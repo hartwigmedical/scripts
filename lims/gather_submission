@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 SUBMISSIONS_DIR="/data/submissions"
 QUERY_LMS_SCRIPT="query_lims.pl"
 QUERY_API_SCRIPT="query_api.pl"
@@ -7,10 +9,9 @@ GATHER_ARIA_SCRIPT="gather_submission_aria_config"
 LIMS_JSON='/data/ops/lims/prod/lims.json'
 submission=$1
 
-## sanity checks
-if [[ $# -eq 0 ]] ; then echo "[ERROR] Run with eg: $0 HMFreg0000"; exit 1; fi
-if [[ -z "${submission+x}" ]]; then echo "[ERROR] Missing submission id as input"; exit 1; fi
-if [[ ! ${submission} =~ ^HMFreg ]]; then echo "[ERROR] Submission should start with \"HMFreg\""; exit 1; fi
+if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]] ; then echo " Usage: $0 HMFreg0000"; exit 1; fi
+[[ -n "${submission}" ]] || die "Missing submission id as input"
+[[ "${submission}" =~ ^HMFreg ]] || die "Submission should start with 'HMFreg'"
 
 ## setting up variables
 out_path="${SUBMISSIONS_DIR}/${submission}"
@@ -28,43 +29,44 @@ samp_json="${samp_file/.txt/.json}"
 runs_json="${runs_file/.txt/.json}"
 
 ## create dirs
-if [[ -e "${out_path}" ]] ; then echo "[ERROR] Dir exists already (${out_path})"; exit 1; fi
-mkdir -p "${out_path}" || exit 1
+[[ ! -e "${out_path}" ]] || die "Output dir exists already (${out_path})"
+mkdir -p "${out_path}" || die "Unable to create output dir (${out_path})"
 
 ## gather submission info from LAB LIMS
-echo "[INFO] Querying HMF LIMS to get submission info"
-cat "${LIMS_JSON}" | jq -r ".submissions.${submission}" > "${subm_json}"
-p_name=$(cat "${subm_json}" | jq -r '.project_name')
-r_name=$(cat "${subm_json}" | jq -r '.report_contact_name')
-r_mail=$(cat "${subm_json}" | jq -r '.report_contact_email')
-d_name=$(cat "${subm_json}" | jq -r '.data_contact_name')
-d_mail=$(cat "${subm_json}" | jq -r '.data_contact_email')
-p_type=$(cat "${subm_json}" | jq -r '.analysis_type')
-if [[ -z "${p_name+x}" ]]; then echo "[ERROR] Unable to find project for submission"; exit 1; fi
+info "Querying HMF LIMS to get submission info"
+jq -r ".submissions.${submission}" "${LIMS_JSON}" > "${subm_json}"
+p_name=$(jq -r '.project_name' "${subm_json}")
+r_name=$(jq -r '.report_contact_name' "${subm_json}")
+r_mail=$(jq -r '.report_contact_email' "${subm_json}")
+d_name=$(jq -r '.data_contact_name' "${subm_json}")
+d_mail=$(jq -r '.data_contact_email' "${subm_json}")
+p_type=$(jq -r '.analysis_type' "${subm_json}")
+
+[[ -n "${p_name}" ]] || die "Unable to find project for submission"
 
 ## get all samples involved from LAB LIMS
-echo "[INFO] Querying HMF LIMS to get sample list"
+info "Querying HMF LIMS to get sample list"
 ${QUERY_LMS_SCRIPT} -type samples -filter "submission=${submission}" > "${lims_file}"
 ${QUERY_LMS_SCRIPT} -type samples -filter "submission=${submission}" -json > "${lims_json}"
 
 ## get q30/yield data from HMF API
-echo "[INFO] Querying HMF API to get sample status"
+info "Querying HMF API to get sample status"
 ${QUERY_API_SCRIPT} -type samples -filter "submission=${submission}" > "${samp_file}"
 api_samples_json=$(${QUERY_API_SCRIPT} -type samples -filter "submission=${submission}" -no_format -json)
-total_yield_gbase=$( echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
+total_yield_gbase=$(echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
 echo "${api_samples_json}" > "${samp_json}"
 
 ## get entity/run-status from HMF API
-echo "[INFO] Querying HMF API to get run status"
+info "Querying HMF API to get run status"
 ${QUERY_API_SCRIPT} -type runs -filter "name=${submission}" > "${runs_file}"
 ${QUERY_API_SCRIPT} -type runs -filter "name=${submission}" -json > "${runs_json}"
 
 ## get counts to check completeness
-hmf_count=$(cat "${lims_file}" | grep -cv "^#")
-api_count=$(cat "${samp_file}" | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+hmf_count=$(grep -cv "^#" "${lims_file}" | cut -f2)
+api_count=$(grep -v "^#" "${samp_file}" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
-cat "${samp_file}" | grep -v "^#" | cut -f2 > "${barc_file}"
+grep -v "^#" "${samp_file}" | cut -f2 > "${barc_file}"
 
 ## setup reporting info
 rm -f "${repo_file}"
@@ -72,49 +74,50 @@ pdf_name="${submission}_${p_name}.pdf"
 
 printf '%s\n' "# Project metadata table for report (${pdf_name})" \
 "${r_name}" "${r_mail}" "${d_mail}"  "${p_name}" "${submission}" \
-"${api_count}" "${p_type}" "${total_yield_gbase} GBase" "" >> "${repo_file}"
+"${api_count}" "${p_type}" "${total_yield_gbase} GBase" \
+"" "# Sample table for report:" >> "${repo_file}"
 
-printf '%s\n' "# Sample table for report:" >> "${repo_file}"
-cat "${samp_file}" | grep -v ^# | while read line; do
+grep -v ^# "${samp_file}" | while read -r line; do
     subm=$(echo "${line}" | cut -f1)
     barc=$(echo "${line}" | cut -f2)
-    q30=$(echo "${line}" | cut -f3)
+    q30M=$(echo "${line}" | cut -f3)
     yldR=$(echo "${line}" | cut -f4)
-    yld=$(echo "${line}" | cut -f5)
+    yldM=$(echo "${line}" | cut -f5)
     name=$(echo "${line}" | cut -f7)
-    date=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" )
-    sops=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" )
-    printf "%s\t" "${subm}" "${barc}" "${q30}" "${yldR}" "${yld}" "${name}" "${date}"
+    date=$(jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" "${lims_json}")
+    sops=$(jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" "${lims_json}")
+    printf "%s\t" "${subm}" "${barc}" "${q30M}" "${yldR}" "${yldM}" "${name}" "${date}"
     printf "%s\n" "${sops}"
 done >> "${repo_file}"
 
-## logging
-echo "#           Date = ${date_string}" >> "${log_file}"
-echo "#     Submission = ${submission}"  >> "${log_file}"
-echo "#        Project = ${p_name}"      >> "${log_file}"
-echo "#   Sample Count = ${hmf_count}"   >> "${log_file}"
-echo "#     Data Count = ${api_count}"   >> "${log_file}"
-echo "#    Yield GBase = ${total_yield_gbase}"  >> "${log_file}"
-echo "# Report Contact = ${r_name} (${r_mail})" >> "${log_file}"
-echo "#   Data Contact = ${d_name} (${d_mail})" >> "${log_file}"
+{
+    echo "#           Date = ${date_string}"
+    echo "#     Submission = ${submission}"
+    echo "#        Project = ${p_name}"
+    echo "#   Sample Count = ${hmf_count}"
+    echo "#     Data Count = ${api_count}"
+    echo "#    Yield GBase = ${total_yield_gbase}"
+    echo "# Report Contact = ${r_name} (${r_mail})"
+    echo "#   Data Contact = ${d_name} (${d_mail})"
+} >> "${log_file}"
 
-## stdout msg
-echo "[INFO] Inspect output files:"
+info "Inspect output files:"
 echo " cd ${out_path}"
 echo " cat ${log_file}"
 echo " cat ${lims_file}"
 echo " cat ${samp_file}"
 echo " cat ${runs_file}"
 echo ""
-echo "[INFO] And/or get the aria2 download config:"
+
+info "And/or get the aria2 download config:"
 echo " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
 echo ""
-echo "[INFO] And/or print info for (PDF) report:"
+
+info "And/or print info for (PDF) report:"
 echo " cat ${repo_file}"
 echo ""
 
 ## warn if not potentially complete
 if [[ ${hmf_count} -ne ${api_count} ]]; then
-    echo "[WARN] There might be missing samples!"
-    exit 1
+    warn "Not all samples have status Ready (so FASTQ might be missing)!"
 fi
