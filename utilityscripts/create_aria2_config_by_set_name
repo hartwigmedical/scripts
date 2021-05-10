@@ -2,48 +2,51 @@
 
 source message_functions || exit 1
 
+command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
+command -v jq > /dev/null || die "Dependency jq not found"
+
 set_name=$1
 
 if [[ -z "${set_name}" ]]; then
-    echo "[ERROR] No set provided. Exiting" && exit 1
+    echo "-----"
+    echo " Usage: $(basename "$0") \${set-name}"
+    echo " Exmpl: $(basename "$0") 210319_HMFregCORE_FR30729774_FR23588534_COREDB010063"
+    echo "-----"
+    exit 1
 fi
 
-api_cred_dir="/data/common/dbs/api_credentials"
-gcp_cred_dir="/data/common/dbs/gcp_credentials"
-
-api_url="http://api.prod-1/hmf/v1"
-
-gcp_url_sign_script="generate_signed_gcp_url.py"
-gcp_key_file="${gcp_cred_dir}/hmf-ops"
-gcp_project="hmf-database"
-gcp_account="hmf-ops"
+credentials_dir="/data/common/dbs/gcp_credentials"
+key_file="${credentials_dir}/hmf-ops"
+project="hmf-database"
+account="hmf-ops"
+service_account="${account}@${project}.iam.gserviceaccount.com"
 
 info "Start of $(basename $0)"
-msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
+info "Switching to service account ${service_account}"
+msg=$(gcloud config set account "${service_account}" 2>&1)
 info "${msg}"
 
 function main() {
-    ## check that only one run exists for the set
-    runs_json=$(query_api.pl -type runs -filter "name=${set_name}" -exact -json | jq '.')
-    runs_count=$(echo "${runs_json}" | jq '. | length')
+    ## make sure only one run exists for the set
+    runs_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '[.[] | select(.ini != "Rerun.ini")]') || die "Unable to get run (${set_name})"
+    runs_count=$(jq '. | length' <<< "${runs_json}")
     if [[ "${runs_count}" -ne 1 ]]; then
         die "Only sets supported with exactly one run (found ${runs_count}). Exiting"
     fi
     run_json=$(echo "${runs_json}" | jq -r '.[-1]')
 
     ## setup all variables
-    cluster=$(echo "${run_json}" | jq -r '.cluster')
-    bucket=$(echo "${run_json}" | jq -r '.bucket')
-    entity=$(echo "${run_json}" | jq -r '.entity')
-    status=$(echo "${run_json}" | jq -r '.status')
-    name=$(echo "${run_json}" | jq -r '.name')
-    pip=$(echo "${run_json}" | jq -r '.pipeline')
-    ini=$(echo "${run_json}" | jq -r '.ini')
-    ref=$(echo "${run_json}" | jq -r '.ref_sample')
-    tum=$(echo "${run_json}" | jq -r '.tumor_sample')
-    oid=$(echo "${run_json}" | jq -r '.id') # object id
+    cluster=$(jq -r '.cluster' <<< "${run_json}")
+    bucket=$(jq -r '.bucket' <<< "${run_json}")
+    entity_id=$(jq -r '.set.entity_id' <<< "${run_json}")
+    status=$(jq -r '.status' <<< "${run_json}")
+    name=$(jq -r '.set.name' <<< "${run_json}")
+    pip=$(jq -r '.version' <<< "${run_json}")
+    ini=$(jq -r '.ini' <<< "${run_json}")
+    ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
+    oid=$(jq -r '.id' <<< "${run_json}") # object id
 
-    files_api_url="${api_url}/files?run_id=${oid}"
     out_jsn_all="${name}_runfiles.json"
     out_md5_all="${name}_runfiles.md5"
     out_aria="${name}.aria.txt"
@@ -51,18 +54,19 @@ function main() {
     out_url_int="${name}_internal_urls.txt"
     out_url_ext="${name}_external_urls.txt"
 
-    info "RunName: ${name}"
-    info "RunStat: ${status}"
-    info "IniName: ${ini}"
-    info "TumName: ${tum}"
-    info "RefName: ${ref}"
-    info "PipeVsn: ${pip}"
-    info "Cluster: ${cluster}"
-    info "Bucket:  ${bucket}"
-    info "Entity:  ${entity}"
-    
     ## create re-usable list of all output files
     output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
+
+    info "Details:"
+    info "  RunName: ${name} (oid=${oid})"
+    info "  RunStat: ${status}"
+    info "  IniName: ${ini}"
+    info "  TumName: ${tum}"
+    info "  RefName: ${ref}"
+    info "  PipeVsn: ${pip}"
+    info "  Cluster: ${cluster}"
+    info "  Bucket:  ${bucket}"
+    info "  Entity:  ${entity_id}"
 
     ## cleanup existing files
     for output_file in "${output_files[@]}"; do
@@ -72,9 +76,8 @@ function main() {
     done
 
     ## get the file objects for one run by id
-    files_json=$(curl --silent -X GET \
-        -H "Accept: application/json" -H "Content-Type: application/json" \
-        "${files_api_url}")
+    info "Collecting required information"
+    files_json=$(hmf_api_get "files?run_id=${oid}")
 
     ## create run type agnostic info files
     create_json_file "${files_json}" "${out_jsn_all}"
@@ -108,7 +111,7 @@ function main() {
         fi
     done
 
-    info "Finished with $(basename $0)"
+    info "Finished with $(basename "$0")"
 }
 
 create_run_specific_files () {
@@ -127,7 +130,7 @@ create_run_specific_files () {
 
     if [[ "${run_type}" == "Fastq" ]]; then
         pip="Fastq"
-    elif [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
+    elif [[ "${pip}" =~ ^5\.[0-9]+$ ]]; then
         minor=$(echo "${pip}" | cut -d"." -f2)
     else
         die "Pipeline version string has unknown format (${pip})"
@@ -181,16 +184,14 @@ create_run_specific_files () {
         "${tumor_bam_bai}"
     )
 
-    # Get correct driver catalog paths depending on the pipeline version.
+    driver_cat_paths=(
+        "purple/${tum}.driver.catalog.germline.tsv"
+        "purple/${tum}.driver.catalog.somatic.tsv"
+    )
+
+    # No germline driver catalog if older than 5.19
     if [[ "${minor}" -lt 19 ]]; then
-      driver_cat_paths=(
-      "purple/${tum}.driver.catalog.tsv"
-      )
-    else
-      driver_cat_paths=(
-      "purple/${tum}.driver.catalog.germline.tsv"
-      "purple/${tum}.driver.catalog.somatic.tsv"
-      )
+        driver_cat_paths=("purple/${tum}.driver.catalog.tsv")
     fi
 
     local somatic_files=(
@@ -212,7 +213,7 @@ create_run_specific_files () {
         "${tumor_bam_bai}"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
-        ${driver_cat_paths[@]}
+        "${driver_cat_paths[@]}"
     )
 
     ## select file collection
@@ -233,39 +234,47 @@ create_run_specific_files () {
     for file_path in "${file_selection[@]}"; do
         file_name=$(basename "${file_path}")
         file_in_bucket="${bucket}/${name}/${file_path}"
-        internal_url="gs://${file_in_bucket}"
+        gs_url="gs://${file_in_bucket}"
 
         ## adjust for Fastq files (those already are complete internal gs path)
         if [[ ${run_type} == "Fastq" ]]; then
             file_in_bucket=${file_path/gs\:\/\//}
-            internal_url="${file_path}"
+            gs_url="${file_path}"
         fi
 
         ## get file specific md5 hash
-        md5sum=$(echo "${json}" | jq -r --arg url "${internal_url}" '.[] | select(.filepath == $url) | .hash')
-        [[ -n "${md5sum}" ]] || die "Missing md5 hash for file at url (${internal_url})"
+        md5sum=$(echo "${json}" | jq -r --arg url "${gs_url}" '.[] | select(.filepath == $url) | .hash')
+        [[ -n "${md5sum}" ]] || die "Missing md5 hash for file at url (${gs_url})"
         printf '%s\t%s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
-        ## sanity check on existance of file in bucket
-        gsutil -u "${gcp_project}" -q stat "${internal_url}"
+        ## sanity check on existence of file in bucket
+        gsutil -u "${project}" -q stat "${gs_url}"
         if [[ $? -eq 1 ]]; then
-            msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
-            warn "Cannot access file so skipping (${internal_url})"
+            msg=$(gsutil -u "${project}" ls "${gs_url}" 2>&1)
+            warn "Cannot access file so skipping (${gs_url})"
             warn "ErrCode=${?} ErrMsg=\"${msg}\""
             continue
         fi
 
-        ## get actual pre-signed URL
-        external_url=$( "${gcp_url_sign_script}" "${gcp_key_file}" "${file_in_bucket}" 604800)
+        ## get pre-signed URL (prints a header and multiple fields)
+        url=$(gsutil signurl -r europe-west4 -b "${project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
 
-        echo "${external_url}" >> "${out_aria}"
-        echo "  dir=${name}" >> "${out_aria}"
-        echo "  checksum=md5=${md5sum}" >> "${out_aria}"
-        echo "" >> "${out_aria}"
+        ## final sanity checks
+        [[ "${url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${url})"
+        [[ -n "${name}" ]] || die "Dir not defined for aria config (${name})"
+        [[ -n "${md5sum}" ]] || die "Md5sum not defined for aria config (${name})"
+
+        ## print aria2 config for one file (for options see https://aria2.github.io/manual/en/html/aria2c.html#input-file)
+        {
+          echo "${url}"
+          echo "  dir=${name}"
+          echo "  checksum=md5=${md5sum}"
+          echo ""
+        } >> "${out_aria}"
 
         ## write urls to separate log files
-        echo "${internal_url}" >> "${out_url_int}"
-        echo "${external_url}" >> "${out_url_ext}"
+        echo "${gs_url}" >> "${out_url_int}"
+        echo "${url}" >> "${out_url_ext}"
     done
 }
 

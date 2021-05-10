@@ -9,6 +9,10 @@ sample_type=$1 && shift # REF or TUM
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
+key_file="/data/common/dbs/gcp_credentials/hmf-download"
+region="europe-west4"
+project="hmf-database"
+
 print_usage(){
     echo "-----"
     echo " Descr: Prints presigned CRAM and CRAI URLs by biopsy name"
@@ -24,8 +28,6 @@ if [[ -z "${biopsy_name}" ]] || [[ -z "${sample_type}" ]]; then
     print_usage
 fi
 
-gcp_sign_url_script="generate_signed_gcp_url.py"
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
 internal_cram_url=""
 
 if [[ ${sample_type} = "REF" ]]; then
@@ -37,19 +39,17 @@ else
 fi
 
 # Sanity check (not all samples are linked to a biopsy yet in API)
-[[ "${internal_cram_url}" =~ ^gs ]] ||  die "Incorrect internal CRAM URL for ${sample_type} sample of biopsy ${biopsy_name}"
-
-# Unfortunately the sign script takes URL without "gs://" prefix
-# Ideally we use gsutil signurl directly but does not work with requester pays buckets
-cram=$(echo "${internal_cram_url}" | sed 's/^gs\:\/\///')
-crai="${cram}.crai"
-
+[[ "${internal_cram_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_cram_url}) for ${sample_type} sample of biopsy ${biopsy_name}"
 internal_crai_url="${internal_cram_url}.crai"
-external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" "$PRESIGN_SECONDS")
-external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" "$PRESIGN_SECONDS")
 
-info "URLs for ${sample_type} sample of biopsy ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds):"
+signed_cram_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_cram_url}" | grep -v 'Signed URL' | cut -f4)
+signed_crai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_crai_url}" | grep -v 'Signed URL' | cut -f4)
+
+[[ "${signed_cram_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_cram_url})"
+[[ "${signed_crai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_crai_url})"
+
+info "URLs for ${sample_type} sample of biopsy ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
 info "CRAM internal URL: ${internal_cram_url}"
 info "CRAI internal URL: ${internal_crai_url}"
-info "CRAM external URL: ${external_cram_url}"
-info "CRAI external URL: ${external_crai_url}"
+info "CRAM external URL: ${signed_cram_url}"
+info "CRAI external URL: ${signed_crai_url}"

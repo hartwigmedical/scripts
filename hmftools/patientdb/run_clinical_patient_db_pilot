@@ -28,7 +28,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 -jar ${patient_
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -tumor_location_mapping_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.tsv \
     -tumor_location_overrides_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_overrides.tsv \
-    -treatment_mapping_tsv /data/common/dbs/clinical_curation/treatment_mapping.tsv \
+    -treatment_mapping_tsv /data/common/dbs/clinical_curation/pilot_treatment_mapping.tsv \
     -biopsy_mapping_tsv /data/common/dbs/clinical_curation/biopsy_site_mapping.tsv \
     -reporting_db_tsv ${reporting_db_tsv} \
     "$@"

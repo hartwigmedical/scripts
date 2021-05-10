@@ -1,31 +1,67 @@
+#!/usr/bin/env bash
+
 source locate_files || exit 1
 source message_functions || exit 1
 
-info "Run PEACH tests"
+SCRIPT_NAME="$(basename "$0")"
 
-if [[ $# -eq 0 ]]; then
-  venv_dir=$(locate_peach_venv_dir)
-else
-  venv_dir=$1 && shift
-fi
+main() {
+  info "Started ${SCRIPT_NAME}"
 
-# peach_repo_base_dir=$HOME/repos/scripts/peach
-peach_repo_base_dir=$(locate_peach_repo_dir)
+  local peach_repo_base_dir
+  local venv_dir
 
-# START VIRTUAL ENV
-source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
+  while [[ $# -gt 0 ]]
+  do
+  key="$1" && shift
+  case $key in
+      -r|--repodir)
+      peach_repo_base_dir="$1" && shift  # optional argument
+      ;;
+      -v|--venv)
+      venv_dir="$1" && shift  # optional argument
+      ;;
+      *)    # unknown option
+      OTHER_OPTIONS+=("$key") # save it in an array for later
+      ;;
+  esac
+  done
 
-export PYTHONPATH="${PYTHONPATH}:${peach_repo_base_dir}/src/"
-export MYPYPATH="${MYPYPATH}:${peach_repo_base_dir}/src/"
+  # default values for arguments
+  if [[ -z ${venv_dir} ]]; then
+    venv_dir=$(locate_peach_venv_dir) || die "Could not get default venv dir" # default value
+  fi
+  if [[ -z ${peach_repo_base_dir} ]]; then
+    peach_repo_base_dir=$(locate_peach_repo_dir) || die "Could not get default peach repo base dir" # default value
+  fi
 
-python -m unittest discover --buffer --verbose --start-directory "${peach_repo_base_dir}" || die "Some PEACH tests failed"
+  # sanity checks
+  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+  [[ -d ${peach_repo_base_dir} ]] || die "peach_repo_base_dir should be a dir: ${peach_repo_base_dir}."
+  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
-info "PEACH tests succeeded"
+  info "Activate PEACH venv"
+  source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
 
-mypy_config="${peach_repo_base_dir}/mypy.ini"
+  export PYTHONPATH="${PYTHONPATH}:${peach_repo_base_dir}/src/"
+  export MYPYPATH="${MYPYPATH}:${peach_repo_base_dir}/src/"
 
-info "Run PEACH type check"
+  info "Run PEACH tests"
 
-mypy "${peach_repo_base_dir}/src" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases || die "PEACH type check failed"
+  python -m unittest discover --buffer --verbose --start-directory "${peach_repo_base_dir}" || die "Some PEACH tests failed"
 
-info "PEACH type succeeded"
+  info "PEACH tests succeeded"
+
+  local mypy_config="${peach_repo_base_dir}/mypy.ini"
+
+  info "Run PEACH type check"
+
+  mypy "${peach_repo_base_dir}/src" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases \
+          || die "PEACH type check failed"
+
+  info "PEACH type check succeeded"
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"

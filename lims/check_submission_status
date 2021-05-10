@@ -73,10 +73,10 @@ samples=$(hmf_api_get "samples?submission=${submission}")
 measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready" or .status=="Deleted") | .yld] | add')
 measured_yield_gbase=$((measured_yield / 1000000000))
 if [[ "${measured_yield_gbase}" -lt "${req_yield}" ]]; then
-    warn "INSUFFICIENT YIELD: Submission requires ${req_yield} GBase but currently has ${measured_yield_gbase} GBase!"
+    warn "INSUFFICIENT YIELD: Submission requires ${req_yield} GBase in total but currently has ${measured_yield_gbase} GBase!"
     warnings_found="TRUE"
 else
-    info "Yield is sufficient: required ${req_yield} and measured ${measured_yield_gbase} GBase"
+    info "Total submission yield is sufficient: required ${req_yield} and measured ${measured_yield_gbase} GBase"
 fi
 
 if [[ ! "${rns_val}" -eq "${rns_tot}" ]]; then
