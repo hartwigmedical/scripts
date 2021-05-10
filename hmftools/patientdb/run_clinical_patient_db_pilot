@@ -6,6 +6,7 @@ patient_db_jar=$(locate_pilot_patient_db)
 runs_dir=/data/cpct/runs
 pipeline_version_file="pipeline.version"
 reporting_db_tsv=$(locate_reporting_db_tsv)
+lims_dir=/data/ops/lims/pilot
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 # Note that we should only "do_process_wide_clinical_data" in case of pilot.
@@ -21,7 +22,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 -jar ${patient_
     -wide_avl_treatment_csv /data/ecrf/wide_avl_treatments.csv \
     -wide_response_csv /data/ecrf/wide_responses.csv \
     -wide_five_days_csv /data/ecrf/wide_five_days.csv \
-    -lims_dir /data/ops/lims/prod \
+    -lims_dir ${lims_dir} \
     -curated_primary_tumor_tsv /data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
     -patient_tumor_curation_status_tsv /data/common/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
