@@ -95,8 +95,16 @@ main() {
   fi
 
   # Run PEACH
-  "${peach_main}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${peach_version}" "${output_dir}"  \
-      "${panel_file}" "${vcftools_tool}" --transcript_tsv "${transcript_tsv}" ${optional_recreate_bed_arg} \
+  "${peach_main}" \
+      "--vcf ${germline_vcf}" \
+      "--sample_t_id ${tumor_sample}" \
+      "--sample_r_id ${ref_sample}" \
+      "--version ${peach_version}" \
+      "--outputdir ${output_dir}"  \
+      "--panel ${panel_file}" \
+      "--vcftools ${vcftools_tool}" \
+      "--transcript_tsv" "${transcript_tsv}" \
+      ${optional_recreate_bed_arg} \
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
