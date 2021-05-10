@@ -84,7 +84,6 @@ main() {
   [[ -d ${base_dir} ]] || die "base_dir should be a dir: ${base_dir}."
   
   info "Run PEACH pilot"
-  info "Subdirs: $(ls "${base_dir}")"
   run_peach_pilot_on_subdirs "${base_dir}" "${optional_panel_arg}" "${optional_recreate_bed_arg}" \
       "${optional_peach_main_arg}" || die "Could not run PEACH pilot"
   
