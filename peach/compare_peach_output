@@ -158,10 +158,12 @@ compare_directory_contents() {
       actual_file="${output_dir}/${file_name}"
       control_file="${control_dir}/${file_name}"
 
-      [[ -f "${actual_file}" ]] || die "Cannot find file ${actual_file}"
-      [[ -f "${control_file}" ]] || die "Cannot find file ${control_file}"
+      [[ -f "${actual_file}" ]] || warn "Cannot find file ${actual_file}"
+      [[ -f "${control_file}" ]] || warn "Cannot find file ${control_file}"
 
-      diff "${actual_file}" "${control_file}"
+      if [[ -f "${actual_file}" &&  -f "${control_file}" ]]; then
+        diff "${actual_file}" "${control_file}"
+      fi
   done
 }
 
