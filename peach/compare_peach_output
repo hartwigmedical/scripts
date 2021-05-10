@@ -7,7 +7,6 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
-RUN_PEACH_LOCATION="$HOME/repos/scripts/peach/run_peach_pilot"  # adjust this if needed
 MAX_THREADS=10
 FULL_DPYD_PANEL_NAME="DPYD.json"
 
@@ -108,7 +107,7 @@ run_peach_pilot_on_subdirs() {
 
   info "Subdirs: $(ls "${base_dir}")"
   ls "${base_dir}" | xargs -n 1 -P "${MAX_THREADS}" -I {} \
-      "${RUN_PEACH_LOCATION}" --rundir "${base_dir}"/{} \
+      run_peach_pilot --rundir "${base_dir}"/{} \
       ${optional_panel_arg} ${optional_recreate_bed_arg} ${optional_peach_main_arg} || die "Could not run PEACH pilot"
 }
 
