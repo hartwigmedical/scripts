@@ -2,8 +2,8 @@
 
 source message_functions
 
-pilot_dir=/data/common/dbs/serve/prod_output_old
-prod_dir=/data/common/dbs/serve/prod_output
+pilot_dir=/data/common/dbs/serve/prod_output
+prod_dir=/data/common/dbs/serve/prod_output_old
 
 info "Verfiy actionable charateristics v37"
 diff ${prod_dir}/ActionableCharacteristics.37.tsv ${pilot_dir}/ActionableCharacteristics.37.tsv
