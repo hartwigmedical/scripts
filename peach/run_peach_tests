@@ -38,7 +38,7 @@ main() {
   # sanity checks
   [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
   [[ -d ${peach_repo_base_dir} ]] || die "peach_repo_base_dir should be a dir: ${peach_repo_base_dir}."
-  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${peach_repo_base_dir}."
+  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
   info "Activate PEACH venv"
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"

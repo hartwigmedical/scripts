@@ -13,13 +13,10 @@ main() {
   info "Started ${SCRIPT_NAME}"
 
   local run_dir
+  local peach_main
   local venv_dir
   local panel_name
   local optional_recreate_bed_arg
-
-  venv_dir=$(locate_peach_venv_dir)  # default argument
-  panel_name="${MINIMAL_DPYD_PANEL_NAME}"  # default argument
-  optional_recreate_bed_arg=""  # default argument
 
   while [[ $# -gt 0 ]]
   do
@@ -27,6 +24,9 @@ main() {
   case $key in
       -r|--rundir)
       run_dir="$1" && shift
+      ;;
+      -m|--main)
+      peach_main="$1" && shift  # optional argument
       ;;
       -v|--venv)
       venv_dir="$1" && shift  # optional argument
@@ -43,11 +43,25 @@ main() {
   esac
   done
 
+  # default values for arguments
+  if [[ -z ${peach_main} ]]; then
+    peach_main=$(locate_peach_main) || die "Could not get default PEACH main path" # default value
+  fi
+  if [[ -z ${venv_dir} ]]; then
+    venv_dir=$(locate_peach_venv_dir) || die "Could not get default PEACH venv dir" # default value
+  fi
+  if [[ -z ${panel_name} ]]; then
+    panel_name="${MINIMAL_DPYD_PANEL_NAME}"  # default value
+  fi
+  if [[ -z ${optional_recreate_bed_arg} ]]; then
+    optional_recreate_bed_arg=""  # default value
+  fi
+
   # sanity checks
   [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
   [[ -n ${run_dir} ]] || die "Variable 'rundir' has not been set."
-  [[ -n ${venv_dir} ]] || die "Variable 'venv' has not been set. Consider using the default argument."
-  [[ -n ${panel_name} ]] || die "Variable 'panel' has not been set. Consider using the default argument."
+  [[ -d ${run_dir} ]] || die "run_dir should be a dir: ${run_dir}."
+  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
   # START VIRTUAL ENV
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
@@ -70,13 +84,9 @@ main() {
   tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
 
   local germline_vcf
-  # germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}") || die "Could not get germline vcf path"
   germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
 
   # REFERENCES
-  local peach_main
-  peach_main=$(locate_peach_main) || die "Could not get PEACH main.py path"
-  # peach_main=$HOME/repos/scripts/peach/src/main.py
   local peach_resource_dir
   peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
   local vcftools_tool
