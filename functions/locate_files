@@ -156,7 +156,7 @@ locate_pilot_datarequest() {
 ################################# NON JAVA TOOLS ###################################
 
 locate_peach_main() {
-    echo "$(locate_peach_repo_dir)/src/main.py"
+    echo "$(locate_peach_repo_dir)/peach"
 }
 
 locate_umi_main() {

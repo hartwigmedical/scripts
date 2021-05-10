@@ -64,9 +64,6 @@ main() {
   [[ -d ${run_dir} ]] || die "run_dir should be a dir: ${run_dir}."
   [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
-  # Start virtual venv
-  source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
-
   # Get argument values
   local output_dir
   output_dir=$(get_output_dir "${run_dir}" "${panel_name}") || die "Could not get output dir"
@@ -82,6 +79,11 @@ main() {
   peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
   local vcftools_tool
   vcftools_tool=$(locate_vcftools) || die "Could not get vcftools path"
+  local panel_file="${peach_resource_dir}/panelfiles/${panel_name}"
+  local transcript_tsv="${peach_resource_dir}/all_genes.37.tsv"
+
+  # Start virtual venv
+  source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
 
   # Add path to environment variable
   export PYTHONPATH="${PYTHONPATH}:${peach_main}/../"
@@ -93,9 +95,8 @@ main() {
   fi
 
   # Run PEACH
-  python "${peach_main}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${peach_version}" "${output_dir}"  \
-      "${peach_resource_dir}/panelfiles/${panel_name}" "${vcftools_tool}" \
-      --transcript_tsv "${peach_resource_dir}/all_genes.37.tsv" ${optional_recreate_bed_arg} \
+  "${peach_main}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${peach_version}" "${output_dir}"  \
+      "${panel_file}" "${vcftools_tool}" --transcript_tsv "${transcript_tsv}" ${optional_recreate_bed_arg} \
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
