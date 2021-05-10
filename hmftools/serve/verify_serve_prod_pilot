@@ -5,32 +5,62 @@ source message_functions
 pilot_dir=/data/common/dbs/serve/pilot_output
 prod_dir=/data/common/dbs/serve/prod_output
 
-info "Verfiy actionable charateristics"
+info "Verfiy actionable charateristics v37"
 diff ${prod_dir}/ActionableCharacteristics.37.tsv ${pilot_dir}/ActionableCharacteristics.37.tsv
 
-info "Verfiy actionable fusions"
+info "Verfiy actionable fusions v37"
 diff ${prod_dir}/ActionableFusions.37.tsv ${pilot_dir}/ActionableFusions.37.tsv
 
-info "Verfiy actionable genes"
+info "Verfiy actionable genes v37"
 diff ${prod_dir}/ActionableGenes.37.tsv ${pilot_dir}/ActionableGenes.37.tsv
 
-info "Verfiy actionable hotspots"
+info "Verfiy actionable hotspots v37"
 diff ${prod_dir}/ActionableHotspots.37.tsv ${pilot_dir}/ActionableHotspots.37.tsv
 
-info "Verfiy actionable ranges"
+info "Verfiy actionable ranges v37"
 diff ${prod_dir}/ActionableRanges.37.tsv ${pilot_dir}/ActionableRanges.37.tsv
 
-info "Verfiy known codons"
+info "Verfiy known codons v37"
 diff ${prod_dir}/KnownCodons.SERVE.37.tsv ${pilot_dir}/KnownCodons.SERVE.37.tsv
 
-info "Verfiy known copy numbers"
+info "Verfiy known copy numbers v37"
 diff ${prod_dir}/KnownCopyNumbers.SERVE.37.tsv ${pilot_dir}/KnownCopyNumbers.SERVE.37.tsv
 
-info "Verfiy known exons"
+info "Verfiy known exons v37"
 diff ${prod_dir}/KnownExons.SERVE.37.tsv ${pilot_dir}/KnownExons.SERVE.37.tsv
 
-info "Verfiy known fusion pairs"
+info "Verfiy known fusion pairs v37"
 diff ${prod_dir}/KnownFusionPairs.SERVE.37.tsv ${pilot_dir}/KnownFusionPairs.SERVE.37.tsv
 
-info "Verfiy known hotspots"
+info "Verfiy known hotspots v37"
 zdiff ${prod_dir}/KnownHotspots.SERVE.37.vcf.gz ${pilot_dir}/KnownHotspots.SERVE.37.vcf.gz
+
+info "Verfiy actionable charateristics v38"
+diff ${prod_dir}/ActionableCharacteristics.38.tsv ${pilot_dir}/ActionableCharacteristics.38.tsv
+
+info "Verfiy actionable fusions v38"
+diff ${prod_dir}/ActionableFusions.38.tsv ${pilot_dir}/ActionableFusions.38.tsv
+
+info "Verfiy actionable genes v38"
+diff ${prod_dir}/ActionableGenes.38.tsv ${pilot_dir}/ActionableGenes.38.tsv
+
+info "Verfiy actionable hotspots v38"
+diff ${prod_dir}/ActionableHotspots.38.tsv ${pilot_dir}/ActionableHotspots.38.tsv
+
+info "Verfiy actionable ranges v38"
+diff ${prod_dir}/ActionableRanges.38.tsv ${pilot_dir}/ActionableRanges.38.tsv
+
+info "Verfiy known codons v38"
+diff ${prod_dir}/KnownCodons.SERVE.38.tsv ${pilot_dir}/KnownCodons.SERVE.38.tsv
+
+info "Verfiy known copy numbers v38"
+diff ${prod_dir}/KnownCopyNumbers.SERVE.38.tsv ${pilot_dir}/KnownCopyNumbers.SERVE.38.tsv
+
+info "Verfiy known exons v38"
+diff ${prod_dir}/KnownExons.SERVE.38.tsv ${pilot_dir}/KnownExons.SERVE.38.tsv
+
+info "Verfiy known fusion pairs v38"
+diff ${prod_dir}/KnownFusionPairs.SERVE.38.tsv ${pilot_dir}/KnownFusionPairs.SERVE.38.tsv
+
+info "Verfiy known hotspots v38"
+zdiff ${prod_dir}/KnownHotspots.SERVE.38.vcf.gz ${pilot_dir}/KnownHotspots.SERVE.38.vcf.gz
