@@ -1,92 +1,238 @@
 #!/usr/bin/env bash
 
-RUN_PEACH_LOCATION="$HOME/repos/scripts/peach/run_peach_pilot"  # adjust this if needed
-FULL_PANEL_NAME="DPYD.json"
+# Only built to run at datastore
 
-base_dir="/data/experiments/pharmagenomics/test_runs"  # default argument
-original=false  # default argument
-skip_vcf=false  # default argument
-optional_panel_arg=""  # default argument
-optional_recreate_bed_arg=""  # default argument
+source locate_files || exit 1
+source message_functions || exit 1
 
-while [[ $# -gt 0 ]]
-do
-key=$1 && shift
-case $key in
-    -d|--basedir)
-    base_dir="$1" && shift  # optional argument
-    ;;
-    -o|--original)
-    original=true  # optional argument
-    ;;
-    -s|--skip-vcf)
-    skip_vcf=true  # optional argument
-    ;;
-    -p|--panel)
-    panel_name="$1" && shift
-    optional_panel_arg=" --panel ${panel_name}"  # optional argument
-    ;;
-    -b|--recreate_bed)
-    optional_recreate_bed_arg=" --recreate_bed"  # optional argument
-    ;;
-    *)    # unknown option
-    OTHER_OPTIONS+=("$key") # save it in an array for later
-    ;;
-esac
-done
+SCRIPT_NAME="$(basename "$0")"
 
-echo "RUN PEACH PILOT"
+MAX_THREADS=10
+FULL_DPYD_PANEL_NAME="DPYD.json"
 
-if [ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]; then
-    echo "[ERROR] Unrecognized options! : ${OTHER_OPTIONS[*]}"
-    exit 1
-fi
+main() {
+  info "Started ${SCRIPT_NAME}"
 
-echo "Subdirs: $(ls "${base_dir}")"
+  # Parse args
+  local key
+  local base_dir
+  local original
+  local skip_vcf
+  local peach_main
+  local optional_peach_main_arg
+  local panel_name
+  local optional_panel_arg
+  local optional_recreate_bed_arg
+  while [[ $# -gt 0 ]]
+  do
+  key=$1 && shift
+  case $key in
+      -d|--basedir)
+      base_dir="$1" && shift  # Optional argument
+      ;;
+      -m|--main)
+      peach_main="$1" && shift
+      optional_peach_main_arg=" --main ${peach_main}"  # Optional argument
+      ;;
+      -p|--panel)
+      panel_name="$1" && shift
+      optional_panel_arg=" --panel ${panel_name}"  # Optional argument
+      ;;
+      -s|--skip-vcf)
+      skip_vcf=true  # Optional argument
+      ;;
+      -b|--recreate_bed)
+      optional_recreate_bed_arg=" --recreate_bed"  # Optional argument
+      ;;
+      -o|--original)
+      original=true  # Optional argument
+      ;;
+      *)    # Unknown option
+      OTHER_OPTIONS+=("$key") # Save it in an array for later
+      ;;
+  esac
+  done
 
-ls "${base_dir}" | xargs -n 1 -P 10 -I {} \
-    "${RUN_PEACH_LOCATION}" --rundir "${base_dir}"/{} ${optional_panel_arg} ${optional_recreate_bed_arg}
+  # Default values for arguments
+  if [[ -z ${base_dir} ]]; then
+    base_dir="/data/experiments/peach/test_runs"
+  fi
+  if [[ -z ${original} ]]; then
+    original=false
+  fi
+  if [[ -z ${skip_vcf} ]]; then
+    skip_vcf=false
+  fi
+  if [[ -z ${peach_main} ]]; then
+    peach_main=""
+  fi
+  if [[ -z ${optional_peach_main_arg} ]]; then
+    optional_peach_main_arg=""
+  fi
+  if [[ -z ${panel_name} ]]; then
+    panel_name=""
+  fi
+  if [[ -z ${optional_panel_arg} ]]; then
+    optional_panel_arg=""
+  fi
+  if [[ -z ${optional_recreate_bed_arg} ]]; then
+    optional_recreate_bed_arg=""
+  fi
+  
+  # Sanity checks
+  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+  [[ -d ${base_dir} ]] || die "base_dir should be a dir: ${base_dir}."
+  
+  info "Run PEACH pilot"
+  info "Subdirs: $(ls "${base_dir}")"
+  run_peach_pilot_on_subdirs "${base_dir}" "${optional_panel_arg}" "${optional_recreate_bed_arg}" \
+      "${optional_peach_main_arg}" || die "Could not run PEACH pilot"
+  
+  info "Compare PEACH output"
+  compare_peach_pilot_ouput_to_control "${base_dir}" "${panel_name}" "${original}" "${skip_vcf}" \
+      || die "Could not compare PEACH output to control"
+  
+  info "Finished ${SCRIPT_NAME}"
+}
 
-if [[ "${panel_name}" == "${FULL_PANEL_NAME}" ]]; then
-  output_dir_name="peach_pilot_full"
-else
-  output_dir_name="peach_pilot"
-fi
+run_peach_pilot_on_subdirs() {
+  local base_dir=$1 && shift
+  local optional_panel_arg=$1 && shift
+  local optional_recreate_bed_arg=$1 && shift
+  local optional_peach_main_arg=$1 && shift
 
-echo "COMPARE PEACH OUTPUT"
-for subdir in "${base_dir}"/*
-do
-    echo "Comparing for ${subdir}"
+  if [[ -z "${base_dir}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
 
-    if [[ -d ${subdir} ]]; then
-      output_dir="${subdir}/${output_dir_name}"
+  info "Subdirs: $(ls "${base_dir}")"
+  ls "${base_dir}" | xargs -n 1 -P "${MAX_THREADS}" -I {} \
+      run_peach_pilot --rundir "${base_dir}"/{} \
+      ${optional_panel_arg} ${optional_recreate_bed_arg} ${optional_peach_main_arg} || die "Could not run PEACH pilot"
+}
 
-      if [ ${original} = true ] ; then
-          control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
+compare_peach_pilot_ouput_to_control() {
+  local base_dir=$1 && shift
+  local panel_name=$1 && shift
+  local original=$1 && shift
+  local skip_vcf=$1 && shift
+
+  if [[ -z "${skip_vcf}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
+
+  for subdir in "${base_dir}"/*
+  do
+      info "Comparing for ${subdir}"
+      if [[ -d ${subdir} ]]; then
+        local output_dir
+        output_dir=$(get_output_dir "${subdir}" "${panel_name}") || die "Could not get output dir"
+        local control_dir
+        control_dir=$(get_control_dir "${subdir}" "${panel_name}" "${original}") || die "Could not get control dir"
+
+        info "Comparing ${output_dir} to ${control_dir}"
+        compare_directory_contents "${output_dir}" "${control_dir}" "${skip_vcf}" || die "Could not compare directory contents"
       else
-          control_dir="${subdir}/${output_dir_name}_control"
+        info "Is not a directory: ${subdir}"
       fi
+  done
+}
 
-      echo "Comparing ${output_dir} to ${control_dir}"
+compare_directory_contents() {
+  local output_dir=$1 && shift
+  local control_dir=$1 && shift
+  local skip_vcf=$1 && shift
 
-      if ${skip_vcf}; then
-        ls_ignore="*.vcf"
-      else
-        ls_ignore="*.very_fake_name"
-      fi
-      file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u )
-      for file_name in $(echo ${file_names})
-      do
-          echo "Diff for ${file_name}"
-          actual_file="${output_dir}/${file_name}"
-          control_file="${control_dir}/${file_name}"
-          [[ -f "${actual_file}" ]] || echo "[ERROR] Cannot find file ${actual_file}"
-          [[ -f "${control_file}" ]] || echo "[ERROR] Cannot find file ${control_file}"
-          diff "${actual_file}" "${control_file}"
-      done
-    else
-      echo "Is not a directory: ${subdir}"
-    fi
-done
+  if [[ -z "${skip_vcf}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
 
-echo "DONE"
+  local comparison_file_names
+  comparison_file_names=$(get_comparison_file_names "${output_dir}" "${control_dir}" "${skip_vcf}") \
+        || die "Could not get file names to compare"
+
+  local actual_file
+  local control_file
+  for file_name in $(echo ${comparison_file_names})
+  do
+      info "Diff for ${file_name}"
+      actual_file="${output_dir}/${file_name}"
+      control_file="${control_dir}/${file_name}"
+
+      [[ -f "${actual_file}" ]] || die "Cannot find file ${actual_file}"
+      [[ -f "${control_file}" ]] || die "Cannot find file ${control_file}"
+
+      diff "${actual_file}" "${control_file}"
+  done
+}
+
+get_comparison_file_names() {
+  local output_dir=$1 && shift
+  local control_dir=$1 && shift
+  local skip_vcf=$1 && shift
+
+  if [[ -z "${skip_vcf}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
+
+  local ls_ignore
+  if ${skip_vcf}; then
+    ls_ignore="*.vcf"
+  else
+    ls_ignore="*.very_fake_name"
+  fi
+  local comparison_file_names
+  comparison_file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u ) \
+      || die "Could not get comparison file names"
+
+  echo "${comparison_file_names}"
+}
+
+get_output_dir() {
+  local subdir=$1 && shift
+  local panel_name=$1 && shift
+
+  if [[ -z "${subdir}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
+
+  local output_dir_name
+  output_dir_name=$(get_output_dir_name "${panel_name}") || die "Could not get output dir name"
+  echo "${subdir}/${output_dir_name}"
+}
+
+get_control_dir() {
+  local subdir=$1 && shift
+  local panel_name=$1 && shift
+  local original=$1 && shift
+
+  if [[ -z "${original}" ]]; then
+    die "Not enough arguments to ${FUNCNAME[0]}"
+  fi
+
+  local output_dir_name
+  output_dir_name=$(get_output_dir_name "${panel_name}") || die "Could not get output dir name"
+
+  local control_dir
+  if [ ${original} = true ] ; then
+      control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
+  else
+      control_dir="${subdir}/${output_dir_name}_control"
+  fi
+
+  echo "${control_dir}"
+}
+
+get_output_dir_name() {
+  local panel_name=$1 && shift
+
+  if [[ "${panel_name}" == "${FULL_DPYD_PANEL_NAME}" ]]; then
+    local output_dir_name="peach_pilot_full"
+  else
+    local output_dir_name="peach_pilot"
+  fi
+
+  echo "${output_dir_name}"
+}
+
+main "$@"
