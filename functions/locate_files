@@ -218,7 +218,7 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/dbs/ckb/210430_flex_dump
+    echo ${base_path}/dbs/ckb/210507_flex_dump
 }
 
 ############################### REF GENOME #################################
