@@ -105,8 +105,9 @@ run_peach_pilot_on_subdirs() {
   fi
 
   info "Subdirs: $(ls "${base_dir}")"
-  ls "${base_dir}" | xargs -n 1 -P "${MAX_THREADS}" -I {} \
-      run_peach_pilot --rundir "${base_dir}"/{} \
+  find /data/experiments/peach/copy_of_210416_verification_runs/platinum-output-pgx-germline/ \
+      -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
+      run_peach_pilot --rundir {} \
       ${optional_panel_arg} ${optional_recreate_bed_arg} ${optional_peach_main_arg} || die "Could not run PEACH pilot"
 }
 
