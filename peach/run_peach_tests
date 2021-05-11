@@ -48,15 +48,7 @@ main() {
   export PYTHONPATH="${PYTHONPATH}:${peach_repo_base_dir}/src/"
   export MYPYPATH="${MYPYPATH}:${peach_repo_base_dir}/src/"
 
-  info "Run PEACH tests"
-  python -m unittest discover --buffer --verbose --start-directory "${peach_repo_base_dir}" || die "Some PEACH tests failed"
-  info "PEACH tests succeeded"
-
-  info "Run PEACH type check"
-  local mypy_config="${peach_repo_base_dir}/mypy.ini"
-  mypy "${peach_repo_base_dir}/src" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases \
-          || die "PEACH type check failed"
-  info "PEACH type check succeeded"
+  "${peach_repo_base_dir}/test_peach"
 
   info "Finished ${SCRIPT_NAME}"
 }
