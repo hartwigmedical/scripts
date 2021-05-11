@@ -18,7 +18,6 @@ main() {
   local peach_main
   local venv_dir
   local panel_name
-  local optional_recreate_bed_arg
   while [[ $# -gt 0 ]]
   do
   key="$1" && shift
@@ -35,9 +34,6 @@ main() {
       -p|--panel)
       panel_name="$1" && shift  # Optional argument
       ;;
-      -b|--recreate_bed)
-      optional_recreate_bed_arg="--recreate_bed"  # Optional argument
-      ;;
       *)    # Unknown option
       OTHER_OPTIONS+=("$key") # Save it in an array for later
       ;;
@@ -53,9 +49,6 @@ main() {
   fi
   if [[ -z ${panel_name} ]]; then
     panel_name="${MINIMAL_DPYD_PANEL_NAME}"
-  fi
-  if [[ -z ${optional_recreate_bed_arg} ]]; then
-    optional_recreate_bed_arg=""
   fi
 
   # Sanity checks
@@ -77,10 +70,7 @@ main() {
   germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
   local peach_resource_dir
   peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
-  local vcftools_tool
-  vcftools_tool=$(locate_vcftools) || die "Could not get vcftools path"
   local panel_file="${peach_resource_dir}/panelfiles/${panel_name}"
-  local transcript_tsv="${peach_resource_dir}/all_genes.37.tsv"
 
   # Start virtual venv
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
@@ -102,9 +92,6 @@ main() {
       "--version" "${peach_version}" \
       "--outputdir" "${output_dir}"  \
       "--panel" "${panel_file}" \
-      "--vcftools" "${vcftools_tool}" \
-      "--transcript_tsv" "${transcript_tsv}" \
-      ${optional_recreate_bed_arg} \
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"

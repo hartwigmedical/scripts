@@ -22,7 +22,6 @@ main() {
   local optional_peach_main_arg
   local panel_name
   local optional_panel_arg
-  local optional_recreate_bed_arg
   while [[ $# -gt 0 ]]
   do
   key=$1 && shift
@@ -40,9 +39,6 @@ main() {
       ;;
       -s|--skip-vcf)
       skip_vcf=true  # Optional argument
-      ;;
-      -b|--recreate_bed)
-      optional_recreate_bed_arg=" --recreate_bed"  # Optional argument
       ;;
       -o|--original)
       original=true  # Optional argument
@@ -75,17 +71,14 @@ main() {
   if [[ -z ${optional_panel_arg} ]]; then
     optional_panel_arg=""
   fi
-  if [[ -z ${optional_recreate_bed_arg} ]]; then
-    optional_recreate_bed_arg=""
-  fi
   
   # Sanity checks
   [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
   [[ -d ${base_dir} ]] || die "base_dir should be a dir: ${base_dir}."
   
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${base_dir}" "${optional_panel_arg}" "${optional_recreate_bed_arg}" \
-      "${optional_peach_main_arg}" || die "Could not run PEACH pilot"
+  run_peach_pilot_on_subdirs "${base_dir}" "${optional_panel_arg}" "${optional_peach_main_arg}" \
+      || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
   compare_peach_pilot_ouput_to_control "${base_dir}" "${panel_name}" "${original}" "${skip_vcf}" \
