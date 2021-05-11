@@ -133,7 +133,7 @@ compare_peach_pilot_ouput_to_control() {
         info "Comparing ${output_dir} to ${control_dir}"
         compare_directory_contents "${output_dir}" "${control_dir}" "${skip_vcf}" || die "Could not compare directory contents"
       else
-        info "Is not a directory: ${subdir}"
+        warn "Is not a directory: ${subdir}"
       fi
   done
 }
