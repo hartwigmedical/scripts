@@ -14,7 +14,8 @@ file_path=$1 && shift
 nas_path=$1 && shift
 
 [[ -f "${file_path}" ]] || die "File to copy not found (${file_path})"
-[[ $(ssh nas ls "${nas_path}") ]] || die "Target directory not found at NAS (${nas_path})"
+# shellcheck disable=SC2029
+ssh nas "[ -d '${nas_path}' ]" || die "Target directory not found at NAS (nas:${nas_path})"
 
 info "Copying ${file_path} to ${nas_path}"
-scp "${file_path}" "nas:${nas_path}"
+scp "${file_path}" "nas:${nas_path}/"
