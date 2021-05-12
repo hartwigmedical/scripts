@@ -315,6 +315,16 @@ locate_peach_pilot_vcf() {
     echo "${peach_pilot_vcf}"
 }
 
+locate_peach_genotype_prod_tsv() {
+    local run_dir=$1
+    local peach_genotype=$(find -L ${run_dir}/peach/ -type f -name "*.peach.genotype.tsv")
+    if [[ -z "${peach_genotype}" ]]; then
+        echo "[ERROR] Unable to locate peach genotype tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${peach_genotype}
+}
+
 ##################################### UMI ##########################################
 
 locate_umi_dir() {
@@ -451,6 +461,40 @@ locate_purple_pilot_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+############################################ VIRUSBreakend ##########################################
+
+locate_virus_breakend_tsv() {
+    local run_dir=$1
+    local virus_breakend_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virusbreakend.vcf.summary.tsv")
+    if [[ -z "${virus_breakend_tsv}" ]]; then
+        echo "[ERROR] Unable to locate virus breakend conclusion tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${virus_breakend_tsv}
+}
+
+############################################ CUPPA ##########################################
+
+locate_cuppa_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
+    if [[ -z "${plot}" ]]; then
+        echo "[ERROR] Unable to locate cuppa plot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${plot}
+}
+
+locate_cuppa_txt() {
+    local run_dir=$1
+    local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
+    if [[ -z "${conclusion_txt}" ]]; then
+        echo "[ERROR] Unable to locate cuppa conclusion in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${conclusion_txt}
+}
+
 ############################################ PURPLE ##########################################
 
 locate_purple_purity() {
@@ -512,6 +556,16 @@ purple_somatic_driver_catalog() {
     fi
 
     echo ${purple_driver_tsv}
+}
+
+locate_purple_cnv_somatic_tsv() {
+    local run_dir=$1
+    local purple_cnv_somatic=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.somatic.tsv")
+    if [[ -z "${purple_cnv_somatic}" ]]; then
+        echo "[ERROR] Unable to locate purple cnv somatic tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_cnv_somatic}
 }
 
 locate_purple_gene_copynumbers() {
