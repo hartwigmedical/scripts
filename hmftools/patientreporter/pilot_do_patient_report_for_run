@@ -91,7 +91,7 @@ pilot_do_run_base_patient_reporter \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -virus_tsv ${virus_tsv}\
+    -virus_tsv ${virus_tsv} \
     -virus_summary_tsv ${virus_summary_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir_data ${output_dir_data} \
