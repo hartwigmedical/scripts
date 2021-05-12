@@ -53,8 +53,7 @@ main() {
     # setup output dir
     mkdir -p "$out_path"
 
-    # write startup msg to both stdout and log file for tracking when using parallel execution
-    info "Starting with $(basename $0) ($submission)"
+    # also write startup msg to log file for tracking when using parallel execution
     info "Starting with $(basename $0) ($submission)" >> "$log_file"
 
     GCP_ACCOUNT_project="${GCP_ACCOUNT}@${GCP_PROJECT}"
@@ -64,6 +63,8 @@ main() {
 
     info "Retrieving samples by submission" >> "$log_file"
     samples_json=$(hmf_api_get "samples?submission=$submission")
+    sample_ids=$(jq -r '. | map(.id) | join(",")' <<< "${samples_json}")
+    info "Samples found: ${sample_ids}}" >> "$log_file"
 
     # add start message to final cleanup cmd file
     echo "echo '[INFO] Starting cleanup for submission $submission'" >> "$rm_cmd_file"
@@ -72,13 +73,11 @@ main() {
     while read -r sample; do
         sample_id=$(echo "$sample" | cut -f1)
         sample_status=$(echo "$sample" | cut -f2)
-        if [[ "${sample_status}" == "Unregistered" ]]; then
-            # Unregistered samples have not sets/runs linked
-            info "Processing unregistered sample (id=$sample_id)" >> "$log_file"
-            process_unregistered_sample "$sample_id" "$rm_cmd_file" "$log_file"
-        else
-            # Registered samples always have sets/runs linked
-            info "Processing registered sample (id=$sample_id)" >> "$log_file"
+        info "Processing sample (id=$sample_id)" >> "$log_file"
+        process_sample "$sample_id" "$rm_cmd_file" "$log_file"
+        if [[ "${sample_status}" != "Unregistered" ]]; then
+            # Registered samples are always linked to sets/runs
+            info "Processing runs for sample (id=$sample_id)" >> "$log_file"
             processed_ids=$(process_runs_for_sample "$sample_id" "$rm_cmd_file" "$log_file" "$processed_ids")
         fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.id,.status] | @tsv')
@@ -158,11 +157,14 @@ process_runs_for_sample() {
     echo "$processed_ids"
 }
 
-process_unregistered_sample() {
+process_sample() {
     local sample_id=$1 && shift
     local cmd_file=$1 && shift
     local log_file=$1 && shift
     fastq_json=$(hmf_api_get "fastq?sample_id=$sample_id")
+
+    info "  Processing sample with id $sample_id" >> "$log_file"
+    echo "echo '[INFO] Executing steps for sample with id $sample_id'" >> "$rm_cmd_file"
 
     while read -r fastq; do
         bucket=$(echo "$fastq" | cut -f1)
