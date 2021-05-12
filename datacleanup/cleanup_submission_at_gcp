@@ -38,12 +38,15 @@ main() {
     info "Starting with $(basename $0) ($submission)"
 
     out_path="$OUT_ROOT/$submission"
-    log_file="$out_path/setup.log"
-    rm_cmd_file="$out_path/cleanup_at_gcp"
-    rm_log_file="$out_path/cleanup_at_gcp.log"
+    if [[ -d "$out_path" ]]; then
+        YYMMDD=$(date '+%y%m%d')
+        info "  Output path exists ($out_path)"
+        out_path="${OUT_ROOT}/${submission}/${YYMMDD}"
+        info "  Output path reset to include date ($out_path)"
+    fi
 
     # sanity checks
-    info "  Performing sanity checks"
+    info "  Performing various sanity checks"
     [[ -w "$OUT_ROOT" ]] || die "Out root not writable ($OUT_ROOT)"
     [[ ! -d "$out_path" ]] || die "Output directory already exists ($out_path)"
     [[ ! -f "$log_file" ]] || die "Log file already exists ($log_file)"
@@ -51,7 +54,10 @@ main() {
     [[ ! -f "$rm_log_file" ]] || die "Removal log already exists ($rm_log_file)"
 
     # setup output dir
-    mkdir -p "$out_path"
+    mkdir -p "$out_path" || die "Unable to create output dir ($out_path)"
+    log_file="$out_path/setup.log"
+    rm_cmd_file="$out_path/cleanup_at_gcp"
+    rm_log_file="$out_path/cleanup_at_gcp.log"
 
     # also write startup msg to log file for tracking when using parallel execution
     info "Starting with $(basename $0) ($submission)" >> "$log_file"
@@ -95,7 +101,7 @@ main() {
     else
         info "You can now execute deletion with:" >> "$log_file"
         info "  nohup $rm_cmd_file > $rm_log_file &" >> "$log_file"
-        info "  Check log file for further actions: $log_file"
+        info "  Setup is complete, check log file for further actions: $log_file"
     fi
     info "Finished with $(basename $0) ($submission)" >> "$log_file"
     info "Finished with $(basename $0) ($submission)"
@@ -181,7 +187,8 @@ process_sample() {
             process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
         fi
 
-    done < <(echo "$fastq_json" | jq -cr '.[] | [.bucket,.name_r1,.name_r2] | @tsv')
+    done < <(echo "$fastq_json" | jq -cr '.[] | [.bucket//"hmf-fastq-storage",.name_r1//"NA",.name_r2//"NA"] | @tsv')
+    # in case bucket is missing check default bucket hmf-fastq-storage
 
     echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$cmd_file"
 }
