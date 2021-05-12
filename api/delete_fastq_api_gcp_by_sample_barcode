@@ -4,27 +4,30 @@ source message_functions || exit 1
 
 barcode=$1 # sample barcode
 out_cmd_file=$2 # output file for rm/patch cmds
+mode=$3 # either reset or delete
 
-if [[ -z "${barcode}" ]]; then
+if [[ -z "${barcode}" || -z "${out_cmd_file}" || -z "${mode}" ]]; then
     echo "---"
     echo "Descr: Prints commands to patch API records and gsutil commands to delete fastq"
-    echo "Usage: $(basename $0) \${barcode} \${output_cmd_file}"
-    echo "   Eg: $(basename $0) FR12345678"
-    echo "       $(basename $0) FR12345678 ./delete_fastq_for_FR12345678.sh"
+    echo "Usage: $(basename $0) \${barcode} \${output_cmd_file} [reset|delete]"
+    echo "   Eg: $(basename $0) FR12345678 ./delete_FR12345678.sh delete"
+    echo "       $(basename $0) FR12345678 ./reset_FR12345678.sh reset"
     echo "---"
     exit 1
 fi
 
 main () {
     # input checks
-    [[ -n "${barcode}" ]] || die "No barcode provided?"
-    [[ -n "${out_cmd_file}" ]] || die "No output command file provided?"
+    [[ -n "${barcode}" ]] || die "No barcode"
+    [[ -n "${out_cmd_file}" ]] || die "No output file"
+    [[ "${mode}" =~ ^delete|reset$ ]] || die "Mode should be 'delete' or 'reset' (${mode})"
     [[ ! -f "${out_cmd_file}" ]] || die "Output file already exists (${out_cmd_file})"
 
     info "Searching for sample (${barcode})"
     result=$(hmf_api_get "samples?barcode=${barcode}")
     count=$(echo "${result}" | jq length)
 
+    # barcode should be unique but double check
     [[ "${count}" -eq 1 ]] || die "Number of samples found for barcode ${barcode} not 1 (${count})"
 
     sample=$(echo "${result}" | jq -r .[0])
@@ -38,11 +41,11 @@ main () {
 
     info "Found sample (name=${name} barcode=${barcode} status=${status} yld=${yld} q30=${q30} id=${id})"
 
-    #runs_json=$(hmf_api_get "runs?barcode=${barcode}")
     fastq_json=$(hmf_api_get "fastq?sample_id=${id}")
+    runs_json=$(hmf_api_get "runs?barcode=${barcode}")
 
     # write cmds
-    echo "# Cleanup commands for ${barcode}" > "${out_cmd_file}"
+    echo "echo 'Starting with ${barcode}'" > "${out_cmd_file}"
     echo "# Removals of FASTQ from bucket" >> "${out_cmd_file}"
     echo "${fastq_json}" | jq -cr '.[] | [.bucket // "NA", .name_r1 // "NA", .name_r2 // "NA"] | @tsv' | while read -r info; do
         bucket=$(echo "${info}" | cut -f1)
@@ -56,26 +59,32 @@ main () {
         fi
     done
 
-    echo "# API Patches for fastq pairs of sample" >> "${out_cmd_file}"
+    echo "# API Patches for fastq" >> "${out_cmd_file}"
     echo "${fastq_json}" | jq -r .[].id | while read -r fastq_id; do
         echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f qc_pass -v false" >> "${out_cmd_file}"
         echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null" >> "${out_cmd_file}"
     done
 
     echo "# API Patches for sample" >> "${out_cmd_file}"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Insufficient Quality'" >> "${out_cmd_file}"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null" >> "${out_cmd_file}"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null" >> "${out_cmd_file}"
-
-    #echo "# API Patches for all runs involved"
-    #echo "${runs_json}" | jq -r .[].id | while read -r run_id; do
-    #    echo " hmf_api_patch -e -c fastq -o '${run_id}' -f status -v Invalidated" >> "${out_cmd_file}"
-    #done
+    if [[ "${mode}" == "delete" ]]; then
+        echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Deleted'" >> "${out_cmd_file}"
+    elif [[ "${mode}" == "reset" ]]; then
+        {
+            echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Insufficient Quality'"
+            echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null"
+            echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null"
+            echo "# API Patches for all runs involved"
+            echo "${runs_json}" | jq -r .[].id | while read -r run_id; do
+                echo " hmf_api_patch -e -c runs -o '${run_id}' -f status -v Invalidated"
+            done
+        } >> "${out_cmd_file}"
+    else
+        die "Should not happen: mode is somehow not 'delete' or 'reset'"
+    fi
 
     echo "echo 'Finished with ${barcode}'" >> "${out_cmd_file}"
-    info "Making cmd file ${out_cmd_file} executable"
     chmod +x "${out_cmd_file}"
-    info "Execute with eg: nohup ${out_cmd_file} > ${out_cmd_file}.log &"
+    info "Check contents and then execute with eg: nohup ${out_cmd_file} > ${out_cmd_file}.log &"
 }
 
 main
