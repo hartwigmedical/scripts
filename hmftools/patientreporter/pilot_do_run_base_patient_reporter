@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 patient_reporter_jar=$(locate_pilot_patient_reporter)
 

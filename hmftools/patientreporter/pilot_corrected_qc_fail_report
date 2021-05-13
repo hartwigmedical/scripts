@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 tumor_sample_or_run_dir=$1 && shift
 qc_fail_reason=$1 && shift
 
 if [[ -z "${tumor_sample_or_run_dir}" ]]; then
-    echo "[ERROR] No tumor sample or run dir provided. Exiting" && exit 1;
+    error "No tumor sample or run dir provided. Exiting" && exit 1;
 fi
 
 if [[ -z "${qc_fail_reason}" ]]; then
-    echo "[ERROR] No QC fail reason provided. Exiting" && exit 1;
+    error "No QC fail reason provided. Exiting" && exit 1;
 fi
 
 # Additional comments are not passed along since comments already used for indicating a pilot report.
@@ -23,5 +25,5 @@ elif [[ ${qc_fail_reason} == "insufficient_tcp_deep_wgs" ]]; then
 elif [[ ${qc_fail_reason} == "technical_failure" ]]; then
     pilot_technical_failure_report ${tumor_sample_or_run_dir} -corrected_report "$@"
 else
-    echo "[WARN] Did not recognize QC Fail reason: ${qc_fail_reason}. Skipping"
+    warn "Did not recognize QC Fail reason: ${qc_fail_reason}. Skipping"
 fi
