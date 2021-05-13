@@ -24,7 +24,7 @@ purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 ## start symlinking purple outputs
 echo "[DEBUG] Symlinking somatic files for ${set_name} with having purple '${purple_version}'"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path_purple}
-ln -s $(locate_purple_drivers_somatic ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_somatic_driver_catalog ${source_set_path}) ${dest_set_path_purple}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path_purple}
 ln -s $(locate_purple_gene_copynumbers ${source_set_path}) ${dest_set_path_purple}
 ln -s $(locate_purple_purity ${source_set_path}) ${dest_set_path_purple}
