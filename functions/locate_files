@@ -41,7 +41,7 @@ locate_ckb_pilot_database_credentials() {
 }
 
 
-############################# Nextcloud Credentials #############################
+############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
     echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
@@ -153,7 +153,7 @@ locate_pilot_datarequest() {
     echo ${base_path}/tools/datarequest/datarequest_pilot.jar
 }
 
-################################# NON JAVA TOOLS ###################################
+############################### NON JAVA TOOLS #################################
 
 locate_peach_main() {
     echo "$(locate_peach_repo_dir)/peach"
@@ -167,7 +167,25 @@ locate_vcftools() {
     echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
 }
 
-#################################### Resources #####################################
+################################### UMI ########################################
+
+locate_umi_dir() {
+    echo "${base_path}/repos/scripts/umi"
+}
+
+locate_umi_resource_dir() {
+    echo "${base_path}/dbs/umi"
+}
+
+locate_umi_venv_dir() {
+    echo "$(locate_umi_resource_dir)/venv/umi"
+}
+
+locate_umi_requirements() {
+    echo "$(locate_umi_dir)/requirements.txt"
+}
+
+################################## Resources ###################################
 
 locate_driver_gene_panel_37_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.37.tsv
@@ -186,7 +204,7 @@ locate_known_fusion_data_38_csv() {
 }
 
 locate_peach_resource_dir() {
-    echo ${base_path}/dbs/peach/
+    echo ${base_path}/dbs/peach
 }
 
 locate_pilot_iclusion_trial_tsv() {
@@ -221,7 +239,7 @@ locate_ckb_flex_data_dir() {
     echo ${base_path}/dbs/ckb/210507_flex_dump
 }
 
-############################### REF GENOME #################################
+################################# REF GENOME ###################################
 
 locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
@@ -239,7 +257,404 @@ locate_ref_genome_38_to_37_chain() {
     echo ${base_path}/refgenomes/liftover/hg38ToHg19.over.chain
 }
 
-################################### PEACH ####################################
+##################################  METRICS ####################################
+
+locate_wgs_metrics() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local metrics_file=""
+    local metrics_dir_pre_v5=${run_dir}/QCStats
+    local metrics_dir_v5=${run_dir}/${sample}/bam_metrics
+
+    if [[ -d "${metrics_dir_pre_v5}" ]]; then
+        metrics_file=$(find -L ${metrics_dir_pre_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
+    elif [[ -d "${metrics_dir_v5}" ]]; then
+        metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}.wgsmetrics")
+    fi
+
+    if [[ -z "${metrics_file}" ]]; then
+        echo "[ERROR] Unable to locate metrics file for ${sample} in run ${run_dir}. Exiting." >& 2
+        exit 1
+    fi
+
+    echo ${metrics_file}
+}
+
+locate_flagstats() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local flagstats_file=""
+    local flagstats_dir_pre_v5=${run_dir}/${sample}/mapping
+    local flagstats_dir_v5=${run_dir}/${sample}/flagstat
+
+    if [[ -d "${flagstats_dir_pre_v5}" ]]; then
+        flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*.realigned.flagstat")
+    elif [[ -d "${flagstats_dir_v5}" ]]; then
+        flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}.flagstat")
+    fi
+
+    if [[ -z "${flagstats_file}" ]]; then
+        echo "[ERROR] Unable to locate flagstats file for ${sample} in run ${run_dir}. Exiting." >& 2
+        exit 1
+    fi
+
+    echo ${flagstats_file}
+}
+
+##################################### AMBER ####################################
+
+locate_amber_directory() {
+    local run_dir=$1
+    local amber_dir=${run_dir}/amber
+
+    if [[ ! -d "${amber_dir}" ]]; then
+        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${amber_dir}
+}
+
+###################################### SAGE ####################################
+
+locate_sage_somatic_variants() {
+    local run_dir=$1
+    local sage_dir_old=${run_dir}/sage
+    local sage_dir=${run_dir}/sage_somatic
+
+    local somatic_vcf=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
+    elif [[ -d "${sage_dir_old}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir_old}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
+    fi
+
+    if [[ -z "${somatic_vcf}" ]]; then
+        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${somatic_vcf}
+}
+
+##################################### PURPLE ###################################
+
+locate_purple_purity() {
+    local run_dir=$1
+    local purple_purity_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity.tsv")
+    if [[ -z "${purple_purity_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_tsv}
+}
+
+locate_purple_pilot_purity() {
+    local run_dir=$1
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local purple_purity_tsv=""
+
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        purple_purity_tsv=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.purity.tsv")
+    fi
+
+    if [[ -z "${purple_purity_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot purity in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_tsv}
+}
+
+locate_purple_qc() {
+    local run_dir=$1
+    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
+    if [[ -z "${purple_qc_file}" ]]; then
+        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_qc_file}
+}
+
+locate_purple_somatic_driver_catalog() {
+    local run_dir=$1
+    local purple_somatic_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
+    if [[ -z "${purple_somatic_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple somatic driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_somatic_driver_tsv}
+}
+
+locate_purple_somatic_copynumber_tsv() {
+    local run_dir=$1
+    local purple_somatic_copynumber_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.somatic.tsv")
+    if [[ -z "${purple_somatic_copynumber_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple somatic copynumbers in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_somatic_copynumber_tsv}
+}
+
+locate_purple_gene_copynumbers() {
+    local run_dir=$1
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
+    if [[ -z "${purple_gene_copynumbers}" ]]; then
+        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_pilot_gene_copynumbers() {
+    local run_dir=$1
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local purple_gene_copynumbers=""
+
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        purple_gene_copynumbers=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.cnv.gene.tsv")
+    fi
+
+    if [[ -z "${purple_gene_copynumbers}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot gene copynumbers in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_somatic_variants() {
+    local run_dir=$1
+    local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
+    if [[ -z "${somatic_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${somatic_vcf}
+}
+
+locate_purple_pilot_somatic_variants() {
+    local run_dir=$1
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local somatic_vcf=""
+
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        somatic_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
+    if [[ -z "${somatic_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${somatic_vcf}
+}
+
+locate_purple_circos_plot() {
+    local run_dir=$1
+    local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")
+    if [[ -z "${circos_plot}" ]]; then
+        echo "[ERROR] Unable to locate purple circos plot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${circos_plot}
+}
+
+locate_purple_pilot_circos_plot() {
+    local run_dir=$1
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local circos_plot=""
+
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        circos_plot=$(find -L ${purple_pilot_dir}/plot/ -type f -name "*.circos.png")
+    fi
+
+    if [[ -z "${circos_plot}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot circos plot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${circos_plot}
+}
+
+################################ PURPLE Germline ###############################
+
+locate_purple_germline_variants() {
+    local run_dir=$1
+    local germline_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.germline.vcf.gz")
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${germline_vcf}
+}
+
+locate_purple_pilot_germline_variants() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple_pilot
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${germline_vcf}
+}
+
+locate_purple_germline_driver_catalog() {
+    local run_dir=$1
+    local purple_germline_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
+    if [[ -z "${purple_germline_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple germline driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_germline_driver_tsv}
+}
+
+############################ Structural Variants ###############################
+
+locate_purple_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+locate_purple_pilot_structural_variants() {
+    local run_dir=$1
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local structural_vcf=""
+
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        structural_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.sv.vcf.gz")
+    fi
+
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple pilot structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+locate_gripss_structural_variants() {
+    local run_dir=$1
+    local gripss_dir=${run_dir}/gripss
+
+    local structural_vcf=""
+    if [[ -d "${gripss_dir}" ]]; then
+        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.filtered.vcf.gz")
+    fi
+
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate GRIPSS structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+locate_gripss_recovery_candidates() {
+    local run_dir=$1
+    local gripss_dir=${run_dir}/gripss
+
+    local structural_vcf=""
+    if [[ -d "${gripss_dir}" ]]; then
+        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.vcf.gz")
+    fi
+
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate GRIPSS recovery variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+##################################### LINX #####################################
+
+locate_linx_fusions() {
+    local run_dir=$1
+    local fusion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.fusion.tsv")
+    if [[ -z "${fusion_tsv}" ]]; then
+        echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${fusion_tsv}
+}
+
+locate_linx_breakends() {
+    local run_dir=$1
+    local disruption_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.breakend.tsv")
+    if [[ -z "${disruption_tsv}" ]]; then
+        echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${disruption_tsv}
+}
+
+locate_linx_viral_insertions() {
+    local run_dir=$1
+    local viral_insertion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.viral_inserts.tsv")
+    if [[ -z "${viral_insertion_tsv}" ]]; then
+        echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${viral_insertion_tsv}
+}
+
+locate_linx_driver_catalog() {
+    local run_dir=$1
+    local driver_catalog_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.driver.catalog.tsv")
+    if [[ -z "${driver_catalog_tsv}" ]]; then
+        echo "[ERROR] Unable to locate linx drivers catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${driver_catalog_tsv}
+}
+
+##################################### GATK #####################################
+
+locate_gatk_germline_variants() {
+    local run_dir=$1 && shift
+    local ref_sample=$1 && shift
+
+    local germline_vcf=""
+
+    if [[ -f "${run_dir}/pipeline.version" ]]; then
+        # >v5 format
+        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name "*.germline.vcf.gz")
+    else
+        # <v5 format
+        germline_vcf=$(find -L ${run_dir}/ -type f -name "*.annotated.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${germline_vcf}
+}
+
+################################### Bachelor ###################################
+
+locate_reportable_bachelor_variants() {
+    local run_dir=$1
+    local reportable_bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.reportable_germline_variant.tsv")
+    if [[ -z "${reportable_bachelor_tsv}" ]]; then
+        # The germline_variant_tsv will only be found for bachelor v1.10+. Since we cannot rerun bachelor on datastore,
+        # we just blank out bachelor results for every pre-v1.10 bachelor run.
+        echo "[WARN] Cannot find bachelor v1.10+ output. Assuming bachelor has not found any variants for ${run_dir}!" >&2
+        reportable_bachelor_tsv=/data/common/dbs/bachelor/empty.reportable_germline_variant.tsv
+    fi
+    echo ${reportable_bachelor_tsv}
+}
+
+#################################### PEACH #####################################
 
 locate_peach_repo_dir() {
     echo "${base_path}/repos/peach"
@@ -325,522 +740,7 @@ locate_peach_genotype_prod_tsv() {
     echo ${peach_genotype}
 }
 
-##################################### UMI ##########################################
-
-locate_umi_dir() {
-    echo "${base_path}/repos/scripts/umi"
-}
-
-locate_umi_resource_dir() {
-    echo "${base_path}/dbs/umi"
-}
-
-locate_umi_venv_dir() {
-    echo "$(locate_umi_resource_dir)/venv/umi"
-}
-
-locate_umi_requirements() {
-    echo "$(locate_umi_dir)/requirements.txt"
-}
-
-#####################################  METRICS ######################################
-
-locate_wgs_metrics() {
-    local run_dir=$1 && shift
-    local sample=$1 && shift
-
-    local metrics_file=""
-    local metrics_dir_pre_v5=${run_dir}/QCStats
-    local metrics_dir_v5=${run_dir}/${sample}/bam_metrics
-
-    if [[ -d "${metrics_dir_pre_v5}" ]]; then
-        metrics_file=$(find -L ${metrics_dir_pre_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
-    elif [[ -d "${metrics_dir_v5}" ]]; then
-        metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}.wgsmetrics")
-    fi
-
-    if [[ -z "${metrics_file}" ]]; then
-        echo "[ERROR] Unable to locate metrics file for ${sample} in run ${run_dir}. Exiting." >& 2
-        exit 1
-    fi
-
-    echo ${metrics_file}
-}
-
-locate_flagstats() {
-    local run_dir=$1 && shift
-    local sample=$1 && shift
-
-    local flagstats_file=""
-    local flagstats_dir_pre_v5=${run_dir}/${sample}/mapping
-    local flagstats_dir_v5=${run_dir}/${sample}/flagstat
-
-    if [[ -d "${flagstats_dir_pre_v5}" ]]; then
-        flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*.realigned.flagstat")
-    elif [[ -d "${flagstats_dir_v5}" ]]; then
-        flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}.flagstat")
-    fi
-
-    if [[ -z "${flagstats_file}" ]]; then
-        echo "[ERROR] Unable to locate flagstats file for ${sample} in run ${run_dir}. Exiting." >& 2
-        exit 1
-    fi
-
-    echo ${flagstats_file}
-}
-
-############################################# AMBER ###########################################
-
-locate_amber_directory() {
-    local run_dir=$1
-    local amber_dir=${run_dir}/amber
-
-    if [[ ! -d "${amber_dir}" ]]; then
-        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${amber_dir}
-}
-
-########################################### SAGE ##########################################
-
-locate_sage_somatic_variants() {
-    local run_dir=$1
-    local sage_dir_old=${run_dir}/sage
-    local sage_dir=${run_dir}/sage_somatic
-
-    local somatic_vcf=""
-
-    if [[ -d "${sage_dir}" ]]; then
-        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
-    elif [[ -d "${sage_dir_old}" ]]; then
-        somatic_vcf=$(find -L ${sage_dir_old}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
-    fi
-
-    if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${somatic_vcf}
-}
-
-locate_purple_somatic_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple
-
-    local somatic_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
-    fi
-
-    if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${somatic_vcf}
-}
-
-locate_purple_pilot_somatic_variants() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local somatic_vcf=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        somatic_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.somatic.vcf.gz")
-    fi
-
-    if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${somatic_vcf}
-}
-
-############################################ VIRUSBreakend ##########################################
-
-locate_virus_breakend_tsv() {
-    local run_dir=$1
-    local virus_breakend_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virusbreakend.vcf.summary.tsv")
-    if [[ -z "${virus_breakend_tsv}" ]]; then
-        echo "[ERROR] Unable to locate virus breakend conclusion tsv in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${virus_breakend_tsv}
-}
-
-############################################ CUPPA ##########################################
-
-locate_cuppa_plot() {
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
-    if [[ -z "${plot}" ]]; then
-        echo "[ERROR] Unable to locate cuppa plot in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${plot}
-}
-
-locate_cuppa_txt() {
-    local run_dir=$1
-    local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
-    if [[ -z "${conclusion_txt}" ]]; then
-        echo "[ERROR] Unable to locate cuppa conclusion in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${conclusion_txt}
-}
-
-############################################ PURPLE ##########################################
-
-locate_purple_purity() {
-    local run_dir=$1
-    local purple_purity_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity.tsv")
-    if [[ -z "${purple_purity_file}" ]]; then
-        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_purity_file}
-}
-
-locate_purple_pilot_purity() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local purple_purity_file=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        purple_purity_file=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.purity.tsv")
-    fi
-
-    if [[ -z "${purple_purity_file}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot purity in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_purity_file}
-}
-
-locate_purple_qc() {
-    local run_dir=$1
-    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
-    if [[ -z "${purple_qc_file}" ]]; then
-        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_qc_file}
-}
-
-locate_purple_somatic_driver_catalog() {
-    local run_dir=$1
-    local purple_somatic_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
-
-    if [[ -z "${purple_somatic_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_somatic_driver_tsv}
-}
-
-locate_purple_somatic_copynumber_tsv() {
-    local run_dir=$1
-    local purple_somatic_copynumber_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.somatic.tsv")
-
-    if [[ -z "${purple_somatic_copynumber_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic copynumber tsv in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_somatic_copynumber_tsv}
-}
-
-locate_purple_gene_copynumbers() {
-    local run_dir=$1
-    local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
-    if [[ -z "${purple_gene_copynumbers}" ]]; then
-        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_gene_copynumbers}
-}
-
-locate_purple_pilot_gene_copynumbers() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local purple_gene_copynumbers=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        purple_gene_copynumbers=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.cnv.gene.tsv")
-    fi
-
-    if [[ -z "${purple_gene_copynumbers}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot gene copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_gene_copynumbers}
-}
-
-locate_purple_circos_plot() {
-    local run_dir=$1
-    local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")
-    if [[ -z "${circos_plot}" ]]; then
-        echo "[ERROR] Unable to locate purple circos plot in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${circos_plot}
-}
-
-locate_purple_pilot_circos_plot() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local circos_plot=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        circos_plot=$(find -L ${purple_pilot_dir}/plot/ -type f -name "*.circos.png")
-    fi
-
-    if [[ -z "${circos_plot}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot circos plot in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${circos_plot}
-}
-
-######################################## PURPLE Germline ########################################
-
-locate_purple_germline_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple
-
-    local germline_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
-    fi
-
-    if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${germline_vcf}
-}
-
-locate_purple_pilot_germline_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple_pilot
-
-    local germline_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
-    fi
-
-    if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${germline_vcf}
-}
-
-locate_purple_germline_driver_catalog() {
-    local run_dir=$1
-    local purple_germline_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
-
-    if [[ -z "${purple_germline_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple germline driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_germline_driver_tsv}
-}
-
-##################################### Structural Variants #####################################
-
-locate_purple_structural_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple
-    local structural_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        structural_vcf=$(find -L ${purple_dir}/ -type f -name "*.purple.sv.vcf.gz")
-    fi
-
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${structural_vcf}
-}
-
-locate_purple_pilot_structural_variants() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local structural_vcf=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        structural_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.sv.vcf.gz")
-    fi
-
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${structural_vcf}
-}
-
-locate_gripss_structural_variants() {
-    local run_dir=$1
-    local gripss_dir=${run_dir}/gripss
-
-    local structural_vcf=""
-    if [[ -d "${gripss_dir}" ]]; then
-        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.filtered.vcf.gz")
-    fi
-
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIPSS structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${structural_vcf}
-}
-
-locate_gripss_recovery_candidates() {
-    local run_dir=$1
-    local gripss_dir=${run_dir}/gripss
-
-    local structural_vcf=""
-    if [[ -d "${gripss_dir}" ]]; then
-        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.vcf.gz")
-    fi
-
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIPSS recovery variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${structural_vcf}
-}
-
-######################################## LINX ########################################
-
-locate_linx_fusions() {
-    local run_dir=$1
-    local linx_dir=${run_dir}/linx
-    if [[ ! -d "${linx_dir}" ]]; then
-        echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-
-    local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusion.tsv")
-    if [[ -z "${fusion_tsv}" ]]; then
-        echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${fusion_tsv}
-}
-
-locate_linx_breakends() {
-    local run_dir=$1
-    local linx_dir=${run_dir}/linx
-    if [[ ! -d "${linx_dir}" ]]; then
-        echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-
-    local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.breakend.tsv")
-    if [[ -z "${disruption_tsv}" ]]; then
-        echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${disruption_tsv}
-}
-
-locate_linx_viral_insertions() {
-    local run_dir=$1
-    local linx_dir=${run_dir}/linx
-    if [[ ! -d "${linx_dir}" ]]; then
-        echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-
-    local viral_insertion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
-    if [[ -z "${viral_insertion_tsv}" ]]; then
-        echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${viral_insertion_tsv}
-}
-
-locate_linx_driver_catalog() {
-    local run_dir=$1
-    local linx_dir=${run_dir}/linx
-    if [[ ! -d "${linx_dir}" ]]; then
-        echo "[ERROR] Unable to locate linx dir for drivers: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-
-    local driver_catalog_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
-    if [[ -z "${driver_catalog_tsv}" ]]; then
-        driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
-        if [[ -z "${driver_catalog_tsv}" ]]; then
-            echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
-    fi
-    echo ${driver_catalog_tsv}
-}
-
-########################################### GATK ##########################################
-
-locate_gatk_germline_variants() {
-    local run_dir=$1 && shift
-    local ref_sample=$1 && shift
-
-    local germline_vcf=""
-
-    if [[ -f "${run_dir}/pipeline.version" ]]; then
-        # >v5 format
-        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name "*.germline.vcf.gz")
-    else
-        # <v5 format
-        germline_vcf=$(find -L ${run_dir}/ -type f -name "*.annotated.vcf.gz")
-    fi
-
-    if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${germline_vcf}
-}
-
-
-########################################### Bachelor ##########################################
-
-locate_reportable_bachelor_variants() {
-    local run_dir=$1
-    local reportable_bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.reportable_germline_variant.tsv")
-    if [[ -z "${reportable_bachelor_tsv}" ]]; then
-        # The germline_variant_tsv will only be found for bachelor v1.10+. Since we cannot rerun bachelor on datastore,
-        # we just blank out bachelor results for every pre-v1.10 bachelor run.
-        echo "[WARN] Cannot find bachelor v1.10+ output. Assuming bachelor has not found any variants for ${run_dir}!" >&2
-        reportable_bachelor_tsv=/data/common/dbs/bachelor/empty.reportable_germline_variant.tsv
-    fi
-    echo ${reportable_bachelor_tsv}
-}
-
-############################################# CHORD ###########################################
+#################################### CHORD #####################################
 
 locate_chord_prediction() {
     local run_dir=$1
@@ -862,7 +762,41 @@ locate_chord_pilot_prediction() {
     echo ${chord_prediction_file}
 }
 
-########################################### PROTECT ##########################################
+################################ VIRUSBreakend #################################
+
+locate_virus_breakend_tsv() {
+    local run_dir=$1
+    local virus_breakend_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virusbreakend.vcf.summary.tsv")
+    if [[ -z "${virus_breakend_tsv}" ]]; then
+        echo "[ERROR] Unable to locate virus breakend conclusion tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${virus_breakend_tsv}
+}
+
+################################## CUPPA #######################################
+
+locate_cuppa_txt() {
+    local run_dir=$1
+    local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
+    if [[ -z "${conclusion_txt}" ]]; then
+        echo "[ERROR] Unable to locate cuppa conclusion in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${conclusion_txt}
+}
+
+locate_cuppa_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
+    if [[ -z "${plot}" ]]; then
+        echo "[ERROR] Unable to locate cuppa plot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${plot}
+}
+
+################################### PROTECT ####################################
 
 locate_protect_evidence() {
     local run_dir=$1
@@ -884,7 +818,7 @@ locate_protect_evidence_pilot() {
     echo ${protect_evidence_tsv}
 }
 
-############################################# LIMS ###########################################
+##################################### LIMS #####################################
 
 locate_reporting_db_tsv() {
     local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv
