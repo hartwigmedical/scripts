@@ -276,8 +276,7 @@ locate_wgs_metrics() {
     fi
 
     if [[ -z "${metrics_file}" ]]; then
-        echo "[ERROR] Unable to locate metrics file for ${sample} in run ${run_dir}. Exiting." >& 2
-        exit 1
+        error "Unable to locate metrics file for ${sample} in run ${run_dir}. Exiting."
     fi
 
     echo ${metrics_file}
@@ -298,8 +297,7 @@ locate_flagstats() {
     fi
 
     if [[ -z "${flagstats_file}" ]]; then
-        echo "[ERROR] Unable to locate flagstats file for ${sample} in run ${run_dir}. Exiting." >& 2
-        exit 1
+        error "Unable to locate flagstats file for ${sample} in run ${run_dir}. Exiting."
     fi
 
     echo ${flagstats_file}
@@ -312,8 +310,7 @@ locate_amber_directory() {
     local amber_dir=${run_dir}/amber
 
     if [[ ! -d "${amber_dir}" ]]; then
-        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate AMBER directory in ${run_dir}. Exiting."
     fi
 
     echo ${amber_dir}
@@ -335,8 +332,7 @@ locate_sage_somatic_variants() {
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate sage somatic variants in ${run_dir}. Exiting."
     fi
     echo ${somatic_vcf}
 }
@@ -347,8 +343,7 @@ locate_purple_purity() {
     local run_dir=$1
     local purple_purity_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity.tsv")
     if [[ -z "${purple_purity_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple purity in ${run_dir}. Exiting."
     fi
     echo ${purple_purity_tsv}
 }
@@ -363,8 +358,7 @@ locate_purple_pilot_purity() {
     fi
 
     if [[ -z "${purple_purity_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot purity in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot purity in ${run_dir}. Exiting."
     fi
     echo ${purple_purity_tsv}
 }
@@ -373,8 +367,7 @@ locate_purple_qc() {
     local run_dir=$1
     local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
     if [[ -z "${purple_qc_file}" ]]; then
-        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple qc in ${run_dir}. Exiting."
     fi
     echo ${purple_qc_file}
 }
@@ -383,8 +376,7 @@ locate_purple_somatic_driver_catalog() {
     local run_dir=$1
     local purple_somatic_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
     if [[ -z "${purple_somatic_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple somatic driver catalog in ${run_dir}. Exiting."
     fi
     echo ${purple_somatic_driver_tsv}
 }
@@ -393,8 +385,7 @@ locate_purple_somatic_copynumber_tsv() {
     local run_dir=$1
     local purple_somatic_copynumber_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.somatic.tsv")
     if [[ -z "${purple_somatic_copynumber_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple somatic copynumbers in ${run_dir}. Exiting."
     fi
     echo ${purple_somatic_copynumber_tsv}
 }
@@ -403,8 +394,7 @@ locate_purple_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
     if [[ -z "${purple_gene_copynumbers}" ]]; then
-        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple gene copynumbers in ${run_dir}. Exiting."
     fi
     echo ${purple_gene_copynumbers}
 }
@@ -419,8 +409,7 @@ locate_purple_pilot_gene_copynumbers() {
     fi
 
     if [[ -z "${purple_gene_copynumbers}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot gene copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot gene copynumbers in ${run_dir}. Exiting."
     fi
     echo ${purple_gene_copynumbers}
 }
@@ -429,8 +418,7 @@ locate_purple_somatic_variants() {
     local run_dir=$1
     local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
     if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple somatic variants in ${run_dir}. Exiting."
     fi
     echo ${somatic_vcf}
 }
@@ -445,8 +433,7 @@ locate_purple_pilot_somatic_variants() {
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot somatic variants in ${run_dir}. Exiting."
     fi
 
     echo ${somatic_vcf}
@@ -456,8 +443,7 @@ locate_purple_circos_plot() {
     local run_dir=$1
     local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")
     if [[ -z "${circos_plot}" ]]; then
-        echo "[ERROR] Unable to locate purple circos plot in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple circos plot in ${run_dir}. Exiting."
     fi
     echo ${circos_plot}
 }
@@ -472,8 +458,7 @@ locate_purple_pilot_circos_plot() {
     fi
 
     if [[ -z "${circos_plot}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot circos plot in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot circos plot in ${run_dir}. Exiting."
     fi
     echo ${circos_plot}
 }
@@ -484,8 +469,7 @@ locate_purple_germline_variants() {
     local run_dir=$1
     local germline_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.germline.vcf.gz")
     if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple germline variants in ${run_dir}. Exiting."
     fi
     echo ${germline_vcf}
 }
@@ -501,8 +485,7 @@ locate_purple_pilot_germline_variants() {
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot germline variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot germline variants in ${run_dir}. Exiting."
     fi
     echo ${germline_vcf}
 }
@@ -511,8 +494,7 @@ locate_purple_germline_driver_catalog() {
     local run_dir=$1
     local purple_germline_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
     if [[ -z "${purple_germline_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple germline driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple germline driver catalog in ${run_dir}. Exiting."
     fi
     echo ${purple_germline_driver_tsv}
 }
@@ -523,8 +505,7 @@ locate_purple_structural_variants() {
     local run_dir=$1
     local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple structural variants in ${run_dir}. Exiting."
     fi
     echo ${structural_vcf}
 }
@@ -539,8 +520,7 @@ locate_purple_pilot_structural_variants() {
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot structural variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate purple pilot structural variants in ${run_dir}. Exiting."
     fi
     echo ${structural_vcf}
 }
@@ -555,8 +535,7 @@ locate_gripss_structural_variants() {
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIPSS structural variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate GRIPSS structural variants in ${run_dir}. Exiting."
     fi
     echo ${structural_vcf}
 }
@@ -571,8 +550,7 @@ locate_gripss_recovery_candidates() {
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIPSS recovery variants in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate GRIPSS recovery variants in ${run_dir}. Exiting."
     fi
     echo ${structural_vcf}
 }
@@ -583,8 +561,7 @@ locate_linx_fusions() {
     local run_dir=$1
     local fusion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.fusion.tsv")
     if [[ -z "${fusion_tsv}" ]]; then
-        echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate linx fusions tsv in ${run_dir}. Exiting."
     fi
     echo ${fusion_tsv}
 }
@@ -593,8 +570,7 @@ locate_linx_breakends() {
     local run_dir=$1
     local disruption_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.breakend.tsv")
     if [[ -z "${disruption_tsv}" ]]; then
-        echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate linx disruptions tsv in ${run_dir}. Exiting."
     fi
     echo ${disruption_tsv}
 }
@@ -603,8 +579,7 @@ locate_linx_viral_insertions() {
     local run_dir=$1
     local viral_insertion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.viral_inserts.tsv")
     if [[ -z "${viral_insertion_tsv}" ]]; then
-        echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate viral insertion tsv in ${run_dir}. Exiting."
     fi
     echo ${viral_insertion_tsv}
 }
@@ -613,8 +588,7 @@ locate_linx_driver_catalog() {
     local run_dir=$1
     local driver_catalog_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.driver.catalog.tsv")
     if [[ -z "${driver_catalog_tsv}" ]]; then
-        echo "[ERROR] Unable to locate linx drivers catalog in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate linx drivers catalog in ${run_dir}. Exiting."
     fi
     echo ${driver_catalog_tsv}
 }
@@ -636,8 +610,7 @@ locate_gatk_germline_variants() {
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate germline VCF in ${run_dir}. Exiting."
     fi
     echo ${germline_vcf}
 }
@@ -650,7 +623,7 @@ locate_reportable_bachelor_variants() {
     if [[ -z "${reportable_bachelor_tsv}" ]]; then
         # The germline_variant_tsv will only be found for bachelor v1.10+. Since we cannot rerun bachelor on datastore,
         # we just blank out bachelor results for every pre-v1.10 bachelor run.
-        echo "[WARN] Cannot find bachelor v1.10+ output. Assuming bachelor has not found any variants for ${run_dir}!" >&2
+        warn "Cannot find bachelor v1.10+ output. Assuming bachelor has not found any variants for ${run_dir}!"
         reportable_bachelor_tsv=/data/common/dbs/bachelor/empty.reportable_germline_variant.tsv
     fi
     echo ${reportable_bachelor_tsv}
@@ -687,8 +660,7 @@ locate_peach_pilot_calls() {
     fi
 
     if [[ -z "${peach_pilot_calls_tsv}" ]]; then
-        echo "[ERROR] Unable to locate pilot PEACH calls tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate pilot PEACH calls tsv in ${run_dir}. Exiting."
     fi
 
     echo "${peach_pilot_calls_tsv}"
@@ -706,8 +678,7 @@ locate_peach_pilot_genotype() {
     fi
 
     if [[ -z "${peach_pilot_genotype_tsv}" ]]; then
-        echo "[ERROR] Unable to locate pilot PEACH genotype tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate pilot PEACH genotype tsv in ${run_dir}. Exiting."
     fi
 
     echo "${peach_pilot_genotype_tsv}"
@@ -725,8 +696,7 @@ locate_peach_pilot_vcf() {
     fi
 
     if [[ -z "${peach_pilot_vcf}" ]]; then
-        echo "[ERROR] Unable to locate pilot PEACH VCF file in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate pilot PEACH VCF file in ${run_dir}. Exiting."
     fi
 
     echo "${peach_pilot_vcf}"
@@ -736,8 +706,7 @@ locate_peach_genotype_prod_tsv() {
     local run_dir=$1
     local peach_genotype=$(find -L ${run_dir}/peach/ -type f -name "*.peach.genotype.tsv")
     if [[ -z "${peach_genotype}" ]]; then
-        echo "[ERROR] Unable to locate peach genotype tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate peach genotype tsv in ${run_dir}. Exiting."
     fi
     echo ${peach_genotype}
 }
@@ -748,8 +717,7 @@ locate_chord_prediction() {
     local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord/ -type f -name "*_chord_prediction.txt")
     if [[ -z "${chord_prediction_file}" ]]; then
-        echo "[ERROR] Unable to locate CHORD prediction file in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate CHORD prediction file in ${run_dir}. Exiting."
     fi
     echo ${chord_prediction_file}
 }
@@ -758,8 +726,7 @@ locate_chord_pilot_prediction() {
     local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord_pilot/ -type f -name "*_chord_prediction.txt")
     if [[ -z "${chord_prediction_file}" ]]; then
-        echo "[ERROR] Unable to locate pilot CHORD prediction file in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate pilot CHORD prediction file in ${run_dir}. Exiting."
     fi
     echo ${chord_prediction_file}
 }
@@ -770,8 +737,7 @@ locate_virus_breakend_tsv() {
     local run_dir=$1
     local virus_breakend_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virusbreakend.vcf.summary.tsv")
     if [[ -z "${virus_breakend_tsv}" ]]; then
-        echo "[ERROR] Unable to locate virus breakend conclusion tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate virus breakend conclusion tsv in ${run_dir}. Exiting."
     fi
     echo ${virus_breakend_tsv}
 }
@@ -782,8 +748,7 @@ locate_cuppa_txt() {
     local run_dir=$1
     local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
     if [[ -z "${conclusion_txt}" ]]; then
-        echo "[ERROR] Unable to locate cuppa conclusion in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate cuppa conclusion in ${run_dir}. Exiting."
     fi
     echo ${conclusion_txt}
 }
@@ -792,8 +757,7 @@ locate_cuppa_plot() {
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
     if [[ -z "${plot}" ]]; then
-        echo "[ERROR] Unable to locate cuppa plot in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate cuppa plot in ${run_dir}. Exiting."
     fi
     echo ${plot}
 }
@@ -804,8 +768,7 @@ locate_protect_evidence() {
     local run_dir=$1
     local protect_evidence_tsv=$(find -L ${run_dir}/protect/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting."
     fi
     echo ${protect_evidence_tsv}
 }
@@ -814,8 +777,7 @@ locate_protect_evidence_pilot() {
     local run_dir=$1
     local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        error "Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting."
     fi
     echo ${protect_evidence_tsv}
 }
@@ -825,8 +787,7 @@ locate_protect_evidence_pilot() {
 locate_reporting_db_tsv() {
     local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv
     if [[ ! -f "${reporting_db_tsv}" ]]; then
-        echo "[ERROR] Unable to locate reporting db TSV. Exiting." >&2
-        exit 1
+        error "Unable to locate reporting db TSV. Exiting."
     fi
     echo ${reporting_db_tsv}
 }
@@ -834,8 +795,7 @@ locate_reporting_db_tsv() {
 locate_reporting_db_tsv_pilot() {
     local reporting_db_tsv=/data/ops/lims/pilot/reporting_db.tsv
     if [[ ! -f "${reporting_db_tsv}" ]]; then
-        echo "[ERROR] Unable to locate pilot reporting db TSV. Exiting." >&2
-        exit 1
+        error "Unable to locate pilot reporting db TSV. Exiting."
     fi
     echo ${reporting_db_tsv}
 }
