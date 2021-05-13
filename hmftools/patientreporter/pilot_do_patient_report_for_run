@@ -80,7 +80,7 @@ pilot_do_run_base_patient_reporter \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
-    -purple_circos_file ${purple_circos_plot} \
+    -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
