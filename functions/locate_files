@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 base_path="/data/common"
 if [[ -z "$(hostname | grep datastore)" ]]; then
     # Common folder does not exist on crunches...
