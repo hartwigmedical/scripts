@@ -150,7 +150,9 @@ class EnsemblRestClient(object):
         possible_gene_overviews = []
         for ensembl_id in suggested_ensembl_ids:
             gene_overviews_for_id = self._request_gene_overviews(species, ensembl_id)
-            external_names = {overview["external_name"] for overview in gene_overviews_for_id}
+            external_names = {
+                overview["external_name"] for overview in gene_overviews_for_id if "external_name" in overview.keys()
+            }
             synonyms = self._request_synonyms(species, ensembl_id)
 
             if symbol in external_names or symbol in synonyms:
@@ -474,6 +476,7 @@ def translate_coordinates(input_file):
 
     for warning in warning_collector.get_all():
         print(warning)
+
 
 def main(request_type, input_file):
     if request_type == "c":
