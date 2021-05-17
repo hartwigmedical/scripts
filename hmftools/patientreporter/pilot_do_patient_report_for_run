@@ -63,9 +63,9 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
-virus_db_tsv=/data/common/dbs/virusbreakend/virusbreakend_db/virusdb.tsv
-virus_summary_tsv=/data/common/dbs/virusbreakend/virus_summary.tsv
-virus_blacklist_tsv=/data/common/dbs/virusbreakend/virus_blacklist_reporting.tsv
+taxonomy_db_tsv=/data/common/dbs/viral_reporting/taxonomy_db.tsv
+virus_interpretation_tsv=/data/common/dbs/viral_reporting/virus_interpretation.tsv
+virus_blacklist_tsv=/data/common/dbs/viral_reporting/virus_blacklist.tsv
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
@@ -92,8 +92,8 @@ pilot_do_run_base_patient_reporter \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -virus_db_tsv ${virus_db_tsv} \
-    -virus_summary_tsv ${virus_summary_tsv} \
+    -taxonomy_db_tsv ${taxonomy_db_tsv} \
+    -virus_interpretation_tsv ${virus_interpretation_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir_data ${output_dir_data} \
     -log_debug \
