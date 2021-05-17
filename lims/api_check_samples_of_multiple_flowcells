@@ -11,3 +11,8 @@ fi
 for sample_sheet in "${sample_sheets[@]}"; do
     api_check_samples_of_one_flowcell "${sample_sheet}"
 done
+
+## Print all samples that are not ok
+YYMMDD=$(date "+%y%m%d")
+echo "[INFO] Grepping log files for samples that are not OK:"
+find /data/ops/recurrent/flowcell_sample_checks/ -name "${YYMMDD}_flowcell_sample_check_*" -exec grep -v OK {} \; | sort | uniq
