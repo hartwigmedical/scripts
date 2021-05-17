@@ -16,6 +16,8 @@ library(ggplot2)
 library(cowplot)
 library(stringi)
 library(gtable)
+library(DBI)
+library(RMySQL)
 
 ## RETRIEVE DATA
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
