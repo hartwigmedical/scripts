@@ -122,7 +122,6 @@ compare_peach_pilot_output_to_control() {
         local control_dir
         control_dir=$(get_control_dir "${subdir}" "${panel_name}" "${original}") || die "Could not get control dir"
 
-        info "Comparing ${output_dir} to ${control_dir}"
         compare_directory_contents "${output_dir}" "${control_dir}" "${skip_vcf}" || die "Could not compare directory contents"
       else
         warn "Is not a directory: ${subdir}"
@@ -138,6 +137,8 @@ compare_directory_contents() {
   if [[ -z "${skip_vcf}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
+
+  info "Start comparing ${output_dir} to ${control_dir}"
 
   local comparison_file_names
   comparison_file_names=$(get_comparison_file_names "${output_dir}" "${control_dir}" "${skip_vcf}") \
@@ -158,6 +159,8 @@ compare_directory_contents() {
         diff "${actual_file}" "${control_file}"
       fi
   done
+
+  info "Finished comparing ${output_dir} to ${control_dir}"
 }
 
 get_comparison_file_names() {
