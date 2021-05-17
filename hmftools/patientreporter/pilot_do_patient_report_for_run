@@ -63,9 +63,9 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
-virus_db_tsv=/data/common/dbs/VIRUSBreakend/virusbreakend_db/virusdb.tsv
-virus_summary_tsv=/data/common/dbs/VIRUSBreakend/virus_summary.tsv
-virus_blacklist_tsv=/data/common/dbs/VIRUSBreakend/virus_blacklist_reporting.tsv
+virus_db_tsv=/data/common/dbs/virusbreakend/virusbreakend_db/virusdb.tsv
+virus_summary_tsv=/data/common/dbs/virusbreakend/virus_summary.tsv
+virus_blacklist_tsv=/data/common/dbs/virusbreakend/virus_blacklist_reporting.tsv
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
