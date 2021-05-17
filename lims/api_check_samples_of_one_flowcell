@@ -74,10 +74,10 @@ main() {
         fi
         echo -e "${result}: ${reason} (sample=${sample_info}, run=${run_info})"
     done | sort >> "${out_log_path}"
-    not_ready_count=$(grep -cv Yes_Ready "${out_log_path}")
+    not_ok_count=$(grep -cv OK "${out_log_path}")
     info "  Output: ${out_log_path}"
     info "  NAS: https://hmf-nas.synology.me/${NAS_TARGET_DIR}/${out_log_name}"
-    info "  Amount of samples not ready: $not_ready_count"
+    info "  Amount of samples not OK: $not_ok_count"
     sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -ah "${out_log_path}" "rsyncuser@nas:${NAS_TARGET_LOC}/"
     info "Finished with $(basename $0) for ${fc_name}"
 }
