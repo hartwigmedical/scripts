@@ -19,5 +19,6 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
+    -expected_pipeline_version "5.22" \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"
