@@ -22,7 +22,7 @@ tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 ref_flagstat_file=$(locate_flagstats ${run_dir} ${ref_sample})
 tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
 
-# TODO Switch to prod data
+# TODO Switch to prod data and load it
 peach_pilot_calls_tsv=$(locate_peach_pilot_calls ${run_dir})
 peach_pilot_genotype_tsv=$(locate_peach_pilot_genotype ${run_dir})
 
@@ -42,5 +42,5 @@ do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} $
 do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
 do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
-do_load_peach_data ${sample} ${peach_pilot_calls_tsv} ${peach_pilot_genotype_tsv} ${credentials} ${patient_db_jar}
+# do_load_peach_data ${sample} ${peach_pilot_calls_tsv} ${peach_pilot_genotype_tsv} ${credentials} ${patient_db_jar}
 do_load_snv_signatures ${tumor_sample} ${credentials}
