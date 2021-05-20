@@ -1,34 +1,57 @@
 #!/usr/bin/env bash
 
-search=$1 # eg FR12345678
+source message_functions || exit 1
 
-if [[ -z "${search}" ]]; then
-    echo "[ERROR] No search string specified. Exiting." && exit 1
-fi
-
+search_remote=FALSE
 dir1='/data/common/snpcheck/'
 dir2='/data/gcp/snpcheckvcfupload/'
 gcp_bucket='hmf-snpcheck'
-gcp_subdir='snpcheckvcfs'
 gcp_key="/data/common/dbs/gcp_credentials/hmf-ops"
 
+print_usage(){
+    echo "-----"
+    echo " Descr: Searches for SNPcheck VCFs locally."
+    echo "   1. $dir1"
+    echo "   2. $dir2"
+    echo " Usage: $(basename $0) \$search_string"
+    echo "        $(basename $0) FR12345678"
+    echo "        $(basename $0) -r FR12345678"
+    echo " Options:"
+    echo "   -r   Also search remote location for VCFs and LOGs ($gcp_bucket)"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':r:' flag; do
+    case "$flag" in
+        r) search_remote=TRUE && shift;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+search=$1 # eg FR12345678
+[[ -n "${search}" ]] || print_usage
+
 echo ""
-local_count1=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
-echo "# Found ${local_count1} local VCFs in archive at datastore (${dir1})"
+info "Searching for snpcheck files matching '${search}'"
+count1=$(find ${dir1} -name "*${search}*.vcf" | wc -l)
+info "Found ${count1} local VCFs in archive at datastore (${dir1})"
 find ${dir1} -name "*${search}*.vcf"
 echo ""
 
-local_count2=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
-echo "# Found ${local_count2} local VCFs in sync location at datastore (${dir2})"
+count2=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
+info "Found ${count2} local VCFs in sync location at datastore (${dir2})"
 find ${dir2} -name "*${search}*.vcf"
 echo ""
 
-if [[ "${local_count2}" -lt 1 ]]; then
-    echo "[WARN] Skipping GCP bucket check because no VCF found in ${dir2} (gs://${gcp_bucket})"
-    exit 0
-fi
+if [[ "${search_remote}" == "TRUE" ]]; then
+    gcloud auth activate-service-account --no-user-output-enabled --key-file "${gcp_key}"
 
-echo "# Listing remote VCFs at GCP (${gcp_bucket})"
-gcloud auth activate-service-account --no-user-output-enabled --key-file "${gcp_key}"
-gsutil ls -r gs://${gcp_bucket}/${gcp_subdir}/** | grep "${search}"
-echo ""
+    info "Checking remote location for VCFs (gs://${gcp_bucket})"
+    gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*"
+    echo ""
+
+    info "Checking remote location for LOGs (gs://${gcp_bucket})"
+    gsutil ls "gs://hmf-snpcheck/snpchecklogs/*${search}*"
+    echo ""
+fi
