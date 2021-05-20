@@ -78,6 +78,17 @@ function main() {
     ## get the file objects for one run by id
     info "Collecting required information"
     files_json=$(hmf_api_get "files?run_id=${oid}")
+    file_count=$(jq 'length' <<< "${files_json}")
+
+    ## Virtual samples potentially have no yield and therefore no files attached but other runs are expected to always have files
+    if [[ "${file_count}" -eq 0 ]]; then
+        if [[ "${name}" =~ VirtualSample[0-9]+ ]]; then
+            info "Found 0 files for run ${name} but is a virtual sample so possible"
+            return 1
+        else
+            die "Found 0 files for run ${name}!!!"
+        fi
+    fi
 
     ## create run type agnostic info files
     create_json_file "${files_json}" "${out_jsn_all}"
