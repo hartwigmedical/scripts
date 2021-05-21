@@ -144,17 +144,11 @@ process_runs_for_sample() {
             echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
 
             if [[ "$run_type" == "fastq" ]]; then
-                echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
-                files_api_url="files?run_id=$run_id"
-                files_json=$(hmf_api_get "$files_api_url")
-                mapfile -t all_gs_urls < <( echo "$files_json" | jq -r '.[].filepath' )
-                for fastq_file_url in "${all_gs_urls[@]}"; do
-                    process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
-                done
+                info "  SKIPPING: run is type fastq so cleanup done at sample level for $run_info" >> "$log_file"
             elif [[ "$run_type" == "pipeline" ]]; then
                 process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
             else
-                die "Run somehow not FASTQ and also not pipeline (ini=$ini_name): this should not happen! ($run_info)"
+                die "Run somehow neither fastq or pipeline (ini=$ini_name): this should not happen! ($run_info)"
             fi
             echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
         done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
