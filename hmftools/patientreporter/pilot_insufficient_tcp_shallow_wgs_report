@@ -12,5 +12,5 @@ ref_sample_mandatory=1
 output_dir_data_report=/data/cpct/qc_fail_reports_data/pilot
 
 pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_shallow_wgs" ${ref_sample_mandatory}  \
-    -output_dir_data_report ${output_dir_data_report} \
+    -output_dir_data ${output_dir_data_report} \
     "$@"
