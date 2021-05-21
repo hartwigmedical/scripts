@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
 
-sample_sheets=("$@")
+source message_functions || exit 1
+
+dates=("$@") # YYMMDD
+dates_count=${#dates[@]}
+logs_dir="/data/ops/recurrent/flowcell_sample_checks/"
 
 ## only proceed if input
-if [[ -z "${sample_sheets}" ]]; then
-    echo "[WARN] No samplesheet paths given?" && exit 1
+if [[ "${dates_count}" -lt 1 ]]; then
+    echo "Usage: $(basename $0) <date1> [<date2> <dateN>]"
+    echo "   Eg: $(basename $0) 210101 210102 210104"
+    exit 1
 fi
 
-## Flowcell done at GCP so get info per sample
-for sample_sheet in "${sample_sheets[@]}"; do
-    api_check_samples_of_one_flowcell "${sample_sheet}"
+for date in "${dates[@]}"; do
+    info "----- ${date} -----"
+    find /data/samplesheets/ -name "${date}_*_SampleSheet.csv" | while read -r sheet; do
+        api_check_samples_of_one_flowcell "${sheet}"
+    done
 done
 
 ## Print all samples that are not ok
 YYMMDD=$(date "+%y%m%d")
-echo "[INFO] Grepping log files for samples that are not OK:"
-find /data/ops/recurrent/flowcell_sample_checks/ -name "${YYMMDD}_flowcell_sample_check_*" -exec grep -v OK {} \; | sort | uniq
+info "Grepping all log files from today (${YYMMDD}) for samples that are not OK:"
+cat "${logs_dir}/${YYMMDD}_flowcell_sample_check_"* | grep -v ^# | grep -v ^OK | tr "\t" " " | sort | uniq
