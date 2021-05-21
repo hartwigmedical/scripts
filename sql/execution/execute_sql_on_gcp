@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+file_with_sql_to_execute=$1
+
+if [[ ! -f "${file_with_sql_to_execute}" ]]; then
+    error "Unable to locate SQL file to execute. Exiting."
+fi
+
+database_name="hmfpatients"
+credentials=$(locate_gcp_database_credentials)
+
+do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}
