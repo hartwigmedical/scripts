@@ -16,4 +16,4 @@ db_host=$(cat /data/common/dbs/mysql_credentials/gcp_database_host)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 
-mysql --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
+mysql ${database_name} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
