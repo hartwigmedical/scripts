@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-classes='sequencers|platforms|inis|entities|flowcells|samples|runs|sets|biopsies'
+classes='biopsies|entities|fastq|flowcells|inis|platforms|runs|samples|sets|sequencers'
 
 # allows autocomplete of script commands
 complete -W "$(echo "${classes}" | tr "|" " ")" "$(basename "$0")"
@@ -58,7 +58,13 @@ fi
 # Retrieve API result
 json_result=""
 if [[ -n "${filter_input}" ]]; then
-    json_result=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter)"
+    if [[ "${filter_field}" == "id" ]]; then
+        json_result=$(hmf_api_get "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
+        # In case one object is queried by id the result is not an array so wrap to allow downstream print
+        json_result=$(jq '[.]' <<< "${json_result}")
+    else
+        json_result=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
+    fi
 else
     json_result=$(hmf_api_get "${class}") || die "Unable to get result from API (without filter)"
 fi
@@ -66,6 +72,10 @@ fi
 # Print results
 if [[ "${output_json}" == "TRUE" ]]; then
     jq <<< "${json_result}"
+elif [[ "${class}" == "fastq" ]]; then
+    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
+    jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
+    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9) }1'
 elif [[ "${class}" == "flowcells" ]]; then
     printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yld undet_yld status qc id
     jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds_p, .status, .undet_rds_p_pass, .id] | @tsv' <<< "${json_result}" \
@@ -90,8 +100,8 @@ elif [[ "${class}" == "inis" ]]; then
     printf "#%s\t%s\n" name id
     jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
 elif [[ "${class}" == "sequencers" ]]; then
-    printf "#%s\t%s\t%s\n" name platform id
-    jq -r '.[] | [.name, .platform, .id] | @tsv' <<< "${json_result}"
+    printf "#%s\t%s\t%s\n" name platform_id id
+    jq -r '.[] | [.name, .platform_id, .id] | @tsv' <<< "${json_result}"
 elif [[ "${class}" == "biopsies" ]]; then
     printf "#%s\t%s\n" name id
     jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
