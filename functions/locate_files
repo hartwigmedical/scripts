@@ -10,8 +10,8 @@ fi
 
 ############################# Database Credentials #############################
 
-locate_gcp_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/prod_gcp
+locate_gcp_prod_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/gcp_prod
 }
 
 locate_prod_database_credentials() {
