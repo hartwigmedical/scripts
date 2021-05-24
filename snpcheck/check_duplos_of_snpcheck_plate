@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+vcf_dir=$1
+ok_string="FINAL RESULT = OK"
+
+[[ -d "$vcf_dir" ]] || die "No directory with VCF files provided?"
+
+for duplo_vcf in $(find "$vcf_dir" -name "*-Duplo*.vcf"); do 
+    vcf=${duplo_vcf/-Duplo/}
+    name=$(basename "$vcf" | cut -d"_" -f1)
+    duplo_name=$(basename "$duplo_vcf" | cut -d"_" -f1)
+    if [[ ! -f "$vcf" ]]; then
+        echo "[WARN] Unable to check $duplo_name because non-duplo VCF does not exist"
+        continue
+    fi
+    result_msg=$(perform_snpcheck.pl "$vcf" "$duplo_vcf" | tail -1)
+    echo "$result_msg for $name vs $duplo_name"
+done
