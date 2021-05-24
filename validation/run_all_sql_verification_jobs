@@ -8,6 +8,6 @@ find "${jobs_dir}" -type f -name "*.sql" | while read sql_file ; do
     job_name="$(basename ${sql_file})"
     log_file="${logs_dir}/${tag}_${job_name}.log"
     echo "[INFO] Executing ${job_name} (log: ${log_file})"
-    execute_sql_on_prod "$sql_file" > "$log_file"
+    execute_sql_on_gcp_prod "$sql_file" > "$log_file"
 done
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 scripts_repo="/data/common/repos/scripts"
-exec_script="${scripts_repo}/sql/execution/execute_sql_on_pilot"
+exec_script="${scripts_repo}/sql/execution/execute_sql_on_ds_pilot"
 
 wide_baseline_biopsy="${scripts_repo}/sql/clinical/wide_baseline_biopsy.sql"
 wide_treatment="${scripts_repo}/sql/clinical/wide_treatment.sql"

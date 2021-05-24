@@ -12,7 +12,7 @@ cohort_tsv=${output_dir}/cohort.tsv
 cohort_select_samples_sql=/data/common/repos/scripts/hmftools/paddle/select_dnds_example_samples.sql
 
 echo "[INFO] Writing cohort file to ${cohort_tsv} using ${cohort_select_samples_sql}"
-execute_sql_on_prod ${cohort_select_samples_sql} > ${cohort_tsv}
+execute_sql_on_gcp_prod ${cohort_select_samples_sql} > ${cohort_tsv}
 
 paddle_jar=/data/common/tools/paddle_v1.0/paddle.jar
 credentials=$(locate_prod_database_credentials)
