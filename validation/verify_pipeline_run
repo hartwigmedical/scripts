@@ -185,7 +185,7 @@ print_sql_code() {
     echo "  sql_file_name=\"$(basename $sql_file)\" "
     echo "  log_file=\"${logs_dir}/before_load_\${sql_file_name}.log\" "
     echo "  echo \"[INFO] Executing \$sql_file_name (log: \$log_file)\" "
-    echo "  execute_sql_on_gcp_prod \"\$sql_file\" > \"\${log_file}\" "
+    echo "  execute_sql_on_ds_prod \"\$sql_file\" > \"\${log_file}\" "
     echo "done"
 }
 
