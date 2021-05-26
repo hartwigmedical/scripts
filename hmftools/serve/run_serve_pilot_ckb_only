@@ -4,7 +4,7 @@ source locate_files || exit 1
 source io_functions || exit 1
 
 ckb_dir=$(locate_ckb_flex_data_dir)
-ckb_filter_tsv=/data/common/dbc/serve/curation/ckb_filters.tsv
+ckb_filter_tsv=/data/common/dbs/serve/curation/ckb_filters.tsv
 
 output_dir=/data/common/dbs/serve/pilot_output_ckb_only
 
