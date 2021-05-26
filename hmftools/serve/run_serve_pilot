@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
-source io_functions
+source locate_files || exit 1
+source io_functions || exit 1
 
 output_dir=/data/common/dbs/serve/pilot_output
 
