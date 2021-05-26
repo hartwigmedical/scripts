@@ -2,14 +2,6 @@
 
 source message_functions || exit 1
 
-if [[ ! -z "${1}" || "${1}" == "-h" || "${1}" == "--help" ]]; then
-    echo "-----"
-    echo " Descr: Creates a job file with API patches for samples DIODs"
-    echo " Usage: $(basename $0)"
-    echo "-----"
-    exit 1
-fi
-
 out_dir="/data/ops/recurrent/ptum_doid_update"
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
@@ -18,33 +10,50 @@ yymmdd=$(date +'%y%m%d')
 job_file="${out_dir}/${yymmdd}_update_doids_in_api.job"
 log_file="${out_dir}/${yymmdd}_update_doids_in_api.log"
 
+if [[ "${1}" == "-h" || "${1}" == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Creates a job file with API patches for samples DIODs"
+    echo " Usage: nohup $(basename "$0") > /path/to/log &"
+    echo " Notes: "
+    echo "   * Commands written to ${job_file}"
+    echo "   * Log written to STDOUT"
+    echo "-----"
+    exit 1
+fi
+
 main () {
     # sanity checks
     doid_file_is_ok || exit 1
     [[ ! -f "${job_file}" ]] || die "File exists: ${job_file}"
     [[ ! -f "${log_file}" ]] || die "File exists: ${log_file}"
 
-    samples_visited=0
+    samples_considered=0
     samples_to_update=0
 
     # action: visit each target sample in API and check for potential updates in doid file
-    samples_json=$(query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)")
+    samples_json=$(hmf_api_get "samples?type=tumor")
+    sample_count=$(jq 'length' <<< "${samples_json}")
 
-    while read line; do
+    info "Will process ${sample_count} samples and write cmds to ${job_file}"
+
+    while read -r line; do
         api_barcode=$(echo "${line}" | cut -f1)
         api_name=$(echo "${line}" | cut -f2)
         api_id=$(echo "${line}" | cut -f3)
         api_doids=$(sort_csv_string "$(echo "${line}" | cut -f4)")
 
-        # API also contains some test samples that should be skipped
         if [[ "${api_name}" == "CPCT12345678T" || "${api_name}" == "CPCT11111111T" ]]; then
+            # do not consider test samples
+            continue
+        elif [[ ! "${api_name}" =~ ^(CPCT|DRUP|WIDE|CORE) ]]; then
+            # only consider samples meant for OncoAct
             continue
         fi
+        samples_considered=$((samples_considered+1))
 
         patient=${api_name:0:12}
         count=$(grep -cP "^${patient}" "${doid_file}")
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
-        samples_visited=$((samples_visited+1))
 
         if [[ "${count}" -eq 0 ]]; then
             warn "SKIPPING: patient ID missing in file (${doid_file}) for ${sample_info}"
@@ -69,7 +78,7 @@ main () {
         fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv')
 
-    info "${samples_to_update} samples found to be updated of total ${samples_visited} visited"
+    info "${samples_to_update} samples found to be updated of ${samples_considered} considered"
     if [[ "${samples_to_update}" -gt 0 ]]; then
         echo "echo '[INFO] Finished with patching primary_tumor_doids'" >> "${job_file}"
         info "Making job file executable (${job_file})"
@@ -95,7 +104,7 @@ doid_file_is_ok () {
 
 get_doids () {
     local patient=$1 && shift
-    doids=$(cat "${doid_file}" | grep -P ^${patient} | cut -f7 | sed 's/;/,/g')
+    doids=$(grep -P "^${patient}" "${doid_file}" | cut -f7 | sed 's/;/,/g')
     echo "${doids}"
 }
 

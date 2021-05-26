@@ -8,6 +8,7 @@ print_usage(){
     echo "   -u  gcp_url    URL to run at GCP"
     echo "   -o  out_dir    Path to directory for verification"
     echo "   -t  truth_run  Path to directory of truth run"
+    echo "   -f  force      Continue if output directory already exists"
     echo " Example:"
     echo "   $(basename $0) -u gs://path/to/run/ -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
     echo " Notes:"
@@ -16,8 +17,10 @@ print_usage(){
     exit 1
 }
 
-while getopts ':u:o:t:' flag; do
+sanity_checks="TRUE"
+while getopts ':fu:o:t:' flag; do
     case "${flag}" in
+        f) sanity_checks="FALSE" ;;
         u) gcp_url=${OPTARG} ;;
         o) out_dir=${OPTARG} ;;
         t) truth_run=${OPTARG} ;;
@@ -34,9 +37,11 @@ main() {
     info "Starting with script $(basename $0)"
     
     ## some input sanity checks
-    [[ ! -z "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir (${out_dir})?"
-    [[ ! -z "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url (${gcp_url})"
-    [[ ! -d "${out_dir}" ]] || die "Dir exists (${out_dir})"
+    [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir (${out_dir})?"
+    [[ -n "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url (${gcp_url})"
+    if [[ "${sanity_checks}" == "TRUE" ]]; then
+        [[ ! -d "${out_dir}" ]] || die "Dir exists (${out_dir})"
+    fi
 
     info "Constructing variables"
     run_name=$(basename "${gcp_url}")
@@ -53,7 +58,7 @@ main() {
     info "Jobs directory: ${jobs_dir}"
     info "Logs directory: ${logs_dir}"
     
-    mkdir "${out_dir}" "${runs_dir}" "${run_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
+    mkdir -p "${out_dir}" "${runs_dir}" "${run_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
     cd "${out_dir}" || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"

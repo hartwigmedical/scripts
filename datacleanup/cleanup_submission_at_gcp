@@ -70,7 +70,7 @@ main() {
     info "Retrieving samples by submission" >> "$log_file"
     samples_json=$(hmf_api_get "samples?submission=$submission")
     sample_ids=$(jq -r '. | map(.id) | join(",")' <<< "${samples_json}")
-    info "Samples found: ${sample_ids}}" >> "$log_file"
+    info "Samples found: ${sample_ids}" >> "$log_file"
 
     # add start message to final cleanup cmd file
     echo "echo '[INFO] Starting cleanup for submission $submission'" >> "$rm_cmd_file"

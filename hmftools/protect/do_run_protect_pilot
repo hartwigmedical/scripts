@@ -27,7 +27,7 @@ if [[ ! -z "${primary_tumor_doids}" ]]; then
     primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
 fi
 
-serve_actionability_dir=/data/common/dbs/serve/pilot_output_ckb_only
+serve_actionability_dir=/data/common/dbs/serve/prod_output
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
