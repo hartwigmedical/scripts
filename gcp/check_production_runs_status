@@ -6,7 +6,7 @@ download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
 inspect_healthchecker_failed_run="inspect_healthchecker_log_at_gcp"
 download_script="download_run_without_bams"
-pipeline="5.21"
+pipeline="5.22"
 run_inis="Somatic.ini|CPCT.ini"
 
 main () {
@@ -18,7 +18,8 @@ main () {
     check_pipeline_version_existance "${pipeline}"
 
     # Create all required run collections
-    runs=$(query_api.pl -type runs -filter "bucket=hmf-output" -filter "ini=${run_inis}" -json)
+    non_db_entities=( $(query_api.pl -type entities -filter "add_to_db=0" -json | jq -r '.[].name') )
+    runs=$(query_api.pl -type runs -filter "ini=${run_inis}" -json)
 
     all_vali_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Validated")]')
     all_fail_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Failed")]')
@@ -90,19 +91,19 @@ main () {
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
-        bucket=$(echo "${run_info}" | cut -f3)
+        entity=$(echo "${run_info}" | cut -f3)
         exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l);
         if [[ ${exists_in_success_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
                 echo "# This is a validation run, so can be ignored for production ${set_name}"
-            elif [[ "${bucket}" == "hmf-output-services" && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
+            elif [[ printf '%s\n' "${non_db_entities[@]}" | grep -P "^${entity}$" && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
                 ## Skip none-CORE sequencing services runs
                 continue
             else
                 echo "${process_script} ${set_name}"
             fi
         fi
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.tumor_sample,.name,.entity] | @tsv')
 
     echo ""
     echo "## Processing runs:"
