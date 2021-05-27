@@ -8,7 +8,7 @@ relative_file_path="health_checker/run.log"
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 
 info "Searching for run to find bucket"
-runs_json=$(hmf_api_get "runs?set_name=${set}")
+runs_json=$(hmf_api_get "runs?set_name=${set}" | jq '[.[] | select(.ini | test("Somatic.ini|PipelineV5.ini|CPCT.ini"))]')
 run_count=$(jq 'length' <<< "${runs_json}")
 
 run_json=$(jq '.[-1]' <<< "${runs_json}")
@@ -20,4 +20,4 @@ file_url="gs://${bucket}/${set}/${relative_file_path}"
 info "Performing cat on file url (${file_url})"
 gsutil -u hmf-database cat "${file_url}"
 
-[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set. Results are from most recent run!"
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"
