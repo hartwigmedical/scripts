@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-OUT_ROOT="/data/ops/recurrent/submission_cleanup"
+OUT_ROOT="/data/ops/recurrent/submission_cleanup/logs"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 
 GCP_PROJECT="hmf-database"
