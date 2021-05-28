@@ -15,15 +15,15 @@ locate_gcp_prod_database_host() {
 }
 
 locate_old_prod_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/prod
+    echo ${base_path}/dbs/mysql_credentials/old_prod
 }
 
 locate_prod_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/gcp_prod_writer
+    echo ${base_path}/dbs/mysql_credentials/prod
 }
 
 locate_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/gcp_pilot_writer
+    echo ${base_path}/dbs/mysql_credentials/pilot
 }
 
 locate_vicc_database_credentials() {
