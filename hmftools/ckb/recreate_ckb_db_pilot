@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 credentials=$(locate_ckb_pilot_database_credentials)
 

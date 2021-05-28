@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+source locate_files || exit 1
+
 credentials=$1 && shift
 ckb_db=$1 && shift
 
@@ -9,8 +12,8 @@ ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_db.sql
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+db_host=$(locate_gcp_prod_database_host)
 
-echo "[INFO] Rebuilding CKB db '${db_url}' using ${ckb_database_sql}"
+info "Rebuilding CKB db '${ckb_db}' on '${db_host} using ${ckb_database_sql}"
 
-mysql ${ckb_db} --user=${db_user} --password=${db_pass} < ${ckb_database_sql}
+mysql ${ckb_db} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${ckb_database_sql}
