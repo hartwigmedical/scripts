@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-source message_functions
+source message_functions || exit 1
 
 BUCKET="gs://registration-resources-prod-1"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source message_functions
+source message_functions || exit 1
 
 vcf=$1 && shift
 
