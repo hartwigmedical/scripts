@@ -8,7 +8,12 @@ if [[ ! -f "${file_with_sql_to_execute}" ]]; then
     echo "[ERROR] Unable to locate SQL file to execute. Exiting." && exit 1
 fi
 
-database_name="hmfpatients_pilot"
-credentials=$(locate_pilot_database_credentials)
 
-do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}
+database_name="hmfpatients_pilot"
+gcp_db_host=$(locate_gcp_prod_database_host)
+
+credentials=$(locate_pilot_database_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
+mysql ${database_name} --host="${gcp_db_host}" --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
