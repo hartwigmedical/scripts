@@ -8,8 +8,4 @@ run_dir=$1 && shift
 patient_db_jar=$(locate_prod_patient_db)
 credentials=$(locate_gcp_prod_writer_database_credentials)
 
-warn "Cannot load runs into GCP database yet"
-exit 0
-
 do_load_run_into_db ${run_dir} ${patient_db_jar} ${credentials}
-
