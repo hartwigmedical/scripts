@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 file_with_sql_to_execute=$1 && shift
 database_name=$1 && shift
