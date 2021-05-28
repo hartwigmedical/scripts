@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 ckb_jar=$(locate_prod_ckb_importer)
 
