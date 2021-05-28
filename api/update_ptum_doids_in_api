@@ -4,6 +4,7 @@ source message_functions || exit 1
 
 out_dir="/data/ops/recurrent/ptum_doid_update"
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
+status_file="/data/common/dbs/clinical_data/patient_tumor_curation_status.tsv"
 field_idx='7'
 
 yymmdd=$(date +'%y%m%d')
@@ -53,7 +54,15 @@ main () {
 
         patient=${api_name:0:12}
         count=$(grep -cP "^${patient}" "${doid_file}")
-        sample_info="${api_barcode} (name:${api_name} id:${api_id})"
+        curation_status=$(grep -P "^${patient}" "${status_file}" | cut -f2 | tail -1)
+        sample_info="${api_barcode} (name:${api_name} id:${api_id} status:${curation_status})"
+
+        # TODO make status check work
+        #
+        #if [[ "${curation_status}" =~ ^(NOT_RESOLVED|ALREADY_REPORTED)$ ]]; then
+        #    info "SKIPPING: patient has status ${curation_status} in ${status_file} for ${sample_info}"
+        #    continue
+        #fi
 
         if [[ "${count}" -eq 0 ]]; then
             warn "SKIPPING: patient ID missing in file (${doid_file}) for ${sample_info}"
