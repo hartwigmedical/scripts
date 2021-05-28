@@ -7,7 +7,7 @@ sql=$1 && shift
 
 raw=${log_dir}/${name}_raw.tsv
 flt=${log_dir}/${name}.tsv
-execute_sql_on_ds_prod ${sql} > ${raw}
+execute_sql_on_old_prod ${sql} > ${raw}
 head -1 ${raw} > ${flt}
 cat ${raw} | grep -v "^#" | while read line; do
     patient=$(echo "${line}" | cut -f1)

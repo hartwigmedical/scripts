@@ -12,7 +12,7 @@ fi
 database_name="hmfpatients"
 gcp_db_host=$(locate_gcp_prod_database_host)
 
-credentials=$(locate_gcp_prod_reader_database_credentials)
+credentials=$(locate_prod_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 

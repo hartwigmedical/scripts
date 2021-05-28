@@ -9,6 +9,6 @@ if [[ ! -f "${file_with_sql_to_execute}" ]]; then
 fi
 
 database_name="hmfpatients"
-credentials=$(locate_prod_database_credentials)
+credentials=$(locate_old_prod_database_credentials)
 
 do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}

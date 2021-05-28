@@ -41,7 +41,7 @@ echo ""
 
 mkdir doids_temp
 
-execute_sql_on_ds_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > doids_temp/doids_database.txt
+execute_sql_on_old_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > doids_temp/doids_database.txt
 echo ""
 
 ################## Print info requested doid(s) #################

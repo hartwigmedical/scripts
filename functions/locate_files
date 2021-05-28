@@ -10,24 +10,20 @@ fi
 
 ############################# Database Credentials #############################
 
-locate_gcp_prod_writer_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/gcp_prod_writer
-}
-
-locate_gcp_prod_reader_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/gcp_prod_reader
-}
-
 locate_gcp_prod_database_host() {
     echo $(cat ${base_path}/dbs/mysql_credentials/gcp_database_host)
 }
 
-locate_prod_database_credentials() {
+locate_old_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
 
+locate_prod_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/gcp_prod_writer
+}
+
 locate_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/pilot
+    echo ${base_path}/dbs/mysql_credentials/gcp_pilot_writer
 }
 
 locate_vicc_database_credentials() {

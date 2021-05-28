@@ -75,7 +75,7 @@ if [[ $? = 0 ]]; then
     # get all samples that are now available for data requests
     cp /data/common/repos/scripts/datarequest/selection/all_samples_eligible_datarequests.sql ${log_dir}/allSamples.sql
     all_samples_tsv=${log_dir}/allSamples.tsv
-    execute_sql_on_ds_prod ${log_dir}/allSamples.sql > ${all_samples_tsv}
+    execute_sql_on_old_prod ${log_dir}/allSamples.sql > ${all_samples_tsv}
     # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
     temp_tsv=${log_dir}/temp_tsv.tsv
     patient_selection_tsv=${log_dir}/selectPatients.tsv
