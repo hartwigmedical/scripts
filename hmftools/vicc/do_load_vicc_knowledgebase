@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 vicc_json=$1 && shift
 credentials=$1 && shift
 vicc_jar=$1 && shift
@@ -9,9 +11,10 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading vicc into SQL into ${db_url}"
+info "Loading vicc into SQL into ${db_url}"
 
-# mysql vicc_db --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
+# To recreate the database
+# mysql vicc_db --host="${gcp_host} --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
 
 java -Dorg.jooq.no-logo=true -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonSQLImporter \
     -vicc_json ${vicc_json} \

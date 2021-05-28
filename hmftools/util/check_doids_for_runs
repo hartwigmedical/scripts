@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 
-source lims_functions
-source metadata_functions
+source lims_functions || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
-echo "[INFO] Start extracting doids"
+info "Start extracting doids"
 for run_dir in /data/cpct/runs/*; do
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 
     if [[ -z "${primary_tumor_doids}" ]]; then
-        echo "[ERROR] Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting" && exit 1;
+        error "Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting"
     else
-        echo "[INFO] Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
+        info "Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
     fi
 done
 
@@ -20,9 +21,9 @@ for run_dir in /data/core/runs/*; do
     primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 
     if [[ -z "${primary_tumor_doids}" ]]; then
-        echo "[ERROR] Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting" && exit 1;
+        error "Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting"
     else
-        echo "[INFO] Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
+        info "Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
     fi
 done
 

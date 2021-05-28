@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 vicc_json=$(locate_vicc_json)
 credentials=$(locate_vicc_pilot_database_credentials)
