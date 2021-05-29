@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 log_file=$1 && shift
 
 if [[ -z "${log_file}" ]]; then
-    echo "[ERROR] No log file provided. Exiting" && exit 1
+    error "No log file provided. Exiting"
 fi
 
-echo "[INFO] Printing all log messages minus symlinks"
+info "Printing all log messages minus symlinks"
 cat "${log_file}" | grep -v "symbolic" | grep -v "symlink"
 
-echo "[INFO] Printing removals only"
+info "Printing removals only"
 cat "${log_file}" | grep Removing

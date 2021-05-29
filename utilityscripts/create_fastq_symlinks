@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 fastq_dir=$1
 
 if [[ -z "${fastq_dir}" ]]; then
-    echo "[ERROR] No fastq dir provided. Exiting" && exit 1
+    error "No fastq dir provided. Exiting"
 fi
 
 for file in ${fastq_dir}/*.fastq.gz ; do

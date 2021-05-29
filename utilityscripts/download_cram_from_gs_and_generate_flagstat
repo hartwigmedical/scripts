@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 gs_cram_url=$1 && shift
 
 if [[ -z "${gs_cram_url}" ]]; then
-    echo >&2 "[ERROR] No CRAM URL passed to $(basename $0). Exiting."
-    exit 1
+    error "No CRAM URL passed to $(basename $0). Exiting."
 fi
 
 cram_name=$(basename "${gs_cram_url}")
 working_dir="${HOME}/${cram_name}"
 
 mkdir "${working_dir}"
-echo "[INFO] Downloading CRAM '${gs_cram_url}'"
+info "Downloading CRAM '${gs_cram_url}'"
 gsutil cp ${gs_cram_url} "${working_dir}/"
 
 local_cram_path="${working_dir}/${cram_name}"
-echo "[INFO] Generating flagstat for ${cram_name}"
+info "Generating flagstat for ${cram_name}"
 /opt/tools/samtools/1.10/samtools flagstat "${local_cram_path}" > "${local_cram_path}.flagstat"
 
-echo "[INFO] Done generating flagstat. Cleaning up CRAM"
+info "Done generating flagstat. Cleaning up CRAM"
 rm "${local_cram_path}"

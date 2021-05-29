@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
-source lims_functions
-source metadata_functions
+source lims_functions || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 health_check_processed_runs
 
-echo "[INFO] Count HealthChecker succeeded"
+info "Count HealthChecker succeeded"
 health_check_processed_runs | grep -c "HealthChecker has succeeded for"
 
 purple_version=2.53
-echo "[INFO] Count analysis purple version v${purple_version}"
+info "Count analysis purple version v${purple_version}"
 health_check_processed_runs | grep -c "This analysis has been done with purple version=${purple_version}"
 
 source_path=/data/gcp/processed_runs
@@ -21,30 +22,30 @@ for run in ${process_runs}; do
     cohort=$(find_cohort_type ${tumor_barcode})
 
     # do some jobs for all runs
-    echo "[INFO] Running PROTECT"
+    info "Running PROTECT"
     run_protect_prod ${source_path}/${run}
 
     if [[ -z ${cohort} ]]; then
-        echo "[ERROR] Could not resolve cohort for ${run}."
+        warn "Could not resolve cohort for ${run}."
     elif [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
-        echo "[INFO] Moving set ${run} to /data/core/runs"
+        info "Moving set ${run} to /data/core/runs"
         mv ${source_path}/${run} /data/core/runs/
     elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
-        echo "[INFO] Moving set ${run} to /data/cpct/runs"
+        info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
-        echo "[INFO] Copy run to hmf-crunch at GCP"
+        info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
-        echo "[INFO] Copying set ${run} to /data/cpct/reportable_runs"
+        info "Copying set ${run} to /data/cpct/reportable_runs"
         cp -R ${source_path}/${run} /data/cpct/reportable_runs/
         if [[ ${cohort} == "CORE" || ${cohort} == "CORELR11" || ${cohort} == "CORESC11" ]]; then
-            echo "[INFO] Moving set ${run} to /data/core/runs"
+            info "Moving set ${run} to /data/core/runs"
             mv ${source_path}/${run} /data/core/runs/
         elif [[ ${cohort} == "WIDE" ]]; then
-            echo "[INFO] Moving set ${run} to /data/cpct/runs"
+            info "Moving set ${run} to /data/cpct/runs"
             mv ${source_path}/${run} /data/cpct/runs/
-            echo "[INFO] Copy run to hmf-crunch at GCP"
+            info "Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
         fi
     fi

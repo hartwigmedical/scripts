@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 input_file=$1
 delim_char="\t"
 
 if [[ -z "${input_file}" ]]; then
-    echo "[ERROR] No input file provided. Exiting" && exit 1
+    error "No input file provided. Exiting"
 fi
 
 if [[ -n "$2" ]]; then

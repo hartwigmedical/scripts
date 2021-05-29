@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 month=$1
 
 if [[ -z "${month}" ]]; then
-    echo "[ERROR] No month provided. Exiting" && exit 1
+    error "No month provided. Exiting"
 fi
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
 monthly_patient_report_overview_tsv="/data/ops/lims/prod/montly_overview_reporting_db/20_${month}_overview.tsv"
 
-echo "[INFO] Creating 20_${month}_overview_tmp.tsv file"
+info "Creating 20_${month}_overview_tmp.tsv file"
 header=$(head -n 1 ${reporting_db_tsv})
 
 echo ${header} | tr " " \\t > "${monthly_patient_report_overview_tsv}"
 cat ${reporting_db_tsv} | grep ${month}-2020 >> "${monthly_patient_report_overview_tsv}"
 
-echo "[INFO] File ${monthly_patient_report_overview_tsv} has been created!"
+info "File ${monthly_patient_report_overview_tsv} has been created!"
