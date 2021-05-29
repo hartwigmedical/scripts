@@ -2,11 +2,12 @@
 
 source locate_files || exit 1
 source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No rundir is provided to $(basename $0). Exiting." && exit 1
+    error "No rundir is provided to $(basename $0). Exiting."
 fi
 
 # Load metadata
@@ -20,7 +21,7 @@ tum_flagstat=$(locate_flagstats "${run_dir}" "${tumor_sample}")
 ref_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${ref_sample}")
 tum_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}")
 
-java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.jar \
+java -Xmx4G -jar /data/common/tools/healthchecker_pilot/health-checker.jar \
     -reference ${ref_sample} \
     -tumor ${tumor_sample} \
     -ref_wgs_metrics_file ${ref_wgs_metrics} \
