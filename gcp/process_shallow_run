@@ -13,7 +13,7 @@ archive_path="/data/data_archive/shallow_seq_pipelines"
 download_path="/data/gcp/shallow_runs"
 archive_set_path=${archive_path}/${set}
 
-run_bucket=$(hmf_api_get "runs?set_name=${set}&ini=ShallowSeq.ini" | jq -r '.[0].bucket')
+run_bucket=$(hmf_api_get "runs?set_name=${set}&ini=ShallowSeq.ini" | jq -r '.[-1].bucket')
 if [[ -z $run_bucket ]]; then
     echo "[WARN] SKIPPING: Could not resolve bucket for \"${set}\""
     exit
