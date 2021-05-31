@@ -8,7 +8,7 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-expected_pipeline_version=$(expected_pipeline_version)
+expected_pipeline_version=$(extract_expected_pipeline_version)
 
 do_patient_report_for_run ${run_dir} \
     -expected_pipeline_version ${expected_pipeline_version} \
