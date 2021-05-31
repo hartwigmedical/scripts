@@ -96,7 +96,7 @@ main () {
         if [[ ${exists_in_success_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
                 echo "# This is a validation run, so can be ignored for production ${set_name}"
-            elif [[ printf '%s\n' "${non_db_entities[@]}" | grep -P "^${entity}$" && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
+            elif [[ $(printf '%s\n' "${non_db_entities[@]}" | grep -cP "^${entity}$") -gt 0 && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
                 ## Skip none-CORE sequencing services runs
                 continue
             else
