@@ -62,7 +62,7 @@ virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
-germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 taxonomy_db_tsv=/data/common/dbs/viral_reporting/taxonomy_db.tsv
 virus_interpretation_tsv=/data/common/dbs/viral_reporting/virus_interpretation.tsv
