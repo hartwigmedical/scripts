@@ -10,6 +10,5 @@ fi
 
 output_dir=${run_dir}/protect_pilot
 protect_jar=$(locate_prod_protect)
-serve_actionability_dir=/data/common/dbs/serve/pilot_output
 
-do_run_protect ${run_dir} ${output_dir} ${protect_jar} ${serve_actionability_dir}
+do_run_protect ${run_dir} ${output_dir} ${protect_jar}
