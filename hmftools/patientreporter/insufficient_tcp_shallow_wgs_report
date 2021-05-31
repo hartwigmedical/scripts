@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 tumor_sample=$1 && shift
 
 if [[ -z "${tumor_sample}" ]]; then
@@ -8,8 +10,6 @@ fi
 
 ref_sample_mandatory=1
 output_dir_data_report=/data/cpct/qc_fail_reports_data/prod
-output_dir_report=/data/cpct/patient_reports
 
 do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_shallow_wgs" ${ref_sample_mandatory}  \
-    -output_dir_data_report ${output_dir_data_report} \
-    -output_dir_report ${output_dir_report} "$@"
+    -output_dir_data ${output_dir_data_report} "$@"

@@ -14,5 +14,6 @@ expected_pipeline_version=$(extract_expected_pipeline_version)
 
 do_patient_report_for_run ${run_dir} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -only_create_pdf \
     -output_dir_report ${output_dir_report} "$@"

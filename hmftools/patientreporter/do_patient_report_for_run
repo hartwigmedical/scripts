@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
-source lims_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -35,52 +36,65 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_data_report=${run_dir}/patient_report_prod_data
-if [[ ! -d "${output_dir_data_report}" ]]; then
-    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
-    mkdir ${output_dir_data_report}
+output_dir_data=${run_dir}/patient_report_prod_data
+if [[ ! -d "${output_dir_data}" ]]; then
+    echo "[INFO] ${output_dir_data} does not exist yet, creating..."
+    mkdir ${output_dir_data}
 fi
 
+pipeline_version_file=${run_dir}/pipeline.version
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_driver_catalog_somatic_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
-purple_driver_catalog_germline_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
+purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
+purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
-bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
+purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
+purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
-linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-circos_file=$(locate_purple_circos_plot ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+molecular_tissue_origin_txt=$(locate_cuppa_txt ${run_dir})
+molecular_tissue_origin_plot=$(locate_cuppa_plot ${run_dir})
+virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
+peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
-germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
-pipeline_version_file=$( echo ${run_dir}/pipeline.version )
+taxonomy_db_tsv=/data/common/dbs/viral_reporting/taxonomy_db.tsv
+virus_interpretation_tsv=/data/common/dbs/viral_reporting/virus_interpretation.tsv
+virus_blacklist_tsv=/data/common/dbs/viral_reporting/virus_blacklist.tsv
 
 do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
     -tumor_sample_barcode ${tumor_sample_barcode} \
+    -pipeline_version_file ${pipeline_version_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
-    -purple_driver_catalog_somatic_tsv ${purple_driver_catalog_somatic_tsv} \
-    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv} \
+    -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+    -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
-    -bachelor_tsv ${bachelor_tsv} \
+    -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+    -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
-    -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
-    -linx_drivers_tsv ${linx_driver_catalog_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
-    -circos_file ${circos_file} \
+    -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
+    -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
+    -virus_breakend_tsv ${virus_breakend_tsv} \
+    -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -output_dir_data_report ${output_dir_data_report} \
-    -pipeline_version_file ${pipeline_version_file} \
+    -taxonomy_db_tsv ${taxonomy_db_tsv} \
+    -virus_interpretation_tsv ${virus_interpretation_tsv} \
+    -virus_blacklist_tsv ${virus_blacklist_tsv} \
+    -output_dir_data ${output_dir_data} \
     "$@"
