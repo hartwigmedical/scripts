@@ -84,7 +84,7 @@ do_run_base_patient_reporter \
     -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
-    -linx_drivers_tsv ${linx_driver_catalog_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
     -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
