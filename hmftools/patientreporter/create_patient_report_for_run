@@ -8,4 +8,6 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-do_patient_report_for_run ${run_dir} -output_dir_report ${output_dir_report} "$@"
+expected_pipeline_version=$(expected_pipeline_version)
+
+do_patient_report_for_run ${run_dir} -output_dir_report ${output_dir_report} -expected_pipeline_version ${expected_pipeline_version} "$@"
