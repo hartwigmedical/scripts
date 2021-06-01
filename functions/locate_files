@@ -698,6 +698,47 @@ locate_peach_pilot_genotype() {
     echo "${peach_pilot_genotype_tsv}"
 }
 
+locate_peach_prod_output_dir() {
+    local run_dir=$1
+    echo "${run_dir}/peach_pilot"
+}
+
+locate_peach_prod_calls() {
+    local run_dir=$1
+    local peach_prod_output_dir
+    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+
+    local peach_prod_calls_tsv=""
+
+    if [[ -d "${peach_prod_output_dir}" ]]; then
+        peach_prod_calls_tsv=$(find -L "${peach_prod_output_dir}" -type f -name "*.peach.calls.tsv")
+    fi
+
+    if [[ -z "${peach_prod_calls_tsv}" ]]; then
+        error "Unable to locate prod PEACH calls tsv in ${run_dir}. Exiting."
+    fi
+
+    echo "${peach_prod_calls_tsv}"
+}
+
+locate_peach_prod_genotype() {
+    local run_dir=$1
+    local peach_prod_output_dir
+    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+
+    local peach_prod_genotype_tsv=""
+
+    if [[ -d "${peach_prod_output_dir}" ]]; then
+        peach_prod_genotype_tsv=$(find -L "${peach_prod_output_dir}" -type f -name "*.peach.genotype.tsv")
+    fi
+
+    if [[ -z "${peach_prod_genotype_tsv}" ]]; then
+        error "Unable to locate prod PEACH genotype tsv in ${run_dir}. Exiting."
+    fi
+
+    echo "${peach_prod_genotype_tsv}"
+}
+
 locate_peach_pilot_vcf() {
     local run_dir=$1
     local peach_pilot_output_dir
