@@ -11,4 +11,4 @@ molecular_tissue_origin_txt=$(locate_cuppa_txt ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_virusbreakend_data ${sample} ${molecular_tissue_origin_txt} ${credentials} ${patient_db_jar}
+do_load_cuppa_data ${sample} ${molecular_tissue_origin_txt} ${credentials} ${patient_db_jar}
