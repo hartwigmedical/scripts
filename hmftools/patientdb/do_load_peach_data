@@ -15,9 +15,9 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading PEACH data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPgxData \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPeachData \
     -sample ${sample} \
-    -pgx_calls_txt ${peach_calls_tsv} \
-    -pgx_genotype_txt ${peach_genotype_tsv} \
+    -peach_calls_txt ${peach_calls_tsv} \
+    -peach_genotype_txt ${peach_genotype_tsv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

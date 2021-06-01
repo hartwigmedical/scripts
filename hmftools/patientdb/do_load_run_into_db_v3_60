@@ -40,7 +40,7 @@ do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} $
 do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
 do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
-do_load_peach_data_pilot ${tumor_sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${credentials} ${patient_db_jar}
+do_load_peach_data ${tumor_sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${credentials} ${patient_db_jar}
 do_load_snv_signatures ${tumor_sample} ${credentials}
 do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${credentials} ${patient_db_jar}
 do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${credentials} ${patient_db_jar}
