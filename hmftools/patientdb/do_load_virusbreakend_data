@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+sample=$1 && shift
+virus_breakend_tsv=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+echo "[INFO] Loading VIRUSBreakend data for ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadVirusBreakendData \
+    -sample ${sample} \
+    -virus_breakend_tsv ${virus_breakend_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
