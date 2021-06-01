@@ -16,6 +16,8 @@ germline_vcf=$(locate_purple_germline_variants ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+molecular_tissue_origin_txt=$(locate_cuppa_txt ${run_dir})
+virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
@@ -29,9 +31,6 @@ peach_pilot_genotype_tsv=$(locate_peach_pilot_genotype ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-# TODO Load CUPPA
-# TODO Load VirusBreakend
-
 do_load_amber_data ${tumor_sample} ${amber_dir} ${credentials} ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
@@ -44,3 +43,5 @@ do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${pat
 do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
 # do_load_peach_data ${sample} ${peach_pilot_calls_tsv} ${peach_pilot_genotype_tsv} ${credentials} ${patient_db_jar}
 do_load_snv_signatures ${tumor_sample} ${credentials}
+do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${credentials} ${patient_db_jar}
+do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${credentials} ${patient_db_jar}
