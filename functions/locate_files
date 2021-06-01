@@ -700,7 +700,7 @@ locate_peach_pilot_genotype() {
 
 locate_peach_prod_output_dir() {
     local run_dir=$1
-    echo "${run_dir}/peach_pilot"
+    echo "${run_dir}/peach"
 }
 
 locate_peach_prod_calls() {
