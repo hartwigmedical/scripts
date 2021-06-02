@@ -163,7 +163,7 @@ locate_pilot_datarequest() {
     echo ${base_path}/tools/datarequest/datarequest_pilot.jar
 }
 
-############################### PIPELINE VERSION #################################
+############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
     echo "5.22"
@@ -253,6 +253,10 @@ locate_hartwig_curated_tsv() {
 
 locate_ckb_flex_data_dir() {
     echo ${base_path}/dbs/ckb/210514_flex_dump
+}
+
+locate_ckb_filter_tsv() {
+    echo ${base_path}/dbs/serve/curation/ckb_filters.tsv
 }
 
 ################################# REF GENOME ###################################
