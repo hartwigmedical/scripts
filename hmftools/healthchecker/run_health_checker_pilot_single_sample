@@ -7,7 +7,7 @@ source message_functions || exit 1
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    error "[ERROR] No rundir is provided to $(basename $0). Exiting."
+    error "No rundir is provided to $(basename $0). Exiting."
 fi
 
 sample=$(basename "${run_dir}" | cut -d"_" -f4)
