@@ -6,11 +6,11 @@ tumor_sample_or_run_dir=$1 && shift
 qc_fail_reason=$1 && shift
 
 if [[ -z "${tumor_sample_or_run_dir}" ]]; then
-    error "No tumor sample or run dir provided. Exiting" && exit 1;
+    error "No tumor sample or run dir provided. Exiting"
 fi
 
 if [[ -z "${qc_fail_reason}" ]]; then
-    error "No QC fail reason provided. Exiting" && exit 1;
+    error "No QC fail reason provided. Exiting"
 fi
 
 # Additional comments are not passed along since comments already used for indicating a pilot report.

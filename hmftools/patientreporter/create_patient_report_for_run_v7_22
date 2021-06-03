@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
-source lims_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -18,16 +19,15 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
-
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
-    echo "[INFO] Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
 
@@ -35,22 +35,22 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${ref_sample_barcode}" ]]; then
-    echo "[INFO] Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
+    info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
     ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_barcode}" ]]; then
-    echo "[ERROR] Incomplete information for reporter. Exiting"
-    echo "  ref_sample name: ${ref_sample}"
-    echo "  ref sample barcode: ${ref_sample_barcode}"
-    echo "  tumor_sample name: ${tumor_sample}"
-    echo "  tum sample barcode: ${tumor_sample_barcode}"
+    warn "Incomplete information for reporter. Exiting"
+    warn "  ref_sample name: ${ref_sample}"
+    warn "  ref sample barcode: ${ref_sample_barcode}"
+    warn "  tumor_sample name: ${tumor_sample}"
+    warn "  tum sample barcode: ${tumor_sample_barcode}"
     exit 1;
 fi
 
 output_dir_data_report=${run_dir}/patient_report_prod_data
 if [[ ! -d "${output_dir_data_report}" ]]; then
-    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    info "${output_dir_data_report} does not exist yet, creating..."
     mkdir ${output_dir_data_report}
 fi
 

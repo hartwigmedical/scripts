@@ -7,7 +7,7 @@ source message_functions || exit 1
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 ref_sample_mandatory=1
@@ -18,7 +18,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 output_dir_data_report=${run_dir}/patient_report_prod_data
 
 if [[ ! -d "${output_dir_data_report}" ]]; then
-    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    info "${output_dir_data_report} does not exist yet, creating..."
     mkdir ${output_dir_data_report}
 fi
 

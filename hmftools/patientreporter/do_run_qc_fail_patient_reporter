@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
+source lims_functions || exit 1
+source metadata_functions || exit 1
 source message_functions || exit 1
-
-source lims_functions
-source metadata_functions
 
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
@@ -11,7 +10,7 @@ ref_sample_mandatory=$1 && shift
 output_dir_report=/data/cpct/patient_reports
 
 if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
-    echo "[ERROR] No tumor sample and/or QC fail reason provided. Exiting" && exit 1;
+    error "No tumor sample and/or QC fail reason provided. Exiting"
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
@@ -19,27 +18,27 @@ ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
-    echo "[INFO] Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
-    echo "[ERROR] Incomplete information for reporter. Exiting"
-    echo "  tumor_sample name: ${tumor_sample}"
-    echo "  tum sample barcode: ${tumor_sample_barcode}"
+    warn "Incomplete information for reporter. Exiting"
+    warn "  tumor_sample name: ${tumor_sample}"
+    warn "  tum sample barcode: ${tumor_sample_barcode}"
     exit 1;
 fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
     if [[ ${ref_sample_mandatory} == "1" ]]; then
-        echo "[ERROR] Incomplete information for reporter. Exiting"
-        echo "  ref_sample name: ${ref_sample}"
-        echo "  ref_sample barcode: ${ref_sample_barcode}"
-        echo "  tumor_sample name: ${tumor_sample}"
-        echo "  tumor_sample barcode: ${tumor_sample_barcode}"
-        exit 1;
+        warn "Incomplete information for reporter. Exiting"
+        warn "  ref_sample name: ${ref_sample}"
+        warn "  ref_sample barcode: ${ref_sample_barcode}"
+        warn "  tumor_sample name: ${tumor_sample}"
+        warn "  tumor_sample barcode: ${tumor_sample_barcode}"
+        exit 1
     else
-        echo "[WARN] Ref sample information is incomplete!"
+        warn "Ref sample information is incomplete!"
 
         do_run_base_patient_reporter \
             -output_dir_report ${output_dir_report} \

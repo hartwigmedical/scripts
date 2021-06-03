@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
 output_dir_report=/data/cpct/patient_reports
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
