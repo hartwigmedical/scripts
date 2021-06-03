@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-serve_dir1=/data/common/dbs/serve/pilot_output
-serve_dir2=/data/common/dbs/serve/prod_output
-
-do_compare_serve_versions ${serve_dir1} ${serve_dir2}
