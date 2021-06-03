@@ -7,7 +7,6 @@ source lims_functions
 run_dir=$1 && shift
 
 output_dir_report=/data/cpct/patient_reports
-expected_pipeline_version=$(expected_pipeline_version)
 patient_reporter_jar=/data/common/tools/patientreporter_v7.22/patient-reporter.jar
 
 
@@ -104,5 +103,4 @@ java -jar ${patient_reporter_jar} \
     -output_dir_data_report ${output_dir_data_report} \
     -pipeline_version_file ${pipeline_version_file} \
     -output_dir_report ${output_dir_report} \
-    -expected_pipeline_version ${expected_pipeline_version} \
     "$@"
