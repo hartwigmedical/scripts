@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+source lims_functions
+
+run_dir=$1 && shift
+
+output_dir=${run_dir}/protect
+protect_jar=/data/common/tools/protect_v1.2/protect.jar
+serve_actionability_dir=/data/common/dbs/serve/prod_output
+
+
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" || -z "${serve_actionability_dir}" ]]; then
+    echo "[ERROR] Missing input parameters. Exiting" && exit 1;
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+if [[ ${tumor_sample} == "COLO"* ]]; then
+    primary_tumor_doids="8923"
+else
+    primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+fi
+
+primary_tumor_argument=""
+if [[ ! -z "${primary_tumor_doids}" ]]; then
+    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
+fi
+
+doid_json=/data/common/dbs/disease_ontology/201015_doid.json
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_driver_catalog_somatic_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
+purple_driver_catalog_germline_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
+bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
+linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
+linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
+linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
+linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
+
+java -Xms2G -Xmx8G -jar ${protect_jar} \
+    -tumor_sample_id ${tumor_sample} \
+    ${primary_tumor_argument} \
+    -output_dir ${output_dir} \
+    -serve_actionability_dir ${serve_actionability_dir} \
+    -doid_json ${doid_json} \
+    -germline_reporting_tsv ${germline_reporting_tsv} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_driver_catalog_somatic_tsv ${purple_driver_catalog_somatic_tsv} \
+    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+    -bachelor_tsv ${bachelor_tsv} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_breakend_tsv ${linx_breakend_tsv} \
+    -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
+    -linx_drivers_tsv ${linx_driver_catalog_tsv} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -log_debug \
+    "$@"
