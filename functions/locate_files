@@ -75,6 +75,10 @@ locate_pilot_purple() {
     echo ${base_path}/tools/purple_pilot/purple.jar
 }
 
+locate_pilot_virus_interpreter() {
+    echo ${base_path}/tools/virus-interpreter_pilot/virus-interpreter.jar
+}
+
 locate_prod_patient_db() {
     echo ${base_path}/tools/patient-db_v3.59/patient-db.jar
 }
