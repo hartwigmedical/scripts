@@ -29,9 +29,6 @@ is_pass=true #value needed from GCP
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
-credentials=$(locate_pilot_database_credentials)
-patient_db_jar=$(locate_pilot_patient_db)
-
 do_load_amber_data ${tumor_sample} ${amber_dir} ${credentials} ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
