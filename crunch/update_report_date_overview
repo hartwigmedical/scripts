@@ -3,7 +3,8 @@
 # This script is expected to be run as a cronjob so loading bashrc
 source ${HOME}/.bashrc
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 task_id="updateReportingOverview"
 rep_src_file=$(locate_reporting_db_tsv)
@@ -12,14 +13,13 @@ pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
 
 ## Sanity check
 if [[ ! -f "${rep_src_file}" ]]; then 
-    echo "[ERROR] Source file does not exist (${rep_src_file})"
-    exit 1
+    error "Source file does not exist (${rep_src_file})"
 fi
 
 ## Syncing source file twice (second time as txt which can be read directly in browser)
-echo "[INFO] START with ${task_id} $(date '+%y%m%d')"
-echo "[INFO]   Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
+info "START with ${task_id} $(date '+%y%m%d')"
+info " Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
 sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/"
 sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/reporting_db.txt"
-echo "[INFO]   File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
-echo "[INFO] DONE with ${task_id}"
+info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
+info "DONE with ${task_id}"

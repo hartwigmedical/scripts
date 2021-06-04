@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 max_find_depth=1
 
 dir_path=${PWD} # directory that contains fastq files
@@ -64,16 +66,16 @@ while IFS=  read -r -d $'\0'; do
 done < <(find "${dir_path}" -maxdepth ${max_find_depth} -name "${old_name}*.fastq.gz" -print0)
 
 ## sanity checks
-if [[ ${#files_to_rename[@]} -lt 1 ]]; then echo "[ERROR] No fastq files found (with find-depth ${max_find_depth})" && exit 1; fi
-if [[ -z "${old_name}" ]]; then echo "[ERROR] Param old_name (-o) not set" && exit 1; fi
-if [[ -z "${new_name}" ]]; then echo "[ERROR] Param new_name (-n) not set" && exit 1; fi
-if [[ -z "${dir_path}" ]]; then echo "[ERROR] Param dir_path (-d) not set" && exit 1; fi
-if [[ ! -d "${dir_path}" ]]; then echo "[ERROR] dir_path (${dir_path}) does not exist?" && exit 1; fi
+if [[ ${#files_to_rename[@]} -lt 1 ]]; then error "No fastq files found (with find-depth ${max_find_depth})"; fi
+if [[ -z "${old_name}" ]]; then error "Param old_name (-o) not set"; fi
+if [[ -z "${new_name}" ]]; then error "Param new_name (-n) not set"; fi
+if [[ -z "${dir_path}" ]]; then error "Param dir_path (-d) not set"; fi
+if [[ ! -d "${dir_path}" ]]; then error "dir_path (${dir_path}) does not exist?"; fi
 
 ## print info
-echo "[INFO] Setting FastqDirectory: ${dir_path}"
-echo "[INFO] Setting OldName: \"${old_name}\""
-echo "[INFO] Setting NewName: \"${new_name}\""
+info "Setting FastqDirectory: ${dir_path}"
+info "Setting OldName: \"${old_name}\""
+info "Setting NewName: \"${new_name}\""
 
 ## renaming action
 for old_file in "${files_to_rename[@]}"; do
@@ -83,20 +85,20 @@ for old_file in "${files_to_rename[@]}"; do
     new_file="${file_dir}/${new_base}" 
 
     if [[ ${do_symlink_files} ]]; then
-        echo "[INFO] Symlinking ${old_base} to ${new_base} )"
+        info "Symlinking ${old_base} to ${new_base} )"
         ln -s ${old_file} ${new_base}
     elif [[ ${do_rename_files} ]]; then
-        echo "[INFO] Renaming ${old_base} to ${new_base}"
+        info "Renaming ${old_base} to ${new_base}"
         mv ${old_file} ${new_file} 
     else
-        echo "[INFO] Would rename ${old_base} to ${new_base}"
+        info "Would rename ${old_base} to ${new_base}"
     fi
 done
 
 if [[ ! ${do_rename_files} ]]; then
     log_file_path="${dir_path}/fastqrename.log"
-    echo "[INFO] Option -r not set so only printed the potential rename actions"
-    echo "[INFO] Cmd to rename: ${command_line} -r > ${log_file_path}"
-    if [[ -f "${log_file_path}" ]]; then echo "[WARN] Logfile (${log_file_path}) already exists!"; fi
+    info "Option -r not set so only printed the potential rename actions"
+    info "Cmd to rename: ${command_line} -r > ${log_file_path}"
+    if [[ -f "${log_file_path}" ]]; then warn "Logfile (${log_file_path}) already exists!"; fi
 fi
 

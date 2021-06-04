@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Usage: $(basename $0) <path-to-seq-run1> [<path-to-seq-run2 etc>]"
@@ -9,7 +11,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-echo "[INFO] Execute to start sync:"
+info "Execute to start sync:"
 rsync_cmd="rsync -trhP"
 rsync_cmd=${rsync_cmd}" --exclude \"*.bcl.gz\""
 rsync_cmd=${rsync_cmd}" --exclude \"*.cbcl\""

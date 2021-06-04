@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 YYMMDD=$(date '+%y%m%d')
 dat_dir="/data/data_archive"
 seq_typ="rna_seq"
@@ -15,13 +17,13 @@ out_sum="${out_dir}/summary.log"
 err_log="${out_dir}/error.log"
 
 ## sanity checks
-if [[ ! -d "${out_dir}" ]]; then echo "[ERROR] OUTPUT DIR does not exist (${out_dir})" && exit 1; fi
-if [[ ! -w "${out_dir}" ]]; then echo "[ERROR] OUTPUT DIR not writable (${out_dir})" && exit 1; fi
-if [[ ! -d "${seq_dir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${seq_dir})" && exit 1; fi
+if [[ ! -d "${out_dir}" ]]; then error "OUTPUT DIR does not exist (${out_dir})"; fi
+if [[ ! -w "${out_dir}" ]]; then error "OUTPUT DIR not writable (${out_dir})"; fi
+if [[ ! -d "${seq_dir}" ]]; then error "INPUT DIR does not exist (${seq_dir})"; fi
 
 ## startup
-echo "[INFO] START ${task_id} ($YYMMDD)" | tee ${out_sum}
-echo "[INFO] Writing err log to ${err_log}" | tee -a ${out_sum}
+info "START ${task_id} ($YYMMDD)" | tee ${out_sum}
+info "Writing err log to ${err_log}" | tee -a ${out_sum}
 
 # gather info
 fastq_disk_usage=$(du -sh ${seq_dir} | cut -f1)
@@ -42,16 +44,16 @@ sample_count=$(grep -cv "^#" ${out_smp})
 uniq_sample_count=$(cat ${out_tsv} | grep -v ^# | cut -f1 | sort | uniq | wc -l)
 uniq_barcode_count=$(cat ${out_tsv} | grep -v ^# | cut -f2 | sort | uniq | wc -l)
 
-echo "[INFO] FASTQ data footprint: ${fastq_disk_usage}" | tee -a ${out_sum}
-echo "[INFO] Number of samples: ${sample_count}" | tee -a ${out_sum}
-echo "[INFO] Number of unique sample names: ${uniq_sample_count}" | tee -a ${out_sum}
-echo "[INFO] Number of unique sample barcodes: ${uniq_barcode_count}" | tee -a ${out_sum}
-echo "[INFO] Complete table in: ${out_tsv}" | tee -a ${out_sum}
-echo "[INFO]   Sample table in: ${out_smp}" | tee -a ${out_sum}
+info "FASTQ data footprint: ${fastq_disk_usage}" | tee -a ${out_sum}
+info "Number of samples: ${sample_count}" | tee -a ${out_sum}
+info "Number of unique sample names: ${uniq_sample_count}" | tee -a ${out_sum}
+info "Number of unique sample barcodes: ${uniq_barcode_count}" | tee -a ${out_sum}
+info "Complete table in: ${out_tsv}" | tee -a ${out_sum}
+info "Sample table in: ${out_smp}" | tee -a ${out_sum}
 
-echo "[INFO] Starting NAS sync (to ${nas_loc})"
+info "Starting NAS sync (to ${nas_loc})"
 rsync ${out_tsv} ${nas_loc}/overview.txt
 rsync ${out_smp} ${nas_loc}/samples.txt
 rsync ${out_sum} ${nas_loc}/summary.txt
 
-echo "[INFO] DONE ${task_id}" | tee -a ${out_sum}
+info "DONE ${task_id}" | tee -a ${out_sum}

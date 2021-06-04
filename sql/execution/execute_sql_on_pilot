@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 file_with_sql_to_execute=$1
 
 if [[ ! -f "${file_with_sql_to_execute}" ]]; then
-    echo "[ERROR] Unable to locate SQL file to execute. Exiting." && exit 1
+    error "Unable to locate SQL file to execute. Exiting."
 fi
 
 database_name="hmfpatients_pilot"

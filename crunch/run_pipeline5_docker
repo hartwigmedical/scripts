@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 WORKING_DIR=$(pwd)
 PATIENT_DIR="/data/repos/testdata/cancerPanel/"
 REFERENCE_GENOME_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
@@ -52,5 +54,5 @@ if [[ ! -z "${MAX_HEAP}" ]]; then
     environment_variables="-e JAVA_OPTS=-Xmx${MAX_HEAP}"
 fi
 
-echo "[INFO] Running pipeline5 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline.log to see the progress."
+info "Running pipeline5 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline.log to see the progress."
 sudo docker run -d ${network} ${volumes} ${environment_variables} hartwigmedicalfoundation/pipeline5:${VERSION}
