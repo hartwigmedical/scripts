@@ -21,6 +21,4 @@ java -jar ${virus_interpreter_jar} \
     -virus_interpretation_tsv ${virus_interpretation_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir ${output_dir} \
-    -log_debug
-
-
+    "$@"
