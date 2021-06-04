@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 sample=$1 && shift
 
 if [[ -z "${sample}" ]]; then
-    echo "[ERROR] No sample is provided to $(basename $0). Exiting." && exit 1
+    error "No sample is provided to $(basename $0). Exiting."
 fi
 
 credentials=$(locate_pilot_database_credentials)

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 runs_dir=/data/gcp/shallow_runs
 patient_db_jar=$(locate_prod_patient_db)
@@ -11,7 +12,7 @@ purple_purity_p5_tsv=".purple.purity.tsv"
 purple_qc_file=".purple.qc"
 pipeline_version_file="pipeline.version"
 
-echo "[INFO] Updating ShallowSeq DB in ${shallow_seq_tsv}"
+info "Updating ShallowSeq DB in ${shallow_seq_tsv}"
 
 java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -runs_dir ${runs_dir} \

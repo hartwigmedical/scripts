@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -14,7 +14,7 @@ tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
 credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-echo "[WARN] Loading flagstats not yet supported in prod. Coming in patient-db v3.50!"
+echo "[WARN] Loading flagstats not yet supported in prod. Coming in patient-db v3.60!"
 exit 1
 
 # do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${credentials} ${patient_db_jar}

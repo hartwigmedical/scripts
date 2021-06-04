@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)

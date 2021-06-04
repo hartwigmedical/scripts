@@ -19,8 +19,6 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 
-bachelor_jar=$(locate_prod_bachelor)
-
 do_load_amber_data ${tumor_sample} ${amber_dir} ${credentials} ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
@@ -30,5 +28,4 @@ do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${patient_db_ja
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
 do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
-do_load_bachelor_data ${tumor_sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar}
 do_load_snv_signatures ${tumor_sample} ${credentials}

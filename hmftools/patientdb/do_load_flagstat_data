@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 sample=$1 && shift
 ref_flagstat_file=$1 && shift
 tumor_flagstat_file=$1 && shift
@@ -11,7 +13,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading flagstats data for ${sample}"
+info "Loading flagstats data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
     -sample ${sample} \
