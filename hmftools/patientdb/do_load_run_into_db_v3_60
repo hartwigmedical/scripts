@@ -24,6 +24,8 @@ tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 ref_flagstat_file=$(locate_flagstats ${run_dir} ${ref_sample})
 tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
 
+is_pass=true #value needed from GCP
+
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
@@ -44,3 +46,4 @@ do_load_peach_data ${tumor_sample} ${peach_prod_calls_tsv} ${peach_prod_genotype
 do_load_snv_signatures ${tumor_sample} ${credentials}
 do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${credentials} ${patient_db_jar}
 do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${credentials} ${patient_db_jar}
+do_update_snpcheck_status ${tumor_sample} ${is_pass} ${credentials} ${patient_db_jar}
