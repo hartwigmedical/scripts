@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 local_path='/data/gcp/snpcheckvcfupload'
 
 bucket='hmf-snpcheck'
 destination='snpcheckvcfs'
 
-echo "[INFO] Syncing snpcheck data to GCP!"
+info "Syncing snpcheck data to GCP!"
 
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m rsync -dr ${local_path} gs://${bucket}/${destination}

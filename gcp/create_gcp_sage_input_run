@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-source api_functions
-source metadata_functions
-source gcp_functions
+source api_functions || exit 1
+source metadata_functions || exit 1
+source gcp_functions || exit 1
 
 run_dir=$1
 set=$(basename $run_dir)

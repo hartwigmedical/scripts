@@ -2,47 +2,47 @@
 api_cred_dir="/data/common/dbs/api_credentials"
 
 latest_gridss_run_details () {
-  local set=$1
-  local run_json=$(jq --arg SET "$set" '.[] | select (.set.name == $SET) | select (.status != "Deleted") | select(.bucket | contains("hmf-output")) ' /data/ops/api/prod/database/runs.json)
-  local ref_sample=$(echo $run_json | jq -r '.set.ref_sample' | uniq)
-  local tumor_sample=$(echo $run_json | jq -r '.set.tumor_sample' | uniq)
-  local run_id=$(echo "$run_json" | jq 'select (.ini_id == 28) | .id' | sort -n -r | head -n 1)
-  if [[ $run_id == "" ]]; then
-    run_id=$(echo "$run_json" | jq 'select (.ini_id == 6) | .id' | sort -n -r | head -n 1)
-  fi
+    local set=$1
+    local run_json=$(jq --arg SET "$set" '.[] | select (.set.name == $SET) | select (.status != "Deleted") | select(.bucket | contains("hmf-output")) ' /data/ops/api/prod/database/runs.json)
+    local ref_sample=$(echo $run_json | jq -r '.set.ref_sample' | uniq)
+    local tumor_sample=$(echo $run_json | jq -r '.set.tumor_sample' | uniq)
+    local run_id=$(echo "$run_json" | jq 'select (.ini_id == 28) | .id' | sort -n -r | head -n 1)
+    if [[ $run_id == "" ]]; then
+        run_id=$(echo "$run_json" | jq 'select (.ini_id == 6) | .id' | sort -n -r | head -n 1)
+    fi
 
-  if [[ $run_id == "" ]]; then
-     run_id=0
-  fi
+    if [[ $run_id == "" ]]; then
+        run_id=0
+    fi
 
-  echo "${run_id} ${ref_sample} $tumor_sample"
+    echo "${run_id} ${ref_sample} $tumor_sample"
 }
 
 latest_gridss_file_locations() {
-  local set=$1
-  local run_details=$(latest_gridss_run_details $set)
-  local run_id=$(echo $run_details | cut -f 1 -d " ")
-  local file_data=$(curl -v "http://api.prod-1/hmf/v1/files?run_id=${run_id}")
-  local unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "gridss(.unfiltered)?.vcf.gz$" | uniq)
-  if [[ $unfiltered_vcf == "" ]]; then
-    unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "structural_caller/(.*).filter.final.vcf.gz$" | uniq)
-  fi
-  if [[ $unfiltered_vcf == "" ]]; then
-     unfiltered_vcf="UNKNOWN"
-  fi
+    local set=$1
+    local run_details=$(latest_gridss_run_details $set)
+    local run_id=$(echo $run_details | cut -f 1 -d " ")
+    local file_data=$(curl -v "http://api.prod-1/hmf/v1/files?run_id=${run_id}")
+    local unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "gridss(.unfiltered)?.vcf.gz$" | uniq)
+    if [[ $unfiltered_vcf == "" ]]; then
+        unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "structural_caller/(.*).filter.final.vcf.gz$" | uniq)
+    fi
+    if [[ $unfiltered_vcf == "" ]]; then
+        unfiltered_vcf="UNKNOWN"
+    fi
 
-  local unfiltered_vcf_index=${unfiltered_vcf}.tbi
+    local unfiltered_vcf_index=${unfiltered_vcf}.tbi
 
-  local bam_data=$(echo $file_data | jq  '.[] | select(.filepath | contains("bam.sv"))')
-  local assembly_bam=$(echo $bam_data | jq -r 'select(.filepath | endswith("bam")) | .filepath')
-  local assembly_bam_dir=$(echo $bam_data | jq -r 'select(.filepath | endswith("bam")) | .directory')
-  if [[ $assembly_bam_dir == "" ]]; then
-     assembly_bam_dir="UNKNOWN"
-  fi
-  local assembly_bam_index=$(echo $bam_data | jq -r --arg DIR "$assembly_bam_dir" 'select(.directory==$DIR) | select(.filepath | endswith("bai")) | .filepath')
-  if [[ $assembly_bam_index == "" ]]; then
-     assembly_bam_index="UNKNOWN"
-  fi
+    local bam_data=$(echo $file_data | jq  '.[] | select(.filepath | contains("bam.sv"))')
+    local assembly_bam=$(echo $bam_data | jq -r 'select(.filepath | endswith("bam")) | .filepath')
+    local assembly_bam_dir=$(echo $bam_data | jq -r 'select(.filepath | endswith("bam")) | .directory')
+    if [[ $assembly_bam_dir == "" ]]; then
+        assembly_bam_dir="UNKNOWN"
+    fi
+    local assembly_bam_index=$(echo $bam_data | jq -r --arg DIR "$assembly_bam_dir" 'select(.directory==$DIR) | select(.filepath | endswith("bai")) | .filepath')
+    if [[ $assembly_bam_index == "" ]]; then
+        assembly_bam_index="UNKNOWN"
+    fi
 
-  echo "$set $run_details $unfiltered_vcf $unfiltered_vcf_index $assembly_bam $assembly_bam_index"
+    echo "$set $run_details $unfiltered_vcf $unfiltered_vcf_index $assembly_bam $assembly_bam_index"
 }

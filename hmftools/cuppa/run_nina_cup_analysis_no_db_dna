@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 # sample command
 # ~/scripts/run_cup_analysis_no_db SAMPLE_001 ~/tools/cuppa.jar ~/tools/sig-analyser.jar ~/samples/SAMPLE_001/ ~/ref/ ~/samples/SAMPLE_001/
 
@@ -10,12 +12,12 @@ sample_data_dir=$4
 cup_ref_dir=$5
 output_dir=$6
 
-echo "CUPPA analysis for ${sampleId}"
-echo "Sample input: ${sample_data_dir}"
-echo "Sample output: ${output_dir}"
-echo "Reference data: ${cup_ref_dir}"
+info "CUPPA analysis for ${sampleId}"
+info " - Sample input: ${sample_data_dir}"
+info " - Sample output: ${output_dir}"
+info " - Reference data: ${cup_ref_dir}"
 
-echo "Generating SNV and signature data for ${sampleId}"
+info "Generating SNV and signature data for ${sampleId}"
 
 # Run signatures to produce SNV counts, genomic position counts and signature allocations
 snv_cosmic_sigs=/data/common/dbs/sigs/snv_cosmic_sigs.csv

@@ -2,6 +2,7 @@
 
 source metadata_functions || exit 1
 source locate_files || exit 1
+source message_functions || exit 1
 
 prefix=$(dirname $(readlink $0 || echo $0))
 
@@ -17,13 +18,12 @@ normal=$(load_ref_sample_from_metadata ${run_dir})
 
 old_amber=${run_dir}/amber/${sample}.amber.baf
 if [[ ! -f "${old_amber}" ]]; then
-    echo "[ERROR] Unable to locate old AMBER file ${old_amber}. Exiting"
-    exit 1
+    error "Unable to locate old AMBER file ${old_amber}. Exiting"
 fi
 
 new_amber=${out_dir}/${sample}.amber.baf
 if [[ -f "${new_amber}" ]]; then
-    echo "[INFO] Amber already rerun: ${new_amber}"
+    info "Amber already rerun: ${new_amber}"
     exit 0
 fi
 
@@ -32,8 +32,7 @@ if [[ ! -f "${bed}" ]]; then
     cat ${old_amber} | grep -v Chrom | awk '{print $1 "\t" $2 - 1 "\t" $2}' > ${bed}
 fi
 
-echo "[ERROR] BAM slicer no longer supported".
-exit 1
+error "BAM slicer no longer supported".
 
 sample_bam=${out_dir}/${sample}.amber.bam
 if [[ ! -f "${sample_bam}" ]]; then

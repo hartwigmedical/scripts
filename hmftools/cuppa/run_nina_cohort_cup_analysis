@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 sample_ids_file=$1
 cup_ref_dir=$2
@@ -33,13 +34,11 @@ pos_freq_counts_file=${output_dir}/snv_position_freq_500000.csv
 snv_matrix_file=${output_dir}/sample_counts.${run_id}.csv
 
 if [[ ! -f $pos_freq_counts_file ]] ; then
-    echo "Error creating $pos_freq_counts_file, aborting"
-    exit 1
+    error "Error creating $pos_freq_counts_file, aborting"
 fi
 
 if [[ ! -f $snv_matrix_file ]] ; then
-    echo "Error creating $snv_matrix_file, aborting"
-    exit 1
+    error "Error creating $snv_matrix_file, aborting"
 fi
 
 java -cp ${siga_jar} com.hartwig.hmftools.sig_analyser.loaders.PositionFreqBuilder \
@@ -53,8 +52,7 @@ java -cp ${siga_jar} com.hartwig.hmftools.sig_analyser.loaders.PositionFreqBuild
 pos_freq_matrix_file=${output_dir}/pos_freq_matrix.${run_id}.csv
 
 if [[ ! -f $pos_freq_matrix_file ]] ; then
-    echo "Error creating $pos_freq_matrix_file, aborting"
-    exit 1
+    error "Error creating $pos_freq_matrix_file, aborting"
 fi
 
 rm ${pos_freq_counts_file}

@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 gcp_url=$1
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-ops"
 
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
-    echo "Usage: $(basename $0) gs://bucket/path/to_file" && exit 1
+    error "Usage: $(basename $0) gs://bucket/path/to_file"
 fi
 
 ## first check object existance
 gsutil -q stat "${gcp_url}"
 if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Unable to locate file (${gcp_url})" >&2
-    exit 1
+    error "Unable to locate file (${gcp_url})"
 fi
 
 ## retrieve presigned URL
 signurl_response=$( gsutil signurl -d 7d "${gcp_key_file}" "${gcp_url}")
 if [[ $? -ne 0 ]]; then
-    echo "[ERROR] Unable to generate URL for file" >&2
-    exit 1
+    error "Unable to generate URL for file"
 fi
 
 ## response has data header line and multiple fields

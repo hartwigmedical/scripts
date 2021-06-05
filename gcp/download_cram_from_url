@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source gcp_functions
+source gcp_functions || exit 1
 source message_functions || exit 1
 
 # Suppress error output with 2> /dev/null or similar to prevent download progress messages from spamming log files etc.

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 sample_id=$1 && shift
 output_dir=$1 && shift
 
 if [[ -z "${sample_id}" || -z "${output_dir}" ]]; then
-    echo "[ERROR] Sample ID and/or Output dir not provided. Exiting."
-    exit 1
+    error "Sample ID and/or Output dir not provided. Exiting."
 fi
 
 credentials=$(locate_prod_database_credentials)

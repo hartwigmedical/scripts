@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 ref_dir=$1 && shift
 
 if [[ -z "${ref_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 cuppa_jar=$(locate_pilot_cuppa)
@@ -17,7 +18,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Running CUPPA Ref Data Builder"
+info "Running CUPPA Ref Data Builder"
 
 java -cp ${cuppa_jar} com.hartwig.hmftools.cup.ref.RefDataBuilder \
     -ref_sample_data_file ${cup_ref_dir}/cup_ref_sample_data.csv \

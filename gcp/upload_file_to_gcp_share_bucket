@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 file_to_upload=$1 && shift
 bucket='hmf-share-services'
 
-if [[ -z "${file_to_upload}" ]]; then echo "[ERROR] No file provided to upload" && exit 1; fi
-if [[ ! -f "${file_to_upload}" ]]; then echo "[ERROR] Not a file: (${file_to_upload})" && exit 1; fi
+if [[ -z "${file_to_upload}" ]]; then error "No file provided to upload"; fi
+if [[ ! -f "${file_to_upload}" ]]; then error "Not a file: (${file_to_upload})"; fi
 
-echo "[INFO] Uploading file to GCP bucket ${bucket}"
+info "Uploading file to GCP bucket ${bucket}"
 
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil cp -n ${file_to_upload} gs://${bucket}/

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source metadata_functions
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 prefix=$(dirname $(readlink $0 || echo $0))
 
@@ -12,14 +13,14 @@ normal=$(load_ref_sample_from_metadata ${run_dir})
 
 amber=${run_dir}/amber_v2/${sample}.amber.baf
 if [[ ! -f "${amber}" ]]; then
-    echo "[ERROR] Unable to locate AMBER file: ${amber}" && exit 1
+    error "Unable to locate AMBER file: ${amber}"
 fi
 
 amber_column_count=$(head -1 ${amber} | wc -w)
 if [[ ${amber_column_count} -ne 8 ]]; then
-    echo "[ERROR] ASCAT requires latest AMBER output" && exit 1
+    error "ASCAT requires latest AMBER output"
 fi
 
-echo "[INFO] Running ASCAT on ${sample}"
+info "Running ASCAT on ${sample}"
 Rscript ${prefix}/ascatForPaper.R ${run_dir} ${out_dir} ${sample} ${normal}
-echo "[INFO] ASCAT complete"
+info "ASCAT complete"

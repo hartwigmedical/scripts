@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-source gcp_functions
+source gcp_functions || exit 1
+source message_functions || exit 1
 
 sampleId_ref=$1 && shift
 sampleId_tumor=$1 && shift
 
 if [[ -z "${sampleId_ref}" || -z "${sampleId_tumor}" ]]; then
-    echo "[ERROR] Not all input parameters provided to $(basename $0). Exiting"
-    exit 1
+    error "Not all input parameters provided to $(basename $0). Exiting"
 fi
 
 switch_to_hmf_ops_service_account
@@ -15,13 +15,13 @@ switch_to_hmf_ops_service_account
 gs_fastq_path=$(gsutil -u hmf-database ls gs://hmf-fastq-storage | grep ${sampleId_ref})
 ds_path=/data/gcp/fastq_upload/${sampleId_tumor}_fastq/
 
-echo "[INFO] Downloading fastq for ${sampleId_ref} from ${gs_fastq_path}"
+info "Downloading fastq for ${sampleId_ref} from ${gs_fastq_path}"
 mkdir -p ${ds_path}
 
 for fastq in ${gs_fastq_path};
 do
-	echo "[INFO] Downloading fastq:  ${fastq}"
-	gsutil -u hmf-database cp ${fastq} ${ds_path}
+	  info "Downloading fastq:  ${fastq}"
+	  gsutil -u hmf-database cp ${fastq} ${ds_path}
 done
 
-echo "[INFO] All fastq is downloaded of sample ${sampleId_ref}!"
+info "All fastq is downloaded of sample ${sampleId_ref}!"

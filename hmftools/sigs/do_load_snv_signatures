@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 sample=$1 && shift
 credentials=$1 && shift
 
 if [[ -z "${sample}" || -z "${credentials}" ]]; then
-    echo "[ERROR] No sample and/or credentials provided. Exiting."
-    exit 1
+    error "No sample and/or credentials provided. Exiting."
 fi
 
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -18,7 +18,7 @@ sig_analyser=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
 cosmic_signatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
 output_dir=/this/does/not/exist
 
-echo "[INFO] Loading sv signatures data for ${sample}"
+info "Loading sv signatures data for ${sample}"
 
 java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
     -sample ${sample} \

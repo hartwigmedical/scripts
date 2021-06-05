@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 
-source api_functions
-source gcp_functions
+source api_functions || exit 1
+source gcp_functions || exit 1
+source message_functions || exit 1
 
 set=$1 && shift
 
 if [[ -z "${set}" ]]; then
-    echo "[ERROR] No set provided to $(basename $0). Exiting"
-    exit 1
+    error "No set provided to $(basename $0). Exiting"
 fi
 
 run_bucket=$(load_intial_run_bucket_for_set ${set})
 if [[ -z "${run_bucket}" ]]; then
-    echo "[ERROR] No initial run bucket found for set '${set}'. Exiting"
-    exit 1
+    error "No initial run bucket found for set '${set}'. Exiting"
 fi
 
-echo "[INFO] Copying set ${set} from ${run_bucket} to hmf-crunch"
+info "Copying set ${set} from ${run_bucket} to hmf-crunch"
 
 switch_to_hmf_ops_service_account
 gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/sage_somatic/* gs://hmf-sage/${set}/

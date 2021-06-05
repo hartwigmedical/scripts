@@ -5,25 +5,27 @@
 # We assume this script as a cronjob rather than from a terminal, so we need to source .bashrc to get all paths
 source ${HOME}/.bashrc
 
-echo "[INFO] Archiving Sequencer Archive"
+source message_functions || exit 1
+
+info "Archiving Sequencer Archive"
 do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3300
 
-echo "[INFO] Archiving Patient Reports"
+info "Archiving Patient Reports"
 do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 6580
 do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 540
 do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 110
 
-echo "[INFO] Archiving Data Requests"
+info "Archiving Data Requests"
 do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 145
 
-echo "[INFO] Archiving Submissions"
+info "Archiving Submissions"
 do_archive_directory_to_gcp /data/submissions submissions 950
 
-echo "[INFO] Archiving Shallow Seq Pipelines"
+info "Archiving Shallow Seq Pipelines"
 do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 1340
 
-echo "[INFO] Archiving SnpCheck Data"
+info "Archiving SnpCheck Data"
 do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
-echo "[INFO] Archiving Samplesheets"
+info "Archiving Samplesheets"
 do_archive_directory_to_gcp /data/samplesheets samplesheets 3340

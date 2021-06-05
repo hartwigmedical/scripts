@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-source api_functions
+source api_functions || exit 1
+source message_functions || exit 1
 
 biopsy=$1 && shift
 # Type can be REF or TUM
 type=$1 && shift
 
 if [[ -z "${biopsy}" ]] || [[ -z "${type}" ]]; then
-    echo "[ERROR] No biopsy name and type provided to $(basename $0)." && exit 1
+    error "No biopsy name and type provided to $(basename $0)."
 fi
 
 if [[ ${type} = "REF" ]]; then
@@ -17,7 +18,7 @@ elif [[ ${type} = "TUM" ]]; then
     sample=$biopsy
     cram=$(locate_tumor_cram ${biopsy})
 else
-    echo "[ERROR] Did not recognize sample type ${type}. Should be REF or TUM"
+    error "Did not recognize sample type ${type}. Should be REF or TUM"
 fi
 
 echo "${sample} ${cram}"

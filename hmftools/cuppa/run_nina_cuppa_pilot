@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 sample_id=$(load_tumor_sample_from_metadata ${run_dir})
@@ -21,28 +22,28 @@ working_dir=${run_dir}/cuppa_pilot
 data_dir=${working_dir}/data
 output_dir=${working_dir}/output
 
-echo "[INFO] Running CUPPA analysis pipeline on ${run_dir}"
-echo "[INFO]  - Sample ID: ${sample_id}"
-echo "[INFO]  - CUPPA pipeline output directory: ${working_dir}"
-echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
+info "Running CUPPA analysis pipeline on ${run_dir}"
+info " - Sample ID: ${sample_id}"
+info " - CUPPA pipeline output directory: ${working_dir}"
+info " - CUPPA Reference data directory: ${cup_ref_dir}"
 
 if [[ ! -d ${working_dir} ]]; then
-    echo "[DEBUG] Creating ${working_dir}"
+    info "Creating ${working_dir}"
     mkdir -p ${working_dir}
 else
-    echo "[DEBUG] Wiping ${working_dir}"
+    info "Wiping ${working_dir}"
     rm -r ${working_dir}/*
 fi
 
-echo "[DEBUG] Preparing ${working_dir} for usage"
+info "Preparing ${working_dir} for usage"
 mkdir -p ${data_dir}
 mkdir -p ${output_dir}
 
-echo "[DEBUG] Copying required input files to ${data_dir}"
+info "Copying required input files to ${data_dir}"
 cp -r ${run_dir}/purple/* ${data_dir}/
 cp -r ${run_dir}/linx/* ${data_dir}/
 
-echo "[INFO] Generating SNV and signature data for ${sample_id}"
+info "Generating SNV and signature data for ${sample_id}"
 
 # Run signatures to produce SNV counts, genomic position counts and signature allocations
 snv_cosmic_sigs=${cup_ref_dir}/snv_cosmic_sigs.csv
@@ -56,7 +57,7 @@ java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitt
     -output_dir ${data_dir} \
     -log_debug
 
-echo "[INFO] Running CUPPA for ${sample_id}"
+info "Running CUPPA for ${sample_id}"
 
 java -jar ${cuppa_jar} \
     -sample_data "${sample_id};Unknown" \
@@ -69,6 +70,6 @@ java -jar ${cuppa_jar} \
 
 
 # We write output PDF to the same directory containing the CUPPA output data
-echo "[INFO] Writing CUP PDF Report"
+info "Writing CUP PDF Report"
 report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
 Rscript ${report_script} ${sample_id} ${output_dir}/ ${output_dir}/

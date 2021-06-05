@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 in_bam=$1 && shift
 
 ## use 90 percent of available threads
@@ -32,43 +34,42 @@ fi
 
 ## ---------------
 ## sanity checks
-if [[ ! -d "${picard_dir}" ]]; then echo "[ERROR] Picard dir not found (${picard_dir})"; exit 1; fi
-if [[ ! -d "${samtools_dir}" ]]; then echo "[ERROR] Samtools dir not found (${samtools_dir})"; exit 1; fi
-if [[ ! -f "${in_bam}" ]]; then echo "[ERROR] Bam file not found (${in_bam})"; exit 1; fi
-if [[ ! -w "$(dirname "${out_dir}")" ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
+if [[ ! -d "${picard_dir}" ]]; then error "Picard dir not found (${picard_dir})"; fi
+if [[ ! -d "${samtools_dir}" ]]; then error "Samtools dir not found (${samtools_dir})"; fi
+if [[ ! -f "${in_bam}" ]]; then error "Bam file not found (${in_bam})"; fi
+if [[ ! -w "$(dirname "${out_dir}")" ]]; then error "Output dir not writable?"; fi
 
 ## ---------------
 
 ## Check format of RG/ID tags in header
 correct_lane_count=$(${samtools_dir}/samtools view -H "${in_bam}" | grep ^@RG | grep -vcP "_L00[1-8]_" )
 if [[ ${correct_lane_count} -gt 1 ]]; then
-    echo "[ERROR] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
+    warn "There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
     ${samtools_dir}/samtools view -H "${in_bam}" | grep ^@RG
     exit 1
 fi
 
 if [[ -d "${out_dir}" ]]; then
-    echo "[ERROR] output dir exists, will not overwrite"
-    exit 1
+    error "Output dir exists, will not overwrite"
 else
-    echo "[INFO] Creating output dir (${out_dir})";
-    mkdir "${out_dir}";
+    info "Creating output dir (${out_dir})"
+    mkdir "${out_dir}"
 fi
 
-echo "[INFO] Running SamToFastq for bam file: $(basename "${in_bam}")"
+info "Running SamToFastq for bam file: $(basename "${in_bam}")"
 java -Xmx50G -jar "${picard_dir}"/picard.jar SamToFastq ODIR="${out_dir}" OPRG=true RGT=ID NON_PF=true RC=true I="${in_bam}"
 
-echo "[INFO] About to rename fastq files"
+info "About to rename fastq files"
 for fastq_path in "${out_dir}"/*fastq; do
     fastq_old=$(basename "${fastq_path}")
     fastq_new=$(echo "${fastq_old}" | sed 's#\.fastq##g' - | awk 'BEGIN { FS = "_" } ; { print $1"_"$2"_"$3"_"$4"_R"$6"_"$5".fastq" }')
    
     mv "${fastq_path}" "${out_dir}"/"${fastq_new}"
-    echo "[INFO] ${fastq_old} renamed to ${fastq_new}"
+    info "${fastq_old} renamed to ${fastq_new}"
 done
 
-echo "[INFO] gzipping fastq files...(using pigz)"
+info "gzipping fastq files...(using pigz)"
 pigz -p ${threads} "${out_dir}"/*.fastq
 
-echo "[INFO] Output fastq can be found in ${out_dir}"
+info "Output fastq can be found in ${out_dir}"
 ls "${out_dir}"

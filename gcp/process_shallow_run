@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-source gcp_functions
+source gcp_functions || exit 1
+source message_functions || exit 1
 
 set=$1 && shift
 
 if [[ -z "${set}" ]]; then
-    echo "[ERROR] No set provided to $(basename $0). Exiting"
-    exit 1
+    error "No set provided to $(basename $0). Exiting"
 fi
 
 archive_path="/data/data_archive/shallow_seq_pipelines"
@@ -15,16 +15,15 @@ archive_set_path=${archive_path}/${set}
 
 run_bucket=$(hmf_api_get "runs?set_name=${set}&ini=ShallowSeq.ini" | jq -r '.[-1].bucket')
 if [[ -z $run_bucket ]]; then
-    echo "[WARN] SKIPPING: Could not resolve bucket for \"${set}\""
-    exit
+    error "SKIPPING: Could not resolve bucket for \"${set}\""
 fi
 
 if [[ -d "${archive_set_path}" ]]; then
-    echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
+    warn "SKIPPING: Set already archived locally (${archive_set_path})"
 else
-    echo "[INFO] Syncing ShallowSeq GCP run ${set}"
+    info "Syncing ShallowSeq GCP run ${set}"
     dest_path=${download_path}/${set}
-    echo "[INFO]   Creating directory ${dest_path}"
+    info "  Creating directory ${dest_path}"
     mkdir -p ${dest_path}
 
     switch_to_hmf_ops_service_account

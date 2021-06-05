@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source gcp_functions
+source gcp_functions || exit 1
 
 switch_to_hmf_ops_service_account
 

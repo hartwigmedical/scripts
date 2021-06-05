@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 credentials=$(locate_prod_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -10,7 +11,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sampleId=$1
 
 if [[ -z "${sampleId}" ]]; then
-    echo "[ERROR] No sample ID passed. Exiting" && exit 1
+    error "No sample ID passed. Exiting"
 fi
 
 cup_ref_dir=/data/experiments/cup/ref/
