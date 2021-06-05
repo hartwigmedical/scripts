@@ -10,7 +10,7 @@ output_dir=$1 && shift
 serve_actionability_dir=$1 && shift
 protect_jar=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_dir}" || -z "${protect_jar}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${serve_actionability_dir}" || -z "${protect_jar}" ]]; then
     error "Missing input parameters. Exiting";
 fi
 
