@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 output_dir=/data/tmp/createReportingDB
 if [[ ! -d "${output_dir}" ]]; then
-    echo "[INFO] ${output_dir} doesn't exist yet. Creating."
+    info "${output_dir} doesn't exist yet. Creating."
     mkdir -p "${output_dir}"
 fi
 
 echo "sample_id	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasReliableQuality"  > ${output_dir}/reportingDB_Total.tsv
 
-echo "[INFO] Reading cpct old final reports"
+info "Reading cpct old final reports"
 for patient_report_old_cpct in /data/cpct/old_cpct_reports/*.pdf; do
     date_report=$(date -r ${patient_report_old_cpct} "+%Y-%m-%d")
     report_name=$(echo ${patient_report_old_cpct} \
@@ -17,7 +19,7 @@ for patient_report_old_cpct in /data/cpct/old_cpct_reports/*.pdf; do
     echo ${output_string} >> ${output_dir}/reportingSamplesTotal.tsv
 done
 
-echo "[INFO] Reading cpct final reports"
+info "Reading cpct final reports"
 for patient_report_cpct in /data/cpct/final_reports/*.pdf; do
     date_report=$(date -r ${patient_report_cpct} "+%Y-%m-%d")
 	  report_name=$(echo ${patient_report_cpct} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}')
@@ -43,7 +45,7 @@ for patient_report_cpct in /data/cpct/final_reports/*.pdf; do
 	  echo ${output_string} >> ${output_dir}/reportingSamplesTotal.tsv
 done
 
-echo "[INFO] Reading CORE final reports"
+info "Reading CORE final reports"
 for patient_report_core in /data/core/final_reports/*.pdf; do
     date_report=$(date -r ${patient_report_core} "+%Y-%m-%d")
     report_name=$(echo ${patient_report_core} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}')
@@ -59,10 +61,10 @@ for patient_report_core in /data/core/final_reports/*.pdf; do
     echo ${output_string} >> ${output_dir}/reportingSamplesTotal.tsv
 done
 
-echo "[INFO} sorting file"
+info "Sorting file"
 cat "${output_dir}/reportingSamplesTotal.tsv" | sort > ${output_dir}/reportingSamplesTotal_sorted.tsv
 
-echo "[INFO] extract correct date format"
+info "Extract correct date format"
 
 sorted_reported_samples="${output_dir}/reportingSamplesTotal_sorted.tsv"
 while IFS= read samples_line; do
@@ -102,7 +104,7 @@ while IFS= read samples_line; do
             changed_month="Dec"
         else
             changed_month=""
-            echo "[ERROR] No correct month of file"
+            warn "No correct month of file"
         fi
         date=$(echo "${day}-${changed_month}-${year}")
     elif [[ ${date} == "prio-2017-02-23" ]] ; then
@@ -111,7 +113,7 @@ while IFS= read samples_line; do
     echo ${sample_from_file} ${barcode_from_file} ${date} >> ${output_dir}/reportingSamplesTotalWitCorrectDateFormat.tsv
 done < ${sorted_reported_samples}
 
-echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
+info "Adding purple info to the samples and adding tumor barcode for sequenced samples"
 file_reporting_samples="${output_dir}/reportingSamplesTotalWitCorrectDateFormat.tsv"
 count=0
 while IFS= read line; do
@@ -190,7 +192,7 @@ while IFS= read line; do
 
 done < ${file_reporting_samples}
 
-echo "[INFO] Create output file with with tab"
+info "Create output file with with tab"
 cat "${output_dir}/reportingDB_Total.tsv" | tr " " \\t > ${output_dir}/reporting_db.tsv
 
-echo "[INFO] Finished!"
+info "Finished!"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 function print_help () {
     echo "-----"
@@ -17,27 +18,26 @@ nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
 nextcloud_dir=$1 && shift
 files_to_upload=("$@")
 
-echo "[INFO] Running script $(basename $0)"
-echo "[INFO] Directory to upload into is ${nextcloud_dir}"
-echo "[INFO] Collecting credentials"
+info "Running script $(basename $0)"
+info "Directory to upload into is ${nextcloud_dir}"
+info "Collecting credentials"
 
 credentials=$(locate_nextcloud_upload_credentials)
 user=$(awk '/^user/ {print $2}' ${credentials})
 pass=$(awk '/^pass/ {print $2}' ${credentials})
 
-echo "[INFO] Checking input files"
+info "Checking input files"
 for file in "${files_to_upload[@]}"; do
     if [[ ! -f "${file}" ]]; then
-        echo >&2 "[ERROR] Error: File not found (${file})"
-        exit 1
+        error "File not found (${file})"
     fi
 done
 
-echo "[INFO] Starting upload of input files to Nextcloud dir ${nextcloud_dir} for user ${user}"
+info "Starting upload of input files to Nextcloud dir ${nextcloud_dir} for user ${user}"
 for file in "${files_to_upload[@]}"; do
-    echo "[INFO] Uploading ${file}"
+    info "Uploading ${file}"
     curl -u "${user}:${pass}" -T "${file}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/"
     if [[ $? -ne 0 ]]; then
-        echo >&2 "[WARN] Upload of file failed (${file})";
+        warn "Upload of file failed (${file})";
     fi
 done
