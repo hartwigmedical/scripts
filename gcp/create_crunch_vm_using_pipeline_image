@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 default_image=pipeline5-5-12-202007130957
 default_disk_size_gb=200
 default_machine_type=n1-standard-2
@@ -30,23 +32,23 @@ if [[ -z "${vm_name}" ]]; then
 fi
 
 if [[ -z "${image}" ]]; then
-    echo "[DEBUG] No image parameter passed. Using '${default_image}' as default."
+    info "No image parameter passed. Using '${default_image}' as default."
     image=${default_image}
 fi
 
 if [[ -z "${disk_size_gb}" ]]; then
-    echo "[DEBUG] No disk size gb parameter passed. Using '${default_disk_size_gb}GB' as default."
+    info "No disk size gb parameter passed. Using '${default_disk_size_gb}GB' as default."
     disk_size_gb=${default_disk_size_gb}
 fi
 
 if [[ -z "${machine_type}" ]]; then
-    echo "[DEBUG] No machine type parameter passed. Using '${default_machine_type}' as default."
+    info "No machine type parameter passed. Using '${default_machine_type}' as default."
     machine_type=${default_machine_type}
 fi
 
-echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
-echo "[INFO] Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'"
-echo "[INFO] Once the experiment is done, destroy the VM using 'gcloud compute instances delete ${vm_name}'"
+info "Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
+info "Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'"
+info "Once the experiment is done, destroy the VM using 'gcloud compute instances delete ${vm_name}'"
 
 gcloud compute --project=hmf-crunch instances create ${vm_name} \
     --zone=europe-west4-a \

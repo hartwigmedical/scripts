@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 search=$1 # eg CPCT02010001
 
 name_pattern="${search}*.pdf"
@@ -11,7 +13,7 @@ dir3='/data/core/final_reports/'
 count=$(find ${dir1} ${dir2} ${dir3} -name "${name_pattern}" | wc -l)
 
 if [[ ${count} -eq 0 ]]; then
-    echo "[WARN] Nothing found for pattern ${name_pattern}"
+    warn "Nothing found for pattern ${name_pattern}"
 else
     find ${dir1} ${dir2} ${dir3} -name "${name_pattern}"
 fi

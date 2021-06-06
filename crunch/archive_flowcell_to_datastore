@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+
 command -v realpath > /dev/null || die "Utility realpath not found"
 
 target_dir="ds:/data/sequencer_archive/"

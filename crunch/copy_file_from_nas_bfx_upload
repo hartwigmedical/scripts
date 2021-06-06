@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename $0) \${nameOfTheFileOnNas}"
@@ -13,5 +15,5 @@ file=$1 && shift
 nas_dir_path="/volume1/machines/BFX/upload"
 nas_file_path="nas:${nas_dir_path}/${file}"
 
-echo "[INFO] Running scp on ${nas_file_path}"
+info "Running scp on ${nas_file_path}"
 scp "${nas_file_path}" ./

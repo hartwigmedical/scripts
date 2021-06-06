@@ -9,6 +9,8 @@
 #   * Requester pays?
 #   * Access control is currently fine-grained, should it be uniform?
 
+source message_functions || exit 1
+
 BUCKET_LOC="europe-west4"
 
 [[ $# -ne 2 ]] && echo "Usage: $(basename $0) [BamSetMatcher output directory] [dest_cmek_url]" && exit 1
@@ -17,10 +19,10 @@ FILES="$1/urls.list"
 [[ -f "${FILES}" && -f "${BUCKETS}" ]] \
   || (echo "${BUCKETS} or ${FILES} does not exist" && echo "$1 does not look like a BamSetMatcher output directory" && exit 1)
 
-echo "[INFO] Created buckets will be owned by the currently-authorised user and the current project."
-echo "[INFO] Current user must be able to read from the source URLs."
-echo "[INFO]   Currently authorised user: $(gcloud config get-value account)"
-echo "[INFO]   Current project          : $(gcloud config get-value project)"
+info "Created buckets will be owned by the currently-authorised user and the current project."
+info "Current user must be able to read from the source URLs."
+info "  Currently authorised user: $(gcloud config get-value account)"
+info "  Current project          : $(gcloud config get-value project)"
 read -p "Continue with these settings (or Ctrl-C now)? " ignore
 
 # Abort on _any_ failures.
@@ -35,7 +37,7 @@ done
 
 # This is tremendously slow. For the trial run, changed it to instead generate a file with all the
 # commands and ran that with `parallel`.
-echo "[INFO] Copying files from batch bucket:"
+info "Copying files from batch bucket:"
 grep -v '^$' "${FILES}" | while read src dest; do
     gsutil cp "${src}" "${dest}"
 done

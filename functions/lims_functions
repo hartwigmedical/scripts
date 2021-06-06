@@ -69,4 +69,3 @@ get_doids_for_biopsy_pilot() {
     doids=$(cat "${doid_file}" | grep -P "^${patient}" | cut -f${column_index})
     echo "${doids}"
 }
-
