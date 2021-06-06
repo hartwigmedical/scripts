@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 nextcloud_dir="STAGING/Reports-To-Check-and-Share"
 for report in /data/cpct/patient_reports/*.pdf; do
-    echo "[INFO] Uploading ${report} to Nextcloud for checking and sharing"
+    info "Uploading ${report} to Nextcloud for checking and sharing"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
 done

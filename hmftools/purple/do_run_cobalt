@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source metadata_functions
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -21,7 +22,7 @@ tumor_ratio=$(find -L ${run_dir}/cobalt/ -type f -name ${tumor_sample}.cobalt)
 if [[ -z "${tumor_ratio}" ]]; then
     rm -f ${output_dir}/*.len
 
-    echo "[INFO] Calculating cobalt ratios for sample" ${tumor_sample}
+    info "Calculating cobalt ratios for sample" ${tumor_sample}
     java -Xmx8G -Xms4G \
         -jar ${cobalt_jar} \
         -threads 2 \
@@ -36,4 +37,4 @@ if [[ -z "${tumor_ratio}" ]]; then
     rm -f ${output_dir}/*.count
 fi
 
-echo "[INFO] Cobalt complete"
+info "Cobalt complete"

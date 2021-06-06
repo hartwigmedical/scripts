@@ -2,6 +2,8 @@
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
 
+source message_functions || exit 1
+
 metadata_tsv=$1 && shift
 linx_dir=$1 && shift
 
@@ -15,7 +17,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
         linx_version=$(cat ${linx_version_file} | grep version)
 
         ## start symlinking
-        echo "[DEBUG] Symlinking linx files for ${set_name} having linx '${linx_version}'"
+        info "Symlinking linx files for ${set_name} having linx '${linx_version}'"
         ln -s ${source_set_path}/linx/linx.version ${dest_set_path}
 
         linx_driver_catalog_file=$(find -L ${source_set_path}/linx -type f -name "*.driver.catalog.tsv")
@@ -44,6 +46,6 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
         ln -s ${source_set_path}/linx/*.linx.vis_segments.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.vis_sv_data.tsv ${dest_set_path}
     else
-        echo "[WARN] Could not determine linx version for ${set_name}. Skipping."
+        warn "Could not determine linx version for ${set_name}. Skipping."
     fi
 done

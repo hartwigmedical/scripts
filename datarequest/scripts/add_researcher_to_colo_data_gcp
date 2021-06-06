@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Add researcher to colo data on GCP"
     echo " Usage: $(basename $0) -e <email>"
@@ -18,14 +20,13 @@ while getopts ':e:' flag; do
 done
 
 if [[ -z "${gcp_mail}" ]]; then
-    echo "[ERROR] script add_researcher_to_colo_data_gcp did not run, check usage below:"
+    warn "script add_researcher_to_colo_data_gcp did not run, check usage below:"
     print_usage
 fi
 
 api_url=$"http://api.prod-1"
 api_url_spec=$"${api_url}/hmf/v1"
 bucket_name="hmf-dr-colo"
-
 
 ## quick input checks
 [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
@@ -37,17 +38,17 @@ echo ""
 
 refresh_colo_data_gcp_nc
 
-echo "[INFO] Account(s) inputted in the script for which access to colo data on GCP data will tried to be given:"
+info "Account(s) inputted in the script for which access to colo data on GCP data will tried to be given:"
 echo ${gcp_mail}
 echo ""
 
 check_whether_GCPaccount_exists -e ${gcp_mail}
 
 echo ""
-echo "[INFO] ADD ${gcp_mail} TO IAM OF ${bucket_name}."
+info "ADD ${gcp_mail} TO IAM OF ${bucket_name}."
 echo ""
 
-echo "[INFO] Current permissions of the ${bucket_name} bucket:"
+info "Current permissions of the ${bucket_name} bucket:"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
@@ -63,27 +64,27 @@ do
         fi
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
-            echo "[ERROR] Account $email not added as user to the ${bucket_name} bucket."
+            warn "Account $email not added as user to the ${bucket_name} bucket."
             echo ""
         else
-            echo "[INFO] Account $email correctly added as user to the ${bucket_name} bucket."
+            info "Account $email correctly added as user to the ${bucket_name} bucket."
             echo ""
         fi
         echo ""
     else
-        echo "[ERROR] Account $email already present in current permissions of the ${bucket_name} bucket, so adding to permissions not needed."
+        warn "Account $email already present in current permissions of the ${bucket_name} bucket, so adding to permissions not needed."
         echo ""
      fi
 done
-echo "[INFO] Updated permissions of the ${bucket_name} bucket:"
+info "Updated permissions of the ${bucket_name} bucket:"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
 group_id=253
 echo ""
-echo "[INFO] ADD $gcp_mail to API GROUP (for ACL permissions) RELATED TO ${bucket_name} ."
+info "ADD $gcp_mail to API GROUP (for ACL permissions) RELATED TO ${bucket_name} ."
 echo ""
-echo "[INFO] Current accounts in API group related to ${bucket_name} :"
+info "Current accounts in API group related to ${bucket_name} :"
 account_nrs=$( curl -s ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 email_in_acl_group=$""
 for account_nr in $account_nrs
@@ -106,12 +107,12 @@ do
         curl -s -d '{"group_id": "$group_id", "account_id": '$account_id'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         echo ""
     else
-        echo "[ERROR] Account $email already present in API group related to ${bucket_name} , so no adding needed."
+        warn "Account $email already present in API group related to ${bucket_name} , so no adding needed."
         echo ""
     fi
 done
 
-echo "[INFO] Updated accounts in API group related to ${bucket_name} :"
+info "Updated accounts in API group related to ${bucket_name} :"
 account_nrs=$( curl -s ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 for account_nr in $account_nrs
 do
@@ -119,18 +120,18 @@ do
 done
 echo ""
 
-echo "[INFO] Current number of raw files with API group related to ${bucket_name}  in the ACL:"
+info "Current number of raw files with API group related to ${bucket_name}  in the ACL:"
 curl -s ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
 number=$(expr $( curl -s ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l ) - 1)
-echo "[INFO] Links to be shared with researcher:"
-echo "URL Bucket = gs://${bucket_name}/"
-echo "URLs to raw data files:"
+info "Links to be shared with researcher:"
+info "URL Bucket = gs://${bucket_name}/"
+info "URLs to raw data files:"
 for i in $(seq 0 $number); do
     file_number=$( curl -s ${api_url_spec}/groups/${group_id}/files | jq ".[${i}].file_id" )
     curl -s ${api_url_spec}/files/${file_number} | jq -r '.filepath'
 done
 echo ""
-echo "[INFO] If you eventually want to revoke access use the script revoke_access_data_GCP with '-i DR-colo' (but never remove the API group!!)."
+info "If you eventually want to revoke access use the script revoke_access_data_GCP with '-i DR-colo' (but never remove the API group!!)."
 
 echo ""
 echo ""

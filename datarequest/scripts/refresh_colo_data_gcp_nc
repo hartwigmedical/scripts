@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 echo ""
 gcloud config set project hmf-share
-
 
 base_path="/data/data_archive/validation_data/latest_tooling_pipeline_runs"
 colo_folder=$( ls ${base_path} | grep "COLO" )
@@ -31,8 +32,8 @@ if [[ "$colo_exists" == "" ]]; then
 
     #gsutil -u hmf-share rm gs://hmf-dr-colo/*
     gsutil -u hmf-share cp ${dest_base_path}/*.tar gs://hmf-dr-colo/
-    echo "[INFO] latest version added to hmf-dr-colo on GCP."
-    echo "[INFO] Files in the bucket hmf-dr-colo:"
+    info "latest version added to hmf-dr-colo on GCP."
+    info "Files in the bucket hmf-dr-colo:"
     gsutil -u hmf-share du -h gs://hmf-dr-colo/
     echo ""
 
@@ -43,19 +44,15 @@ if [[ "$colo_exists" == "" ]]; then
     #tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file}
     #do_upload_files_to_nextcloud_directory UPLOAD DR-COLO-Example.tar
     do_upload_files_to_nextcloud_directory UPLOAD ${somatic_tar_file}
-    echo "[INFO] The ${somatic_tar_file} file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
+    info "The ${somatic_tar_file} file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
     echo ""
 else
     echo ""
     echo "[START] NO REFRESH NEEDED, lATEST VERSION ALREADY ON GCP AND NEXTCLOUD."
     echo ""
-    echo "[INFO] Files in the GCP bucket hmf-dr-colo:"
+    info "Files in the GCP bucket hmf-dr-colo:"
     gsutil -u hmf-share du -h gs://hmf-dr-colo/
     echo ""
-    echo "[INFO] Check NextCloud (PUBLIC/Data-Access-Requests) manually to be sure the file is there with the latest data."
+    info "Check NextCloud (PUBLIC/Data-Access-Requests) manually to be sure the file is there with the latest data."
     echo ""
 fi
-
-
-
-

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
@@ -16,23 +17,19 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 amber_dir=$(locate_amber_directory ${run_dir})
 
 if [[ ! -d "${amber_dir}" ]]; then
-    echo "[ERROR] Unable to locate AMBER data. Exiting."
-    exit 1
+    error "Unable to locate AMBER data. Exiting."
 fi
 
 if [[ ! -f "${somatic_vcf}" ]]; then
-    echo "[ERROR] Unable to locate somatic variants. Exiting."
-    exit 1
+    error "Unable to locate somatic variants. Exiting."
 fi
 
 if [[ ! -f "${structural_vcf}" ]]; then
-    echo "[ERROR] Unable to locate structural variants. Exiting."
-    exit 1
+    error "Unable to locate structural variants. Exiting."
 fi
 
 if [[ ! -f "${sv_recovery_vcf}" ]]; then
-    echo "[ERROR] Unable to locate sv recovery variants. Exiting."
-    exit 1
+    error "Unable to locate sv recovery variants. Exiting."
 fi
 
 if [[ -d "${purple_output_dir}" ]]; then
@@ -40,8 +37,7 @@ if [[ -d "${purple_output_dir}" ]]; then
 else
     mkdir -p "${purple_output_dir}"
     if [[ $? = 1 ]]; then
-        echo "[ERROR] Could not create directory ${purple_output_dir}. Exiting."
-        exit 1
+        error "Could not create directory ${purple_output_dir}. Exiting."
     fi
 fi
 
@@ -65,7 +61,7 @@ if [[ ! -z "${credentials}" ]]; then
     db_args="-db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
 fi
 
-echo "[INFO] Running purple for ${tumor_sample}"
+info "Running purple for ${tumor_sample}"
 
 java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \

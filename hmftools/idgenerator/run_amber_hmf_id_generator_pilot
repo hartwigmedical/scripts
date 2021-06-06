@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 id_generator_jar=$(locate_pilot_hmf_id_generator)
 credentials=$(locate_pilot_database_credentials)

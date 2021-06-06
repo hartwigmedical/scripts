@@ -2,6 +2,8 @@
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
 
+source message_functions || exit 1
+
 metadata_tsv=$1 && shift
 isofox_dir=$1 && shift
 
@@ -20,16 +22,16 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f2 | while read sample_name; do
             mkdir -p ${dest_set_path}
 
             ## start symlinking
-            echo "[DEBUG] Symlinking isofox files for ${sample_name}"
+            info "Symlinking isofox files for ${sample_name}"
             ln -s ${gene_data_csv} ${dest_set_path}
             ln -s ${transcript_data_csv} ${dest_set_path}
             ln -s ${fusions_csv} ${dest_set_path}
             #ln -s ${alt_splice_junc_csv} ${dest_set_path}
             #ln -s ${retained_intron_csv} ${dest_set_path}
         else
-            echo "[WARN] Either gene or transcript data missing for ${sample_name}"
+            warn "Either gene or transcript data missing for ${sample_name}"
         fi
     else
-        echo "[DEBUG] No isofox files found for ${sample_name}. Skipping."
+        info "No isofox files found for ${sample_name}. Skipping."
     fi
 done

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Checks the logs of the datarequest job"
     echo " Usage: $(basename $0) -m <metadata_tsv> -p <request_logs_path> "
@@ -19,7 +21,7 @@ while getopts ':m:p:' flag; do
 done
 
 if [[  -z "${metadata_tsv}" || -z "${request_logs_path}" ]]; then
-    echo "[ERROR] script check_logs_datarequest_job did not run, check usage below:"
+    warn "script check_logs_datarequest_job did not run, check usage below:"
     print_usage
 fi
 
@@ -37,8 +39,8 @@ request_tar_files_path=$( echo ${request_logs_path} | cut -f1,2,3,4,5 -d'/')
 request_name=$( echo ${request_logs_path} | cut -f6 -d'/')
 
 
-if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
-    echo "[INFO] DATA REQUEST PREPARED FROM OLD SELECTION - EXTRA CHECK DONE:"
+if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) -gt 0 ]]; then
+    info "DATA REQUEST PREPARED FROM OLD SELECTION - EXTRA CHECK DONE:"
     echo "Request used for selection:"
     cat ${log_job} | grep "request_name_selection=" | cut -d "=" -f2
     dr_name=$( cat ${log_job} | grep "dr_name=" | cut -d "=" -f2 )
@@ -53,36 +55,36 @@ if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
     echo ""
 fi
 
-echo "[INFO] PREPARED METADATA CHECK"
+info "PREPARED METADATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version=" | wc -l ) >0 ]]; then
     requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version=" |wc -l )
     log_metadata_name=$( ls ${request_logs_path} | grep 'metadata.log' )
     log_metadata=$"${request_logs_path}${log_metadata_name}"
     entries_metadata=$( expr $( cat ${log_job} | grep ".metadata.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
     lines_metadata_tar_log=$( expr $( cat ${log_metadata} | wc -l) - 1 )
-    if [[ $( cat ${log_job}  | grep "include_patient_clinical_data=1" | wc -l ) >0 ]]; then
+    if [[ $(cat ${log_job}  | grep -c "include_patient_clinical_data=1") -gt 0 ]]; then
         entries_metadata=$( expr $( echo ${entries_metadata} ) + 1 )
         lines_metadata_tar_log=$( expr $( echo ${lines_metadata_tar_log}) + 1 )
     fi
-    if [[ $( cat ${log_job}  | grep "include_treatment_response_clinical_data=1" | wc -l ) >0 ]]; then
+    if [[ $(cat ${log_job}  | grep -c "include_treatment_response_clinical_data=1") -gt 0 ]]; then
         entries_metadata=$( expr $( echo ${entries_metadata} ) - 1 )
         lines_metadata_tar_log=$( expr $( echo ${lines_metadata_tar_log}) - 1 )
     fi
-    echo "[INFO] ${requested_metadata}  types of metadata requested:"
+    info "${requested_metadata}  types of metadata requested:"
     cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version="
     #check numbers.
     if [[ ${requested_metadata} != ${entries_metadata} || ${requested_metadata} != ${lines_metadata_tar_log} ]]; then
-        echo "[ERROR] The number of extra types of requested metadata (${requested_metadata}) does not match the number of extra entries created during the datarequest job. Check the log  file(s) (log of the create job and/or tar_DR-XXX_somatics.log) under: ${request_logs_path}."
+        warn "The number of extra types of requested metadata (${requested_metadata}) does not match the number of extra entries created during the datarequest job. Check the log  file(s) (log of the create job and/or tar_DR-XXX_somatics.log) under: ${request_logs_path}."
     else
-        echo "[INFO] The number of extra types of requested metadata (${requested_metadata}) matches the number of entries created during the datarequest job."
+        info "The number of extra types of requested metadata (${requested_metadata}) matches the number of entries created during the datarequest job."
     fi
     du -sh "${request_tar_files_path}/${request_name}.metadata.tar"
 else
-    echo "[INFO] No metadata prepared in datarequest job"
+    info "No metadata prepared in datarequest job"
 fi
 echo ""
 
-echo "[INFO] PREPARED SOMATIC DATA CHECK"
+info "PREPARED SOMATIC DATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep "somatics") != "" ]]; then
     cat ${log_job} | grep ". Found" | grep "samples" | grep "somatics"
     entries_somatic=$( expr $( cat ${log_job} | grep ".somatics.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
@@ -91,25 +93,25 @@ if [[ $(cat ${log_job}  | grep "=1" | grep "somatics") != "" ]]; then
     log_somatic=$"${request_logs_path}${log_somatic_name}"
     lines_somatic_tar_log=$(expr  $( cat ${log_somatic} | wc -l) - 1)
     calc_somatic_tar_log=$(expr  ${lines_somatic_tar_log} / 30 )
-    echo "[INFO] ${number_samples_metadata} number of samples requested"
-    echo "[INFO] 30 entries (1 base folder + 2 subfolders (linx,purple) + 27 files) per sample."
+    info "${number_samples_metadata} number of samples requested"
+    info "30 entries (1 base folder + 2 subfolders (linx,purple) + 27 files) per sample."
     #check numbers.
     if [[ ${number_samples_metadata} != ${calc_somatic} || ${number_samples_metadata} != ${calc_somatic_tar_log} ]]; then
-        echo "[ERROR] The number of samples requested (${number_samples_metadata}) does not match the number of somatic entries created during the datarequest job (${calc_somatic} (${entries_somatic} entries log) / ${calc_somatic_tar_log} (${lines_somatic_tar_log} entries tar log)). Check the log file(s) under: ${request_logs_path}."
+        warn "The number of samples requested (${number_samples_metadata}) does not match the number of somatic entries created during the datarequest job (${calc_somatic} (${entries_somatic} entries log) / ${calc_somatic_tar_log} (${lines_somatic_tar_log} entries tar log)). Check the log file(s) under: ${request_logs_path}."
     else
-        echo "[INFO] The number of samples requested (${number_samples_metadata}) matches the number of somatic entries created during the datarequest job."
+        info "The number of samples requested (${number_samples_metadata}) matches the number of somatic entries created during the datarequest job."
     fi
     if [[ $(cat ${log_somatic} | grep germline) != "" ]]; then
-        echo "[ERROR] In the somatic data there is a file  included with germline in the name, please check below:"
+        warn "In the somatic data there is a file  included with germline in the name, please check below:"
         cat ${log_somatic} | grep germline
     fi
     du -sh "${request_tar_files_path}/${request_name}.somatics.tar"
 else
-    echo "[INFO] No somatic data prepared in datarequest job"
+    info "No somatic data prepared in datarequest job"
 fi
 echo ""
 
-echo "[INFO] PREPARED GERMLINE DATA CHECK"
+info "PREPARED GERMLINE DATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep "germline") != "" ]]; then
     cat ${log_job} | grep ". Found" | grep "samples" | grep "germline"
     entries_germline=$( expr $( cat ${log_job} | grep ".germline.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
@@ -118,28 +120,28 @@ if [[ $(cat ${log_job}  | grep "=1" | grep "germline") != "" ]]; then
     log_germline=$"${request_logs_path}${log_germline_name}"
     lines_germline_tar_log=$(expr  $( cat ${log_germline} | wc -l) - 1)
     calc_germline_tar_log=$(expr  ${lines_germline_tar_log} / 6)
-    echo "[INFO] ${number_samples_metadata} number of samples requested"
-    echo "[INFO] 6 entries (1 base folder + 2 subfolders (gatk,purple) + 3 files) per sample."
+    info "${number_samples_metadata} number of samples requested"
+    info "6 entries (1 base folder + 2 subfolders (gatk,purple) + 3 files) per sample."
     #check numbers.
     if [[ ${number_samples_metadata} != ${calc_germline} || ${number_samples_metadata} != ${calc_germline_tar_log} ]]; then
-        echo "[ERROR] The number of samples requested (${number_samples_metadata}) does not match the number of germline entries created during the datarequest job (${calc_germline} (${entries_germline} entries log) / ${calc_germline_tar_log} (${lines_germline_tar_log} entries tar log)). Check the log file(s) under: ${request_logs_path}."
+        warn "The number of samples requested (${number_samples_metadata}) does not match the number of germline entries created during the datarequest job (${calc_germline} (${entries_germline} entries log) / ${calc_germline_tar_log} (${lines_germline_tar_log} entries tar log)). Check the log file(s) under: ${request_logs_path}."
     else
-        echo "[INFO] The number of samples requested (${number_samples_metadata}) matches the number of germline entries created during the datarequest job."
+        info "The number of samples requested (${number_samples_metadata}) matches the number of germline entries created during the datarequest job."
     fi
     du -sh "${request_tar_files_path}/${request_name}.germline.tar"
 else
-    echo "[INFO] No germline data prepared in datarequest job"
+    info "No germline data prepared in datarequest job"
 fi
 echo ""
 
-
 if [[ $( cat ${log_job} | grep "tar: " ) != "" || $( cat ${log_job} | grep "WARN" ) != "" || $( cat ${log_job} | grep "ERROR" ) != "" ]]; then
-    echo "[ERROR] WARNINGS/ERRORS IN LOG FILES:"
+    warn "WARNINGS/ERRORS IN LOG FILES:"
     cat ${log_job} | grep "tar: "
     cat ${log_job} | grep "WARN"
     cat ${log_job} | grep "ERROR"
 else
-    echo "[INFO] NO WARNINGS/ERRORS IN LOG FILES."
+    info "NO WARNINGS/ERRORS IN LOG FILES."
 fi
+
 echo ""
 echo ""

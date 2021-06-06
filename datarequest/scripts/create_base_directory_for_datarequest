@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 dr_path=$1 && shift
 
 if [[ -z "${dr_path}" ]]; then
@@ -8,11 +10,11 @@ if [[ -z "${dr_path}" ]]; then
     exit 1
 fi
 
-echo "[DEBUG] Creating base directory structure at ${dr_path}"
+info "Creating base directory structure at ${dr_path}"
 if [[ -d "${dr_path}" ]]; then
-    echo "[WARN] Directory already exists: ${dr_path}. Exiting" && exit 1
+    error "Directory already exists: ${dr_path}. Exiting"
 fi
 
 mkdir -p "${dr_path}"
 
-echo "[DEBUG] Finished creating DR base directory at ${dr_path}"
+info "Finished creating DR base directory at ${dr_path}"

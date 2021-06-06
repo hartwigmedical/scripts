@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 print_usage(){
     echo "-----"
@@ -207,24 +208,12 @@ main() {
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
     info " 2) And then run cmd with: ${output_cmd_file} | tee -a ${dr_path}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
-
 }
 
 join_array() {
     local IFS="$1";
     shift;
     echo "$*";
-}
-
-die() { 
-    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
-    exit 1 
-}
-warn() { 
-    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
-}
-info() { 
-    echo "[INFO] $(date +"%y%m%d %T") $@"
 }
 
 main

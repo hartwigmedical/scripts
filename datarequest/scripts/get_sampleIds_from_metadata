@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Get sampleIds list from metadata.tsv file"
     echo " Usage: $(basename $0) -m <metadata_tsv>"
@@ -18,7 +20,7 @@ while getopts ':m:' flag; do
 done
 
 if [[ -z "${metadata_tsv}" ]]; then
-    echo "[ERROR] script get_sampleIds_from_metadata did not run, check usage below:"
+    warn "script get_sampleIds_from_metadata did not run, check usage below:"
     print_usage
 fi
 
@@ -26,9 +28,8 @@ echo ""
 echo "[START] get_sampleIds_from_metadata: $(date +"%y%m%d (%T)")"
 echo ""
 
-
 echo "NUMBER OF SAMPLES IN METADATA FILE":
-csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv} | grep -v sampleId | wc -l
+csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv} | grep -cv sampleId
 echo "USE IN SQL COMMAND TO SELECT CORRECT SAMPLES:"
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv} | awk -vs1="'" '{S=S?S OFS s1 $0 s1:s1 $0 s1} END{print S}' OFS=, | sed -e s/^"'sampleId',"//
 echo ""

@@ -102,19 +102,19 @@ done >> "${repo_file}"
 } >> "${log_file}"
 
 info "Inspect output files:"
-echo " cd ${out_path}"
-echo " cat ${log_file}"
-echo " cat ${lims_file}"
-echo " cat ${samp_file}"
-echo " cat ${runs_file}"
+info " cd ${out_path}"
+info " cat ${log_file}"
+info " cat ${lims_file}"
+info " cat ${samp_file}"
+info " cat ${runs_file}"
 echo ""
 
 info "And/or get the aria2 download config:"
-echo " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
+info " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
 echo ""
 
 info "And/or print info for (PDF) report:"
-echo " cat ${repo_file}"
+info " cat ${repo_file}"
 echo ""
 
 ## warn if not potentially complete

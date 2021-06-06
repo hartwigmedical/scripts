@@ -104,9 +104,9 @@ fi
 
 ## no INDELs for now
 #if [[ -f "${indVcfPath}" ]]; then
-#    echo "[INFO] INDEL vcf already exist, skipping (${indVcfPath})"
+#    info "INDEL vcf already exist, skipping (${indVcfPath})"
 #else
-#    echo "[INFO] Running GATK to create INDEL vcf (${indVcfName})"
+#    info "Running GATK to create INDEL vcf (${indVcfName})"
 #    java -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType INDEL -o ${indVcfPath}
 #fi
 

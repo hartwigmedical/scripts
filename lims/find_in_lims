@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename $0) CPCT02010001"
@@ -16,12 +18,12 @@ match_fields=(sample_name sample_id patient)
 match_fields_string=$(join_by "|" "${match_fields[@]}")
 
 ## retrieve all info for each barcode found
-echo "[INFO] Searching for \"${search_string}\" (exact match with: ${match_fields_string})"
+info "Searching for \"${search_string}\" (exact match with: ${match_fields_string})"
 for match_field in "${match_fields[@]}"; do
     mapfile -t barcodes < <(query_lims.pl -type samples -rna -exact -filter "${match_field}=${search_string}" -json | jq -r '.[].sample_id' )
     for barcode in "${barcodes[@]}"; do
         type=$(query_lims.pl -type samples -rna -exact -filter "sample_id=${barcode}" -json | jq -r '.[0].analysis_type' )
-        echo "[INFO] ${barcode} found (type=${type})"
+        info "${barcode} found (type=${type})"
         query_lims.pl -type samples -filter "sample_id=${barcode}" -json | \
             jq -r '.[] | to_entries|map("  \(.key) = \(.value|tostring)")|.[]' | \
             sort | grep -vP "= $"

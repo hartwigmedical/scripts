@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 iclusion_importer_jar=$(locate_prod_iclusion_importer)
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)

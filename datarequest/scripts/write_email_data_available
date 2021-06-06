@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-print_usage(){
+
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Write email that the data is available"
     echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_mail>"
@@ -20,7 +23,7 @@ while getopts ':i:s:m:e:' flag; do
 done
 
 if [[ -z "${dr_name}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
-    echo "[ERROR] script write_email_data_available did not run, check usage below:"
+    warn "script write_email_data_available did not run, check usage below:"
     print_usage
 fi
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 runs_dir=/data/data_archive/shallow_seq_pipelines
 patient_db_jar=$(locate_prod_patient_db)

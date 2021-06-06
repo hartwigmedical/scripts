@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 sample_selection_tsv=$1 && shift
 log_dir=$1 && shift
 name=$1 && shift
 out=$1 && shift
 sql=$1 && shift
 
-echo "[DEBUG] Generating clinical data ${name}"
+info "Generating clinical data ${name}"
 raw=${log_dir}/${name}_raw.tsv
 flt=${log_dir}/${name}_flt.tsv
 execute_sql_on_old_prod ${sql} > ${raw}
@@ -21,4 +23,4 @@ done >> ${flt}
 cp ${flt} ${out}
 
 item_count=$(grep -cv "^#" ${out})
-echo "[DEBUG] Found ${item_count} items for ${name}"
+info "Found ${item_count} items for ${name}"

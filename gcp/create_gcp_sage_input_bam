@@ -20,8 +20,6 @@ normal_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|
 
 echo {\"tumor\":\"${sample_bam}\", \"reference\":\"${normal_bam}\", \"tumorSample\":\"${sample}\", \"referenceSample\":\"${normal}\"},
 
-source metadata_functions
-
 set=$1
 run_dir="/data/cpct/runs/"${set}
 sample=$(load_tumor_sample_from_metadata ${run_dir})

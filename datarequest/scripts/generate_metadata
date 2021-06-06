@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 prefix=$(dirname $(readlink $0 || echo $0))
 
 patient_selection_tsv=$1 && shift
@@ -13,26 +15,26 @@ sql=""
 
 if [[ ${include_patient_clinical_data} == "1" ]]; then
     if [[ ${include_tumor_clinical_data} == "0" ]]; then
-        echo "[DEBUG] Generating metadata with patient fields"
+        info "Generating metadata with patient fields"
         sql="sql_metadata_patient.sql"
     elif [[ ${include_treatment_response_clinical_data} == "1" ]]; then
-        echo "[DEBUG] Generating metadata with tumor, patient and treatment fields"
+        info "Generating metadata with tumor, patient and treatment fields"
         sql="sql_metadata_tumor_patient_treatment.sql"
     else
-        echo "[DEBUG] Generating metadata for with tumor and patient fields"
+        info "Generating metadata for with tumor and patient fields"
         sql="sql_metadata_tumor_patient.sql"
     fi
 #elif [[ ${include_treatment_response_clinical_data} == "1" ]]; then
-#    echo "[ERROR] Cannot include treatment data without including patient data! Exiting."
+#    error "Cannot include treatment data without including patient data! Exiting."
 #    exit 1
 elif [[ ${include_treatment_response_clinical_data} == "1" ]]; then
-        echo "[DEBUG] Generating metadata with tumor and treatment fields"
-        sql="sql_metadata_tumor_treatment.sql"
+    info "Generating metadata with tumor and treatment fields"
+    sql="sql_metadata_tumor_treatment.sql"
 elif [[ ${include_tumor_clinical_data} == "1" ]]; then
-    echo "[DEBUG] Generating metadata for with tumor fields"
+    info "Generating metadata for with tumor fields"
     sql="sql_metadata_tumor.sql"
 else
-    echo "[INFO] Generating metadata for with no clinical fields"
+    info "Generating metadata for with no clinical fields"
     sql="sql_metadata_none.sql"
 fi
 

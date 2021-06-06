@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
@@ -14,7 +15,6 @@ dest_set_path_linx=${dest_set_path}/linx
 ## init
 mkdir -p ${dest_set_path}
 
-
 ## init purple
 mkdir -p ${dest_set_path_purple}
 
@@ -22,7 +22,7 @@ mkdir -p ${dest_set_path_purple}
 purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 
 ## start symlinking purple outputs
-echo "[DEBUG] Symlinking somatic files for ${set_name} with having purple '${purple_version}'"
+info "Symlinking somatic files for ${set_name} with having purple '${purple_version}'"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path_purple}
 ln -s $(locate_purple_somatic_driver_catalog ${source_set_path}) ${dest_set_path_purple}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path_purple}
@@ -44,7 +44,7 @@ mkdir -p ${dest_set_path_linx}
 linx_version=$(cat ${source_set_path}/linx/linx.version | grep version)
 
 ## start symlinking linx outputs
-echo "[DEBUG] Symlinking linx files for ${set_name} having linx '${linx_version}'"
+info "Symlinking linx files for ${set_name} having linx '${linx_version}'"
 ln -s ${source_set_path}/linx/linx.version ${dest_set_path_linx}
 ln -s ${source_set_path}/linx/*.linx.breakend.tsv ${dest_set_path_linx}
 ln -s ${source_set_path}/linx/*.linx.clusters.tsv ${dest_set_path_linx}
@@ -64,11 +64,10 @@ linx_drivers_file=$(find -L ${source_set_path}/linx -type f -name "*.linx.driver
 ln -s ${linx_drivers_file} ${dest_set_path_linx}
 expected_file_count=$( expr ${expected_file_count} + 15)
 
-
 somatic_file_count_purple=$(ls ${dest_set_path_purple} | wc -l)
 somatic_file_count_linx=$(ls ${dest_set_path_linx} | wc -l)
 somatic_file_count=$( expr ${somatic_file_count_purple} + ${somatic_file_count_linx})
 
 if [[ ${somatic_file_count} -ne ${expected_file_count} ]]; then
-    echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
+    warn "Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
 fi

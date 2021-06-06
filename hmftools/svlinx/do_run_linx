@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 credentials=$1 && shift
@@ -49,4 +49,3 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -check_drivers \
     -driver_gene_panel ${driver_gene_panel} \
     "$@"
-

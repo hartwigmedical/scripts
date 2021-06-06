@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-print_usage(){
+print_usage() {
     echo "-----"
     echo " Descr: Revokes access to data on GCP for a specific DR"
     echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -e <email>"
@@ -55,8 +55,6 @@ info "Accounts inputted in the script for which access to GCP data will try to b
 info ${gcp_mail}
 info ""
 
-
-
 ### check whether the GCP email inputted is similar to the GCP email showed in the manifest of the bucket.
 #mkdir temp
 #gsutil -q cp gs://${bucket_name}/manifest.json temp/manifest.json
@@ -65,21 +63,17 @@ info ""
 #do
 #    temp=$( jq '.accounts | .[] | .email' temp/manifest.json | grep $email )
 #    if [[ $temp == "" ]]; then
-#         echo "[ERROR] Account $email given as input to the script is not related to bucket ${bucket_name}. Revoking access not possible."
+#         warn "Account $email given as input to the script is not related to bucket ${bucket_name}. Revoking access not possible."
 #    fi
 #    email_in_manifest+=${temp}
 #done
 #if [[ ${email_in_manifest} == "" ]]; then
-#    echo "[ERROR] None of the account(s) given as input to the script are related to bucket ${bucket_name}. The script will not run further."
+#    warn "None of the account(s) given as input to the script are related to bucket ${bucket_name}. The script will not run further."
 #    echo ""
 #    rm -r temp
 #    exit
 #fi
 #rm -r temp
-
-
-
-
 
 error=$( gsutil -u hmf-share iam get gs://${bucket_name}/ 2>&1)
 if [[ "$error" == *"BucketNotFoundException: 404"* ]]; then
@@ -189,4 +183,3 @@ fi
 
 echo ""
 echo ""
-

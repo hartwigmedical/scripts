@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-[[ $# -ne 2 ]] && echo "Which version (Travis build no.)? And is it 'prod' or 'pilot'?" && exit 1
-[[ $2 -ne "prod" && $2 -ne "pilot" ]] && echo "Specify prod or pilot" && exit 1
+source message_functions || exit 1
+
+[[ $# -ne 2 ]] && error "Which version (Travis build no.)? And is it 'prod' or 'pilot'?"
+[[ $2 -ne "prod" && $2 -ne "pilot" ]] && error "Specify prod or pilot"
 
 dir="/data/common/tools/datarequest"
 target="datarequest-1.${1}.jar"
@@ -12,6 +14,6 @@ link="datarequest_${2}.jar"
 [[ -e ${dir}/datarequest_${2}.jar ]] && echo "Replacing current ${2} version: $(basename $(readlink -f ${dir}/${link}))"
 gsutil cp gs://hmf-maven-repository/release/com/hartwig/datarequest/1.${1}/${target} ${dir}
 ln -sf ${dir}/${target} ${dir}/${link}
-echo "Current state of deployment directory ${dir}:"
+info "Current state of deployment directory ${dir}:"
 ls -l ${dir}
 

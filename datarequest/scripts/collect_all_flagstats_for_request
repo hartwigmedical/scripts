@@ -2,8 +2,9 @@
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
 
-source metadata_functions;
-source locate_files;
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 metadata_tsv=$1 && shift
 flagstat_dir=$1 && shift
@@ -17,18 +18,18 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
     tumor_sample=$(load_tumor_sample_from_metadata ${source_set_path})
 
     flagstat_ref_file=$(locate_flagstats ${source_set_path} ${ref_sample})
-    if [[ $? = 1 ]]; then echo "[WARN]  Could not locate flagstat ref file for ${source_set_path}"; fi
+    if [[ $? = 1 ]]; then warn " Could not locate flagstat ref file for ${source_set_path}"; fi
     flagstat_tumor_file=$(locate_flagstats ${source_set_path} ${tumor_sample})
-    if [[ $? = 1 ]]; then echo "[WARN]  Could not locate flagstat tumor file for ${source_set_path}"; fi
+    if [[ $? = 1 ]]; then warn " Could not locate flagstat tumor file for ${source_set_path}"; fi
 
     ## start symlinking
-    echo "[DEBUG] Symlinking flagstats files for ${set_name}"
+    info "Symlinking flagstats files for ${set_name}"
     ln -s ${flagstat_ref_file} ${dest_set_path}
     ln -s ${flagstat_tumor_file} ${dest_set_path}
 
     flagstats_file_count=$(ls ${dest_set_path} | wc -l)
 
     if [[ ${flagstats_file_count} -ne 2 ]]; then
-        echo "[WARN] Mismatch in expected file count. Expected 2 files but got ${flagstats_file_count} files for ${set_name}. Please inspect manually!"
+        warn "Mismatch in expected file count. Expected 2 files but got ${flagstats_file_count} files for ${set_name}. Please inspect manually!"
     fi
 done

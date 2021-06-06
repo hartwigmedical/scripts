@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-source metadata_functions
-source locate_files
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -31,7 +32,7 @@ else
     mkdir -p ${output_dir}
 fi
 
-echo "[INFO] Running linx for ${sample}"
+info "Running linx for ${sample}"
 
 java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \

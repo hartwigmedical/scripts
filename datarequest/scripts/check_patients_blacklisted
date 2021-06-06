@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Check whether patients are blacklisted"
     echo " Usage: $(basename $0) -m <query_sql or metadata_tsv>"
@@ -18,7 +20,7 @@ while getopts ':m:' flag; do
 done
 
 if [[ -z "${metadata_tsv}" ]]; then
-    echo "[ERROR] script check_patients_blacklisted did not run, check usage below:"
+    warn "script check_patients_blacklisted did not run, check usage below:"
     print_usage
 fi
 
@@ -33,19 +35,19 @@ else
 fi
 
 echo ""
-echo "[INFO] number of patients blacklisted:"
+info "number of patients blacklisted:"
 cat /data/ops/lims/prod/patient_blacklist.tsv | wc -l
-echo "[INFO] number of patients selected for DR:"
+info "number of patients selected for DR:"
 cat temp_datarequest.tsv | wc -l
-echo "[INFO] Overlap between blacklisted patients and patients selected for DR:"
+info "Overlap between blacklisted patients and patients selected for DR:"
 comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv) | wc -l
 echo ""
 
 overlap=$( comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv) | wc -l )
 if [[ ${overlap} == 0 ]]; then
-    echo "[INFO] No patients in the DR selection are blacklisted."
+    info "No patients in the DR selection are blacklisted."
 else
-    echo "[ERROR] There are patients that are blacklisted included in the DR selection. Please remove those (see below for the IDs)."
+    warn "There are patients that are blacklisted included in the DR selection. Please remove those (see below for the IDs)."
     comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv)
 fi
 echo ""

@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-print_usage(){
+print_usage() {
     echo "-----"
     echo " Descr: Get relevant children of doids. IMPORTANT: please select a doid from the three in our documentation (https://hartwigmedical.github.io/documentation/doid.html)."
     echo " Usage: $(basename $0) -d <doids> "

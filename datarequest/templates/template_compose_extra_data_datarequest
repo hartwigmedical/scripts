@@ -4,11 +4,13 @@
 # The request_name should be the name of the specific handout of the Data Request you have prepared, and you want to add this extra data to (at least metadata should be prepared before! (eg DR-028-update1).
 # the custom data name should be the name of the extra data you want to prepare (eg. isofox)
 
+source message_functions || exit 1
+
 dr_name=DR-XXX
 request_name=DR-XXX
 custom_data_name=XXXX
 
-echo "[INFO] Collecting ${custom_data_name} data for ${request_name}"
+info "Collecting ${custom_data_name} data for ${request_name}"
 dr_base_path=/data/data_archive/datarequests/${dr_name}
 dr_path=${dr_base_path}/${request_name}
 log_dir=${dr_path}/logs
@@ -19,6 +21,6 @@ mkdir -p ${data_dir}
 collect_all_${custom_data_name}_data_for_request ${metadata_tsv} ${data_dir}
 data_sample_count=$(ls ${data_dir} | wc -l)
 data_tar_file=${dr_base_path}/${request_name}.${custom_data_name}.tar
-echo "[INFO] Done collecting ${custom_data_name} for DR. Found ${data_sample_count} samples. Creating TAR at ${data_tar_file}"
+info "Done collecting ${custom_data_name} for DR. Found ${data_sample_count} samples. Creating TAR at ${data_tar_file}"
 create_tar_file ${data_tar_file} ${dr_path} ./${data_dir_name} ${log_dir}/tar_${request_name}_${custom_data_name}.log
-echo "[INFO] TAR file created ${data_tar_file}. Job finished."
+info "TAR file created ${data_tar_file}. Job finished."

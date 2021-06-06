@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 nextcloud_dir="STAGING/Reports-KMBP-EMC/Finished reports"
 for report in /data/cpct/patient_reports/*.pdf; do
-    echo "[INFO] Uploading ${report} to Nextcloud for KMBP EMC finished reports"
+    info "Uploading ${report} to Nextcloud for KMBP EMC finished reports"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
 done

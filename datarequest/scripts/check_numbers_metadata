@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Prints numbers in metadata file"
     echo " Usage: $(basename $0) -m <metadata_tsv>"
@@ -18,7 +20,7 @@ while getopts ':m:' flag; do
 done
 
 if [[ -z "${metadata_tsv}" ]]; then
-    echo "[ERROR] script check_numbers_metadata did not run, check usage below:"
+    warn "script check_numbers_metadata did not run, check usage below:"
     print_usage
 fi
 
@@ -33,9 +35,9 @@ mkdir temp_number_check
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/sampleId_metadata.tsv
 
-echo "[INFO] Number of patients (based on study number) in metadata file:"
+info "Number of patients (based on study number) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
-echo "[INFO] Number of samples (based on study number) in metadata file:"
+info "Number of samples (based on study number) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l
 echo ""
 rm temp_number_check/patientId_metadata.tsv
@@ -45,15 +47,15 @@ rm temp_number_check/sampleId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/sampleId_metadata.tsv
 
-echo "[INFO] Number of patients (based on hmfId) in metadata file:"
+info "Number of patients (based on hmfId) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
-echo "[INFO] Number of samples (based on hmfId) in metadata file:"
+info "Number of samples (based on hmfId) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l
 echo ""
 rm temp_number_check/patientId_metadata.tsv
 rm temp_number_check/sampleId_metadata.tsv
 
-echo "[INFO] Types of primary tumor locations and studies in the metadata (if no metadata / only patient data is requested this will not be shown):"
+info "Types of primary tumor locations and studies in the metadata (if no metadata / only patient data is requested this will not be shown):"
 echo "---- locations/types of tumors ----:"
 csvcut -t -e iso-8859-1 -c 'primaryTumorLocation','primaryTumorSubLocation','primaryTumorType','primaryTumorSubType' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq
 echo ""

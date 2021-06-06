@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source lims_functions
+source lims_functions || exit 1
 
 load_ref_sample_from_metadata() {
     local run_dir=$1
@@ -74,4 +74,3 @@ load_joint_name_from_metadata() {
     local tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     echo "${ref_sample}_${tumor_sample}"
 }
-

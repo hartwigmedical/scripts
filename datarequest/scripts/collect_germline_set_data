@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
@@ -19,9 +20,8 @@ mkdir -p ${dest_set_path}
 ## init gatk
 mkdir -p ${dest_set_path_gatk}
 
-
 ## gather germline info
-echo "[DEBUG] Symlinking gatk germline VCF (and tbi index) for ${set_name}"
+info "Symlinking gatk germline VCF (and tbi index) for ${set_name}"
 ln -s $(locate_gatk_germline_variants ${source_set_path} ${ref_sample}) ${dest_set_path_gatk}
 ln -s $(locate_gatk_germline_variants ${source_set_path} ${ref_sample}).tbi ${dest_set_path_gatk}
 expected_file_count=2
@@ -31,7 +31,7 @@ mkdir -p ${dest_set_path_purple}
 purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 
 ## gather germline info
-echo "[DEBUG] Symlinking germline files for ${set_name} with having purple '${purple_version}'"
+info "Symlinking germline files for ${set_name} with having purple '${purple_version}'"
 #ln -s $(locate_purple_germline_variants ${source_set_path}) ${dest_set_path_purple}
 #ln -s $(locate_purple_germline_variants ${source_set_path}).tbi ${dest_set_path_purple}
 ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path_purple}
@@ -42,6 +42,5 @@ germline_file_count_gatk=$(ls ${dest_set_path_gatk} | wc -l)
 germline_file_count_purple=$(ls ${dest_set_path_purple} | wc -l)
 germline_file_count=$( expr ${germline_file_count_gatk} + ${germline_file_count_purple})
 if [[ ${germline_file_count} -ne 3 ]]; then
-    echo "[WARN] Found ${germline_file_count} which is different than expected for ${set_name} Please manually inspect!"
+    warn "Found ${germline_file_count} which is different than expected for ${set_name} Please manually inspect!"
 fi
-

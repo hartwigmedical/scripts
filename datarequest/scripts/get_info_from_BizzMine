@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Get data from BizzMine"
     echo " Usage: $(basename $0) -i <dr-id>"
@@ -18,10 +20,9 @@ while getopts ':i:' flag; do
 done
 
 if [[ -z "${dr_id}" ]]; then
-    echo "[ERROR] script get_info_from_BizzMine did not run, check usage below:"
+    warn "script get_info_from_BizzMine did not run, check usage below:"
     print_usage
 fi
-
 
 api_url=$"https://api.bizzmine.cloud/collection/DataRequests/"
 api_token=$( cat /data/common/dbs/api_credentials/bizzmine/api_token )
@@ -37,7 +38,6 @@ echo "[START] get_info_from_BizzMine: $(date +"%y%m%d (%T)")"
 echo ""
 
 echo "--- DETAILS DATA ACCESS REQUEST: $release_id ---"
-
 
 datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID' )
 echo "Bizzmine instance: $datarequest_id"
@@ -86,8 +86,4 @@ echo "Data shared:"
 jq -r '.[].DataShared[]? | with_entries( select( .value != "" ) ) | del(.CrossLinkInstancesID) | del(.DataDesignCrossID) ' <temp.json
 echo ""
 
-
 rm temp.json
-
-
-

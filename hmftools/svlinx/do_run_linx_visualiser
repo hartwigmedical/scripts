@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source metadata_functions
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 linx_jar=$1 && shift
@@ -41,4 +41,3 @@ java -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
 # -chromosome   will only produce plot for supplied chromosome
 # -clusterId    will only produce plot for supplied clusterId
 # -debug    replaces sv positions with sv id
-

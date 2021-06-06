@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 run_dir=$1 && shift
 output_dir=${run_dir}/linx/

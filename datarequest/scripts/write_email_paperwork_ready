@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Write email that the paperwork is ready"
     echo " Usage: $(basename $0) -i <dr-id>"
@@ -18,10 +20,9 @@ while getopts ':i:' flag; do
 done
 
 if [[ -z "${dr_id}" ]]; then
-    echo "[ERROR] script write_email_paperwork_ready did not run, check usage below:"
+    warn "script write_email_paperwork_ready did not run, check usage below:"
     print_usage
 fi
-
 
 api_url=$"https://api.bizzmine.cloud/collection/DataRequests/"
 api_token=$( cat /data/common/dbs/api_credentials/bizzmine/api_token )

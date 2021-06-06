@@ -2,6 +2,8 @@
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
 
+source message_functions || exit 1
+
 metadata_tsv=$1 && shift
 gridss_dir=$1 && shift
 
@@ -16,7 +18,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      mkdir -p ${dest_set_path}
 
      ## start symlinking
-     echo "[DEBUG] Symlinking gridds files for ${set_name}'"
+     info "Symlinking gridds files for ${set_name}'"
      ln -s ${structural_variants_path}  ${dest_set_path}
      ln -s ${structural_variants_path}.tbi  ${dest_set_path}
      ln -s ${recovery_candidates_path}  ${dest_set_path}

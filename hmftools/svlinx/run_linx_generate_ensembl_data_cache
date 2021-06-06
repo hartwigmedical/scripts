@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
 
 output_dir=$1 && shift
 

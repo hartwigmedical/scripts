@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Constructs bash command for data prep"
     echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -j <dr_name_selection> -t <dr_suffix_selection> "
@@ -8,6 +10,7 @@ print_usage(){
     echo "-----"
     exit 1
 }
+
 while getopts ':i:s:j:t:' flag; do
     case "${flag}" in
         i) dr_name=${OPTARG} ;;
@@ -20,14 +23,12 @@ while getopts ':i:s:j:t:' flag; do
 done
 
 if [[ -z "${dr_name}" ]]; then
-    echo "[ERROR] script create_datarequest_prep_cmd did not run, check usage below:"
+    warn "script create_datarequest_prep_cmd did not run, check usage below:"
     print_usage
 fi
 
-
 api_url=$"https://api.bizzmine.cloud/collection/DataRequests/"
 api_token=$( cat /data/common/dbs/api_credentials/bizzmine/api_token )
-
 
 main() {
     info "Starting with $(basename $0)"
@@ -47,7 +48,6 @@ main() {
 
     ## setup general variables
     local uploads_array=()
-
 
     ## setup BizzMine variables
     local datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$dr_name" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID' )
@@ -78,12 +78,9 @@ main() {
     fi
 
     uploads_single_line=$(join_array , ${uploads_array[@]})
-
-
-
     
     echo ""  >> "${output_cmd_file}"
-    echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+    info "date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [TOOL] Template to prep data for datarequest:"  >> "${output_cmd_file}"
@@ -93,8 +90,7 @@ main() {
 
     ## create the magic
     if [[ "${dr_name_selection}" == "" ]]; then
-
-      echo "dr_name=${dr_name}" >> "${output_cmd_file}"
+        echo "dr_name=${dr_name}" >> "${output_cmd_file}"
         echo "request_name=${request_name}" >> "${output_cmd_file}"
         echo "patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'" >> "${output_cmd_file}"
         echo "include_somatics=${somatics_ind}" >> "${output_cmd_file}"
@@ -109,9 +105,7 @@ main() {
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
         ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}')
-
     else
-
         ## we need the index of DR
         local request_name_selection="${dr_name_selection}"
 
@@ -139,7 +133,6 @@ main() {
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
         ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}')
-
     fi
 
     info "Writing cmd to cmd file ${output_cmd_file}"
@@ -162,24 +155,12 @@ main() {
     info "Finished with $(basename $0)"
 
     rm temp.json
-
 }
 
 join_array() {
     local IFS="$1";
     shift;
     echo "$*";
-}
-
-die() {
-    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
-    exit 1
-}
-warn() {
-    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
-}
-info() {
-    echo "[INFO] $(date +"%y%m%d %T") $@"
 }
 
 main

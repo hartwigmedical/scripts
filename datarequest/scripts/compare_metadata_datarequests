@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-print_usage(){
+source message_functions || exit 1
+
+print_usage() {
     echo "-----"
     echo " Descr: Compare metadata selection of datarequests"
     echo " Usage: $(basename $0) -i <dr-id1> -s <suffix> -j <dr-id2> -t <suffix> | -i <metadata_tsv1>  -j <metadata_tsv2>"
@@ -21,7 +23,7 @@ while getopts ':i:s:j:t:' flag; do
 done
 
 if [[ -z "${dr1_id}" || -z "${dr2_id}" ]]; then
-    echo "[ERROR] script compare_metadata_datarequests did not run, check usage below:"
+    warn "script compare_metadata_datarequests did not run, check usage below:"
     print_usage
 fi
 
@@ -54,121 +56,116 @@ else
     metadata_tsv2=${dr2_id}
 fi
 
-
-echo "[INFO] ANALYSES BASED ON patientId:"
+info "ANALYSES BASED ON patientId:"
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients selected for ${request1_id}:"
+info "Number of patients selected for ${request1_id}:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients selected for ${request2_id}:"
+info "Number of patients selected for ${request2_id}:"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra patients selected for ${request1_id}:"
+    info "Number of extra patients selected for ${request1_id}:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More patients selected for ${request1_id} than for ${request2_id}. See IDs below: "
+    warn "More patients selected for ${request1_id} than for ${request2_id}. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra patients selected for ${request2_id}:"
+    info "Number of extra patients selected for ${request2_id}:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More patients selected for ${request2_id} than for ${request1_id}. See IDs below: "
+    warn "More patients selected for ${request2_id} than for ${request1_id}. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
 rm temp_metadata_check/metadata1.tsv
 rm temp_metadata_check/metadata2.tsv
 
-
-echo "[INFO] ANALYSES BASED ON hmfPatientId:"
+info "ANALYSES BASED ON hmfPatientId:"
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients selected for ${request1_id}:"
+info "Number of patients selected for ${request1_id}:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients selected for ${request2_id}:"
+info "Number of patients selected for ${request2_id}:"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra patients selected for ${request1_id}:"
+    info "Number of extra patients selected for ${request1_id}:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More patients selected for ${request1_id} than for ${request2_id}. See IDs below: "
+    warn "More patients selected for ${request1_id} than for ${request2_id}. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra patients selected for ${request2_id}:"
+    info "Number of extra patients selected for ${request2_id}:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More patients selected for ${request2_id} than for ${request1_id}. See IDs below: "
+    warn "More patients selected for ${request2_id} than for ${request1_id}. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
 rm temp_metadata_check/metadata1.tsv
 rm temp_metadata_check/metadata2.tsv
 
-
-echo "[INFO] ANALYSES BASED ON sampleId:"
+info "ANALYSES BASED ON sampleId:"
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of samples selected for ${request1_id}:"
+info "Number of samples selected for ${request1_id}:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of samples selected for ${request2_id}:"
+info "Number of samples selected for ${request2_id}:"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra samples selected for ${request1_id}:"
+    info "Number of extra samples selected for ${request1_id}:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More samples selected for ${request1_id} than for ${request2_id}. See IDs below: "
+    warn "More samples selected for ${request1_id} than for ${request2_id}. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra samples selected for ${request2_id}:"
+    info "Number of extra samples selected for ${request2_id}:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More samples selected for ${request2_id} than for ${request1_id}. See IDs below: "
+    warn "More samples selected for ${request2_id} than for ${request1_id}. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
 rm temp_metadata_check/metadata1.tsv
 rm temp_metadata_check/metadata2.tsv
 
-
-echo "[INFO] ANALYSES BASED ON hmfSampleId:"
+info "ANALYSES BASED ON hmfSampleId:"
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of samples selected for ${request1_id}:"
+info "Number of samples selected for ${request1_id}:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of samples selected for ${request2_id}:"
+info "Number of samples selected for ${request2_id}:"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra samples selected for ${request1_id}:"
+    info "Number of extra samples selected for ${request1_id}:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More samples selected for ${request1_id} than for ${request2_id}. See IDs below: "
+    warn "More samples selected for ${request1_id} than for ${request2_id}. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra samples selected for ${request2_id}:"
+    info "Number of extra samples selected for ${request2_id}:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More samples selected for ${request2_id} than for ${request1_id}. See IDs below: "
+    warn "More samples selected for ${request2_id} than for ${request1_id}. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
 rm temp_metadata_check/metadata1.tsv
 rm temp_metadata_check/metadata2.tsv
-
 
 rm -r temp_metadata_check
