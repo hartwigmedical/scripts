@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 api_url='http://api.prod-1/hmf/v1'
 
 hmfapi () {
@@ -21,30 +23,30 @@ sample_name=""
 sample_id=$(curl -s "${api_url}/samples?barcode=${barcode}" | jq '.[].id')
 
 if [[ -z "${sample_id}" ]]; then
-    echo "[ERROR] Barcode not found at API (${barcode})" && exit 1
+    error "Barcode not found at API (${barcode})"
 fi
 
 ## make sure the FASTQ files contain only ONE sample
 sample_count=$(find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq | wc -l)
 if [[ ${sample_count} -ne 1 ]]; then
-    echo "[ERROR] FASTQ files in dir should be from one sample (found ${sample_count} samples in dir \"${fastq_dir}\")" && exit 1;
+    error "FASTQ files in dir should be from one sample (found ${sample_count} samples in dir \"${fastq_dir}\")"
 else
     sample_name=$(find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq)
 fi
 
 ## find all R1 fastq files -> check R2 presence -> register pair
-echo "[INFO] Starting with sample name:${sample_name} barcode:${barcode} id:${sample_id}"
+info "Starting with sample name:${sample_name} barcode:${barcode} id:${sample_id}"
 find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | while read R1; do
     R2=$( echo "${R1}" | sed 's/_R1_/_R2_/' )
     if [[ -z "${R1}" || -z "${R2}" ]]; then
-        echo "[WARN] Somehow R1 found but R2 file does not exist (${R2}) so SKIPPING this pair."
+        warn "Somehow R1 found but R2 file does not exist (${R2}) so SKIPPING this pair."
     else
-        echo "[INFO] Registering fastq R1/R2 pair (name_r1=${R1})"
+        info "Registering fastq R1/R2 pair (name_r1=${R1})"
         hmfapi --print=b POST "${api_url}/fastq" name_r1="${R1}" name_r2="${R2}" bucket="hmf-fastq-storage" sample_id="${sample_id}"
     fi
 done
 
-echo "[INFO] Registering sample"
+info "Registering sample"
 curl -s --header "Content-type: application/json" \
     -X PATCH \
     -d '{"name": "'${sample_name}'", "status": "Pending_QC"}' "${api_url}/samples/${sample_id}"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 out_name=$1 && shift # optional
@@ -20,9 +21,9 @@ truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
 truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 
 ## init checks
-if [[ ! -w "${val_base}" ]]; then echo "[ERROR] validation base not writable (${val_base})"; exit 1; fi
-if [[ ! -f "${truth_vcf_path}" ]]; then echo "[ERROR] truth VCF not available (${truth_vcf_path})"; exit 1; fi
-if [[ ! -f "${truth_bed_path}" ]]; then echo "[ERROR] truth BED not available (${truth_bed_path})"; exit 1; fi
+if [[ ! -w "${val_base}" ]]; then error "validation base not writable (${val_base})"; fi
+if [[ ! -f "${truth_vcf_path}" ]]; then error "truth VCF not available (${truth_vcf_path})"; fi
+if [[ ! -f "${truth_bed_path}" ]]; then error "truth BED not available (${truth_bed_path})"; fi
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
@@ -34,7 +35,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-echo "[INFO] START with $(basename $0)"
+info "START with $(basename $0)"
 
 ## -----
 ## Find somatic VCF
@@ -52,14 +53,14 @@ else
     elif [[ -f "${pv5_path}" ]]; then
         run_som_vcf_path=${pv5_path}
     else
-        echo "[ERROR] Unable to find somatic VCF" && exit 1;
+        error "Unable to find somatic VCF"
     fi
 fi
 run_som_vcf_name=$(basename ${run_som_vcf_path})
 
 ## -----
 ## Prepare
-echo "[INFO] Using input VCF (${run_som_vcf_name})"
+info "Using input VCF (${run_som_vcf_name})"
 run_name="$(basename ${run_dir} )"
 if [[ ! -z "${out_name}" ]]; then
     out_name="${truth_version}__vs__${out_name}"
@@ -70,9 +71,9 @@ fi
 out_path="${val_base}/${out_name}"
 tmp_path="${out_path}/vcfeval"
 if [[ -e "${out_path}" ]]; then
-    echo "[ERROR] Output dir exists remove first: ${out_path}" && exit 1
+    error "Output dir exists remove first: ${out_path}"
 else 
-    echo "[INFO] Using output dir (${out_path})"
+    info "Using output dir (${out_path})"
     mkdir ${out_path}
 fi
 
@@ -81,16 +82,16 @@ fi
 cp "${run_som_vcf_path}"* ${out_path}
 run_som_vcf_path="${out_path}/${run_som_vcf_name}"
 if [[ ${run_som_vcf_path} =~ .vcf$ ]]; then
-    echo "[INFO] Running bgzip"
+    info "Running bgzip"
     bgzip ${run_som_vcf_path}
-    echo "[INFO] Running tabix"
+    info "Running tabix"
     tabix "${run_som_vcf_path}.gz"
     run_som_vcf_path="${run_som_vcf_path}.gz"
 fi 
 
 ## -----
 ## Run variant evaluation
-echo "[INFO] Running RTGtools vcfeval"
+info "Running RTGtools vcfeval"
 ${rtg_exec} vcfeval \
     --template=${rtg_sdf_path} \
     --threads=${rtg_threads} \
@@ -119,7 +120,7 @@ for call_type in "${call_classes[@]}"; do
     call_type_sum=0
     for variant_type in "${variant_types[@]}"; do
         out_vcf="${tmp_path}/${variant_type}_${call_type}.vcf.gz"
-        echo "[INFO] Creating $call_type $variant_type sub VCF"
+        info "Creating $call_type $variant_type sub VCF"
         java -jar ${gatk_jar} -T SelectVariants --variant ${rtg_vcf} -o ${out_vcf} -R ${ref_genome_fasta} -selectType ${variant_type}
         variant_count=$(zcat ${out_vcf} | grep -cv "^#")
         call_type_sum=$((call_type_sum + variant_count))
@@ -144,7 +145,7 @@ cat ${tmp_path}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | whil
         "${thres}" "${tp}" "${fp}" "${fn}" "${prec}" "${sens}" "${score}"
 done > ${out_path}/rtg_summary.tsv
 
-echo "[INFO] Output in ${out_path}"
-echo "[INFO] Counts in ${metrics_out_file}"
-echo "[INFO] DONE with $(basename $0)"
+info "Output in ${out_path}"
+info "Counts in ${metrics_out_file}"
+info "DONE with $(basename $0)"
 

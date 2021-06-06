@@ -7,7 +7,7 @@ out_bam=$1 && shift
 ratio_to_keep=$1 && shift
 
 if [[ ! -f "${in_bam}" || -z "${out_bam}" || -z "${ratio_to_keep}" ]]; then
-    error"Missing input files for downslicing"
+    error "Missing input files for downslicing"
 fi
 
 picard_dir=/data/tools/picard-tools_v1.141

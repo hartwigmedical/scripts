@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     echo "-----"
     echo " Usage: $(basename $0) <CRAM file>"
@@ -24,9 +26,9 @@ main() {
     info "Starting with $(basename $0)"
     
     ## sanity checks
-    command -v "${samtools}" >/dev/null 2>&1 || die "${samtools} not found"
-    [[ -f "${cram}" ]] || die "File not found (${cram})"
-    [[ "${cram}" =~ cram$ ]] || die "Not a CRAM file (${cram})"
+    command -v "${samtools}" >/dev/null 2>&1 || error "${samtools} not found"
+    [[ -f "${cram}" ]] || error "File not found (${cram})"
+    [[ "${cram}" =~ cram$ ]] || error "Not a CRAM file (${cram})"
 
     ## variables setup
     bam=$(echo "${cram}" | sed 's/cram$/bam/')
@@ -57,19 +59,6 @@ main() {
     fi
 
     info "Finished with $(basename $0)"
-}
-
-die() { 
-    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
-    exit 1 
-}
-
-warn() { 
-    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
-}
-
-info() { 
-    echo "[INFO] $(date +"%y%m%d %T") $@"
 }
 
 main

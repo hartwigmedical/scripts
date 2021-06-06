@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 print_usage(){
     echo "-----"
     echo " Descr: Installs a COLO829T Somatic pipeline run in validation data archive"
@@ -96,17 +98,6 @@ copy_file() {
     fi
     
     [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
-}
-
-die() { 
-    echo "[ERROR] $(date +"%y%m%d %T")" "$@" >&2
-    exit 1 
-}
-warn() { 
-    echo "[WARN] $(date +"%y%m%d %T")" "$@" >&2
-}
-info() { 
-    echo "[INFO] $(date +"%y%m%d %T")" "$@"
 }
 
 main

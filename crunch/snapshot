@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 PREFIX=" "
 
 function main {
@@ -10,7 +12,7 @@ function main {
     elif [[ "${host_name}" =~ datastore ]]; then
         processAsDatastore
     else
-        echo "[ERROR] Unknown hostname (${host_name})"
+        warn "Unknown hostname (${host_name})"
     fi
     echo ""
 }

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 curr_host=$(hostname)
 parse_script="$(dirname $0)/do_parse_bcl2fqreporthtml.pl"
 
@@ -25,7 +27,7 @@ else
 fi
 
 report_dir=${run_dir}/Data/Intensities/BaseCalls/Reports/
-if [[ ! -e "${report_dir}" ]]; then echo "[ERROR] report_dir does not exist (${report_dir})"; exit 1; fi
+if [[ ! -e "${report_dir}" ]]; then error "report_dir does not exist (${report_dir})"; fi
 
 echo ""
 echo "## ==> Conversion results for ${seq_run_name}"

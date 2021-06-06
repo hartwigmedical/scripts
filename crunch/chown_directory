@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 dir=$1 && shift
 user=$1 && shift
 group=$1 && shift
@@ -9,7 +11,7 @@ function main {
     if [[ -z "${dir}" || -z "${user}" || -z "${group}" ]]; then
         print_usage
     elif [[ ! -d "${dir}" ]]; then
-        echo "[ERROR] Is not a directory (${dir})!"
+        warn "Is not a directory (${dir})!"
         print_usage
     fi
 
@@ -18,26 +20,25 @@ function main {
     elif [[ "${what_to_chown}" == "include_directory" ]]; then
         chown_dir
     else
-        echo "[ERROR] Unclear what to chown (${what_to_chown})"
-        exit 1
+        error "Unclear what to chown (${what_to_chown})"
     fi
 }
 
 function chown_dir() {
-    echo "[INFO] About to chown ${dir} and contents to ${user}:${group}"
-    read -r -p "[INFO] Press enter to start chown action"
+    info "About to chown ${dir} and contents to ${user}:${group}"
+    read -r -p "Press enter to start chown action"
     sudo chown -R "${user}:${group}" "${dir}"
 }
 
 function chown_dir_contents() {
-    echo "[INFO] Searching content that is not owned by ${user} yet (in ${dir})"
+    info "Searching content that is not owned by ${user} yet (in ${dir})"
     count=$(find "${dir}" -mindepth 1 -maxdepth 1 \! -user "${user}" | wc -l)
-    echo "[INFO] Found ${count} to chown in ${dir}"
+    info "Found ${count} to chown in ${dir}"
 
     if [[ "${count}" -gt 0 ]]; then
-        echo "[INFO] Objects to chown (max 20 shown):"
+        info "Objects to chown (max 20 shown):"
         find "${dir}" -mindepth 1 -maxdepth 1 \! -user "${user}" | head -20
-        read -r -p "[INFO] Press enter to start chown action"
+        read -r -p "Press enter to start chown action"
         find "${dir}" -mindepth 1 -maxdepth 1 \! -user "${user}" -exec sudo chown -R "${user}:${group}" {} +
     fi
 }

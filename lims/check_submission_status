@@ -5,7 +5,7 @@ source message_functions || exit 1
 submission=$1
 
 if [[ -z "${submission}" ]]; then
-    echo "[ERROR] Provide a submission (eg HMFreg0001). Exiting" && exit 1
+    error "Provide a submission (eg HMFreg0001). Exiting"
 fi
 
 submission_dir="/data/submissions/${submission}"
@@ -36,13 +36,13 @@ info "${smp_dne} API samples finished (${smp_rdy} ready and ${smp_del} deleted)"
 info "${rns_tot} API runs total"
 info "${rns_dne} API runs finished"
 info "${rns_val} API runs validated"
-echo ""
+info ""
 
 info "Commands for further inspection:"
-echo "  query_lims.pl -type samples -filter submission=${submission}"
-echo "  query_api.pl -type samples -filter submission=${submission}"
-echo "  query_api.pl -type runs -filter name=${submission}"
-echo ""
+info "  query_lims.pl -type samples -filter submission=${submission}"
+info "  query_api.pl -type samples -filter submission=${submission}"
+info "  query_api.pl -type runs -filter name=${submission}"
+info ""
 
 ## Sanity checks
 warnings_found="FALSE"
@@ -89,6 +89,6 @@ if [[ "${warnings_found}" == "TRUE" ]]; then
     warn "Warnings encountered during check. Check these first!"
 else
     info "If all OK then continue with gather step:"
-    echo "  gather_submission ${submission}"
-    echo ""
+    info "  gather_submission ${submission}"
+    info ""
 fi

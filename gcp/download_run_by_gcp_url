@@ -45,12 +45,10 @@ while getopts ":u:d:ep:o" opt; do
       switch_to_hmf_ops="false"
       ;;
     \?)
-      echo "[ERROR] Invalid option: -${OPTARG}" >&2
-      exit 1
+      error "Invalid option: -${OPTARG}"
       ;;
     :)
-      echo "[ERROR] Option -${OPTARG} requires an argument." >&2
-      exit 1
+      error "Option -${OPTARG} requires an argument."
       ;;
   esac
 done
@@ -79,4 +77,5 @@ if [[ "$exclude_crams" == "true" ]]; then
 else
     gsutil -u "${billing_project}" -m rsync -r "${gcp_url}" "${dest_path}"
 fi
+
 info "Finished downloading of ${gcp_url} to ${download_path}"

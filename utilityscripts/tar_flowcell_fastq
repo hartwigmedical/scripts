@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 path_of_dir_to_tar=$1
 optional_tag=$2 # Eg HMFregXXXX
 
@@ -28,37 +30,37 @@ out_md5_path="${out_tar_path}.md5"
 
 ## sanity checks
 if [[ -e "${out_tar_path}" ]]; then
-    echo "[ERROR] Provided output tar file already exists (${out_tar_path})" && exit 1
+    error "Provided output tar file already exists (${out_tar_path})"
 fi
 if [[ ! -e "${path_of_dir_to_tar}" ]]; then
-    echo "[ERROR] Provided dir to tar does not exist (${path_of_dir_to_tar})" && exit 1
+    error "Provided dir to tar does not exist (${path_of_dir_to_tar})"
 fi
 if [[ $(find ${path_of_dir_to_tar} -type f -name "*.fastq.gz" | wc -l) -lt 1 ]]; then
-    echo "[ERROR] Provided dir to tar does not contain fastq.gz files (${path_of_dir_to_tar})" && exit 1
+    error "Provided dir to tar does not contain fastq.gz files (${path_of_dir_to_tar})"
 fi
 
 ## create output files
-echo "[INFO] Changing dir to in root (${in_root})"
+info "Changing dir to in root (${in_root})"
 cd ${in_root} || exit 1
 
-echo "[INFO] Creating tar file (${out_tar_path})"
+info "Creating tar file (${out_tar_path})"
 find_cmd="find ${tar_dir_name} -name *.fastq.gz"
 ${find_cmd} | tar -cf ${out_tar_path} --files-from - || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
-echo "[INFO] Creating content file (${out_cnt_path})"
+info "Creating content file (${out_cnt_path})"
 tar -tf "${out_tar_path}" > "${out_cnt_path}"
 
-echo "[INFO] Changing dir to out root (${out_root})"
+info "Changing dir to out root (${out_root})"
 cd ${out_root} || exit 1
 
-echo "[INFO] Creating md5 file (${out_md5_path})"
+info "Creating md5 file (${out_md5_path})"
 md5sum "${out_tar_name}" > "${out_md5_path}"
 
-echo "[INFO] Output files ready:"
-echo "[INFO]  ${out_tar_path} (${du_of_tar})"
-echo "[INFO]  ${out_cnt_path}"
-echo "[INFO]  ${out_md5_path}"
-echo "[INFO] Cmd to sync output files to datastore:"
-echo "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
+info "Output files ready:"
+info " ${out_tar_path} (${du_of_tar})"
+info " ${out_cnt_path}"
+info " ${out_md5_path}"
+info "Cmd to sync output files to datastore:"
+info "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
 echo ""

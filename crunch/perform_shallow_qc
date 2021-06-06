@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 run_paths=("$@")
 
 if [[ ${#run_paths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
@@ -67,14 +69,14 @@ for run_dir in "${run_paths[@]}"; do
     all_files_ok="yes"
     for required_file in "${aqc_file}" "${pqc_file}" "${ppu_file}" "${vsn_file}" "${wgs_file_r}"; do
         if [[ -z "${required_file}" ]]; then
-            echo "[WARN] One of the required file variables is empty!!"
+            warn "One of the required file variables is empty!!"
             all_files_ok="no"
         elif [[ ! -f "${required_file}" ]]; then
-            echo "[WARN] File does not exist (${required_file})"
+            warn "File does not exist (${required_file})"
             all_files_ok="no"
         fi
     done
-    if [[ ! ${all_files_ok} == "yes" ]]; then echo "[ERROR] Something wrong with required files" && exit 1; fi
+    if [[ ! ${all_files_ok} == "yes" ]]; then error "Something wrong with required files"; fi
 
     ## gather WgsMetrics
     head=$(cat ${wgs_file_r} | grep GENOME_T)

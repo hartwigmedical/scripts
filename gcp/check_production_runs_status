@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 find_dirs=("/data/cpct/runs/" "/data/cpct/reportable_runs/" "/data/core/runs/" "/data/gcp/processed_runs/")
 find_fail_dirs=("/data/gcp/qc_fail_runs")
 download_dir="/data/gcp/downloaded_runs"
@@ -129,7 +131,7 @@ check_ini_existance () {
     local ini=$1 && shift
     ini_count=$(query_api.pl -type inis -filter "name=${ini}" -exact | grep -cv "^#")
     if [[ ${ini_count} != 1 ]]; then
-        echo "[ERROR] Non-existing ini ${ini})?" && exit 1
+        error "Non-existing ini ${ini})?"
     fi
 }
 
@@ -137,7 +139,7 @@ check_pipeline_version_existance () {
     local version=$1 && shift
     pip_count=$(query_api.pl -type stacks -filter "revision=v${version}" | grep -cv "^#")
     if [[ ${pip_count} -lt 1 ]]; then
-        echo "[ERROR] Non-existing pipeline version (${version})?" && exit 1
+        error "Non-existing pipeline version (${version})?"
     fi
 }
 

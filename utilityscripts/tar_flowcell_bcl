@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 path_of_dir_to_tar=$1
 out_root="${2:-/data2/processed}"
 
@@ -29,7 +31,7 @@ if [[ -f "${sample_sheet}" ]]; then
         grep -vP "^[\,\s]+$" | cut -d"," -f "${col_idx}" | sort | uniq)")
     out_tar_name="${tar_dir_name}_${projects}_BCL.tar"
 else
-    echo "[WARN] SampleSheet.csv not found (${sample_sheet}) so unable to add project ID to tar name"
+    warn "SampleSheet.csv not found (${sample_sheet}) so unable to add project ID to tar name"
     out_tar_name="${tar_dir_name}_BCL.tar"
 fi
 
@@ -39,16 +41,19 @@ out_md5_path="${out_tar_path}.md5"
 
 ## sanity checks
 if [[ ! -d "${out_root}" ]]; then
-    echo "[ERROR] Output root dir does not exist (${out_root})" && exit 1
+    error "Output root dir does not exist (${out_root})"
 fi
+
 if [[ -e "${out_tar_path}" ]]; then
-    echo "[ERROR] Provided output tar file already exists (${out_tar_path})" && exit 1
+    error "Provided output tar file already exists (${out_tar_path})"
 fi
+
 if [[ ! -e "${path_of_dir_to_tar}" ]]; then
-    echo "[ERROR] Provided dir to tar does not exist (${path_of_dir_to_tar})" && exit 1
+    error "Provided dir to tar does not exist (${path_of_dir_to_tar})"
 fi
+
 if [[ $(find ${path_of_dir_to_tar} -type f -name "*.bcl.bgzf" -or -name "*.cbcl" | wc -l) -lt 1 ]]; then
-    echo "[ERROR] Provided dir to tar does not contain BCL or CBCL files (${path_of_dir_to_tar})" && exit 1
+    error "Provided dir to tar does not contain BCL or CBCL files (${path_of_dir_to_tar})"
 fi
 
 ## construct tar command
@@ -62,26 +67,26 @@ tar_cmd+=" -cf ${out_tar_path}"
 tar_cmd+=" ${tar_dir_name}"
 
 ## create output files
-echo "[INFO] Changing dir to in root (${in_root})"
+info "Changing dir to in root (${in_root})"
 cd ${in_root} || exit 1
 
-echo "[INFO] Creating tar file (${out_tar_path})"
+info "Creating tar file (${out_tar_path})"
 ${tar_cmd} || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
-echo "[INFO] Creating content file (${out_cnt_path})"
+info "Creating content file (${out_cnt_path})"
 tar -tf "${out_tar_path}" > "${out_cnt_path}"
 
-echo "[INFO] Changing dir to out root (${out_root})"
+info "Changing dir to out root (${out_root})"
 cd ${out_root} || exit 1
 
-echo "[INFO] Creating md5 file (${out_md5_path})"
+info "Creating md5 file (${out_md5_path})"
 md5sum "${out_tar_name}" > "${out_md5_path}"
 
-echo "[INFO] Output files ready:"
-echo "[INFO]  ${out_tar_path} (${du_of_tar})"
-echo "[INFO]  ${out_cnt_path}"
-echo "[INFO]  ${out_md5_path}"
-echo "[INFO] Cmd to sync output files to datastore:"
-echo "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
-echo ""
+info "Output files ready:"
+info " ${out_tar_path} (${du_of_tar})"
+info " ${out_cnt_path}"
+info " ${out_md5_path}"
+info "Cmd to sync output files to datastore:"
+info "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
+info ""

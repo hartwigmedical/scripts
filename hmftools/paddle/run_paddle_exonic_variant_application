@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 output_dir=$1 && shift
 
 if [[ ! -d "${output_dir}" ]]; then
-    echo "[ERROR] Output dir not a directory. Exiting" && exit 1;
+    error "Output dir not a directory. Exiting"
 fi
 
 cohort_tsv=${output_dir}/cohort.tsv
 cohort_select_samples_sql=/data/common/repos/scripts/hmftools/paddle/select_dnds_example_samples.sql
 
-echo "[INFO] Writing cohort file to ${cohort_tsv} using ${cohort_select_samples_sql}"
+info "Writing cohort file to ${cohort_tsv} using ${cohort_select_samples_sql}"
 execute_sql_on_prod ${cohort_select_samples_sql} > ${cohort_tsv}
 
 paddle_jar=/data/common/tools/paddle_v1.0/paddle.jar
@@ -22,7 +23,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Running paddle exonic variant application with output dir '${output_dir}'"
+info "Running paddle exonic variant application with output dir '${output_dir}'"
 
 java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleExonicVariantsApplicationKt  \
     -output_dir ${output_dir} \

@@ -2,102 +2,102 @@
 
 source locate_files || exit 1
 source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir configured. Exiting"
-    exit 1
+    error "No run dir configured. Exiting"
 fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-echo "[INFO] Files that must exist in every circumstance"
+info "Files that must exist in every circumstance"
 
 ref_sample_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
-if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Ref Sample: ${ref_sample_metrics_file}"; fi
+if [[ $? = 0 ]]; then info " WGSMetrics Ref Sample: ${ref_sample_metrics_file}"; fi
 
 tumor_sample_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
-if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Tumor Sample: ${tumor_sample_metrics_file}"; fi
+if [[ $? = 0 ]]; then info " WGSMetrics Tumor Sample: ${tumor_sample_metrics_file}"; fi
 
 ref_sample_flagstats=$(locate_flagstats ${run_dir} ${ref_sample})
-if [[ $? = 0 ]]; then echo "[INFO]  Flagstats Ref Sample: ${ref_sample_flagstats}"; fi
+if [[ $? = 0 ]]; then info " Flagstats Ref Sample: ${ref_sample_flagstats}"; fi
 
 tumor_sample_flagstats=$(locate_flagstats ${run_dir} ${tumor_sample})
-if [[ $? = 0 ]]; then echo "[INFO]  Flagstats Tumor Sample: ${tumor_sample_flagstats}"; fi
+if [[ $? = 0 ]]; then info " Flagstats Tumor Sample: ${tumor_sample_flagstats}"; fi
 
 amber_dir=$(locate_amber_directory ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  AMBER directory: ${amber_dir}"; fi
+if [[ $? = 0 ]]; then info " AMBER directory: ${amber_dir}"; fi
 
 gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
-if [[ $? = 0 ]]; then echo "[INFO]  GATK Germline Variants: ${gatk_germline_variants}"; fi
+if [[ $? = 0 ]]; then info " GATK Germline Variants: ${gatk_germline_variants}"; fi
 
 sage_somatic_variants=$(locate_sage_somatic_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  SAGE Somatic VCF: ${sage_somatic_variants}"; fi
+if [[ $? = 0 ]]; then info " SAGE Somatic VCF: ${sage_somatic_variants}"; fi
 
 purple_somatic_variants=$(locate_purple_somatic_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Somatic VCF: ${purple_somatic_variants}"; fi
+if [[ $? = 0 ]]; then info " Purple Somatic VCF: ${purple_somatic_variants}"; fi
 
 purple_germline_variants=$(locate_purple_germline_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Germline VCF: ${purple_germline_variants}"; fi
+if [[ $? = 0 ]]; then info " Purple Germline VCF: ${purple_germline_variants}"; fi
 
 purple_purity=$(locate_purple_purity ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Purity: ${purple_purity}"; fi
+if [[ $? = 0 ]]; then info " Purple Purity: ${purple_purity}"; fi
 
 purple_qc=$(locate_purple_qc ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple QC: ${purple_qc}"; fi
+if [[ $? = 0 ]]; then info " Purple QC: ${purple_qc}"; fi
 
 purple_somatic_driver_catalog=$(locate_purple_somatic_driver_catalog ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Somatic Driver Catalog: ${purple_somatic_driver_catalog}"; fi
+if [[ $? = 0 ]]; then info " Purple Somatic Driver Catalog: ${purple_somatic_driver_catalog}"; fi
 
 purple_germline_driver_catalog=$(locate_purple_germline_driver_catalog ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Germline Driver Catalog: ${purple_germline_driver_catalog}"; fi
+if [[ $? = 0 ]]; then info " Purple Germline Driver Catalog: ${purple_germline_driver_catalog}"; fi
 
 purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Somatic Copynumbers: ${purple_somatic_copynumber_tsv}"; fi
+if [[ $? = 0 ]]; then info " Purple Somatic Copynumbers: ${purple_somatic_copynumber_tsv}"; fi
 
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Gene Copynumbers: ${purple_gene_copynumbers}"; fi
+if [[ $? = 0 ]]; then info " Purple Gene Copynumbers: ${purple_gene_copynumbers}"; fi
 
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Circos Plot: ${purple_circos_plot}"; fi
+if [[ $? = 0 ]]; then info " Purple Circos Plot: ${purple_circos_plot}"; fi
 
 purple_structural_variants=$(locate_purple_structural_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Structural VCF: ${purple_structural_variants}"; fi
+if [[ $? = 0 ]]; then info " Purple Structural VCF: ${purple_structural_variants}"; fi
 
 gripss_structural_variants=$(locate_gripss_structural_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  GRIPSS Filtered Structural VCF: ${gripss_structural_variants}"; fi
+if [[ $? = 0 ]]; then info " GRIPSS Filtered Structural VCF: ${gripss_structural_variants}"; fi
 
 gripss_recovery_candidates=$(locate_gripss_recovery_candidates ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  GRIPSS Recovery Candidates VCF: ${gripss_recovery_candidates}"; fi
+if [[ $? = 0 ]]; then info " GRIPSS Recovery Candidates VCF: ${gripss_recovery_candidates}"; fi
 
 linx_fusions=$(locate_linx_fusions ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  LINX Fusions: ${linx_fusions}"; fi
+if [[ $? = 0 ]]; then info " LINX Fusions: ${linx_fusions}"; fi
 
 linx_breakends=$(locate_linx_breakends ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  LINX Breakends: ${linx_breakends}"; fi
+if [[ $? = 0 ]]; then info " LINX Breakends: ${linx_breakends}"; fi
 
 linx_viral_insertions=$(locate_linx_viral_insertions ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions}"; fi
+if [[ $? = 0 ]]; then info " LINX Viral Insertions: ${linx_viral_insertions}"; fi
 
 linx_driver_catalog=$(locate_linx_driver_catalog ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  LINX Driver Catalog: ${linx_driver_catalog}"; fi
+if [[ $? = 0 ]]; then info " LINX Driver Catalog: ${linx_driver_catalog}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; fi
+if [[ $? = 0 ]]; then info " CHORD Prediction File: ${chord_prediction}"; fi
 
 molecular_tissue_origin_txt=$(locate_cuppa_txt ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  CUPPA Output: ${molecular_tissue_origin_txt}"; fi
+if [[ $? = 0 ]]; then info " CUPPA Output: ${molecular_tissue_origin_txt}"; fi
 
 molecular_tissue_origin_plot=$(locate_cuppa_plot ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  CUPPA Plot: ${molecular_tissue_origin_plot}"; fi
+if [[ $? = 0 ]]; then info " CUPPA Plot: ${molecular_tissue_origin_plot}"; fi
 
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  VIRUSBreakend Output: ${virus_breakend_tsv}"; fi
+if [[ $? = 0 ]]; then info " VIRUSBreakend Output: ${virus_breakend_tsv}"; fi
 
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  PEACH Genotypes: ${peach_genotype_tsv}"; fi
+if [[ $? = 0 ]]; then info " PEACH Genotypes: ${peach_genotype_tsv}"; fi
 
 protect_evidence=$(locate_protect_evidence ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  PROTECT Evidence: ${protect_evidence}"; fi
+if [[ $? = 0 ]]; then info " PROTECT Evidence: ${protect_evidence}"; fi

@@ -7,7 +7,7 @@ NA="NA"
 script=$(basename "$0")
 
 function main {
-    [[ "$(hostname)" =~ datastore ]] || die "[ERROR] Only run this script at datastore!"
+    [[ "$(hostname)" =~ datastore ]] || die "Only run this script at datastore!"
     info "Starting with ${script}"
     check_datastore
     check_crunches

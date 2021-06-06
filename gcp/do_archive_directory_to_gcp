@@ -3,31 +3,30 @@
 # Note: This script assumes an account is active in gcloud which has the privileges to make backups in GS.
 #  A service account with this privileges is hmf-ops@hmf-database.iam.gserviceaccount.com
 
+source message_functions || exit 1
+
 local_path=$1 && shift
 remote_archive_dir=$1 && shift
 
 minimal_local_entries=0
 if [[ "$#" -gt 0 ]]; then
     minimal_local_entries=$1 && shift
-    echo "[DEBUG] Setting minimal local entries to ${minimal_local_entries} for ${local_path}"
+    info "Setting minimal local entries to ${minimal_local_entries} for ${local_path}"
 fi
 
 if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
-    echo "[ERROR] Not all input parameters provided to $(basename $0). Exiting"
-    exit 1
+    error "Not all input parameters provided to $(basename $0). Exiting"
 fi
 
 if [[ ! -d "${local_path}" ]]; then
-    echo "[ERROR] ${local_path} is not a directory. Exiting"
-    exit 1
+    error "${local_path} is not a directory. Exiting"
 fi
 
 local_entry_count=$(ls ${local_path} | wc -l)
 if [[ ${local_entry_count} -lt ${minimal_local_entries} ]]; then
-    echo "[WARN] Number of entries in ${local_path} is ${local_entry_count} which is less than required ${minimal_local_entries}. Exiting"
-    exit 1
+    error "Number of entries in ${local_path} is ${local_entry_count} which is less than required ${minimal_local_entries}. Exiting"
 else
-    echo "[DEBUG] Number of entries ${local_entry_count} is equal or larger than minimum required of ${minimal_local_entries}"
+    info "Number of entries ${local_entry_count} is equal or larger than minimum required of ${minimal_local_entries}"
 fi
 
 # -d = delete files on GS that no longer exist on datastore

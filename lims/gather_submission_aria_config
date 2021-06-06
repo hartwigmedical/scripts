@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 CREATE_ARIA_SCRIPT="create_aria2_config_by_set_name"
 
 if [[ $# -eq 0 ]]; then echo "Usage: $(basename $0) HMFreg0000"; exit 1; fi
@@ -14,57 +16,57 @@ out_config="${output_dir}/${submission}.aria.txt"
 out_gcp_du="${output_dir}/${submission}_disk_usage_gcp.txt"
 
 ## sanity checks
-if [[ ! -d "${submission_dir}" ]] ; then echo "[ERROR] Submission dir does not exist (${submission_dir})"; exit 1; fi
-if [[ ! -w "${submission_dir}" ]] ; then echo "[ERROR] Submission dir is not writable (${submission_dir})"; exit 1; fi
-if [[ ! -f "${runs_json}" ]] ; then echo "[ERROR] Runs json does not exist (${runs_json})"; exit 1; fi
-if [[   -d "${output_dir}" ]] ; then echo "[ERROR] Output dir already exists (${output_dir})"; exit 1; fi
+if [[ ! -d "${submission_dir}" ]] ; then error "Submission dir does not exist (${submission_dir})"; fi
+if [[ ! -w "${submission_dir}" ]] ; then error "Submission dir is not writable (${submission_dir})"; fi
+if [[ ! -f "${runs_json}" ]] ; then error "Runs json does not exist (${runs_json})"; fi
+if [[   -d "${output_dir}" ]] ; then error "Output dir already exists (${output_dir})"; fi
 
-echo "[INFO] Creating aria output dir (${output_dir})"
+info "Creating aria output dir (${output_dir})"
 mkdir "${output_dir}" || exit 1
 
-echo "[INFO] Changing dir to output dir (${output_dir})"
+info "Changing dir to output dir (${output_dir})"
 cd "${output_dir}" || exit 1
 
 non_val_count=$(jq '[select(.[].status != "Validated")] | length' "${runs_json}")
 if [[ "${non_val_count}" -gt 0 ]]; then
-    echo "[WARN] There are ${non_val_count} runs that will be missing in config because status != Validated"
+    warn "There are ${non_val_count} runs that will be missing in config because status != Validated"
 fi
 
-echo "[INFO] Creating job file (${create_job})"
+info "Creating job file (${create_job})"
 for run_name in $(jq -r '.[] | select(.status == "Validated") | .name' "${runs_json}"); do
     echo "${CREATE_ARIA_SCRIPT} ${run_name}"
 done > "${create_job}"
 chmod +x "${create_job}"
 
-echo "[INFO] Executing job script (runtime depends on amount of samples, check progress in log '${create_log}')"
+info "Executing job script (runtime depends on amount of samples, check progress in log '${create_log}')"
 parallel -j5 -I% --max-args 1 % < "${create_job}" > "${create_log}" 2>&1
 
-echo "[INFO] Printing any non INFO lines from log"
+info "Printing any non INFO lines from log"
 grep -v '\[INFO\]' "${create_log}"
 non_info_count=$(grep -vc '\[INFO\]' "${create_log}")
 
-echo "[INFO] Double checking log for errors with check_log_file (will print if any found)"
+info "Double checking log for errors with check_log_file (will print if any found)"
 check_log_file "${create_log}"
 
-echo "[INFO] Joining all run aria.txt files to ${out_config}"
+info "Joining all run aria.txt files to ${out_config}"
 find "${output_dir}" -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
 
-echo "[INFO] Writing file sizes to ${out_gcp_du}"
+info "Writing file sizes to ${out_gcp_du}"
 if [[ "$(find "${output_dir}" -name "*_internal_urls.txt" | wc -l)" -lt 1 ]]; then
-    echo "[ERROR] No internal urls files found (should not happen)." && exit 1
+    error "No internal urls files found (should not happen)."
 else
     # Intellij wants you to quote the find cmd: don't do this as du will work only on first file
     # shellcheck disable=SC2046
     gsutil du -shc $(find "${output_dir}" -name "*_internal_urls.txt" -exec cat {} +) > "${out_gcp_du}"
 fi
 
-echo "[INFO] Action: Check one URL manually in browser"
+info "Action: Check one URL manually in browser"
 grep https "${out_config}" | tail -1
 
-echo "[INFO] Action: If all OK you can upload final config to Nextcloud with:"
-echo " upload_files_to_nextcloud_research ${out_config}"
+info "Action: If all OK you can upload final config to Nextcloud with:"
+info " upload_files_to_nextcloud_research ${out_config}"
 
 if [[ "${non_info_count}" -gt 0 ]]; then
-    echo "[WARNING] Non-info lines were encountered in log. Proceed with caution!!"
+    warn "Non-info lines were encountered in log. Proceed with caution!!"
 fi
 echo ""

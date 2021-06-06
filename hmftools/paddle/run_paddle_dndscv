@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 work_dir=$1 && shift
 
 if [[ -z "${work_dir}" ]]; then
-    echo "[ERROR] No work dir passed. Exiting!" && exit 1
+    error "No work dir passed. Exiting!"
 fi
 
 # The dNdScv R script assumes hardcoded paths for below
 if [[ ! -d "${work_dir}/somatics" ]]; then
-    echo "[ERROR] No somatics dir found in ${work_dir}. Exiting!" && exit 1
+    error "No somatics dir found in ${work_dir}. Exiting!"
 fi
 
 if [[ ! -f "${work_dir}/mutationalLoad.tsv" ]]; then
-    echo "[ERROR] No mutational load input file found in ${work_dir}. Exiting!" && exit 1
+    error "No mutational load input file found in ${work_dir}. Exiting!"
 fi
 
 Rscript /data/common/tools/paddle_v1.0/dnds.R ${work_dir}

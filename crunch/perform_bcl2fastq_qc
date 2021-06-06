@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 HOSTNAME=$(hostname)
 PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
 ERRLOG_FILE="conversionError.txt"
@@ -48,13 +50,13 @@ for seq_dir in "${seq_dirs[@]}"; do
     
     ## If anything not ok: exit
     if [[ ! -d "${seq_dir}" ]]; then
-        echo "[ERROR] dir does not exist (${seq_dir})" && exit 1; 
+        error "dir does not exist (${seq_dir})"
     elif [[ ! -f "${errlog_path}" ]]; then
-        echo "[ERROR] Errlog does not exist (${errlog_path})" && exit 1;
+        error "Errlog does not exist (${errlog_path})"
     elif [[ ! $(cat ${errlog_path} | tail -1 | grep "with 0 errors and") ]]; then
-        echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
+        error "Errlog does not say 0 errors (${errlog_path})"
     elif [[ -z "${hmfrun_name}" ]]; then
-        echo "[ERROR] Have not been able to parse hmfrun_name from sheet (${ssheet_path})" && exit 1; 
+        error "Have not been able to parse hmfrun_name from sheet (${ssheet_path})"
     fi
     
     ## store further cmds so we can print all together at the end

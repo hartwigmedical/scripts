@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 print_usage(){
     echo "-----"
     echo " Descr: Verifies a new COLO829T Somatic pipeline run"
@@ -90,9 +92,9 @@ main() {
     url_to_check="${gcp_url}/${file_to_check}"
     msg=$(gsutil ls "${url_to_check}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        echo "[ERROR] Cannot access file (${url_to_check})"
-        echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
-        echo "[ERROR] Check run contents with: gsutil ls ${gcp_url}"
+        warn "Cannot access file (${url_to_check})"
+        warn "ErrCode=${?} ErrMsg=\"${msg}\""
+        warn "Check run contents with: gsutil ls ${gcp_url}"
         exit 1
     else
         info "File ${file_to_check} found in bucket so assuming run is complete."
@@ -192,17 +194,6 @@ print_sql_code() {
     echo "  echo \"[INFO] Executing \$sql_file_name (log: \$log_file)\" "
     echo "  execute_sql_on_ds_prod \"\$sql_file\" > \"\${log_file}\" "
     echo "done"
-}
-
-die() { 
-    echo "[ERROR] $(date +"%y%m%d %T")" "$@" >&2
-    exit 1 
-}
-warn() { 
-    echo "[WARN] $(date +"%y%m%d %T")" "$@" >&2
-}
-info() { 
-    echo "[INFO] $(date +"%y%m%d %T")" "$@"
 }
 
 main

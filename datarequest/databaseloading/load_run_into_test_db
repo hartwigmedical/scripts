@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 run_dir=$1
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting"
-    exit 1
+    error "No run dir provided. Exiting"
 fi
 
 if [[ ! -d "${run_dir}" ]]; then
-    echo "[ERROR] Not a dir as run dir provided (maybe file?). Exiting"
-    exit 1
+    error "Not a dir as run dir provided (maybe file?). Exiting"
 fi
 
 if [[ ! -f "${run_dir}"*.purple.purity.tsv ]]; then
-    echo "[ERROR] Not the correct run dir provided (important file missing in run dir). Exiting"
-    exit 1
+    error "Not the correct run dir provided (important file missing in run dir). Exiting"
 fi
 
 # Configuration of paths

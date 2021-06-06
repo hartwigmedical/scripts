@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files || exit 1
 source message_functions || exit 1
-source locate_files || die "Unable to source locate_files"
 
 base_run_path=$1
 test_run_path=$2
@@ -92,7 +92,6 @@ main () {
 
     print_header "CRAM print_header check"
     if [[ "${all_crams_present}" == "TRUE" ]]; then
-
         base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
         test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
         samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"

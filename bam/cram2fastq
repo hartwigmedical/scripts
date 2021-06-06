@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     echo "-----"
     echo " Descr: Wrapper for cram2bam and bam2fastq"
@@ -12,10 +14,10 @@ fi
 cram=$1
 bam=$(echo "${cram}" | sed 's/cram$/bam/')
 
-echo "[INFO] Starting with cram2fastq" 
+info "Starting with cram2fastq"
 
 cram2bam "${cram}"
 
 bam2fastq "${bam}"
 
-echo "[INFO] Finished with cram2fastq" 
+info "Finished with cram2fastq"

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 input_dir_with_fastq=$1
 gcp_account="hmf-ops@hmf-database.iam.gserviceaccount.com"
 gcp_fastq_bucket="hmf-fastq-storage"
@@ -12,20 +14,18 @@ if [[ "$#" -ne 1 ]]; then
 fi
 
 if [[ ! -d "${input_dir_with_fastq}" ]]; then
-   echo "[ERROR] Provided path is not a valid directory (${input_dir_with_fastq})"
-   exit 1
+    error "Provided path is not a valid directory (${input_dir_with_fastq})"
 fi
 
 file_count=$(find "${input_dir_with_fastq}" -mindepth 1 -maxdepth 1 -type f -name "*.fastq.gz" | wc -l)
 
 if [[ "${file_count}" -lt 1 ]]; then
-   echo "[ERROR] Unexpected number of fastq files (${file_count}) in directory (${input_dir_with_fastq})"
-   exit 1
+    error "Unexpected number of fastq files (${file_count}) in directory (${input_dir_with_fastq})"
 fi
 
-echo "[INFO] Switching to GCP account '${gcp_account}'"
+info "Switching to GCP account '${gcp_account}'"
 gcloud config set account "${gcp_account}"
 
-echo "[INFO] Start copying all fastq files from '${input_dir_with_fastq}' to bucket ${gcp_fastq_bucket}"
+info "Start copying all fastq files from '${input_dir_with_fastq}' to bucket ${gcp_fastq_bucket}"
 find "${input_dir_with_fastq}" -mindepth 1 -maxdepth 1 -type f -name "*.fastq.gz" | gsutil -m cp -I gs://${gcp_fastq_bucket}/
 

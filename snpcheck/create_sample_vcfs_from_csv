@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTBASE="/data/common/snpcheck"
 SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
@@ -19,22 +21,22 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 csv_file=$1
-if [[   -z "${csv_file}" ]]; then echo "[ERROR] No csv results file provided.."; exit 1; fi
-if [[ ! -f "${csv_file}" ]]; then echo "[ERROR] Input csv file does not exist?"; exit 1; fi
-if [[ ! -f "${SCRIPT}"  ]]; then echo "[ERROR] Script file does not exist?"; exit 1; fi
-if [[ ! -w "${GCPDIR}"  ]]; then echo "[ERROR] Output sync dir not writable ($GCPDIR)"; exit 1; fi
+if [[   -z "${csv_file}" ]]; then error "No csv results file provided.."; fi
+if [[ ! -f "${csv_file}" ]]; then error "Input csv file does not exist?"; fi
+if [[ ! -f "${SCRIPT}"  ]]; then error "Script file does not exist?"; fi
+if [[ ! -w "${GCPDIR}"  ]]; then error "Output sync dir not writable ($GCPDIR)"; fi
 
 ## setup design to use
 one_sample=$( cat ${csv_file} | grep ^FR | cut -d"," -f1 | sort | uniq | head -1 )
 design_size=$( grep -c ^${one_sample} ${csv_file} )
 if [[ ${design_size} -eq 60 ]]; then
-    echo "[INFO] Detected temporary 60SNP panel"
+    info "Detected temporary 60SNP panel"
     SNPCOUNT="60"
 fi
 DESIGN="${CODEDIR}/${SNPCOUNT}SNPtaq_design.vcf"
 OUTDIR="${OUTBASE}/output/${SNPCOUNT}SNPtaq"
-if [[ ! -f "${DESIGN}" ]]; then echo "[ERROR] Design file does not exist (${DESIGN})?"; exit 1; fi
-if [[ ! -d "${OUTDIR}" ]]; then echo "[ERROR] Output dir does not exist (${OUTDIR})?"; exit 1; fi
+if [[ ! -f "${DESIGN}" ]]; then error "Design file does not exist (${DESIGN})?"; fi
+if [[ ! -d "${OUTDIR}" ]]; then error "Output dir does not exist (${OUTDIR})?"; fi
 
 ## continue with parsing and converting
 experiment_name=$(echo "$(basename "${csv_file}")" | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//')
@@ -42,18 +44,18 @@ plate_name=$(cat ${csv_file} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2)
 combi_name="${experiment_name}_${plate_name}"
 vcf_out_dir="${OUTDIR}/${combi_name}"
 
-if [[ -d "${vcf_out_dir}" ]]; then echo "[ERROR] Output dir already exists (${vcf_out_dir})"; exit 1; fi
+if [[ -d "${vcf_out_dir}" ]]; then error "Output dir already exists (${vcf_out_dir})"; fi
 
-echo "[INFO] Starting conversion from CSVs to VCFs"
-echo "[INFO] Output dir will be: ${vcf_out_dir}"
+info "Starting conversion from CSVs to VCFs"
+info "Output dir will be: ${vcf_out_dir}"
 mkdir ${vcf_out_dir}
 ${SCRIPT} --out ${vcf_out_dir} --des ${DESIGN} --csv ${csv_file}
 vcf_count=$(ls ${vcf_out_dir} | wc -l)
-echo "[INFO] Total of ${vcf_count} VCFs created"
-echo ""
-echo "[TODO] Performs plate QC"
-echo "  perform_snpcheck_plate_qc ${vcf_out_dir}"
-echo ""
-echo "[TODO] Also copy the results to sync dir"
-echo "  cp -r ${vcf_out_dir} ${GCPDIR}"
-echo ""
+info "Total of ${vcf_count} VCFs created"
+info ""
+info "[TODO] Performs plate QC"
+info "  perform_snpcheck_plate_qc ${vcf_out_dir}"
+info ""
+info "[TODO] Also copy the results to sync dir"
+info "  cp -r ${vcf_out_dir} ${GCPDIR}"
+info ""

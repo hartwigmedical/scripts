@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 if [[ $# -ne 3 || "${1}" == "-h" || "${1}" == "--help" ]]; then
     echo "-----"
     echo " Descr: Locates VCFs and prints the mv commands to perform"
@@ -16,12 +18,12 @@ new_sample=$1 && shift
 old_tag="${barcode}-${old_sample}"
 new_tag="${barcode}-${new_sample}"
 
-echo "[INFO] OLD tag: $old_tag"
-echo "[INFO] NEW tag: $new_tag"
+info "OLD tag: $old_tag"
+info "NEW tag: $new_tag"
 mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -name "${old_tag}_*.vcf" -or -name "${old_tag}-Duplo_*.vcf")
 vcf_count=${#vcfs[@]}
 
-echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember to sync to GCP afterwards!)"
+info "Printing rename code for ${vcf_count} VCFs (remember to sync to GCP afterwards!)"
 for old_vcf_path in "${vcfs[@]}"; do
     new_vcf_path=${old_vcf_path/${old_tag}/${new_tag}}
     echo "mv $old_vcf_path $new_vcf_path"

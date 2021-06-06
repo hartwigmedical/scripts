@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 print_usage(){
     echo "-----"
     echo " Descr: Get relevant children of doids. IMPORTANT: please select a doid from the three in our documentation (https://hartwigmedical.github.io/documentation/doid.html)."
@@ -18,19 +20,19 @@ while getopts ':d:' flag; do
 done
 
 if [[  -z "${doids}" ]]; then
-    echo "[ERROR] script get_relevant_children_of_doids did not run, check usage below:"
+    warn "script get_relevant_children_of_doids did not run, check usage below:"
     print_usage
 fi
 
 for input_doid in $(echo ${doids} | sed "s/,/ /g")
 do
-   if [[ "$input_doid" == "162" ]]; then
-        echo "[INFO] DOID_162 involves all cancers. All samples in the database are children (so no filter needed). Script will end."
-        exit 1
+   if [[ "${input_doid}" == "162" ]]; then
+        info "DOID_162 involves all cancers. All samples in the database are children (so no filter needed). Script will end."
+        exit 0
    fi
-   if [[ "$input_doid" == "0060072" ]]; then
-        echo "[INFO] DOID_0060072 involves all begnign neoplasms and is not a relevant filter. Script will end."
-        exit 1
+   if [[ "${input_doid}" == "0060072" ]]; then
+        info "DOID_0060072 involves all begnign neoplasms and is not a relevant filter. Script will end."
+        exit 0
    fi
 done
 

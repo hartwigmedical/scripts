@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
 
 source api_functions || exit 1
+source message_functions || exit 1
 
 set=$1
 
 if [[ -z "${set}" ]]; then
-    echo "[ERROR] Provide a set. Exiting" && exit 1
+    error "Provide a set. Exiting"
 fi
 
 run_info=$(load_run_info_for_set ${set})
 initial_run_bucket=$(load_intial_run_bucket_for_set ${set})
 pipeline_version=$(extract_pipeline_version_from_run_info "${run_info}")
 
-echo "[INFO] Testing HMF API functions on ${set}"
-echo "[INFO] Run Info = ${run_info}"
-echo "[INFO] Initial Run Bucket = ${initial_run_bucket}"
-echo "[INFO] Pipeline Version = ${pipeline_version}"
-echo "[INFO] Rerun V3 Info = $(load_rerun_v3_info_for_set ${set})"
-echo "[INFO] Rerun V4 Info = $(load_rerun_v4_info_for_set ${set})"
-echo "[INFO] Tumor Sample ID = $(load_tumor_sample_id_for_set ${set})"
-echo "[INFO] Ref Sample ID = $(load_ref_sample_id_for_set ${set})"
+info "Testing HMF API functions on ${set}"
+info "Run Info = ${run_info}"
+info "Initial Run Bucket = ${initial_run_bucket}"
+info "Pipeline Version = ${pipeline_version}"
+info "Rerun V3 Info = $(load_rerun_v3_info_for_set ${set})"
+info "Rerun V4 Info = $(load_rerun_v4_info_for_set ${set})"
+info "Tumor Sample ID = $(load_tumor_sample_id_for_set ${set})"
+info "Ref Sample ID = $(load_ref_sample_id_for_set ${set})"

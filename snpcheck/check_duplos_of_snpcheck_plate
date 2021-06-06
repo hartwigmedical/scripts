@@ -12,7 +12,7 @@ for duplo_vcf in $(find "$vcf_dir" -name "*-Duplo*.vcf"); do
     name=$(basename "$vcf" | cut -d"_" -f1)
     duplo_name=$(basename "$duplo_vcf" | cut -d"_" -f1)
     if [[ ! -f "$vcf" ]]; then
-        echo "[WARN] Unable to check $duplo_name because non-duplo VCF does not exist"
+        warn "Unable to check $duplo_name because non-duplo VCF does not exist"
         continue
     fi
     result_msg=$(perform_snpcheck.pl "$vcf" "$duplo_vcf" | tail -1)

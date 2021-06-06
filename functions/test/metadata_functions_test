@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 
 source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir configured. Exiting" && exit 1
+    error "No run dir configured. Exiting"
 fi
 
-echo "[INFO] Testing metadata functions on ${run_dir}"
-echo "[INFO]  Tumor Sample = $(load_tumor_sample_from_metadata ${run_dir})"
-echo "[INFO]  Tumor Sample Barcode = $(load_tumor_sample_barcode_from_metadata ${run_dir})"
-echo "[INFO]  Ref Sample = $(load_ref_sample_from_metadata ${run_dir})"
-echo "[INFO]  Ref Sample Barcode = $(load_ref_sample_barcode_from_metadata ${run_dir})"
-echo "[INFO]  Joint Name = $(load_joint_name_from_metadata ${run_dir})"
+info "Testing metadata functions on ${run_dir}"
+info " Tumor Sample = $(load_tumor_sample_from_metadata ${run_dir})"
+info " Tumor Sample Barcode = $(load_tumor_sample_barcode_from_metadata ${run_dir})"
+info " Ref Sample = $(load_ref_sample_from_metadata ${run_dir})"
+info " Ref Sample Barcode = $(load_ref_sample_barcode_from_metadata ${run_dir})"
+info " Joint Name = $(load_joint_name_from_metadata ${run_dir})"

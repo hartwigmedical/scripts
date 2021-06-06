@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source message_functions || exit 1
 
 GATK_JAR='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
 REF_FASTA=$(locate_ref_genome_37_fasta_file)
@@ -14,10 +15,10 @@ designs=(
 
 bam_path=$1
 
-if [[ ! -f "${bam_path}" ]]; then echo "[ERROR] Provide path to bam"; exit 1; fi
-if [[ ! "${bam_path}" =~ \.bam$ ]]; then echo "[ERROR] Only BAM files as input"; exit 1; fi
+if [[ ! -f "${bam_path}" ]]; then error "Provide path to bam"; fi
+if [[ ! "${bam_path}" =~ \.bam$ ]]; then error "Only BAM files as input"; fi
 
-echo "[INFO] SNPcheck Genotying Starting"
+info "SNPcheck Genotying Starting"
 
 file_name=$(basename ${bam_path})
 sample_name=$(echo ${file_name} | sed 's/\.bam//')
@@ -26,7 +27,7 @@ for design_file in "${designs[@]}"; do
     design_name=$( echo ${design_file} | sed 's/_design\.vcf//' )
     design_path=${DESIGN_DIR}'/'${design_file}
     out_file="${sample_name}_${design_name}_snpcheck.vcf"
-    echo "[INFO] Genotying by ${design_name} for ${sample_name} to ${out_file}"
+    info "Genotying by ${design_name} for ${sample_name} to ${out_file}"
     java -Xms2g -Xmx9g -jar ${GATK_JAR} \
         -T UnifiedGenotyper \
         -R ${REF_FASTA} \
@@ -36,4 +37,4 @@ for design_file in "${designs[@]}"; do
         -o ${out_file}
 done
 
-echo "[INFO] SNPcheck Genotying Done"
+info "SNPcheck Genotying Done"

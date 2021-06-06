@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source metadata_functions
+source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 output_path=$1 && shift
@@ -9,15 +10,15 @@ input_path=$1 && shift
 tumor_sample=$(load_tumor_sample_from_metadata ${input_path}/${run_dir})
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+    error "No run dir provided. Exiting"
 fi
 
 if [[ -z "${output_path}" ]]; then
-    echo "[ERROR] No output path provided. Exiting" && exit 1;
+    error "No output path provided. Exiting"
 fi
 
 if [[ -z "${input_path}" ]]; then
-    echo "[ERROR] No input path provided. Exiting" && exit 1;
+    error "No input path provided. Exiting"
 fi
 
 protect_prod_tsv_path=$( find ${input_path}/${run_dir}/protect/${tumor_sample}.protect.tsv)

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 SOURCE='/volume1/machines/Experimenten/SNP\ check'
 TARGET='/data/common/snpcheck/input'
 SUFFIX='Results.csv'
@@ -15,15 +17,15 @@ if [[ -z "${plate_id}" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 ## find at NAS
-echo "[INFO] Searching for \"${plate_id}*${SUFFIX}\" results file in \"nas:${SOURCE}\""
+info "Searching for \"${plate_id}*${SUFFIX}\" results file in \"nas:${SOURCE}\""
 result_files=()
 while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
 done < <(ssh nas find "${SOURCE}" -name "${plate_id}*${SUFFIX}" -print0)
 if [[ ${#result_files[@]} -eq 0 ]]; then 
-    echo "[ERROR] No file found for '${plate_id}'!" && exit 1
+    error "No file found for '${plate_id}'!"
 elif [[ ${#result_files[@]} -gt 1 ]]; then
-    echo "[ERROR] More than 1 file found for '${plate_id}'!" && exit 1
+    error "More than 1 file found for '${plate_id}'!"
 fi
 
 ## sync and process
@@ -31,12 +33,12 @@ result_file_path="${result_files[0]}"
 result_file_name=$(basename "${result_file_path}")
 target_file_path="${TARGET}/${result_file_name}"
 
-echo "[INFO] Found SNPcheck file at NAS ($result_file_name)"
-echo "[INFO]   syncing to datastore"
+info "Found SNPcheck file at NAS ($result_file_name)"
+info " syncing to datastore"
 rsync --protect-args -ah "nas:${result_file_path}" "${target_file_path}"
-if [[ $? != 0 ]]; then echo "[ERROR] Rsync finished with non-zero exit code ($?)" && exit 1; fi
+if [[ $? != 0 ]]; then error "Rsync finished with non-zero exit code ($?)"; fi
 
-echo "[INFO]   converting file VCFs"
+info "  converting file VCFs"
 create_sample_vcfs_from_csv "${target_file_path}"
-if [[ $? != 0 ]]; then echo "[ERROR] Conversion to VCF finished with non-zero exit code ($?)" && exit 1; fi
+if [[ $? != 0 ]]; then error "Conversion to VCF finished with non-zero exit code ($?)"; fi
 

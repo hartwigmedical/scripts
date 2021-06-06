@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
-source locate_files
+source locate_files || exit 1
+source message_functions || exit 1
 
 cram=$1 && shift
 
 if [[ ! -f "${cram}" ]]; then
-    echo "[ERROR] Cram is not a file: ${cram}. Exiting" && exit 1
+    error "Cram is not a file: ${cram}. Exiting"
 fi
 
 samtools=/data/common/tools/samtools_v1.10/samtools
