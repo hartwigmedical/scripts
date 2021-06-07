@@ -21,12 +21,13 @@ else
     primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 fi
 
+# TODO Clean up on PROTECT v1.4 -> Should always pass the param with an empty string in case of no doid
 primary_tumor_argument=""
-#if [[ ! -z "${primary_tumor_doids}" ]]; then
-#    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
-#else
+if [[ ! -z "${primary_tumor_doids}" ]]; then
+    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
+else
     primary_tumor_argument="-primary_tumor_doids \"\""
-#fi
+fi
 
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
