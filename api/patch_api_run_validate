@@ -2,31 +2,32 @@
 
 source message_functions || exit 1
 
-run_name=$1
+set_name=$1
 
 key='status'
 val="Validated"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo "Descr: Patches run ${key} to ${val}"
-    echo "Usage: $(basename $0) \$run_name"
+    echo "Descr: Patches ${key} to ${val}"
+    echo "Usage: $(basename $0) \$set_name"
     echo "   Eg: $(basename $0) 200101_HMFregXXXX_FR123_FR456_SAMPLE"
     echo "-----"
     exit 1
 fi
 
-info "Querying api to find run by name (${run_name})"
-runs_json=$(hmf_api_get "runs?set_name=${run_name}")
+info "Querying api to select non research-pipeline runs by set name (${set_name})"
+runs_json=$(hmf_api_get "runs?set_name=${set_name}" | jq '[.[] | select( .bucket | contains("research-pipeline") | not)]')
 count=$(echo "${runs_json}" | jq length)
-[[ "${count}" -eq 1 ]] || die "Amount of runs found for ${run_name} is not 1 (${count})"
+
+while read -r run_info; do
+    info "  $run_info"
+done < <(jq -r '.[] | [.ini,.version,.status,.bucket,.id] | @tsv' <<< "${runs_json}" | tr "\t" " ")
+[[ "${count}" -eq 1 ]] || die "Amount of runs (${count}) is more than supported (1) for set ${set_name}. Exiting."
 
 run=$(echo "${runs_json}" | jq -r .[0])
 oid=$(echo "${run}" | jq -r .id)
 sts=$(echo "${run}" | jq -r .status)
-
-info "About to patch run object ${oid} with ${key}=${val}"
-[[ "${sts}" != "${val}" ]] || die "Field ${key} is already set to ${val} for ${run_name}"
-
+info "Patching run object ${oid} with ${key}=${val}"
+[[ "${sts}" != "${val}" ]] || warn "Field '${key}' of run '${oid}' is already set to ${val}"
 hmf_api_patch -c "runs" -o "${oid}" -f "${key}" -v "${val}"
-
