@@ -22,11 +22,11 @@ else
 fi
 
 primary_tumor_argument=""
-if [[ ! -z "${primary_tumor_doids}" ]]; then
-    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
-else
+#if [[ ! -z "${primary_tumor_doids}" ]]; then
+#    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
+#else
     primary_tumor_argument="-primary_tumor_doids \"\""
-fi
+#fi
 
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
