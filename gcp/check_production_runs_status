@@ -8,7 +8,7 @@ download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
 inspect_healthchecker_failed_run="inspect_healthchecker_log_at_gcp"
 download_script="download_run_without_bams"
-pipeline="5.22"
+pipeline="5.22.1"
 run_inis="Somatic.ini|CPCT.ini"
 
 main () {
