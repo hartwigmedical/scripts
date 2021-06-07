@@ -17,7 +17,9 @@ main () {
     # Sanity checks
     check_ini_existance "Somatic.ini"
     check_ini_existance "CPCT.ini"
-    check_pipeline_version_existance "${pipeline}"
+
+    # TODO: SVL determine how to solve these check
+   # check_pipeline_version_existance "${pipeline}"
 
     # Create all required run collections
     non_db_entities=( $(query_api.pl -type entities -filter "add_to_db=0" -json | jq -r '.[].name') )
