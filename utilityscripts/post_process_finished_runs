@@ -35,6 +35,8 @@ for run in ${process_runs}; do
         create_patient_report_for_run /data/cpct/runs/${run}
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
+        info "Loading run into database"
+        load_run_into_prod_db /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
         info "Copying set ${run} to /data/cpct/reportable_runs"
@@ -49,6 +51,8 @@ for run in ${process_runs}; do
             mv ${source_path}/${run} /data/cpct/runs/
             info "Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
+            info "Loading run into database"
+            load_run_into_prod_db /data/cpct/runs/${run}
         fi
     fi
 done
