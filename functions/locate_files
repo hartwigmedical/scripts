@@ -260,7 +260,7 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/dbs/ckb/210514_flex_dump
+    echo ${base_path}/dbs/ckb/210604_flex_dump
 }
 
 locate_ckb_filter_tsv() {
