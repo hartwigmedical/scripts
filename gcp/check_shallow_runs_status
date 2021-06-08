@@ -6,7 +6,7 @@ yymmdd=$(date +'%y%m%d')
 reported_tsv="/data/ops/lims/prod/shallow_seq_purity.tsv"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
-current_pipeline_version="5.21"
+current_pipeline_version="5.22"
 
 echo "===== Running $(basename $0) ====="
 info "Checking ShallowSeq runs for pipeline v${current_pipeline_version}"
@@ -40,7 +40,7 @@ while read -r line; do
         to_mention+=("  WAITING: ${run_name} (status=${run_status})")
     elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
         to_mention+=("  PROCESSING: ${run_name} (status=${run_status})")
-    elif [[ -n "${run_version}" && "${run_version}" != "${current_pipeline_version}" ]]; then
+    elif [[ -n "${run_version}" && ! "${run_version}" =~ ^${current_pipeline_version} ]]; then
         continue
     elif [[ "${run_status}" == "Failed" ]]; then
         to_mention+=("  FAILED: ${run_name} (status=${run_status})")
