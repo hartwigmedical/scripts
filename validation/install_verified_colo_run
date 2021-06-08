@@ -42,7 +42,7 @@ main() {
     logs_dir="${exp_dir_path}/logs"
  
     info "Selecting latest run in runs dir ${runs_dir}"
-    source_path=$(find "${runs_dir}" -mindepth 1 -maxdepth 1 -type d -name "*COLO829*" | tail -1)
+    source_path=$(find "${runs_dir}" -mindepth 1 -maxdepth 1 -type d | grep -i "COLO829" | tail -1)
     #source_name=$(basename "${source_path}")
     #install_log="${logs_dir}/install.log"
     
@@ -59,11 +59,11 @@ main() {
     echo ""
 
     info "TODO Sync without CRAMs from target back to source:"
-    echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '$source_path/'"
+    echo " rsync -ah --stats --exclude '*.cram' --exclude '*.bam' '$target_path/' '$source_path/'"
     echo ""
 
     info "TODO Sync without CRAMs to directory with latest"
-    echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '${latest_path}/'"
+    echo " rsync -ah --stats --exclude '*.cram' --exclude '*.bam' '$target_path/' '${latest_path}/'"
     echo ""
 
     load_job=${jobs_dir}/load_run_into_reference_validation_sets_db
@@ -77,9 +77,9 @@ main() {
     info "TODO Cleanup previous COLO run from latest_tooling"
     info "  cd ${target_root}/latest_tooling_pipeline_runs"
     info "  rm -r ${dir-of-previous-version}"
-    info "TODO Cleanup CRAMs from previous COLO run in pipeline_runs"
+    info "TODO Cleanup CRAM and BAM from previous COLO run in pipeline_runs"
     info "  cd ${target_root}/pipeline_runs"
-    info "  find <dir-of-previous-version> -name 'COLO829v003[RT].cram' # add -delete for action"
+    info "  find <dir-of-previous-version> -regex '.*\.\(cram\|bam\)' # add -delete for action"
     info "TODO make sure all is chowned to root:"
     echo "  chown_directory_contents_to_root ${target_root}/pipeline_runs"
 
