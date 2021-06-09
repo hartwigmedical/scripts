@@ -28,7 +28,7 @@ info "${msg}"
 
 function main() {
     ## make sure only one run exists for the set
-    runs_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '[.[] | select(.ini != "Rerun.ini")]') || die "Unable to get run (${set_name})"
+    runs_json=$(retrieve_runs_to_check "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
     if [[ "${runs_count}" -ne 1 ]]; then
         die "Only sets supported with exactly one run (found ${runs_count}). Exiting"
@@ -86,7 +86,7 @@ function main() {
             info "Found 0 files for run ${name} but is a virtual sample so possible"
             return 1
         else
-            die "Found 0 files for run ${name}!!!"
+            die "Found 0 files for run ${name} (files?run_id=${oid})!!!"
         fi
     fi
 
@@ -123,6 +123,16 @@ function main() {
     done
 
     info "Finished with $(basename "$0")"
+}
+
+retrieve_runs_to_check () {
+    local set_name=$1 && shift
+    local ini_exclude="Rerun.ini"
+    local buk_exclude="^research-pipeline"
+    hmf_api_get "runs?set_name=${set_name}" | jq \
+      --arg ini "^${ini_exclude}" \
+      --arg buk "^${buk_exclude}" \
+      '[.[] | select(.bucket//"NA"|test($buk)|not) | select(.ini//"NA"|test($ini)|not)]'
 }
 
 create_run_specific_files () {
