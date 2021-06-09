@@ -11,4 +11,4 @@ virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_virusinterpreter_data ${sample} ${virus_breakend_tsv} ${credentials} ${patient_db_jar}
+do_load_virusbreakend_data ${sample} ${virus_breakend_tsv} ${credentials} ${patient_db_jar}
