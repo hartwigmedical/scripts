@@ -80,5 +80,6 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -somatic_hotspots ${somatic_hotspot_vcf} \
     -germline_hotspots ${germline_hotspot_vcf} \
     -driver_gene_panel ${driver_gene_panel} \
+    -ref_genome_version 37 \
     ${db_args} \
     "$@"
