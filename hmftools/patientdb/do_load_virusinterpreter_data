@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample=$1 && shift
+virus_annotation_tsv=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+info "Loading VIRUS Interpreter data for ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadVirusInterpreter \
+    -sample ${sample} \
+    -virus_annotation_tsv ${virus_annotation_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

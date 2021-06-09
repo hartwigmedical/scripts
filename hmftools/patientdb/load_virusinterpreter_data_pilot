@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+
+run_dir=$1 && shift
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+virus_annotation_tsv=$(locate_virus_annotation_tsv_pilot ${run_dir})
+
+credentials=$(locate_pilot_database_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+do_load_virusbreakend_data ${sample} ${virus_annotation_tsv} ${credentials} ${patient_db_jar}
