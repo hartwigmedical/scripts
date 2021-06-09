@@ -153,6 +153,8 @@ create_run_specific_files () {
         pip="Fastq"
     elif [[ "${pip}" =~ ^5\.[0-9]+$ ]]; then
         minor=$(echo "${pip}" | cut -d"." -f2)
+    elif [[ "${pip}" =~ ^5\.[0-9]+.[0-9]+$ ]]; then
+        minor=$(echo "${pip}" | cut -d"." -f2)
     else
         die "Pipeline version string has unknown format (${pip})"
         exit 1
