@@ -15,6 +15,10 @@ if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${serve_actionability_dir}" |
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+primary_tumor_doids=$(get_tumorlocation_for_biopsy ${tumor_sample})
+info "Tumor Location of this patient is: ${primary_tumor_doids}"
+
 if [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
