@@ -18,6 +18,11 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+
+primary_tumor_doids=$(get_tumorlocation_for_biopsy ${tumor_sample})
+info ${primary_tumor_doids};
+
+
 if [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
