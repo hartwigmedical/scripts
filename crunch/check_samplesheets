@@ -3,17 +3,34 @@
 run=$1
 run_root="/data1/illumina_data/"
 
-function join_by { local IFS="$1"; shift; echo "$*"; }
+main () {
+    if [[ -n "${run}" ]]; then
+        sheets="${run}/SampleSheet.csv"
+    else
+        sheets=$(find "${run_root}" -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
+    fi
 
-if [[ ! ${run} == "" ]]; then
-    sheets="${run}/SampleSheet.csv"
-else
-    sheets=$(find ${run_root} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
-fi
-    
-for sheet in ${sheets}; do
     curr_host=$(hostname)
     curr_host_short="${curr_host/crunch00/c}"
+
+    for sheet in ${sheets}; do
+        if [[ -f "${sheet}" ]]; then
+            process_sheet "${sheet}"
+        fi
+    done
+
+    if [[ "" == "yes" ]]; then
+        test_sheets=$(find "${run_root}/TestRuns" -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
+        for sheet in ${test_sheets}; do
+            if [[ -f "${sheet}" ]]; then
+                process_sheet "${sheet}"
+            fi
+        done
+    fi
+}
+
+function process_sheet () {
+    local sheet=$1 && shift
     run_base=$(dirname "${sheet}")
     fastq_out_dir="${run_base}/Fastq"
     run_name=$(basename "${run_base}")
@@ -86,4 +103,8 @@ for sheet in ${sheets}; do
         cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj}" | \
         sort -k2,2 -k1,1 | \
         uniq
-done
+}
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+main
