@@ -8,17 +8,18 @@ download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
 inspect_healthchecker_script="inspect_healthchecker_log_at_gcp"
 download_script="download_run_without_bams"
-version_prefix="5.22"
-bucket_prefix="diagnostic-pipeline"
-run_inis="Somatic.ini|CPCT.ini"
+major_version="5.22"
 
 main () {
-    echo "## Production Run Status Check for ${run_inis} runs on pipeline version ${version_prefix} (date=$(date +'%y%m%d'))"
+    echo "## Production run status check for runs on pipeline version ${major_version} (date=$(date +'%y%m%d'))"
 
     # Create all required run collections
-    non_db_entities=( $(query_api.pl -type entities -filter "add_to_db=0" -json | jq -r '.[].name') )
-    runs=$(query_api.pl -type runs -filter "ini=${run_inis}" -json)
+    echo "## Retrieving required information from API..."
+    mapfile -t non_db_entities < <(hmf_api_get "entities" | jq -r '.[] | select(.add_to_db == false) | .name')
+    all_runs=$(hmf_api_get "runs") || die "Unable to retrieve runs from API"
+    runs=$(echo "${all_runs}" | jq '[.[] | select(.ini == "Somatic.ini" or .ini == "CPCT.ini")]') || die "Unable to select runs by ini"
 
+    echo "## Creating run collections to check..."
     all_vali_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Validated")]')
     all_fail_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Failed")]')
     all_fini_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Finished")]')
@@ -30,12 +31,12 @@ main () {
     tumor_samples_with_proc_run=$(get_tumor_samples_from_runs_json "${all_proc_runs}")
     tumor_samples_with_wait_run=$(get_tumor_samples_from_runs_json "${all_wait_runs}")
 
-    # We only consider a subset of runs to check for further processing (currently based on version and bucket)
-    current_vali_runs=$(select_runs_to_check "${all_vali_runs}")
-    current_fail_runs=$(select_runs_to_check "${all_fail_runs}")
-    current_fini_runs=$(select_runs_to_check "${all_fini_runs}")
-    current_proc_runs=$(select_runs_to_check "${all_proc_runs}")
-    current_wait_runs=$(select_runs_to_check "${all_wait_runs}")
+    # We only consider current runs to check for further processing
+    current_vali_runs=$(select_runs_to_check "${all_vali_runs}" "${major_version}")
+    current_fail_runs=$(select_runs_to_check "${all_fail_runs}" "${major_version}")
+    current_fini_runs=$(select_runs_to_check "${all_fini_runs}" "${major_version}")
+    current_proc_runs=$(select_runs_to_check "${all_proc_runs}" "${major_version}")
+    current_wait_runs=$(select_runs_to_check "${all_wait_runs}" "")
 
     # Now ready to check each status on by one
     echo ""
@@ -43,6 +44,7 @@ main () {
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
+        db_status=$(echo "${run_info}" | cut -f3)
 
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}")
@@ -54,20 +56,21 @@ main () {
             exists_in_qcfail_run_dirs=$(find "${find_fail_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "${inspect_healthchecker_script} ${set_name}"
+                echo "${inspect_healthchecker_script} ${set_name} "
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "# ${set_name} has failed on ${version_prefix} and is already on datastore ${find_fail_dirs[*]}"
+                echo "# ${set_name} has Failed on and is already on datastore ${find_fail_dirs[*]} (db_status=${db_status})"
             else
-                echo "# ${sample_name} has failed on pipeline ${version_prefix} but also has a Validated/Processing/Waiting run so can be ignored."
+                echo "# ${sample_name} has Failed but also has a Validated/Processing/Waiting run so can be ignored (db_status=${db_status})."
             fi
         fi
-    done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')  | sort -r | uniq
+    done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
     echo "## Finished runs (that are not Validated or Failed, probably waiting for SNP genotype VCF):"
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
+        db_status=$(echo "${run_info}" | cut -f3)
 
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
@@ -76,12 +79,12 @@ main () {
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
             exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
             if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "${download_script} ${set_name} ${download_dir}"
+                echo "${download_script} ${set_name} ${download_dir} # db_status=${db_status}"
             fi
         else
-            echo "# ${sample_name} has Finished on pipeline ${version_prefix} but also has a Validated/Processing/Waiting run so can be ignored."
+            echo "# ${sample_name} has Finished but also has a Validated/Processing/Waiting run so can be ignored."
         fi
-    done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.tumor_sample,.name] | @tsv')  | sort -r | uniq
+    done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status] | @tsv')  | sort -r | uniq
 
     echo ""
     echo "## Validated runs that need to be processed:"
@@ -89,6 +92,7 @@ main () {
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         entity=$(echo "${run_info}" | cut -f3)
+        db_status=$(echo "${run_info}" | cut -f4)
         exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l);
         if [[ ${exists_in_success_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
@@ -97,34 +101,35 @@ main () {
                 ## Skip none-CORE sequencing services runs
                 continue
             else
-                echo "${process_script} ${set_name}"
+                echo "${process_script} ${set_name} # db_status=${db_status}"
             fi
         fi
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.tumor_sample,.name,.entity] | @tsv')
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status] | @tsv')
 
     echo ""
     echo "## Processing runs:"
     while read -r set_name; do
         echo "# ${set_name} is Processing/Uploading/Downloading"
-    done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.name] | @tsv')
+    done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.name] | @tsv')
 
     echo ""
     echo "## Waiting runs:"
     while read -r set_name; do
         echo "# ${set_name} is Waiting"
-    done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.name] | @tsv')
+    done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name] | @tsv')
 
     echo ""
 }
 
 select_runs_to_check () {
     local runs_json_input=$1 && shift
-    local vsn="^${version_prefix}"
-    local buk="^${bucket_prefix}"
+    local version_string=$1 && shift
+    local bucket_exclude="research-pipeline"
+    # Since Pv5.22 the samples-for-db have two runs (diagnostic and research) we want to ignore the research
     echo "${runs_json_input}" | jq \
-      --arg vsn "^${vsn}" \
-      --arg buk "^${buk}" \
-      '[.[] | select(.bucket//"NA"|match($buk)) | select(.version//"NA"|match($vsn))]'
+      --arg vsn "^${version_string}" \
+      --arg buk "^${bucket_exclude}" \
+      '[.[] | select(.version//"NA"|match($vsn)) | select(.bucket//"NA"|test($buk)|not)]'
 }
 
 get_tumor_samples_from_runs_json () {

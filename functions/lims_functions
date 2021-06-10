@@ -50,6 +50,15 @@ get_doids_for_biopsy() {
     echo "${doids}"
 }
 
+get_tumorlocation_for_biopsy() {
+    local biopsy=$1 && shift # eg CPCT02010001T
+    doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
+    patient="${BASH_REMATCH[1]}"
+    tumorLocation=$(cat "${doid_file}" | grep -P "^${patient}" | awk '{print $2, $3, $4, $5, $6}')
+    echo "${tumorLocation}"
+}
+
+
 get_doids_for_biopsy_pilot() {
     local biopsy=$1 && shift # eg CPCT02010001T
     doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
