@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
 source message_functions || exit 1
 
 file_with_sql_to_execute=$1
