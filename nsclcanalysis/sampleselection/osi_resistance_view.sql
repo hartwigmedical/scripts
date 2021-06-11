@@ -14,7 +14,7 @@ SELECT *,
 	WHEN (preTreatmentLine11 LIKE '%Osi%' AND preTreatmentLine11PdDate <> '1000-10-10' AND daysBiopsyAfterStartLine11 > 0 AND daysBiopsyAfterPDLine11 < 90) THEN "INCLUDE"
 	WHEN (preTreatmentLine12 LIKE '%Osi%' AND preTreatmentLine12PdDate <> '1000-10-10' AND daysBiopsyAfterStartLine12 > 0 AND daysBiopsyAfterPDLine12 < 90) THEN "INCLUDE"
 	ELSE "EXCLUDE"
-    END AS "include?"
+    END AS "include"
  FROM
 	(SELECT a.patientId, n.sampleId, dateBiopsy, driver,
 	pretreatmentLine1, pretreatmentLine1startDate, pretreatmentLine1PdDate, pretreatmentLine1StopReason, dateDiff(dateBiopsy,pretreatmentLine1StartDate) AS daysBiopsyAfterStartLine1, dateDiff(dateBiopsy,pretreatmentLine1PdDate) AS daysBiopsyAfterPDLine1,
