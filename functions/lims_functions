@@ -35,7 +35,7 @@ get_doids_for_biopsy() {
     doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
     column_index=7
     expected_field="doids"
-    name_regex='^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX]*$'
+    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX]*$'
 
     # sanity check on header content
     header_field=$(cat ${doid_file} | head -1 | cut -f"${column_index}")
