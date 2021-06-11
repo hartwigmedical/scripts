@@ -10,7 +10,6 @@ if [[ ! -f "${file_with_sql_to_execute}" ]]; then
 fi
 
 database_name="nsclc"
-credentials=/nina/path/to/credentials
+credentials=$HOME/hmf/credentials/nsclc
 
 do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}
-
