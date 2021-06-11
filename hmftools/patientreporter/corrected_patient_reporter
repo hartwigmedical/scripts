@@ -13,4 +13,4 @@ if [[ -z "${comments}" ]]; then
     error "No comments provided. Exiting"
 fi
 
-create_patient_report_for_run_v7_22 ${run_dir} -comments "${comments}" -corrected_report "$@"
+create_patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "$@"
