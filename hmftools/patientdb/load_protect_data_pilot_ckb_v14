@@ -6,9 +6,9 @@ source metadata_functions || exit 1
 run_dir=$1 && shift
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence_pilot_ckb ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence_pilot_ckb_v14 ${run_dir})
 
-credentials=$(locate_pilot_database_credentials)
+credentials=/data/common/dbs/mysql_credentials/ckb_pilot_protect_v14
 patient_db_jar=$(locate_pilot_patient_db)
 
 do_load_protect_data ${sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
