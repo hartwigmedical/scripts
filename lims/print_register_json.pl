@@ -29,8 +29,7 @@ my $NO_PIPELINE_PRIO = 100;
 my $YES_PIPELINE_PRIO = 99;
 
 my $LIMS_IN_FILE = '/data/ops/lims/prod/lims.json';
-my $JSON_BASE_DIR = '/data/ops/api/prod/jsons';
-my $JSON_DONE_DIR = '/data/ops/api/prod/jsons/registered';
+my $OUTPUT_DIR = '/data/ops/api/prod/jsons';
 my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
 my $FORCE_OUTPUT = 0;
@@ -41,8 +40,7 @@ my $FORCE_OUTPUT = 0;
 my %opt = ();
 GetOptions (
     "samplesheet=s"  => \$opt{ samplesheet },
-    "outdir=s"       => \$JSON_BASE_DIR,
-    "donedir=s"      => \$JSON_DONE_DIR,
+    "outdir=s"       => \$OUTPUT_DIR,
     "limsjson=s"     => \$LIMS_IN_FILE,
     "useExistingRef" => \$USE_EXISTING_REF,
     "useExistingTum" => \$USE_EXISTING_TUM,
@@ -58,10 +56,7 @@ my $HELP =<<HELP;
 
   Description
     Creates the JSON(s) to register set/run at HMF API.
-    It checks whether a run already exists in either the
-    "output" or "registered" location:
-      Output = $JSON_BASE_DIR
-      Registered = $JSON_DONE_DIR
+    Output directory = $OUTPUT_DIR
     
   Usage
     $SCRIPT -samplesheet \${path-to-samplesheet}
@@ -72,18 +67,18 @@ my $HELP =<<HELP;
       eg: $SCRIPT FR11111111 FR22222222 FR33333333
     
   Options
-    -outdir <s>        [$JSON_BASE_DIR]
+    -outdir <s>        [$OUTPUT_DIR]
     -limsjson <s>      [$LIMS_IN_FILE]
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
-    -forceOutput       (write json even if sample already has run in $JSON_DONE_DIR)
+    -forceOutput       (write json even if sample already has a run in API)
     -experiment <s>    (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
 
 HELP
 
 print $HELP and exit(0) if $opt{ help };
 print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
-die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
+die "[ERROR] Output dir is not writeable ($OUTPUT_DIR)?\n" unless -w $OUTPUT_DIR;
 
 ## MAIN
 sayInfo("START of script $SCRIPT ($DATETIME)");
@@ -233,8 +228,6 @@ sub processSample{
 
     ## Setup json content based on analysis type
     if ( $analysis eq 'BCL' ){
-        #sayWarn("  RESULT: Type $analysis not yet supported ($barcode)");
-        #return "NoJsonMade_bclTypeNotSupported";
         my $set = join("_", $date, $submission, $barcode, $name );
         sayInfo("  SET: $set");
         $json_data{ 'ini' } = "$BCL_INI";
@@ -329,6 +322,10 @@ sub processSample{
                 sayWarn("  RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)");
                 return "NoJsonMade_ShallowExtraSeq";
             }
+            elsif ( $run_status eq "Processing" ){
+                sayWarn("  RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming accidental extra seq)");
+                return "NoJsonMade_ShallowSeqStillProcessing";
+            }
             elsif ( $run_status eq "Finished" ){
                 sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
@@ -380,23 +377,21 @@ sub processSample{
 
     ## output json
     my $json_file = $json_data{ 'set_name' }.'.json';
-    my $json_path = $JSON_BASE_DIR.'/'.$json_file;
+    my $json_path = $OUTPUT_DIR.'/'.$json_file;
     
     ## check if set was already registered earlier
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
-    my @base_jsons = glob( "$JSON_BASE_DIR/*json" );
-    my @done_jsons = glob( "$JSON_DONE_DIR/*json" );
-    
-    foreach my $existing_json ( @base_jsons, @done_jsons ){
-        if ( $existing_json =~ /$setname_wo_date/ ){
-            if ( $FORCE_OUTPUT ){
-                push( @warn_msg, "Existing run for $sample_id ($existing_json) but output json enforced" );
-            }
-            else{
-                sayWarn("  RESULT for $sample_id ($name): SKIPPING because set json exists ($existing_json)");
-                return "NoJsonMade_setJsonAlreadyExists";
-            }
+    my $existing_runs = decode_json(`hmf_api_get 'runs?set_name_contains=$setname_wo_date'`);
+    my $existing_count = scalar @$existing_runs;
+
+    if ( $existing_count > 0 ){
+        if ( $FORCE_OUTPUT ){
+            push( @warn_msg, "Existing run(s) found in API for $setname_wo_date ($existing_count) but output was enforced" );
+        }
+        else{
+            sayWarn("  RESULT for $sample_id ($name): SKIPPING because a run with '$setname_wo_date' already exists in API");
+            return "NoJsonMade_setJsonAlreadyExists";
         }
     }
     
@@ -411,15 +406,6 @@ sub processSample{
     printSetJson( \%json_data, $json_path );
     sayInfo("  RESULT for $sample_id: OK");
     return "OK_JSON_MADE";
-}
-
-sub listExistingJsons{
-    my @source_dirs = @_;
-    my @jsons = ();
-    foreach my $dir ( @source_dirs ){
-        push( @jsons, glob( "$dir/*json" ) );
-    }
-    return \@jsons;
 }
 
 sub printSetJson{
