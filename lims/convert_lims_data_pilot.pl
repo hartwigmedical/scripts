@@ -536,8 +536,8 @@ sub addAccessSamplesToSamples{
         next if $name =~ /^(PMC\d{6})(T|R){1}/ms;
 
         ## From here on a sample should be one of
-        ## CPCT/DRUP/WIDE/COREDB or "other" CORE
-        my $name_regex = '^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        ## CPCT/DRUP/WIDE/ACTN/COREDB or "other" CORE
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         my $patient_id = "";
         my $study = "";
         my $center = "";
@@ -632,7 +632,7 @@ sub addAccessSamplesToSamples{
                 sayWarn("Unable to update submission \"$submission_id\" because not found in submissions (id:$id name:$name)");
             }
         }
-        ## All other samples are clinical study based (CPCT/DRUP/WIDE/COREDB)
+        ## All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
         elsif ( exists $centers_dict->{ $center } ){
             my $centername = $centers_dict->{ $center };
             my $original_submission = $object->{ 'submission' };
