@@ -97,5 +97,6 @@ do_run_base_patient_reporter \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
     -virus_interpretation_tsv ${virus_interpretation_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
+    -output_dir_report ${output_dir_report} \
     -output_dir_data ${output_dir_data} \
     "$@"
