@@ -37,7 +37,7 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/core/runs/
         info "Create patient report for ${run}"
         create_patient_report_for_run /data/core/runs/${run}
-    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
+    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" || ${cohort} == "ACTIN"  ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
         info "Create patient report for ${run}"
