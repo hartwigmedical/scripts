@@ -99,4 +99,5 @@ do_run_base_patient_reporter \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir_report ${output_dir_report} \
     -output_dir_data ${output_dir_data} \
+    -only_create_pdf \
     "$@"
