@@ -22,12 +22,12 @@ for run in ${process_runs}; do
     cohort=$(find_cohort_type ${tumor_barcode})
 
     info "Checking primary tumor doid"
-    report_doid=$(get_tumorlocation_for_biopsy ${sample_id})
-    protect_doid=$(cat /data/core/runs/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3)
+    report_doid=$(get_doids_for_biopsy ${sample_id})
+    protect_doid=$(cat ${source_path}/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3)
     if [[ ${protect_doid} == ${report_doid} ]]; then
-        info "protect doid is: ${protect_doid} and report doid is: ${report_doid}"
+        info "The doid are equals of protect ${protect_doid} and report ${report_doid}"
     else
-        warn "protect doid is: ${protect_doid} and report doid is: ${report_doid}"
+        warn "The doid are not equals of protect ${protect_doid} and report ${report_doid}"
     fi
 
     if [[ -z ${cohort} ]]; then
