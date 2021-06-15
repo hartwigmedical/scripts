@@ -72,7 +72,7 @@ locate_prod_purple() {
 }
 
 locate_pilot_purple() {
-    echo ${base_path}/tools/purple_pilot/purple_pilot.jar
+    echo ${base_path}/tools/purple_pilot/purple.jar
 }
 
 locate_prod_virus_interpreter() {
