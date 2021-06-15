@@ -8,7 +8,7 @@ relative_file_path="health_checker/run.log"
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 
 info "Searching for run to find bucket"
-runs_json=$(hmf_api_get "runs?set_name=${set}" | jq '[.[] | select(.ini | test("Somatic.ini|PipelineV5.ini|CPCT.ini"))]')
+runs_json=$(hmf_api_get "runs?set_name=${set}" | jq '[.[] | select(.ini | test("Somatic.ini|PipelineV5.ini|CPCT.ini")) | select(.bucket | test("diagnostic-pipeline-output-prod-1"))]')
 run_count=$(jq 'length' <<< "${runs_json}")
 
 run_json=$(jq '.[-1]' <<< "${runs_json}")
