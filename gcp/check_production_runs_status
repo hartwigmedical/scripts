@@ -71,6 +71,7 @@ main () {
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         db_status=$(echo "${run_info}" | cut -f3)
+        research_db_status=$(get_db_status_by_set_name "${set_name}")
 
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
@@ -79,12 +80,12 @@ main () {
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
             exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
             if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "${download_script} ${set_name} ${download_dir} # db_status=${db_status}"
+                echo "${download_script} ${set_name} ${download_dir} # db_status=${db_status}/${research_db_status}"
             fi
         else
             echo "# ${sample_name} has Finished but also has a Validated/Processing/Waiting run so can be ignored."
         fi
-    done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status] | @tsv')  | sort -r | uniq
+    done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
     echo "## Validated runs that need to be processed:"
@@ -105,7 +106,7 @@ main () {
                 echo "${process_script} ${set_name} # db_status=${db_status}/${research_db_status}"
             fi
         fi
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status] | @tsv')
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
     echo ""
     echo "## Processing/Uploading/Downloading runs:"
