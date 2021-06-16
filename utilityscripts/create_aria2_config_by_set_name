@@ -4,13 +4,17 @@ source message_functions || exit 1
 
 command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
 command -v jq > /dev/null || die "Dependency jq not found"
+command -v base64 > /dev/null || die "Dependency base64 not found"
+command -v xxd > /dev/null || die "Dependency xxd not found"
+
+script_name=$(basename "$0")
 
 set_name=$1
 
 if [[ -z "${set_name}" ]]; then
     echo "-----"
-    echo " Usage: $(basename "$0") \${set-name}"
-    echo " Exmpl: $(basename "$0") 210319_HMFregCORE_FR30729774_FR23588534_COREDB010063"
+    echo " Usage: $script_name \${name-of-set}"
+    echo " Exmpl: $script_name 210319_HMFregCORE_FR30729774_FR23588534_COREDB010063"
     echo "-----"
     exit 1
 fi
@@ -21,14 +25,14 @@ project="hmf-database"
 account="hmf-ops"
 service_account="${account}@${project}.iam.gserviceaccount.com"
 
-info "Start of $(basename $0)"
+info "Start of ${script_name}"
 info "Switching to service account ${service_account}"
 msg=$(gcloud config set account "${service_account}" 2>&1)
 info "${msg}"
 
 function main() {
     ## make sure only one run exists for the set
-    runs_json=$(retrieve_runs_to_check "${set_name}") || die "Unable to get runs from API (${set_name})"
+    runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
     if [[ "${runs_count}" -ne 1 ]]; then
         die "Only sets supported with exactly one run (found ${runs_count}). Exiting"
@@ -36,35 +40,32 @@ function main() {
     run_json=$(echo "${runs_json}" | jq -r '.[-1]')
 
     ## setup all variables
-    cluster=$(jq -r '.cluster' <<< "${run_json}")
     bucket=$(jq -r '.bucket' <<< "${run_json}")
     entity_id=$(jq -r '.set.entity_id' <<< "${run_json}")
     status=$(jq -r '.status' <<< "${run_json}")
-    name=$(jq -r '.set.name' <<< "${run_json}")
     pip=$(jq -r '.version' <<< "${run_json}")
     ini=$(jq -r '.ini' <<< "${run_json}")
     ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id
 
-    out_jsn_all="${name}_runfiles.json"
-    out_md5_all="${name}_runfiles.md5"
-    out_aria="${name}.aria.txt"
-    out_md5="${name}.md5"
-    out_url_int="${name}_internal_urls.txt"
-    out_url_ext="${name}_external_urls.txt"
+    out_jsn_all="${set_name}_runfiles.json"
+    out_md5_all="${set_name}_runfiles.md5"
+    out_aria="${set_name}.aria.txt"
+    out_md5="${set_name}.md5"
+    out_url_int="${set_name}_internal_urls.txt"
+    out_url_ext="${set_name}_external_urls.txt"
 
     ## create re-usable list of all output files
     output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
 
     info "Details:"
-    info "  RunName: ${name} (oid=${oid})"
+    info "  RunName: ${set_name} (oid=${oid})"
     info "  RunStat: ${status}"
     info "  IniName: ${ini}"
     info "  TumName: ${tum}"
     info "  RefName: ${ref}"
     info "  PipeVsn: ${pip}"
-    info "  Cluster: ${cluster}"
     info "  Bucket:  ${bucket}"
     info "  Entity:  ${entity_id}"
 
@@ -81,12 +82,12 @@ function main() {
     file_count=$(jq 'length' <<< "${files_json}")
 
     ## Virtual samples potentially have no yield and therefore no files attached but other runs are expected to always have files
-    if [[ "${file_count}" -eq 0 ]]; then
-        if [[ "${name}" =~ VirtualSample[0-9]+ ]]; then
-            info "Found 0 files for run ${name} but is a virtual sample so possible"
+    if [[ "${file_count}" -eq 0 && "${ini}" == "FastQ.ini" ]]; then
+        if [[ "${set_name}" =~ VirtualSample[0-9]+ ]]; then
+            info "Found 0 files in API for run ${set_name} but is a virtual sample so possible"
             return 1
         else
-            die "Found 0 files for run ${name} (files?run_id=${oid})!!!"
+            die "Found 0 files in API for FastQ.ini run ${set_name} (files?run_id=${oid})!!!"
         fi
     fi
 
@@ -94,24 +95,25 @@ function main() {
     create_json_file "${files_json}" "${out_jsn_all}"
     create_md5sums_file "${files_json}" "${out_md5_all}"
 
-    ## create the run type specific subset files
+    output_type=""
     if [[ "${ini}" == "FastQ.ini" || "${ini}" == "Rna.ini" ]]; then
-        create_run_specific_files "${files_json}" \
-        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Fastq"
+        output_type="Fastq"
     elif [[ "${ini}" == "Somatic.ini" ]]; then
-        create_run_specific_files "${files_json}" \
-        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Somatic"
+        output_type="Somatic"
     elif [[ "${ini}" == "SingleSample.ini" ]]; then
-        create_run_specific_files "${files_json}" \
-        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "SingleSample"
+        output_type="SingleSample"
     elif [[ "${ini}" == "ShallowSeq.ini" ]]; then
-        create_run_specific_files "${files_json}" \
-        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
+        output_type="ShallowSeq"
     else
         die "Unknown ini (${ini})"
     fi
 
-    ## output check
+    ## create the run type specific subset files
+    create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${set_name}" "${bucket}" "${ref}" "${tum}" "${pip}" "${output_type}" \
+        || die "Something wrong with creating run specific files. Exiting."
+
+    ## at this point all output should exist so check
     info "Output files:"
     for output_file in "${output_files[@]}"; do
         if [[ ! -f "${output_file}" ]]; then
@@ -122,17 +124,7 @@ function main() {
         fi
     done
 
-    info "Finished with $(basename "$0")"
-}
-
-retrieve_runs_to_check () {
-    local set_name=$1 && shift
-    local ini_exclude="Rerun.ini"
-    local buk_exclude="^research-pipeline"
-    hmf_api_get "runs?set_name=${set_name}" | jq \
-      --arg ini "^${ini_exclude}" \
-      --arg buk "^${buk_exclude}" \
-      '[.[] | select(.bucket//"NA"|test($buk)|not) | select(.ini//"NA"|test($ini)|not)]'
+    info "Finished with ${script_name}"
 }
 
 create_run_specific_files () {
@@ -141,20 +133,20 @@ create_run_specific_files () {
     local out_aria=$1 && shift
     local out_url_int=$1 && shift
     local out_url_ext=$1 && shift
-    local name=$1 && shift
+    local set_name=$1 && shift
     local bucket=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
     local pip=$1 && shift
     local run_type=$1 && shift
-    local minor=""
+    local minor_version=""
 
     if [[ "${run_type}" == "Fastq" ]]; then
         pip="Fastq"
     elif [[ "${pip}" =~ ^5\.[0-9]+$ ]]; then
-        minor=$(echo "${pip}" | cut -d"." -f2)
+        minor_version=$(echo "${pip}" | cut -d"." -f2)
     elif [[ "${pip}" =~ ^5\.[0-9]+.[0-9]+$ ]]; then
-        minor=$(echo "${pip}" | cut -d"." -f2)
+        minor_version=$(echo "${pip}" | cut -d"." -f2)
     else
         die "Pipeline version string has unknown format (${pip})"
         exit 1
@@ -167,7 +159,7 @@ create_run_specific_files () {
         ref_bam_bai="undef"
         tumor_bam="undef"
         tumor_bam_bai="undef"
-    elif [[ "${minor}" -lt 10 ]]; then
+    elif [[ "${minor_version}" -lt 10 ]]; then
         ref_bam="${ref}/aligner/${ref}.bam"
         ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
         tumor_bam="${tum}/aligner/${tum}.bam"
@@ -213,11 +205,15 @@ create_run_specific_files () {
     )
 
     # No germline driver catalog if older than 5.19
-    if [[ "${minor}" -lt 19 ]]; then
+    if [[ "${minor_version}" -lt 19 ]]; then
         driver_cat_paths=("purple/${tum}.driver.catalog.tsv")
     fi
 
     local somatic_files=(
+        "${ref_bam}"
+        "${ref_bam_bai}"
+        "${tumor_bam}"
+        "${tumor_bam_bai}"
         "purple/purple.version"
         "purple/${tum}.purple.cnv.somatic.tsv"
         "purple/${tum}.purple.cnv.gene.tsv"
@@ -230,10 +226,6 @@ create_run_specific_files () {
         "purple/${tum}.purple.somatic.vcf.gz.tbi"
         "purple/${tum}.purple.cnv.germline.tsv"
         "purple/plot/${tum}.circos.png"
-        "${ref_bam}"
-        "${ref_bam_bai}"
-        "${tumor_bam}"
-        "${tumor_bam_bai}"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
         "${driver_cat_paths[@]}"
@@ -256,7 +248,7 @@ create_run_specific_files () {
     info "Creating ${out_aria} (and selection tmp files)"
     for file_path in "${file_selection[@]}"; do
         file_name=$(basename "${file_path}")
-        file_in_bucket="${bucket}/${name}/${file_path}"
+        file_in_bucket="${bucket}/${set_name}/${file_path}"
         gs_url="gs://${file_in_bucket}"
 
         ## adjust for Fastq files (those already are complete internal gs path)
@@ -265,32 +257,33 @@ create_run_specific_files () {
             gs_url="${file_path}"
         fi
 
-        ## get file specific md5 hash
-        md5sum=$(echo "${json}" | jq -r --arg url "${gs_url}" '.[] | select(.filepath == $url) | .hash')
-        [[ -n "${md5sum}" ]] || die "Missing md5 hash for file at url (${gs_url})"
-        printf '%s\t%s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
-
         ## sanity check on existence of file in bucket
         gsutil -u "${project}" -q stat "${gs_url}"
         if [[ $? -eq 1 ]]; then
+            err=$?
             msg=$(gsutil -u "${project}" ls "${gs_url}" 2>&1)
-            warn "Cannot access file so skipping (${gs_url})"
-            warn "ErrCode=${?} ErrMsg=\"${msg}\""
-            continue
+            warn "Unable to locate file in bucket (ErrCode=${err} ErrMsg='${msg}' URL='${gs_url}')"
+            die "Not all files are present at expected location in bucket. Exiting."
         fi
+
+        ## get file specific md5 hash
+        info "  Getting md5 and signing URL for file ${file_name}"
+        md5sum=$(get_md5_for_gs_url "${gs_url}")
+        [[ -n "${md5sum}" ]] || die "Unable to retrieve md5 hash for file at url (${gs_url})"
+        printf '%s  %s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
         ## get pre-signed URL (prints a header and multiple fields)
         url=$(gsutil signurl -r europe-west4 -b "${project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
 
         ## final sanity checks
         [[ "${url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${url})"
-        [[ -n "${name}" ]] || die "Dir not defined for aria config (${name})"
-        [[ -n "${md5sum}" ]] || die "Md5sum not defined for aria config (${name})"
+        [[ -n "${set_name}" ]] || die "Dir not defined for aria config (${set_name})"
+        [[ -n "${md5sum}" ]] || die "Md5sum not defined for aria config (${set_name})"
 
         ## print aria2 config for one file (for options see https://aria2.github.io/manual/en/html/aria2c.html#input-file)
         {
           echo "${url}"
-          echo "  dir=${name}"
+          echo "  dir=${set_name}"
           echo "  checksum=md5=${md5sum}"
           echo ""
         } >> "${out_aria}"
@@ -299,6 +292,16 @@ create_run_specific_files () {
         echo "${gs_url}" >> "${out_url_int}"
         echo "${url}" >> "${out_url_ext}"
     done
+}
+
+retrieve_runs_by_set () {
+    local set_name=$1 && shift
+    local ini_exclude="Rerun.ini"
+    local buk_exclude="^research-pipeline"
+    hmf_api_get "runs?set_name=${set_name}" | jq \
+      --arg ini "^${ini_exclude}" \
+      --arg buk "^${buk_exclude}" \
+      '[.[] | select(.bucket//"NA"|test($buk)|not) | select(.ini//"NA"|test($ini)|not)]'
 }
 
 create_json_file () {
@@ -314,6 +317,18 @@ create_md5sums_file () {
     info "Creating ${out_file}"
     echo "${json_text}" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > "${out_file}"
     echo "${json_text}" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> "${out_file}"
+}
+
+get_md5_for_gs_url () {
+    local gs_url=$1
+    file_info=$(gsutil ls -L "${gs_url}") || warn "unable to get file info for '${gs_url}'"
+    # method to convert hexadecimal to base64 from https://gist.github.com/analogist/f74d28b5f00ae3db0cd7f0870f7bad90
+    echo "${file_info}" | awk 'BEGIN {
+    decodehash = "base64 -d | xxd -p | tr -d \"\\n\"";
+    truncname = "sed 's#gs://[a-z0-9_.\-]*/##' | sed 's/:$//'" }
+    /Hash \(md5\)/ { print $3 | decodehash; close(decodehash);
+        printf "  %s\n",fname | truncname; close(truncname) }
+    /^gs:\/\// { fname = $0 }' | cut -d" " -f1
 }
 
 main
