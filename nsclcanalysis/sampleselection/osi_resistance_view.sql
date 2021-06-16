@@ -4,9 +4,9 @@ SELECT *,
     WHEN (qcStatus LIKE '%WARN_LOW_PURITY%' OR qcStatus = 'FAIL_NO_TUMOR')
 		THEN "EXCLUDE_1_QC_CHECK"
     WHEN sampleId LIKE 'CORE%'
-		THEN "EXCLUDE_2_CORE_SAMPLE"
+		THEN "EXCLUDE_2_COREDB_SAMPLE"
     WHEN (preTreatmentLine1 NOT LIKE '%Osi%' AND preTreatmentLine2 NOT LIKE '%Osi%' AND preTreatmentLine3 NOT LIKE '%Osi%' AND preTreatmentLine4 NOT LIKE '%Osi%' AND preTreatmentLine5 NOT LIKE '%Osi%' AND preTreatmentLine6 NOT LIKE '%Osi%' AND preTreatmentLine7 NOT LIKE '%Osi%' AND preTreatmentLine8 NOT LIKE '%Osi%' AND preTreatmentLine9 NOT LIKE '%Osi%' AND preTreatmentLine10 NOT LIKE '%Osi%' AND preTreatmentLine11 NOT LIKE '%Osi%' AND preTreatmentLine12 NOT LIKE '%Osi%')
-		THEN "EXCLUDE_3_NO_OSI_PRE_BIOPSY"
+		THEN "EXCLUDE_3_NO_OSI_BEFORE_BIOPSY"
     WHEN (preTreatmentLine1 LIKE '%Osi%' AND preTreatmentLine1PdDate <> '1000-10-10' AND daysBiopsyAfterStartLine1 > 0 AND daysBiopsyAfterPDLine1 < 90) THEN "INCLUDE"
     WHEN (preTreatmentLine2 LIKE '%Osi%' AND preTreatmentLine2PdDate <> '1000-10-10' AND daysBiopsyAfterStartLine2 > 0 AND daysBiopsyAfterPDLine2 < 90) THEN "INCLUDE"
 	WHEN (preTreatmentLine3 LIKE '%Osi%' AND preTreatmentLine3PdDate <> '1000-10-10' AND daysBiopsyAfterStartLine3 > 0 AND daysBiopsyAfterPDLine3 < 90) THEN "INCLUDE"
