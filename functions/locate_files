@@ -140,6 +140,7 @@ locate_pilot_serve() {
 }
 
 locate_prod_protect() {
+    # Cannot update to v1.4 yet as long as diagnostics pipeline occasionally needs a protect rerun.
     echo ${base_path}/tools/protect_v1.3/protect.jar
 }
 
@@ -861,29 +862,20 @@ locate_protect_evidence() {
     echo ${protect_evidence_tsv}
 }
 
-locate_protect_evidence_pilot_ckb_v13() {
+locate_protect_evidence_pilot_ckb() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb_v1.3/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot CKB v1.3 evidence tsv in ${run_dir}. Exiting."
+        error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}. Exiting."
     fi
     echo ${protect_evidence_tsv}
 }
 
-locate_protect_evidence_pilot_ckb_v14() {
+locate_protect_evidence_pilot_vicc() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb_v1.4/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_vicc/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot CKB v1.4 evidence tsv in ${run_dir}. Exiting."
-    fi
-    echo ${protect_evidence_tsv}
-}
-
-locate_protect_evidence_pilot() {
-    local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
-    if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}. Exiting."
+        error "Unable to locate PROTECT pilot VICC evidence tsv in ${run_dir}. Exiting."
     fi
     echo ${protect_evidence_tsv}
 }

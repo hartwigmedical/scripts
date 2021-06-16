@@ -61,7 +61,7 @@ molecular_tissue_origin_txt=$(locate_cuppa_txt ${run_dir})
 molecular_tissue_origin_plot=$(locate_cuppa_plot ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence_pilot_ckb_v14 ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence_pilot_ckb ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
