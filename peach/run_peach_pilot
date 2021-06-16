@@ -18,6 +18,8 @@ main() {
   local peach_main
   local venv_dir
   local panel_name
+  local optional_reference_assembly_version_arg
+
   while [[ $# -gt 0 ]]
   do
   key="$1" && shift
@@ -34,6 +36,9 @@ main() {
       -p|--panel)
       panel_name="$1" && shift  # Optional argument
       ;;
+      -a|--vcf_reference_assembly_version)
+      optional_reference_assembly_version_arg=" --vcf_reference_assembly_version $1" && shift  # Optional argument
+      ;;
       *)    # Unknown option
       OTHER_OPTIONS+=("$key") # Save it in an array for later
       ;;
@@ -49,6 +54,9 @@ main() {
   fi
   if [[ -z ${panel_name} ]]; then
     panel_name="${MINIMAL_DPYD_PANEL_NAME}"
+  fi
+  if [[ -z ${optional_reference_assembly_version_arg} ]]; then
+    optional_reference_assembly_version_arg=""
   fi
 
   # Sanity checks
@@ -92,6 +100,7 @@ main() {
       "--tool_version" "${peach_version}" \
       "--outputdir" "${output_dir}"  \
       "--panel" "${panel_file}" \
+      ${optional_reference_assembly_version_arg} \
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
