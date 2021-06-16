@@ -820,6 +820,16 @@ locate_virus_annotation_tsv_pilot() {
     echo ${virus_annotation_tsv}
 }
 
+
+locate_virus_annotation_tsv() {
+    local run_dir=$1
+    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
+    if [[ -z "${virus_annotation_tsv}" ]]; then
+        error "Unable to locate virus annotation TSV in ${run_dir}. Exiting."
+    fi
+    echo ${virus_annotation_tsv}
+}
+
 ################################## CUPPA #######################################
 
 locate_cuppa_txt() {
