@@ -10,7 +10,7 @@ info "Start extracting doids"
 primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 
 if [[ -z "${primary_tumor_doids}" ]]; then
-    error "Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting"
+    warn "Could not determine tumor DOIDs for ${tumor_sample}."
 else
-    info "Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
+    info "Could determine tumor DOIDs '${primary_tumor_doids}' for ${tumor_sample}"
 fi
