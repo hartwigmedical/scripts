@@ -22,7 +22,7 @@ SELECT *,
 	ELSE "EXCLUDE_4_NO_PD_OR_TIME_RULES"
     END AS "include"
  FROM
-	(SELECT n.sampleId, status, dateBiopsy, dateDiagnosis, dateStageIV, dateDeathOrLastContact, note, driver, qcStatus,
+	(SELECT n.sampleId, qcStatus, note, driver, dateDiagnosis, dateStageIV, dateDeathOrLastContact, alive, dateBiopsy,
 	pretreatmentLine1, pretreatmentLine1startDate, pretreatmentLine1PdDate, pretreatmentLine1StopReason, IF(dateDiff(dateBiopsy,pretreatmentLine1StartDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine1StartDate)) AS daysBiopsyAfterStartLine1, IF(dateDiff(dateBiopsy,pretreatmentLine1PdDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine1PdDate)) AS daysBiopsyAfterPDLine1,
 	pretreatmentLine2, pretreatmentLine2startDate, pretreatmentLine2PdDate, pretreatmentLine2StopReason, IF(dateDiff(dateBiopsy,pretreatmentLine2StartDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine2StartDate)) AS daysBiopsyAfterStartLine2, IF(dateDiff(dateBiopsy,pretreatmentLine2PdDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine2PdDate)) AS daysBiopsyAfterPDLine2,
 	pretreatmentLine3, pretreatmentLine3startDate, pretreatmentLine3PdDate, pretreatmentLine3StopReason, IF(dateDiff(dateBiopsy,pretreatmentLine3StartDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine3StartDate)) AS daysBiopsyAfterStartLine3, IF(dateDiff(dateBiopsy,pretreatmentLine3PdDate)>300000,"NA",dateDiff(dateBiopsy,pretreatmentLine3PdDate)) AS daysBiopsyAfterPDLine3,
@@ -40,4 +40,4 @@ SELECT *,
     INNER JOIN hmfpatients.purity p ON n.sampleId=p.sampleId
     INNER JOIN hmfpatients.amberPatient a ON n.sampleId=a.sampleId)
 		AS potentialSelection
-		);
+);
