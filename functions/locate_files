@@ -59,14 +59,6 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
-locate_prod_bachelor() {
-    echo ${base_path}/tools/bachelor_v1.12/bachelor.jar
-}
-
-locate_pilot_bachelor() {
-    echo ${base_path}/tools/bachelor_pilot/bachelor.jar
-}
-
 locate_prod_purple() {
     echo ${base_path}/tools/purple_v2.52/purple.jar
 }
@@ -97,6 +89,10 @@ locate_prod_linx() {
 
 locate_pilot_linx() {
     echo ${base_path}/tools/sv-linx_pilot/sv-linx.jar
+}
+
+locate_pilot_orange() {
+    echo ${base_path}/tools/orange_pilot/orange.jar
 }
 
 locate_prod_patient_reporter() {
