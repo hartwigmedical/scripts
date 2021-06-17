@@ -27,9 +27,9 @@ def main() -> None:
         ("COLO100NGU_umi_collapse", "/home/david/depths/COLO100NGU.umi_collapse.bam.depth"),
         ("COLO150NGU_umi_collapse", "/home/david/depths/COLO150NGU.umi_collapse.bam.depth"),
         ("COLO200NGU_umi_collapse", "/home/david/depths/COLO200NGU.umi_collapse.bam.depth"),
-        ("COLOT20NGU_no_dedup", "/home/david/depths/COLOT20NGU.bam.depth"),
-        ("COLOT20NGU_sambamba", "/home/david/depths/COLOT20NGU.sambamba.bam.depth"),
-        ("COLOT20NGU_umi_tools", "/home/david/depths/COLOT20NGU.umi_tools.bam.depth"),
+        ("COLOT50NGU_no_dedup", "/home/david/depths/COLOT50NGU.bam.depth"),
+        ("COLOT50NGU_sambamba", "/home/david/depths/COLOT50NGU.sambamba.bam.depth"),
+        ("COLOT50NGU_umi_tools", "/home/david/depths/COLOT50NGU.umi_tools.bam.depth"),
     ]
     output_dir_100 = "/home/david/coverage_analysis_100/"
     output_dir_500 = "/home/david/coverage_analysis_500/"
