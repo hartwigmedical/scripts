@@ -8,7 +8,7 @@ def main() -> None:
     # See gs://func-79-panel-v1-coverage-analysis/config in hmf-crunch for panel config files
     # Depth files are output of samtools depth
     panel_file_config = PanelFileConfig(
-        all_genes_tsv="/home/david/Documents/all_genes.38.tsv",
+        all_genes_tsv="/home/david/config/all_genes.38.tsv",
         baf_sites_list="/home/david/config/baf_points_list_v1.tsv",
         fusion_sites_list="/home/david/config/fusion_intron_list_v1.tsv",
         gene_list="/home/david/config/gene_list_v2.txt",
