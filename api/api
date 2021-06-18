@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-classes='biopsies|entities|fastq|flowcells|inis|platforms|runs|samples|sets|sequencers'
+classes='accounts|biopsies|entities|fastq|flowcells|groups|inis|platforms|runs|samples|sets|sequencers'
 
 # allows autocomplete of script commands
 complete -W "$(echo "${classes}" | tr "|" " ")" "$(basename "$0")"
@@ -106,6 +106,12 @@ elif [[ "${class}" == "sequencers" ]]; then
     printf "#%s\t%s\t%s\n" name platform_id id
     jq -r '.[] | [.name, .platform_id, .id] | @tsv' <<< "${json_result}"
 elif [[ "${class}" == "biopsies" ]]; then
+    printf "#%s\t%s\n" name id
+    jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+elif [[ "${class}" == "accounts" ]]; then
+    printf "#%s\t%s\n" email id
+    jq -r '.[] | [.email, .id] | @tsv' <<< "${json_result}"
+elif [[ "${class}" == "groups" ]]; then
     printf "#%s\t%s\n" name id
     jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
 else
