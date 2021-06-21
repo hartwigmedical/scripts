@@ -18,8 +18,6 @@ source_path=/data/gcp/processed_runs
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
-    tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
-    cohort=$(find_cohort_type ${tumor_barcode})
 
     info "Checking primary tumor doid"
     report_doid=$(get_doids_for_biopsy ${sample_id})
@@ -27,9 +25,11 @@ for run in ${process_runs}; do
     if [[ ${protect_doid} == ${report_doid} ]]; then
         info "The doid are equals of protect ${protect_doid} and report ${report_doid}"
     else
-        warn "The doid are not equals of protect ${protect_doid} and report ${report_doid}"
+        warn "The doid are not equal of protect ${protect_doid} and report ${report_doid}"
     fi
 
+    tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
+    cohort=$(find_cohort_type ${tumor_barcode})
     if [[ -z ${cohort} ]]; then
         warn "Could not resolve cohort for ${run}."
     elif [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
