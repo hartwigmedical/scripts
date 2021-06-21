@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source message_functions || exit 1
 
@@ -34,10 +34,29 @@ echo "${samples}" | jq -r '.[].barcode' | while read info; do
     barcode=$(echo "${info}" | cut -f1)
     name=$(echo "${info}" | cut -f2)
     status=$(echo "${info}" | cut -f3)
-    all_runs=$(hmf_api_get "runs?barcode=$barcode")
+    all_runs=$(hmf_api_get "runs?barcode=$barcode" | jq '[.[] | select(.ini != "Rerun.ini") | select(.ini != "Import.ini")]')
     val_runs=$(echo "$all_runs" | jq '[.[] | select(.status == "Validated")]')
+    del_runs=$(echo "$all_runs" | jq '[.[] | select(.status == "Deleted")]')
+    inis=$(jq -r  '.[].ini' <<< "$all_runs" | sort | uniq | paste -sd, - | sed 's/.ini//g')
+
     all_count=$(echo "${all_runs}" | jq 'length')
     val_count=$(echo "${val_runs}" | jq 'length')
-    info "  $barcode has $val_count Validated runs of $all_count total (name=$name|status=$status)"
+    del_count=$(echo "${del_runs}" | jq 'length')
+
+    info_line="$barcode has $val_count Validated and $del_count Deleted runs of $all_count total ($name|$status|$inis)"
+    if [[ ! "${status}" =~ ^(Ready|Deleted)$ ]]; then
+        warn "  WARN: SAMPLE_STATUS $info_line"
+    elif [[ "${all_count}" -lt 1 ]]; then
+        warn "  WARN: NO_RUNS $info_line"
+    elif [[ "${val_count}" -lt 1 ]]; then
+        if [[ "${del_count}" -gt 0 ]]; then
+            warn "  WARN: DELETED_RUNS $info_line"
+        else
+            warn "  WARN: NO_VALIDATED_RUNS $info_line"
+            jq -r '.[] | [.set.name,.ini,.status,.failure.type//"NA",.id] | @tsv' <<< "$all_runs" | tr "\t" " " | awk '{print "[WARN]    "$0}'
+        fi
+    else
+        info "  OK: $info_line"
+    fi
 done < <(echo "${samples}" | jq -cr '.[] | [.barcode,.name,.status] | @tsv')
 

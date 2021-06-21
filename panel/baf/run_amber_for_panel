@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")" || die "Could not get script name"
+
+DIR_NAME="$(dirname "$0")" || die "Could not get dir name of this script"
+EXTRACT_BAF_INFO="${DIR_NAME}/extract_baf_info.py"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  # Parse args
+  local amber
+  local loci
+  local output_dir
+  local threads
+  local bams
+  local other_options
+
+  while [[ $# -gt 0 ]]
+  do
+  key=$1 && shift
+  case $key in
+      -a|--amber)
+      amber="$1" && shift
+      ;;
+      -l|--loci)
+      loci="$1" && shift
+      ;;
+      -o|--output_dir)
+      output_dir="$1" && shift
+      ;;
+      -t|--threads)
+      threads="$1" && shift  # Optional. By default use 90% of available.
+      ;;
+      -b|--bam)
+      bams+=("$1") && shift
+      ;;
+      *)    # Unknown option
+      other_options+=("$key") # Save it in an array for later
+      ;;
+  esac
+  done
+
+  if [[ -z ${threads} ]]; then
+    threads=$(($(nproc) * 9 / 10))  # Default value, use 90% of available
+  fi
+
+  # Sanity checks
+  [[ "${#other_options[@]}" -eq 0 ]] || die "Unrecognized options! : ${other_options[*]}"
+  if [[ -z "${amber}" ]] || [[ ! -f ${amber} ]] || [[ "${amber: -4}" != ".jar" ]]; then
+    die "'amber' argument should be a jar file: ${amber}."
+  fi
+  if [[ -z "${loci}" ]] || [[ ! -f ${loci} ]] || [[ "${loci: -4}" != ".vcf" ]]; then
+    die "'loci' argument should be a vcf file: ${loci}."
+  fi
+  if [[ -z "${output_dir}" ]]; then
+    die "'output_dir' argument not provided."
+  fi
+
+  for bam in "${bams[@]}"
+  do
+    handle_bam "${bam}" "${amber}" "${loci}" "${output_dir}" "${threads}"
+  done
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+handle_bam() {
+  local bam=$1 && shift
+  local amber=$1 && shift
+  local loci=$1 && shift
+  local output_dir=$1 && shift
+  local threads=$1 && shift
+
+  if [[ -z "${threads}" ]]; then
+    die "Not enough arguments to ${SCRIPT_NAME}"
+  fi
+
+  bam_name="${bam##*/}"
+  sample="${bam_name%.*}"
+  sample_output_dir="${output_dir}/${sample}"
+
+  if [[ -d sample_output_dir ]]; then
+    die "Output dir exists: ${sample_output_dir}"
+  fi
+
+  info "Run AMBER"
+  java -Xmx8G -cp "${amber}" com.hartwig.hmftools.amber.AmberApplication \
+    -tumor_only \
+    -tumor "${sample}" \
+    -tumor_bam "${bam}" \
+    -output_dir "${sample_output_dir}" \
+    -threads "${threads}" \
+    -loci "${loci}" || die "Could not run AMBER"
+  info "Finished AMBER"
+
+  info "Started creation of tsv for easy copying into sheet"
+  baf_output_file="${sample_output_dir}/${sample}.amber.baf.vcf.gz"
+  easy_copy_output_file="${sample_output_dir}/${sample}.easycopy.tsv"
+
+  python3 "${EXTRACT_BAF_INFO}" "${baf_output_file}" "${loci}" "${easy_copy_output_file}" ||
+    die "Could not extract baf info for easy copying"
+  info "Created tsv for easy copying into sheet"
+}
+
+main "$@"
