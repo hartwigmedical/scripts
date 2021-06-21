@@ -14,10 +14,6 @@ locate_gcp_prod_database_host() {
     echo $(cat ${base_path}/dbs/mysql_credentials/gcp_database_host)
 }
 
-locate_old_prod_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/old_prod
-}
-
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }

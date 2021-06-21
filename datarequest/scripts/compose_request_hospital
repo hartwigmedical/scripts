@@ -41,7 +41,7 @@ if [[ $? = 0 ]]; then
     info "Selecting patients to include for ${request_name}..."
     cp ${sample_selection_sql} ${log_dir}/selectSamples.sql
     sample_selection_tsv=${log_dir}/selectSamples.tsv
-    execute_sql_on_old_prod ${log_dir}/selectSamples.sql > ${sample_selection_tsv}
+    execute_sql_on_prod ${log_dir}/selectSamples.sql > ${sample_selection_tsv}
     patient_count=$(grep -cv "^#" ${sample_selection_tsv})
     info "Created ${sample_selection_tsv} with ${patient_count} samples"
 
