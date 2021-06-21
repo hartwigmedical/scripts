@@ -9,9 +9,9 @@ if [[ -z "${run_dir}" ]]; then
     error "No run directory provided. Exiting."
 fi
 
-sigs_jar=$(locate_pilot_sigs)
-output_dir=${run_dir}/sigs_pilot
+sigs_jar=$(locate_prod_sigs)
+output_dir=${run_dir}/sigs
 
-info "Running sigs pilot for on ${run_dir}"
+info "Running sigs prod on ${run_dir}"
 
 do_run_sigs ${run_dir} ${sigs_jar} ${output_dir}
