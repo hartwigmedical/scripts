@@ -57,6 +57,7 @@ info "Running linx visualiser for ${sample}"
 
 java -Xmx8G -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     -sample ${sample} \
+    -circos /data/common/tools/circos_v0.69.6/bin/circos \
     -vis_file_dir ${output_dir} \
     -data_out ${output_dir}/vis \
     -plot_out ${output_dir}/plot \
