@@ -56,7 +56,7 @@ locate_nextcloud_upload_credentials() {
 ##################################### JARS #####################################
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.52/purple.jar
+    echo ${base_path}/tools/purple_v3.1/purple.jar
 }
 
 locate_pilot_purple() {
@@ -618,6 +618,24 @@ locate_linx_driver_catalog() {
         error "Unable to locate linx drivers catalog in ${run_dir}. Exiting."
     fi
     echo ${driver_catalog_tsv}
+}
+
+##################################### Sigs #####################################
+
+locate_sigs_dir() {
+    local run_dir=$1
+    if [[ ! -d ${run_dir} ]]; then
+        error "Run dir is not a directory: ${run_dir}. Exiting"
+    fi
+    echo ${run_dir}/sigs
+}
+
+locate_sigs_pilot_dir() {
+    local run_dir=$1
+    if [[ ! -d ${run_dir} ]]; then
+        error "Run dir is not a directory: ${run_dir}. Exiting"
+    fi
+    echo ${run_dir}/sigs_pilot
 }
 
 ##################################### GATK #####################################

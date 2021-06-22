@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sigs_jar=$(locate_pilot_sigs)
-output_dir=${run_dir}/sigs_pilot
+output_dir=$(locate_sigs_pilot_dir ${run_dir})
 
 info "Running sigs pilot for on ${run_dir}"
 
