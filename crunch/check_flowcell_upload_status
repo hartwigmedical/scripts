@@ -1,17 +1,35 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 flowcells_dir=/data1/illumina_data
 uploadlog_dir=/data/bcl_upload_logs
+min_days_converted=2
 
-echo "# Checking upload status of flowcells"
+info "Checking upload status of flowcells (${uploadlog_dir})"
 
-for run_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -exec ls -d {} +); do
-    run_name=$(basename ${run_path})
-    log_gcp="${uploadlog_dir}/${run_name}_GCP_Uploaded.done"
+cleanup=()
+while read -r flowcell_path; do
+    flowcell_name=$(basename "${flowcell_path}")
+    upload_log="${uploadlog_dir}/${flowcell_name}_GCP_Uploaded.done"
+    conversion_log="${flowcell_path}/conversionDone.txt"
 
-    if [[ -f "${log_gcp}" ]]; then
-        echo "${run_name} OK (${log_gcp})"
+    if [[ ! -f "${upload_log}" ]]; then
+        warn "  ${flowcell_name} not uploaded to GCP yet!!"
+    elif [[ ! -f "${conversion_log}" ]]; then
+        warn "  ${flowcell_name} not converted yet!!"
     else
-        echo "${run_name} WARNING not uploaded to GCP yet!!"
+        days=$(( ($(date +%s) - $(date -r "${conversion_log}" +%s) )/(60*60*24) ))
+        info "  OK ${flowcell_name} uploaded to GCP (converted ${days} days ago)"
+        if [[ "${days}" -gt "${min_days_converted}" ]]; then
+            cleanup+=("${flowcell_path}")
+        fi
     fi
+done < <(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -exec ls -d {} +)
+
+info "Potential cleanup:"
+for flowcell_path in "${cleanup[@]}"; do
+    # sanity check on variable content before we print a sudo rm command
+    [[ "${flowcell_path}" =~ ^/data1/illumina_data/[^/]+$ ]] || die "The flowcell path string has unexpected format (${flowcell_path})"
+    info "  sudo -u sbsuser rm -r ${flowcell_path}"
 done
