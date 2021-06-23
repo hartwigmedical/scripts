@@ -4,14 +4,16 @@ source message_functions || exit 1
 
 api_url='http://api.prod-1/hmf/v1'
 
+script_name=$(basename "$0")
+
 hmfapi () {
     http --ignore-stdin "$@"
 }
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $(basename $0) \${barcode} \${fastqDir}"
-    echo "        $(basename $0) FR12345678 /path/to/fastq/files/"
+    echo " Usage: ${script_name} \${barcode} \${fastqDir}"
+    echo "        ${script_name} FR12345678 /path/to/fastq/files/"
     echo "---"
     exit 1
 fi
@@ -26,17 +28,24 @@ if [[ -z "${sample_id}" ]]; then
     error "Barcode not found at API (${barcode})"
 fi
 
+## find all R1 fastq files
+if [[ ${fastq_dir} == gs://* ]]; then
+  R1_fastq_files=$(gsutil ls "${fastq_dir}/*_R1_*" | xargs -I% basename % \;)
+else
+  R1_fastq_files=$(find "${fastq_dir}" -name "*_R1_*.fastq.gz" -exec basename {} \;)
+fi
+
 ## make sure the FASTQ files contain only ONE sample
-sample_count=$(find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq | wc -l)
+sample_count=$(echo "${R1_fastq_files}" | cut -d"_" -f1 | sort | uniq | wc -l)
 if [[ ${sample_count} -ne 1 ]]; then
     error "FASTQ files in dir should be from one sample (found ${sample_count} samples in dir \"${fastq_dir}\")"
 else
-    sample_name=$(find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq)
+    sample_name=$(echo "${R1_fastq_files}" | cut -d"_" -f1 | sort | uniq)
 fi
 
-## find all R1 fastq files -> check R2 presence -> register pair
+## check R1 and R2 presence -> register pair
 info "Starting with sample name:${sample_name} barcode:${barcode} id:${sample_id}"
-find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | while read R1; do
+echo "${R1_fastq_files}" | while read R1; do
     R2=$( echo "${R1}" | sed 's/_R1_/_R2_/' )
     if [[ -z "${R1}" || -z "${R2}" ]]; then
         warn "Somehow R1 found but R2 file does not exist (${R2}) so SKIPPING this pair."
