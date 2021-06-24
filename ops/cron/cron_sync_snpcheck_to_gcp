@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-script_dir="/data/common/repos/scripts/api"
-script_name="update_ptum_doids_in_api"
+script_dir="/data/common/repos/scripts/gcp"
+script_name="sync_snpcheck_to_gcp"
 script_path="${script_dir}/${script_name}"
 
 log_dir="/data/ops/cron/logs/"
 log="${log_dir}/$(date +%y%m%d)_cron_${script_name}.log"
 
-${script_path} -m patch > "${log}" 2>&1
+${script_path} > "${log}" 2>&1
