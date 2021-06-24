@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+log_dir="/data/ops/recurrent/ptum_doid_update/logs/"
+log="${log_dir}/$(date +%y%m%d)_cron_update_ptum_doids_in_api.log"
+
+update_ptum_doids_in_api -m patch > "${log}" 2>&1
