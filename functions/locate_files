@@ -184,30 +184,8 @@ locate_peach_main() {
     echo "$(locate_peach_repo_dir)/peach"
 }
 
-locate_umi_main() {
-    echo "$(locate_umi_dir)/main.py"
-}
-
 locate_vcftools() {
     echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
-################################### UMI ########################################
-
-locate_umi_dir() {
-    echo "${base_path}/repos/scripts/umi"
-}
-
-locate_umi_resource_dir() {
-    echo "${base_path}/dbs/umi"
-}
-
-locate_umi_venv_dir() {
-    echo "$(locate_umi_resource_dir)/venv/umi"
-}
-
-locate_umi_requirements() {
-    echo "$(locate_umi_dir)/requirements.txt"
 }
 
 ################################## Resources ###################################
