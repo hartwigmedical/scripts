@@ -2,14 +2,17 @@
 
 source message_functions || exit 1
 
-if [[ "$(hostname)" != "datastore" ]]; then
-    die "This script is meant to be executed at datastore. Exiting."
-fi
-
 for i in {2,3}; do
-    ssh crunch00${i} check_samplesheets | \
+    if [[ "$(hostname)" == "crunch00${i}" ]]; then
+      sample_sheets_info=$(check_samplesheets) \
+          || die "Could not check samplesheets from crunch00${i} directly"
+    else
+      sample_sheets_info=$(ssh "crunch00${i}" check_samplesheets) \
+          || die "Could not check samplesheets info over ssh from crunch00${i}"
+    fi
+    echo "${sample_sheets_info}" | \
     grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+" | \
-    while read crunch_info; do
+    while read -r crunch_info; do
         fc_run_name=$(echo "${crunch_info}" | cut -f1)
         fc_dir_name=$(echo "${crunch_info}" | cut -f2)
         fc_run_date=$(echo "${fc_dir_name}" | cut -d"_" -f1)
