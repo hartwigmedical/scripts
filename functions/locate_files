@@ -181,7 +181,7 @@ extract_expected_pipeline_version() {
 ############################### NON JAVA TOOLS #################################
 
 locate_peach_main() {
-    echo "$(locate_peach_repo_dir)/peach"
+    echo "$(locate_repo_dir "peach")/peach"
 }
 
 locate_vcftools() {
@@ -244,6 +244,13 @@ locate_ckb_flex_data_dir() {
 
 locate_ckb_filter_tsv() {
     echo ${base_path}/dbs/serve/curation/ckb_filters.tsv
+}
+
+#################################### Repos #####################################
+
+locate_repo_dir() {
+    local repo_name=$1 && shift
+    echo "${base_path}/repos/${repo_name}"
 }
 
 ################################# REF GENOME ###################################
@@ -640,16 +647,12 @@ locate_gatk_germline_variants() {
 
 #################################### PEACH #####################################
 
-locate_peach_repo_dir() {
-    echo "${base_path}/repos/peach"
-}
-
 locate_peach_venv_dir() {
     echo "$(locate_peach_resource_dir)/venv/peach"
 }
 
 locate_peach_requirements() {
-    echo "$(locate_peach_repo_dir)/requirements.txt"
+    echo "$(locate_repo_dir "peach")/requirements.txt"
 }
 
 locate_peach_pilot_output_dir() {

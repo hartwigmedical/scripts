@@ -33,7 +33,7 @@ main() {
     venv_dir=$(locate_peach_venv_dir) || die "Could not get default venv dir"
   fi
   if [[ -z ${peach_repo_base_dir} ]]; then
-    peach_repo_base_dir=$(locate_peach_repo_dir) || die "Could not get default peach repo base dir"
+    peach_repo_base_dir=$(locate_repo_dir "peach") || die "Could not get default peach repo base dir"
   fi
 
   # Sanity checks
