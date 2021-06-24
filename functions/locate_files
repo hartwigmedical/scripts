@@ -3,8 +3,8 @@
 source message_functions || exit 1
 
 base_path="/data/common"
-if [[ -z "$(hostname | grep datastore)" ]]; then
-    # Common folder does not exist on crunches...
+if [[ ! -d ${base_path} ]]; then
+    # Backup if that path doesn't exist
     base_path="/data"
 fi
 
