@@ -10,6 +10,10 @@ if [[ -z ${repo_name} ]]; then
     die "No repo name provided. ${SCRIPT_NAME} requires a repo name as an argument"
 fi
 
+if [[ ${repo_name} != "scripts" ]] && [[ ${repo_name} != "peach" ]]; then
+    die "Only allowed to be used on scripts and peach repos. Other repos are set to a fixed version on purpose."
+fi
+
 repo_root="/data/repos"
 work_path=$(pwd)
 
