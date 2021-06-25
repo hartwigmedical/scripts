@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-datastore_sheets_dir=/data/samplesheets
+local_sheets_dir=/data/samplesheets
 crunch_seq_runs_dir=/data1/illumina_data
 
 for i in {2,3}; do
@@ -13,7 +13,7 @@ for i in {2,3}; do
     while read sheet_path; do
         run_path=$(dirname ${sheet_path})
         run_name=$(basename ${run_path})
-        dest_path="${datastore_sheets_dir}/${run_name}_SampleSheet.csv"
+        dest_path="${local_sheets_dir}/${run_name}_SampleSheet.csv"
         info "  Executing rsync for ${run_name}"
         rsync_log_line_count=$(rsync -rtv ${crunch_name}:${sheet_path} ${dest_path} | wc -l)
         if [[ "${rsync_log_line_count}" -gt 4 ]]; then
