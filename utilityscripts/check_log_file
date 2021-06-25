@@ -8,7 +8,14 @@ if [[ -z "${file_name}" ]]; then
     error "No log file name. Exiting"
 fi
 
+info "Checking errors"
+
 cat "${file_name}" \
-    | grep -Pi "error|excep|fail|warn" \
+    | grep -Pi "error|excep|fail" \
     | grep -Pv "^#.*(E|e)rrors :.*\(" \
     | grep -Pv "errorCorrection|OnFirstError|download:|\.error"
+
+info "Checking warnings"
+
+cat "${file_name}" \
+    | grep -Piw "warn"
