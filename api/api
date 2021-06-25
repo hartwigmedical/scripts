@@ -21,6 +21,7 @@ print_usage(){
     echo " $script runs 210409_HMFregCORE_FR30729505_FR30729512_COREDB010110"
     echo " $script runs FR30729512 barcode"
     echo " $script fastq 37510 sample_id"
+    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna' id"
     echo "Notes:"
     echo " - Default filter-key is 'name'"
     echo " - Add option -j to output raw json instead of parsed TSV table"
