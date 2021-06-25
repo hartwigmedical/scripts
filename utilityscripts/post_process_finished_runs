@@ -20,8 +20,8 @@ for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
 
     info "Checking primary tumor doid"
-    report_doid=$(get_doids_for_biopsy ${sample_id})
-    protect_doid=$(cat ${source_path}/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3)
+    report_doid=$(get_doids_for_biopsy ${sample_id} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
+    protect_doid=$(cat ${source_path}/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
     if [[ ${protect_doid} == "" ]]; then
         warn "The doid of protect ${protect_doid} is not known"
     elif [[ ${protect_doid} == ${report_doid} ]]; then
