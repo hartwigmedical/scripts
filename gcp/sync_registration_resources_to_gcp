@@ -9,4 +9,5 @@ BUCKET="gs://registration-resources-prod-1"
 info "Syncing registration resources to GCP!"
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m cp /data/ops/lims/prod/* ${BUCKET}/lims
+gsutil -m rsync /data/samplesheets ${BUCKET}/samplesheets
 info "Registration resource sync to GCP complete"
