@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source gcp_functions || exit 1
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
@@ -7,6 +8,8 @@ source locate_gcp_files || exit 1
 crunch_seq_runs_dir=/data1/illumina_data
 local_sheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
 samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
+
+switch_to_hmf_ops_service_account
 
 for i in {2,3}; do
     crunch_name="crunch00${i}"
@@ -23,10 +26,8 @@ for i in {2,3}; do
             info "   Synced to ${dest_path}"
         fi
         in_bucket_path="${samplesheets_bucket}/${run_name}_SampleSheet.csv"
-        info "  Executing rsync to bucket for ${run_name}"
-        gsutil_rsync_copy_count=$(gsutil cp "${dest_path}" "${in_bucket_path}" | grep -c Copying)
-        if [[ "${gsutil_rsync_copy_count}" -gt 1 ]]; then
-            info "   Synced to ${in_bucket_path}"
-        fi
+        info "  Copying to bucket for ${run_name}"
+        gsutil cp "${dest_path}" "${in_bucket_path}"
+        gsutil -q stat "${in_bucket_path}" || die "Could not upload samplesheet for ${run_name} to ${samplesheets_bucket}"
     done
 done
