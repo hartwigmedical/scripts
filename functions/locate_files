@@ -242,6 +242,10 @@ locate_ckb_flex_data_dir() {
     echo ${base_path}/dbs/ckb/210604_flex_dump
 }
 
+locate_ckb_flex_data_dir_pilot() {
+    echo ${base_path}/dbs/ckb/210625_flex_dump
+}
+
 locate_ckb_filter_tsv() {
     echo ${base_path}/dbs/serve/curation/ckb_filters.tsv
 }

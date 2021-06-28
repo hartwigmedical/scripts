@@ -5,13 +5,12 @@ source message_functions || exit 1
 
 base_run_path=$1
 test_run_path=$2
-logs_dir_path=$3
 
-if [[ "$#" -ne 3 ]]; then
+if [[ "$#" -ne 2 ]]; then
     echo "-----"
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
-    echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run \$path_to_logs_dir"
-    echo " Examp: $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 /path/to/logs"
+    echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run"
+    echo " Examp: $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9"
     echo "-----"
     exit 1
 fi
@@ -28,7 +27,6 @@ test_meta_file="${test_run_path}/metadata.json"
 main () {
     die_unless_dir_exists "${base_run_path}"
     die_unless_dir_exists "${test_run_path}"
-    die_unless_dir_exists "${logs_dir_path}"
 
     die_unless_file_exists "${base_pip_vsn_file}"
     die_unless_file_exists "${test_pip_vsn_file}"
@@ -46,7 +44,6 @@ main () {
     files_to_diff=("protect/${test_tum_sample}.protect.tsv")
 
     print_header "Settings"
-    info "  LOGS DIR: ${logs_dir_path}"
     info "  BASE DIR: ${base_run_path}"
     info "  TEST DIR: ${test_run_path}"
     info "  BASE version: ${base_pip_vsn}"
@@ -90,16 +87,18 @@ main () {
         fi
     done
 
-    print_header "CRAM print_header check"
+    print_header "BAM/CRAM header check"
     if [[ "${all_crams_present}" == "TRUE" ]]; then
-        base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
-        test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
-        samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
-        samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
-        if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
+        base_header=$(samtools view -H "${base_tum_cram}" | grep '^@RG')
+        test_header=$(samtools view -H "${test_tum_cram}" | grep '^@RG')
+        if [[ $(diff <(echo "${base_header}") <(echo "${test_header}") | wc -l) -eq 0 ]]; then
             info "  OK Identical CRAM RG lines in headers"
         else
-            info_and_warn "  DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
+            info_and_warn "  DIFFERENT CRAM RG lines in headers!"
+            echo "# BASE header (${base_tum_cram}):" 1>&2
+            echo "${base_header}" 1>&2
+            echo "# TEST header (${test_tum_cram}):" 1>&2
+            echo "${test_header}" 1>&2
         fi
     else
         info "  NOTE: not all CRAMs were present so skipping CRAM specific checks"
@@ -133,7 +132,7 @@ main () {
     awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
     awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
 
-    info "Finished with $(basename $0)"
+    info "Finished with $(basename "$0")"
 }
 
 diff_vcf () {
