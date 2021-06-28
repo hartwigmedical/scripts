@@ -25,6 +25,6 @@ locate_sample_registration_logs_at_gcp() {
 }
 
 locate_sample_registration_lims_at_gcp() {
-    echo "$(locate_sample_registration_bucket_at_gcp)/lims"
+    echo "$(locate_sample_registration_bucket_at_gcp)/lims/"
 }
 
