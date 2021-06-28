@@ -6,7 +6,7 @@ source message_functions || exit 1
 base_run_path=$1
 test_run_path=$2
 
-if [[ "$#" -ne 3 ]]; then
+if [[ "$#" -ne 2 ]]; then
     echo "-----"
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
     echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run"
