@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
-SHEETS_LOC=/data/samplesheets
+SHEETS_LOC=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
 JSONS_LOC=/data/ops/api/prod/jsons
 
 ssheet_date=$1

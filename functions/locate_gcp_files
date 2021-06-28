@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+# This script is for finding files in buckets whose locations are not in the API.
+# For files that can be found in the API, see api_functions.
+# For finding local files (including when run from a VM), see locate_files.
+
+############################# Sample Registration ###############################
+
+locate_sample_registration_bucket_at_gcp() {
+    echo "gs://registration-resources-prod-1"
+}
+
+locate_samplesheets_at_gcp() {
+    echo "$(locate_sample_registration_bucket_at_gcp)/samplesheets/"
+}
+
+locate_sample_registration_jsons_at_gcp() {
+    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/jsons/registered/"
+}
+
+locate_sample_registration_logs_at_gcp() {
+    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/logs/"
+}
+
+locate_sample_registration_lims_at_gcp() {
+    echo "$(locate_sample_registration_bucket_at_gcp)/lims"
+}
+

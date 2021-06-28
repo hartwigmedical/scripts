@@ -250,6 +250,10 @@ locate_ckb_filter_tsv() {
     echo ${base_path}/dbs/serve/curation/ckb_filters.tsv
 }
 
+locate_samplesheets_dir() {
+    echo "/data/samplesheets/"
+}
+
 #################################### Repos #####################################
 
 locate_repo_dir() {
@@ -893,6 +897,16 @@ locate_reporting_db_tsv_pilot() {
     local reporting_db_tsv=/data/ops/lims/pilot/reporting_db.tsv
     if [[ ! -f "${reporting_db_tsv}" ]]; then
         error "Unable to locate pilot reporting db TSV. Exiting."
+    fi
+    echo ${reporting_db_tsv}
+}
+
+##################################### LIMS #####################################
+
+locate_reporting_db_tsv() {
+    local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv
+    if [[ ! -f "${reporting_db_tsv}" ]]; then
+        error "Unable to locate reporting db TSV. Exiting."
     fi
     echo ${reporting_db_tsv}
 }

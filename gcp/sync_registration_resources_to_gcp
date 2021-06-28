@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
 
 set -e
 
-BUCKET="gs://registration-resources-prod-1"
+lims_bucket=$(locate_sample_registration_lims_at_gcp) || die "Could not find lims bucket path"
+samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
+
+local_samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
 
 info "Syncing registration resources to GCP!"
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
-gsutil -m cp /data/ops/lims/prod/* ${BUCKET}/lims
-gsutil -m rsync /data/samplesheets ${BUCKET}/samplesheets
+gsutil -m cp /data/ops/lims/prod/* "${lims_bucket}"
+gsutil -m rsync "${local_samplesheets_dir}" "${samplesheets_bucket}"
 info "Registration resource sync to GCP complete"
