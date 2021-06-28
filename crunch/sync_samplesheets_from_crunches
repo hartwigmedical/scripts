@@ -24,9 +24,9 @@ for i in {2,3}; do
         fi
         in_bucket_path="${samplesheets_bucket}/${run_name}_SampleSheet.csv"
         info "  Executing rsync to bucket for ${run_name}"
-        gsutil_rsync_copy_count=$(gsutil -m rsync -u "${dest_path}" "${in_bucket_path}" | grep -c Copying)
+        gsutil_rsync_copy_count=$(gsutil cp "${dest_path}" "${in_bucket_path}" | grep -c Copying)
         if [[ "${gsutil_rsync_copy_count}" -gt 1 ]]; then
-            info "   Synced to ${dest_path}"
+            info "   Synced to ${in_bucket_path}"
         fi
     done
 done
