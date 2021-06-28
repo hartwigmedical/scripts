@@ -12,7 +12,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-info "Loading VIRUS Interpreter data for ${sample}"
+info "Loading virus Interpreter data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadVirusInterpreter \
     -sample ${sample} \
