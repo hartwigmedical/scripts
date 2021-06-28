@@ -10,7 +10,7 @@ machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
 extra_params=("--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com" "--no-address")
-family="pipeline5-5-22"
+family="pipeline5-5-23"
 do_not_use_service_account="FALSE"
 vm_project="hmf-crunch"
 
