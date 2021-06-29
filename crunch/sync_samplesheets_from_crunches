@@ -9,7 +9,7 @@ crunch_seq_runs_dir=/data1/illumina_data
 local_sheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
 samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
-switch_to_hmf_ops_service_account
+switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
 for i in {2,3}; do
     crunch_name="crunch00${i}"
