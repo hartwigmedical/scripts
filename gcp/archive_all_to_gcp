@@ -6,6 +6,7 @@
 source ${HOME}/.bashrc
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 info "Archiving Sequencer Archive"
 do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3300
@@ -28,4 +29,5 @@ info "Archiving SnpCheck Data"
 do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
 info "Archiving Samplesheets"
-do_archive_directory_to_gcp /data/samplesheets samplesheets 3340
+samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
+do_archive_directory_to_gcp "${samplesheets_dir}" samplesheets 3340

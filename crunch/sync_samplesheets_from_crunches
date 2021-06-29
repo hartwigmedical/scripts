@@ -1,23 +1,33 @@
 #!/usr/bin/env bash
 
+source gcp_functions || exit 1
 source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
 
-local_sheets_dir=/data/samplesheets
 crunch_seq_runs_dir=/data1/illumina_data
+local_sheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
+samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
+
+switch_to_hmf_ops_service_account
 
 for i in {2,3}; do
     crunch_name="crunch00${i}"
     info "Checking ${crunch_name} for samplesheets"
 
     ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
-    while read sheet_path; do
-        run_path=$(dirname ${sheet_path})
-        run_name=$(basename ${run_path})
+    while read -r sheet_path; do
+        run_path=$(dirname "${sheet_path}")
+        run_name=$(basename "${run_path}")
         dest_path="${local_sheets_dir}/${run_name}_SampleSheet.csv"
         info "  Executing rsync for ${run_name}"
-        rsync_log_line_count=$(rsync -rtv ${crunch_name}:${sheet_path} ${dest_path} | wc -l)
+        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${dest_path}" | wc -l)
         if [[ "${rsync_log_line_count}" -gt 4 ]]; then
             info "   Synced to ${dest_path}"
         fi
+        in_bucket_path="${samplesheets_bucket}/${run_name}_SampleSheet.csv"
+        info "  Copying to bucket for ${run_name}"
+        gsutil cp "${dest_path}" "${in_bucket_path}"
+        gsutil -q stat "${in_bucket_path}" || die "Could not upload samplesheet for ${run_name} to ${samplesheets_bucket}"
     done
 done

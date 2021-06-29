@@ -10,7 +10,7 @@ machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
 extra_params=("--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com" "--no-address")
-family="pipeline5-5-22"
+family="pipeline5-5-23"
 do_not_use_service_account="FALSE"
 vm_project="hmf-crunch"
 
@@ -81,8 +81,6 @@ info "Details of VM to be created:"
 info "    Name: ${vm_name} (in ${current_project})"
 info "   Image: ${image_name} (from ${image_project})"
 info "  Config: ${machine_type} ${disk_size}" "${extra_params[*]}"
-info "  Access: gcloud compute ssh ${vm_name}"
-info "  Delete: gcloud compute instances delete --zone ${zone} -q ${vm_name}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
@@ -98,5 +96,9 @@ gcloud compute instances create "${vm_name}" \
 --no-restart-on-failure \
 --zone "${zone}" \
 "${extra_params[@]}" || die "Something went wrong when creating the image. Check the gcloud response."
+
+info "VM usage:"
+info "  Access: gcloud compute ssh ${vm_name}"
+info "  Delete: gcloud compute instances delete --zone ${zone} -q ${vm_name}"
 
 info "Finished creating VM instance ${vm_name}"

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files || exit 1
+
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Search SampleSheets for string (perl style grep based matching)"
@@ -13,10 +15,12 @@ fi
 
 search_terms=("$@")
 
+samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
+
 function print_join { local IFS="$1"; shift; echo "$*"; }
 
 for search_term in "${search_terms[@]}"; do
-    for sample_sheet in $(grep -l ${search_term} /data/samplesheets/*_SampleSheet.csv); do
+    for sample_sheet in $(grep -l ${search_term} ${samplesheets_dir}/*_SampleSheet.csv); do
         hmf_run_name=$(cat ${sample_sheet} | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2)
         seq_run_name=$(basename ${sample_sheet} | sed 's#_SampleSheet.csv##g')
 

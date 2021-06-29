@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_gcp_files || exit 1
 
 set -e
 
-BUCKET="gs://registration-resources-prod-1"
+registration_jsons_bucket=$(locate_sample_registration_jsons_at_gcp) || die "Could not find registration jsons bucket path"
+registration_logs_bucket=$(locate_sample_registration_logs_at_gcp) || die "Could not find registration logs bucket path"
 
 info "Syncing registered JSONs and logs from GCP"
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
-gsutil -m rsync ${BUCKET}/jsons_and_logs/jsons/registered/ /data/ops/api/prod/jsons/registered/
-gsutil -m rsync ${BUCKET}/jsons_and_logs/logs/ /data/ops/api/prod/logs/
+gsutil -m rsync "${registration_jsons_bucket}" /data/ops/api/prod/jsons/registered/
+gsutil -m rsync "${registration_logs_bucket}" /data/ops/api/prod/logs/
 info "Registered JSONs and logs synchronised"
