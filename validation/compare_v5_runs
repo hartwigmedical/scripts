@@ -43,7 +43,7 @@ main () {
     base_tum_sample=$(jq -r '.tumor.sampleName' "${base_meta_file}")
     test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-    tool_dirs_to_check=(amber chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss protect)
+    tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss health_checker linx peach purple protect sage_germline sage_somatic sigs virusbreakend)
     files_to_diff=("protect/${test_tum_sample}.protect.tsv")
 
     print_header "Settings"
@@ -189,6 +189,8 @@ diff_file () {
         info "  OK Identical diff for file (${rel_file_path})"
     else
         info_and_warn "  DIFFERENCES found for file (${rel_file_path})"
+        warn "    BASE file: ${base_file_path}"
+        warn "    TEST file: ${test_file_path}"
     fi
 }
 
@@ -224,6 +226,7 @@ check_tool_directory () {
         -not -name "*.bam" -not -name "*.bai" \
         -not -name "*.sh" -not -name "*.log" -not -name "*.bak" \
         -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
+        -not -name "*.png" -not -name "*.jpg" -not -name "*.svg" \
     | while read -r base_file_path; do
         file_name=$(basename "${base_file_path}");
         file_path="${tool_name}/${file_name}"
