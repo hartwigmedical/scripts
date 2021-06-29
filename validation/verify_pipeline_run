@@ -117,7 +117,7 @@ main() {
     info "Executing compare_v5_runs"
     out_log="${logs_dir}/compare_v5_runs.log"
     err_log="${logs_dir}/compare_v5_runs.err"
-    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" "${logs_dir}" > "${out_log}" 2>"${err_log}"
+    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${out_log}" 2>"${err_log}"
 
     info "Executing diff_v5_COLO829v003_runs"
     "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
