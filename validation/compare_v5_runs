@@ -188,7 +188,7 @@ diff_file () {
     if [[ "$diff_result" == 0 ]]; then
         info "  OK Identical diff for file (${rel_file_path})"
     else
-        info_and_warn "  DIFFERENCES found for file (${rel_file_path})"
+        info_and_warn "  DIFFERENT content found for file (${rel_file_path})"
         warn "    BASE file: ${base_file_path}"
         warn "    TEST file: ${test_file_path}"
     fi
