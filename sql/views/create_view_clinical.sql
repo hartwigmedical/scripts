@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW clinical AS
 
 SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPatientId,
-    sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA, setName,
+    sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rnaStatistics.sampleId)) as hasRNA, setName,
     sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType,
     baseline.primaryTumorExtraDetails, doidView.doids,
@@ -17,7 +17,7 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
 FROM sample
     INNER JOIN patient ON sample.patientId = patient.id
     LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
-    LEFT JOIN rna on sample.sampleId = rna.sampleId
+    LEFT JOIN rnaStatistics on sample.sampleId = rnaStatistics.sampleId
     LEFT JOIN baseline ON patient.id = baseline.patientId
     LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidNode GROUP BY 1) AS doidView
         ON patient.id = doidView.patientId
