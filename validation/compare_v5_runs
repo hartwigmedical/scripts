@@ -11,6 +11,7 @@ if [[ "$#" -ne 2 ]]; then
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
     echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run"
     echo " Examp: $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9"
+    echo "        $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 >out.log 2>out.err"
     echo "-----"
     exit 1
 fi
