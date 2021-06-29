@@ -185,15 +185,4 @@ check_metadata_json() {
     done
 }
 
-print_sql_code() {
-    local output_file=$1 && shift
-    local log_file=$1 && shift
-    echo "find ${jobs_dir} -type f -name \"*.sql\" | while read sql_file ; do"
-    echo "  sql_file_name=\"$(basename $sql_file)\" "
-    echo "  log_file=\"${logs_dir}/before_load_\${sql_file_name}.log\" "
-    echo "  echo \"[INFO] Executing \$sql_file_name (log: \$log_file)\" "
-    echo "  execute_sql_on_ds_prod \"\$sql_file\" > \"\${log_file}\" "
-    echo "done"
-}
-
 main
