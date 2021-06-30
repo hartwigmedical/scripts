@@ -13,5 +13,5 @@ fi
 pilot_do_patient_report_for_run ${run_dir} \
     -only_create_pdf \
     -output_dir_report ${output_dir_report} \
-    -override_pipeline_version xx \
+    -override_pipeline_version \
     "$@"
