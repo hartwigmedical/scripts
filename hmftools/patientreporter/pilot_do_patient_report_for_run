@@ -94,5 +94,6 @@ pilot_do_run_base_patient_reporter \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -output_dir_data ${output_dir_data} \
+    -ref_genome_version 37 \
     -log_debug \
     "$@"
