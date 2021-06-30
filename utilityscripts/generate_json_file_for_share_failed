@@ -7,4 +7,4 @@ sample_id=$1 && shift
 
 tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
 
-cat /data/cpct/qc_fail_reports_data/prod/${sample_id}_${tumor_barcode}.json | jq . > /data/cpct/json_file_for_share/${sample_id}_${tumor_barcode}.json
+cat /data/cpct/qc_fail_reports_data/prod/${sample_id}_${tumor_barcode}.json | jq . > /data/cpct/json_files_for_share/${sample_id}_${tumor_barcode}.json
