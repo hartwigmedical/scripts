@@ -9,7 +9,7 @@ ssheet_date=$1 && shift
 curr_date=$(date +'%y%m%d')
 
 ## Sanity checks
-if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong input date: run with \"$(basename $0) YYMMDD\""; fi
+if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong input date: run with \"$(basename "$0") YYMMDD\""; fi
 
 local_ssheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
 ssheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
@@ -30,9 +30,13 @@ for ssheet_in_bucket in ${relevant_ssheets_in_bucket}; do
   fi
 done
 
-info "TODO: If all of the expected samplesheets have been downloaded, then continue processing by running the below command:"
-info " cd /data/ops/api/prod/jsons && nohup create_set_jsons_for_samplesheets_on_date ${ssheet_date} > ./create.log &"
-#info ""
-#info "TODO: After registering the sets, run below command to back up the registration jsons and logs to the bucket and:"
-#info "move them to the correct local directory of the VM:"
-#info " cd /data/ops/api/prod/jsons && archive_registration_jsons ${ssheet_date} ${curr_date}"
+unregistered_jsons_dir=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
+
+info "TODO: If all of the expected samplesheets have been downloaded, then continue processing by running the below commands:"
+info " cd ${unregistered_jsons_dir}"
+info " nohup create_set_jsons_for_samplesheets_on_date ${ssheet_date} > ./create.log &"
+info ""
+info "TODO: After registering the sets, run below command to back up the registration jsons and logs to the bucket and:"
+info "move them to the correct local directory of the VM:"
+info " cd ${unregistered_jsons_dir}"
+info " move_registration_jsons_and_logs ${ssheet_date} ${curr_date}"

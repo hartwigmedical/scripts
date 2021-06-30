@@ -8,7 +8,7 @@ source locate_gcp_files || exit 1
 ssheet_date=$1 && shift
 
 ## Sanity checks
-if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong input date: run with \"$(basename $0) YYMMDD\""; fi
+if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong input date: run with \"$(basename "$0") YYMMDD\""; fi
 
 ssheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
