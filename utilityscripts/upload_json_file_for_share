@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+nextcloud_dir="STAGING/Json_Files_To_Share"
+for json_file in /data/cpct/json_file_share/*.pdf; do
+    info "Uploading ${json_file} to Nextcloud for share"
+    do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${json_file}"
+done
