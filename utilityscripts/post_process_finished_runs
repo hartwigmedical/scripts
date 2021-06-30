@@ -39,7 +39,17 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/core/runs/
         info "Create patient report for ${run}"
         create_patient_report_for_run /data/core/runs/${run}
-    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" || ${cohort} == "ACTIN"  ]]; then
+    elif [[ ${cohort} == "COREDB" ]]; then
+        info "Moving set ${run} to /data/cpct/runs"
+        mv ${source_path}/${run} /data/cpct/runs/
+        info "Create patient report for ${run}"
+        create_patient_report_for_run /data/cpct/runs/${run}
+        info "Copy run to hmf-crunch at GCP"
+        copy_run_to_gcp_crunch_project ${run}
+        ## TODO: execute below rules when overeenkomst is signed
+        ## info "Generate json file for share"
+        ## generate_json_file_for_share ${run}
+    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3"  || ${cohort} == "ACTIN"  ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
         info "Create patient report for ${run}"
