@@ -10,4 +10,8 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-pilot_do_patient_report_for_run ${run_dir} -only_create_pdf -output_dir_report ${output_dir_report} "$@"
+pilot_do_patient_report_for_run ${run_dir} \
+    -only_create_pdf \
+    -output_dir_report ${output_dir_report} \
+    -override_pipeline_version \
+    "$@"
