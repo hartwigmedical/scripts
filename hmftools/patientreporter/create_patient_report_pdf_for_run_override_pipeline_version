@@ -13,8 +13,9 @@ fi
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
+# TODO Remove "xx" bogus param when upgrading to 7.24
 do_patient_report_for_run ${run_dir} \
     -expected_pipeline_version ${expected_pipeline_version} \
-    -override_pipeline_version \
+    -override_pipeline_version xx \
     -only_create_pdf \
     -output_dir_report ${output_dir_report} "$@"
