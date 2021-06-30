@@ -4,12 +4,13 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 SHEETS_LOC=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
-JSONS_LOC=/data/ops/api/prod/jsons
+JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
+LOGS_LOC=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
 
 ssheet_date=$1
 curr_date=$(date +'%y%m%d')
-create_log="/data/ops/api/prod/logs/${curr_date}_create_jsons_for_${ssheet_date}"
-register_log="/data/ops/api/prod/logs/${curr_date}_register_sets_from_${ssheet_date}_flowcells"
+create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${ssheet_date}"
+register_log="${LOGS_LOC}/${curr_date}_register_sets_from_${ssheet_date}_flowcells"
 
 ## Sanity checks
 if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then error "Wrong input date: run with \"$(basename $0) YYMMDD\""; fi
