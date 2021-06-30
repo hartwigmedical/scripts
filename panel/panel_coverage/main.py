@@ -37,7 +37,7 @@ def main() -> None:
         ("GIAB12878v1T", "/home/david/depths/GIAB12878v1T.bam.depth"),
         ("GIAB12878v2T", "/home/david/depths/GIAB12878v2T.bam.depth"),
         ("GIAB12878v3T", "/home/david/depths/GIAB12878v3T.bam.depth"),
-        ("COLO100TCP", "/home/david/depths/COLO100TCP.bam.depth"),
+        ("COLO100TCP", "/home/david/depths/COLO100TCPT.bam.depth"),
         ("COLOT50NG", "/home/david/depths/COLOT50NG.bam.depth"),
     ]
     output_dir_50 = "/home/david/coverage_analysis_50/"
