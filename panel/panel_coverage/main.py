@@ -18,49 +18,63 @@ def main() -> None:
         tert_site="/home/david/config/tert_promoter_list_v1.tsv",
     )
 
+    # sample_with_depth_file_list: List[Tuple[str, str]] = [
+    #     ("COLOT20NGU_umi_collapse", "/home/david/depths/COLOT20NGU.umi_collapse.bam.depth"),
+    #     ("COLOT35NGU_umi_collapse", "/home/david/depths/COLOT35NGU.umi_collapse.bam.depth"),
+    #     ("COLOT50NGU_umi_collapse", "/home/david/depths/COLOT50NGU.umi_collapse.bam.depth"),
+    #     ("COLOT65NGU_umi_collapse", "/home/david/depths/COLOT65NGU.umi_collapse.bam.depth"),
+    #     ("COLOT80NGU_umi_collapse", "/home/david/depths/COLOT80NGU.umi_collapse.bam.depth"),
+    #     ("COLO100NGU_umi_collapse", "/home/david/depths/COLO100NGU.umi_collapse.bam.depth"),
+    #     ("COLO150NGU_umi_collapse", "/home/david/depths/COLO150NGU.umi_collapse.bam.depth"),
+    #     ("COLO200NGU_umi_collapse", "/home/david/depths/COLO200NGU.umi_collapse.bam.depth"),
+    #     ("COLOT50NGU_no_dedup", "/home/david/depths/COLOT50NGU.bam.depth"),
+    #     ("COLOT50NGU_sambamba", "/home/david/depths/COLOT50NGU.sambamba.bam.depth"),
+    #     ("COLOT50NGU_umi_tools", "/home/david/depths/COLOT50NGU.umi_tools.bam.depth"),
+    # ]
     sample_with_depth_file_list: List[Tuple[str, str]] = [
-        ("COLOT20NGU_umi_collapse", "/home/david/depths/COLOT20NGU.umi_collapse.bam.depth"),
-        ("COLOT35NGU_umi_collapse", "/home/david/depths/COLOT35NGU.umi_collapse.bam.depth"),
-        ("COLOT50NGU_umi_collapse", "/home/david/depths/COLOT50NGU.umi_collapse.bam.depth"),
-        ("COLOT65NGU_umi_collapse", "/home/david/depths/COLOT65NGU.umi_collapse.bam.depth"),
-        ("COLOT80NGU_umi_collapse", "/home/david/depths/COLOT80NGU.umi_collapse.bam.depth"),
-        ("COLO100NGU_umi_collapse", "/home/david/depths/COLO100NGU.umi_collapse.bam.depth"),
-        ("COLO150NGU_umi_collapse", "/home/david/depths/COLO150NGU.umi_collapse.bam.depth"),
-        ("COLO200NGU_umi_collapse", "/home/david/depths/COLO200NGU.umi_collapse.bam.depth"),
-        ("COLOT50NGU_no_dedup", "/home/david/depths/COLOT50NGU.bam.depth"),
-        ("COLOT50NGU_sambamba", "/home/david/depths/COLOT50NGU.sambamba.bam.depth"),
-        ("COLOT50NGU_umi_tools", "/home/david/depths/COLOT50NGU.umi_tools.bam.depth"),
+        ("COLO829vP01R", "/home/david/depths/COLO829vP01R.bam.depth"),
+        ("COLO829vP01T", "/home/david/depths/COLO829vP01T.bam.depth"),
+        ("GIAB12878v1T", "/home/david/depths/GIAB12878v1T.bam.depth"),
+        ("GIAB12878v2T", "/home/david/depths/GIAB12878v2T.bam.depth"),
+        ("GIAB12878v3T", "/home/david/depths/GIAB12878v3T.bam.depth"),
+        ("COLO100TCP", "/home/david/depths/COLO100TCP.bam.depth"),
+        ("COLOT50NG", "/home/david/depths/COLOT50NG.bam.depth"),
     ]
-    output_dir_100 = "/home/david/coverage_analysis_100/"
-    output_dir_500 = "/home/david/coverage_analysis_500/"
+    output_dir_50 = "/home/david/coverage_analysis_50/"
+    # output_dir_100 = "/home/david/coverage_analysis_100/"
+    # output_dir_500 = "/home/david/coverage_analysis_500/"
 
-    analysis_todo_config = AnalysisTodoConfig(
-        baf=True,
-        exome=True,
-        fusion=True,
-        hotspot=True,
-        msi=True,
-        pgx=True,
-        tert=True,
-    )
     # analysis_todo_config = AnalysisTodoConfig(
-    #     baf=False,
+    #     baf=True,
     #     exome=True,
-    #     fusion=False,
-    #     hotspot=False,
-    #     msi=False,
-    #     pgx=False,
-    #     tert=False,
+    #     fusion=True,
+    #     hotspot=True,
+    #     msi=True,
+    #     pgx=True,
+    #     tert=True,
     # )
-    config_100 = Config(
-        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 100, output_dir_100
+    analysis_todo_config = AnalysisTodoConfig(
+        baf=False,
+        exome=True,
+        fusion=False,
+        hotspot=False,
+        msi=False,
+        pgx=False,
+        tert=False,
     )
-    config_500 = Config(
-        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 500, output_dir_500
+    config_50 = Config(
+        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 50, output_dir_50
     )
-
-    do_analysis(config_100)
-    do_analysis(config_500)
+    # config_100 = Config(
+    #     tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 100, output_dir_100
+    # )
+    # config_500 = Config(
+    #     tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 500, output_dir_500
+    # )
+    #
+    do_analysis(config_50)
+    # do_analysis(config_100)
+    # do_analysis(config_500)
 
 
 if __name__ == "__main__":
