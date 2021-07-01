@@ -28,3 +28,6 @@ locate_sample_registration_lims_at_gcp() {
     echo "$(locate_sample_registration_bucket_at_gcp)/lims/"
 }
 
+locate_shallow_tsv_at_gcp() {
+    echo "gs://shallow-reporter-prod-1/shallowseq.tsv"
+}
