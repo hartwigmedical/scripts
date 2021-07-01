@@ -923,7 +923,7 @@ locate_reporting_db_tsv() {
     echo ${reporting_db_tsv}
 }
 
-locate_shallow_seq_tsv() {
+locate_shallow_tsv() {
     local shallow_seq_tsv=/data/ops/lims/prod/shallow_seq_purity.tsv
     if [[ ! -f "${shallow_seq_tsv}" ]]; then
         error "Unable to locate shallow seq TSV. Exiting."
