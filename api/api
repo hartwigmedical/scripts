@@ -39,7 +39,7 @@ while getopts ':j' flag; do
     esac
 done
 
-class=$1
+class=$1 # obligatory
 filter_input=$2 # optional
 filter_field=$3 # optional
 
@@ -48,7 +48,7 @@ if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 # Sanity checks
-[[ "${class}" =~ ${classes} ]] || die "Class '${class}' is not supported."
+[[ "${class}" =~ ${classes} ]] || die "Unknown class '${class}' provided."
 
 # Filter variable setup
 if [[ -n "${filter_field}" ]]; then
