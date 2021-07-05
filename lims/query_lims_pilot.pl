@@ -37,6 +37,7 @@ my $available_types = join(", ", sort keys %OUT_FIELDS_PER_TYPE);
 my $last_update_epoch = (stat($LIMS_JSON))[9];
 my $last_update = strftime( "%Y-%m-%d %H:%M:%S", localtime($last_update_epoch));
 
+
 my $HELP_TEXT =<<HELP;
 
   Description
