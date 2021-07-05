@@ -6,13 +6,14 @@ yymmdd=$(date +'%y%m%d')
 reported_tsv="/data/ops/lims/prod/shallow_seq_purity.tsv"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
+archive_path="/data/data_archive/shallow_seq_pipelines"
 current_pipeline_version="5.22"
 
 echo "===== Running $(basename $0) ====="
-info "Checking ShallowSeq runs for pipeline v${current_pipeline_version}"
+info "Checking ShallowSeq runs (v${current_pipeline_version} and higher)"
 
 # Waiting runs have no version in API so filter on version later
-all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
+all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${current_pipeline_version}") || die "Unable to get from API"
 
 to_mention=() # gets comment msg appended
 to_process=() # gets actual processing commands appended
@@ -20,11 +21,10 @@ to_process=() # gets actual processing commands appended
 while read -r line; do
     run_name=$(echo "${line}" | cut -f1)
     run_status=$(echo "${line}" | cut -f2)
-    tumor_name=$(echo "${line}" | cut -f3)
-    run_version=$(echo "${line}" | cut -f4)
+    run_version=$(echo "${line}" | cut -f3)
 
-    barcode=$(echo "${run_name}" | cut -d"_" -f4)
-    reported=$(grep "${tumor_name}" "${reported_tsv}" | grep "${barcode}" | wc -l)
+    reported=$(find "${archive_path}" -mindepth 1 -maxdepth 1 -type d -name "${run_name}" | wc -l)
+    run_info="status=${run_status}|version=${run_version}"
 
     if [[ "${reported}" -gt 0 ]]; then
         continue
@@ -37,20 +37,18 @@ while read -r line; do
     elif [[ -d "${process_path}/${run_name}" ]]; then
         to_mention+=("  DOWNLOADED: ${run_name} found in ${process_path}")
     elif [[ "${run_status}" == "Waiting" ]]; then
-        to_mention+=("  WAITING: ${run_name} (status=${run_status})")
+        to_mention+=("  WAITING: ${run_name} (${run_info})")
     elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
-        to_mention+=("  PROCESSING: ${run_name} (status=${run_status})")
-    elif [[ -n "${run_version}" && ! "${run_version}" =~ ^${current_pipeline_version} ]]; then
-        continue
+        to_mention+=("  PROCESSING: ${run_name} (${run_info})")
     elif [[ "${run_status}" == "Failed" ]]; then
-        to_mention+=("  FAILED: ${run_name} (status=${run_status})")
+        to_mention+=("  FAILED: ${run_name} (${run_info})")
     elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
-        to_mention+=("  FINISHED: ${run_name} (status=${run_status})")
-        to_process+=(" process_shallow_run ${run_name} # (status=${run_status})")
+        to_mention+=("  FINISHED: ${run_name} (${run_info})")
+        to_process+=(" process_shallow_run ${run_name} # (${run_info})")
     else
-        to_mention+=("  UNKNOWN STATUS: ${run_name} (status=${run_status})")
+        to_mention+=("  UNKNOWN STATUS: ${run_name} (${run_info})")
     fi
-done < <(echo "${all_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_name,.version] | @tsv')
+done < <(echo "${all_runs}" | jq -rc '.[] | [.set.name,.status,.version] | @tsv')
 
 to_process_count="${#to_process[*]}"
 to_mention_count="${#to_mention[*]}"
@@ -80,6 +78,3 @@ if [[ "${to_process_count}" -gt 0 ]]; then
         warn "log file already exists (${log_file})!!!!"
     fi
 fi
-
-echo ""
-
