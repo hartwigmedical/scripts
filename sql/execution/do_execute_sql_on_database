@@ -29,5 +29,5 @@ if [[ "${from_file}" == "true" ]]; then
     < "${sql_file_or_select_statement}"
 else
     mysql --defaults-extra-file="${credentials_cnf}" "${database_name}" \
-    --execute="${sql_file_or_select_statement}" --batch --silent
+    --execute="${sql_file_or_select_statement}" --batch
 fi
