@@ -27,6 +27,7 @@ else
     fi
 fi
 
+pipeline_version_file=${run_dir}/pipeline.version
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
@@ -51,6 +52,7 @@ java -Xms2G -Xmx8G -jar ${orange_jar} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
+    -pipeline_version_file ${pipeline_version_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
