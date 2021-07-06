@@ -3,12 +3,17 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-file_with_sql_to_execute=$1 && shift
+sql_file_or_select_statement=$1 && shift
 database_name=$1 && shift
 credentials=$1 && shift
+from_file='true'
 
-if [[ ! -f "${file_with_sql_to_execute}" ]]; then
-    error "Unable to locate SQL file to execute. Exiting."
+if [[ ! -f "${sql_file_or_select_statement}" ]]; then
+    if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then
+        error "Provided sql is not an existing file but no SELECT statement either (${sql_file_or_select_statement}). Exiting."
+    else
+        from_file='false'
+    fi
 fi
 
 if [[ -z "${database_name}" ]]; then
@@ -20,7 +25,13 @@ if [[ ! -f "${credentials}" ]]; then
 fi
 
 db_host=$(locate_gcp_prod_database_host)
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_user=$(awk '/^user/ {print $2}' "${credentials}")
+db_pass=$(awk '/^pass/ {print $2}' "${credentials}")
 
-mysql ${database_name} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
+if [[ "${from_file}" == "true" ]]; then
+    mysql "${database_name}" --host="${db_host}" --user="${db_user}" --password="${db_pass}" \
+    < "${sql_file_or_select_statement}"
+else
+    mysql "${database_name}" --host="${db_host}" --user="${db_user}" --password="${db_pass}" \
+    --execute="${sql_file_or_select_statement}" --batch --silent
+fi
