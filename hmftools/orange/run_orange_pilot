@@ -4,6 +4,7 @@ source locate_files || exit 1
 source metadata_functions || exit 1
 source lims_functions || exit 1
 source message_functions || exit 1
+source io_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -14,6 +15,8 @@ fi
 orange_jar=$(locate_pilot_orange)
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 output_dir=${run_dir}/orange_pilot
+
+create_or_cleanup_dir ${output_dir}
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
