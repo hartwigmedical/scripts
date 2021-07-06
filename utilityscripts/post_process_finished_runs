@@ -50,7 +50,7 @@ for run in ${process_runs}; do
             info "Generating CUPPA ruo report"
             Rscript /data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R ${sample_id} /data/cpct/runs/${run}/cuppa/ /data/cpct/patient_reports/ true
         else
-            info "Skipping generating CUPPA ruo report"
+            warn "Skipping generating CUPPA ruo report for sample ${sample_id}"
         fi
         ## TODO: execute below rules when overeenkomst is signed
         ## info "Generate json file for share"
