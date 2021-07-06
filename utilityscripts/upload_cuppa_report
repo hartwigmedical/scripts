@@ -2,9 +2,11 @@
 
 source message_functions || exit 1
 
+sample_cuppa_report=$1 && shift
+run_dir=$1 && shift
 nextcloud_dir="STAGING/CUPPA-reports"
 
-for cuppa_report in /data/cpct/cuppa_ruo_reports/*_cup_report.pdf; do
+for cuppa_report in ${run_dir}/${sample_cuppa_report}_cup_report.pdf; do
     info "Uploading ${cuppa_report} to Nextcloud for CUPPA reports"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${cuppa_report}"
 done
