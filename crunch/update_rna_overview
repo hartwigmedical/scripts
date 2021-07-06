@@ -1,59 +1,41 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+command -v execute_sql_on_prod || die "Command not found (execute_sql_on_prod)"
 
 YYMMDD=$(date '+%y%m%d')
-dat_dir="/data/data_archive"
-seq_typ="rna_seq"
-task_id="Overview ${seq_typ}"
 
 nas_loc="nas:/volume1/web/overviews/rnaseq/"
-seq_dir="${dat_dir}/${seq_typ}/fastq"
-out_dir="${dat_dir}/${seq_typ}/overview"
 
-out_tsv="${out_dir}/overview.tsv"
-out_smp="${out_dir}/samples.tsv"
-out_sum="${out_dir}/summary.log"
-err_log="${out_dir}/error.log"
+out_dir="/tmp"
+task="rna_overview"
+prefix="${out_dir}/${task}"
+sql_out="${prefix}_sql.tsv"
+api_out="${prefix}_api.json"
+sql_samples_tsv="${prefix}_samples_sql.tsv"
+api_samples_tsv="${prefix}_samples_api.tsv"
+out_sum="${prefix}_summary.txt"
+err_log="${prefix}_error.log"
 
-## sanity checks
 if [[ ! -d "${out_dir}" ]]; then error "OUTPUT DIR does not exist (${out_dir})"; fi
 if [[ ! -w "${out_dir}" ]]; then error "OUTPUT DIR not writable (${out_dir})"; fi
-if [[ ! -d "${seq_dir}" ]]; then error "INPUT DIR does not exist (${seq_dir})"; fi
 
-## startup
-info "START ${task_id} ($YYMMDD)" | tee ${out_sum}
+info "Starting with ${task} creation ($YYMMDD)" | tee ${out_sum}
 info "Writing err log to ${err_log}" | tee -a ${out_sum}
 
-# gather info
-fastq_disk_usage=$(du -sh ${seq_dir} | cut -f1)
-echo -e "#sample\tbarcode\tsize\tpath\tflowcells" > "${out_tsv}"
-for fastq_dir_path in ${seq_dir}/*; do 
-    fastq_dir_name=$(basename ${fastq_dir_path})
-    barcode=$(echo ${fastq_dir_name} | cut -d"_" -f1)
-    sample=$(echo ${fastq_dir_name} | cut -d"_" -f2)
-    size=$(du -sh ${fastq_dir_path} | cut -f1)
-    flowcells=$(find ${fastq_dir_path} -name "*fastq.gz" -exec basename {} \; | cut -d"_" -f2 | sort | uniq | tr "\n" "," | sed 's/,$//')
-    printf "%s\t%s\t%s\t%s\t%s\n" "${sample}" "${barcode}" "${size}" "${fastq_dir_path}" "${flowcells}"
-done | sort -k1 >>"${out_tsv}" 2>"${err_log}"
+execute_sql_on_prod "SELECT sampleId FROM rnaStatistics;" > "${sql_out}"
+hmf_api_get "samples?type=tumor-rna" > "${api_out}"
 
-## create sample name list
-cat ${out_tsv} | grep -v "^#" | cut -f1 | sort | uniq > ${out_smp}
-sample_count=$(grep -cv "^#" ${out_smp})
+cut -f3 "${sql_out}" | grep -v sampleId | sort | uniq > "${sql_samples_tsv}"
+jq -r '.[] | [.name,.status] | @tsv' "${api_out}" | sort | uniq > "${api_samples_tsv}"
 
-uniq_sample_count=$(cat ${out_tsv} | grep -v ^# | cut -f1 | sort | uniq | wc -l)
-uniq_barcode_count=$(cat ${out_tsv} | grep -v ^# | cut -f2 | sort | uniq | wc -l)
+sample_count_sql=$(wc -l "${sql_samples_tsv}")
+sample_count_api=$(wc -l "${api_samples_tsv}")
 
-info "FASTQ data footprint: ${fastq_disk_usage}" | tee -a ${out_sum}
-info "Number of samples: ${sample_count}" | tee -a ${out_sum}
-info "Number of unique sample names: ${uniq_sample_count}" | tee -a ${out_sum}
-info "Number of unique sample barcodes: ${uniq_barcode_count}" | tee -a ${out_sum}
-info "Complete table in: ${out_tsv}" | tee -a ${out_sum}
-info "Sample table in: ${out_smp}" | tee -a ${out_sum}
+info "Number of samples from SQL: ${sample_count_sql}" | tee -a ${out_sum}
+info "Number of samples from API: ${sample_count_api}" | tee -a ${out_sum}
 
-info "Starting NAS sync (to ${nas_loc})"
-rsync ${out_tsv} ${nas_loc}/overview.txt
-rsync ${out_smp} ${nas_loc}/samples.txt
-rsync ${out_sum} ${nas_loc}/summary.txt
+info "Syncing results to NAS (${nas_loc})"
+rsync "${sql_out}" "${api_out}"  ${nas_loc}/
 
-info "DONE ${task_id}" | tee -a ${out_sum}
+info "Finished with ${task}" | tee -a ${out_sum}
