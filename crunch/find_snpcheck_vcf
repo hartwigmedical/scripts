@@ -51,7 +51,8 @@ if [[ "${search_remote}" == "TRUE" ]]; then
     gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*"
     echo ""
 
-    info "Checking remote location for LOGs (gs://${gcp_bucket})"
-    gsutil ls "gs://hmf-snpcheck/snpchecklogs/*${search}*"
-    echo ""
+    # since January 2021 logs are no longer written to the snpchecklogs
+    #info "Checking remote location for LOGs (gs://${gcp_bucket})"
+    #gsutil ls "gs://hmf-snpcheck/snpchecklogs/*${search}*"
+    #echo ""
 fi
