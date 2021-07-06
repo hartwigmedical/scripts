@@ -11,15 +11,23 @@ fi
 ############################# Database Credentials #############################
 
 locate_gcp_prod_database_host() {
-    echo $(cat ${base_path}/dbs/mysql_credentials/gcp_database_host)
+    cat "${base_path}/dbs/mysql_credentials/gcp_database_host"
 }
 
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
 
+locate_prod_database_credentials_cnf() {
+    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
+}
+
 locate_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pilot
+}
+
+locate_pilot_database_credentials_cnf() {
+    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
 }
 
 locate_vicc_database_credentials() {

@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 sql_file_or_select_statement=$1 && shift
 database_name=$1 && shift
-credentials=$1 && shift
+credentials_cnf=$1 && shift
 from_file='true'
 
 if [[ ! -f "${sql_file_or_select_statement}" ]]; then
@@ -20,18 +20,14 @@ if [[ -z "${database_name}" ]]; then
     error "No database name provided. Exiting."
 fi
 
-if [[ ! -f "${credentials}" ]]; then
-    error "Unable to locate MySQL credentials. Exiting."
+if [[ ! -f "${credentials_cnf}" ]]; then
+    error "Unable to locate MySQL credentials .cnf file (${credentials_cnf}). Exiting."
 fi
 
-db_host=$(locate_gcp_prod_database_host)
-db_user=$(awk '/^user/ {print $2}' "${credentials}")
-db_pass=$(awk '/^pass/ {print $2}' "${credentials}")
-
 if [[ "${from_file}" == "true" ]]; then
-    mysql "${database_name}" --host="${db_host}" --user="${db_user}" --password="${db_pass}" \
+    mysql --defaults-extra-file="${credentials_cnf}" "${database_name}" \
     < "${sql_file_or_select_statement}"
 else
-    mysql "${database_name}" --host="${db_host}" --user="${db_user}" --password="${db_pass}" \
+    mysql --defaults-extra-file="${credentials_cnf}" "${database_name}" \
     --execute="${sql_file_or_select_statement}" --batch --silent
 fi
