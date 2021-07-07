@@ -11,6 +11,7 @@ fi
 ############################# Database Credentials #############################
 
 locate_gcp_prod_database_host() {
+    echo $(cat ${base_path}/dbs/mysql_credentials/gcp_database_host)
     cat "${base_path}/dbs/mysql_credentials/gcp_database_host"
 }
 
