@@ -43,6 +43,16 @@ echo ""
 
 mkdir doids_temp
 
+###
+
+source locate_files || exit 1
+
+database_name="hmfpatients"
+credentials=$(locate_prod_database_credentials)
+
+do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}
+
+
 execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > doids_temp/doids_database.txt
 echo ""
 
