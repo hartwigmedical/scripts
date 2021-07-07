@@ -20,7 +20,7 @@ locate_prod_database_credentials() {
 }
 
 locate_prod_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/writer.cnf
+    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
 }
 
 locate_pilot_database_credentials() {
@@ -28,7 +28,7 @@ locate_pilot_database_credentials() {
 }
 
 locate_pilot_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/writer.cnf
+    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
 }
 
 locate_vicc_database_credentials() {
