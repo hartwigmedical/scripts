@@ -43,17 +43,13 @@ echo ""
 
 mkdir doids_temp
 
-###
-
-source locate_files || exit 1
-
+source locate_files
 database_name="hmfpatients"
-credentials=$(locate_prod_database_credentials)
+credentials=$(locate_prod_database_credentials_reader)
+do_execute_sql_on_database "SET SESSION group_concat_max_len = @@max_allowed_packet;
+SELECT GROUP_CONCAT(distinct REPLACE(doids, ' ' , '' ) SEPARATOR ',') as doids
+FROM  datarequest where doids is not null;" ${database_name} ${credentials} > doids_temp/doids_database.txt
 
-do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}
-
-
-execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > doids_temp/doids_database.txt
 echo ""
 
 ################## Print info requested doid(s) #################
