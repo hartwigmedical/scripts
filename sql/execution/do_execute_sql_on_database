@@ -25,9 +25,9 @@ if [[ ! -f "${credentials_cnf}" ]]; then
 fi
 
 if [[ "${from_file}" == "true" ]]; then
-    mysql --defaults-extra-file="${credentials_cnf}" "${database_name}" \
+    mysql --defaults-file="${credentials_cnf}" "${database_name}" \
     < "${sql_file_or_select_statement}"
 else
-    mysql --defaults-extra-file="${credentials_cnf}" "${database_name}" \
+    mysql --defaults-file="${credentials_cnf}" "${database_name}" \
     --execute="${sql_file_or_select_statement}" --batch
 fi
