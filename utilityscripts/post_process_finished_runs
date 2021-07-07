@@ -18,7 +18,7 @@ source_path=/data/gcp/processed_runs
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
-    purity=$(cat ${sample_id}.purple.purity.tsv | awk '{print $1}' | tail -n 1)
+    purity=$(cat ${source_path}/${run}/${sample_id}.purple.purity.tsv | awk '{print $1}' | tail -n 1)
     info "Checking primary tumor doid"
     report_doid=$(get_doids_for_biopsy ${sample_id} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
     protect_doid=$(cat ${source_path}/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
