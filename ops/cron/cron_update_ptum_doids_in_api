@@ -4,7 +4,7 @@ script_dir="/data/common/repos/scripts/api"
 script_name="update_ptum_doids_in_api"
 script_path="${script_dir}/${script_name}"
 
-timestamp="$(date +%y%m%d_%H%M%S)"
+timestamp="$(date +%y%m%d_%H%M)"
 log_dir="/data/ops/cron/logs/"
 log="${log_dir}/${timestamp}_cron_${script_name}.log"
 
