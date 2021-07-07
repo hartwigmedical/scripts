@@ -44,11 +44,11 @@ echo ""
 mkdir doids_temp
 
 source locate_files
-database_name="hmfpatients"
 credentials=$(locate_prod_database_credentials_reader)
-do_execute_sql_on_database "SET SESSION group_concat_max_len = @@max_allowed_packet;
-SELECT GROUP_CONCAT(distinct REPLACE(doids, ' ' , '' ) SEPARATOR ',') as doids
-FROM  datarequest where doids is not null;" ${database_name} ${credentials} > doids_temp/doids_database.txt
+database_name="hmfpatients"
+mysql --defaults-extra-file="${credentials}" "${database_name}" \
+--execute="SET SESSION group_concat_max_len = @@max_allowed_packet; SELECT GROUP_CONCAT(distinct REPLACE(doids, ' ' , '' ) SEPARATOR ',') as doids FROM  datarequest where doids is not null;"  \
+--batch > doids_temp/doids_database.txt
 
 echo ""
 
