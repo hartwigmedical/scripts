@@ -3,21 +3,31 @@
 source message_functions || exit 1
 
 yymmdd=$(date +'%y%m%d')
-reported_tsv="/data/ops/lims/prod/shallow_seq_purity.tsv"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
 archive_path="/data/data_archive/shallow_seq_pipelines"
 current_pipeline_version="5.22"
 
-echo "===== Running $(basename $0) ====="
+echo "===== Running $(basename "$0") ====="
 info "Checking ShallowSeq runs (v${current_pipeline_version} and higher)"
 
-# Waiting runs have no version in API so filter on version later
-all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${current_pipeline_version}") || die "Unable to get from API"
+# Waiting runs have no version in API so retrieve in second query
+all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${current_pipeline_version}") || die "Unable to get Shallow runs from API"
+waiting_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&status=Waiting") || die "Unable to get Waiting Shallow runs from API"
 
 to_mention=() # gets comment msg appended
 to_process=() # gets actual processing commands appended
 
+# Process Waiting runs
+while read -r line; do
+    run_name=$(echo "${line}" | cut -f1)
+    run_status=$(echo "${line}" | cut -f2)
+    run_version=$(echo "${line}" | cut -f3)
+    run_info="status=${run_status}|version=${run_version}"
+    to_mention+=("  WAITING: ${run_name} (${run_info})")
+done < <(echo "${waiting_runs}" | jq -rc '.[] | [.set.name,.status,.version] | @tsv')
+
+# Process ShallowSeq runs from current pipeline version
 while read -r line; do
     run_name=$(echo "${line}" | cut -f1)
     run_status=$(echo "${line}" | cut -f2)
