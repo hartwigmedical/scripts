@@ -16,7 +16,7 @@ tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
     info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name_pilot ${tumor_sample})
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -24,7 +24,7 @@ ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${ref_sample_barcode}" ]]; then
     info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
-    ref_sample_barcode=$(find_ref_barcode_for_sample_name_pilot ${tumor_sample})
+    ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_barcode}" ]]; then
