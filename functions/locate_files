@@ -259,6 +259,10 @@ locate_ckb_filter_tsv() {
     echo ${base_path}/dbs/serve/curation/ckb_filters.tsv
 }
 
+locate_ckb_filter_tsv_empty() {
+    echo ${base_path}/dbs/serve/curation/ckb_filters_empty.tsv
+}
+
 locate_samplesheets_dir() {
     echo "/data/samplesheets/"
 }
