@@ -16,7 +16,7 @@ tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
     info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+    tumor_sample_barcode=$(find_barcode_for_sample_name_pilot ${tumor_sample})
 fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -24,7 +24,7 @@ ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
 if [[ -z "${ref_sample_barcode}" ]]; then
     info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
-    ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+    ref_sample_barcode=$(find_ref_barcode_for_sample_name_pilot ${tumor_sample})
 fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_barcode}" ]]; then
@@ -57,15 +57,12 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 molecular_tissue_origin_plot=$(locate_cuppa_plot ${run_dir})
-virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
+annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
-taxonomy_db_tsv=/data/common/dbs/virus_interpreter/taxonomy_db.tsv
-virus_interpretation_tsv=/data/common/dbs/virus_interpreter/virus_interpretation.tsv
-virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
@@ -87,14 +84,12 @@ pilot_do_run_base_patient_reporter \
     -chord_prediction_txt ${chord_prediction_txt} \
     -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
     -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
-    -virus_breakend_tsv ${virus_breakend_tsv} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -taxonomy_db_tsv ${taxonomy_db_tsv} \
-    -virus_interpretation_tsv ${virus_interpretation_tsv} \
-    -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir_data ${output_dir_data} \
+    -ref_genome_version 37 \
     -log_debug \
     "$@"
