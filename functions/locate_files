@@ -480,6 +480,15 @@ locate_purple_pilot_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_purple_plot_directory() {
+    local run_dir=$1
+    local purple_plot_dir="${run_dir}/purple/plot"
+    if [[ ! -d "${purple_plot_dir}" ]]; then
+        error "Unable to locate purple plot directory in ${run_dir}. Exiting."
+    fi
+    echo ${purple_plot_dir}
+}
+
 locate_purple_circos_plot() {
     local run_dir=$1
     local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")

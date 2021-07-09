@@ -38,7 +38,7 @@ purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_d
 purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
-purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
+purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
@@ -63,7 +63,7 @@ java -Xms2G -Xmx8G -jar ${orange_jar} \
     -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
-    -purple_circos_plot ${purple_circos_plot} \
+    -purple_plot_directory ${purple_plot_directory} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
