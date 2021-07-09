@@ -21,7 +21,7 @@ while read -r flowcell_path; do
     else
         days=$(( ($(date +%s) - $(date -r "${conversion_log}" +%s) )/(60*60*24) ))
         info "  OK ${flowcell_name} uploaded to GCP (converted ${days} days ago)"
-        if [[ "${days}" -gt "${min_days_converted}" ]]; then
+        if [[ "${days}" -ge "${min_days_converted}" ]]; then
             cleanup+=("${flowcell_path}")
         fi
     fi
