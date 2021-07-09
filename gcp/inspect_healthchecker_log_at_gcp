@@ -5,10 +5,17 @@ source message_functions || exit 1
 set=$1 && shift
 relative_file_path="health_checker/run.log"
 
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 
-info "Searching for run to find bucket"
-runs_json=$(hmf_api_get "runs?set_name=${set}" | jq '[.[] | select(.ini | test("Somatic.ini|PipelineV5.ini|CPCT.ini")) | select(.bucket | test("diagnostic-pipeline-output-prod-1"))]')
+info "Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
 run_count=$(jq 'length' <<< "${runs_json}")
 
 run_json=$(jq '.[-1]' <<< "${runs_json}")
