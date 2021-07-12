@@ -53,7 +53,7 @@ get_add_yield() {
 
 na="na"
 
-echo -e "AddR\tAddT\t#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
 for run_dir in "${run_paths[@]}"; do
