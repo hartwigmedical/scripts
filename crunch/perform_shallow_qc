@@ -48,6 +48,12 @@ get_add_yield() {
     current_yield=$(( ((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE) ))
 
     add_yield=$(( target_yield-current_yield ))
+
+    if [[ ${add_yield} -lt 0 ]]; then
+        # Already has enough yield
+        add_yield="NA"
+    fi
+
     echo "${add_yield}"
 }
 
