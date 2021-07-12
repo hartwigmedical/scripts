@@ -46,7 +46,7 @@ mkdir doids_temp
 source locate_files
 credentials=$(locate_prod_database_credentials_cnf)
 database_name="hmfpatients"
-mysql --defaults-extra-file="${credentials}" "${database_name}" \
+mysql --defaults-file="${credentials}" "${database_name}" \
 --execute="SET SESSION group_concat_max_len = @@max_allowed_packet; SELECT GROUP_CONCAT(distinct REPLACE(doids, ' ' , '' ) SEPARATOR ',') as doids FROM  datarequest where doids is not null;"  \
 --batch > doids_temp/doids_database.txt
 

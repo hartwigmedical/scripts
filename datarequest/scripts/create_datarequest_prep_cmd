@@ -149,7 +149,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     info " 2) Make sure the sql for selection is available at '/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql' (if needed)"
-    info " 3) And then run cmd with: ${output_cmd_file} | tee -a ${proposed_log_file}"
+    info " 3) And then run cmd with: ${output_cmd_file} 2>&1 | tee -a ${proposed_log_file}"
     info " 4) Copy the job to the correct DR folder using: cp ${output_cmd_file}  /data/data_archive/datarequests/${dr_name}/${request_name}/logs/"
     info " 5) Copy the log to the correct DR folder using: cp ${proposed_log_file}  /data/data_archive/datarequests/${dr_name}/${request_name}/logs/"
     info "Finished with $(basename $0)"
