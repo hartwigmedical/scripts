@@ -2,5 +2,5 @@ SELECT
     DISTINCT patientId AS '#patientId'
 FROM
     datarequest
-WHERE primaryTumorLocation = 'Colon/Rectum' or primaryTumorLocation = 'Lung' or primaryTumorLocation = 'Breast'
+WHERE primaryTumorLocation = 'Colorectum' or primaryTumorLocation = 'Lung' or primaryTumorLocation = 'Breast'
 ORDER BY 1;
