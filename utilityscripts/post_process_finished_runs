@@ -18,7 +18,8 @@ source_path=/data/gcp/processed_runs
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
-    purity=$(cat ${source_path}/${run}/${sample_id}.purple.purity.tsv | awk '{print $1}' | tail -n 1)
+    purity=$(cat ${source_path}/${run}/purple/${sample_id}.purple.purity.tsv | awk '{print $1}' | tail -n 1)
+    purity_int=$(awk -v n=$purity 'BEGIN{ print int(n*100) }')
     info "Checking primary tumor doid"
     report_doid=$(get_doids_for_biopsy ${sample_id} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
     protect_doid=$(cat ${source_path}/${run}/protect/run.log | grep -w "initial tumor doids" | awk '{print $NF}' | tail -c +3 | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
@@ -46,7 +47,8 @@ for run in ${process_runs}; do
         create_patient_report_for_run /data/cpct/runs/${run}
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
-        if [[ ${purity} -ge "0.2000" ]]; then
+
+        if [[ ${purity_int} -ge 20 ]]; then
             info "Generating CUPPA ruo report"
             Rscript /data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R ${sample_id} /data/cpct/runs/${run}/cuppa/ /data/cpct/patient_reports/ true
         else
