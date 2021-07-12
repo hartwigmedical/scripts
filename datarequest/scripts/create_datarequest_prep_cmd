@@ -80,7 +80,7 @@ main() {
     uploads_single_line=$(join_array , ${uploads_array[@]})
     
     echo ""  >> "${output_cmd_file}"
-    info "date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+    info "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [TOOL] Template to prep data for datarequest:"  >> "${output_cmd_file}"
