@@ -36,6 +36,13 @@ echo ""
 echo "[START] add_researcher_to_colo_data_gcp: $(date +"%y%m%d (%T)")"
 echo ""
 
+echo '[INFO] Select project hmf-share and login as yourself.'
+gcloud config set project hmf-share
+echo '[INPUT] Please provide your hmf GCP account address.. '
+read answer
+gcloud config set account $answer
+echo ""
+
 refresh_colo_data_gcp_nc
 
 info "Account(s) inputted in the script for which access to colo data on GCP data will tried to be given:"
