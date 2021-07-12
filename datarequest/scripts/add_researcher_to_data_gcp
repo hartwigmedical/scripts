@@ -26,7 +26,7 @@ if [[ -z "${dr_id}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-api_url=$"http://api-prod1"
+api_url=$"http://api.prod-1"
 api_url_spec=$"${api_url}/hmf/v1"
 
 ## quick input checks
