@@ -48,12 +48,18 @@ get_add_yield() {
     current_yield=$(( ((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE) ))
 
     add_yield=$(( target_yield-current_yield ))
+
+    if [[ ${add_yield} -lt 0 ]]; then
+        # Already has enough yield
+        add_yield="NA"
+    fi
+
     echo "${add_yield}"
 }
 
 na="na"
 
-echo -e "AddR\tAddT\t#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
 for run_dir in "${run_paths[@]}"; do
