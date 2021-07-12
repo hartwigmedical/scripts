@@ -2,6 +2,11 @@
 
 source message_functions || exit 1
 
+REF_TARGET_YIELD=100
+TUM_TARGET_YIELD=300
+BASES_PER_READ=150
+BASES_PER_GBASE=1000000000
+
 run_paths=("$@")
 
 if [[ ${#run_paths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
@@ -11,9 +16,44 @@ if [[ ${#run_paths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
+get_add_yield() {
+    local target_yield=$1 && shift
+    local reads=$1 && shift
+    local exc=$1 && shift
+
+    if [[ -z ${exc} ]]; then
+        die "Not enough arguments for ${FUNCNAME[0]}: ${target_yield}, ${reads}, ${exc}"
+    fi
+
+    if [[ ${exc:0:2} != "0." ]]; then
+        die "Calculation only works if exc is between 0 and 1: exc=${exc}"
+    fi
+
+    # Calculation of current yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
+    # However, bash doesn't do floating point math and exc is a fraction.
+    # Since exc is between 0 and 1 we can avoid the floating point math as follows:
+    exc_decimals="${exc#*.}"
+    exc_decimals_length="${#exc_decimals}"
+    exc_decimals_factor=$(( 10**exc_decimals_length ))
+    # We know that exc == exc_decimals/exc_decimals_factor.
+    # This implies that 1-exc == (exc_decimals_factor - exc_decimals) / exc_decimals_factor
+    # As an example, if exc=0.217 then exc_decimals=217, exc_decimals_factor=1000. In this case
+    # 1-exc=1-0.217=0.783=783/1000=(1000-217)/1000=(exc_decimals_factor-exc_decimals)/exc_decimals_factor
+    #
+    # We can then write
+    # current_yield=(((exc_decimals_factor - exc_decimals) / exc_decimals_factor to write) * reads * BASES_PER_READ / BASES_PER_GBASE)
+    # To avoid the multiple roundings (from the divisions), the final formula is as follows:
+    # current_yield=((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE)
+    # Note that the result is rounded down to an integer.
+    current_yield=$(( ((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE) ))
+
+    add_yield=$(( target_yield-current_yield ))
+    echo "${add_yield}"
+}
+
 na="na"
 
-echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+echo -e "AddR\tAddT\t#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
 for run_dir in "${run_paths[@]}"; do
@@ -106,9 +146,14 @@ for run_dir in "${run_paths[@]}"; do
     purity=$(cat ${ppu_file} | tail -1 | cut -f1)
     status=$(cat ${ppu_file} | tail -1 | cut -f7)
     qc_stat=$(cat ${pqc_file} | grep QCStatus | cut -f2)
+
+    ## calculate yield to add in GBase
+    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}")
+    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}")
   
     ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        ${ref_add_yield} ${tum_add_yield} \
         ${set_name} ${tum_sample} ${qc_stat} ${purity} \
         ${status} ${amb_qc} ${pip_vsn} ${pur_vsn} ${ref_cov} ${tum_cov} \
         ${ref_rds} ${tum_rds} ${ref_map} ${tum_map} \
