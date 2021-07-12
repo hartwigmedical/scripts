@@ -14,11 +14,6 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
-if [[ "$tumor_sample" == "$tumor_sample_barcode" ]]; then
-    # run has been anonymized, so get real name from API
-    tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
-    warn "Tumor sample name extracted from API: ${tumor_sample}"
-fi
 
 primary_tumor_doids=$(get_tumorlocation_for_biopsy ${tumor_sample})
 info "The primary tumor doid is: ${primary_tumor_doids}"
@@ -30,11 +25,6 @@ fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
-if [[ "$ref_sample" == "$ref_sample_barcode" ]]; then
-    # run has been anonymized, so get real name from API
-    ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
-    warn "Ref sample name extracted from API: ${ref_sample}"
-fi
 
 if [[ -z "${ref_sample_barcode}" ]]; then
     info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
