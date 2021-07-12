@@ -51,6 +51,14 @@ info ""
 info "[START] revoke_acces_data_gcp: $(date +"%y%m%d (%T)")"
 info ""
 
+echo '[INFO] Select project hmf-share and login as yourself.'
+gcloud config set project hmf-share
+echo '[INPUT] Please provide your hmf GCP account address.. '
+read answer
+gcloud config set account $answer
+echo ""
+
+
 info "Accounts inputted in the script for which access to GCP data will try to be be revoked:"
 info ${gcp_mail}
 info ""
