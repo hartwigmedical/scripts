@@ -42,6 +42,7 @@ purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
+linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 cuppa_conclusion_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
@@ -67,6 +68,7 @@ java -Xms2G -Xmx8G -jar ${orange_jar} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+    -linx_plot_directory ${linx_plot_directory} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -cuppa_conclusion_txt ${cuppa_conclusion_txt} \
     -cuppa_result_csv ${cuppa_result_csv} \

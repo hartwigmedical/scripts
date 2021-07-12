@@ -643,6 +643,15 @@ locate_linx_driver_catalog() {
     echo ${driver_catalog_tsv}
 }
 
+locate_linx_plot_directory() {
+    local run_dir=$1
+    local linx_plot_dir="${run_dir}/linx/plot"
+    if [[ ! -d "${linx_plot_dir}" ]]; then
+        error "Unable to locate linx plot directory in ${run_dir}. Exiting."
+    fi
+    echo ${linx_plot_dir}
+}
+
 ##################################### Sigs #####################################
 
 locate_sigs_dir() {
