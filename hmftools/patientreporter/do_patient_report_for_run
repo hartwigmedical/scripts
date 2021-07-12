@@ -4,6 +4,7 @@ source locate_files || exit 1
 source metadata_functions || exit 1
 source lims_functions || exit 1
 source message_functions || exit 1
+source api_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -13,6 +14,10 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
+if [[ "$tumor_sample" == "$tumor_sample_barcode" ]]; then
+  # run has been anonymized, so get real name from API
+  tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
+fi
 
 primary_tumor_doids=$(get_tumorlocation_for_biopsy ${tumor_sample})
 info "The primary tumor doid is: ${primary_tumor_doids}"
@@ -24,6 +29,10 @@ fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
+if [[ "$ref_sample" == "$ref_sample_barcode" ]]; then
+  # run has been anonymized, so get real name from API
+  ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
+fi
 
 if [[ -z "${ref_sample_barcode}" ]]; then
     info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
