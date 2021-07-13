@@ -62,7 +62,7 @@ java -Xms2G -Xmx8G -jar ${orange_jar} \
     -pipeline_version_file ${pipeline_version_file} \
     -sage_germline_gene_coverage_tsv ${sage_germline_gene_coverage_tsv} \
     -sage_somatic_ref_sample_bqr_plot ${sage_somatic_ref_sample_bqr_plot} \
-    sage_somatic_tumor_sample_bqr_plot ${sage_somatic_tumor_sample_bqr_plot} \
+    -sage_somatic_tumor_sample_bqr_plot ${sage_somatic_tumor_sample_bqr_plot} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
