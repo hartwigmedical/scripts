@@ -31,7 +31,7 @@ for log in ${relevant_logs}; do
     gsutil -q stat "${in_bucket_path}" || die "Could not copy log ${log_file_name} to bucket"
 done
 
-new_jsons=$(find "${local_new_jsons_dir}" -name "*.json") || die "Cannot find recently registered jsons"
+new_jsons=$(find "${local_new_jsons_dir}" -name "*.json" -maxdepth 1) || die "Cannot find recently registered jsons"
 for json in ${new_jsons}; do
     json_file_name="${json##*/}"
     in_bucket_path="${jsons_bucket}/${json_file_name}"
