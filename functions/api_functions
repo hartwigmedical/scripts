@@ -24,7 +24,7 @@ locate_reference_cram() {
 
 load_sample_name_for_barcode() {
   local barcode=$1 && shift
-  api -j samples "${barcode}" barcode | jq '.[0].name'
+  hmf_api_get "samples?barcode=${barcode}" | jq -r '.[0].name'
 }
 
 load_ref_sample_id_for_set() {
