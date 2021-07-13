@@ -16,7 +16,7 @@ info "Looking at bucket ${ssheets_bucket}"
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
-relevant_ssheets_in_bucket=$(gsutil ls "${ssheets_bucket}" | grep "${ssheet_date}") || die "Could not access samplesheet bucket"
+relevant_ssheets_in_bucket=$(switch_to_hmf_ops_service_account && gsutil ls "${ssheets_bucket}" | grep "${ssheet_date}") || die "Could not access samplesheet bucket"
 
 info "Relevant ssheets in registration bucket for date ${ssheet_date}:"
 
