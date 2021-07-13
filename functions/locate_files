@@ -20,7 +20,7 @@ locate_prod_database_credentials() {
 }
 
 locate_research_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/research_writer
+    echo ${base_path}/dbs/mysql_credentials/diagnostic-patients.sql.prod-1/writer.cnf
 }
 
 locate_prod_database_credentials_cnf() {
