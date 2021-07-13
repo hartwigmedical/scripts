@@ -344,17 +344,17 @@ sub getUnreportedBiopsies{
         ## skip unless is biopsy
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} eq 'Somatic_T';
+
+        ## skip if sample is too old
+        next unless defined $sample->{'arrival_date'};
+        next if $sample->{'arrival_date'} =~ /(2015|2016|2017|2018|2019|2020)/;
                 
         ## skip if not production biopsy
         next unless defined $sample->{'label'};
-        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE)$/;
+        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE|ACTN)$/;
         
         ## skip T0 biopsies (these should always have a T as well)
         next if $sample_name =~ /T0$/;
-        
-        ## skip if sample is too old
-        next unless defined $sample->{'arrival_date'};
-        next if $sample->{'arrival_date'} =~ /(2015|2016|2017)/;
         
         ## skip if lab not ready yet
         next unless defined $sample->{'lab_status'};
@@ -393,28 +393,33 @@ sub getUnreportedBiopsies{
 sub addApiInfoToSampleBySampleId{
     my ($sample, $sample_id) = @_;
     
-    my $api_cmd = "query_api.pl -type runs -filter \"name=${sample_id}\" -json";
+    #my $api_cmd = "query_api.pl -type runs -filter \"name=${sample_id}\" -json";
+    my $api_cmd = "hmf_api_get 'runs?barcode=${sample_id}'";
     my $api_txt = `$api_cmd`;
     my $runs = decode_json( $api_txt );
     
     ## init new fields in case no runs found
     $sample->{api_info} = $NA_CHAR;
-    
+
     foreach my $run ( @$runs ){
         my $ini = getValueByKey( $run, 'ini' );
-        my $entity = getValueByKey( $run, 'entity' );
-        my $set_name = getValueByKey( $run, 'name' );
-        my $status = getValueByKey( $run, 'status' ); 
+        my $set_name = getValueByKey( $run, 'set', 'name' );
+        my $bucket = getValueByKey( $run, 'bucket' );
+        my $status = getValueByKey( $run, 'status' );
         next if $ini =~ /rerun/i;
+        next if $bucket =~ /research-pipeline-output-prod/i;
         $sample->{api_info} = "$set_name ($status)";
     }
     return($sample);
 }
 
 sub getValueByKey{
-    my ($obj, $key) = @_;
-    if ( not defined $obj->{ $key } ){
-        return( $NA_CHAR );
+    my ($obj, $key, $key2) = @_;
+    my $out = $NA_CHAR;
+    if ( defined $key2 and defined defined $obj->{ $key }{ $key2 }){
+        $out = $obj->{ $key }{ $key2 };
+    }elsif( defined $key and defined defined $obj->{ $key }){
+        $out = $obj->{ $key };
     }
-    return( $obj->{ $key } );
+    return($out);
 }
