@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
 
 print_usage() {
     echo "-----"
