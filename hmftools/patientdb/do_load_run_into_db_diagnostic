@@ -18,6 +18,8 @@ chord_prediction_file=$(locate_chord_prediction ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
+
+run_sigs_prod ${run_dir}
 sigs_dir=$(locate_sigs_dir ${run_dir})
 
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
