@@ -12,7 +12,9 @@ if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong input date: run with \"
 
 ssheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
-# switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
+info "Looking at bucket ${ssheets_bucket}"
+
+switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
 relevant_ssheets_in_bucket=$(gsutil ls "${ssheets_bucket}" | grep "${ssheet_date}") || die "Could not access samplesheet bucket"
 
