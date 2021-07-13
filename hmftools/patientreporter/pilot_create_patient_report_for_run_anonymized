@@ -4,6 +4,7 @@ source locate_files || exit 1
 source metadata_functions || exit 1
 source lims_functions || exit 1
 source message_functions || exit 1
+source api_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -49,6 +50,9 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
+report_sample_name=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
+echo "${report_sample_name}"
+
 output_dir_data=${run_dir}/patient_report_pilot_data
 if [[ ! -d "${output_dir_data}" ]]; then
     info "${output_dir_data} does not exist yet, creating..."
@@ -76,7 +80,9 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
-
+taxonomy_db_tsv=/data/common/dbs/virus_interpreter/taxonomy_db.tsv
+virus_interpretation_tsv=/data/common/dbs/virus_interpreter/virus_interpretation.tsv
+virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
 
 java -jar ${patient_reporter_jar} \
     -reporting_db_tsv ${reporting_db_tsv} \
@@ -111,6 +117,9 @@ java -jar ${patient_reporter_jar} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
+    -taxonomy_db_tsv ${taxonomy_db_tsv} \
+    -virus_interpretation_tsv ${virus_interpretation_tsv} \
+    -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -output_dir_data ${output_dir_data} \
     -output_dir_report ${output_dir_report} \
     -ref_genome_version 37 \
