@@ -32,6 +32,8 @@ fi
 
 pipeline_version_file=${run_dir}/pipeline.version
 sage_germline_gene_coverage_tsv=${run_dir}/sage_germline/*.sage.gene.coverage.tsv
+sage_somatic_ref_sample_bqr_plot=${run_dir}/sage_somatic/${reference_sample}.sage.bqr.png
+sage_somatic_tumor_sample_bqr_plot=${run_dir}/sage_somatic/${tumor_sample}.sage.bqr.png
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
@@ -59,6 +61,8 @@ java -Xms2G -Xmx8G -jar ${orange_jar} \
     -doid_json ${doid_json} \
     -pipeline_version_file ${pipeline_version_file} \
     -sage_germline_gene_coverage_tsv ${sage_germline_gene_coverage_tsv} \
+    -sage_somatic_ref_sample_bqr_plot ${sage_somatic_ref_sample_bqr_plot} \
+    sage_somatic_tumor_sample_bqr_plot ${sage_somatic_tumor_sample_bqr_plot} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
