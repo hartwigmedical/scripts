@@ -17,7 +17,6 @@ main() {
   local key
   local base_dir
   local original
-  local skip_vcf
   local peach_main
   local optional_peach_main_arg
   local panel_name
@@ -39,9 +38,6 @@ main() {
       panel_name="$1" && shift
       optional_panel_arg=" --panel ${panel_name}"  # Optional argument
       ;;
-      -s|--skip-vcf)
-      skip_vcf=true  # Optional argument
-      ;;
       -o|--original)
       original=true  # Optional argument
       ;;
@@ -60,9 +56,6 @@ main() {
   fi
   if [[ -z ${original} ]]; then
     original=false
-  fi
-  if [[ -z ${skip_vcf} ]]; then
-    skip_vcf=false
   fi
   if [[ -z ${peach_main} ]]; then
     peach_main=""
@@ -90,7 +83,7 @@ main() {
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
-  compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" "${original}" "${skip_vcf}" \
+  compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" "${original}" \
       || die "Could not compare PEACH output to control"
   
   info "Finished ${SCRIPT_NAME}"
@@ -119,9 +112,8 @@ compare_peach_pilot_output_to_control() {
   local base_dir=$1 && shift
   local panel_name=$1 && shift
   local original=$1 && shift
-  local skip_vcf=$1 && shift
 
-  if [[ -z "${skip_vcf}" ]]; then
+  if [[ -z "${original}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
@@ -134,7 +126,7 @@ compare_peach_pilot_output_to_control() {
         local control_dir
         control_dir=$(get_control_dir "${subdir}" "${panel_name}" "${original}") || die "Could not get control dir"
 
-        compare_directory_contents "${output_dir}" "${control_dir}" "${skip_vcf}" || die "Could not compare directory contents"
+        compare_directory_contents "${output_dir}" "${control_dir}" || die "Could not compare directory contents"
       else
         warn "Is not a directory: ${subdir}"
       fi
@@ -144,16 +136,15 @@ compare_peach_pilot_output_to_control() {
 compare_directory_contents() {
   local output_dir=$1 && shift
   local control_dir=$1 && shift
-  local skip_vcf=$1 && shift
 
-  if [[ -z "${skip_vcf}" ]]; then
+  if [[ -z "${control_dir}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
   info "Start comparing ${output_dir} to ${control_dir}"
 
   local comparison_file_names
-  comparison_file_names=$(get_comparison_file_names "${output_dir}" "${control_dir}" "${skip_vcf}") \
+  comparison_file_names=$(get_comparison_file_names "${output_dir}" "${control_dir}") \
         || die "Could not get file names to compare"
 
   local actual_file
@@ -178,20 +169,13 @@ compare_directory_contents() {
 get_comparison_file_names() {
   local output_dir=$1 && shift
   local control_dir=$1 && shift
-  local skip_vcf=$1 && shift
 
-  if [[ -z "${skip_vcf}" ]]; then
+  if [[ -z "${control_dir}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  local ls_ignore
-  if ${skip_vcf}; then
-    ls_ignore="*.vcf"
-  else
-    ls_ignore="*.very_fake_name"
-  fi
   local comparison_file_names
-  comparison_file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u ) \
+  comparison_file_names=$({ ls "${output_dir}" & ls "${control_dir}";} | sort -u ) \
       || die "Could not get comparison file names"
 
   echo "${comparison_file_names}"
