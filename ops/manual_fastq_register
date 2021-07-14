@@ -30,8 +30,10 @@ fi
 
 ## find all R1 fastq files
 if [[ ${fastq_dir} == gs://* ]]; then
-  R1_fastq_files=$(gsutil ls "${fastq_dir}/*_R1_*" | xargs -I% basename % \;)
+  info "FASTQ dir is a bucket"
+  R1_fastq_files=$(gsutil ls "${fastq_dir%/}/*_R1_*" | xargs -I% basename % \;)
 else
+  info "FASTQ dir is a local dir"
   R1_fastq_files=$(find "${fastq_dir}" -name "*_R1_*.fastq.gz" -exec basename {} \;)
 fi
 
@@ -45,8 +47,9 @@ fi
 
 ## check R1 and R2 presence -> register pair
 info "Starting with sample name:${sample_name} barcode:${barcode} id:${sample_id}"
-echo "${R1_fastq_files}" | while read R1; do
-    R2=$( echo "${R1}" | sed 's/_R1_/_R2_/' )
+echo "${R1_fastq_files}" | while read -r R1; do
+    R2="${R1//_R1_/_R2_}"
+    info "${R1} paired with ${R2}"
     if [[ -z "${R1}" || -z "${R2}" ]]; then
         warn "Somehow R1 found but R2 file does not exist (${R2}) so SKIPPING this pair."
     else
