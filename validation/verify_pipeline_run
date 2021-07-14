@@ -143,11 +143,11 @@ download_run_from_gcp() {
     touch "${check_log}"
     
     info "Starting download from GCP (you can track progress in log ${log_file})"
-    gsutil -m rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}" 2>&1
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}" 2>&1
     [[ $? -eq 0 ]] || die "Something went wrong with download"
 
     info "Starting re-download from GCP (to check sync completeness)"
-    gsutil -m rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}.check" 2>&1
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}.check" 2>&1
     [[ $? -eq 0 ]] || die "Something went wrong with re-download"
 
     line_count=$(cat "${check_log}" | grep -v 'Building sync' | grep -v 'Starting sync' | wc -l)

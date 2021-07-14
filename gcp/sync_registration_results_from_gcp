@@ -14,6 +14,6 @@ local_registration_logs_dir=$(locate_sample_registration_logs_dir) || die "Could
 
 info "Syncing registered JSONs and logs from GCP"
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
-gsutil -m rsync "${registration_jsons_bucket}" "${local_registration_jsons_dir}"
-gsutil -m rsync "${registration_logs_bucket}" "${local_registration_logs_dir}"
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync "${registration_jsons_bucket}" "${local_registration_jsons_dir}"
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync "${registration_logs_bucket}" "${local_registration_logs_dir}"
 info "Registered JSONs and logs synchronised"

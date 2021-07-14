@@ -11,7 +11,7 @@ gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials
 gsutil cp /data/ecrf/cpct_ecrf.xml ${BUCKET}/cpct_ecrf.xml
 gsutil cp /data/ecrf/cpct_form_status.csv ${BUCKET}/cpct_form_status.csv 
 gsutil cp /data/ecrf/drup_ecrf.xml ${BUCKET}/drup_ecrf.xml
-gsutil -m cp /data/ops/lims/prod/* ${BUCKET}/lims
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* ${BUCKET}/lims
 gsutil cp /data/common/dbs/disease_ontology/201015_doid.json ${BUCKET}/201015_doid.json
 gsutil cp /data/common/dbs/clinical_curation/tumor_location_mapping.tsv ${BUCKET}/tumor_location_mapping.tsv 
 gsutil cp /data/common/dbs/clinical_curation/treatment_mapping.tsv ${BUCKET}/treatment_mapping.tsv 

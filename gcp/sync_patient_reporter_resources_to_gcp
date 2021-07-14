@@ -13,6 +13,6 @@ gsutil cp /data/common/dbs/summary_patient_report/summary_samples.tsv ${BUCKET}/
 gsutil cp /data/common/dbs/viral_reporting/taxonomy_db.tsv ${BUCKET}/taxonomy_db.tsv
 gsutil cp /data/common/dbs/viral_reporting/virus_interpretation.tsv ${BUCKET}/virus_interpretation.tsv
 gsutil cp /data/common/dbs/viral_reporting/virus_blacklist.tsv ${BUCKET}/virus_blacklist.tsv
-gsutil -m cp /data/ops/lims/prod/* ${BUCKET}/lims
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* ${BUCKET}/lims
 gsutil cp /data/common/dbs/patient_reporter_images/* ${BUCKET}/
 info "Done syncing patient-reporter resources"
