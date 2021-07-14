@@ -10,6 +10,6 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 patient_db_jar=$(locate_prod_patient_db)
-credentials=$(locate_research_database_credentials)
+credentials=$(locate_diagnostic_database_credentials)
 
 do_load_run_into_db_diagnostic ${run_dir} ${patient_db_jar} ${credentials}
