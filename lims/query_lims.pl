@@ -392,8 +392,7 @@ sub getUnreportedBiopsies{
 
 sub addApiInfoToSampleBySampleId{
     my ($sample, $sample_id) = @_;
-    
-    #my $api_cmd = "query_api.pl -type runs -filter \"name=${sample_id}\" -json";
+
     my $api_cmd = "hmf_api_get 'runs?barcode=${sample_id}'";
     my $api_txt = `$api_cmd`;
     my $runs = decode_json( $api_txt );
