@@ -9,7 +9,12 @@ zone="europe-west4-a"
 machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
-extra_params=("--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com" "--no-address")
+extra_params=(
+    "--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
+    "--network" "projects/hmf-vpc-network/global/networks/vpc-network-prod-1"
+    "--subnetwork" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
+    "--no-address"
+)
 family="pipeline5-5-23"
 do_not_use_service_account="FALSE"
 vm_project="hmf-crunch"
