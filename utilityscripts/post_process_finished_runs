@@ -66,7 +66,7 @@ for run in ${process_runs}; do
             warn "Skipping generating CUPPA ruo report for sample ${sample_id}"
         fi
         info "Loading set ${run} into diagnotic db"
-        load_run_into_diagnostic_db ${run}
+        load_run_into_diagnostic_db /data/cpct/runs/${run}
 
         ## TODO: execute below rules when overeenkomst is signed
         ## info "Generate json file for share"
@@ -86,7 +86,7 @@ for run in ${process_runs}; do
             warn "Skipping generating CUPPA ruo report for sample ${sample_id}"
         fi
         info "Loading set ${run} into diagnotic db"
-        load_run_into_diagnostic_db ${run}
+        load_run_into_diagnostic_db /data/cpct/runs/${run}
     elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3"  ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
@@ -95,7 +95,7 @@ for run in ${process_runs}; do
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
         info "Loading set ${run} into diagnotic db"
-        load_run_into_diagnostic_db ${run}
+        load_run_into_diagnostic_db /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
         info "Copying set ${run} to /data/cpct/reportable_runs"
@@ -111,7 +111,7 @@ for run in ${process_runs}; do
             info "Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
             info "Loading set ${run} into diagnotic db"
-            load_run_into_diagnostic_db ${run}
+            load_run_into_diagnostic_db /data/cpct/runs/${run}
         fi
     fi
 done
