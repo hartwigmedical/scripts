@@ -80,6 +80,10 @@ main() {
   peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
   local panel_file="${peach_resource_dir}/panelfiles/${panel_name}"
 
+  # Check input file existence
+  [[ -f ${germline_vcf} ]] || die "Germline vcf could not be found"
+  [[ -f ${panel_file} ]] || die "Panel file could not be found"
+
   # Start virtual venv
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
 
