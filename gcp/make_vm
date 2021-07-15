@@ -9,45 +9,41 @@ zone="europe-west4-a"
 machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
-extra_params=(
-    "--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
-    "--network" "projects/hmf-vpc-network/global/networks/vpc-network-prod-1"
-    "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
-    "--no-address"
-)
+service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
+network="projects/hmf-vpc-network/global/networks/vpc-network-prod-1"
+subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
 family="pipeline5-5-23"
 preemptible="FALSE"
-do_not_use_service_account="FALSE"
 vm_project="hmf-crunch"
-
-current_project=$(gcloud config get-value project) || die "Unable to get-value project"
 
 print_usage() {
     script=$(basename "$0")
     echo ""
-    echo "Descr: Creates a VM (by default in ${vm_project} using service account)"
+    echo "Descr: Creates a VM (using account ${service_account})"
     echo "Usage: ${script} -n <NAME> [options]"
     echo "Examp: ${script} -n ${USER}-test-vm"
-    echo "       ${script} -n ${USER}-test-vm -i my-image-name -p my-image-project"
+    echo ""
     echo "Options:"
-    echo "      -i image_name       Image name [default is most recent ${family} image]"
-    echo "      -p image_project    Image project [${image_project}]"
-    echo "      -m machine_type     VM machine type [${machine_type}]"
-    echo "      -s disk_size        VM boot disk size [${disk_size}]"
-    echo "      -t disk_type        VM boot disk type [${disk_type}]"
-    echo "      -e                  Make VM preemptible"
-    echo "      -x                  Do not use service account and allow internet access"
-    echo "                          (WARNING: only use this when not using patient data!!)"
+    echo "  -i image_name      Image name [default is most recent ${family} image]"
+    echo "  -p image_project   Image project [${image_project}]"
+    echo "  -m machine_type    VM machine type [${machine_type}]"
+    echo "  -s disk_size       VM boot disk size [${disk_size}]"
+    echo "  -t disk_type       VM boot disk type [${disk_type}]"
+    echo "  -e                 Make VM pre-emptible"
+    echo ""
     echo "See also:"
-    echo "      https://cloud.google.com/compute/docs/disks"
-    echo "      https://cloud.google.com/compute/docs/machine-types"
-    echo "      https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
-    echo "      gcloud --project ${image_project} compute images list | grep pipeline"
+    echo "  https://cloud.google.com/compute/docs/disks"
+    echo "  https://cloud.google.com/compute/docs/machine-types"
+    echo "  https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
+    echo "  gcloud --project ${image_project} compute images list | grep pipeline"
+    echo "  gcloud --project ${vm_project} compute compute instances list"
+    echo "  gcloud compute instances delete --zone ${zone} --quiet \$vm"
+    echo "  gcloud compute instances ssh \$vm"
     echo ""
     exit 1
 }
 
-while getopts ':n:p:i:m:s:t:ex' flag; do
+while getopts ':n:p:i:m:s:t:e' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         i) image_name=${OPTARG} ;;
@@ -56,28 +52,21 @@ while getopts ':n:p:i:m:s:t:ex' flag; do
         s) disk_size=${OPTARG} ;;
         t) disk_type=${OPTARG} ;;
         e) preemptible="TRUE" ;;
-        x) do_not_use_service_account="TRUE" ;;
         *) print_usage
         exit 1 ;;
     esac
 done
 
 if [[ -z "${vm_name}" || "$1" == "-h" || "$1" == "--help" ]]; then
-  echo "found it"
     print_usage
 fi
 
 # if VM will be created with crunch service account then make sure that project is set
-if [[ "${do_not_use_service_account}" == "TRUE" ]]; then
-    info "Current project is ${current_project}"
-    extra_params=()
-    vm_project="${current_project}"
-else
-    if [[ ! "${current_project}" == "${vm_project}" ]]; then
-        info "Current config wants to create VM in ${vm_project} but current project is ${current_project}"
-        info "Switch to ${vm_project} (gcloud config set project ${vm_project}) and try again"
-        exit 1
-    fi
+current_project=$(gcloud config get-value project) || die "Unable to get-value project"
+if [[ ! "${current_project}" == "${vm_project}" ]]; then
+    info "Current config wants to create VM in ${vm_project} but current project is ${current_project}"
+    info "Switch to ${vm_project} (gcloud config set project ${vm_project}) and try again"
+    exit 1
 fi
 
 # if no image name provided then try to get newest pipeline image
@@ -88,15 +77,17 @@ if [[ -z "${image_name}" ]]; then
 fi
 
 info "Details of VM to be created:"
-info "    Name: ${vm_name} (in ${current_project})"
-info "   Image: ${image_name} (from ${image_project})"
+info "    Name: ${vm_name}"
+info " Project: ${current_project}"
+info "   Image: ${image_name} in ${image_project}"
 info "  Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
+info " Account: ${service_account}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
 
 if [[ "${preemptible}" == "TRUE" ]]; then
-    preemptible_arg="--preemptible"
+    preemptible_arg=" --preemptible"
 else
     preemptible_arg=""
 fi
@@ -111,8 +102,11 @@ gcloud compute instances create "${vm_name}" \
 --scopes storage-full \
 --no-restart-on-failure \
 --zone "${zone}" \
-${preemptible_arg} \
-"${extra_params[@]}" || die "Something went wrong when creating the image. Check the gcloud response."
+--service-account "${service_account}" \
+--network "${network}" \
+--subnet "${subnet}" \
+--no-address \
+"${preemptible_arg}" || die "Something wrong with VM creation. Check the gcloud response."
 
 info "VM usage:"
 info "  Access: gcloud compute ssh ${vm_name}"
