@@ -4,6 +4,8 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
+IMAGE_PROJECT="hmf-pipeline-development"
+
 main() {
   info "Started ${SCRIPT_NAME}"
 
@@ -20,8 +22,6 @@ main() {
     case $key in
       -n|--name)
         name="$1" && shift;;
-      -p|--project)
-        project="$1" && shift;;
       -c|--corecount)  # optional
         corecount="$1" && shift;;
       -d|--disksize)  # optional
@@ -29,7 +29,7 @@ main() {
       -t|--type)  # optional
         vm_type="$1" && shift;;
       -e|--preemptible)  # optional
-        pre_emptible_arg="--preemptible";;
+        pre_emptible_arg="-e";;
       *)
         UNRECOGNIZED+=("$1");;
     esac
@@ -38,39 +38,11 @@ main() {
   # sanity checks
   [[ ${#UNRECOGNIZED[@]} -eq 0 ]] || die "Unrecognized options to ${SCRIPT_NAME}: options=${UNRECOGNIZED[*]}"
   [[ -n ${name} ]] || die "Variable 'name' has not been set"
-  [[ -n ${project} ]] || die "Variable 'project' has not been set"
 
-  info "Creating VM ${name} in ${project}"
-  if [[ ${project} == "hmf-crunch" ]]; then
-    gcloud compute instances create "${name}" \
-      --project="hmf-crunch" \
-      --zone="europe-west4-a" \
-      --machine-type="${vm_type}-${corecount}" \
-      --image-project="hmf-pipeline-development" \
-      --image-family="base-image" \
-      --boot-disk-size="${disksize}" \
-      --boot-disk-type="pd-standard" \
-      --boot-disk-device-name="${name}" \
-      --service-account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com" \
-      --no-address \
-      --scopes="cloud-platform" \
-      ${pre_emptible_arg} || die "Could not create VM ${name}"
-  elif [[ ${project} == "hmf-pipeline-development" ]]; then
-    gcloud compute instances create "${name}" \
-      --project="hmf-pipeline-development" \
-      --zone="europe-west4-a" \
-      --machine-type="${vm_type}-${corecount}" \
-      --image-project="hmf-pipeline-development" \
-      --image-family="base-image" \
-      --boot-disk-size="${disksize}" \
-      --boot-disk-type="pd-standard" \
-      --boot-disk-device-name="${name}" \
-      --scopes="cloud-platform" \
-      ${pre_emptible_arg} || die "Could not create VM ${name}"
-  else
-    die "Unrecognized project name ${project}"
-  fi
-  info "Finished creation of VM ${name} in ${project}"
+  latest_image=$(gcloud --project="${IMAGE_PROJECT}" compute images describe-from-family "base-image" | grep name | cut -d" " -f2) \
+        || die "Unable to describe-from-family from project ${IMAGE_PROJECT}"
+
+  make_vm -n "${name}" -m "${vm_type}-${corecount}" -i "${latest_image}" -p "${IMAGE_PROJECT}" -s "${disksize}" ${pre_emptible_arg}
 }
 
 main "$@"
