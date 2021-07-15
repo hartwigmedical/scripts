@@ -106,7 +106,7 @@ gcloud compute instances create "${vm_name}" \
 --network "${network}" \
 --subnet "${subnet}" \
 --no-address \
-"${preemptible_arg}" || die "Something wrong with VM creation. Check the gcloud response."
+${preemptible_arg} || die "Something wrong with VM creation. Check the gcloud response."
 
 info "VM usage:"
 info "  Access: gcloud compute ssh ${vm_name}"
