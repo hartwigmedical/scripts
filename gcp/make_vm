@@ -86,7 +86,7 @@ fi
 info "Details of VM to be created:"
 info "    Name: ${vm_name} (in ${current_project})"
 info "   Image: ${image_name} (from ${image_project})"
-info "  Config: ${machine_type} ${disk_size}" "${extra_params[*]}"
+info "  Config: ${machine_type}|${disk_size}|${disk_type}|${zone}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
