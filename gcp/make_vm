@@ -16,6 +16,7 @@ extra_params=(
     "--no-address"
 )
 family="pipeline5-5-23"
+preemptible="FALSE"
 do_not_use_service_account="FALSE"
 vm_project="hmf-crunch"
 
@@ -34,6 +35,7 @@ print_usage() {
     echo "      -m machine_type     VM machine type [${machine_type}]"
     echo "      -s disk_size        VM boot disk size [${disk_size}]"
     echo "      -t disk_type        VM boot disk type [${disk_type}]"
+    echo "      -e                  Make VM preemptible"
     echo "      -x                  Do not use service account and allow internet access"
     echo "                          (WARNING: only use this when not using patient data!!)"
     echo "See also:"
@@ -45,7 +47,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:p:i:m:s:t:x' flag; do
+while getopts ':n:p:i:m:s:t:ex' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         i) image_name=${OPTARG} ;;
@@ -53,6 +55,7 @@ while getopts ':n:p:i:m:s:t:x' flag; do
         m) machine_type=${OPTARG} ;;
         s) disk_size=${OPTARG} ;;
         t) disk_type=${OPTARG} ;;
+        e) preemptible="TRUE" ;;
         x) do_not_use_service_account="TRUE" ;;
         *) print_usage
         exit 1 ;;
@@ -60,6 +63,7 @@ while getopts ':n:p:i:m:s:t:x' flag; do
 done
 
 if [[ -z "${vm_name}" || "$1" == "-h" || "$1" == "--help" ]]; then
+  echo "found it"
     print_usage
 fi
 
@@ -86,10 +90,16 @@ fi
 info "Details of VM to be created:"
 info "    Name: ${vm_name} (in ${current_project})"
 info "   Image: ${image_name} (from ${image_project})"
-info "  Config: ${machine_type}|${disk_size}|${disk_type}|${zone}"
+info "  Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
+
+if [[ "${preemptible}" == "TRUE" ]]; then
+    preemptible_arg="--preemptible"
+else
+    preemptible_arg=""
+fi
 
 info "Start creating VM instance ${vm_name}"
 gcloud compute instances create "${vm_name}" \
@@ -101,6 +111,7 @@ gcloud compute instances create "${vm_name}" \
 --scopes storage-full \
 --no-restart-on-failure \
 --zone "${zone}" \
+${preemptible_arg} \
 "${extra_params[@]}" || die "Something went wrong when creating the image. Check the gcloud response."
 
 info "VM usage:"
