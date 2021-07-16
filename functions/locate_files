@@ -93,6 +93,10 @@ locate_prod_patient_db() {
     echo ${base_path}/tools/patient-db_v3.62/patient-db.jar
 }
 
+locate_diagnostic_patient_db() {
+    echo ${base_path}/tools/patient-db_v3.62/patient-db.jar
+}
+
 locate_pilot_patient_db() {
     echo ${base_path}/tools/patient-db_pilot/patient-db.jar
 }

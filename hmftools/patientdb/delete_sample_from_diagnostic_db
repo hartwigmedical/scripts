@@ -9,7 +9,7 @@ if [[ -z "${sample}" ]]; then
     error "No sample is provided to $(basename $0). Exiting."
 fi
 
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_diagnostic_patient_db)
 credentials=$(locate_diagnostic_database_credentials)
 
 do_delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}
