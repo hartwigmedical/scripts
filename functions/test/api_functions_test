@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source api_functions || exit 1
 source message_functions || exit 1
+source api_functions || exit 1
 
 set=$1
 
@@ -9,15 +9,21 @@ if [[ -z "${set}" ]]; then
     error "Provide a set. Exiting"
 fi
 
-run_info=$(load_run_info_for_set ${set})
-initial_run_bucket=$(load_intial_run_bucket_for_set ${set})
+run_info=$(load_run_info_for_set "${set}")
+bucket=$(extract_bucket_from_run_info "${run_info}")
 pipeline_version=$(extract_pipeline_version_from_run_info "${run_info}")
+status=$(extract_status_from_run_info "${run_info}")
+tumor_sample=$(load_tumor_sample_id_for_set "${set}")
+ref_sample=$(load_ref_sample_id_for_set "${set}")
 
-info "Testing HMF API functions on ${set}"
+info "Testing HMF API functions on set ${set}"
 info "Run Info = ${run_info}"
-info "Initial Run Bucket = ${initial_run_bucket}"
-info "Pipeline Version = ${pipeline_version}"
-info "Rerun V3 Info = $(load_rerun_v3_info_for_set ${set})"
-info "Rerun V4 Info = $(load_rerun_v4_info_for_set ${set})"
-info "Tumor Sample ID = $(load_tumor_sample_id_for_set ${set})"
-info "Ref Sample ID = $(load_ref_sample_id_for_set ${set})"
+info "Run Bucket = ${bucket}"
+info "Run Pipeline Version = ${pipeline_version}"
+info "Run Status = ${status}"
+info "Rerun V3 Info = <obsolete check>"
+info "Rerun V4 Info = <obsolete check>"
+info "Ref Name = ${ref_sample}"
+info "Tumor Name = ${tumor_sample}"
+info "Ref datasets CRAM = $(locate_reference_cram "${tumor_sample}")"
+info "Tumor datasets CRAM = $(locate_tumor_cram "${tumor_sample}")"

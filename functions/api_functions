@@ -16,7 +16,8 @@ locate_tumor_cram() {
 
 locate_reference_cram() {
   local biopsy=$1
-  local sample=$(echo $biopsy | cut -c1-12)R
+  local sample=""
+  sample=$(echo "$biopsy" | cut -c1-12)R
   local api_request="datasets/${biopsy}?output=condensed&datatype=aligned_reads"
 
   hmf_api_get "${api_request}" | jq -r ".${sample}.path"
@@ -29,41 +30,33 @@ load_sample_name_for_barcode() {
 
 load_ref_sample_id_for_set() {
     local set=$1
-    local ref_sample_name=$(load_sample_id_for_set_by_type_from_api ${set} "ref_sample" )
-    echo ${ref_sample_name}
+    local name=""
+    name=$(load_sample_id_for_set_by_type_from_api "${set}" "ref_sample" )
+    echo "${name}"
 }
 
 load_tumor_sample_id_for_set() {
     local set=$1 && shift
-    local tumor_sample_name=$(load_sample_id_for_set_by_type_from_api ${set} "tumor_sample" )
-    echo ${tumor_sample_name}
+    local name=""
+    name=$(load_sample_id_for_set_by_type_from_api "${set}" "tumor_sample" )
+    echo "${name}"
 }
 
 load_sample_id_for_set_by_type_from_api() {
     local set=$1 && shift
     local sample_type=$1 && shift # can be 'ref_sample' or 'tumor_sample'
-    local sample_name=$(query_api.pl -type sets -filter "name=${set}" -json | jq -r ".[0].${sample_type}" )
-    echo ${sample_name}
-}
-
-load_intial_run_bucket_for_set() {
-    local set=$1 && shift
-
-    local run_info=$(load_run_info_for_set ${set})
-
-    # Need to pass as a string because ${run_info} is a string containing spaces.
-    extract_bucket_from_run_info "${run_info}"
+    local name=""
+    name=$(hmf_api_get "sets?name=${set}" | jq -r ".[0].${sample_type}")
+    echo "${name}"
 }
 
 load_cram_run_bucket_for_set() {
     local set=$1 && shift
+    local run_info=""
+    local obj_count=""
 
-    local run_info=$(query_api.pl -type runs \
-        -filter "ini=CRAM.ini" \
-        -filter "name=${set}" \
-        -json
-    )
-    local obj_count=$(echo "${run_info}" | jq 'length')
+    run_info=$(hmf_api_get "runs?set_name=${set}&ini=CRAM.ini")
+    obj_count=$(echo "${run_info}" | jq 'length')
 
     # There should be max one CRAM.ini run so return empty if anything else.
     if [[ "$obj_count" -eq 1 ]]; then
@@ -74,86 +67,49 @@ load_cram_run_bucket_for_set() {
     fi
 }
 
+load_run_by_set_ini_status(){
+    # This function selects the most recent run by setname/ini/status and returns json format
+    local set=$1 && shift
+    local ini=$1 && shift
+    local status=$1 && shift
+    local out=""
+    out=$(hmf_api_get "runs?set_name=${set}&ini=${ini}&status=${status}" | jq -c '[.[] | select(.bucket|contains("research-pipeline")|not)] | .[-1]')
+    if [[ "${out}" == "[]" || "${out}" == "null" ]]; then
+        out=""
+    fi
+    echo "${out}"
+}
+
 load_run_info_for_set() {
+    # This function aims to select the one "true/final/correct" run for a set and returns json format
+    # We do this by moving down the tree of preferred run ini and status and stop once a run is found
+    # Most sets will have a Validated Somatic.ini run
     local set=$1 && shift
+    local run_info=""
 
-    # Remove header from the query command
-    local run_info=$(query_api.pl -type runs \
-        -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
-        -filter "status=Validated|Finished" \
-        -filter "name=${set}" | grep -v "^#"
-    )
+    # Trying all combinations of "final" statuses and inis
+    for status in 'Validated' 'Finished' 'Failed' 'Deleted'; do
+        for ini in 'Somatic.ini' 'PipelineV5.ini' 'CPCT.ini'; do
+            run_info=$(load_run_by_set_ini_status "$set" "$ini" "$status")
+            [[ -z "$run_info" ]] || break
+        done
+        [[ -z "$run_info" ]] || break
+    done
 
-    # If there are no succesfull runs, try a failed run for same set
-    if [[ -z "${run_info}" ]]; then
-        run_info=$(query_api.pl -type runs \
-            -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
-            -filter "status=Failed" \
-            -filter "name=${set}" | grep -v "^#")
-    fi
-
-    echo ${run_info}
-}
-
-load_rerun_v3_info_for_set() {
-    local set=$1 && shift
-
-    # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
-    local rerun_info=$(query_api.pl -type runs \
-        -filter "bucket=hmf-output" \
-        -filter "ini=Somatic_Rerun_bam.ini" \
-        -filter "status=Validated" \
-        -filter "name=${set}" | grep -v "^#")
-
-    if [[ -z "${rerun_info}" ]]; then
-        local run_info=$(load_run_info_for_set ${set})
-        local run_is_v3_or_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v3\|v5")
-        if [[ -z "${run_is_v3_or_v4_or_v5}" ]]; then
-            # Should not happen - any pre-v3 run must have a v3-rerun
-            rerun_info=""
-        else
-            rerun_info=${run_info}
-        fi
-    fi
-    echo ${rerun_info}
-}
-
-load_rerun_v4_info_for_set() {
-    local set=$1 && shift
-
-    # Allow for failure of v4 rerun since v4 rerun runs the health checks.
-    local rerun_info=$(query_api.pl -type runs \
-        -filter "bucket=hmf-output" \
-        -filter "ini=Somatic_Rerun_v4.ini" \
-        -filter "status=Validated|Failed" \
-        -filter "name=${set}"  | grep "v4.4" | grep  -v "^#")
-
-    if [[ -z "${rerun_info}" ]]; then
-        local run_info=$(load_run_info_for_set ${set})
-        local run_is_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v5")
-        if [[ -z "${run_is_v4_or_v5}" ]]; then
-            # Should not happen - any pre-v4 run must have a v4-rerun
-            rerun_info=""
-        else
-            rerun_info=${run_info}
-        fi
-    fi
-
-    echo ${rerun_info}
+    echo "${run_info}"
 }
 
 extract_bucket_from_run_info() {
     local run_info=$1 && shift
-
-    run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
-
-    echo ${run_bucket}
+    jq -r '.bucket' <<< "${run_info}"
 }
 
 extract_pipeline_version_from_run_info() {
     local run_info=$1 && shift
+    jq -r '.version' <<< "${run_info}"
+}
 
-    run_bucket=$(echo ${run_info} | cut -d ' ' -f8)
-
-    echo ${run_bucket}
+extract_status_from_run_info() {
+    local run_info=$1 && shift
+    jq -r '.status' <<< "${run_info}"
 }
