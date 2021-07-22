@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 print_usage() {
     echo "-----"
     echo " Descr: Constructs bash command for data prep"
