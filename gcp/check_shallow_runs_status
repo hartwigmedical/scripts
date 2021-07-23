@@ -3,16 +3,19 @@
 source message_functions || exit 1
 
 yymmdd=$(date +'%y%m%d')
-qcfail_path="/data/gcp/qc_fail_runs"
-process_path="/data/gcp/shallow_runs"
-archive_path="/data/data_archive/shallow_seq_pipelines"
-current_pipeline_version="5.22"
+archive_file="gs://hmf-ops-status/already_processed_shallow_runs"
+pipeline_version="5.22" # IVDR version of pipeline
+tmp_file="/tmp/$(basename "$archive_file").tmp"
 
-echo "===== Running $(basename "$0") ====="
-info "Checking ShallowSeq runs (v${current_pipeline_version} and higher)"
+info "Starting $(basename "$0")"
+
+# Retrieve archive log
+info "Retrieving file ${archive_file}"
+gsutil -q cp "${archive_file}" "${tmp_file}" || die "Unable to retrieve file (${archive_file})"
 
 # Waiting runs have no version in API so retrieve in second query
-all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${current_pipeline_version}") || die "Unable to get Shallow runs from API"
+info "Retrieving shallow runs (v${pipeline_version} or higher)"
+all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${pipeline_version}") || die "Unable to get Shallow runs from API"
 waiting_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&status=Waiting") || die "Unable to get Waiting Shallow runs from API"
 
 to_mention=() # gets comment msg appended
@@ -33,7 +36,7 @@ while read -r line; do
     run_status=$(echo "${line}" | cut -f2)
     run_version=$(echo "${line}" | cut -f3)
 
-    reported=$(find "${archive_path}" -mindepth 1 -maxdepth 1 -type d -name "${run_name}" | wc -l)
+    reported=$(grep -c "^${run_name}" "${tmp_file}" | cut -d" " -f1)
     run_info="status=${run_status}|version=${run_version}"
 
     if [[ "${reported}" -gt 0 ]]; then
@@ -42,10 +45,6 @@ while read -r line; do
         continue
     elif [[ "${run_status}" == "Deleted" ]]; then
         continue
-    elif [[ -d "${qcfail_path}/${run_name}" ]]; then
-        to_mention+=("  DOWNLOADED: ${run_name} found in ${qcfail_path}")
-    elif [[ -d "${process_path}/${run_name}" ]]; then
-        to_mention+=("  DOWNLOADED: ${run_name} found in ${process_path}")
     elif [[ "${run_status}" == "Waiting" ]]; then
         to_mention+=("  WAITING: ${run_name} (${run_info})")
     elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
@@ -54,7 +53,8 @@ while read -r line; do
         to_mention+=("  FAILED: ${run_name} (${run_info})")
     elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
         to_mention+=("  FINISHED: ${run_name} (${run_info})")
-        to_process+=(" process_shallow_run ${run_name} # (${run_info})")
+        to_process+=("${run_name}")
+        echo "${run_name}" >> "${tmp_file}"
     else
         to_mention+=("  UNKNOWN STATUS: ${run_name} (${run_info})")
     fi
@@ -63,28 +63,34 @@ done < <(echo "${all_runs}" | jq -rc '.[] | [.set.name,.status,.version] | @tsv'
 to_process_count="${#to_process[*]}"
 to_mention_count="${#to_mention[*]}"
 
-info "Found ${to_mention_count} runs to mention and ${to_process_count} finished to be processed further"
+info "Found ${to_process_count} runs to be processed of ${to_mention_count} to mention"
 if [[ "${to_mention_count}" -gt 0 ]]; then
     printf '[INFO] %s\n' "${to_mention[@]}" | sort
 fi
 
 if [[ "${to_process_count}" -gt 0 ]]; then
-    job_name="${yymmdd}_${USER}_process_shallow_runs"
+    job_name="${yymmdd}_${USER}_process_shallow_runs_gcp"
     job_file="/data/ops/jobs/${job_name}"
     log_file="/data/ops/logs/${job_name}"
 
-    if [[ -f "${job_file}" ]]; then
-        warn "Overwriting job file ${job_file}"
-    fi
-    echo "# ShallowSeq processing ${yymmdd}" > "${job_file}"
-    printf ' %s\n' "${to_process[@]}" | sort >> "${job_file}"
-    chmod +x "${job_file}"
-    execute_job_cmd="nohup ${job_file} > ${log_file} &"
+    [[ ! -f "${job_file}" ]] || die "Job file exists (${job_file}). Delete first to allow job file creation!"
+    [[ ! -f "${log_file}" ]] || warn "Log file already exists (${log_file})!"
 
-    info "Check contents of job file ${job_file}"
+    {
+      echo "set -e"
+      echo "echo '[INFO] Running perform_shallow_qc_gcp...'"
+      echo "  perform_shallow_qc_gcp ${to_process[*]}"
+      echo "echo '[INFO] Adding set names to log file in bucket...'"
+      echo "  gsutil cp '${tmp_file}' '${archive_file}'"
+      echo "echo '[INFO] Removing tmp file...'"
+      echo "  rm '${tmp_file}'"
+    } > "${job_file}"
+    chmod +x "${job_file}"
+
+    info "Check contents of job file:"
+    echo "  cat ${job_file}"
     info "Or start processing a total of ${to_process_count} runs with:"
-    echo "  ${execute_job_cmd}"
-    if [[ -f "${log_file}" ]]; then
-        warn "log file already exists (${log_file})!!!!"
-    fi
+    echo "  nohup ${job_file} > ${log_file} &"
 fi
+
+info "Finished with $(basename "$0")"
