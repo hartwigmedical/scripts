@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source gcp_functions || exit 1
+source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
+
+crunch_seq_runs_dir=/data1/illumina_data
+samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
+
+switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
+
+for i in {2,3}; do
+    crunch_name="crunch00${i}"
+    info "Checking ${crunch_name} for samplesheets"
+
+    ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
+    while read -r sheet_path; do
+        run_path=$(dirname "${sheet_path}")
+        run_name=$(basename "${run_path}")
+        in_bucket_path="${samplesheets_bucket%/}/${run_name}_SampleSheet.csv"
+        info "  Copying to bucket ${samplesheets_bucket} for ${run_name}"
+        ssh -n ${crunch_name} gsutil cp "${sheet_path}" "${in_bucket_path}"
+        gsutil -q stat "${in_bucket_path}" || die "Could not upload samplesheet for ${run_name} to ${samplesheets_bucket}"
+    done
+done
