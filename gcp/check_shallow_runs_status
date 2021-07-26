@@ -14,7 +14,7 @@ info "Retrieving file ${archive_file}"
 gsutil -q cp "${archive_file}" "${tmp_file}" || die "Unable to retrieve file (${archive_file})"
 
 # Waiting runs have no version in API so retrieve in second query
-info "Retrieving shallow runs (v${pipeline_version} or higher)"
+info "Searching for shallow runs in API (v${pipeline_version} or higher)"
 all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&min_version=${pipeline_version}") || die "Unable to get Shallow runs from API"
 waiting_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini&status=Waiting") || die "Unable to get Waiting Shallow runs from API"
 
