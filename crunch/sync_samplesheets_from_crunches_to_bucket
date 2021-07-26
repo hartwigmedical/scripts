@@ -20,7 +20,7 @@ for i in {2,3}; do
         run_name=$(basename "${run_path}")
         in_bucket_path="${samplesheets_bucket%/}/${run_name}_SampleSheet.csv"
         info "  Copying to bucket ${samplesheets_bucket} for ${run_name}"
-        ssh -n ${crunch_name} gsutil cp "${sheet_path}" "${in_bucket_path}"
+        ssh -n ${crunch_name} switch_to_hmf_ops_service_account && gsutil cp "${sheet_path}" "${in_bucket_path}"
         gsutil -q stat "${in_bucket_path}" || die "Could not upload samplesheet for ${run_name} to ${samplesheets_bucket}"
     done
 done
