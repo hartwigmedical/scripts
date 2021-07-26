@@ -6,7 +6,7 @@ source message_functions || exit 1
 source locate_gcp_files || exit 1
 
 crunch_seq_runs_dir=/data1/illumina_data
-tmp_dir=/tmp/samplesheets/
+tmp_dir="$HOME/tmp/samplesheets/"
 samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
@@ -23,7 +23,7 @@ for i in {2,3}; do
         run_name=$(basename "${run_path}")
         tmp_local_path="${tmp_dir%/}/${run_name}_SampleSheet.csv"
         info "  Executing rsync for ${run_name}"
-        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${tmp_local_path}" | wc -l)
+        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${tmp_local_path}" | wc -l) || die "Could not rsync"
         if [[ "${rsync_log_line_count}" -gt 4 ]]; then
             info "   Synced to ${tmp_local_path}"
         fi
