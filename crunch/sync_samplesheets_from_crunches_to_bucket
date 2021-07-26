@@ -6,7 +6,7 @@ source message_functions || exit 1
 source locate_gcp_files || exit 1
 
 crunch_seq_runs_dir=/data1/illumina_data
-tmp_dir="/tmp/samplesheets"
+tmp_dir="/tmp/samplesheets_from_crunches"
 samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
