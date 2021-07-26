@@ -42,6 +42,15 @@ load_tumor_sample_id_for_set() {
     echo "${name}"
 }
 
+load_intial_run_bucket_for_set() {
+    local set=$1 && shift
+
+    local run_info=$(load_run_info_for_set ${set})
+
+    # Need to pass as a string because ${run_info} is a string containing spaces.
+    extract_bucket_from_run_info "${run_info}"
+}
+
 load_sample_id_for_set_by_type_from_api() {
     local set=$1 && shift
     local sample_type=$1 && shift # can be 'ref_sample' or 'tumor_sample'
