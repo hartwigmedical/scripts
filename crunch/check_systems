@@ -7,9 +7,11 @@ NA="NA"
 script=$(basename "$0")
 
 function main {
-    [[ "$(hostname)" =~ datastore ]] || die "Only run this script at datastore!"
+    [[ ! "$(hostname)" =~ crunch ]] || die "This script is not meant to be executed from a crunch!"
     info "Starting with ${script}"
-    check_datastore
+    if [[ "$(hostname)" =~ datastore ]]; then
+        check_datastore
+    fi
     check_crunches
     info "Finished with ${script}"
 }
