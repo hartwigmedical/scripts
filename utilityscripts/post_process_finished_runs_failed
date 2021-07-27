@@ -13,7 +13,7 @@ purple_version=2.53
 info "Count analysis purple version v${purple_version}"
 health_check_processed_runs | grep -c "This analysis has been done with purple version=${purple_version}"
 
-source_path=/data/gcp/processed_runs
+source_path=/data/gcp/qc_fail_runs
 
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
@@ -33,8 +33,8 @@ for run in ${process_runs}; do
         copy_run_to_gcp_crunch_project ${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
-        info "Copying set ${run} to /data/cpct/reportable_runs"
-        cp -R ${source_path}/${run} /data/cpct/reportable_runs/
+        #info "Copying set ${run} to /data/cpct/reportable_runs"
+        #cp -R ${source_path}/${run} /data/cpct/reportable_runs/
         if [[ ${cohort} == "CORE" || ${cohort} == "CORELR11" || ${cohort} == "CORESC11" ]]; then
             info "Moving set ${run} to /data/core/runs"
             mv ${source_path}/${run} /data/core/runs/
