@@ -9,7 +9,7 @@ samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samples
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
-find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
+find ${crunch_seq_runs_dir} -mindepth 2 -maxdepth 2 -type f -name "SampleSheet.csv" |
 while read -r sheet_path; do
     run_path=$(dirname "${sheet_path}") || die "Could not determine run directory path"
     run_name=$(basename "${run_path}") || die "Could not determine run name"
