@@ -72,42 +72,39 @@ for seq_dir in "${seq_dirs[@]}"; do
         submission=$(echo "${line}" | cut -f11)
         sample_id=$(echo "${line}" | cut -f9)
         sample_nm=$(echo "${line}" | cut -f10)
-        status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
-        if [[ "${HOSTNAME}" == "datastore" ]]; then
-            api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
-            if [[ "${api_samples_json}" == "[]" ]]; then
-                status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
+        api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
+        else
+            sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
+            sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
+            # Note: last cut shortens "Insufficient Quality" to "Insufficient"
+            smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
+            yld=$(echo "${sample_tsv}" | cut -f2)
+            req=$(echo "${sample_tsv}" | cut -f3)
+
+            yld=$((yld/1000000000))
+            req=$((req/1000000000))
+
+            # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
+            # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+            api_run=$(
+              hmf_api_get "runs?barcode=${sample_id}" | \
+              jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
+              jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
+              jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
+              tail -1
+            )
+            api_run_tsv=$(cut -f1,2 <<< "${api_run}")
+            set_name=$(cut -f3 <<< "${api_run}")
+
+            if [[ "${api_run_tsv}" == "" ]]; then
+                status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
             else
-                sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
-                sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
-                # Note: last cut shortens "Insufficient Quality" to "Insufficient"
-                smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
-                yld=$(echo "${sample_tsv}" | cut -f2)
-                req=$(echo "${sample_tsv}" | cut -f3)
-
-                yld=$((yld/1000000000))
-                req=$((req/1000000000))
-
-                # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
-                # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
-                api_run=$(
-                  hmf_api_get "runs?barcode=${sample_id}" | \
-                  jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
-                  jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
-                  jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
-                  tail -1
-                )
-                api_run_tsv=$(cut -f1,2 <<< "${api_run}")
-                set_name=$(cut -f3 <<< "${api_run}")
-
-                if [[ "${api_run_tsv}" == "" ]]; then
-                    status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
-                else
-                    run_status=$(echo "${api_run_tsv}" | cut -f1)
-                    ini=$(echo "${api_run_tsv}" | cut -f2)
-                    ini=${ini/.ini/}
-                    status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
-                fi
+                run_status=$(echo "${api_run_tsv}" | cut -f1)
+                ini=$(echo "${api_run_tsv}" | cut -f2)
+                ini=${ini/.ini/}
+                status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
             fi
         fi
         echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
