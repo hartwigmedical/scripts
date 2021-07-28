@@ -13,7 +13,10 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
     treatment.name AS treatment, treatment.type AS consolidatedTreatmentType, biopsyDrugs.treatmentType AS concatenatedTreatmentType,
 	treatment.mechanism AS consolidatedTreatmentMechanism, biopsyDrugs.treatmentMechanism as concatenatedTreatmentMechanism,
     firstMatchedTreatmentResponse.measurementDone AS responseMeasured, firstMatchedTreatmentResponse.responseDate,
-    firstMatchedTreatmentResponse.response AS firstResponse
+    firstMatchedTreatmentResponse.response AS firstResponse,
+    purity AS tumorPurity,
+    qcStatus AS purpleQC,
+    version AS purpleVersion
 FROM sample
     INNER JOIN patient ON sample.patientId = patient.id
     LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
@@ -29,4 +32,5 @@ FROM sample
         GROUP_CONCAT(drug.mechanism SEPARATOR '/') AS treatmentMechanism
         FROM drug INNER JOIN treatment ON drug.treatmentId = treatment.id GROUP BY biopsyId)
         biopsyDrugs ON biopsy.id = biopsyDrugs.biopsyId
-    LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId;
+    LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId
+    INNER JOIN purity ON purity.sampleId = sample.sampleId;
