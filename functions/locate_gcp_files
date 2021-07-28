@@ -31,3 +31,7 @@ locate_sample_registration_lims_at_gcp() {
 locate_shallow_tsv_at_gcp() {
     echo "gs://shallow-reporter-prod-1/shallowseq.tsv"
 }
+
+locate_shallow_processed_runs_log_at_gcp() {
+    echo "gs://hmf-ops-status/already_processed_shallow_runs"
+}

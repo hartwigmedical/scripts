@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_gcp_files || exit 1
 
 yymmdd=$(date +'%y%m%d')
-archive_file="gs://hmf-ops-status/already_processed_shallow_runs"
+archive_file=$(locate_shallow_processed_runs_log_at_gcp) || die "Unable to locate processed runs log at GCP"
 pipeline_version="5.22" # IVDR version of pipeline
-tmp_file="/tmp/$(basename "$archive_file").tmp"
+tmp_archive_file="/tmp/$(basename "$archive_file").tmp"
 
 info "Starting $(basename "$0")"
 
 # Retrieve archive log
 info "Retrieving file ${archive_file}"
-gsutil -q cp "${archive_file}" "${tmp_file}" || die "Unable to retrieve file (${archive_file})"
+gsutil -q cp "${archive_file}" "${tmp_archive_file}" || die "Unable to retrieve file (${archive_file})"
 
 # Waiting runs have no version in API so retrieve in second query
 info "Searching for shallow runs in API (v${pipeline_version} or higher)"
@@ -36,7 +37,7 @@ while read -r line; do
     run_status=$(echo "${line}" | cut -f2)
     run_version=$(echo "${line}" | cut -f3)
 
-    reported=$(grep -c "^${run_name}" "${tmp_file}" | cut -d" " -f1)
+    reported=$(grep -c "^${run_name}" "${tmp_archive_file}" | cut -d" " -f1)
     run_info="status=${run_status}|version=${run_version}"
 
     if [[ "${reported}" -gt 0 ]]; then
@@ -54,7 +55,7 @@ while read -r line; do
     elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
         to_mention+=("  FINISHED: ${run_name} (${run_info})")
         to_process+=("${run_name}")
-        echo "${run_name}" >> "${tmp_file}"
+        echo "${run_name}" >> "${tmp_archive_file}"
     else
         to_mention+=("  UNKNOWN STATUS: ${run_name} (${run_info})")
     fi
@@ -81,9 +82,9 @@ if [[ "${to_process_count}" -gt 0 ]]; then
       echo "echo '[INFO] Running perform_shallow_qc_gcp...'"
       echo "  perform_shallow_qc_gcp ${to_process[*]}"
       echo "echo '[INFO] Adding set names to log file in bucket...'"
-      echo "  gsutil cp '${tmp_file}' '${archive_file}'"
+      echo "  gsutil cp '${tmp_archive_file}' '${archive_file}'"
       echo "echo '[INFO] Removing tmp file...'"
-      echo "  rm '${tmp_file}'"
+      echo "  rm '${tmp_archive_file}'"
     } > "${job_file}"
     chmod +x "${job_file}"
 
