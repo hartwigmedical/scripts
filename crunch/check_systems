@@ -24,7 +24,7 @@ function check_datastore {
 }
 
 function check_crunches {
-    for crunch in crunch00{2,3}; do
+    for crunch in c{2,3}; do
         header ${crunch}
         diskUsage "/home"  "ssh ${crunch}"
         diskUsage "/data1" "ssh ${crunch}"
