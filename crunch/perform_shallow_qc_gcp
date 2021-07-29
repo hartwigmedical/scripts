@@ -8,6 +8,9 @@ TUM_TARGET_YIELD=300
 BASES_PER_READ=150
 BASES_PER_GBASE=1000000000
 
+ADD_YIELD_NOT_APPLICABLE="NA"
+REF_COV_MINIMUM_REQUIREMENT=26
+
 set_names=("$@")
 
 if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
@@ -53,7 +56,7 @@ get_add_yield() {
 
     if [[ ${add_yield} -lt 0 ]]; then
         # Already has enough yield
-        add_yield="NA"
+        add_yield="${ADD_YIELD_NOT_APPLICABLE}"
     fi
 
     echo "${add_yield}"
@@ -136,8 +139,12 @@ for set_name in "${set_names[@]}"; do
 
     ## calculate yield to add in GBase
     ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}")
+    if [[ ${ref_cov} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
+        # Already has enough yield
+        ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
+    fi
     tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}")
-  
+
     ## output
     printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
         "${ref_add_yield}" "${tum_add_yield}" \
