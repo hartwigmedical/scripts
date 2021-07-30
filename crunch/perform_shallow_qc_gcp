@@ -139,7 +139,7 @@ for set_name in "${set_names[@]}"; do
 
     ## calculate yield to add in GBase
     ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}")
-    if [[ ${ref_cov} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
+    if [[ ${ref_cov%%.*} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
         # Already has enough yield
         ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
     fi
