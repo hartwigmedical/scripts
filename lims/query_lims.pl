@@ -415,9 +415,9 @@ sub addApiInfoToSampleBySampleId{
 sub getValueByKey{
     my ($obj, $key, $key2) = @_;
     my $out = $NA_CHAR;
-    if ( defined $key2 and defined defined $obj->{ $key }{ $key2 }){
+    if ( defined $key2 and defined $obj->{ $key }{ $key2 }){
         $out = $obj->{ $key }{ $key2 };
-    }elsif( defined $key and defined defined $obj->{ $key }){
+    }elsif( defined $key and defined $obj->{ $key }){
         $out = $obj->{ $key };
     }
     return($out);
