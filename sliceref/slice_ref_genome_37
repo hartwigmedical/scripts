@@ -1,0 +1,4 @@
+# Format = chr:start-end
+
+region=$1
+/data/common/tools/samtools_v1.10/samtools faidx /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta ${region}
