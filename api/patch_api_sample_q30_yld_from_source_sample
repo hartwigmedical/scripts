@@ -2,8 +2,6 @@
 
 source message_functions || exit 1
 
-api_url="http://api.prod-1/hmf/v1"
-
 if [[ "$#" -ne 2 ]]; then
     echo "-----"
     echo "Descr: Patches target sample yield/q30 from source sample (and sets status to Ready)"
@@ -18,8 +16,8 @@ t_bc=$2 # target sample barcode
 
 main () {
     info "Searching for samples (${s_bc} and ${t_bc})"
-    s_result="$(hmfapi GET ${api_url}/samples?barcode=${s_bc})"
-    t_result="$(hmfapi GET ${api_url}/samples?barcode=${t_bc})"
+    s_result=$(hmf_api_get "samples?barcode=${s_bc}")
+    t_result=$(hmf_api_get "samples?barcode=${t_bc}")
     s_count=$(echo "${s_result}" | jq length)
     t_count=$(echo "${t_result}" | jq length)
 
@@ -30,29 +28,31 @@ main () {
     else
         s_sample=$(echo "${s_result}" | jq -r .[0])
         t_sample=$(echo "${t_result}" | jq -r .[0])
-        s_id=$(echo "${s_sample}" | jq -r .id)
-        t_id=$(echo "${t_sample}" | jq -r .id)
- 
-        s_yld=$(echo "${s_sample}" | jq -r .yld)
-        s_q30=$(echo "${s_sample}" | jq -r .q30)
+
+        s_id=$(jq -r '.id' <<< "${s_sample}")
+        s_yld=$(jq -r '.yld' <<< "${s_sample}")
+        s_q30=$(jq -r '.q30' <<< "${s_sample}")
+
+        t_id=$(jq -r '.id' <<< "${t_sample}")
+        t_yld=$(jq -r '.yld' <<< "${t_sample}")
+        t_q30=$(jq -r '.q30' <<< "${t_sample}")
 
         info "Found source sample (barcode=${s_bc} id=${s_id} yield=${s_yld} q30=${s_q30})"
-        info "Found target sample (barcode=${t_bc} id=${t_id})"
+        info "Found target sample (barcode=${t_bc} id=${t_id} yield=${t_yld} q30=${t_q30})"
 
-        info "Patching all fastq pairs of target sample (to qc_pass=true)"
-        t_fastq=$(hmfapi GET ${api_url}/fastq?sample_id=${t_id})
-        echo "${t_fastq}" | jq -r .[].id | while read fastq_oid; do
-            hmfapi PATCH ${api_url}/fastq/${fastq_oid} qc_pass:=true
+        info "Will patch fastq of target sample to qc_pass=true and update target sample yield/q30 to match source sample"
+        info "Press [ENTER] to apply..."
+        read -r -s
+
+        t_fastq=$(hmf_api_get "fastq?sample_id=${t_id}")
+        echo "${t_fastq}" | jq -r .[].id | while read -r fastq_oid; do
+            hmf_api_patch -e -c fastq -o "${fastq_oid}" -f "qc_pass" -v "true"
         done
         info "Patching yld/q30 for target sample (to values from source sample)"
-        hmfapi PATCH ${api_url}/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
+        hmf_api_patch -e -c samples -o "${t_id}" -f "yld" -v "${s_yld}"
+        hmf_api_patch -e -c samples -o "${t_id}" -f "q30" -v "${s_q30}"
+        hmf_api_patch -e -c samples -o "${t_id}" -f "status" -v "Ready"
     fi
-}
-
-## Generic api function
-hmfapi () {
-    echo "$@" 1>&2
-    http --ignore-stdin "$@"
 }
 
 main
