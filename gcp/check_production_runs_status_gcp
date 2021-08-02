@@ -52,15 +52,15 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
 
-            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v -F ${failed_reports} | wc -l );
-            exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -F ${failed_reports} | wc -l )
+            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
+            exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 echo "${inspect_healthchecker_script} ${set_name} "
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "# ${set_name} has Failed and has already been reported as failed: $( cat ${reporting_db_file} | grep ${sample_name} | grep -F ${failed_reports} )"
+                echo "# ${set_name} has Failed and has already been reported as failed: $( cat ${reporting_db_file} | grep ${sample_name} )"
             else
-                echo "# ${set_name} has Failed but has already been reported as succesfull: $( cat ${reporting_db_file} | grep ${sample_name} | grep -v -F ${failed_reports} )"
+                echo "# ${set_name} has Failed but has already been reported as succesfull: $( cat ${reporting_db_file} | grep ${sample_name} )"
             fi
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
@@ -78,7 +78,7 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
-            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v -F ${failed_reports} | wc -l )
+            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 echo "Please check what went wrong with: ${set_name} # db_status=${db_status}/${research_db_status}"
             fi
@@ -94,7 +94,7 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         entity=$(echo "${run_info}" | cut -f3)
         db_status=$(echo "${run_info}" | cut -f4)
-        exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v -F ${failed_reports} | wc -l );
+        exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
         research_db_status=$(get_db_status_by_set_name "${set_name}")
         if [[ ${exists_in_success_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
