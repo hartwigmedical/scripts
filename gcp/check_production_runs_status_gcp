@@ -91,7 +91,7 @@ main () {
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
-    echo "## Validated runs that need to be processed:"
+    echo "## Validated runs for which the report can be shared:"
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
@@ -107,7 +107,13 @@ main () {
                 ## Skip none-CORE sequencing services runs
                 continue
             else
-                echo "${process_script} ${set_name} # db_status=${db_status}/${research_db_status}"
+                echo "The report for ${set_name} can be shared when no errors are found below or in the patient reporter log # db_status=${db_status}/${research_db_status}"
+                health_check_validated_run ${set_name}
+                doid_check_validated_run ${set_name} ${sample_name}
+                #check if report exists: gsutil ls gs://patient-reporter-prod-1/ | grep ${set_name}/${sample_name}
+                #check run log of report
+                echo "Note: when report is shared remove report to "'gs://patient-reporter-final-prod-1/'""
+                echo "---------"
             fi
         fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
