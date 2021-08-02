@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 set=$1 && shift
-tumor_sample=$1 && shift
+tumor_sample=$2 && shift
 
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
