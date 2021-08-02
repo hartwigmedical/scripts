@@ -1,16 +1,4 @@
-export SCRIPTS=/data/common/repos/scripts
-export PATH=${SCRIPTS}/functions:$PATH
-export PATH=${SCRIPTS}/functions/test:$PATH
-export PATH=${SCRIPTS}/datarequest/procedure:$PATH
-export PATH=${SCRIPTS}/datarequest/scripts:$PATH
-export PATH=${SCRIPTS}/sql/execution:$PATH
-for d in analysisscripts api bam chord crunch cuplr datacleanup datarequest gcp lims nas ops snpcheck utilityscripts validation
-do
-   export PATH="${SCRIPTS}/${d}"
-done 
-for d in bachelor bamslicer gridss healthchecker idgenerator patientdb patientreporter purityploidyestimator sage sigs svlinx \
-    svloader 
-do
-   export PATH="${SCRIPTS}/hmftools/${d}" 
+for d in $(find /data/common/repos/scripts/* -type d | grep -v '.git'); do
+    export PATH="${PATH}:$d"
 done
 
