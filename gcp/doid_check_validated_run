@@ -13,10 +13,13 @@ sample_name=$1 && shift
 bucket="diagnostic-pipeline-output-prod-1"
 protect_url="gs://${bucket}/${set}/protect/"
 
-if ! $( gsutil  -u hmf-database ls ${protect_url}  ); then
-    echo "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp. Exiting "
+error=$( gsutil -u hmf-database ls ${protect_url} 2>&1)
+if [[ "$error" != *"CommandException"* ]]; then
+    warn "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp. Exiting "
     exit 1
 fi
+
+
 
 report_doid=$(get_doids_for_biopsy ${sample_name} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 protect_doid=$( gsutil -u hmf-database cat ${protect_url}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
