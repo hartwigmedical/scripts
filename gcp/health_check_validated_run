@@ -9,6 +9,8 @@ set=$1 && shift
 bucket="diagnostic-pipeline-output-prod-1"
 healthchecker_url="gs://${bucket}/${set}/health_checker/"
 
+if ! $( gsutil  -u hmf-database ls ${healthchecker_url}  ); then echo "Run health_checker output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp. Exiting " || exit 1; fi
+
 healthchecker_success=$( gsutil  -u hmf-database ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
 healthchecker_fail=$( gsutil  -u hmf-database ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )
 
