@@ -78,12 +78,15 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
+
             exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
+            exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
+
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 echo "Please check what went wrong with: ${set_name} # db_status=${db_status}/${research_db_status}"
             fi
         else
-            echo "# ${set_name} has Finished but has been reported before so can be ignored: $( cat ${reporting_db_file} | grep ${sample_name} )"
+            echo "# ${set_name} has Finished but has been reported before: $( cat ${reporting_db_file} | grep ${sample_name} )"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
@@ -94,9 +97,10 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         entity=$(echo "${run_info}" | cut -f3)
         db_status=$(echo "${run_info}" | cut -f4)
-        exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
+        exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
+        exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
         research_db_status=$(get_db_status_by_set_name "${set_name}")
-        if [[ ${exists_in_success_run_dirs} == 0 ]]; then
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
                 echo "# This is a validation run, so can be ignored for production ${set_name}"
             elif [[ $(printf '%s\n' "${non_db_entities[@]}" | grep -cP "^${entity}$") -gt 0 && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
