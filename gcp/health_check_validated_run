@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set=$1 && shift
+
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+
+[[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
+
+info "Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+healthchecker_url="gs://${bucket}/${set}/healthchecker/"
+
+if [[ -f "${healthchecker_url}*.HealthCheckSucceeded" ]]; then
+    info "HealthChecker has succeeded for ${set}"
+elif [[ -f "${healthchecker_url}*.HealthCheckFailed" ]]; then
+    warn "HealthChecker has failed for ${set}!!"
+else
+    warn "HealthChecker has not been run for ${set}"
+fi
+
+# Printing purple version just for double-checking!
+purple_version_url="gs://${bucket}/${set}/purple/purple.version"
+purple_version=$(gsutil -u hmf-database cat "${purple_version_url}" | grep version)
+info "This analysis has been done with purple ${purple_version}"
+
