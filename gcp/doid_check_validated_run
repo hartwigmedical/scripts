@@ -15,7 +15,7 @@ protect_url="gs://${bucket}/${set}/protect/"
 
 error=$( gsutil -u hmf-database ls ${protect_url} 2>&1)
 if [[ "$error" == *"CommandException"* ]]; then
-    warn "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp. Exiting "
+    warn "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp."
     exit 1
 fi
 
