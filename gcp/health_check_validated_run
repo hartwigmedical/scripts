@@ -3,14 +3,13 @@
 source message_functions || exit 1
 
 set=$1 && shift
-tumor_sample=$2 && shift
 
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
 
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 
-info "Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})"
+#info "Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})"
 runs_json=$(
   hmf_api_get "runs?set_name=${set}" | \
   jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
@@ -22,16 +21,20 @@ run_json=$(jq '.[-1]' <<< "${runs_json}")
 bucket=$(jq -r '.bucket' <<< "${run_json}")
 healthchecker_url="gs://${bucket}/${set}/healthchecker/"
 
-if [[ -f "${healthchecker_url}${tumor_sample}.HealthCheckSucceeded" ]]; then
-    info "HealthChecker has succeeded for ${set}"
-elif [[ -f "${healthchecker_url}${tumor_sample}.HealthCheckFailed" ]]; then
-    warn "HealthChecker has failed for ${set}!!"
+healthchecker_success=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
+healthchecker_fail=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )
+
+if [[ ${healthchecker_success} == 0 && ${healthchecker_fail} == 0 ]]; then
+   warn "HealthChecker has not been run for ${set}"
+elif [[ ${healthchecker_success} == 0 ]]; then
+   warn "HealthChecker has failed for ${set}!!"
 else
-    warn "HealthChecker has not been run for ${set}"
+   info "HealthChecker has succeeded for ${set}"
 fi
 
-# Printing purple version just for double-checking!
-purple_version_url="gs://${bucket}/${set}/purple/purple.version"
-purple_version=$(gsutil -u hmf-database cat "${purple_version_url}" | grep version)
-info "This analysis has been done with purple ${purple_version}"
+
+# Printing pipeline version just for double-checking!
+pipeline_version_url="gs://${bucket}/${set}/pipeline.version"
+pipeline_version=$(gsutil -u hmf-database cat "${pipeline_version_url}" | grep version)
+info "This run has been done with pipeline ${pipeline_version}"
 
