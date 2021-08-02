@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 set=$1 && shift
+tumor_sample=$1 && shift
 
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
@@ -21,9 +22,9 @@ run_json=$(jq '.[-1]' <<< "${runs_json}")
 bucket=$(jq -r '.bucket' <<< "${run_json}")
 healthchecker_url="gs://${bucket}/${set}/healthchecker/"
 
-if [[ -f "${healthchecker_url}*.HealthCheckSucceeded" ]]; then
+if [[ -f "${healthchecker_url}${tumor_sample}.HealthCheckSucceeded" ]]; then
     info "HealthChecker has succeeded for ${set}"
-elif [[ -f "${healthchecker_url}*.HealthCheckFailed" ]]; then
+elif [[ -f "${healthchecker_url}${tumor_sample}.HealthCheckFailed" ]]; then
     warn "HealthChecker has failed for ${set}!!"
 else
     warn "HealthChecker has not been run for ${set}"
