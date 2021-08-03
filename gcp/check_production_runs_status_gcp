@@ -46,7 +46,6 @@ main () {
     # Now ready to check each status on by one
     echo ""
     echo "### Failed runs that should be sorted out / have already been reported: ###"
-    counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
@@ -63,21 +62,17 @@ main () {
             exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                counter=$((counter+1))
-                echo "-${counter}- Please inspect the set using: ${inspect_healthchecker_script} ${set_name} "
+                echo "Please inspect the set using: ${inspect_healthchecker_script} ${set_name} "
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                counter=$((counter+1))
-                echo "# -${counter}- ${set_name} has Failed and has already been reported as failed: $( cat ${sharing_db_file} | grep ${sample_name} )"
+                echo "# ${set_name} has Failed and has already been reported as failed: $( cat ${sharing_db_file} | grep ${sample_name} )"
             else
-                counter=$((counter+1))
-                echo "# -${counter}- ${set_name} has Failed but has already been reported as succesfull: $( cat ${sharing_db_file} | grep ${sample_name} )"
+                echo "# ${set_name} has Failed but has already been reported as succesfull: $( cat ${sharing_db_file} | grep ${sample_name} )"
             fi
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
     echo "### Finished runs (that are not Validated or Failed, probably waiting for SNP genotype VCF): ###"
-    counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
@@ -94,12 +89,10 @@ main () {
             exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                counter=$((counter+1))
-                echo "-${counter}- Please check what went wrong with: ${set_name} # db_status=${db_status}/${research_db_status}"
+                echo "Please check what went wrong with: ${set_name} # db_status=${db_status}/${research_db_status}"
             fi
         else
-            counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"
+            echo "# ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
@@ -125,7 +118,7 @@ main () {
                 counter=$((counter+1))
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared when no errors are found below or in the patient reporter log # db_status=${db_status}/${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
-                if [[ $( gsutil ls gsutil ${url_bucket_report_pipline} | grep  ${sample_name} | wc -l ) == 0 ]]; then
+                if [[ $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | wc -l ) == 0 ]]; then
                     warn "No report has been created for this set. Please check what went wrong"
                 else
                     report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} )
@@ -142,22 +135,18 @@ main () {
 
     echo ""
     echo "### Processing/Uploading/Downloading runs: ###"
-    counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f1)
         status=$(echo "${run_info}" | cut -f2)
-        counter=$((counter+1))
-        echo "# -${counter}- ${set_name} is ${status}"
+        echo "# ${set_name} is ${status}"
     done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
     echo "### Waiting runs: ###"
-    counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f1)
         status=$(echo "${run_info}" | cut -f2)
-        counter=$((counter+1))
-        echo "# -${counter}- ${set_name} is ${status}"
+        echo "# ${set_name} is ${status}"
     done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
