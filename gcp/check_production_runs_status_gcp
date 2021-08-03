@@ -62,7 +62,7 @@ main () {
             exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "Please inspect the set using: ${inspect_healthchecker_script} ${set_name} "
+                echo "Please inspect ${set_name} set using: ${inspect_healthchecker_script} ${set_name} "
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
                 echo "# ${set_name} has Failed and has already been reported as failed: $( cat ${sharing_db_file} | grep ${sample_name} )"
             else
@@ -118,10 +118,11 @@ main () {
                 counter=$((counter+1))
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared when no errors are found below or in the patient reporter log # db_status=${db_status}/${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
-                if [[ $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | wc -l ) == 0 ]]; then
+                if [[ $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l ) == 0 ]]; then
                     warn "No report has been created for this set. Please check what went wrong"
                 else
-                    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} )
+                    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
+                    report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
                     info "A report has been created in the bucket ${url_bucket_report_pipline}: ${report_name}"
                 fi
                 echo " Step 1: Check whether there are no errors above. If no, continue to step 2... "
