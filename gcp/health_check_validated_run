@@ -12,7 +12,7 @@ healthchecker_url="gs://${bucket}/${set}/health_checker/"
 
 error=$( gsutil -u hmf-database ls ${healthchecker_url} 2>&1)
 if [[ "$error" == *"CommandException"* ]]; then
-    warn "Run health_checker output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp."
+    warn "Run health_checker output does not exist in ${bucket} on gcp."
     exit 1
 fi
 

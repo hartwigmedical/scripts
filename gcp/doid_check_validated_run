@@ -11,12 +11,11 @@ sample_name=$1 && shift
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 [[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
 
-bucket="diagnostic-pipeline-output-prod-1"
 protect_url="gs://${bucket}/${set}/protect/"
 
 error=$( gsutil -u hmf-database ls ${protect_url} 2>&1)
 if [[ "$error" == *"CommandException"* ]]; then
-    warn "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp."
+    warn "Run protect output does not exist in ${bucket} on gcp."
     exit 1
 fi
 
