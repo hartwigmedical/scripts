@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample_name=$1 && shift
+report_name=$1 && shift
+
+[[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
+[[ -n "${report_name}" ]] || die "No report_name provided. Exiting"
+
+reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
+sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
+
+url_bucket_report_pipline="gs://patient-reporter-prod-1/"
+url_bucket_report_final="gs://patient-reporter-final-prod-1/"
+
+
+echo "## Report ${report_name} has been shared: final processing will start:"
+
+if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${report_name}" | wc -l ) == 0 ]]; then
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) == 1 ]]; then
+        warn "Report does not exist in ${url_bucket_report_pipline} on gcp so cannot be copied."
+        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+        exit 1
+    fi
+    warn "Report does not exist in ${url_bucket_report_pipline} on gcp so cannot be copied."
+    warn "Report also does not exists in ${url_bucket_report_final} on gcp so is also not yet shared. Exiting"
+    exit 1
+fi
+
+
+info "Report exists in ${url_bucket_report_pipline} on gcp."
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) == 1 ]]; then
+    warn "Report also already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check what is wrong. Exiting"
+    exit 1
+fi
+
+gsutil mv ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
+if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${report_name}" | wc -l ) == 0 && $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) == 1 ]]; then
+    info "Report moved to final archive (${url_bucket_report_final}) on gcp."
+else
+    warn "Report not correctly moved. Please check what went wrong."
+    exit 1
+fi
+
+reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} )
+reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | awk '{ print $4 }' )
+current_date=$(date '+%d-%b-%Y')
+reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
+
+
+if [[ ${report_name} == *"corrected"* ]]; then
+    echo ${reporting_info} >> ${sharing_db_file}
+    info "A record has been added for ${sample_name} to ${sharing_db_file}"
+    info "Reports shared for ${sample_name}:"
+    cat ${sharing_db_file}  | grep ${sample_name}
+else
+    if [[ $( cat ${sharing_db_file}  | grep ${sample_name} | wc -l ) == 0 ]]; then
+        echo ${reporting_info} >> ${sharing_db_file}
+         info "A record has been added for ${sample_name} to ${sharing_db_file}"
+         info "Reports shared for ${sample_name}:"
+         cat ${sharing_db_file}  | grep ${sample_name}
+    else
+        warn "A report has already been shared for ${sample_name}, see ${sharing_db_file}:"
+        cat ${sharing_db_file}  | grep ${sample_name}
+    fi
+fi

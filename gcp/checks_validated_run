@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set=$1 && shift
+sample_name=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+[[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
+
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+
+set_url="gs://${bucket}/${set}/"
+
+error=$( gsutil ls ${set_url} 2>&1)
+if [[ "$error" == *"CommandException"* ]]; then
+    warn "Run ${set} does not exist in ${bucket} on gcp."
+    exit 1
+fi
+
+info "The run can be found in ${bucket} on gcp."
+
+# Printing pipeline version just for double-checking!
+pipeline_version_url="${set_url}pipeline.version"
+pipeline_version=$(gsutil cat "${pipeline_version_url}" )
+info "This run has been done with pipeline ${pipeline_version}"
+
+health_check_validated_run ${bucket} ${set}
+doid_check_validated_run ${bucket} ${set} ${sample_name}

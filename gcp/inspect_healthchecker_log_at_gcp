@@ -25,6 +25,6 @@ file_url="gs://${bucket}/${set}/${relative_file_path}"
 [[ -n "${bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
 
 info "Performing cat on file url (${file_url})"
-gsutil -u hmf-database cat "${file_url}"
+gsutil cat "${file_url}"
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"
