@@ -10,15 +10,15 @@ set=$1 && shift
 
 healthchecker_url="gs://${bucket}/${set}/health_checker/"
 
-error=$( gsutil -u hmf-database ls ${healthchecker_url} 2>&1)
+error=$( gsutil ls ${healthchecker_url} 2>&1)
 if [[ "$error" == *"CommandException"* ]]; then
     warn "Run health_checker output does not exist in ${bucket} on gcp."
     exit 1
 fi
 
 
-healthchecker_success=$( gsutil  -u hmf-database ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
-healthchecker_fail=$( gsutil  -u hmf-database ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )
+healthchecker_success=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
+healthchecker_fail=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )
 
 if [[ ${healthchecker_success} == 0 && ${healthchecker_fail} == 0 ]]; then
    warn "HealthChecker has not been run for ${set}"

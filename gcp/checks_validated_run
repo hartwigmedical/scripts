@@ -31,7 +31,7 @@ fi
 
 set_url="gs://${bucket}/${set}/"
 
-error=$( gsutil -u hmf-database ls ${set_url} 2>&1)
+error=$( gsutil ls ${set_url} 2>&1)
 if [[ "$error" == *"CommandException"* ]]; then
     warn "Run ${set} does not exist in ${bucket} on gcp."
     exit 1
@@ -41,7 +41,7 @@ info "The run can be found in ${bucket} on gcp."
 
 # Printing pipeline version just for double-checking!
 pipeline_version_url="${set_url}pipeline.version"
-pipeline_version=$(gsutil -u hmf-database cat "${pipeline_version_url}" )
+pipeline_version=$(gsutil cat "${pipeline_version_url}" )
 info "This run has been done with pipeline ${pipeline_version}"
 
 health_check_validated_run ${bucket} ${set}
