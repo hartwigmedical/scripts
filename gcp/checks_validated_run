@@ -21,7 +21,7 @@ run_count=$(jq 'length' <<< "${runs_json}")
 run_json=$(jq '.[-1]' <<< "${runs_json}")
 bucket=$(jq -r '.bucket' <<< "${run_json}")
 
-[[ ${run_count} > 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
 if [[ ${run_count} == 0 ]]; then
     warn "No run was found for ${set} on gcp."
@@ -37,12 +37,12 @@ if [[ "$error" == *"CommandException"* ]]; then
     exit 1
 fi
 
-info "Run ${set} can be found in ${bucket} on gcp."
+info "The run can be found in ${bucket} on gcp."
 
 # Printing pipeline version just for double-checking!
-pipeline_version_url="${set_url}/pipeline.version"
+pipeline_version_url="${set_url}pipeline.version"
 pipeline_version=$(gsutil -u hmf-database cat "${pipeline_version_url}" )
 info "This run has been done with pipeline ${pipeline_version}"
 
-health_check_validated_run ${bucket} ${set_name}
-doid_check_validated_run ${bucket} ${set_name} ${sample_name}
+health_check_validated_run ${bucket} ${set}
+doid_check_validated_run ${bucket} ${set} ${sample_name}
