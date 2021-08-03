@@ -7,7 +7,6 @@ source locate_gcp_files || exit 1
 set -e
 
 info "Syncing shallow TSV from GCP"
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil cp "$(locate_shallow_tsv_at_gcp)" "$(locate_shallow_tsv)" 
 info "Shallow TSV synchronised"
 

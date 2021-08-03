@@ -7,7 +7,6 @@ set -e
 BUCKET="gs://clinicaldb-resources-prod-1"
 
 info "Syncing clinicaldb resources to GCP"
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil cp /data/ecrf/cpct_ecrf.xml ${BUCKET}/cpct_ecrf.xml
 gsutil cp /data/ecrf/cpct_form_status.csv ${BUCKET}/cpct_form_status.csv 
 gsutil cp /data/ecrf/drup_ecrf.xml ${BUCKET}/drup_ecrf.xml

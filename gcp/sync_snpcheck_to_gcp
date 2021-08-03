@@ -9,5 +9,4 @@ destination='snpcheckvcfs'
 
 info "Syncing snpcheck data to GCP!"
 
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -dr ${local_path} gs://${bucket}/${destination}

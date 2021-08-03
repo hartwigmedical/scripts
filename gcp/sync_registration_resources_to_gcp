@@ -12,7 +12,6 @@ samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samples
 local_samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
 
 info "Syncing registration resources to GCP!"
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* "${lims_bucket}"
 gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync "${local_samplesheets_dir}" "${samplesheets_bucket}"
 info "Registration resource sync to GCP complete"

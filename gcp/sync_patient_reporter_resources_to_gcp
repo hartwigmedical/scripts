@@ -6,7 +6,6 @@ source message_functions || exit 1
 BUCKET="gs://patient-reporter-resources-prod-1"
 
 info "Syncing patient-reporter resources to GCP"
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil cp /data/common/dbs/clinical_data/curated_primary_tumor.tsv ${BUCKET}/primary_tumor.tsv
 gsutil cp /data/common/dbs/germline_reporting/germline_reporting.tsv ${BUCKET}/germline_reporting.tsv
 gsutil cp /data/common/dbs/summary_patient_report/summary_samples.tsv ${BUCKET}/sample_summary.tsv
