@@ -108,8 +108,7 @@ main () {
                 continue
             else
                 echo "The report for ${sample_name} (run: ${set_name}) can be shared when no errors are found below or in the patient reporter log # db_status=${db_status}/${research_db_status}"
-                health_check_validated_run ${set_name}
-                doid_check_validated_run ${set_name} ${sample_name}
+                checks_validated_run ${set_name} ${sample_name}
                 #check if report exists: gsutil ls gs://patient-reporter-prod-1/ | grep ${set_name}/${sample_name}
                 #check run log of report
                 echo "Note: when report is shared move report to "'gs://patient-reporter-final-prod-1/'""

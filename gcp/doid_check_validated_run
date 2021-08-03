@@ -3,12 +3,13 @@
 source message_functions || exit 1
 source lims_functions || exit 1
 
+bucket=$1 && shift
 set=$1 && shift
 sample_name=$1 && shift
 
+[[ -n "${bucket}" ]] || die "No bucket provided. Exiting"
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 [[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
-
 
 bucket="diagnostic-pipeline-output-prod-1"
 protect_url="gs://${bucket}/${set}/protect/"
@@ -18,8 +19,6 @@ if [[ "$error" == *"CommandException"* ]]; then
     warn "Run protect output does not exist in "'diagnostic-pipeline-output-prod-1'" on gcp."
     exit 1
 fi
-
-
 
 report_doid=$(get_doids_for_biopsy ${sample_name} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 protect_doid=$( gsutil -u hmf-database cat ${protect_url}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')

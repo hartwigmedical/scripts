@@ -2,11 +2,12 @@
 
 source message_functions || exit 1
 
+bucket=$1 && shift
 set=$1 && shift
 
-[[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
+[[ -n "${bucket}" ]] || die "No bucket provided. Exiting"
+[[ -n "${set}" ]] || die "No set provided. Exiting"
 
-bucket="diagnostic-pipeline-output-prod-1"
 healthchecker_url="gs://${bucket}/${set}/health_checker/"
 
 error=$( gsutil -u hmf-database ls ${healthchecker_url} 2>&1)
@@ -26,10 +27,3 @@ elif [[ ${healthchecker_success} == 0 ]]; then
 else
    info "HealthChecker has succeeded for ${set}"
 fi
-
-
-# Printing pipeline version just for double-checking!
-pipeline_version_url="gs://${bucket}/${set}/pipeline.version"
-pipeline_version=$(gsutil -u hmf-database cat "${pipeline_version_url}" )
-info "This run has been done with pipeline ${pipeline_version}"
-
