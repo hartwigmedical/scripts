@@ -3,9 +3,14 @@
 source message_functions || exit 1
 
 reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
+sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
+
 failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insufficient_tcp_corrected\|insufficient_dna\|insufficient_tcp_deep_wgs\|insufficient_tcp_deep_wgs_corrected\|insufficient_tcp_shallow_wgs\|insufficient_tcp_shallow_wgs_corrected\|qc_fail_report\|sufficient_tcp_qc_failure"
 
-process_script="process_successful_run"
+url_bucket_report_pipline="gs://patient-reporter-prod-1/"
+url_bucket_report_final="gs://patient-reporter-final-prod-1/"
+
+move_final_report_script="move_report_to_final_reports_gcp"
 inspect_healthchecker_script="inspect_healthchecker_log_at_gcp"
 major_version="5.22"
 
@@ -54,19 +59,18 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
 
-            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
-            exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
+            exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
+            exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 counter=$((counter+1))
                 echo "-${counter}- Please inspect the set using: ${inspect_healthchecker_script} ${set_name} "
-            fi
-            if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} > 0 ]]; then
+            elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
                 counter=$((counter+1))
-                echo "# -${counter}- ${set_name} has Failed and has already been reported as failed: $( cat ${reporting_db_file} | grep ${sample_name} )"
+                echo "# -${counter}- ${set_name} has Failed and has already been reported as failed: $( cat ${sharing_db_file} | grep ${sample_name} )"
             else
                 counter=$((counter+1))
-                echo "# -${counter}- ${set_name} has Failed but has already been reported as succesfull: $( cat ${reporting_db_file} | grep ${sample_name} )"
+                echo "# -${counter}- ${set_name} has Failed but has already been reported as succesfull: $( cat ${sharing_db_file} | grep ${sample_name} )"
             fi
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
@@ -86,8 +90,8 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
 
-            exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
-            exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
+            exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
+            exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 counter=$((counter+1))
@@ -95,7 +99,7 @@ main () {
             fi
         else
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${reporting_db_file} | grep ${sample_name} )"
+            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
@@ -107,8 +111,8 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         entity=$(echo "${run_info}" | cut -f3)
         db_status=$(echo "${run_info}" | cut -f4)
-        exists_in_success_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
-        exists_in_qcfail_run_dirs=$( cat ${reporting_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
+        exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
+        exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
         research_db_status=$(get_db_status_by_set_name "${set_name}")
         if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
@@ -121,9 +125,16 @@ main () {
                 counter=$((counter+1))
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared when no errors are found below or in the patient reporter log # db_status=${db_status}/${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
-                #check if report exists: gsutil ls gs://patient-reporter-prod-1/ | grep ${set_name}/${sample_name}
-                #check run log of report
-                echo "Note: when report is shared move report to "'gs://patient-reporter-final-prod-1/'""
+                if [[ $( gsutil ls gsutil ${url_bucket_report_pipline} | grep  ${sample_name} | wc -l ) == 0 ]]; then
+                    warn "No report has been created for this set. Please check what went wrong"
+                else
+                    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} )
+                    info "A report has been created in the bucket ${url_bucket_report_pipline}: ${report_name}"
+                fi
+                echo " Step 1: Check whether there are no errors above. If no, continue to step 2... "
+                echo " Step 2: Download the report to local and check the report. "
+                echo " Step 3: Share the report with the relevent persons. "
+                echo " Step 4: Move the report to the final archive using the script: ${move_final_report_script} ${sample_name} ${report_name}. "
                 echo "---------"
             fi
         fi
