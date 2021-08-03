@@ -10,6 +10,7 @@ inspect_healthchecker_script="inspect_healthchecker_log_at_gcp"
 major_version="5.22"
 
 main () {
+    echo ""
     echo "## Production run status check for runs on pipeline version ${major_version} (date=$(date +'%y%m%d'))"
 
     # Create all required run collections
@@ -39,7 +40,7 @@ main () {
 
     # Now ready to check each status on by one
     echo ""
-    echo "### Failed runs which are expected to exist on datastore: ###"
+    echo "### Failed runs that should be sorted out / have already been reported: ###"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -59,7 +60,8 @@ main () {
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 counter=$((counter+1))
                 echo "-${counter}- Please inspect the set using: ${inspect_healthchecker_script} ${set_name} "
-            elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
+            fi
+            if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} > 0 ]]; then
                 counter=$((counter+1))
                 echo "# -${counter}- ${set_name} has Failed and has already been reported as failed: $( cat ${reporting_db_file} | grep ${sample_name} )"
             else
