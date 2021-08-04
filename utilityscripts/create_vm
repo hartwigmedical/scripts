@@ -31,7 +31,7 @@ main() {
       -e|--preemptible)  # optional
         pre_emptible_arg="-e";;
       *)
-        UNRECOGNIZED+=("$1");;
+        UNRECOGNIZED+=("${key}");;
     esac
   done
 

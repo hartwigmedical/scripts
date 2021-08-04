@@ -1,4 +1,12 @@
-for d in $(find /data/repos/scripts/* -type d | grep -v '.git'); do
+if [ -d /data/common/repos/scripts/ ]; then
+    scripts_repo="/data/common/repos/scripts/"
+elif [ -d /data/repos/scripts/ ]; then
+    scripts_repo="/data/repos/scripts/"
+else
+    echo "Could not find scripts repo"
+fi
+
+for d in $(find ${scripts_repo}/* -type d | grep -v '.git'); do
     export PATH="${PATH}:$d"
 done
 
