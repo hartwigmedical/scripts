@@ -11,7 +11,7 @@ info "Done"
 
 info "Syncing tools from common-tools"
 gsutil -m cp -rn gs://common-tools/* /data/tools/
-cd /data/repos/scrips && git pull
+cd /data/repos/scripts && git pull
 info "Done"
 
 info "Syncing datasets with dsync"
