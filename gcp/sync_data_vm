@@ -4,9 +4,19 @@ source locate_gcp_files || exit 1
 
 set -e
 
+info "Syncing resources from GIT and common-resources"
+cd /data/resources && git pull
+gsutil -m cp -rn gs://common-resources/* /data/resources/
+info "Done"
+
+info "Syncing tools from common-tools"
+gsutil -m cp -rn gs://common-tools/* /data/tools/
+cd /data/repos/scrips && git pull
+info "Done"
+
+info "Syncing datasets with dsync"
 credentials=/tmp/credentials.properties
 gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reader  --project=hmf-secrets | sed s/\"//g  > ${credentials}
-
 api_url=http://api.prod-1
 local_path=/data/datasets
 dsync_jar=$(locate_dsync)
@@ -16,6 +26,6 @@ java11 -jar ${dsync_jar} \
     --patient_db_url ${db_url} \
     --patient_db_credentials ${credentials} \
     --local_path ${local_path} \
-    --threads 100
-
+    --threads 100 > /tmp/dsync-$(date +%Y%m%d%H%M).out
 rm ${credentials}
+info "Done"
