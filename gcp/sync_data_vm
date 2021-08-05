@@ -6,11 +6,11 @@ set -e
 
 info "Syncing resources from GIT and common-resources"
 cd /data/resources && git pull
-gsutil -m cp -rn gs://common-resources/* /data/resources/
+gsutil -mq cp -rn gs://common-resources/* /data/resources/
 info "Done"
 
 info "Syncing tools from common-tools"
-gsutil -m cp -rn gs://common-tools/* /data/tools/
+gsutil -mq cp -rn gs://common-tools/* /data/tools/
 cd /data/repos/scripts && git pull
 info "Done"
 
