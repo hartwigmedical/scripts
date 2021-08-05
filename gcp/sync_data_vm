@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
+
+set -e
+
+api_url=http://api.prod-1
+local_path=/data/datasets
+credentials=$(locate_prod_database_credentials)
+dsync_jar=$(locate_dsync)
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+gsutil -m cp -rn gs://common-resources/* /data/resources/
+gsutil -m cp -rn gs://common-tools/* /data/tools/
+
+java11 -jar ${dsync_jar} \
+    --api_url ${api_url} \
+    --patient_db_url ${db_url} \
+    --patient_db_credentials ${credentials} \
+    --local_path ${local_path} \
+    --threads 100

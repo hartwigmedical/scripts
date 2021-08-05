@@ -193,6 +193,10 @@ locate_pilot_datarequest() {
     echo ${base_path}/tools/datarequest/datarequest_pilot.jar
 }
 
+locate_dsync() {
+	echo ${base_path}/tools/dsync/1.0/dsync.jar
+}
+
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
