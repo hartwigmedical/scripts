@@ -31,21 +31,12 @@ locate_prod_backup_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.backup.prod-1/reader.cnf
 }
 
-
 locate_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pilot
 }
 
 locate_pilot_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
-}
-
-locate_vicc_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/vicc_db
-}
-
-locate_vicc_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/vicc_db_pilot
 }
 
 locate_reference_validation_sets_database_credentials() {
@@ -56,12 +47,20 @@ locate_pipeline_v5_validation_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
 }
 
+locate_vicc_database_credentials() {
+    echo ${base_path}/resources/mysql_credentials/vicc_db
+}
+
+locate_vicc_pilot_database_credentials() {
+    echo ${base_path}/resources/mysql_credentials/vicc_db_pilot
+}
+
 locate_ckb_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/ckb_db
+    echo ${base_path}/resources/mysql_credentials/ckb_db
 }
 
 locate_ckb_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/ckb_db_pilot
+    echo ${base_path}/resources/mysql_credentials/ckb_db_pilot
 }
 
 
