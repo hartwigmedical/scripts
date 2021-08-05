@@ -99,7 +99,7 @@ gcloud compute instances create "${vm_name}" \
 --machine-type "${machine_type}" \
 --boot-disk-type "${disk_type}" \
 --boot-disk-size "${disk_size}" \
---scopes storage-full \
+--scopes all \
 --no-restart-on-failure \
 --zone "${zone}" \
 --service-account "${service_account}" \
