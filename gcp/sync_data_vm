@@ -12,9 +12,6 @@ credentials=$(locate_prod_database_credentials)
 dsync_jar=$(locate_dsync)
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-gsutil -m cp -rn gs://common-resources/* /data/resources/
-gsutil -m cp -rn gs://common-tools/* /data/tools/
-
 java11 -jar ${dsync_jar} \
     --api_url ${api_url} \
     --patient_db_url ${db_url} \
