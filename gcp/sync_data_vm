@@ -12,9 +12,13 @@ credentials=$(locate_prod_database_credentials)
 dsync_jar=$(locate_dsync)
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
+gcloud secrets versions access "latest" --secret=mysql-diagnostic-patients-sql-prod-1-reader  --project=hmf-secrets | sed s/\"//g  > /tmp/credentials.properties
+
 java11 -jar ${dsync_jar} \
     --api_url ${api_url} \
     --patient_db_url ${db_url} \
-    --patient_db_credentials ${credentials} \
+    --patient_db_credentials /tmp/credentials.properties \
     --local_path ${local_path} \
     --threads 100
+
+rm /tmp/credentials.properties
