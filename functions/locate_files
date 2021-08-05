@@ -322,7 +322,7 @@ locate_ref_genome_37_to_38_chain() {
 }
 
 locate_ref_genome_38_to_37_chain() {
-    echo ${base_path}/refgenomes/reference_genome_liftover/hg38ToHg19.over.chain
+    echo ${base_path}/resources/reference_genome_liftover/hg38ToHg19.over.chain
 }
 
 ##################################  METRICS ####################################
