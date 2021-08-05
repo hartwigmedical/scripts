@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
@@ -12,8 +10,7 @@ gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reade
 api_url=http://api.prod-1
 local_path=/data/datasets
 dsync_jar=$(locate_dsync)
-db_url=$(awk '/^host/ {print $2}' ${credentials})
-
+db_url=jdbc:mysql://patients.sql.prod-1/hmfpatients
 java11 -jar ${dsync_jar} \
     --api_url ${api_url} \
     --patient_db_url ${db_url} \
