@@ -3,7 +3,7 @@
 iclusion_importer_jar=$1 && shift
 iclusion_trial_tsv=$1 && shift
 
-iclusion_api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
+iclusion_api_credentials=/data/resources/iclusion_credentials/iclusion_api_credentials
 
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
