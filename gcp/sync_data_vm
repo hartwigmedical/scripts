@@ -8,7 +8,6 @@ set -e
 
 api_url=http://api.prod-1
 local_path=/data/datasets
-credentials=$(locate_prod_database_credentials)
 dsync_jar=$(locate_dsync)
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
