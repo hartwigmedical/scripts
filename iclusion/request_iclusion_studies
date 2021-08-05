@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
+api_credentials=/data/resources/iclusion/iclusion_api_credentials
 
 do_request_iclusion_object "studies" ${api_credentials}
