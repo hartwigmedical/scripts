@@ -11,10 +11,10 @@ ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file_gcp)
 ref_genome_37_to_38_chain=$(locate_ref_genome_37_to_38_chain)
 ref_genome_38_to_37_chain=$(locate_ref_genome_38_to_37_chain)
 
-driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
-driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
-known_fusion_37_file=$(locate_known_fusion_data_37_csv)
-known_fusion_38_file=$(locate_known_fusion_data_38_csv)
+driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv_gcp)
+driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv_gcp)
+known_fusion_37_file=$(locate_known_fusion_data_37_csv_gcp)
+known_fusion_38_file=$(locate_known_fusion_data_38_csv_gcp)
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
