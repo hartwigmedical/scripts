@@ -4,10 +4,10 @@ source locate_files || exit 1
 
 serve_jar=$(locate_pilot_serve)
 
-missing_doids_mapping_tsv=/data/common/dbs/serve/curation/missing_doids_mapping.tsv
+missing_doids_mapping_tsv=/data/resources/serve/missing_doids_mapping.tsv
 
-ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
-ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
+ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file_gcp)
 ref_genome_37_to_38_chain=$(locate_ref_genome_37_to_38_chain)
 ref_genome_38_to_37_chain=$(locate_ref_genome_38_to_37_chain)
 

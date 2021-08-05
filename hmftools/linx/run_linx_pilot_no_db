@@ -22,7 +22,7 @@ ensembl_data_dir=/data/common/dbs/ensembl_data_cache/37
 fragile_sites=/data/common/dbs/linx/37/fragile_sites_hmf.37.csv
 line_elements=/data/common/dbs/linx/37/line_elements.37.csv
 replication_origins=/data/common/dbs/linx/37/heli_rep_origins.37.bed
-ref_genome=$(locate_ref_genome_37_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file_ds)
 
 if [[ -d "${output_dir}" ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")

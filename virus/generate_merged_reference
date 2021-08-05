@@ -3,7 +3,7 @@
 source locate_files || exit 1
 
 HOMOSAPIENS_TAX_ID=9606
-HUMAN_REF=$(locate_ref_genome_37_fasta_file)
+HUMAN_REF=$(locate_ref_genome_37_fasta_file_ds)
 REF=hg19_virus.fa
 
 wget ftp://ftp.genome.jp/pub/db/virushostdb/virushostdb.genomic.fna.gz

@@ -48,7 +48,7 @@ if [[ -z "$(hostname | grep datastore)" ]]; then
 fi
 
 gc_profile=${base_path}/dbs/archive/gc_profiles/GC_profile.1000bp.37.cnp
-ref_genome=$(locate_ref_genome_37_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file_ds)
 somatic_hotspot_vcf=${base_path}/dbs/serve/hotspots/210502/KnownHotspots.somatic.37.vcf.gz
 germline_hotspot_vcf=${base_path}/dbs/archive/sage/KnownHotspots.germline.37.vcf.gz
 driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
