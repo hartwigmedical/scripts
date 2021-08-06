@@ -12,7 +12,7 @@ samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samples
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
 for i in {2,3}; do
-    crunch_name="crunch00${i}"
+    crunch_name="crunch${i}.prod-1"
     info "Checking ${crunch_name} for samplesheets"
 
     ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
