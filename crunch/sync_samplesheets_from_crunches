@@ -21,7 +21,7 @@ for i in {2,3}; do
         run_name=$(basename "${run_path}")
         dest_path="${local_sheets_dir}/${run_name}_SampleSheet.csv"
         info "  Executing rsync for ${run_name}"
-        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${dest_path}" | wc -l)
+        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${dest_path}" | wc -l) || die "Could not rsync"
         if [[ "${rsync_log_line_count}" -gt 4 ]]; then
             info "   Synced to ${dest_path}"
         fi
