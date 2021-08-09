@@ -181,7 +181,6 @@ main () {
             fi
             set_name_error="error_"$set_name
             eval ${set_name_error}=$error
-            echo "${!set_name_error}"
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
@@ -193,7 +192,6 @@ main () {
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
-            echo "${!set_name_error}"
             if [[ "${!set_name_error}" == "none" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
