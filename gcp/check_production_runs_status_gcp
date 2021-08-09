@@ -60,7 +60,7 @@ main () {
         exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l );
         exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
-        if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0  ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
+        if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             echo "Please inspect ${set_name} set using: ${inspect_healthchecker_script} ${set_name}"
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
