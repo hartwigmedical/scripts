@@ -165,7 +165,7 @@ main () {
             validated_runs_not_yet_reported=$validated_runs_not_yet_reported$set_name" "
             error="none"
             health_error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
-            if [[ "$health_error" == *"WARN"* && "$error" == *"healthchecker"* ]]; then
+            if [[ "$health_error" == *"WARN"* && "$error" == *"HealthChecker"* ]]; then
                 error="healthchecker_error"
             else
                 if [[ "$health_error" == *"WARN"* && "$error" == *"doid"* ]]; then
@@ -183,6 +183,8 @@ main () {
             fi
             set_name_error="X"$set_name
             error_[$set_name_error]=$error
+            echo ${set_name}
+            echo ${error_[$set_name_error]}
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
     echo $validated_runs_not_yet_reported
