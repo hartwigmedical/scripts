@@ -6,22 +6,45 @@ set=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+set_url="gs://${bucket}/${set}/"
+
 barcode_tumor=$( echo "$set" | cut -d"_" -f 4 )
 sample_name_tumor=$( api samples $barcode_tumor barcode | cut -f 7 | grep -v name )
 
 barcode_ref=$( echo "$set" | cut -d"_" -f 3 )
 sample_name_ref=$( api samples $barcode_ref barcode | cut -f 7 | grep -v name )
 
-if [[ "${sample_name_tumor:0:12}" == "${sample_name_tumor:0:12}" ]]; then
+
+if [[ "${sample_name_tumor:0:12}" == "${$sample_name_ref:0:12}" ]]; then
     info "The reference file for the snpcheck is of the same sample: $barcode_tumor=$sample_name_tumor (tumor) eq $barcode_ref=$sample_name_ref (ref)."
 else
-    info "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
+    warn "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
 fi
-snpcheck_vcf_tumor=$( find_snpcheck_vcf $barcode_tumor )
+
+snpcheck_vcf_tumor="${set_url}${sample_name_tumor}/snp_genotype/snp_genotype_output.vcf"
 snpcheck_vcf_ref=$( find_snpcheck_vcf $barcode_ref )
 
 if [[ "$snpcheck_vcf_tumor" == "" || "$snpcheck_vcf_ref" == "" ]]; then
-    warn "One (or both) of the vcf files for the snpcheck could not be found. The snpcheck will not be performed."
+    warn "One (or both) of the vcf files for the snpcheck could not be found (see warnings above). The snpcheck will not be performed."
 else
     info "The snpcheck will now be performed:"
     perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
