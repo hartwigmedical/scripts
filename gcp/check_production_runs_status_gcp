@@ -158,10 +158,10 @@ main () {
         if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
             validation_ss_run=1
         else
-            validation_ss_run=1
+            validation_ss_run=0
             if [[ $(printf '%s\n' "${non_db_entities[@]}" | grep -cP "^${entity}$") -gt 0 && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
                 ## Skip none-CORE sequencing services runs
-                validation_ss_run=0
+                validation_ss_run=1
             fi
         fi
         echo $set_name
