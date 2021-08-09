@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+barcode_tumor=$( echo "$set" | cut -d"_" -f 4 )
+sample_name_tumor=$( api samples $barcode_tumor barcode | cut -f 7 | grep -v name )
+
+barcode_ref=$( echo "$set" | cut -d"_" -f 3 )
+sample_name_ref=$( api samples $barcode_ref barcode | cut -f 7 | grep -v name )
+
+if [[ "$sample_name_tumor" == "$sample_name_ref" ]]; then
+    info "The reference file for the snpcheck is of the same sample: $sample_name_tumor (tumor) = $sample_name_ref (ref)."
+else
+    info "The reference file for the snpcheck is from another sample: $sample_name_tumor (tumor) <> $sample_name_ref (ref)."
+    info "SNPcheck will be performed:"
+    snpcheck_vcf_tumor=$( find_snpcheck_vcf $barcode_tumor )
+    snpcheck_vcf_ref=$( find_snpcheck_vcf $barcode_ref )
+
+perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
