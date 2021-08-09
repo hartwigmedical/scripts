@@ -49,3 +49,7 @@ else
     info "The snpcheck will now be performed:"
     perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
 fi
+
+if [[ "${sample_name_tumor:0:12}" == "${sample_name_ref:0:12}" ]]; then
+    echo " Action: if snpcheck is OK update the api using the script: patch_api_run_validate ${set}. "
+fi
