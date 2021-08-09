@@ -49,7 +49,7 @@ main () {
 
     # Now ready to check each status on by one
     echo ""
-    echo "### Failed runs (that should be sorted out!): ###"
+    echo "### Failed runs (that should be sorted out!):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -71,7 +71,7 @@ main () {
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
-    echo "### Failed runs that have already been reported (so no further action needed): ###"
+    echo "### Failed runs that have already been reported (so no further action needed):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -94,7 +94,7 @@ main () {
 
 
     echo ""
-    echo "### Finished runs (but not Validated, something with snpcheck?): ###"
+    echo "### Finished runs (but not Validated, something with snpcheck?):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -119,7 +119,7 @@ main () {
 
 
     echo ""
-    echo "### Finished runs that have already been reported (so no further action needed): ###"
+    echo "### Finished runs that have already been reported (so no further action needed):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -145,7 +145,7 @@ main () {
 
 
     echo ""
-    echo "### Validated runs without warnings (for which the report can be shared): ###"
+    echo "### Validated runs without warnings (for which the report can be shared):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -166,7 +166,7 @@ main () {
             fi
         fi
 
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && validation_ss_run == 0 ]]; then
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
 
             error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
             if [[ "$error" == *"WARN"* ]]; then
@@ -207,7 +207,7 @@ main () {
 
 
     echo ""
-    echo "### Validated runs with healthchecker warning ( please solve! ): ###"
+    echo "### Validated runs with healthchecker warning ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -228,7 +228,7 @@ main () {
             fi
         fi
 
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && validation_ss_run == 0 ]]; then
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
 
             error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
             if [[ "$error" == *"WARN"* ]]; then
@@ -265,7 +265,7 @@ main () {
 
 
     echo ""
-    echo "### Validated runs with doid warning ( please solve! ): ###"
+    echo "### Validated runs with doid warning ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -286,7 +286,7 @@ main () {
             fi
         fi
 
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && validation_ss_run == 0 ]]; then
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
 
             error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
             if [[ "$error" == *"WARN"* ]]; then
@@ -323,7 +323,7 @@ main () {
 
 
     echo ""
-    echo "### Validated runs with other health warning ( please solve! ): ###"
+    echo "### Validated runs with other health warning ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -344,7 +344,7 @@ main () {
             fi
         fi
 
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && validation_ss_run == 0 ]]; then
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
 
             error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
             if [[ "$error" == *"WARN"* ]]; then
@@ -382,7 +382,7 @@ main () {
 
     echo ""
     counter=0
-    echo "### Processing/Uploading/Downloading runs (no action required): ###"
+    echo "### Processing/Uploading/Downloading runs (no action required):"
     while read -r run_info; do
         counter=$((counter+1))
         set_name=$(echo "${run_info}" | cut -f1)
@@ -392,7 +392,7 @@ main () {
 
 
     echo ""
-    echo "### Waiting runs (no action required): ###"
+    echo "### Waiting runs (no action required):"
     counter=0
     while read -r run_info; do
         counter=$((counter+1))
