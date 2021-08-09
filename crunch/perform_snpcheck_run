@@ -34,7 +34,7 @@ barcode_ref=$( echo "$set" | cut -d"_" -f 3 )
 sample_name_ref=$( api samples $barcode_ref barcode | cut -f 7 | grep -v name )
 
 
-if [[ "${sample_name_tumor:0:12}" == "${$sample_name_ref:0:12}" ]]; then
+if [[ "${sample_name_tumor:0:12}" == "${sample_name_ref:0:12}" ]]; then
     info "The reference file for the snpcheck is of the same sample: $barcode_tumor=$sample_name_tumor (tumor) eq $barcode_ref=$sample_name_ref (ref)."
 else
     warn "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
