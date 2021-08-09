@@ -181,12 +181,15 @@ main () {
                     fi
                  fi
             fi
+            echo $set_name
+            echo $error
+            set_name_error="X"$set_name
+            error_[$set_name_error]=$error
+            echo ${error_[$set_name_error]}
          fi
-         set_name_error="X"$set_name
-         error_[$set_name_error]=$error
-         echo ${error_[$set_name_error]}
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
+    echo $validated_runs_not_yet_reported
 
     echo ""
     echo "### Validated runs without warnings and with report (that can now be shared):"
@@ -291,6 +294,8 @@ main () {
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
+
+    validated_runs_not_yet_reported=""
 
     echo ""
     counter=0
