@@ -3,7 +3,6 @@
 source message_functions || exit 1
 
 gcp_bucket='hmf-snpcheck'
-gcp_key=$( gcloud secrets versions access "latest" --secret=gcp-hmf-ops-u-hmf-database --project=hmf-secrets )
 
 print_usage(){
     echo "-----"
@@ -17,8 +16,6 @@ print_usage(){
 search=$1
 [[ -n "${search}" ]] || print_usage
 
-
-gcloud auth activate-service-account --no-user-output-enabled --key-file "${gcp_key}"
 
 echo ""
 #info "Checking remote location for VCFs (gs://${gcp_bucket})"
