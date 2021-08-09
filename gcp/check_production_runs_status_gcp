@@ -179,10 +179,9 @@ main () {
             if [[ "$error" == *"HealthChecker has failed"* ]]; then
                  error="healthchecker_error"
             fi
-            set_name_error="X"$set_name
-            error_[$set_name_error]=$error
-            echo ${set_name}
-            echo ${error_[$set_name_error]}
+            set_name_error="error_"$set_name
+            eval ${set_name_error}=$error
+            echo "${!set_name_error}"
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
@@ -193,9 +192,9 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="X"$set_name
-            echo "${error_[$set_name_error]}"
-            if [[ "${error_[$set_name_error]}" == "none" ]]; then
+            set_name_error="error_"$set_name
+            echo "${!set_name_error}"
+            if [[ "${!set_name_error}" == "none" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
@@ -218,8 +217,8 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="X"$set_name
-            if [[ "${error_[$set_name_error]}" == "no_report_error" ]]; then
+            set_name_error="error_"$set_name
+            if [[ "${!set_name_error}" == "no_report_error" ]]; then
                 counter=$((counter+1))
                  db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
@@ -238,8 +237,8 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="X"$set_name
-            if [[ "${error_[$set_name_error]}" == "healthchecker_error" ]]; then
+            set_name_error="error_"$set_name
+            if [[ "${!set_name_error}" == "healthchecker_error" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
@@ -259,8 +258,8 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="X"$set_name
-            if [[ "${error_[$set_name_error]}" == "DOID_error" ]]; then
+            set_name_error="error_"$set_name
+            if [[ "${!set_name_error}" == "DOID_error" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
@@ -279,8 +278,8 @@ main () {
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="X"$set_name
-            if [[ "${error_[$set_name_error]}" == "other_health_error" ]]; then
+            set_name_error="error_"$set_name
+            if [[ "${!set_name_error}" == "other_health_error" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
