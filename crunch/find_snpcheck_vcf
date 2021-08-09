@@ -2,8 +2,6 @@
 
 source message_functions || exit 1
 
-gcp_bucket='hmf-snpcheck'
-
 print_usage(){
     echo "-----"
     echo " Descr: Searches for SNPcheck VCFs in GCP (gs://hmf-snpcheck/snpcheckvcfs/)."
@@ -19,7 +17,11 @@ search=$1
 
 #echo ""
 #info "Checking remote location for VCFs (gs://${gcp_bucket})"
-gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*" | sort -r | head -1
+if [[ $( gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*" | grep -v "Duplo" | head -1 | wc -l ) == 1 ]]; then
+    gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*" | grep -v "Duplo" | head -1
+else
+    warn "No snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${search}"
+fi
 #echo ""
 
 # since January 2021 logs are no longer written to the snpchecklogs
