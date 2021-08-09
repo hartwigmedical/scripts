@@ -45,7 +45,7 @@ main () {
 
     # Now ready to check each status on by one
     echo ""
-    echo "### Failed runs that should be sorted out / have already been reported: ###"
+    echo "### Failed runs (that should be sorted out!) || Failed runs that have already been reported (so no further action needed): ###"
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
@@ -72,7 +72,7 @@ main () {
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')  | sort -r | uniq
 
     echo ""
-    echo "### Finished runs (that are not Validated or Failed, probably waiting for SNP genotype VCF): ###"
+    echo "### Finished runs (but not Validated, something with snpcheck?) || Finished runs that have already been reported (so no further action needed): ###"
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
@@ -89,7 +89,9 @@ main () {
             exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "Please check what went wrong with: ${set_name} # db_status=${db_status}/${research_db_status}"
+                echo "-- ${set_name} has been finished but not validated. snpcheck issue? # db_status=${db_status}/${research_db_status}"
+                perform_snpcheck_run ${set_name}
+                echo "---------"
             fi
         else
             echo "# ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"

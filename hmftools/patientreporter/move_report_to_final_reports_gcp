@@ -14,8 +14,8 @@ sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
 url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 
-
-echo "## Report ${report_name} has been shared: final processing will start:"
+echo ""
+echo "## Report ${report_name} has been shared - final processing will start:"
 
 if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${report_name}" | wc -l ) == 0 ]]; then
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) == 1 ]]; then
