@@ -143,57 +143,8 @@ main () {
 
 
 
-
-
-    # validated runs pre-processing
-    while read -r run_info; do
-        sample_name=$(echo "${run_info}" | cut -f1)
-        set_name=$(echo "${run_info}" | cut -f2)
-        entity=$(echo "${run_info}" | cut -f3)
-        db_status=$(echo "${run_info}" | cut -f4)
-        exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
-        exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
-        research_db_status=$(get_db_status_by_set_name "${set_name}")
-
-        if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
-            validation_ss_run=1
-        else
-            validation_ss_run=1
-            if [[ $(printf '%s\n' "${non_db_entities[@]}" | grep -cP "^${entity}$") -gt 0 && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
-                ## Skip none-CORE sequencing services runs
-                validation_ss_run=0
-            fi
-        fi
-
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
-
-            error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
-            if [[ "$error" == *"WARN"* ]]; then
-                error="no_report_error"
-            else
-                error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
-                if [[ "$error" == *"WARN"* ]]; then
-                    _error="other_health_error"
-                else
-                    if [[ "$error" == *"WARN"* && "$error" == *"doid"* ]]; then
-                        error="DOID_error"
-                    else
-                        if [[ "$error" == *"WARN"* && "$error" == *"healthchecker"* ]]; then
-                            error="healthchecker_error"
-                        fi
-                    fi
-                 fi
-            fi
-         fi
-         echo $error
-         local error_${setname}=$(echo $error)
-         echo error_${setname}
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
-
-
-
     echo ""
-    echo "### Validated runs without warnings (for which the report can be shared):"
+    echo "### Validated runs without warnings and with report (for which the report can be shared):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -240,12 +191,6 @@ main () {
                 no_report=0
             fi
 
-            echo "health_warn: $health_warn"
-            echo "health_healthchecker_warn: $health_healthchecker_warn"
-            echo "health_doid_warn: $health_doid_warn"
-            echo "no_report: $no_report"
-
-
             if [[ ${health_warn} == 0 && ${no_report} == 0 ]]; then
                 counter=$((counter+1))
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status=${db_status}/${research_db_status}"
@@ -258,6 +203,67 @@ main () {
             fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
+
+    echo ""
+    echo "### Validated runs without warnings but with no report:"
+    counter=0
+    while read -r run_info; do
+        sample_name=$(echo "${run_info}" | cut -f1)
+        set_name=$(echo "${run_info}" | cut -f2)
+        entity=$(echo "${run_info}" | cut -f3)
+        db_status=$(echo "${run_info}" | cut -f4)
+        exists_in_success_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep -v ${failed_reports} | wc -l )
+        exists_in_qcfail_run_dirs=$( cat ${sharing_db_file} | grep ${sample_name} | grep ${failed_reports} | wc -l )
+        research_db_status=$(get_db_status_by_set_name "${set_name}")
+
+        if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
+            validation_ss_run=1
+        else
+            validation_ss_run=0
+            if [[ $(printf '%s\n' "${non_db_entities[@]}" | grep -cP "^${entity}$") -gt 0 && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
+                ## Skip none-CORE sequencing services runs
+                validation_ss_run=1
+            fi
+        fi
+
+        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
+
+            error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
+            if [[ "$error" == *"WARN"* ]]; then
+                health_warn=1
+            else
+                health_warn=0
+            fi
+            if [[ "$error" == *"WARN"* && "$error" == *"healthchecker"* ]]; then
+                health_healthchecker_warn=1
+            else
+                health_healthchecker_warn=0
+            fi
+            if [[ "$error" == *"WARN"* && "$error" == *"doid"* ]]; then
+                health_doid_warn=1
+            else
+                health_doid_warn=0
+            fi
+
+            error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
+            if [[ $error == 0 ]]; then
+                no_report=1
+            else
+                no_report=0
+            fi
+
+            if [[ ${health_warn} == 0 && ${no_report} == 1 ]]; then
+                counter=$((counter+1))
+                echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status=${db_status}/${research_db_status}"
+                checks_validated_run ${set_name} ${sample_name} exclude_checks
+                warn "No report found in the bucket ${url_bucket_report_pipline}"
+                echo "---------"
+            fi
+         fi
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
+
+
+
 
     echo ""
     echo "### Validated runs with healthchecker warning ( please solve! ):"
