@@ -17,10 +17,10 @@ search=$1
 [[ -n "${search}" ]] || print_usage
 
 
-echo ""
+#echo ""
 #info "Checking remote location for VCFs (gs://${gcp_bucket})"
-gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*"
-echo ""
+gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*" | sort -r | head -1
+#echo ""
 
 # since January 2021 logs are no longer written to the snpchecklogs
 #info "Checking remote location for LOGs (gs://${gcp_bucket})"
