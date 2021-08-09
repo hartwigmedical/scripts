@@ -46,7 +46,7 @@ pipeline_version_url="${set_url}pipeline.version"
 pipeline_version=$(gsutil cat "${pipeline_version_url}" )
 info "This run has been done with pipeline ${pipeline_version}"
 
-if [[ -n "${exclusion_checks}" ]]; then
+if [[ "${exclusion_checks}" == "" ]]; then
     health_check_validated_run ${bucket} ${set}
     doid_check_validated_run ${bucket} ${set} ${sample_name}
 fi

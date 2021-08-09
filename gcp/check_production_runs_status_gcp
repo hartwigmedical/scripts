@@ -164,9 +164,6 @@ main () {
                 validation_ss_run=1
             fi
         fi
-        echo $set_name
-        echo "validation_ss_run: $validation_ss_run"
-
 
         if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
 
