@@ -175,4 +175,3 @@ get_tumor_samples_from_runs_json () {
 }
 
 main
-#!/usr/bin/env bash
