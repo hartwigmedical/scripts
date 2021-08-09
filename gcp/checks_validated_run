@@ -4,6 +4,8 @@ source message_functions || exit 1
 
 set=$1 && shift
 sample_name=$1 && shift
+exclusion_checks=$1 && shift
+
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 [[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
@@ -44,5 +46,7 @@ pipeline_version_url="${set_url}pipeline.version"
 pipeline_version=$(gsutil cat "${pipeline_version_url}" )
 info "This run has been done with pipeline ${pipeline_version}"
 
-health_check_validated_run ${bucket} ${set}
-doid_check_validated_run ${bucket} ${set} ${sample_name}
+if [[ -n "${exclusion_checks}" ]]; then
+    health_check_validated_run ${bucket} ${set}
+    doid_check_validated_run ${bucket} ${set} ${sample_name}
+fi
