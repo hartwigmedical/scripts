@@ -19,5 +19,6 @@ else
     info "SNPcheck will be performed:"
     snpcheck_vcf_tumor=$( find_snpcheck_vcf $barcode_tumor )
     snpcheck_vcf_ref=$( find_snpcheck_vcf $barcode_ref )
+fi
 
 perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
