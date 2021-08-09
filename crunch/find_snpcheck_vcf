@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 gcp_bucket='hmf-snpcheck'
-gcp_key=( gcloud secrets versions access "latest" --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets )
+gcp_key=$( gcloud secrets versions access "latest" --secret=gcp-hmf-ops-u-hmf-database --project=hmf-secrets )
 
 print_usage(){
     echo "-----"
