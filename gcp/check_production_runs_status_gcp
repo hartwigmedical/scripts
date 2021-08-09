@@ -160,26 +160,24 @@ main () {
                 validation_ss_run=1
             fi
         fi
-
         if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
             validated_runs_not_yet_reported=$validated_runs_not_yet_reported$set_name" "
             error="none"
+            #
+            report_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
+            if [[ "$report_error" == 0 ]]; then
+                 error="no_report_error"
+            fi
+            #
             health_error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
-            if [[ "$health_error" == *"WARN"* && "$error" == *"HealthChecker"* ]]; then
-                error="healthchecker_error"
-            else
-                if [[ "$health_error" == *"WARN"* && "$error" == *"doid"* ]]; then
-                   error="DOID_error"
-                else
-                    if [[ "$health_error" == *"WARN"* ]]; then
-                        error="other_health_error"
-                    else
-                       report_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
-                       if [[ "$report_error" == 0 ]]; then
-                            error="no_report_error"
-                       fi
-                    fi
-                fi
+            if [[ "$health_error" == *"WARN"* ]]; then
+                error="other_health_error "
+            fi
+            if [[ "$health_error" == *"the doid of protect  is not known"* || "$health_error" == *"the doid is not equal of"* ]]; then
+                 error="DOID_error"
+            fi
+            if [[ "$error" == *"HealthChecker has failed"* ]]; then
+                 error="healthchecker_error"
             fi
             set_name_error="X"$set_name
             error_[$set_name_error]=$error
@@ -187,7 +185,6 @@ main () {
             echo ${error_[$set_name_error]}
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
-    echo $validated_runs_not_yet_reported
 
     echo ""
     echo "### Validated runs without warnings and with report (that can now be shared):"
@@ -197,7 +194,8 @@ main () {
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="X"$set_name
-            if [[ "${error_[$set_name_error]}" == "None" ]]; then
+            echo "${error_[$set_name_error]}"
+            if [[ "${error_[$set_name_error]}" == "none" ]]; then
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
