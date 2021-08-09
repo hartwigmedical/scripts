@@ -162,10 +162,11 @@ main () {
         fi
 
         if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
+            echo $set_name
             validated_runs_not_yet_reported=$validated_runs_not_yet_reported$set_name" "
             error="none"
             report_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
-            if [[ "$report_error" == *"WARN"* ]]; then
+            if [[ "$report_error" == 0 ]]; then
                 error="no_report_error"
             else
                 health_error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
@@ -181,13 +182,11 @@ main () {
                     fi
                  fi
             fi
-            echo $set_name
             echo $error
             set_name_error="X"$set_name
             error_[$set_name_error]=$error
             echo ${error_[$set_name_error]}
          fi
-
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
     echo $validated_runs_not_yet_reported
 
@@ -195,9 +194,9 @@ main () {
     echo "### Validated runs without warnings and with report (that can now be shared):"
     counter=0
     while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name=$(echo "${run_info}" | cut -f2)
             set_name_error="X"$set_name
             if [[ "${error_[$set_name_error]}" == "None" ]]; then
                 counter=$((counter+1))
@@ -219,9 +218,9 @@ main () {
     echo "### Validated runs without warnings but with no report:"
     counter=0
     while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name=$(echo "${run_info}" | cut -f2)
             set_name_error="X"$set_name
             if [[ "${error_[$set_name_error]}" == "no_report_error" ]]; then
                 counter=$((counter+1))
@@ -239,9 +238,9 @@ main () {
     echo "### Validated runs with healthchecker warning ( please solve! ):"
     counter=0
     while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name=$(echo "${run_info}" | cut -f2)
             set_name_error="X"$set_name
             if [[ "${error_[$set_name_error]}" == "healthchecker_error" ]]; then
                 counter=$((counter+1))
@@ -260,9 +259,9 @@ main () {
     echo "### Validated runs with doid warning ( please solve! ):"
     counter=0
     while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name=$(echo "${run_info}" | cut -f2)
             set_name_error="X"$set_name
             if [[ "${error_[$set_name_error]}" == "DOID_error" ]]; then
                 counter=$((counter+1))
@@ -280,9 +279,9 @@ main () {
     echo "### Validated runs with other health warning ( please solve! ):"
     counter=0
     while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
-            set_name=$(echo "${run_info}" | cut -f2)
             set_name_error="X"$set_name
             if [[ "${error_[$set_name_error]}" == "other_health_error" ]]; then
                 counter=$((counter+1))
