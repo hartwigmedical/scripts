@@ -241,7 +241,6 @@ locate_known_fusion_data_38_csv_gcp() {
 
 locate_peach_resource_dir() {
     echo ${base_path}/dbs/peach
-
 }
 
 locate_pilot_iclusion_trial_tsv() {
