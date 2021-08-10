@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+command -v copy_file_from_nas > /dev/null || die "Missing dependency copy_file_from_nas"
 
-SOURCE='/volume1/machines/Experimenten/SNP\ check'
-TARGET='/data/common/snpcheck/input'
-SUFFIX='Results.csv'
+nas_dir='/volume1/machines/Experimenten/SNP\ check'
+target_dir='/data/common/snpcheck/input'
+file_suffix='Results.csv'
 
 plate_id=$1
 
@@ -17,11 +18,11 @@ if [[ -z "${plate_id}" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 ## find at NAS
-info "Searching for \"${plate_id}*${SUFFIX}\" results file in \"nas:${SOURCE}\""
+info "Searching for \"${plate_id}*${file_suffix}\" results file in \"nas:${nas_dir}\""
 result_files=()
 while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
-done < <(ssh nas find "${SOURCE}" -name "${plate_id}*${SUFFIX}" -print0)
+done < <(ssh nas find "${nas_dir}" -name "${plate_id}*${file_suffix}" -print0)
 if [[ ${#result_files[@]} -eq 0 ]]; then 
     error "No file found for '${plate_id}'!"
 elif [[ ${#result_files[@]} -gt 1 ]]; then
@@ -31,14 +32,15 @@ fi
 ## sync and process
 result_file_path="${result_files[0]}"
 result_file_name=$(basename "${result_file_path}")
-target_file_path="${TARGET}/${result_file_name}"
+target_file_path="${target_dir}/${result_file_name}"
 
 info "Found SNPcheck file at NAS ($result_file_name)"
 info " syncing to datastore"
-rsync --protect-args -ah "nas:${result_file_path}" "${target_file_path}"
-if [[ $? != 0 ]]; then error "Rsync finished with non-zero exit code ($?)"; fi
+#rsync --protect-args -ah "nas:${result_file_path}" "${target_file_path}"
+copy_file_from_nas "${result_file_path}" "${target_dir}/" || die "Rsync finished with non-zero exit code ($?)"
+#if [[ $? != 0 ]]; then error "Rsync finished with non-zero exit code ($?)"; fi
 
 info "  converting file VCFs"
-create_sample_vcfs_from_csv "${target_file_path}"
-if [[ $? != 0 ]]; then error "Conversion to VCF finished with non-zero exit code ($?)"; fi
+create_sample_vcfs_from_csv "${target_file_path}" || die "Conversion to VCF finished with non-zero exit code ($?)"
+#if [[ $? != 0 ]]; then error "Conversion to VCF finished with non-zero exit code ($?)"; fi
 
