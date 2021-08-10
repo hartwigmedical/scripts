@@ -2,7 +2,9 @@
 
 source message_functions || exit 1
 
-NAS_CREDS_FILE="/data/common/dbs/nas_credentials/rsyncuser"
+nas_user="rsyncuser"
+creds_name="nas-credentials-rsyncuser"
+password=$(gcloud secrets versions access "latest" --secret="${creds_name}" --project=hmf-secrets) || die "Unable to retrieve password"
 
 if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -15,6 +17,6 @@ fi
 nas_file_path=$1 && shift
 target_dir_path=$1 && shift
 
-[[ -d "${target_dir_path}" ]] || die "Directory to copy file to not found (${target_dir_path})"
-info "Copying file 'nas:${nas_file_path}' to directory '${target_dir_path}'"
-sshpass -f "${NAS_CREDS_FILE}" rsync --chmod=ugo=rw,-X -s "rsyncuser@nas:${nas_file_path}" "${target_dir_path}/"
+# explicitly add group write and remove execution permission (--chmod)
+info "Copying file 'nas:${nas_file_path}' to local directory '${target_dir_path}'"
+sshpass -f <(cat <<< "${password}") rsync --chmod=ugo=rw,-X --protect-args "${nas_user}@nas:${nas_file_path}" "${target_dir_path}/"
