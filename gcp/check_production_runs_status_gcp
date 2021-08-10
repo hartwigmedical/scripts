@@ -10,8 +10,6 @@ failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insuff
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
 url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 
-move_final_report_script="move_report_to_final_reports_gcp"
-inspect_healthchecker_script="inspect_healthchecker_log_at_gcp"
 major_version="5.22"
 
 
@@ -49,12 +47,13 @@ main () {
 
     # Now ready to check each status on by one
     echo ""
-    echo "### Failed runs (that should be sorted out!):"
+    echo "### Failed runs that not have been reported before ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         db_status=$(echo "${run_info}" | cut -f3)
+        research_db_status=$(get_db_status_by_set_name "${set_name}")
 
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}")
@@ -66,17 +65,20 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
-            echo "-${counter}- Please inspect ${set_name} set using: ${inspect_healthchecker_script} ${set_name}"
+            echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR'
+            echo "---------"
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Failed runs that have already been reported (so no further action needed):"
+    echo "### Failed runs that have already been reported ( no action required ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         db_status=$(echo "${run_info}" | cut -f3)
+        research_db_status=$(get_db_status_by_set_name "${set_name}")
 
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}")
@@ -88,13 +90,13 @@ main () {
 
         if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Failed but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"
+            echo "# -${counter}- ${set_name} has Failed but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
 
     echo ""
-    echo "### Finished runs (but not Validated, something with snpcheck?):"
+    echo "### Finished runs that not have been reported before ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -111,14 +113,14 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
-            echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? # db_status=${db_status}/${research_db_status}"
+            echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
             echo "---------"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Finished runs that have already been reported (so no further action needed):"
+    echo "### Finished runs that have already been reported ( no action required ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -135,7 +137,7 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} )"
+            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
             echo "---------"
         fi
@@ -176,16 +178,13 @@ main () {
             if [[ "$health_error" == *"the doid of protect  is not known"* || "$health_error" == *"the doid is not equal of"* ]]; then
                  error="DOID_error"
             fi
-            if [[ "$error" == *"HealthChecker has failed"* ]]; then
-                 error="healthchecker_error"
-            fi
             set_name_error="error_"$set_name
             eval ${set_name_error}=$error
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Validated runs without warnings and with report (that can now be shared):"
+    echo "### Validated runs without warnings and with report ( that can now be shared ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
@@ -196,12 +195,12 @@ main () {
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status=${db_status}/${research_db_status}"
+                echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name} exclude_checks
                 report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
                 report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
                 #info "A report has been created in the bucket ${url_bucket_report_pipline}: ${report_name}"
-                echo " Action : Move the report to the final archive using the script: ${move_final_report_script} ${sample_name} ${report_name}. "
+                echo " Action : Move the report to the final archive using the script: move_report_to_final_reports_gcp ${sample_name} ${report_name}. "
                 echo "---------"
              fi
          fi
@@ -209,7 +208,7 @@ main () {
 
 
     echo ""
-    echo "### Validated runs without warnings but with no report:"
+    echo "### Validated runs without warnings but with no report ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
@@ -220,33 +219,13 @@ main () {
                 counter=$((counter+1))
                  db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status=${db_status}/${research_db_status}"
+                echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name} exclude_checks
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
                 echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
-
-    echo ""
-    echo "### Validated runs with healthchecker warning ( please solve! ):"
-    counter=0
-    while read -r run_info; do
-        set_name=$(echo "${run_info}" | cut -f2)
-        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
-            sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="error_"$set_name
-            if [[ "${!set_name_error}" == "healthchecker_error" ]]; then
-                counter=$((counter+1))
-                db_status=$(echo "${run_info}" | cut -f4)
-                research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- ${set_name} is validated, but the healthchecker failed (see below) # db_status=${db_status}/${research_db_status}"
-                checks_validated_run ${set_name} ${sample_name}
-                echo "---------"
-             fi
-         fi
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
-
 
 
     echo ""
@@ -261,7 +240,7 @@ main () {
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status=${db_status}/${research_db_status}"
+                echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
                 echo "---------"
              fi
@@ -281,7 +260,7 @@ main () {
                 counter=$((counter+1))
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- ${set_name} is validated, but there is a other warning (see below) # db_status=${db_status}/${research_db_status}"
+                echo "-${counter}- ${set_name} is validated, but there is a other warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
                 echo "---------"
              fi
@@ -292,7 +271,7 @@ main () {
 
     echo ""
     counter=0
-    echo "### Processing/Uploading/Downloading runs (no action required):"
+    echo "### Processing/Uploading/Downloading runs ( no action required ):"
     while read -r run_info; do
         counter=$((counter+1))
         set_name=$(echo "${run_info}" | cut -f1)
@@ -302,7 +281,7 @@ main () {
 
 
     echo ""
-    echo "### Waiting runs (no action required):"
+    echo "### Waiting runs ( no action required ):"
     counter=0
     while read -r run_info; do
         counter=$((counter+1))

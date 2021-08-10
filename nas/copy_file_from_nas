@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+NAS_CREDS_FILE="/data/common/dbs/nas_credentials/rsyncuser"
+
+if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Usage: $(basename "$0") \${remote-nas-file-path} \${local-target-path}"
+    echo " Exmpl: $(basename "$0") '/volume1/machines/BFX/test file.txt' /local/dir/"
+    echo "---"
+    exit 1
+fi
+
+nas_file_path=$1 && shift
+target_dir_path=$1 && shift
+
+[[ -d "${target_dir_path}" ]] || die "Directory to copy file to not found (${target_dir_path})"
+info "Copying file 'nas:${nas_file_path}' to directory '${target_dir_path}'"
+sshpass -f "${NAS_CREDS_FILE}" rsync --chmod=ugo=rw,-X -s "rsyncuser@nas:${nas_file_path}" "${target_dir_path}/"
