@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
 source message_functions || exit 1
 
 sql_file_or_select_statement=$1 && shift
 database_name=$1 && shift
-credentials_cnf=$1 && shift
+credentials=$1 && shift
 from_file='true'
+
+user=$( echo $credentials | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | sed 's/"//g' )
+password=$( echo $credentials | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
+host=$( echo $credentials | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
+port=$( echo $credentials | sed 's/ /\n/g' | grep port= | cut -d"=" -f2 | sed 's/"//g' )
+
+
 
 if [[ ! -f "${sql_file_or_select_statement}" ]]; then
     if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then
@@ -20,14 +26,13 @@ if [[ -z "${database_name}" ]]; then
     error "No database name provided. Exiting."
 fi
 
-if [[ ! -f "${credentials_cnf}" ]]; then
-    error "Unable to locate MySQL credentials .cnf file (${credentials_cnf}). Exiting."
+if [[ "$credentials" == "" ]]; then
+    error "No credentials available. Exiting."
 fi
 
 if [[ "${from_file}" == "true" ]]; then
-    mysql --defaults-file="${credentials_cnf}" "${database_name}" \
+    mysql --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}"  \
     < "${sql_file_or_select_statement}"
 else
-    mysql --defaults-file="${credentials_cnf}" "${database_name}" \
-    --execute="${sql_file_or_select_statement}" --batch
+    mysql --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}" --execute="${sql_file_or_select_statement}" --batch
 fi
