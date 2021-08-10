@@ -4,7 +4,14 @@ source message_functions || exit 1
 
 nas_user="rsyncuser"
 creds_name="nas-credentials-rsyncuser"
-password=$(gcloud secrets versions access "latest" --secret="${creds_name}" --project=hmf-secrets) || die "Unable to retrieve password"
+
+# TODO: once datastore-out is done remove the option to get password from file
+if [[ "$(hostname)" == "datastore" ]]; then
+    password=$(cat "/data/common/dbs/nas_credentials/rsyncuser")
+else
+    password=$(gcloud secrets versions access "latest" --secret="${creds_name}" --project=hmf-secrets)
+fi
+[[ -n "${password}" ]] || die "Unable to retrieve password"
 
 if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
