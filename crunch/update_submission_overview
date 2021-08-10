@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# This script is expected to be run as a cronjob so loading bashrc
-source "${HOME}/.bashrc"
-
 source message_functions || exit 1
 
 YYMMDD=$(date '+%y%m%d')
