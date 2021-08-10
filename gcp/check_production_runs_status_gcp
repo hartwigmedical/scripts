@@ -197,6 +197,7 @@ main () {
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name} exclude_checks
+                sql_checks_reporting ${sample_name}
                 report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
                 report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
                 #info "A report has been created in the bucket ${url_bucket_report_pipline}: ${report_name}"
@@ -221,6 +222,7 @@ main () {
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name} exclude_checks
+                sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
                 echo "---------"
              fi
@@ -242,6 +244,7 @@ main () {
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
+                sql_checks_reporting ${sample_name}
                 echo "---------"
              fi
          fi
@@ -262,6 +265,7 @@ main () {
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but there is a other warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name} ${sample_name}
+                sql_checks_reporting ${sample_name}
                 echo "---------"
              fi
          fi
