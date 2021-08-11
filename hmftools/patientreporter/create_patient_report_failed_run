@@ -71,6 +71,11 @@ fi
 # create folder for report
 mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
+output_dir_data_report=${temp_folder_path}/patient_report_prod_data
+if [[ ! -d "${output_dir_data_report}" ]]; then
+    mkdir ${output_dir_data_report}
+fi
+
 
 #### create report and add to log file
 ref_sample_mandatory=1
@@ -79,15 +84,15 @@ if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut 
      if [[ ${correction_comments} != "" ]]; then
         #corrected report
         do_run_qc_fail_patient_reporter \
-        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
-        -output_dir_data ${output_dir_report} \
+        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  ${output_dir_report}  \
+        -output_dir_data ${output_dir_data_report} \
         -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
         -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc -comments "${correction_comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
     else
         #Normal report
        do_run_qc_fail_patient_reporter \
-        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
-        -output_dir_data ${output_dir_report} \
+        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  ${output_dir_report}  \
+        -output_dir_data ${output_dir_data_report} \
         -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
         -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
     fi
@@ -95,15 +100,15 @@ else
     if [[ ${correction_comments} != "" ]]; then
         #corrected report
         do_run_qc_fail_patient_reporter \
-        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
-        -output_dir_data ${output_dir_report} \
+        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  ${output_dir_report}  \
+        -output_dir_data ${output_dir_data_report} \
         -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
         -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc -comments "${correction_comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
     else
         #Normal report
        do_run_qc_fail_patient_reporter \
-        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
-        -output_dir_data ${output_dir_report} \
+        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}   ${output_dir_report} \
+        -output_dir_data ${output_dir_data_report} \
         -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
         -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
     fi

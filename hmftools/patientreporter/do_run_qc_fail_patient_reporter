@@ -9,6 +9,11 @@ qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
 output_dir_report=$1 && shift
 
+if [[ "$output_dir_report" == "" ]]; then
+    output_dir_report=/data/cpct/patient_reports
+fi
+
+
 if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
     error "No tumor sample and/or QC fail reason provided. Exiting"
 fi
