@@ -31,7 +31,7 @@ set_url="gs://${bucket}/${set}/"
 
 temp_folder_path=$( pwd )"/temp_cp_${set}"
 mkdir $temp_folder_path
-gsutil -m cp $set_url $temp_folder_path
+gsutil -m cp -r $set_url $temp_folder_path
 
 ###
 
@@ -39,6 +39,6 @@ mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
 
 #Normal report
-do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &> manual_patientreporter_${set}.log
+do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
 
-gsutil cp ${temp_folder_path}/new_report* gs://patient-reporter-manual-prod-1/
+gsutil cp -r ${temp_folder_path}/new_report* gs://patient-reporter-manual-prod-1/
