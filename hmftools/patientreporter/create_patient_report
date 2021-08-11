@@ -28,7 +28,7 @@ fi
 
 set_url="gs://${bucket}/${set}"
 
-info "-- A report will be greated for ${set} --"
+info "-- A report will be greated for ${set} from run bucket ${bucket} --"
 
 ### Copy run data from bucket to local in vm
 temp_folder_path=$( pwd )"/temp_cp_${set}"
@@ -54,7 +54,7 @@ mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
 
 ### doid check (especifally important when rerun of protect)
-report_doid=$(get_doids_for_biopsy ${sample_name} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
+report_doid=$( get_doids_for_biopsy ${sample_name} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 info "Checking primary tumor doid" &> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
 if [[ ${protect_doid} == "" ]]; then
@@ -71,20 +71,21 @@ fi
 do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &>> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
 
 if [[ $( cat ${temp_folder_path}/new_report/manual_patientreporter_${set}.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
-    warn "Running the patient reporter gave warnings/errors, please check:"
-    cat ${temp_folder_path}/new_report/manual_patientreporter_${set}.log | grep "WARN\|ERROR"
-    info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
+    #cat ${temp_folder_path}/new_report/manual_patientreporter_${set}.log | grep "WARN\|ERROR"
+    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
 else
     info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
-gsutil cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/ 2>&1
+gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
+gsutil -q cp -r ${temp_folder_path}/patient_report_prod_data/* gs://patient-reporter-manual-prod-1/
 report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
 info "The report $report has been created"
 rm -r ${temp_folder_path}/ 2>&1
-info "The report $report and its log file (manual_patientreporter_${set}.log) can be found in: gs://patient-reporter-manual-prod-1/"
+info "The report $report and the related log + json file can be found in: gs://patient-reporter-manual-prod-1/"
 
 ### upload report to NC
 info "The report $report will now be uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
-upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report
+upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report 2>&1
