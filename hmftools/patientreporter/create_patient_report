@@ -7,7 +7,7 @@ set=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
-barcode=$( echo "set" | cut -d"_" -f 4 )
+barcode=$( echo "$set" | cut -d"_" -f 4 )
 sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
