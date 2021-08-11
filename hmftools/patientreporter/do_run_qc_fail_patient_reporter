@@ -7,7 +7,7 @@ source message_functions || exit 1
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
-output_dir_report=/data/cpct/patient_reports
+output_dir_report=$1 && shift
 
 if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
     error "No tumor sample and/or QC fail reason provided. Exiting"
