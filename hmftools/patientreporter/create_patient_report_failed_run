@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source lims_functions || exit 1
+
+set=$1 && shift
+correction_comments=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+barcode=$( echo "$set" | cut -d"_" -f 4 )
+sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+set_url="gs://${bucket}/${set}"
+
+
+info "- A fail report will be created for ${sample} from run bucket ${bucket}/${set} - -"
+if [[ ${correction_comments} != "" ]]; then
+    echo "[IMPORTANT] this will be an correction report!"
+    echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
+fi
+
+if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    warn 'There already exists a patient report for this sample:'
+    gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+    echo '[INPUT] Are you sure you want to continue with making a new report (all data will be overwritten, except for the report when making a corrected report)? Please answer Y or N.'
+    read answer
+    echo $answer
+    if [[ $answer != 'Y' ]]; then
+        warn "Report will not be created. exiting"
+        exit 1
+    fi
+fi
+
+
+### Copy run data from bucket to local in vm
+temp_folder_path=$( pwd )"/temp_cp_${set}"
+mkdir $temp_folder_path
+gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path/copy.log
+gsutil -m cp ${set_url}/metadata.json $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+
+if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
+    warn "Making the copy gave errors (see below). Exiting."
+    cat $temp_folder_path/copy.log
+    rm -r $temp_folder_path/
+    exit 1
+fi
+
+# create folder for report
+mkdir ${temp_folder_path}/new_report
+output_dir_report=${temp_folder_path}/new_report
+
+#### create report and add to log file
+ref_sample_mandatory=1
+
+if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
+     if [[ ${correction_comments} != "" ]]; then
+        #corrected report
+        do_run_qc_fail_patient_reporter \
+        ${tumor_sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
+        -output_dir_data ${output_dir_data_report} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} -comments "${comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    else
+        #Normal report
+        do_run_qc_fail_patient_reporter \
+        ${tumor_sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
+        -output_dir_data ${output_dir_data_report} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} "$@"   &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+else
+    if [[ ${correction_comments} != "" ]]; then
+        #corrected report
+        do_run_qc_fail_patient_reporter \
+        ${tumor_sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
+        -output_dir_data ${output_dir_data_report} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} -comments "${comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    else
+        #Normal report
+        do_run_qc_fail_patient_reporter \
+        ${tumor_sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
+        -output_dir_data ${output_dir_data_report} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} "$@"   &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+fi
+
+
+#### check log file of making the report
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+    #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
+    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+else
+    info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+fi
+
+#### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
+gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
+gsutil -q cp -r ${temp_folder_path}/patient_report_prod_data/* gs://patient-reporter-manual-prod-1/
+report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+info "The report $report has been created"
+rm -r ${temp_folder_path}/ 2>&1
+info "The report and the related log + json file can be found in gs://patient-reporter-manual-prod-1/:"
+gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+
+### upload report to NC
+upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
+info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"

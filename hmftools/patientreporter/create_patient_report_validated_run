@@ -4,8 +4,10 @@ source message_functions || exit 1
 source lims_functions || exit 1
 
 set=$1 && shift
+correction_comments=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
+
 
 barcode=$( echo "$set" | cut -d"_" -f 4 )
 sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
@@ -32,12 +34,16 @@ fi
 set_url="gs://${bucket}/${set}"
 
 
-info "- A report will be greated for ${sample} from run bucket ${bucket}/${set} - -"
+info "- A report will be created for ${sample} from run bucket ${bucket}/${set} - -"
+if [[ ${correction_comments} != "" ]]; then
+    echo "[IMPORTANT] this will be an correction report!"
+    echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
+fi
 
-if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep '.pdf' | wc -l ) > 0 ]]; then
+if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     warn 'There already exists a patient report for this sample:'
     gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
-    echo '[INPUT] Are you sure you want to continue with making a new report (it will likely be overwritten, except for a corrected report)? Please answer Y or N.'
+    echo '[INPUT] Are you sure you want to continue with making a new report (all data will be overwritten, except for the report when making a corrected report)? Please answer Y or N.'
     read answer
     echo $answer
     if [[ $answer != 'Y' ]]; then
@@ -73,26 +79,34 @@ output_dir_report=${temp_folder_path}/new_report
 ### doid check (especifally important when rerun of protect)
 report_doid=$( get_doids_for_biopsy ${sample} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
-info "Checking primary tumor doid" &> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
+info "Checking primary tumor doid from protect vs that used in the report: " &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 if [[ ${protect_doid} == "" ]]; then
-    warn "Checking primary tumor doid: the doid of protect ${protect_doid} is not known" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
+    warn "Checking primary tumor doid - the doid of protect ${protect_doid} is not known" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 elif [[ ${protect_doid} == ${report_doid} ]]; then
-    info "Checking primary tumor doid: the doid is equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
+    info "Checking primary tumor doid - the doid is equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
-    warn "Checking primary tumor doid: the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
+    warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
 
 #### create report and add to log file
-#Normal report
-do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 
-if [[ $( cat ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
-    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
-    #cat ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log | grep "WARN\|ERROR"
-    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
+if [[ ${correction_comments} != "" ]]; then
+    #corrected report
+    do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} -comments "${correction_comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
-    info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
+    #Normal report
+    do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+fi
+
+
+#### check log file of making the report
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+    #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
+    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+else
+    info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
