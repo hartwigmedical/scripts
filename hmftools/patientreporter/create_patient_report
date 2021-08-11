@@ -32,7 +32,7 @@ fi
 set_url="gs://${bucket}/${set}"
 
 
-info "-- A report will be greated for ${sample} from run bucket ${bucket}/${set} --"
+info "- A report will be greated for ${sample} from run bucket ${bucket}/${set} - -"
 
 if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep '.pdf' | wc -l ) > 0 ]]; then
     warn 'There already exists a patient report for this sample:'
@@ -101,8 +101,9 @@ gsutil -q cp -r ${temp_folder_path}/patient_report_prod_data/* gs://patient-repo
 report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
 info "The report $report has been created"
 rm -r ${temp_folder_path}/ 2>&1
-info "The report $report and the related log + json file can be found in: gs://patient-reporter-manual-prod-1/"
+info "The report and the related log + json file can be found in gs://patient-reporter-manual-prod-1/:"
+gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
 ### upload report to NC
-upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report 2>&1 /dev/null
+upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
