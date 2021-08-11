@@ -3,11 +3,12 @@
 source message_functions || exit 1
 source lims_functions || exit 1
 
-sample=$1 && shift
 set=$1 && shift
 
-[[ -n "${sample}" ]] || die "No sample name provided. Exiting"
 [[ -n "${set}" ]] || die "No set provided. Exiting"
+
+barcode=$( echo "set" | cut -d"_" -f 4 )
+sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
@@ -31,10 +32,10 @@ fi
 set_url="gs://${bucket}/${set}"
 
 
-info "-- A report will be greated for ${sample} (${set}) from run bucket ${bucket} --"
+info "-- A report will be greated for ${sample} from run bucket ${bucket}/${set} --"
 
-if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | wc -l ) > 1 ]]; then
-    warn 'There already exist a patient report for this sample:'
+if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep '.pdf' | wc -l ) > 0 ]]; then
+    warn 'There already exists a patient report for this sample:'
     gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
     echo '[INPUT] Are you sure you want to continue with making a new report (it will likely be overwritten, except for a corrected report)? Please answer Y or N.'
     read answer
@@ -72,26 +73,26 @@ output_dir_report=${temp_folder_path}/new_report
 ### doid check (especifally important when rerun of protect)
 report_doid=$( get_doids_for_biopsy ${sample} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
-info "Checking primary tumor doid" &> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
+info "Checking primary tumor doid" &> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 if [[ ${protect_doid} == "" ]]; then
-    warn "Checking primary tumor doid: the doid of protect ${protect_doid} is not known" &>> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
+    warn "Checking primary tumor doid: the doid of protect ${protect_doid} is not known" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 elif [[ ${protect_doid} == ${report_doid} ]]; then
-    info "Checking primary tumor doid: the doid is equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
+    info "Checking primary tumor doid: the doid is equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 else
-    warn "Checking primary tumor doid: the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
+    warn "Checking primary tumor doid: the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 fi
 
 
 #### create report and add to log file
 #Normal report
-do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &>> ${temp_folder_path}/new_report/manual_patientreporter_${set}.log
+do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &>> ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log
 
-if [[ $( cat ${temp_folder_path}/new_report/manual_patientreporter_${set}.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
-    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
-    #cat ${temp_folder_path}/new_report/manual_patientreporter_${set}.log | grep "WARN\|ERROR"
-    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
+if [[ $( cat ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
+    #cat ${temp_folder_path}/new_report/manual_patientreporter_${sample}_${barcode}.log | grep "WARN\|ERROR"
+    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
 else
-    info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${set}.log"
+    info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/manual_patientreporter_${sample}_${barcode}.log"
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
@@ -103,5 +104,5 @@ rm -r ${temp_folder_path}/ 2>&1
 info "The report $report and the related log + json file can be found in: gs://patient-reporter-manual-prod-1/"
 
 ### upload report to NC
-info "The report $report will now be uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
-upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report 2>&1
+upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report 2>&1 /dev/null
+info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
