@@ -109,8 +109,7 @@ symlink_to_latest() {
 retrieve_file_from_nas() {
     local source_path=$1 && shift
     local target_dir=$1 && shift
-    info "  Syncing file 'nas:${nas_file_path}'"
-    sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -s "rsyncuser@nas:${source_path}" "${target_dir}" || die "Rsync FAILED (${source_path})"
+    copy_file_from_nas "${source_path}" "${target_dir}" || die "Copying from NAS FAILED (${source_path})"
 }
 
 dir_exists_and_is_writable() {

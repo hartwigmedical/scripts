@@ -25,5 +25,5 @@ nas_file_path=$1 && shift
 target_dir_path=$1 && shift
 
 # explicitly add group write and remove execution permission (--chmod)
-info "Copying file 'nas:${nas_file_path}' to local directory '${target_dir_path}'"
+info "  Copying file 'nas:${nas_file_path}' to local directory '${target_dir_path}'"
 sshpass -f <(cat <<< "${password}") rsync --chmod=ugo=rw,-X --protect-args "${nas_user}@nas:${nas_file_path}" "${target_dir_path}/"

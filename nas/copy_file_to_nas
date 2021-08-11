@@ -25,5 +25,5 @@ source_file_path=$1 && shift
 nas_dir_path=$1 && shift
 
 # explicitly pass on original file permissions (--perms)
-info "Copying local file '${source_file_path}' to 'nas:${nas_dir_path}/'"
+info "  Copying local file '${source_file_path}' to 'nas:${nas_dir_path}/'"
 sshpass -f <(cat <<< "${password}") rsync --perms --protect-args "${source_file_path}" "${nas_user}@nas:${nas_dir_path}/"
