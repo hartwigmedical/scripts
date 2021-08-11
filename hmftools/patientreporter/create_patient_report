@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+set_url="gs://${bucket}/${set}/"
+
+### Copy run data from bucket to local in vm
+
+temp_folder_path=$( pwd )"temp_cp_${set}"
+mkdir $temp_folder_path
+gsutil -m cp $set_url $temp_folder_path
+
+###
+
+mkdir ${temp_folder_path}/new_report
+output_dir_report=${temp_folder_path}/new_report
+
+#Normal report
+do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} &> manual_patientreporter_${set}.log
+
+gsutil cp ${temp_folder_path}/new_report* gs://patient-reporter-manual-prod-1/
