@@ -11,7 +11,6 @@ if [[ -z "${out_dir}" ]]; then
 fi
 
 ## setup main variables
-NAS_PW_LOC="/data/common/dbs/nas_credentials/rsyncuser"
 LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
 SYM_DIR="${LAB_DIR}/latest"
@@ -34,7 +33,6 @@ main() {
     dir_exists_and_is_writable "${out_dir}"
     dir_exists_and_is_writable "${LAB_DIR}"
     dir_exists_and_is_writable "${SYM_DIR}"
-    file_exists "${NAS_PW_LOC}"
 
     mkdir -p "${DAY_DIR}"
 
@@ -50,7 +48,7 @@ main() {
     for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
     for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
 
-    info "Syncing input files from NAS to DATASTORE (${DAY_DIR})"
+    info "Retrieving input files from NAS (${DAY_DIR})"
     for nas_file_path in "${NAS_FILES[@]}"; do
       retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
     done
@@ -116,11 +114,6 @@ dir_exists_and_is_writable() {
     dir_to_check=$1 && shift
     [[ -d "${dir_to_check}" ]] || die "Dir does not exist (${dir_to_check})"
     [[ -w "${dir_to_check}" ]] || die "Dir is not writable (${dir_to_check})"
-}
-
-file_exists() {
-    file_to_check=$1 && shift
-    [[ -f "${file_to_check}" ]] || die "File does not exist (${file_to_check})"
 }
 
 main
