@@ -76,7 +76,17 @@ fi
 mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
 
-### doid check (especifally important when rerun of protect)
+
+### rerun of protect (if applicable)
+echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
+read answer_protect
+echo $answer_protect
+if [[ $answer_protect == 'Y' ]]; then
+    run_protect_prod_on_vicc_gcp ${set} ${temp_folder_path}
+fi
+
+
+### doid check (specifally important when rerun of protect)
 report_doid=$( get_doids_for_biopsy ${sample} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 info "Checking primary tumor doid from protect vs that used in the report: " &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
@@ -99,12 +109,21 @@ else
     do_patient_report_for_run ${temp_folder_path} -output_dir_report ${output_dir_report} "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
+#check whether a report has been made
+if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    info "The report $report has been created"
+else
+    warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
+    rm -r ${temp_folder_path}/ 2>&1
+    warn "The script will end here. Exiting"
+    exit 1
+fi
 
 #### check log file of making the report
 if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
     warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
     #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
-    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 else
     info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 fi
@@ -113,7 +132,7 @@ fi
 gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
 gsutil -q cp -r ${temp_folder_path}/patient_report_prod_data/* gs://patient-reporter-manual-prod-1/
 report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-info "The report $report has been created"
+
 rm -r ${temp_folder_path}/ 2>&1
 info "The report and the related log + json file can be found in gs://patient-reporter-manual-prod-1/:"
 gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}

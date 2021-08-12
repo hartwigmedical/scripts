@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+set=$1 && shift
+temp_folder_path=$1 && shift
+
+if [[ -z "${set}" ]]; then
+    error "No run provided. Exiting"
+fi
+
+if [[ -z "${temp_folder_path}" ]]; then
+    error "No dir provided where run is temporarily stored. Exiting"
+fi
+
+barcode=$( echo "$set" | cut -d"_" -f 4 )
+sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
+
+### Download the privite resource having the SERVE actionability data for the diagnostic pipeline
+gcloud --project hmf-pipeline-prod-e45b00f2 source repos clone common-resources-private
+
+serve_actionability_dir=$( pwd )"common-resources-private/serve/37"
+
+output_dir=${temp_folder_path}/protect
+protect_jar=$(locate_prod_protect)
+
+info "Rerunning protect for $set (only in VM; pipeline data will not be overwritten)"
+do_run_protect ${temp_folder_path} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
+
+#### check log file of rerunning protect
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
+    warn "Rerunning protect gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
+    #cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|ERROR"
+else
+    info "No warnings/errors in rerunning protect. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
+fi

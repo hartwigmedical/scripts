@@ -114,12 +114,22 @@ else
     fi
 fi
 
+#check whether a report has been made
+if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    info "The report $report has been created"
+else
+    warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
+    rm -r ${temp_folder_path}/ 2>&1
+    warn "The script will end here. Exiting"
+    exit 1
+fi
+
 
 #### check log file of making the report
 if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR" | wc -l ) > 0 ]]; then
     warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
     #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR"
-    #info "For further inspection of the log file run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 else
     info "No warnings/errors in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 fi
