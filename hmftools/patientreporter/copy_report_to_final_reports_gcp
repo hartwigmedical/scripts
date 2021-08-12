@@ -23,7 +23,7 @@ if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .
     info "No report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
 else
     info "Report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
-    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | head -1 )
+    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | head -1 | cut -d"/" -f4 )
     report_type="pipeline"
 fi
 
@@ -33,14 +33,14 @@ if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .p
     if [[ "${report_type}" == "none" ]]; then
         warn "Report does not exist in ${url_bucket_report_pipline} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
         exit 1
-    else     
+    else
         info "Conclusion: the pipeline report ${report_name} was shared."
     fi
 else
     if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
-        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | head -1 )
+        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | head -1 | cut -d"/" -f4 )
     else
-        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | head -1 )
+        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | head -1 | cut -d"/" -f4 )
     fi
     info "Report available for ${sample_name} in manual bucket ${url_bucket_report_pipline}"
     info "Conclusion: the manual report ${report_name} was shared."
@@ -51,13 +51,13 @@ fi
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample_name}" | grep .pdf | wc -l ) > 0 ]]; then
      warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
      warn "See also the record in sharing db:"
-     cat ${sharing_db_file} | grep "${sample_name}"  
+     cat ${sharing_db_file} | grep "${sample_name}"
      exit 1
 fi
 
 ## copy report from pipeline/manual bucket to final
 
-if [[ "${report_type}" == "pipeline" ]]; then 
+if [[ "${report_type}" == "pipeline" ]]; then
     gsutil cp ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
 else
     gsutil cp ${url_bucket_report_manual}${report_name} ${url_bucket_report_final}${report_name}
@@ -66,7 +66,7 @@ fi
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) > 0 ]]; then
     info "Report moved to final archive ${url_bucket_report_final} on gcp."
     info "Final reports made available for ${sample_name}:"
-    gsutil ls ${url_bucket_report_final} | grep "${report_name}" 
+    gsutil ls ${url_bucket_report_final} | grep "${report_name}"
 else
     warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong."
     exit 1
