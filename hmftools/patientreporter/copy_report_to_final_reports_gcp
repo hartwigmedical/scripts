@@ -58,9 +58,9 @@ fi
 ## copy report from pipeline/manual bucket to final
 
 if [[ "${report_type}" == "pipeline" ]]; then
-    gsutil cp ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
+    gsutil -q cp ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
 else
-    gsutil cp ${url_bucket_report_manual}${report_name} ${url_bucket_report_final}${report_name}
+    gsutil -q cp ${url_bucket_report_manual}${report_name} ${url_bucket_report_final}${report_name}
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) > 0 ]]; then
