@@ -2,25 +2,24 @@
 
 source message_functions || exit 1
 
-samplesheet_path=$1
+samplesheet_url=$1
 task_name="flowcell sample check"
 
 LOG_OUT_LOC="/data/ops/recurrent/flowcell_sample_checks"
 NAS_TARGET_DIR="overviews/flowcellsamplechecks"
 NAS_TARGET_LOC="/volume1/web/${NAS_TARGET_DIR}"
-NAS_PW_LOC="/data/common/dbs/nas_credentials/rsyncuser"
 
-if [[ -z "$samplesheet_path" ]]; then
-    info "Run with: $(basename $0) /path/to/SampleSheet.csv"
+if [[ -z "$samplesheet_url" ]]; then
+    info "Run with: $(basename "$0") gs://path/to/SampleSheet.csv"
     exit 1
 fi
 
 main() {
-    info "Starting with ${task_name} for samplesheet ${samplesheet_path}"
-    [[ -f "$samplesheet_path" ]] || die "Provided SampleSheet does not exist ($samplesheet_path)"
-    fc_dir_name=$(basename "${samplesheet_path}" | sed 's#_SampleSheet.csv##')
+    info "Starting with ${task_name} for samplesheet ${samplesheet_url}"
+    samplesheet_content=$(gsutil cat "${samplesheet_url}") || die "Unable to read sheet (${samplesheet_url})"
+
+    fc_dir_name=$(basename "${samplesheet_url}" | sed 's#_SampleSheet.csv##')
     fc_fcid=${fc_dir_name: -9}
-    #fc_date=${fc_dir_name:0:6}
     info "Searching api for flowcell with flowcell_id ${fc_fcid}"
     fc_json=$(hmf_api_get "flowcells?flowcell_id=${fc_fcid}")
     fc_count=$(jq 'length' <<< "${fc_json}")
@@ -48,10 +47,10 @@ main() {
     result reason submission barcode name required measured sample_info run_info > "${out_log_path}"
     
     ## find index of Sample_ID column
-    idx_id=$(grep Sample_ID "${samplesheet_path}" | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
+    idx_id=$(echo "${samplesheet_content}" | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
 
     ## collect all barcodes from SampleSheet
-    mapfile -t barcodes < <(sed -e '1,/Sample_ID/d' "${samplesheet_path}" | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq)
+    mapfile -t barcodes < <(echo "${samplesheet_content}" | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq)
     barcode_count=${#barcodes[@]}
 
     info "Checking samples for flowcell ${fc_name}"
@@ -96,7 +95,7 @@ main() {
 
     done | sort >> "${out_log_path}"
     not_ok_count=$(awk '$1 != "OK"' "${out_log_path}" | grep -vc ^#)
-    info "  SSheet: ${samplesheet_path} (${barcode_count} samples)"
+    info "  SSheet: ${samplesheet_url} (${barcode_count} samples)"
     info "  Output: ${out_log_path}"
     info "  Report: https://hmf-nas.synology.me/${NAS_TARGET_DIR}/${out_log_name}"
     final_msg="Found $not_ok_count samples that are not OK for flowcell ${fc_name}"
@@ -105,7 +104,7 @@ main() {
     else
         info "  ${final_msg}"
     fi
-    sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -ah "${out_log_path}" "rsyncuser@nas:${NAS_TARGET_LOC}/"
+    copy_file_to_nas "${out_log_path}" "${NAS_TARGET_LOC}"
     info "Finished with ${task_name} for ${fc_name}"
 }
 

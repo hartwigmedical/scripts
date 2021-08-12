@@ -2,27 +2,28 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source locate_gcp_files || exit 1
 
-dates=("$@") # YYMMDD
-dates_count=${#dates[@]}
+current_date=$(date "+%y%m%d")
+sheet_dates=("$@") # in YYMMDD format
+dates_count=${#sheet_dates[@]}
 logs_dir="/data/ops/recurrent/flowcell_sample_checks/"
-samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
+samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find the samplesheets dir"
 
 ## only proceed if input
 if [[ "${dates_count}" -lt 1 ]]; then
-    echo "Usage: $(basename $0) <date1> [<date2> <dateN>]"
-    echo "   Eg: $(basename $0) 210101 210102 210104"
+    echo "Usage: $(basename "$0") <date1> [<date2> <dateN>]"
+    echo "   Eg: $(basename "$0") 210101 210102 210104"
     exit 1
 fi
 
-for date in "${dates[@]}"; do
-    info "----- ${date} -----"
-    find "${samplesheets_dir}" -name "${date}_*_SampleSheet.csv" | while read -r sheet; do
+for date in "${sheet_dates[@]}"; do
+    info "Searching for ${samplesheets_bucket}${date}_*_SampleSheet.csv"
+    gsutil ls "${samplesheets_bucket}${date}_*_SampleSheet.csv" | while read -r sheet; do
         api_check_samples_of_one_flowcell "${sheet}"
     done
 done
 
 ## Print all samples that are not ok
-YYMMDD=$(date "+%y%m%d")
-info "Grepping all log files from today (${YYMMDD}) for samples that are not OK:"
-cat "${logs_dir}/${YYMMDD}_flowcell_sample_check_"* | grep -v ^# | grep -v ^OK | tr "\t" " " | sort | uniq
+info "Grepping all log files from today (${current_date}) for samples that are not OK:"
+cat "${logs_dir}/${current_date}_flowcell_sample_check_"* | grep -v ^# | grep -v ^OK | tr "\t" " " | sort | uniq
