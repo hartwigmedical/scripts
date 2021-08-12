@@ -34,8 +34,8 @@ fi
 
 set_url="gs://${bucket}/${set}"
 
-
-info "- A fail report will be created for ${sample} from run bucket gs://${bucket}/${set}/ - -"
+echo ""
+echo "--- A fail report will be created for ${sample} from run bucket gs://${bucket}/${set}/ ---"
 if [[ ${correction_comments} != "" ]]; then
     echo "[IMPORTANT] this will be an correction report!"
     echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
@@ -145,3 +145,4 @@ gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 ### upload report to NC
 upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+echo ""

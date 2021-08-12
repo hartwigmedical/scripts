@@ -139,3 +139,4 @@ gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 ### upload report to NC
 upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+echo ""

@@ -105,3 +105,5 @@ else
         warn "No new record added."
     fi
 fi
+
+echo ""
