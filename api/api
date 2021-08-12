@@ -75,7 +75,7 @@ fi
 
 # Print results
 if [[ "${output_json}" == "TRUE" ]]; then
-    jq <<< "${json_result}"
+    echo "${json_result}"
 elif [[ "${class}" == "fastq" ]]; then
     printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
     jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
