@@ -40,8 +40,8 @@ info ""
 
 info "Commands for further inspection:"
 info "  query_lims.pl -type samples -filter submission=${submission}"
-info "  query_api.pl -type samples -filter submission=${submission}"
-info "  query_api.pl -type runs -filter name=${submission}"
+info "  api samples ${submission} submission"
+info "  api runs ${submission} submission"
 info ""
 
 ## Sanity checks
@@ -89,6 +89,6 @@ if [[ "${warnings_found}" == "TRUE" ]]; then
     warn "Warnings encountered during check. Check these first!"
 else
     info "If all OK then continue with gather step:"
-    info "  gather_submission ${submission}"
-    info ""
+    echo " gather_submission ${submission}"
+    echo ""
 fi
