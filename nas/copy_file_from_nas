@@ -23,4 +23,4 @@ if [[ -d "$target" && ! "$target" =~ \/$ ]]; then
 fi
 
 info "  Syncing 'nas:${source}' to '${target}'"
-sshpass -f <(cat <<< "${password}") rsync --chmod=ugo=rw --protect-args "rsyncuser@nas:${source}" "${target}"
+sshpass -p "${password}" rsync --chmod=ugo=rw --protect-args "rsyncuser@nas:${source}" "${target}"

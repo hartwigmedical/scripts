@@ -21,4 +21,4 @@ target=$1 && shift
 [[ -f "${source}" ]] || die "Source is not a file (perhaps you want the sync_dir_to_nas instead)."
 
 info "  Syncing local file '${source}' to 'nas:${target}'"
-sshpass -f <(cat <<< "${password}") rsync --perms --protect-args "${source}" "rsyncuser@nas:${target}"
+sshpass -p "${password}" rsync --perms --protect-args "${source}" "rsyncuser@nas:${target}"

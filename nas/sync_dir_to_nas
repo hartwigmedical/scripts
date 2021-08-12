@@ -22,4 +22,4 @@ target_dir=$1 && shift
 [[ -d "${source_dir}" ]] || die "Source dir is not a directory (${source_dir})"
 
 info "  Syncing 'nas:${source_dir}' to '${target_dir}'"
-sshpass -f <(cat <<< "${password}") rsync -a --protect-args "rsyncuser@nas:${source_dir}" "${target_dir}"
+sshpass -p "${password}" rsync -a --protect-args "rsyncuser@nas:${source_dir}" "${target_dir}"
