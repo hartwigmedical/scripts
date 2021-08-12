@@ -1,29 +1,26 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source secrets_functions || exit 1
 
-nas_user="rsyncuser"
-creds_name="nas-credentials-rsyncuser"
-
-# TODO: once datastore-out is done remove the option to get password from file
-if [[ "$(hostname)" == "datastore" ]]; then
-    password=$(cat "/data/common/dbs/nas_credentials/rsyncuser")
-else
-    password=$(gcloud secrets versions access "latest" --secret="${creds_name}" --project=hmf-secrets)
-fi
-[[ -n "${password}" ]] || die "Unable to retrieve password"
+password=$(get_nas_rsyncuser_credentials)
+[[ -n "${password}" ]] || die "Was somehow unable to retrieve password"
 
 if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $(basename "$0") \${remote-nas-file-path} \${local-target-path}"
-    echo " Exmpl: $(basename "$0") '/volume1/machines/BFX/test file.txt' /local/dir/"
+    echo " Usage: $(basename "$0") \${nas-source-path} \${local-target-path}"
+    echo " Exmpl: $(basename "$0") '/volume1/web/playground/test/test-file.txt' /local/dir/"
+    echo "        $(basename "$0") '/volume1/web/playground/test/test-file.txt' /local/dir/new-file-name.txt"
     echo "---"
     exit 1
 fi
 
-nas_file_path=$1 && shift
-target_dir_path=$1 && shift
+source=$1 && shift
+target=$1 && shift
 
-# explicitly add group write and remove execution permission (--chmod)
-info "  Copying file 'nas:${nas_file_path}' to local directory '${target_dir_path}'"
-sshpass -f <(cat <<< "${password}") rsync --chmod=ugo=rw,-X --protect-args "${nas_user}@nas:${nas_file_path}" "${target_dir_path}/"
+if [[ -d "$target" && ! "$target" =~ \/$ ]]; then
+    target="${target}/"
+fi
+
+info "  Syncing 'nas:${source}' to '${target}'"
+sshpass -f <(cat <<< "${password}") rsync --chmod=ugo=rw --protect-args "rsyncuser@nas:${source}" "${target}"

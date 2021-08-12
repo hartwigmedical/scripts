@@ -1,29 +1,24 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source secrets_functions || exit 1
 
-nas_user="rsyncuser"
-creds_name="nas-credentials-rsyncuser"
-
-# TODO: once datastore-out is done remove the option to get password from file
-if [[ "$(hostname)" == "datastore" ]]; then
-    password=$(cat "/data/common/dbs/nas_credentials/rsyncuser")
-else
-    password=$(gcloud secrets versions access "latest" --secret="${creds_name}" --project=hmf-secrets)
-fi
-[[ -n "${password}" ]] || die "Unable to retrieve password"
+password=$(get_nas_rsyncuser_credentials)
+[[ -n "${password}" ]] || die "Was somehow unable to retrieve password"
 
 if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $(basename "$0") \${local-file-path} \${nas-dir-path}"
-    echo " Exmpl: $(basename "$0") /path/to/file /volume1/web/playground"
+    echo " Usage: $(basename "$0") \${local-source-path} \${target-nas-path}"
+    echo " Exmpl: $(basename "$0") /path/to/file /volume1/web/playground/test/"
+    echo "        $(basename "$0") /path/to/file /volume1/web/playground/test/new-file-name"
     echo "---"
     exit 1
 fi
 
-source_file_path=$1 && shift
-nas_dir_path=$1 && shift
+source=$1 && shift
+target=$1 && shift
 
-# explicitly pass on original file permissions (--perms)
-info "  Copying local file '${source_file_path}' to 'nas:${nas_dir_path}/'"
-sshpass -f <(cat <<< "${password}") rsync --perms --protect-args "${source_file_path}" "${nas_user}@nas:${nas_dir_path}/"
+[[ -f "${source}" ]] || die "Source is not a file (perhaps you want the sync_dir_to_nas instead)."
+
+info "  Syncing local file '${source}' to 'nas:${target}'"
+sshpass -f <(cat <<< "${password}") rsync --perms --protect-args "${source}" "rsyncuser@nas:${target}"
