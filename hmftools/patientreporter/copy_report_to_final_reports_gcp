@@ -64,8 +64,12 @@ else
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) > 0 ]]; then
-    info "Report moved to final archive ${url_bucket_report_final} on gcp."
-    info "Final reports made available for ${sample_name}:"
+    if [[ "${report_type}" == "pipeline" ]]; then
+        info "Report copied from ${url_bucket_report_pipline}${report_name} to final archive ${url_bucket_report_final} on gcp."
+    else
+        info "Report copied from ${url_bucket_report_manual}${report_name} to final archive ${url_bucket_report_final} on gcp."
+    fi
+    info "Final reports stored for ${sample_name}:"
     gsutil ls ${url_bucket_report_final} | grep "${report_name}"
 else
     warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong."
@@ -96,7 +100,7 @@ else
          info "Reports shared registration for ${sample_name}:"
          cat ${sharing_db_file}  | grep ${sample_name}
     else
-        warn "That report ${report_name} is already in the registration file ${sharing_db_file}:"
+        warn "The report ${report_name} is already in the registration file ${sharing_db_file}:"
         cat ${sharing_db_file}  | grep ${sample_name}
         warn "No new record added."
     fi
