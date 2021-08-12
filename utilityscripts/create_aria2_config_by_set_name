@@ -20,14 +20,14 @@ if [[ -z "${set_name}" ]]; then
 fi
 
 credentials_dir="/data/common/dbs/gcp_credentials"
-key_file="${credentials_dir}/hmf-ops"
-project="hmf-database"
-account="hmf-ops"
-service_account="${account}@${project}.iam.gserviceaccount.com"
+key_file="${credentials_dir}/hmf-share"
+billing_project="hmf-share"
+service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
 
 info "Start of ${script_name}"
 info "Switching to service account ${service_account}"
-msg=$(gcloud config set account "${service_account}" 2>&1)
+# The "Updated property [core/account]." response is send to stderr: capture and print as info msg
+msg=$(gcloud config set account "${service_account}" 2>&1) || die "Unable to switch to service account"
 info "${msg}"
 
 function main() {
@@ -258,10 +258,10 @@ create_run_specific_files () {
         fi
 
         ## sanity check on existence of file in bucket
-        gsutil -u "${project}" -q stat "${gs_url}"
+        gsutil -q stat "${gs_url}"
         if [[ $? -eq 1 ]]; then
             err=$?
-            msg=$(gsutil -u "${project}" ls "${gs_url}" 2>&1)
+            msg=$(gsutil ls "${gs_url}" 2>&1)
             warn "Unable to locate file in bucket (ErrCode=${err} ErrMsg='${msg}' URL='${gs_url}')"
             die "Not all files are present at expected location in bucket. Exiting."
         fi
@@ -273,7 +273,7 @@ create_run_specific_files () {
         printf '%s  %s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
         ## get pre-signed URL (prints a header and multiple fields)
-        url=$(gsutil signurl -r europe-west4 -b "${project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
+        url=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
 
         ## final sanity checks
         [[ "${url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${url})"

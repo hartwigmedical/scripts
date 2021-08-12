@@ -64,7 +64,7 @@ info "Action: Check one URL manually in browser"
 grep https "${out_config}" | tail -1
 
 info "Action: If all OK you can upload final config to Nextcloud with:"
-info " upload_files_to_nextcloud_research ${out_config}"
+echo " upload_files_to_nextcloud_research ${out_config}"
 
 if [[ "${non_info_count}" -gt 0 ]]; then
     warn "Non-info lines were encountered in log. Proceed with caution!!"

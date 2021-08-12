@@ -110,11 +110,11 @@ info " cat ${runs_file}"
 echo ""
 
 info "And/or get the aria2 download config:"
-info " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
+echo " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
 echo ""
 
 info "And/or print info for (PDF) report:"
-info " cat ${repo_file}"
+echo " cat ${repo_file}"
 echo ""
 
 ## warn if not potentially complete
