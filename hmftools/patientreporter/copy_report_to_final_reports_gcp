@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample_name=$1 && shift
+
+[[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
+
+reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
+sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
+
+url_bucket_report_pipline="gs://patient-reporter-prod-1/"
+url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
+url_bucket_report_final="gs://patient-reporter-final-prod-1/"
+
+echo ""
+echo "--- Report for ${sample_name} has been shared (again; in case of correction) - final processing will start: ---"
+
+report_type="none"
+
+## check whether report exists in pipeline bucket
+if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+    info "No report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
+else
+    info "Report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
+    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | head -1 )
+    report_type="pipeline"
+fi
+
+## check whether report exists in manual bucket
+if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
+    if [[ "${report_type}" == "none" ]]; then
+        warn "Report does not exist in ${url_bucket_report_pipline} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
+        exit 1
+    else     
+        info "Conclusion: the pipeline report ${report_name} was shared."
+    fi
+else
+    if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | head -1 )
+    else
+        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | head -1 )
+    fi
+    info "Report available for ${sample_name} in manual bucket ${url_bucket_report_pipline}"
+    info "Conclusion: the manual report ${report_name} was shared."
+    report_type="manual"
+fi
+
+## check wether report already exists in final bucket
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample_name}" | grep .pdf | wc -l ) > 0 ]]; then
+     warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+     warn "See also the record in sharing db:"
+     cat ${sharing_db_file} | grep "${sample_name}"  
+     exit 1
+fi
+
+## copy report from pipeline/manual bucket to final
+
+if [[ "${report_type}" == "pipeline" ]]; then 
+    gsutil cp ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
+else
+    gsutil cp ${url_bucket_report_manual}${report_name} ${url_bucket_report_final}${report_name}
+fi
+
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) > 0 ]]; then
+    info "Report moved to final archive ${url_bucket_report_final} on gcp."
+    info "Final reports made available for ${sample_name}:"
+    gsutil ls ${url_bucket_report_final} | grep "${report_name}" 
+else
+    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong."
+    exit 1
+fi
+
+reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} )
+reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | awk '{ print $4 }' )
+current_date=$(date '+%d-%b-%Y')
+reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
+
+
+if [[ ${report_name} == *"corrected"* ]]; then
+    echo ${reporting_info} >> ${sharing_db_file}
+    info "A record has been added for ${sample_name} to ${sharing_db_file}"
+    info "Reports shared for ${sample_name}:"
+    cat ${sharing_db_file}  | grep ${sample_name}
+else
+    if [[ $( cat ${sharing_db_file}  | grep ${sample_name} | wc -l ) == 0 ]]; then
+        echo ${reporting_info} >> ${sharing_db_file}
+         info "A record has been added for ${sample_name} to ${sharing_db_file}"
+         info "Reports shared for ${sample_name}:"
+         cat ${sharing_db_file}  | grep ${sample_name}
+    else
+        warn "A report has already been shared for ${sample_name}, see ${sharing_db_file}:"
+        cat ${sharing_db_file}  | grep ${sample_name}
+    fi
+fi

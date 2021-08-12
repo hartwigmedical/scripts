@@ -34,7 +34,7 @@ fi
 set_url="gs://${bucket}/${set}"
 
 
-info "- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/ - -"
+echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/ ---"
 if [[ ${correction_comments} != "" ]]; then
     echo "[IMPORTANT] this will be an correction report!"
     echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
