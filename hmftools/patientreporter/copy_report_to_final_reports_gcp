@@ -72,8 +72,14 @@ else
     exit 1
 fi
 
-reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} )
-reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | awk '{ print $4 }' )
+if [[ ${report_name} == *"corrected"* ]]; then
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} | grep correction )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | grep correction | awk '{ print $4 }' )
+else
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | awk '{ print $4 }' )
+fi
+
 current_date=$(date '+%d-%b-%Y')
 reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
 
@@ -81,16 +87,17 @@ reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_dat
 if [[ ${report_name} == *"corrected"* ]]; then
     echo ${reporting_info} >> ${sharing_db_file}
     info "A record has been added for ${sample_name} to ${sharing_db_file}"
-    info "Reports shared for ${sample_name}:"
+    info "Reports shared registration for ${sample_name}:"
     cat ${sharing_db_file}  | grep ${sample_name}
 else
     if [[ $( cat ${sharing_db_file}  | grep ${sample_name} | wc -l ) == 0 ]]; then
         echo ${reporting_info} >> ${sharing_db_file}
          info "A record has been added for ${sample_name} to ${sharing_db_file}"
-         info "Reports shared for ${sample_name}:"
+         info "Reports shared registration for ${sample_name}:"
          cat ${sharing_db_file}  | grep ${sample_name}
     else
-        warn "A report has already been shared for ${sample_name}, see ${sharing_db_file}:"
+        warn "That report ${report_name} is already in the registration file ${sharing_db_file}:"
         cat ${sharing_db_file}  | grep ${sample_name}
+        warn "No new record added."
     fi
 fi
