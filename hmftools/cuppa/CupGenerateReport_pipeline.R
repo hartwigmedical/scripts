@@ -62,7 +62,6 @@ rowIndex <- data.frame(as.numeric(as.character(rownames(featureOrder))))
 colnames(rowIndex) <- "FeatureIndex"
 featureOrder <- cbind(featureOrder, rowIndex)
 cupFeatures <- merge(cupFeatures, featureOrder %>% select(Value, FeatureIndex), by = 'Value', all.x = T)
-cupFeatures <- cupFeatures %>% mutate(DataLabel = Value)
 
 cupOtherData <- cupPlotData %>%
   filter(Category != 'CLASSIFIER' &
@@ -139,20 +138,18 @@ summaryHeight <- 205
 genderHeight <- 45
 sigHeight <- 110
 percHeight <- 90
-disclaimer1Height <- 12
-disclaimer2Height <- 14
 
 if (featureCount > featureLimit)
   {
   separateFeaturePlot <- T
   print(sprintf('features(%d) print separately', featureCount))
-  plotHeights <- c(titleHeight, disclaimer1Height, disclaimer2Height, summaryHeight, genderHeight, sigHeight, percHeight)
+  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight)
 } else
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
   print(sprintf('features(%d) featureHeight(%d)', featureCount, featureHeight))
-  plotHeights <- c(titleHeight, disclaimer1Height, disclaimer2Height, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
+  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
 pdf(file = outputFile, height = 14, width = 20)
@@ -160,12 +157,10 @@ pdf(file = outputFile, height = 14, width = 20)
 par(mar = c(1, 1, 1, 1))
 
 title <- textGrob(paste0(sampleId, ' CUP Report'), gp = gpar(fontface = "bold", fontsize = 16))
-disclaimer1 <- textGrob(paste('All results and data described in this report are for research-use-only and have not been generated using a clinically validated and controlled procedure.'), gp = gpar(fontface = "bold", fontsize = 13))
-disclaimer2 <- textGrob(paste('These results should not be used for clinical decision making.'), gp = gpar(fontface = "bold", fontsize = 13))
 
 if (separateFeaturePlot)
   {
-  grid.arrange(plot_grid(title, disclaimer1, disclaimer2, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+  grid.arrange(plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 7, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
   featurePlot <- featurePlot +
@@ -175,7 +170,7 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 } else
   {
-  plot_grid(title, disclaimer1, disclaimer2, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+  plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
             ncol = 1, nrow = 8, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
