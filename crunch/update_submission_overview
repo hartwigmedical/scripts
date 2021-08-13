@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 YYMMDD=$(date '+%y%m%d')
 task_id="updateSubmissionOverview"
@@ -12,19 +13,18 @@ nas_reports_source="/volume1/machines/BFX/dataReports"
 nas_reports_target="/volume1/web/overviews/submissions/pdf_reports"
  ds_reports_target="/data/data_archive/overviews/submissions/pdf_reports"
 
-pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
+password=$(get_nas_rsyncuser_credentials)
 
 ## Sanity checks
-if [[ ! -d "${ds_src_dir}" ]]; then
-    error "INPUT DIR does not exist (${ds_src_dir})"
-fi
+[[ -n "${password}" ]] || die "Was somehow unable to retrieve password"
+[[ -d "${ds_src_dir}" ]] || die "INPUT DIR does not exist (${ds_src_dir})"
 
 info "Starting task ${task_id} ($YYMMDD)"
 info " Finding all submissions in ${ds_src_dir}"
 dirs_to_sync=$(find ${ds_src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
 info " Syncing logs from datastore to NAS (to ${nas_tgt_dir})"
-sshpass -p "$(cat ${pwd_loc})" rsync -ah \
+sshpass -p "$password" rsync -ah \
   --omit-dir-times \
   --exclude "*/data/" \
   --include "*/" \
@@ -35,7 +35,7 @@ sshpass -p "$(cat ${pwd_loc})" rsync -ah \
   "rsyncuser@nas:${nas_tgt_dir}"
 
 info " Syncing pdfs from NAS share to Datastore (to ${ds_reports_target})"
-sshpass -p "$(cat ${pwd_loc})" rsync -trh \
+sshpass -p "$password" rsync -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
@@ -43,7 +43,7 @@ sshpass -p "$(cat ${pwd_loc})" rsync -trh \
   "${ds_reports_target}/"
 
 info " Syncing back pdfs from Datastore to NAS (to ${nas_reports_target})"
-sshpass -p "$(cat ${pwd_loc})" rsync -trh \
+sshpass -p "$password" rsync -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
