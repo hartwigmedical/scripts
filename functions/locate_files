@@ -194,7 +194,11 @@ locate_pilot_datarequest() {
 }
 
 locate_dsync() {
-	echo ${base_path}/tools/dsync/1.0/dsync.jar
+    echo ${base_path}/tools/dsync/1.0/dsync.jar
+}
+
+locate_run_contexts_writer() {
+    echo ${base_path}/tools/run_contexts_writer/clinical-db-loader.jar
 }
 
 ############################# PIPELINE VERSION #################################
