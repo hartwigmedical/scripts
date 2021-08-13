@@ -8,8 +8,8 @@ source ${HOME}/.bashrc
 source message_functions || exit 1
 source locate_files || exit 1
 
-info "Archiving Sequencer Archive"
-do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3300
+info "Archiving Sequencer Archive no longer possible: removed as part of datastore-out (for new sequencer archive location ask Stef)"
+#do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3300
 
 info "Archiving Patient Reports"
 do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 6580
@@ -19,15 +19,15 @@ do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 110
 info "Archiving Data Requests"
 do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 145
 
-info "Archiving Submissions"
-do_archive_directory_to_gcp /data/submissions submissions 950
+info "Archiving Submissions no longer possible: removed as part of datastore-out (see also gs://hmf-ops-data)"
+#do_archive_directory_to_gcp /data/submissions submissions 950
 
-info "Archiving Shallow Seq Pipelines"
-do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 1340
+info "Archiving Shallow Seq Pipelines no longer possible: removed as part of datastore-out"
+#do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 1340
 
-info "Archiving SnpCheck Data"
-do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
+info "Archiving SnpCheck Data no longer possible: removed as part of datastore-out (see also gs://hmf-ops-data)"
+#do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
-info "Archiving Samplesheets"
-samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
-do_archive_directory_to_gcp "${samplesheets_dir}" samplesheets 3340
+info "Archiving Samplesheets no longer possible: removed as part of datastore-out"
+#samplesheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
+#do_archive_directory_to_gcp "${samplesheets_dir}" samplesheets 3340
