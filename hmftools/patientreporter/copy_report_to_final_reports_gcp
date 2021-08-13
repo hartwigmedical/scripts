@@ -34,7 +34,7 @@ if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .p
         warn "Report does not exist in ${url_bucket_report_pipline} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
         exit 1
     else
-        info "Conclusion: the pipeline report ${report_name} was shared."
+        info "Conclusion: the pipeline report ${report_name} will be finalized."
     fi
 else
     if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
@@ -43,7 +43,7 @@ else
         report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | head -1 | cut -d"/" -f4 )
     fi
     info "Report available for ${sample_name} in manual bucket ${url_bucket_report_pipline}"
-    info "Conclusion: the manual report ${report_name} was shared."
+    info "Conclusion: the manual report ${report_name} will be finalized (goes over the pipeline report)."
     report_type="manual"
 fi
 

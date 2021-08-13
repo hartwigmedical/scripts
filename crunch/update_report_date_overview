@@ -6,7 +6,6 @@ source message_functions || exit 1
 task_id="updateReportingOverview"
 rep_src_file=$(locate_reporting_db_tsv)
 nas_loc="/volume1/web/overviews/reporting"
-pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
 
 ## Sanity check
 if [[ ! -f "${rep_src_file}" ]]; then 
@@ -16,7 +15,7 @@ fi
 ## Syncing source file twice (second time as txt which can be read directly in browser)
 info "START with ${task_id} $(date '+%y%m%d')"
 info " Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
-sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/"
-sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/reporting_db.txt"
+copy_file_to_nas "${rep_src_file}" "${nas_loc}/"
+copy_file_to_nas "${rep_src_file}" "${nas_loc}/reporting_db.txt"
 info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
 info "DONE with ${task_id}"
