@@ -17,11 +17,11 @@ if (length(args) < 3)
   stop()
 }
 
-sampleId = args[1]
-inputDir = args[2]
-outputDir = args[3]
+sampleId <- args[1]
+inputDir <- args[2]
+outputDir <- args[3]
 
-cupDataFile = paste0(inputDir, sampleId, '.cup.data.csv')
+cupDataFile <- paste0(inputDir, sampleId, '.cup.data.csv')
 
 if (!file.exists(cupDataFile))
   {
@@ -29,7 +29,7 @@ if (!file.exists(cupDataFile))
   stop()
 }
 
-cupSampleResults = read.csv(cupDataFile)
+cupSampleResults <- read.csv(cupDataFile)
 
 print(sprintf('sample(%s) loaded %d results', sampleId, nrow(cupSampleResults)))
 
@@ -164,7 +164,7 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
-  featurePlot = featurePlot +
+  featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
     theme(axis.text.x.top = element_text(angle = 90, hjust = 0, size = 10, face = 'bold', family = font))
 
