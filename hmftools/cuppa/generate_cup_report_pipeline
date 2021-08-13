@@ -12,4 +12,4 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 cuppa_dir=${run_dir}/cuppa/
 
-Rscript CupGenerateReport_pipeline.R ${tumor_sample} ${cuppa_dir} ${cuppa_dir}
+Rscript $(dirname $0)/CupGenerateReport_pipeline.R ${tumor_sample} ${cuppa_dir} ${cuppa_dir}
