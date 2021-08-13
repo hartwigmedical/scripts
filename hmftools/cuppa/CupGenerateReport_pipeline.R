@@ -161,7 +161,7 @@ title <- textGrob(paste0(sampleId, ' CUP Report'), gp = gpar(fontface = "bold", 
 if (separateFeaturePlot)
   {
   grid.arrange(plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
-                         ncol = 1, nrow = 7, rel_heights = plotHeights, align = 'v', axis = 'l'))
+                         ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -171,7 +171,7 @@ if (separateFeaturePlot)
 } else
   {
   plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
-            ncol = 1, nrow = 8, rel_heights = plotHeights, align = 'v', axis = 'l')
+            ncol = 1, nrow = 6, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
 dev.off()
