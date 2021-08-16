@@ -147,7 +147,6 @@ if (featureCount > featureLimit)
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
-  print(sprintf('Features(%d) FeatureHeight(%d)', featureCount, featureHeight))
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
