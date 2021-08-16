@@ -18,10 +18,9 @@ if (length(args) < 3)
 }
 
 sampleId <- args[1]
-inputDir <- args[2]
-outputDir <- args[3]
+cuppaDir <- args[2]
 
-cupDataFile <- paste0(inputDir, sampleId, '.cup.data.csv')
+cupDataFile <- paste0(cuppaDir, sampleId, '.cup.data.csv')
 
 if (!file.exists(cupDataFile))
   {
@@ -129,7 +128,7 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   scale_fill_manual(values = prevColours, limits = names(prevColours)) +
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
-outputFile <- paste0(outputDir, sampleId, '_cup_report.pdf')
+outputFile <- paste0(cuppaDir, sampleId, '_cup_report.png')
 print(paste0("writing output to file: ", outputFile))
 
 featureLimit <- 15
@@ -153,7 +152,7 @@ if (featureCount > featureLimit)
   plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
-pdf(file = outputFile, height = 14, width = 20)
+png(file = outputFile, height = 14, width = 20)
 
 par(mar = c(1, 1, 1, 1))
 
