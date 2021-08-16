@@ -11,9 +11,9 @@ library(gtable)
 args <- commandArgs(trailingOnly = TRUE)
 print(args)
 
-if (length(args) < 3)
+if (length(args) < 2)
   {
-  print("Requires arguments 1=SampleId, 2=Input directory, 3=Output directory")
+  print("Requires arguments 1=SampleId, 2=Cuppa directory")
   stop()
 }
 
