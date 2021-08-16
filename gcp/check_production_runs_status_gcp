@@ -175,7 +175,7 @@ main () {
                  error="no_report_error"
             fi
             #
-            health_error=$( checks_validated_run ${set_name} ${sample_name} 2>&1 )
+            health_error=$( checks_validated_run ${set_name} 2>&1 )
             if [[ "$health_error" == *"WARN"* ]]; then
                 error="other_health_error "
             fi
@@ -200,7 +200,7 @@ main () {
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} ${sample_name} exclude_checks
+                checks_validated_run ${set_name} exclude_checks
                 sql_checks_reporting ${sample_name}
                 report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
                 report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
@@ -226,7 +226,7 @@ main () {
                  db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} ${sample_name} exclude_checks
+                checks_validated_run ${set_name} exclude_checks
                 sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
                 echo " Action 1 - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
@@ -250,7 +250,7 @@ main () {
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} ${sample_name}
+                checks_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
                 echo " Action 1 - solve the doid warning by updating the API and rerunning protect: WIP "
                 echo " Action 2 - create a new report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
@@ -274,7 +274,7 @@ main () {
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but there is a other warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} ${sample_name}
+                checks_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
                 echo "---------"
              fi

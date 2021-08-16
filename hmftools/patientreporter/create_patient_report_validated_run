@@ -8,10 +8,6 @@ correction_comments=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
-
-barcode=$( echo "$set" | cut -d"_" -f 4 )
-sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
-
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
@@ -21,8 +17,11 @@ runs_json=$(
   '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
-run_json=$(jq '.[-1]' <<< "${runs_json}")
-bucket=$(jq -r '.bucket' <<< "${run_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+pipeline_version=$( echo $runs_json | jq -r '.[].version' )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode=$( hmf_api_get "samples?name=COREDB010110T" | jq -r .[].barcode )
+
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -34,7 +33,7 @@ fi
 set_url="gs://${bucket}/${set}"
 
 echo ""
-echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/ ---"
+echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"
 if [[ ${correction_comments} != "" ]]; then
     echo "[IMPORTANT] this will be an correction report!"
     echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
@@ -80,7 +79,7 @@ output_dir_report=${temp_folder_path}/new_report
 echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
 read answer_protect
 if [[ $answer_protect == 'Y' ]]; then
-    run_protect_prod_on_vicc_gcp ${set} ${temp_folder_path}
+    run_protect_prod_on_vicc_gcp ${set} ${barcode} ${sample} ${pipeline_version} ${temp_folder_path}
 fi
 
 

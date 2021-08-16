@@ -3,7 +3,8 @@
 source locate_files || exit 1
 
 patient_db_jar=$(locate_prod_patient_db)
-runs_dir=/data/cpct/runs
+create_run_contexts_json
+runs_json=./run_contexts.json
 pipeline_version_file="pipeline.version"
 reporting_db_tsv=$(locate_reporting_db_tsv)
 lims_dir=/data/ops/lims/prod
@@ -11,7 +12,7 @@ lims_dir=/data/ops/lims/prod
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
-    -runs_dir ${runs_dir} \
+    -runs_json ${runs_json} \
     -pipeline_version_file ${pipeline_version_file} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \

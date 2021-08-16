@@ -3,13 +3,10 @@
 source message_functions || exit 1
 
 set=$1 && shift
-sample_name=$1 && shift
 exclusion_checks=$1 && shift
 
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
-[[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
-
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
@@ -20,8 +17,8 @@ runs_json=$(
   '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
-run_json=$(jq '.[-1]' <<< "${runs_json}")
-bucket=$(jq -r '.bucket' <<< "${run_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -48,5 +45,5 @@ info "This run has been done with pipeline ${pipeline_version}"
 
 if [[ "${exclusion_checks}" == "" ]]; then
     health_check_validated_run ${bucket} ${set}
-    doid_check_validated_run ${bucket} ${set} ${sample_name}
+    doid_check_validated_run ${bucket} ${set} ${sample}
 fi

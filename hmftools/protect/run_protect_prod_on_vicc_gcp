@@ -4,18 +4,31 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 set=$1 && shift
+barcode=$1 && shift
+sample=$1 && shift
+pipeline_version=$1 && shift
 temp_folder_path=$1 && shift
+
 
 if [[ -z "${set}" ]]; then
     error "No run provided. Exiting"
 fi
 
+if [[ -z "${barcode}" ]]; then
+    error "No barcode provided. Exiting"
+fi
+
+if [[ -z "${sample}" ]]; then
+    error "No sample name provided. Exiting"
+fi
+
+if [[ -z "${pipeline_version}" ]]; then
+    error "No pipeline version. Exiting"
+fi
+
 if [[ -z "${temp_folder_path}" ]]; then
     error "No dir provided where run is temporarily stored. Exiting"
 fi
-
-barcode=$( echo "$set" | cut -d"_" -f 4 )
-sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
 
 output_dir=${temp_folder_path}/protect
 protect_jar=$(locate_prod_protect)
@@ -23,6 +36,10 @@ protect_jar=$(locate_prod_protect)
 info "Rerunning protect for $set (only in VM; pipeline data will not be overwritten)"
 ### Download the privite resource having the SERVE actionability data for the diagnostic pipeline
 gcloud --project hmf-pipeline-prod-e45b00f2 source repos clone common-resources-private &> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
+cd common-resources-private/
+#git tag
+git checkout v${pipeline_version} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
+cd ..
 serve_actionability_dir=$( pwd )"/common-resources-private/serve/37"
 info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 
