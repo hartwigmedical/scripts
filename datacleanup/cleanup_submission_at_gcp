@@ -63,8 +63,8 @@ main() {
     # also write startup msg to log file for tracking when using parallel execution
     info "Starting with $(basename $0) ($submission)" >> "$log_file"
 
-    info "Switching to GCP service account $GCP_GCP_SERVICE_ACCOUNT" >> "$log_file"
-    msg=$(gcloud config set account "${$GCP_GCP_SERVICE_ACCOUNT}" 2>&1)
+    info "Switching to GCP service account $GCP_SERVICE_ACCOUNT" >> "$log_file"
+    msg=$(gcloud config set account "$GCP_SERVICE_ACCOUNT" 2>&1)
     info "  $msg" >> "$log_file"
 
     info "Retrieving samples by submission" >> "$log_file"
@@ -197,7 +197,7 @@ run_type_by_ini_name() {
 
     if [[ "$ini_name" == "BCL.ini" ]]; then
         echo "$bcl"
-    if [[ "$ini_name" == "FastQ.ini" ]]; then
+    elif [[ "$ini_name" == "FastQ.ini" ]]; then
         echo "$fastq"
     elif [[ "$ini_name" == "Somatic.ini" ]]; then
         echo "$pipeline"
