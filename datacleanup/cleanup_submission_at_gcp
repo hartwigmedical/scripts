@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-set -e
 
 OUT_ROOT="/data/ops/recurrent/submission_cleanup/logs"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
