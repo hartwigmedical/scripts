@@ -150,7 +150,7 @@ if (featureCount > featureLimit)
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
-png(file = outputFile, res = 200, height = 800, width = 1000)
+png(file = outputFile, res = 200, height = 3400, width = 5000)
 
 par(mar = c(1, 1, 1, 1))
 
