@@ -59,6 +59,7 @@ for run in ${process_runs}; do
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
 
+
         if [[ ${purity_int} -ge 20 ]]; then
             info "Generating CUPPA ruo report"
             Rscript /data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R ${sample_id} /data/cpct/runs/${run}/cuppa/ /data/cpct/patient_reports/ true
