@@ -30,7 +30,7 @@ if (!file.exists(cupDataFile))
 
 cupSampleResults <- read.csv(cupDataFile)
 
-print(sprintf('sample(%s) loaded %d results', sampleId, nrow(cupSampleResults)))
+print(sprintf('Sample(%s) loaded %d results', sampleId, nrow(cupSampleResults)))
 
 # Data preparation
 cupPlotData <- cupSampleResults %>% select(Category, ResultType, DataType, Value, RefCancerType, RefValue)
@@ -129,11 +129,10 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
 outputFile <- paste0(cuppaDir, sampleId, '_cup_report.png')
-print(paste0("writing output to file: ", outputFile))
+print(paste0("Writing output to file: ", outputFile))
 
 featureLimit <- 15
 featureCount <- nrow(cupFeatures %>% group_by(Value) %>% count)
-titleHeight <- 10
 summaryHeight <- 205
 genderHeight <- 45
 sigHeight <- 110
@@ -142,14 +141,14 @@ percHeight <- 90
 if (featureCount > featureLimit)
   {
   separateFeaturePlot <- T
-  print(sprintf('features(%d) print separately', featureCount))
-  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight)
+  print(sprintf('Features(%d) print separately', featureCount))
+  plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight)
 } else
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
-  print(sprintf('features(%d) featureHeight(%d)', featureCount, featureHeight))
-  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
+  print(sprintf('Features(%d) FeatureHeight(%d)', featureCount, featureHeight))
+  plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
 png(file = outputFile, height = 1400, width = 2000)
