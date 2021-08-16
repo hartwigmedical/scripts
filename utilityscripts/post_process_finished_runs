@@ -68,9 +68,8 @@ for run in ${process_runs}; do
         info "Loading set ${run} into diagnotic db"
         load_run_into_diagnostic_db /data/cpct/runs/${run}
 
-        ## TODO: execute below rules when overeenkomst is signed
-        ## info "Generate json file for share"
-        ## generate_json_file_for_share ${run}
+        info "Generate json file for share"
+        generate_json_file_for_share ${run}
     elif [[ ${cohort} == "ACTIN" ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
