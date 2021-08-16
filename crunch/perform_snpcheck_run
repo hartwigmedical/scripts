@@ -15,8 +15,11 @@ runs_json=$(
   '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
-run_json=$(jq '.[-1]' <<< "${runs_json}")
-bucket=$(jq -r '.bucket' <<< "${run_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+sample_name_tumor=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode_tumor=$( hmf_api_get "samples?name=${sample_name_tumor}" | jq -r .[].barcode )
+sample_name_ref=$( echo $runs_json | jq -r '.[].set.ref_sample' )
+barcode_ref=$( hmf_api_get "samples?name=${sample_name_ref}" | jq -r .[].barcode )
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -26,12 +29,6 @@ if [[ ${run_count} == 0 ]]; then
 fi
 
 set_url="gs://${bucket}/${set}/"
-
-barcode_tumor=$( echo "$set" | cut -d"_" -f 4 )
-sample_name_tumor=$( api samples $barcode_tumor barcode | cut -f 7 | grep -v name )
-
-barcode_ref=$( echo "$set" | cut -d"_" -f 3 )
-sample_name_ref=$( api samples $barcode_ref barcode | cut -f 7 | grep -v name )
 
 
 if [[ "${sample_name_tumor:0:12}" == "${sample_name_ref:0:12}" ]]; then

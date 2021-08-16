@@ -27,3 +27,6 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -biopsy_mapping_tsv /data/common/dbs/clinical_curation/biopsy_site_mapping.tsv \
     -reporting_db_tsv ${reporting_db_tsv} \
     "$@"
+
+rm ./run_contexts.json
+rm ./run.log
