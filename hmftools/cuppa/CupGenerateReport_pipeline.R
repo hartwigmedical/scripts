@@ -38,7 +38,7 @@ cupPlotData <- cupSampleResults %>% select(Category, ResultType, DataType, Value
 cupPlotData <- cupPlotData %>% mutate(RefValueLabel = sprintf('%.0f%%', RefValue * 100),
                                       DataType = stri_replace_all_fixed(DataType, '_', ' '))
 
-## Do not show GENDER CLASSIFIER on CUP report
+## Do not show GENDER CLASSIFIER on analysis
 cupClassData <- cupPlotData %>%
   filter(Category == 'CLASSIFIER' | Category == 'COMBINED') %>%
   filter(DataType != 'GENDER') %>%
@@ -156,12 +156,10 @@ png(file = outputFile, height = 1400, width = 2000)
 
 par(mar = c(1, 1, 1, 1))
 
-title <- textGrob(paste0(sampleId, ' CUP Report'), gp = gpar(fontface = "bold", fontsize = 16))
-
 if (separateFeaturePlot)
   {
-  grid.arrange(plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
-                         ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l'))
+  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+                         ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -170,8 +168,8 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 } else
   {
-  plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
-            ncol = 1, nrow = 6, rel_heights = plotHeights, align = 'v', axis = 'l')
+  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+            ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
 dev.off()
