@@ -11,5 +11,5 @@ fi
 ref_sample_mandatory=0
 output_dir_data_report=/data/cpct/qc_fail_reports_data/prod
 
-do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_dna" ${ref_sample_mandatory} \
+do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_dna" ${ref_sample_mandatory} "" \
     -output_dir_data ${output_dir_data_report} "$@"

@@ -23,7 +23,7 @@ if [[ ! -d "${output_dir_data_report}" ]]; then
 fi
 
 do_run_qc_fail_patient_reporter \
-    ${tumor_sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
+    ${tumor_sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  "" \
     -output_dir_data ${output_dir_data_report} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} "$@"
