@@ -34,7 +34,7 @@ set_url="gs://${bucket}/${set}/"
 if [[ "${sample_name_tumor:0:12}" == "${sample_name_ref:0:12}" ]]; then
     info "The reference file for the snpcheck is of the same sample: $barcode_tumor=$sample_name_tumor (tumor) eq $barcode_ref=$sample_name_ref (ref)."
 else
-    warn "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
+    info "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
 fi
 
 snpcheck_vcf_tumor="${set_url}${sample_name_tumor}/snp_genotype/snp_genotype_output.vcf"
@@ -45,8 +45,4 @@ if [[ "$snpcheck_vcf_tumor" == "" || "$snpcheck_vcf_ref" == "" ]]; then
 else
     info "The snpcheck will now be performed:"
     perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
-fi
-
-if [[ "${sample_name_tumor:0:12}" == "${sample_name_ref:0:12}" ]]; then
-    echo " Action: if snpcheck is OK update the api using the script: patch_api_run_validate ${set}. "
 fi
