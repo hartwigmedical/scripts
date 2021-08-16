@@ -9,7 +9,7 @@ sample_type=$1 && shift # REF or TUM
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
-key_file="/data/common/dbs/gcp_credentials/hmf-download"
+key_file="/data/credentials/hmf-download"
 region="europe-west4"
 project="hmf-database"
 
