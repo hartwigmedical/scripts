@@ -128,7 +128,7 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   scale_fill_manual(values = prevColours, limits = names(prevColours)) +
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
-outputFile <- paste0(cuppaDir, sampleId, '_cup_report.png')
+outputFile <- paste0(cuppaDir, sampleId, '.cup.report.png')
 print(paste0("Writing output to file: ", outputFile))
 
 featureLimit <- 15
