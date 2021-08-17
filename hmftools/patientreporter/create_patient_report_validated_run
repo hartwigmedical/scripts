@@ -4,6 +4,7 @@ source message_functions || exit 1
 source locate_files || exit 1
 source lims_functions || exit 1
 
+
 set=$1 && shift
 correction_comments=$1 && shift
 
@@ -23,7 +24,7 @@ pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
 sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
 barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
 ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
-ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref}'") | .barcode' | cut -d"_" -f1 )
+ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
 
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
