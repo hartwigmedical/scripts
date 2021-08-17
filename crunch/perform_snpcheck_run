@@ -42,7 +42,7 @@ if [[ "$snpcheck_vcf_tumor" == "" ]]; then
     warn "No snpcheckvcf is found in ${set_url}${sample_name_tumor}/snp_genotype/ for ${barcode_tumor} (${sample_name_tumor})"
 fi
 
-snpcheck_vcf_ref=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*" | sort -k 2 | head -1 | awk '{ print $3 }' )
+snpcheck_vcf_ref=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | head -1 | awk '{ print $3 }' )
 if [[ "$snpcheck_vcf_ref" == "" ]]; then
     warn "No snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${barcode_ref} (${sample_name_ref})"
 fi
