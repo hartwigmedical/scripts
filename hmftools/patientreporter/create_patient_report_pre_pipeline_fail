@@ -54,6 +54,7 @@ ref_sample_barcode=$(find_ref_barcode_for_sample_name ${sample})
 barcode=$(find_barcode_for_sample_name ${sample})
 
 if [[ ${correction_comments} != "" ]]; then
+    #corrected report
     do_run_base_patient_reporter \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} \
@@ -66,6 +67,7 @@ if [[ ${correction_comments} != "" ]]; then
             -comments "${correction_comments}" \
             -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
+    #Normal report
     do_run_base_patient_reporter \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} \
