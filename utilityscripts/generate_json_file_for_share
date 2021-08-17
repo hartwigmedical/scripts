@@ -5,7 +5,7 @@ source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
-sample_id=$(load_tumor_sample_from_metadata ${run_dir})
+sample_id=$(load_tumor_sample_from_metadata /data/cpct/runs/${run_dir})
 tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
 
-cat ${run_dir}/patient_report_prod_data/${sample_id}_${tumor_barcode}.json | jq . > /data/cpct/patient_reports/${sample_id}_${tumor_barcode}.json
+cat /data/cpct/runs/${run_dir}/patient_report_prod_data/${sample_id}_${tumor_barcode}.json | jq . > /data/cpct/patient_reports/${sample_id}_${tumor_barcode}.json
