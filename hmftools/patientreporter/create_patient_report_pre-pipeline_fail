@@ -2,7 +2,6 @@
 
 source message_functions || exit 1
 source lims_functions || exit 1
-source metadata_functions || exit 1
 
 sample=$1 && shift
 fail_reason=$1 && shift
@@ -50,7 +49,7 @@ fi
 
 
 ## running patient reporter
-ref_sample=$(imply_ref_sample_from_sample ${sample})
+ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${sample})
 barcode=$(find_barcode_for_sample_name ${sample})
 
@@ -58,7 +57,7 @@ do_run_base_patient_reporter \
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_data_report} \
         -qc_fail \
-        -qc_fail_reason ${qc_fail_reason} \
+        -qc_fail_reason ${fail_reason} \
         -ref_sample_id ${ref_sample} \
         -ref_sample_barcode ${ref_sample_barcode} \
         -sample_id ${sample} \
