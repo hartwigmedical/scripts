@@ -23,7 +23,7 @@ pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
 sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
 barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
 ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
-ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref}'") | .barcode' | cut -d"_" -f1 )
+ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
 
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
@@ -93,31 +93,31 @@ fi
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
     do_run_base_patient_reporter \
-            -output_dir_report ${output_dir_report} \
-            -output_dir_data ${output_dir_data_report} \
-            -qc_fail \
-            -qc_fail_reason ${fail_reason} \
-            -ref_sample_id ${ref_sample} \
-            -ref_sample_barcode ${ref_sample_barcode} \
-            -tumor_sample_id ${sample} \
-            -tumor_sample_barcode ${barcode} \
-            -purple_purity_tsv ${purple_purity_tsv} \
-            -purple_qc_file ${purple_qc_file} \
-            -comments "${correction_comments}" \
-            -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        -output_dir_report ${output_dir_report} \
+        -output_dir_data ${output_dir_data_report} \
+        -qc_fail \
+        -qc_fail_reason ${fail_reason} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${sample} \
+        -tumor_sample_barcode ${barcode} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} \
+        -comments "${correction_comments}" \
+        -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     #Normal report
     do_run_base_patient_reporter \
-            -output_dir_report ${output_dir_report} \
-            -output_dir_data ${output_dir_data_report} \
-            -qc_fail \
-            -qc_fail_reason ${fail_reason} \
-            -ref_sample_id ${ref_sample} \
-            -ref_sample_barcode ${ref_sample_barcode} \
-            -tumor_sample_id ${sample} \
-            -tumor_sample_barcode ${barcode} \
-            -purple_purity_tsv ${purple_purity_tsv} \
-            -purple_qc_file ${purple_qc_file} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        -output_dir_report ${output_dir_report} \
+        -output_dir_data ${output_dir_data_report} \
+        -qc_fail \
+        -qc_fail_reason ${fail_reason} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${sample} \
+        -tumor_sample_barcode ${barcode} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
 
