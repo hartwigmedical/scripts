@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-
 source message_functions || exit 1
+source locate_files || exit 1
 source lims_functions || exit 1
 
 set=$1 && shift
@@ -80,6 +80,9 @@ fi
 ## running patient reporter
 ref_sample_mandatory=1
 
+purple_purity_tsv=$(locate_purple_purity ${temp_folder_path})
+purple_qc_file=$(locate_purple_qc ${temp_folder_path})
+
 if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
      fail_reason="insufficient_tcp_deep_wgs"
 else
@@ -98,10 +101,10 @@ if [[ ${correction_comments} != "" ]]; then
             -ref_sample_barcode ${ref_sample_barcode} \
             -tumor_sample_id ${sample} \
             -tumor_sample_barcode ${barcode} \
-            -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-            -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc \
+            -purple_purity_tsv ${purple_purity_tsv} \
+            -purple_qc_file ${purple_qc_file} \
             -comments "${correction_comments}" \
-            -corrected_report &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+            -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     #Normal report
     do_run_base_patient_reporter \
@@ -113,8 +116,8 @@ else
             -ref_sample_barcode ${ref_sample_barcode} \
             -tumor_sample_id ${sample} \
             -tumor_sample_barcode ${barcode} \
-            -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-            -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+            -purple_purity_tsv ${purple_purity_tsv} \
+            -purple_qc_file ${purple_qc_file} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
 
