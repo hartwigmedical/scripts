@@ -60,8 +60,8 @@ do_run_base_patient_reporter \
         -qc_fail_reason ${fail_reason} \
         -ref_sample_id ${ref_sample} \
         -ref_sample_barcode ${ref_sample_barcode} \
-        -sample_id ${sample} \
-        -barcode ${barcode} \
+        -tumor_sample_id ${sample} \
+        -tumor_sample_barcode ${barcode} \
         "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 
 
