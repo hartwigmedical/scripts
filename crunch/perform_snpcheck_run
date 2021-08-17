@@ -17,9 +17,9 @@ runs_json=$(
 run_count=$(jq 'length' <<< "${runs_json}")
 bucket=$( echo $runs_json | jq -r '.[].bucket' )
 sample_name_tumor=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
-barcode_tumor=$( hmf_api_get "samples?name=${sample_name_tumor}" | jq -r .[].barcode )
+barcode_tumor=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_tumor}'") | .barcode' | cut -d"_" -f1 )
 sample_name_ref=$( echo $runs_json | jq -r '.[].set.ref_sample' )
-barcode_ref=$( hmf_api_get "samples?name=${sample_name_ref}" | jq -r .[].barcode | cut -d"_" -f1 )
+barcode_ref=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref}'") | .barcode' | cut -d"_" -f1 )
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
