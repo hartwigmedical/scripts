@@ -38,7 +38,14 @@ else
 fi
 
 snpcheck_vcf_tumor="${set_url}${sample_name_tumor}/snp_genotype/snp_genotype_output.vcf"
-snpcheck_vcf_ref=$( find_snpcheck_vcf $barcode_ref )
+if [[ "$snpcheck_vcf_tumor" == "" ]]; then
+    warn "No snpcheckvcf is found in ${set_url}${sample_name_tumor}/snp_genotype/ for ${barcode_tumor} (${sample_name_tumor})"
+fi
+
+snpcheck_vcf_ref=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*" | sort -k 2 | head -1 | awk '{ print $3 }' )
+if [[ "$snpcheck_vcf_ref" == "" ]]; then
+    warn "No snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${barcode_ref} (${sample_name_ref})"
+fi
 
 if [[ "$snpcheck_vcf_tumor" == "" || "$snpcheck_vcf_ref" == "" ]]; then
     warn "One (or both) of the vcf files for the snpcheck could not be found (see warnings above). The snpcheck will not be performed."
