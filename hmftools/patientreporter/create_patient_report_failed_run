@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-#!/usr/bin/env bash
 
 source message_functions || exit 1
 source lims_functions || exit 1
@@ -23,6 +22,8 @@ bucket=$( echo $runs_json | jq -r '.[].bucket' )
 pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
 sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
 barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
+ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref}'") | .barcode' | cut -d"_" -f1 )
 
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
@@ -76,92 +77,44 @@ if [[ ! -d "${output_dir_data_report}" ]]; then
 fi
 
 
-#### create report and add to log file
+## running patient reporter
 ref_sample_mandatory=1
 
-ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
-tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
-
-if [[ -z "${tumor_sample_barcode}" ]]; then
-    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
+     fail_reason="insufficient_tcp_deep_wgs"
+else
+    fail_reason="sufficient_tcp_qc_failure"
 fi
 
-if [[ -z "${tumor_sample_barcode}" ]]; then
-    warn "Incomplete information for reporter. Exiting"
-    warn "  tumor_sample name: ${tumor_sample}"
-    warn "  tum sample barcode: ${tumor_sample_barcode}"
-    exit 1;
-fi
 
-if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
-    if [[ ${ref_sample_mandatory} == "1" ]]; then
-        warn "Incomplete information for reporter. Exiting"
-        warn "  ref_sample name: ${ref_sample}"
-        warn "  ref_sample barcode: ${ref_sample_barcode}"
-        warn "  tumor_sample name: ${tumor_sample}"
-        warn "  tumor_sample barcode: ${tumor_sample_barcode}"
-        exit 1
-    else
-        warn "Ref sample information is incomplete!"
-
-        do_run_base_patient_reporter \
+if [[ ${correction_comments} != "" ]]; then
+    do_run_base_patient_reporter \
             -output_dir_report ${output_dir_report} \
+            -output_dir_data ${output_dir_data_report} \
             -qc_fail \
-            -qc_fail_reason ${qc_fail_reason} \
-            -tumor_sample_id ${tumor_sample} \
-            -tumor_sample_barcode ${tumor_sample_barcode} \
-            "$@"
-    fi
+            -qc_fail_reason ${fail_reason} \
+            -ref_sample_id ${ref_sample} \
+            -ref_sample_barcode ${ref_sample_barcode} \
+            -tumor_sample_id ${sample} \
+            -tumor_sample_barcode ${barcode} \
+            -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
+            -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc \
+            -comments "${correction_comments}" \
+            -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     do_run_base_patient_reporter \
-        -output_dir_report ${output_dir_report} \
-        -qc_fail \
-        -qc_fail_reason ${qc_fail_reason} \
-        -ref_sample_id ${ref_sample} \
-        -ref_sample_barcode ${ref_sample_barcode} \
-        -tumor_sample_id ${tumor_sample} \
-        -tumor_sample_barcode ${tumor_sample_barcode} \
-        "$@"
+            -output_dir_report ${output_dir_report} \
+            -output_dir_data ${output_dir_data_report} \
+            -qc_fail \
+            -qc_fail_reason ${fail_reason} \
+            -ref_sample_id ${ref_sample} \
+            -ref_sample_barcode ${ref_sample_barcode} \
+            -tumor_sample_id ${sample} \
+            -tumor_sample_barcode ${barcode}
+            -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
+            -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
-
-
-
-if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
-     if [[ ${correction_comments} != "" ]]; then
-        #corrected report
-        do_run_qc_fail_patient_reporter \
-        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory} ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-        -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc -comments "${correction_comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-    else
-        #Normal report
-       do_run_qc_fail_patient_reporter \
-        ${sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory} ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-        -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-    fi
-else
-    if [[ ${correction_comments} != "" ]]; then
-        #corrected report
-        do_run_qc_fail_patient_reporter \
-        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory} ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-        -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc -comments "${correction_comments}" -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-    else
-        #Normal report
-       do_run_qc_fail_patient_reporter \
-        ${sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -purple_purity_tsv  ${temp_folder_path}/purple/${sample}.purple.purity.tsv \
-        -purple_qc_file ${temp_folder_path}/purple/${sample}.purple.qc "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-    fi
-fi
 
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
