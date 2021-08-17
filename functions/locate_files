@@ -272,7 +272,7 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/resources/ckb/270730_ckb_flex_dump
+    echo ${base_path}/resources/ckb/ckb_flex_dump
 }
 
 locate_ckb_filter_tsv() {
@@ -907,6 +907,15 @@ locate_cuppa_result_csv() {
     echo ${result_csv}
 }
 
+locate_cuppa_report_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.png")
+    if [[ -z "${plot}" ]]; then
+        error "Unable to locate cuppa report plot in ${run_dir}. Exiting."
+    fi
+    echo ${plot}
+}
+
 locate_cuppa_conclusion_txt() {
     local run_dir=$1
     local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
@@ -916,7 +925,7 @@ locate_cuppa_conclusion_txt() {
     echo ${conclusion_txt}
 }
 
-locate_cuppa_plot() {
+locate_cuppa_conclusion_plot() {
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
     if [[ -z "${plot}" ]]; then

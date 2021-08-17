@@ -12,8 +12,8 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
-orange_jar=$(locate_pilot_orange)
-doid_json=/data/common/dbs/disease_ontology/201015_doid.json
+orange_jar=~/tools/orange_pilot/orange.jar
+doid_json=/data/resources/disease_ontology/201015_doid.json
 output_dir=${run_dir}/orange_pilot
 
 create_or_cleanup_dir ${output_dir}

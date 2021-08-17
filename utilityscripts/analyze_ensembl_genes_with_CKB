@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+genes1="genes1.tsv"
+genes2="genes2.tsv"
+
+echo "geneSymbol	gene present in comparing file" > tmp_comparing_file.tsv
+while IFS= read genes; do
+
+    geneSymbol=$( echo ${genes} | awk -F ',' '{print $1}')
+    present=$( cat ${genes2} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
+    if [[ ${present} -eq 1 ]]; then
+    	echo "${geneSymbol}	true" >> tmp_comparing_file.tsv
+    else
+	echo "${geneSymbol}     false" >> tmp_comparing_file.tsv
+    fi 
+
+done < ${genes1}

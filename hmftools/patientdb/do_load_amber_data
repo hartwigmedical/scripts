@@ -21,6 +21,6 @@ info "Loading amber data for ${sample}"
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
     -sample ${sample} \
     -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
-    -snpcheck_vcf /data/common/dbs/amber/Amber.snpcheck.37.vcf \
+    -snpcheck_vcf /data/common/dbs/has_been_moved_to_gcp/amber/Amber.snpcheck.37.vcf \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

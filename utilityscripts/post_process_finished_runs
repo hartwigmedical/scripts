@@ -59,6 +59,7 @@ for run in ${process_runs}; do
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
 
+
         if [[ ${purity_int} -ge 20 ]]; then
             info "Generating CUPPA ruo report"
             Rscript /data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R ${sample_id} /data/cpct/runs/${run}/cuppa/ /data/cpct/patient_reports/ true
@@ -68,9 +69,8 @@ for run in ${process_runs}; do
         info "Loading set ${run} into diagnotic db"
         load_run_into_diagnostic_db /data/cpct/runs/${run}
 
-        ## TODO: execute below rules when overeenkomst is signed
-        ## info "Generate json file for share"
-        ## generate_json_file_for_share ${run}
+        info "Generate json file for share"
+        generate_json_file_for_share ${run}
     elif [[ ${cohort} == "ACTIN" ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/

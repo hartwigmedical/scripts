@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+zipFile=$1 && shift
+
+# first add file to gs://hmf-crunch-resources/serve/ckb/ bucket
+
+# copying data from bucket
+gsutil cp gs://hmf-crunch-resources/serve/ckb/${zipFile} /data/resources/ckb/
+
+# unzip file
+unzip /data/resources/ckb/${zipFile}
+
+#rename dir
+date=$(echo ${zipFile} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}')
+mv /data/resources/ckb/api-export ${date}_ckb_flex_dump
+rm ${zipFile}
+
+# create new symlink
+unlink /data/resources/ckb/ckb_flex_dump
+ln -s /data/resources/ckb/${date}_ckb_flex_dump /data/resources/ckb/ckb_flex_dump

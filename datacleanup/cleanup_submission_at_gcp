@@ -5,8 +5,9 @@ source message_functions || exit 1
 OUT_ROOT="/data/ops/recurrent/submission_cleanup/logs"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 
-GCP_PROJECT="hmf-database"
-GCP_ACCOUNT="hmf-ops"
+GCP_PROJECT="hmf-ops"
+GCP_USER="hmf-ops"
+GCP_SERVICE_ACCOUNT="${GCP_USER}@${GCP_PROJECT}.iam.gserviceaccount.com"
 do_execute_cleanup=false
 
 print_usage(){
@@ -62,14 +63,13 @@ main() {
     # also write startup msg to log file for tracking when using parallel execution
     info "Starting with $(basename $0) ($submission)" >> "$log_file"
 
-    GCP_ACCOUNT_project="${GCP_ACCOUNT}@${GCP_PROJECT}"
-    info "Switching to GCP service account $GCP_ACCOUNT_project" >> "$log_file"
-    msg=$(gcloud config set account "${GCP_ACCOUNT_project}.iam.gserviceaccount.com" 2>&1)
+    info "Switching to GCP service account $GCP_SERVICE_ACCOUNT" >> "$log_file"
+    msg=$(gcloud config set account "$GCP_SERVICE_ACCOUNT" 2>&1)
     info "  $msg" >> "$log_file"
 
     info "Retrieving samples by submission" >> "$log_file"
     samples_json=$(hmf_api_get "samples?submission=$submission")
-    sample_ids=$(jq -r '. | map(.id) | join(",")' <<< "${samples_json}")
+    sample_ids=$(jq -r '. | map(.id) | @csv' <<< "${samples_json}")
     info "Samples found: ${sample_ids}" >> "$log_file"
 
     # add start message to final cleanup cmd file
@@ -192,9 +192,12 @@ run_type_by_ini_name() {
 
     local pipeline="pipeline"
     local fastq="fastq"
+    local bcl="bcl"
     local unknown="unknown"
 
-    if [[ "$ini_name" == "FastQ.ini" ]]; then
+    if [[ "$ini_name" == "BCL.ini" ]]; then
+        echo "$bcl"
+    elif [[ "$ini_name" == "FastQ.ini" ]]; then
         echo "$fastq"
     elif [[ "$ini_name" == "Somatic.ini" ]]; then
         echo "$pipeline"
@@ -213,7 +216,7 @@ process_gs_url() {
     local out_file=$1 && shift
     local log_file=$1 && shift
     
-    msg=$(gsutil -u "$GCP_PROJECT" ls "$gs_url" 2>&1)
+    msg=$(gsutil ls "$gs_url" 2>&1)
     if [[ $? -eq 1 ]]; then
         deleted_status="Deleted"
         if [[ "$status" == "$deleted_status" ]]; then
@@ -224,7 +227,7 @@ process_gs_url() {
         fi
     else
         info "  OK file found at url so writing rm cmd ($gs_url)" >> "$log_file"
-        echo "  gsutil -q -u $GCP_PROJECT $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
+        echo "  gsutil -q $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
     fi
 }
 

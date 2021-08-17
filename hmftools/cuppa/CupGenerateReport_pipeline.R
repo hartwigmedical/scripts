@@ -11,17 +11,16 @@ library(gtable)
 args <- commandArgs(trailingOnly = TRUE)
 print(args)
 
-if (length(args) < 3)
+if (length(args) < 2)
   {
-  print("Requires arguments 1=SampleId, 2=Input directory, 3=Output directory")
+  print("Requires arguments 1=SampleId, 2=Cuppa directory")
   stop()
 }
 
 sampleId <- args[1]
-inputDir <- args[2]
-outputDir <- args[3]
+cuppaDir <- args[2]
 
-cupDataFile <- paste0(inputDir, sampleId, '.cup.data.csv')
+cupDataFile <- paste0(cuppaDir, sampleId, '.cup.data.csv')
 
 if (!file.exists(cupDataFile))
   {
@@ -31,7 +30,7 @@ if (!file.exists(cupDataFile))
 
 cupSampleResults <- read.csv(cupDataFile)
 
-print(sprintf('sample(%s) loaded %d results', sampleId, nrow(cupSampleResults)))
+print(sprintf('Sample(%s) loaded %d results', sampleId, nrow(cupSampleResults)))
 
 # Data preparation
 cupPlotData <- cupSampleResults %>% select(Category, ResultType, DataType, Value, RefCancerType, RefValue)
@@ -39,7 +38,7 @@ cupPlotData <- cupSampleResults %>% select(Category, ResultType, DataType, Value
 cupPlotData <- cupPlotData %>% mutate(RefValueLabel = sprintf('%.0f%%', RefValue * 100),
                                       DataType = stri_replace_all_fixed(DataType, '_', ' '))
 
-## Do not show GENDER CLASSIFIER on CUP report
+## Do not show GENDER CLASSIFIER on analysis
 cupClassData <- cupPlotData %>%
   filter(Category == 'CLASSIFIER' | Category == 'COMBINED') %>%
   filter(DataType != 'GENDER') %>%
@@ -129,12 +128,11 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   scale_fill_manual(values = prevColours, limits = names(prevColours)) +
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
-outputFile <- paste0(outputDir, sampleId, '_cup_report.pdf')
-print(paste0("writing output to file: ", outputFile))
+outputFile <- paste0(cuppaDir, sampleId, '.cup.report.png')
+print(paste0("Writing output to file: ", outputFile))
 
 featureLimit <- 15
 featureCount <- nrow(cupFeatures %>% group_by(Value) %>% count)
-titleHeight <- 10
 summaryHeight <- 205
 genderHeight <- 45
 sigHeight <- 110
@@ -143,26 +141,23 @@ percHeight <- 90
 if (featureCount > featureLimit)
   {
   separateFeaturePlot <- T
-  print(sprintf('features(%d) print separately', featureCount))
-  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight)
+  print(sprintf('Features(%d) print separately', featureCount))
+  plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight)
 } else
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
-  print(sprintf('features(%d) featureHeight(%d)', featureCount, featureHeight))
-  plotHeights <- c(titleHeight, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
+  plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
-pdf(file = outputFile, height = 14, width = 20)
+png(file = outputFile, res = 140, height = 2200, width = 4000)
 
 par(mar = c(1, 1, 1, 1))
 
-title <- textGrob(paste0(sampleId, ' CUP Report'), gp = gpar(fontface = "bold", fontsize = 16))
-
 if (separateFeaturePlot)
   {
-  grid.arrange(plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
-                         ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l'))
+  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+                         ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -171,8 +166,8 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 } else
   {
-  plot_grid(title, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
-            ncol = 1, nrow = 6, rel_heights = plotHeights, align = 'v', axis = 'l')
+  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+            ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
 dev.off()
