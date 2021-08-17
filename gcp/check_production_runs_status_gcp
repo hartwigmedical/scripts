@@ -253,8 +253,8 @@ main () {
                 echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 checks_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
-                echo " Action 1 - solve the doid warning by updating the API and rerunning protect: WIP "
-                echo " Action 2 - create a new report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
+                echo " Action 1 - solve the doid warning by updating the API using the script: update_clinical_curation"
+                echo " Action 2 - create a new report (indicate to rerun protect!) and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 echo " Action 3 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
                 echo "---------"
              fi

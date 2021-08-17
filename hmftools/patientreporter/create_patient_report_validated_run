@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 source lims_functions || exit 1
 
 set=$1 && shift
@@ -103,24 +104,24 @@ fi
 
 #### run patient reporter
 
-pipeline_version_file=${run_dir}/pipeline.version
-purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
-purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
-purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
-purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
-purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
-purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
-linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
-linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
-linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
-chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
-molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${run_dir})
-virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
-peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+pipeline_version_file=${temp_folder_path}/pipeline.version
+purple_purity_tsv=$(locate_purple_purity ${temp_folder_path})
+purple_qc_file=$(locate_purple_qc ${temp_folder_path})
+purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${temp_folder_path})
+purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${temp_folder_path})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${temp_folder_path})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${temp_folder_path})
+purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${temp_folder_path})
+purple_circos_plot=$(locate_purple_circos_plot ${temp_folder_path})
+linx_fusion_tsv=$(locate_linx_fusions ${temp_folder_path})
+linx_breakend_tsv=$(locate_linx_breakends ${temp_folder_path})
+linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${temp_folder_path})
+chord_prediction_txt=$(locate_chord_prediction ${temp_folder_path})
+molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${temp_folder_path})
+molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${temp_folder_path})
+virus_breakend_tsv=$(locate_virus_breakend_tsv ${temp_folder_path})
+peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${temp_folder_path})
+protect_evidence_tsv=$(locate_protect_evidence ${temp_folder_path})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
