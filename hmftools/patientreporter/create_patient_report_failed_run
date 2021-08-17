@@ -10,20 +10,20 @@ correction_comments=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
-barcode=$( echo "$set" | cut -d"_" -f 4 )
-sample=$( api samples $barcode barcode | cut -f 7 | grep -v name )
-
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
 runs_json=$(
-    hmf_api_get "runs?set_name=${set}" | \
-    jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
-    '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
-run_json=$(jq '.[-1]' <<< "${runs_json}")
-bucket=$(jq -r '.bucket' <<< "${run_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -78,6 +78,56 @@ fi
 
 #### create report and add to log file
 ref_sample_mandatory=1
+
+ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+fi
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    warn "Incomplete information for reporter. Exiting"
+    warn "  tumor_sample name: ${tumor_sample}"
+    warn "  tum sample barcode: ${tumor_sample_barcode}"
+    exit 1;
+fi
+
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
+    if [[ ${ref_sample_mandatory} == "1" ]]; then
+        warn "Incomplete information for reporter. Exiting"
+        warn "  ref_sample name: ${ref_sample}"
+        warn "  ref_sample barcode: ${ref_sample_barcode}"
+        warn "  tumor_sample name: ${tumor_sample}"
+        warn "  tumor_sample barcode: ${tumor_sample_barcode}"
+        exit 1
+    else
+        warn "Ref sample information is incomplete!"
+
+        do_run_base_patient_reporter \
+            -output_dir_report ${output_dir_report} \
+            -qc_fail \
+            -qc_fail_reason ${qc_fail_reason} \
+            -tumor_sample_id ${tumor_sample} \
+            -tumor_sample_barcode ${tumor_sample_barcode} \
+            "$@"
+    fi
+else
+    do_run_base_patient_reporter \
+        -output_dir_report ${output_dir_report} \
+        -qc_fail \
+        -qc_fail_reason ${qc_fail_reason} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${tumor_sample} \
+        -tumor_sample_barcode ${tumor_sample_barcode} \
+        "$@"
+fi
+
+
+
 
 if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
      if [[ ${correction_comments} != "" ]]; then
