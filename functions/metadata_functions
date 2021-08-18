@@ -4,73 +4,41 @@ source lims_functions || exit 1
 
 load_ref_sample_from_metadata() {
     local run_dir=$1
-    local ref_sample=""
-    if [[ -f "${run_dir}/pipeline.version" ]]; then
-        # V5 format
-        metadata=${run_dir}/metadata.json
-        ref_sample=$(jq -r '.reference.sampleName' ${metadata})
-    else
-        # Pre-V5 format
-        metadata=${run_dir}/metadata
-        ref_sample=$(jq -r '.ref_sample' ${metadata})
-    fi
+    local metadata=${run_dir}/metadata.json
+    local ref_sample=$(jq -r '.reference.sampleName' ${metadata})
     echo "${ref_sample}"
 }
 
 load_ref_sample_barcode_from_metadata() {
     local run_dir=$1
+    local metadata=${run_dir}/metadata.json
+
     local ref_sample_barcode=""
-    if [[ -f "${run_dir}/pipeline.version" ]]; then
-        # V5 format
-        metadata=${run_dir}/metadata.json
-        # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
-        if [[ $(jq 'select(.reference.barcode != null)' "${metadata}") ]]; then 
-            ref_sample_barcode=$(jq -r '.reference.barcode' ${metadata} | cut -d"_" -f1)
-        elif [[ $(jq 'select(.reference.sampleId != null)' "${metadata}") ]]; then
-            ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | cut -d"_" -f1)
-        fi
+    # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
+    if [[ $(jq 'select(.reference.barcode != null)' "${metadata}") ]]; then
+        ref_sample_barcode=$(jq -r '.reference.barcode' ${metadata} | cut -d"_" -f1)
+    elif [[ $(jq 'select(.reference.sampleId != null)' "${metadata}") ]]; then
+        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | cut -d"_" -f1)
     fi
     echo "${ref_sample_barcode}"
 }
 
 load_tumor_sample_from_metadata() {
     local run_dir=$1
-    local tumor_sample=""
-    if [[ -f "${run_dir}/pipeline.version" ]]; then
-        # V5 format
-        metadata=${run_dir}/metadata.json
-        tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
-    else
-        # Pre-V5 format
-        metadata=${run_dir}/metadata
-        tumor_sample=$(jq -r '.tumor_sample' ${metadata})
-    fi
+    local metadata=${run_dir}/metadata.json
+    local tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
     echo "${tumor_sample}"
 }
 
 load_tumor_sample_barcode_from_metadata() {
     local run_dir=$1
     local tumor_sample_barcode=""
-    if [[ -f "${run_dir}/pipeline.version" ]]; then
-        # V5 format
-        metadata=${run_dir}/metadata.json
-        # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
-        if [[ $(jq 'select(.tumor.barcode != null)' "${metadata}") ]]; then 
-            tumor_sample_barcode=$(jq -r '.tumor.barcode' ${metadata} | cut -d"_" -f1)
-        elif [[ $(jq 'select(.tumor.sampleId != null)' "${metadata}") ]]; then
-            tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | cut -d"_" -f1)
-        fi
-    else
-         # Pre-V5 format
-        metadata=${run_dir}/metadata
-        tumor_sample_barcode=$(jq -r '.set_name' ${metadata} | tr "_" " " | awk '{print $4}')
+    local metadata=${run_dir}/metadata.json
+    # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
+    if [[ $(jq 'select(.tumor.barcode != null)' "${metadata}") ]]; then
+        tumor_sample_barcode=$(jq -r '.tumor.barcode' ${metadata} | cut -d"_" -f1)
+    elif [[ $(jq 'select(.tumor.sampleId != null)' "${metadata}") ]]; then
+        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | cut -d"_" -f1)
     fi
     echo "${tumor_sample_barcode}"
-}
-
-load_joint_name_from_metadata() {
-    local run_dir=$1
-    local ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-    local tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-    echo "${ref_sample}_${tumor_sample}"
 }
