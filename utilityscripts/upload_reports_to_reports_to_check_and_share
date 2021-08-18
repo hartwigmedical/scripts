@@ -7,3 +7,8 @@ for report in /data/cpct/patient_reports/*.pdf; do
     info "Uploading ${report} to Nextcloud for checking and sharing"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
 done
+
+for json in /data/cpct/patient_reports/*.json; do
+    info "Uploading ${json} to Nextcloud for checking and sharing"
+    do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${json}"
+done
