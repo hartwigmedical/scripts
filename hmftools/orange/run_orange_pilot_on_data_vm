@@ -32,7 +32,7 @@ fi
 
 pipeline_version_file=${run_dir}/pipeline.version
 pipeline_version_cmd=""
-if [[ -f ${pipeline_version_file } ]]; then
+if [[ -f ${pipeline_version_file} ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
