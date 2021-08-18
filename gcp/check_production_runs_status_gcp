@@ -67,6 +67,7 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
+            echo "---------"
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR\|Health checker log from'
             echo "**"
@@ -74,7 +75,6 @@ main () {
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
             echo " Action 2 - create a failed report and upload it to nc for final checking and sharing using the script: create_patient_report_failed_run ${set_name} "
             echo " Action 3 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-            echo "---------"
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -98,9 +98,9 @@ main () {
 
         if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "-${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            echo "     $( cat ${sharing_db_file} | grep ${sample_name} ) "
             echo "---------"
+            echo "-${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "    $( cat ${sharing_db_file} | grep ${sample_name} ) "
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -123,11 +123,11 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
+            echo "---------"
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
             echo "**"
             echo " Action - if snpcheck is OK update the api using the script: patch_api_run_validate ${set_name}"
-            echo "---------"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -150,9 +150,9 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            echo "     $( cat ${sharing_db_file} | grep ${sample_name} ) "
             echo "---------"
+            echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "    $( cat ${sharing_db_file} | grep ${sample_name} ) "
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -236,6 +236,7 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "none" ]]; then
                 counter=$((counter+1))
+                echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -247,7 +248,6 @@ main () {
                 echo "**"
                 echo " Action 1 - upload the report for final checking and sharing to nc using the script: upload_report_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ ${report_name}"
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -263,6 +263,7 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "reporting_error" ]]; then
                 counter=$((counter+1))
+                echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but there were warning while creating the report (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -277,7 +278,6 @@ main () {
                 echo " Action 1 - when warning(s) solved using above action(s) create a new report and upload it to nc for final checking and sharing using the script:"
                 echo "            create_patient_report_validated_run ${set_name} (when there was a doid/clinical curation warning indicate you want to rerun protect!)"
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -293,7 +293,8 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "no_report_error" ]]; then
                 counter=$((counter+1))
-                 db_status=$(echo "${run_info}" | cut -f4)
+                echo "---------"
+                db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 info_validated_run ${set_name} exclude_checks
@@ -302,7 +303,6 @@ main () {
                 echo "**"
                 echo " Action 1 - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -320,13 +320,13 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "health_error" ]]; then
                 counter=$((counter+1))
+                echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- ${set_name} is validated, but there is a health warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 info_validated_run ${set_name}
                 health_check_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
