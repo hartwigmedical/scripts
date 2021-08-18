@@ -657,15 +657,6 @@ locate_linx_breakends() {
     echo ${disruption_tsv}
 }
 
-locate_linx_viral_insertions() {
-    local run_dir=$1
-    local viral_insertion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.viral_inserts.tsv")
-    if [[ -z "${viral_insertion_tsv}" ]]; then
-        error "Unable to locate viral insertion tsv in ${run_dir}. Exiting."
-    fi
-    echo ${viral_insertion_tsv}
-}
-
 locate_linx_driver_catalog() {
     local run_dir=$1
     local driver_catalog_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.driver.catalog.tsv")
@@ -673,6 +664,15 @@ locate_linx_driver_catalog() {
         error "Unable to locate linx drivers catalog in ${run_dir}. Exiting."
     fi
     echo ${driver_catalog_tsv}
+}
+
+locate_linx_drivers() {
+    local run_dir=$1
+    local driver_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.drivers.tsv")
+    if [[ -z "${driver_tsv}" ]]; then
+        error "Unable to locate linx drivers in ${run_dir}. Exiting."
+    fi
+    echo ${driver_tsv}
 }
 
 locate_linx_plot_directory() {
