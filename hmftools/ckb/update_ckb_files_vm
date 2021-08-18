@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 zipFile=$1 && shift
 
 # first add file to gs://hmf-crunch-resources/serve/ckb/ bucket
