@@ -67,6 +67,7 @@ main () {
             counter=$((counter+1))
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR\|Health checker log from'
+            echo "****"
             echo " Action 1 - inspect the error above and solve if possible with lab (extra sequencing for coverage and/or second biopt)... "
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
             echo " Action 2 - create a failed report and upload it to nc for final checking and sharing using the script: create_patient_report_failed_run ${set_name} "
@@ -94,7 +95,8 @@ main () {
 
         if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Failed but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "# -${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "             .$( cat ${sharing_db_file} | grep ${sample_name} ) "
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -119,6 +121,7 @@ main () {
             counter=$((counter+1))
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
+            echo "****"
             echo " Action - if snpcheck is OK update the api using the script: patch_api_run_validate ${set_name}"
             echo "---------"
         fi
@@ -142,8 +145,8 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            perform_snpcheck_run ${set_name}
+            echo "# -${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "             .$( cat ${sharing_db_file} | grep ${sample_name} ) "
             echo "---------"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
@@ -235,6 +238,7 @@ main () {
                 gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -' | grep "has already been reported"
                 report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
                 report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
+                echo "****"
                 echo " Action 1 - upload the report for final checking and sharing to nc using the script: upload_report_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ ${report_name}"
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
                 echo "---------"
@@ -259,6 +263,7 @@ main () {
                 info_validated_run ${set_name} exclude_checks
                 sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
+                echo "****"
                 echo " Action 1 - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
                 echo "---------"
@@ -284,9 +289,10 @@ main () {
                 doid_check_validated_run ${set_name}
                 gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -'
                 sql_checks_reporting ${sample_name}
-                echo " Action when lims information warning - update the API using the script: update_lims"
-                echo " Action when doid/clinical curation warning - update the API using the script: update_clinical_curation"
-                echo " Action when summary missing warning - add a summary to /data/common/dbs/summary_patient_report/summary_samples.tsv"
+                echo "****"
+                echo " Action when lims information warning - ask lab to update lims, thereafter update the API using the script: update_lims"
+                echo " Action when doid/clinical curation warning - solve the clinical curation, thereafter update using the script: update_clinical_curation"
+                echo " Action when summary missing warning - ask KMBP to write summary, thereafter add a summary to /data/common/dbs/summary_patient_report/summary_samples.tsv"
                 echo " Action 1 - when warning(s) solved using above action(s) create a new report and upload it to nc for final checking and sharing using the script:"
                 echo "             create_patient_report_validated_run ${set_name} (when there was a doid/clinical curation warning indicate you want to rerun protect!)"
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
