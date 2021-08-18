@@ -73,11 +73,11 @@ locate_nextcloud_upload_credentials() {
 ##################################### JARS #####################################
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v3.1/purple.jar
+    echo ${base_path}/tools/purple/3.1/purple.jar
 }
 
 locate_pilot_purple() {
-    echo ${base_path}/tools/purple_pilot/purple.jar
+    echo ${base_path}/tools/purple/pilot/purple.jar
 }
 
 locate_prod_virus_interpreter() {
@@ -109,11 +109,11 @@ locate_pilot_linx() {
 }
 
 locate_prod_sigs() {
-    echo ${base_path}/tools/sigs_v1.0/sigs.jar
+    echo ${base_path}/tools/sigs/1.0/sigs.jar
 }
 
 locate_pilot_sigs() {
-    echo ${base_path}/tools/sigs_pilot/sigs.jar
+    echo ${base_path}/tools/sigs/pilot/sigs.jar
 }
 
 locate_pilot_orange() {
@@ -166,7 +166,7 @@ locate_prod_protect() {
 }
 
 locate_pilot_protect() {
-    echo ${base_path}/tools/protect_pilot/protect.jar
+    echo ${base_path}/tools/protect/pilot/protect.jar
 }
 
 locate_pilot_cuppa() {
