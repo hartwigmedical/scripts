@@ -3,8 +3,6 @@
 source message_functions || exit 1
 
 set=$1 && shift
-exclusion_checks=$1 && shift
-
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
@@ -27,6 +25,7 @@ if [[ ${run_count} == 0 ]]; then
     exit 1
 fi
 
+####
 
 set_url="gs://${bucket}/${set}/"
 
@@ -43,7 +42,3 @@ pipeline_version_url="${set_url}pipeline.version"
 pipeline_version=$(gsutil cat "${pipeline_version_url}" )
 info "This run has been done with pipeline ${pipeline_version}"
 
-if [[ "${exclusion_checks}" == "" ]]; then
-    health_check_validated_run ${bucket} ${set}
-    doid_check_validated_run ${bucket} ${set} ${sample}
-fi
