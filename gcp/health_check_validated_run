@@ -1,12 +1,31 @@
 #!/usr/bin/env bash
 
+
 source message_functions || exit 1
 
-bucket=$1 && shift
 set=$1 && shift
 
-[[ -n "${bucket}" ]] || die "No bucket provided. Exiting"
 [[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+###
 
 healthchecker_url="gs://${bucket}/${set}/health_checker/"
 
@@ -15,7 +34,6 @@ if [[ "$error" == *"CommandException"* ]]; then
     warn "Run health_checker output does not exist in ${bucket} on gcp."
     exit 1
 fi
-
 
 healthchecker_success=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
 healthchecker_fail=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )

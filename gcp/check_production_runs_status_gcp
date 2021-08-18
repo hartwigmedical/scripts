@@ -46,8 +46,10 @@ main () {
 
 
     # Now ready to check each status on by one
+
     echo ""
-    echo "### Failed runs that not have been reported before ( please solve! ):"
+    echo ""
+    echo "### FAILED RUNS THAT NOT HAVE BEEN REPORTED BEFORE ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -65,18 +67,20 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
+            echo "---------"
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR\|Health checker log from'
+            echo "**"
             echo " Action 1 - inspect the error above and solve if possible with lab (extra sequencing for coverage and/or second biopt)... "
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
             echo " Action 2 - create a failed report and upload it to nc for final checking and sharing using the script: create_patient_report_failed_run ${set_name} "
             echo " Action 3 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-            echo "---------"
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Failed runs that have already been reported ( no action required ):"
+    echo ""
+    echo "### FAILED RUNS THAT ALREADY HAVE BEEN REPORTED ( no action required ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -94,13 +98,15 @@ main () {
 
         if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Failed but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "---------"
+            echo "-${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "    $( cat ${sharing_db_file} | grep ${sample_name} ) "
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
-
     echo ""
-    echo "### Finished runs that not have been reported before ( please solve! ):"
+    echo ""
+    echo "### FINISHED RUNS THAT NOT HAVE BEEN REPORTED BEFORE ( please solve! ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -117,15 +123,17 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
+            echo "---------"
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
+            echo "**"
             echo " Action - if snpcheck is OK update the api using the script: patch_api_run_validate ${set_name}"
-            echo "---------"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Finished runs that have already been reported ( no action required ):"
+    echo ""
+    echo "### FINISHED RUNS THAT ALREADY HAVE BEEN REPORTED ( no action required ):"
     counter=0
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
@@ -142,9 +150,9 @@ main () {
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
-            echo "# -${counter}- ${set_name} has Finished but has been reported before: $( cat ${sharing_db_file} | grep ${sample_name} ) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            perform_snpcheck_run ${set_name}
             echo "---------"
+            echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
+            echo "    $( cat ${sharing_db_file} | grep ${sample_name} ) "
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -168,28 +176,58 @@ main () {
             fi
         fi
         if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
+
             validated_runs_not_yet_reported=$validated_runs_not_yet_reported$set_name" "
+
             error="none"
-            #
-            report_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
-            if [[ "$report_error" == 0 ]]; then
+
+            if [[ $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log | wc -l ) > 0 ]]; then
+
+                # error - reporter
+                doid_error=$( doid_check_validated_run ${set_name} 2>&1 )
+                reporter_log_error=$( gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -'  2>&1 )
+
+                # error - reporter - doid
+                if [[ "$doid_error" == *"the doid of protect is not known"* || "$doid_error" == *"the doid is not equal of"* || "$reporter_log_error" == *"in list of primary tumors!"* ]]; then
+                     error="reporting_error"
+                     reporter_error="doid"
+                fi
+                # error - reporter - lims
+                if [[ "$reporter_log_error" == *"Consent"* || "$reporter_log_error" == *"Mismatching ref sample name"* || "$reporter_log_error" == *"do not match"* || "$reporter_log_error" == *"Missing or invalid hospital"* ]]; then
+                     error="reporting_error"
+                     reporter_error=${reporter_error}"_lims"
+                fi
+                # error - reporter - summary
+                if [[ "$reporter_log_error" == *"summary"* ]]; then
+                     error="reporting_error"
+                     reporter_error=${reporter_error}"_summary"
+                fi
+
+            else
+                error="no_report_error"
+            fi
+
+            # error - no report made
+            report_exists_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
+            if [[ "$report_exists_error" == 0 ]]; then
                  error="no_report_error"
             fi
-            #
-            health_error=$( checks_validated_run ${set_name} 2>&1 )
+
+            # error - health
+            health_error=$( health_check_validated_run ${set_name} 2>&1 )
             if [[ "$health_error" == *"WARN"* ]]; then
-                error="other_health_error "
+                 error="health_error"
             fi
-            if [[ "$health_error" == *"the doid of protect  is not known"* || "$health_error" == *"the doid is not equal of"* ]]; then
-                 error="DOID_error"
-            fi
+
+
             set_name_error="error_"$set_name
             eval ${set_name_error}=$error
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Validated runs without warnings and with report ( that can now be shared ):"
+    echo ""
+    echo "### VALIDATED RUNS WITHOUT WARNINGS AND WITH REPORT ( that can now be shared ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
@@ -198,24 +236,55 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "none" ]]; then
                 counter=$((counter+1))
+                echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} exclude_checks
+                info_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
+                gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -' | grep "has already been reported"
                 report_name=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample_name} | grep dna_analysis_report.pdf )
                 report_name=$( echo ${report_name#"gs://patient-reporter-prod-1/"} )
-                #info "A report has been created in the bucket ${url_bucket_report_pipline}: ${report_name}"
+                echo "**"
                 echo " Action 1 - upload the report for final checking and sharing to nc using the script: upload_report_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ ${report_name}"
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
+    echo ""
+    echo ""
+    echo "### VALIDATED RUNS WITH WARNINGS WHILE CREATING THE REPORT ( please solve! ):"
+    counter=0
+    while read -r run_info; do
+        set_name=$(echo "${run_info}" | cut -f2)
+        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
+            sample_name=$(echo "${run_info}" | cut -f1)
+            set_name_error="error_"$set_name
+            if [[ "${!set_name_error}" == "reporting_error" ]]; then
+                counter=$((counter+1))
+                echo "---------"
+                db_status=$(echo "${run_info}" | cut -f4)
+                research_db_status=$(get_db_status_by_set_name "${set_name}")
+                echo "-${counter}- ${set_name} is validated, but there were warning while creating the report (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
+                info_validated_run ${set_name}
+                doid_check_validated_run ${set_name}
+                gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -'
+                sql_checks_reporting ${sample_name}
+                echo "**"
+                echo " Action when lims information warning - ask lab to update lims, thereafter update the API using the script: update_lims"
+                echo " Action when doid/clinical curation warning - solve the clinical curation, thereafter update using the script: update_clinical_curation"
+                echo " Action when summary missing warning - ask KMBP to write summary, thereafter add a summary to /data/common/dbs/summary_patient_report/summary_samples.tsv"
+                echo " Action 1 - when warning(s) solved using above action(s) create a new report and upload it to nc for final checking and sharing using the script:"
+                echo "            create_patient_report_validated_run ${set_name} (when there was a doid/clinical curation warning indicate you want to rerun protect!)"
+                echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
+             fi
+         fi
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
     echo ""
-    echo "### Validated runs without warnings but with no report ( please solve! ):"
+    echo ""
+    echo "### VALIDATED RUNS WITH NO REPORT CREATED ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
@@ -224,60 +293,40 @@ main () {
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "no_report_error" ]]; then
                 counter=$((counter+1))
-                 db_status=$(echo "${run_info}" | cut -f4)
+                echo "---------"
+                db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
                 echo "-${counter}- There were no warnings for ${set_name}, but no report has been found for ${sample_name} # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name} exclude_checks
+                info_validated_run ${set_name} exclude_checks
                 sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
+                echo "**"
                 echo " Action 1 - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
 
+
     echo ""
-    echo "### Validated runs with doid warning ( please solve! ):"
+    echo ""
+    echo "### VALIDATED RUNS WITH HEALTH WARNING ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
-            if [[ "${!set_name_error}" == "DOID_error" ]]; then
+            if [[ "${!set_name_error}" == "health_error" ]]; then
                 counter=$((counter+1))
+                echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
                 research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- ${set_name} is validated, but doid warning see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name}
+                echo "-${counter}- ${set_name} is validated, but there is a health warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
+                info_validated_run ${set_name}
+                health_check_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
-                echo " Action 1 - solve the doid warning by updating the API using the script: update_clinical_curation"
-                echo " Action 2 - create a new report (indicate to rerun protect!) and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
-                echo " Action 3 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${sample_name}. "
-                echo "---------"
-             fi
-         fi
-    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
-
-
-    echo ""
-    echo "### Validated runs with other health warning ( please solve! ):"
-    counter=0
-    while read -r run_info; do
-        set_name=$(echo "${run_info}" | cut -f2)
-        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
-            sample_name=$(echo "${run_info}" | cut -f1)
-            set_name_error="error_"$set_name
-            if [[ "${!set_name_error}" == "other_health_error" ]]; then
-                counter=$((counter+1))
-                db_status=$(echo "${run_info}" | cut -f4)
-                research_db_status=$(get_db_status_by_set_name "${set_name}")
-                echo "-${counter}- ${set_name} is validated, but there is a other warning (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
-                checks_validated_run ${set_name}
-                sql_checks_reporting ${sample_name}
-                echo "---------"
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -286,7 +335,7 @@ main () {
 
     echo ""
     counter=0
-    echo "### Processing/Uploading/Downloading runs ( no action required ):"
+    echo "### PROCESSING/UPLOADING/DOWNLOADING RUNS ( no action required ):"
     while read -r run_info; do
         counter=$((counter+1))
         set_name=$(echo "${run_info}" | cut -f1)
@@ -296,7 +345,7 @@ main () {
 
 
     echo ""
-    echo "### Waiting runs ( no action required ):"
+    echo "### WAITING RUNS ( no action required ):"
     counter=0
     while read -r run_info; do
         counter=$((counter+1))
