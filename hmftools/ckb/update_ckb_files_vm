@@ -5,16 +5,22 @@ zipFile=$1 && shift
 # first add file to gs://hmf-crunch-resources/serve/ckb/ bucket
 
 # copying data from bucket
+info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zipFile}"
 gsutil cp gs://hmf-crunch-resources/serve/ckb/${zipFile} /data/resources/ckb/
 
 # unzip file
+info "Unziping file ${zipFile}"
 unzip /data/resources/ckb/${zipFile}
 
 #rename dir
-date=$(echo ${zipFile} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}')
+info "Renaming dir"
+date=$(echo ${zipFile} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}' | cut -c 3-)
 mv /data/resources/ckb/api-export ${date}_ckb_flex_dump
 rm ${zipFile}
 
 # create new symlink
+info "Creating new symlink"
 unlink /data/resources/ckb/ckb_flex_dump
 ln -s /data/resources/ckb/${date}_ckb_flex_dump /data/resources/ckb/ckb_flex_dump
+
+info "CKB dump is updated!"
