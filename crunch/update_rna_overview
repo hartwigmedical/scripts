@@ -1,24 +1,25 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-command -v execute_sql_on_prod || die "Command not found (execute_sql_on_prod)"
+command -v execute_sql_on_prod >/dev/null 2>&1 || die "Command not found (execute_sql_on_prod)"
 
 YYMMDD=$(date '+%y%m%d')
 
-nas_loc="nas:/volume1/web/overviews/rnaseq/"
+nas_loc="/volume1/web/overviews/rnaseq"
 
-task="rna_overview"
-out_dir="/tmp/${task}"
-api_jsn="${out_dir}/api.json"
-sql_tsv="${out_dir}/sql.txt"
-api_tsv="${out_dir}/api.txt"
-sum_out="${out_dir}/summary.txt"
+task="rna_overview_${YYMMDD}"
+tmp_dir="/tmp/${task}"
+api_jsn="${tmp_dir}/api.json"
+sql_tsv="${tmp_dir}/sql.txt"
+api_tsv="${tmp_dir}/api.txt"
+sum_out="${tmp_dir}/summary.txt"
 
-[[ -d "${out_dir}" ]] || mkdir "${out_dir}"
-[[ -d "${out_dir}" ]] || die "OUTPUT DIR does not exist (${out_dir})"
-[[ -w "${out_dir}" ]] || die "OUTPUT DIR not writable (${out_dir})"
+[[ -d "${tmp_dir}" ]] || mkdir "${tmp_dir}"
+[[ -d "${tmp_dir}" ]] || die "OUTPUT DIR does not exist (${tmp_dir})"
+[[ -w "${tmp_dir}" ]] || die "OUTPUT DIR not writable (${tmp_dir})"
 
-info "Starting with ${task} creation ($YYMMDD)" | tee ${sum_out}
+info "Starting with ${task} creation ($YYMMDD)" | tee "${sum_out}"
+info "Writing output to directory ${tmp_dir}" | tee "${sum_out}"
 
 execute_sql_on_prod "SELECT sampleId AS '#sampleId',readLength,totalFragments FROM rnaStatistics" > "${sql_tsv}"
 hmf_api_get "samples?type=tumor-rna" > "${api_jsn}"
@@ -30,15 +31,15 @@ count_sql_all=$(grep -vc ^# "${sql_tsv}")
 count_api_all=$(grep -vc ^# "${api_tsv}")
 count_api_rdy=$(grep -v ^# "${api_tsv}" | grep -cP "Ready|Unregistered")
 count_api_ins=$(grep -v ^# "${api_tsv}" | grep -cPv "Ready|Unregistered")
+sql_api_diff=$((count_api_all - count_sql_all))
 
-info "Number of samples from SQL: ${count_sql_all}" | tee -a ${sum_out}
-info "Number of samples from API: ${count_api_all}" | tee -a ${sum_out}
-info "  Of which ready/unregistered: ${count_api_rdy}" | tee -a ${sum_out}
-info "  Of which insufficient: ${count_api_ins}" | tee -a ${sum_out}
+info "Number of samples from SQL: ${count_sql_all}" | tee -a "${sum_out}"
+info "Number of samples from API: ${count_api_all}" | tee -a "${sum_out}"
+info "  Of which ready/unregistered: ${count_api_rdy}" | tee -a "${sum_out}"
+info "  Of which insufficient: ${count_api_ins}" | tee -a "${sum_out}"
+info "Difference between API and SQL: ${sql_api_diff}" | tee -a "${sum_out}"
 
-info "Finished with ${task}" | tee -a ${sum_out}
+info "Finished with ${task}" | tee -a "${sum_out}"
 
 info "Syncing results to NAS (${nas_loc})"
-rsync "${api_jsn}" "${sql_tsv}" "${api_tsv}" "${sum_out}" "${nas_loc}/"
-
-
+sync_dir_to_nas "${tmp_dir}" "${nas_loc}/"
