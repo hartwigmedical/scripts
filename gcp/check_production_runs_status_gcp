@@ -185,7 +185,7 @@ main () {
                      reporter_error="doid"
                 fi
                 # error - reporter - lims
-                if [[ "$reporter_log_error" == *"consent"* || "$reporter_log_error" == *"Mismatching ref sample name"* || "$reporter_log_error" == *"do not match"* || "$reporter_log_error" == *"Missing or invalid hospital"* ]]; then
+                if [[ "$reporter_log_error" == *"Consent"* || "$reporter_log_error" == *"Mismatching ref sample name"* || "$reporter_log_error" == *"do not match"* || "$reporter_log_error" == *"Missing or invalid hospital"* ]]; then
                      error="reporting_error"
                      reporter_error=${reporter_error}"_lims"
                 fi
