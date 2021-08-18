@@ -8,4 +8,4 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
-run_orange_pilot ${run_dir} -max_evidence_level B
+run_orange_pilot_on_data_vm ${run_dir} -max_evidence_level B
