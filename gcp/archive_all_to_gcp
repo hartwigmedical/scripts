@@ -8,7 +8,7 @@ source ${HOME}/.bashrc
 source message_functions || exit 1
 source locate_files || exit 1
 
-info "Archiving Sequencer Archive no longer possible: removed as part of datastore-out (for new sequencer archive location ask Stef)"
+info "Archiving Sequencer Archive no longer possible: removed as part of datastore-out (see also gs://hmf-ops-data)"
 #do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3300
 
 info "Archiving Patient Reports"
