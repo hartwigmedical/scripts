@@ -66,14 +66,15 @@ main () {
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
     info_string="name=${name}|class=${class}|id=${oid}|env=${environment}"
-    info "About to patch object (${info_string}) with '${data}'"
     if [[ "${confirmation}" == "true" ]]; then
+        info "About to patch object (${info_string}) with '${data}'"
         current_value=$(jq --arg key "${field}" '.[$key]' <<< "${json}")
         info "Will replace ${current_value} with ${value}"
         info "Press [ENTER] to apply..."
         read -r -s
         patch_with_curl "${object_location}" "${data}" || die "API PATCH failed"
     elif [[ "${confirmation}" == "false" ]]; then
+        info "Patching object (${info_string}) with '${data}'"
         patch_with_curl "${object_location}" "${data}" || die "API PATCH failed"
     else
         die "Unexpected: param confirmation should always be either true or false"
