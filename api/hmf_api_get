@@ -3,28 +3,27 @@
 source message_functions || exit 1
 
 print_usage(){
-    self=$(basename $0)
+    self=$(basename "$0")
     echo ""
     echo "Descr: Runs a GET query against HMF API"
-    echo "Usage: $self [-a] \${query}"
+    echo "Usage: $self [-t] \${query}"
     echo "Exmpl: $self 'samples?name=GIAB12878'"
     echo "       $self 'samples?barcode=FR17758478-200806'"
     echo "       $self 'samples?name=name&type=tumor'"
     echo "       $self 'runs/63961'"
-    echo "       $self -a 'samples'"
+    echo "       $self -t 'samples'"
     echo "       $self 'runs?ini=ShallowSeq.ini'"
     echo "Options:"
-    echo "   -a  Use acceptance environment instead of production"
+    echo "   -t  Use testing/pilot environment instead of production"
     echo ""
     exit 1
 }
 
-api_dir="/data/common/dbs/api_credentials"
 environment='prod'
 
-while getopts ':a' flag; do
+while getopts ':t' flag; do
     case "${flag}" in
-        a) environment='acc' && shift ;;
+        t) environment='pilot' && shift ;;
         *) print_usage >&2
         exit 1 ;;
     esac
@@ -34,12 +33,10 @@ query=$1 && shift
 # no default for api credentials and url to avoid using wrong env as much as possible
 if [[ "${environment}" == "prod" ]]; then
     api_url="http://api.prod-1/hmf/v1"
-elif [[ "${environment}" == "acc" ]]; then
-    api_crt="--cert ${api_dir}/acc/api.crt"
-    api_key="--key ${api_dir}/acc/api.key"
-    api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
+elif [[ "${environment}" == "pilot" ]]; then
+    api_url="http://api.pilot-1/hmf/v1"
 else
-    die "Environment should be either prod or acc"
+    die "Environment should be either prod or pilot"
 fi
 
 main () {

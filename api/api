@@ -7,30 +7,34 @@ classes=(accounts biopsies entities fastq flowcells groups inis platforms runs s
 print_usage(){
     script=$(basename "$0")
     echo "---"
-    echo "Usage: $script [-j] <class> [<filter-value> <filter-key>]"
+    echo "Usage: $script [-j, -t] <class> [<filter-value> <filter-key>]"
     echo "Examples:"
     echo " $script platforms"
     echo " $script -j platforms"
+    echo " $script -t samples"
     echo " $script flowcells | tail"
     echo " $script flowcells NS21-0064"
     echo " $script samples CPCT02460007T"
     echo " $script samples FR17455547 barcode"
-    echo " $script runs 210409_HMFregCORE_FR30729505_FR30729512_COREDB010110"
-    echo " $script runs FR30729512 barcode"
     echo " $script fastq 37510 sample_id"
     echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna' id"
+    echo "Options:"
+    echo " -j  output raw json instead of TSV table"
+    echo " -t  use testing/pilot API instead of prod"
     echo "Notes:"
-    echo " - Default filter-key is 'name'"
-    echo " - Add option -j to output raw json instead of parsed TSV table"
-    echo " - Classes: ${classes[*]}"
+    echo " Default filter-key is 'name'"
+    echo " Classes: ${classes[*]}"
     echo "---"
     exit 1
 }
 
 output_json='FALSE'
-while getopts ':j' flag; do
+additional_get_params=""
+
+while getopts ':jt' flag; do
     case "${flag}" in
         j) output_json='TRUE' && shift ;;
+        t) additional_get_params="-t " && shift ;;
         *) print_usage >&2
         exit 1 ;;
     esac
@@ -48,7 +52,6 @@ main(){
     # Sanity checks
     contains "${class}" "${classes[@]}" || die "Unknown class '${class}' provided."
 
-    # Setup
     if [[ -n "${filter_field}" ]]; then
         filter_field="${filter_field}"
     elif [[ "${class}" == "runs" ]]; then
@@ -62,14 +65,17 @@ main(){
     json_result=""
     if [[ -n "${filter_input}" ]]; then
         if [[ "${filter_field}" == "id" ]]; then
-            json_result=$(hmf_api_get "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
+            # shellcheck disable=SC2086
+            json_result=$(hmf_api_get $additional_get_params "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
             # In case one object is queried by id the result is not an array so wrap to allow downstream print
             json_result=$(jq '[.]' <<< "${json_result}")
         else
-            json_result=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
+            # shellcheck disable=SC2086
+            json_result=$(hmf_api_get $additional_get_params "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
         fi
     else
-        json_result=$(hmf_api_get "${class}") || die "Unable to get result from API (without filter)"
+        # shellcheck disable=SC2086
+        json_result=$(hmf_api_get $additional_get_params "${class}") || die "Unable to get result from API (without filter)"
     fi
 
     # Printing
