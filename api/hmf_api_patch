@@ -12,7 +12,7 @@ print_usage(){
     echo "       $(basename "$0") -c samples -o 1000 -f primary_tumor_doids -v 1,4,92"
     echo "Options:"
     echo "  -e   Do not require to press a key for confirmation"
-    echo "  -a   Use acceptance environment instead of production"
+    echo "  -t   Use testing/pilot environment instead of production"
     echo ""
     exit 1
 }
@@ -22,23 +22,22 @@ oid='' # object id
 field='' # the field to PATCH
 value='' # the value to PATCH field with
 confirmation='true' # by default script requires key press
-environment='prod' # by default uses production instead of acceptance
+environment='prod' # by default uses production instead of testing/pilot
 
 unquoted_values='null|true|false'
 quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample'
 unquoted_fields='yld|yld_req|q30|q30_req|qc_pass|max_undet|min_q30|min_sample_yield'
 quoted_array_fields='primary_tumor_doids'
 unquoted_array_fields='no_literal_array_fields_yet'
-api_dir="/data/common/dbs/api_credentials"
 
-while getopts ':c:o:f:v:ea' flag; do
+while getopts ':c:o:f:v:et' flag; do
     case "${flag}" in
         c) class=${OPTARG} ;;
         o) oid=${OPTARG} ;;
         f) field=${OPTARG} ;;
         v) value=${OPTARG} ;;
         e) confirmation='false' ;;
-        a) environment='acc' ;;
+        t) environment='pilot' ;;
         *) print_usage >&2
         exit 1 ;;
     esac
@@ -51,19 +50,17 @@ fi
 # no default for api credentials and url to avoid using wrong env as much as possible
 if [[ "${environment}" == "prod" ]]; then
     api_url="http://api.prod-1/hmf/v1"
-elif [[ "${environment}" == "acc" ]]; then
-    api_crt="--cert ${api_dir}/acc/api.crt"
-    api_key="--key ${api_dir}/acc/api.key"
-    api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
+elif [[ "${environment}" == "pilot" ]]; then
+    api_url="http://api.pilot-1/hmf/v1"
 else
-    die "Environment should be either prod or acc"
+    die "Environment should be either prod or pilot (${environment})"
 fi
 
 main () {
     info "Checking api for object (class=${class}|id=${oid}|env=${environment})"
     object_location="${class}/${oid}"
 
-    # TODO: use hmf_api_get once acceptance environment supported
+    # TODO: use hmf_api_get once pilot environment supported
     json=$(get_with_curl "${object_location}") || die "API GET failed for ${object_location}. Exit."
     name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
@@ -125,20 +122,20 @@ get_name_from_object () {
 get_with_curl () {
     local object_location=$1 && shift
     curl -f --silent --show-error -H "Content-Type: application/json" \
-      --cert-type pem ${api_crt} ${api_key} -X GET "${api_url}/${object_location}"
+      -X GET "${api_url}/${object_location}"
 }
 
 patch_with_curl () {
     local object_location=$1 && shift
     local data=$1 && shift
     curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
-      --cert-type pem ${api_crt} ${api_key} -X PATCH "${api_url}/${object_location}" --data "${data}" > /dev/null
+      -X PATCH "${api_url}/${object_location}" --data "${data}" > /dev/null
 }
 
 post_with_curl_without_data () {
     local object_location=$1 && shift
     curl --silent --show-error \
-      --cert-type pem ${api_crt} ${api_key} -X POST "${api_url}/${object_location}" > /dev/null
+      -X POST "${api_url}/${object_location}" > /dev/null
 }
 
 main
