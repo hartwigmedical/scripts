@@ -2,10 +2,7 @@
 
 source message_functions || exit 1
 
-classes='accounts|biopsies|entities|fastq|flowcells|groups|inis|platforms|runs|samples|sets|sequencers'
-
-# allows autocomplete of script commands
-complete -W "$(echo "${classes}" | tr "|" " ")" "$(basename "$0")"
+classes=(accounts biopsies entities fastq flowcells groups inis platforms runs samples sets sequencers)
 
 print_usage(){
     script=$(basename "$0")
@@ -25,7 +22,7 @@ print_usage(){
     echo "Notes:"
     echo " - Default filter-key is 'name'"
     echo " - Add option -j to output raw json instead of parsed TSV table"
-    echo " - Classes: ${classes}"
+    echo " - Classes: ${classes[*]}"
     echo "---"
     exit 1
 }
@@ -41,80 +38,92 @@ done
 
 class=$1 # obligatory
 filter_input=$2 # optional
-filter_field=$3 # optional
+filter_field=$3 # optional but required if searching by any field other than the "name" of object
 
 if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
     print_usage >&2
 fi
 
-# Sanity checks
-[[ "${class}" =~ ${classes} ]] || die "Unknown class '${class}' provided."
+main(){
+    # Sanity checks
+    contains "${class}" "${classes[@]}" || die "Unknown class '${class}' provided."
 
-# Filter variable setup
-if [[ -n "${filter_field}" ]]; then
-    filter_field="${filter_field}"
-elif [[ "${class}" == "runs" ]]; then
-    filter_field="set_name"
-else
-    filter_field="name"
-fi
-
-# Retrieve API result
-json_result=""
-if [[ -n "${filter_input}" ]]; then
-    if [[ "${filter_field}" == "id" ]]; then
-        json_result=$(hmf_api_get "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
-        # In case one object is queried by id the result is not an array so wrap to allow downstream print
-        json_result=$(jq '[.]' <<< "${json_result}")
+    # Setup
+    if [[ -n "${filter_field}" ]]; then
+        filter_field="${filter_field}"
+    elif [[ "${class}" == "runs" ]]; then
+        # runs have no name field but do have a set_name filter
+        filter_field="set_name"
     else
-        json_result=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
+        filter_field="name"
     fi
-else
-    json_result=$(hmf_api_get "${class}") || die "Unable to get result from API (without filter)"
-fi
 
-# Print results
-if [[ "${output_json}" == "TRUE" ]]; then
-    echo "${json_result}"
-elif [[ "${class}" == "fastq" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
-    jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
-    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9) }1'
-elif [[ "${class}" == "flowcells" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc id
-    jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, .id] | @tsv' <<< "${json_result}" \
-    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
-elif [[ "${class}" == "samples" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
-    jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
-    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
-elif [[ "${class}" == "runs" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ini status version bucket id
-    jq -r '.[] | [.set.name, .set.entity_id, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "platforms" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
-    jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "sets" ]]; then
-    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ref_name tum_name ref_barcode tum_barcode id
-    jq -r '.[] | [.name, .entity_id, .ref_sample, .tumor_sample, (.samples[]|select(.type=="ref")|.barcode)//"NA", (.samples[]|select(.type=="tumor")|.barcode)//"NA", .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "entities" ]]; then
-    printf "#%s\t%s\t%s\t%s\n" name bucket add_to_db id
-    jq -r '.[] | [.name, .bucket, .add_to_db, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "inis" ]]; then
-    printf "#%s\t%s\n" name id
-    jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "sequencers" ]]; then
-    printf "#%s\t%s\t%s\n" name platform_id id
-    jq -r '.[] | [.name, .platform_id, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "biopsies" ]]; then
-    printf "#%s\t%s\n" name id
-    jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "accounts" ]]; then
-    printf "#%s\t%s\n" email id
-    jq -r '.[] | [.email, .id] | @tsv' <<< "${json_result}"
-elif [[ "${class}" == "groups" ]]; then
-    printf "#%s\t%s\n" name id
-    jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
-else
-    die "Table print for class ${class} is not supported"
-fi
+    # Retrieval
+    json_result=""
+    if [[ -n "${filter_input}" ]]; then
+        if [[ "${filter_field}" == "id" ]]; then
+            json_result=$(hmf_api_get "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
+            # In case one object is queried by id the result is not an array so wrap to allow downstream print
+            json_result=$(jq '[.]' <<< "${json_result}")
+        else
+            json_result=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
+        fi
+    else
+        json_result=$(hmf_api_get "${class}") || die "Unable to get result from API (without filter)"
+    fi
+
+    # Printing
+    if [[ "${output_json}" == "TRUE" ]]; then
+        echo "${json_result}"
+    elif [[ "${class}" == "fastq" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
+        jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9) }1'
+    elif [[ "${class}" == "flowcells" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc id
+        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, .id] | @tsv' <<< "${json_result}" \
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
+    elif [[ "${class}" == "samples" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
+        jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
+    elif [[ "${class}" == "runs" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ini status version bucket id
+        jq -r '.[] | [.set.name, .set.entity_id, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "platforms" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
+        jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "sets" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ref_name tum_name ref_barcode tum_barcode id
+        jq -r '.[] | [.name, .entity_id, .ref_sample, .tumor_sample, (.samples[]|select(.type=="ref")|.barcode)//"NA", (.samples[]|select(.type=="tumor")|.barcode)//"NA", .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "entities" ]]; then
+        printf "#%s\t%s\t%s\t%s\n" name bucket add_to_db id
+        jq -r '.[] | [.name, .bucket, .add_to_db, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "inis" ]]; then
+        printf "#%s\t%s\n" name id
+        jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "sequencers" ]]; then
+        printf "#%s\t%s\t%s\n" name platform_id id
+        jq -r '.[] | [.name, .platform_id, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "biopsies" ]]; then
+        printf "#%s\t%s\n" name id
+        jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "accounts" ]]; then
+        printf "#%s\t%s\n" email id
+        jq -r '.[] | [.email, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "groups" ]]; then
+        printf "#%s\t%s\n" name id
+        jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    else
+        die "Table print for class ${class} is not supported"
+    fi
+}
+
+contains(){
+    local e match="$1"
+    shift
+    for e; do [[ "$e" == "$match" ]] && return 0; done
+    return 1
+}
+
+main
