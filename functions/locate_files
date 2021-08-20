@@ -750,7 +750,7 @@ locate_gatk_germline_variants() {
 
     if [[ -z ${germline_vcf} ]]; then
         # Probably no v5 pipeline done yet
-        germline_vcf=$(find -L ${run_dir}/ -type f -name "*.annotated.vcf.gz")
+        germline_vcf=$(find -L ${run_dir}/germline_caller/*/ -type f -name "*.annotated.vcf.gz")
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
