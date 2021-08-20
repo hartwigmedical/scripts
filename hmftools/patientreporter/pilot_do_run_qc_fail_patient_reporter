@@ -57,6 +57,5 @@ else
         -ref_sample_barcode ${ref_sample_barcode} \
         -tumor_sample_id ${tumor_sample} \
         -tumor_sample_barcode ${tumor_sample_barcode} \
-        -ref_genome_version 37 \
         "$@"
 fi
