@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-classes=(accounts biopsies entities fastq flowcells groups inis platforms runs samples sets sequencers)
+classes=(accounts biopsies datasets entities fastq flowcells groups inis platforms runs samples sets sequencers)
 
 print_usage(){
     script=$(basename "$0")
