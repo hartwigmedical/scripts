@@ -410,6 +410,44 @@ locate_sage_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_sage_bqr_plot() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local sage_dir_old=${run_dir}/sage
+    local sage_dir=${run_dir}/sage_somatic
+
+    local bqr_plot=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        bqr_plot=$(find -L ${sage_dir}/ -type f -name "${sample}.sage.bqr.png")
+    elif [[ -d "${sage_dir_old}" ]]; then
+        bqr_plot=$(find -L ${sage_dir_old}/ -type f -name "${sample}.sage.bqr.png")
+    fi
+
+    if [[ -z "${bqr_plot}" ]]; then
+        error "Unable to locate BQR plot for ${sample} in ${run_dir}. Exiting."
+    fi
+    echo ${bqr_plot}
+}
+
+locate_sage_germline_gene_coverage() {
+    local run_dir=$1 && shift
+
+    local sage_dir=${run_dir}/sage_germline
+
+    local gene_coverage_tsv=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        gene_coverage_tsv=$(find -L ${sage_dir}/ -type f -name "*.sage.gene.coverage.tsv")
+    fi
+
+    if [[ -z "${gene_coverage_tsv}" ]]; then
+        error "Unable to locate SAGE germline gene coverage in ${run_dir}. Exiting."
+    fi
+    echo ${gene_coverage_tsv}
+}
+
 ##################################### PURPLE ###################################
 
 locate_purple_purity() {
