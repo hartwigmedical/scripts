@@ -17,30 +17,25 @@ if [[ -z "${plate_id}" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-## find at NAS
-info "Searching for \"${plate_id}*${file_suffix}\" results file in \"nas:${nas_dir}\""
+info "Searching for \"${plate_id}*${file_suffix}\" file in \"nas:${nas_dir}\""
 result_files=()
 while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
 done < <(ssh nas find "${nas_dir}" -name "${plate_id}*${file_suffix}" -print0)
-if [[ ${#result_files[@]} -eq 0 ]]; then 
-    error "No file found for '${plate_id}'!"
+
+if [[ ${#result_files[@]} -eq 0 ]]; then
+    die "No file found for '${plate_id}'!"
 elif [[ ${#result_files[@]} -gt 1 ]]; then
-    error "More than 1 file found for '${plate_id}'!"
+    die "More than 1 file found for '${plate_id}'!"
 fi
 
-## sync and process
 result_file_path="${result_files[0]}"
 result_file_name=$(basename "${result_file_path}")
 target_file_path="${target_dir}/${result_file_name}"
 
-info "Found SNPcheck file at NAS ($result_file_name)"
-info " syncing to datastore"
-#rsync --protect-args -ah "nas:${result_file_path}" "${target_file_path}"
+info "Found results CSV file at NAS ($result_file_name)"
+info "  Retrieving Array results CSV"
 copy_file_from_nas "${result_file_path}" "${target_dir}/" || die "Rsync finished with non-zero exit code ($?)"
-#if [[ $? != 0 ]]; then error "Rsync finished with non-zero exit code ($?)"; fi
 
-info "  converting file VCFs"
+info "  Converting Array results CSV to sample VCFs"
 create_sample_vcfs_from_csv "${target_file_path}" || die "Conversion to VCF finished with non-zero exit code ($?)"
-#if [[ $? != 0 ]]; then error "Conversion to VCF finished with non-zero exit code ($?)"; fi
-
