@@ -758,6 +758,10 @@ locate_gatk_germline_variants() {
 
     if [[ -d ${run_dir}/${ref_sample}/germline_caller ]]; then
         germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name "*.germline.vcf.gz")
+        # Some runs have GATK calls in a new place but with old file name.
+        if [[ -z ${germline_vcf} ]]; then
+            germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name "*.annotated.vcf.gz")
+        fi
     fi
 
     if [[ -z ${germline_vcf} ]]; then
