@@ -346,6 +346,10 @@ locate_wgs_metrics() {
         metrics_file=$(find -L ${metrics_dir_pre_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
     elif [[ -d "${metrics_dir_v5}" ]]; then
         metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}.wgsmetrics")
+        # Some runs have new structure but still old file names.
+        if [[ -z ${metrics_file} ]]; then
+            metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
+        fi
     fi
 
     if [[ -z "${metrics_file}" ]]; then
@@ -367,6 +371,10 @@ locate_flagstats() {
         flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*.realigned.flagstat")
     elif [[ -d "${flagstats_dir_v5}" ]]; then
         flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}.flagstat")
+        # Some runs have new structure but still old file names.
+        if [[ -z ${flagstats_file} ]]; then
+            flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}*.realigned.flagstat")
+        fi
     fi
 
     if [[ -z "${flagstats_file}" ]]; then
