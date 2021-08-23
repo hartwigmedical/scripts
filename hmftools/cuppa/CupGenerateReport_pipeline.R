@@ -128,8 +128,8 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   scale_fill_manual(values = prevColours, limits = names(prevColours)) +
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
-outputFile <- paste0(cuppaDir, sampleId, '.cup.report.png')
-print(paste0("Writing output to file: ", outputFile))
+outputFile1 <- paste0(cuppaDir, sampleId, '.cup.report.1.png')
+outputFile2 <- paste0(cuppaDir, sampleId, '.cup.report.2.png')
 
 featureLimit <- 15
 featureCount <- nrow(cupFeatures %>% group_by(Value) %>% count)
@@ -150,23 +150,27 @@ if (featureCount > featureLimit)
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
-png(file = outputFile, res = 140, height = 2200, width = 4000)
 
-par(mar = c(1, 1, 1, 1))
+# Generating PNG files
 
 if (separateFeaturePlot)
-  {
-  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+  {	 print(paste0("Writing output to file: ", outputFile1))
+	  png(file=outputFile1, res = 140, height = 2200, width = 4000)
+	  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
-  featurePlot <- featurePlot +
-    scale_x_discrete(position = "top") +
-    theme(axis.text.x.top = element_text(angle = 90, hjust = 0, size = 10, face = 'bold', family = font))
+	  print(paste0("Writing output to file: ", outputFile2))
+  	  png(file=outputFile2, res = 140, height=2200, width=4000)
+    	featurePlot <- featurePlot +
+    	scale_x_discrete(position = "top") +
+    	theme(axis.text.x.top = element_text(angle = 90, hjust = 0, size = 10, face = 'bold', family = font))
+	grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 
-  grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
-} else
+  } else
   {
-  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+	  print(paste0("Writing output to file: ", outputFile1))
+  	png(file=outputFile1, res=140, height = 2200, width = 4000)
+	  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
             ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
