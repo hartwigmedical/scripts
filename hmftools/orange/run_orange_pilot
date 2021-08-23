@@ -12,7 +12,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
-orange_jar=$(locate_orange_pilot)
+orange_jar=$(locate_pilot_orange)
 doid_json=/data/resources/public/disease_ontology/201015_doid.json
 output_dir=${run_dir}/orange_pilot
 
