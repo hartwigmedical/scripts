@@ -128,9 +128,6 @@ sigPlot <- ggplot(cupOtherData %>% filter(Category == 'SNV'), aes(x = RefCancerT
   scale_fill_manual(values = prevColours, limits = names(prevColours)) +
   labs(x = '', y = '', title = 'SNV SIGNATURES')
 
-outputFile1 <- paste0(cuppaDir, sampleId, '.cup.report.1.png')
-outputFile2 <- paste0(cuppaDir, sampleId, '.cup.report.2.png')
-
 featureLimit <- 15
 featureCount <- nrow(cupFeatures %>% group_by(Value) %>% count)
 summaryHeight <- 205
@@ -150,27 +147,27 @@ if (featureCount > featureLimit)
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
-
 # Generating PNG files
-
+outputFileSummary <- paste0(cuppaDir, sampleId, '.cup.report.summary.png')
 if (separateFeaturePlot)
-  {	 print(paste0("Writing output to file: ", outputFile1))
-	  png(file=outputFile1, res = 140, height = 2200, width = 4000)
-	  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+  {
+  outputFileFeatures <- paste0(cuppaDir, sampleId, '.cup.report.features.png')
+  print(paste0("Writing output to file: ", outputFileSummary))
+  png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
+  grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
-	  print(paste0("Writing output to file: ", outputFile2))
-  	  png(file=outputFile2, res = 140, height=2200, width=4000)
-    	featurePlot <- featurePlot +
-    	scale_x_discrete(position = "top") +
-    	theme(axis.text.x.top = element_text(angle = 90, hjust = 0, size = 10, face = 'bold', family = font))
-	grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
-
-  } else
+  print(paste0("Writing output to file: ", outputFileFeatures))
+  png(file = outputFileFeatures, res = 140, height = 2200, width = 4000)
+  featurePlot <- featurePlot +
+    scale_x_discrete(position = "top") +
+    theme(axis.text.x.top = element_text(angle = 90, hjust = 0, size = 10, face = 'bold', family = font))
+  grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
+} else
   {
-	  print(paste0("Writing output to file: ", outputFile1))
-  	png(file=outputFile1, res=140, height = 2200, width = 4000)
-	  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+  print(paste0("Writing output to file: ", outputFileSummary))
+  png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
+  plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
             ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
