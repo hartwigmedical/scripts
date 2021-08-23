@@ -17,4 +17,5 @@ fi
 # See also DEV-2195
 generate_cup_report_pipeline ${run_dir}
 
-run_orange_pilot_no_c_d_evidence ${run_dir}
+# See also DEV-2027
+run_orange_prod_no_c_d_evidence ${run_dir}

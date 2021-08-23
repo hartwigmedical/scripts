@@ -109,11 +109,19 @@ locate_pilot_linx() {
 }
 
 locate_prod_sigs() {
-    echo ${base_path}/tools/sigs_v1.0/sigs.jar
+    echo ${base_path}/tools/sigs/1.0/sigs.jar
 }
 
 locate_pilot_sigs() {
     echo ${base_path}/tools/sigs/pilot/sigs.jar
+}
+
+locate_pilot_orange() {
+    echo ${base_path}/tools/orange/pilot/orange.jar
+}
+
+locate_prod_orange() {
+    echo ${base_path}/tools/orange/1.0/orange.jar
 }
 
 locate_pilot_orange() {
