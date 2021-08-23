@@ -22,7 +22,7 @@ if [[ ! -d "${output_dir_data_report}" ]]; then
     mkdir ${output_dir_data_report}
 fi
 
-pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
+pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory} "" \
     -output_dir_data ${output_dir_data_report} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
