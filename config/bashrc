@@ -1,6 +1,8 @@
-if [ -d /data/common/repos/scripts ]; then
+#!/usr/bin/env bash
+
+if [[ -d /data/common/repos/scripts ]]; then
     scripts_repo="/data/common/repos/scripts"
-elif [ -d /data/repos/scripts ]; then
+elif [[ -d /data/repos/scripts ]]; then
     scripts_repo="/data/repos/scripts"
 else
     echo "Could not find scripts repo"
