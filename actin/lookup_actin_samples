@@ -11,4 +11,4 @@ info "Querying API regarding ACTIN samples"
 hmf_api_get 'samples?submission=${actin_submission}' | jq
 
 info "Querying API regarding ACTIN runs"
-hmf_api_get 'runs?submission=${actin_submission}'
+hmf_api_get 'runs?submission=${actin_submission}' | jq
