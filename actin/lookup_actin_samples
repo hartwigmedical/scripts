@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+actin_submission="HMFregACTN"
+
+info "Querying LIMS regarding ACTIN samples"
+query_lims.pl -type samples -filter "submission=${actin_submission}"
+
+info "Querying API regarding ACTIN samples"
+query_api.pl -type samples -filter "submission=${actin_submission}"
+
+info "Querying API regarding ACTIN runs"
+warn "Cannot query ACTIN runs yet. Entity not clear yet."
+# query_api.pl -type runs -filter "entity=?"
