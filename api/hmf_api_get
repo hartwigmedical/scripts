@@ -67,7 +67,7 @@ main () {
 
 api_curl () {
     local url=$1 && shift
-    curl --fail --silent --show-error ${api_crt} ${api_key} -H "Content-Type: application/json" -X GET "${url}"
+    curl --fail --silent --show-error -H "Content-Type: application/json" -X GET "${url}"
 }
 
 main
