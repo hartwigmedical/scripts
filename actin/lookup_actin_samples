@@ -3,13 +3,13 @@
 source message_functions || exit 1
 
 actin_submission="HMFregACTN"
+actin_entity="ACTN_EMC"
 
 info "Querying LIMS regarding ACTIN samples"
 query_lims.pl -type samples -filter "submission=${actin_submission}"
 
 info "Querying API regarding ACTIN samples"
-query_api.pl -type samples -filter "submission=${actin_submission}"
+hmf_api_get 'samples?submission=${actin_submission}'
 
 info "Querying API regarding ACTIN runs"
-warn "Cannot query ACTIN runs yet. Entity not clear yet."
-# query_api.pl -type runs -filter "entity=?"
+hmf_api_get 'runs?entity=${actin_entity}'
