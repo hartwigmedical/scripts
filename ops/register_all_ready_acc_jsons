@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-source message_functions || exit 1
-
-for json in /data/ops/api/acc/jsons/*.json; do
-    echo ""
-    info "About to register: ${json}"
-    register_set_by_json_to_acc ${json}
-done
