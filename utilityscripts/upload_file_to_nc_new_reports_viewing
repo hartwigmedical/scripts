@@ -8,7 +8,7 @@ file=$1 && shift
 [[ -n "${bucket}" ]] || die "No bucket provided. Exiting"
 [[ -n "${file}" ]] || die "No file name provided. Exiting"
 
-nextcloud_dir="STAGING/New-files-Viewing"
+nextcloud_dir="STAGING/New-Reports-Viewing"
 
 file_prefix=$( echo ${file} | sed 's/.pdf//g' | sed 's/.json//g' | sed 's/.log//g')
 temp_folder_path_file=$( pwd )"/temp_cp_${file_prefix}"
