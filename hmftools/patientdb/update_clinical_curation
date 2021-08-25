@@ -5,7 +5,6 @@ source message_functions || exit 1
 echo ""
 echo "-- UPDATE LIMS -- "
 update_lims
-sync_clinicaldb_resources_to_gcp
 
 echo ""
 echo "-- UPDATE CLINICAL CURATION FILES -- "
