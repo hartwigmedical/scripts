@@ -62,24 +62,24 @@ else
     info "Overview array:"
     perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep -v '\[INFO\]' | awk 'v && NR==1{ print "" $0}NR==1{ print "Ref_array: " $0}NR==2{ print "Ref      : " $0 }NR==3{ print "Tumor    : " $0}'
     #
-    echo "--The snpcheck Ref-array vs Ref gave the result:--"
+    echo "--The snpcheck Ref-array vs Ref gave the result:"
     if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - )  | grep "FAIL" | wc -l ) > 0 ]]; then
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) | tail -5
     else
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) | grep "FINAL RESULT"
     fi
     #
-    echo "--The snpcheck Ref-array vs Tumor gave the result:--"
+    echo "--The snpcheck Ref-array vs Tumor gave the result:"
     if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FAIL" | wc -l ) > 0 ]]; then
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | tail -5
     else
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FINAL RESULT"
     fi
     #
-    echo "--The snpcheck Ref vs Tumor gave the result:--"
-    if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FAIL" | wc -l ) > 0 ]]; then
-        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | tail -5
+    echo "--The snpcheck Ref vs Tumor gave the result:"
+    if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FAIL" | wc -l ) > 0 ]]; then
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - ) | tail -5
     else
-        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FINAL RESULT"
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FINAL RESULT"
     fi
 fi
