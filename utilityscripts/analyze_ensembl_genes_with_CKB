@@ -5,47 +5,46 @@ genes_map_37_89="genes_map_37_89.tsv"
 genes_map_38_104="genes_map_38_104.tsv"
 genes_map_38_89="genes_map_38_89.tsv"
 
-echo "geneSymbol	genes_map_37_89" > CKB_versus_genes_map_37_89.tsv
-echo "geneSymbol	genes_map_38_104" > CKB_versus_genes_map_38_104.tsv
-echo "geneSymbol	genes_map_38_89" > CKB_versus_genes_map_38_89.tsv
-
+echo "geneSymbol	geneSynonyms  genes_map_37_89" > CKB_versus_genes_map_37_89.tsv
+echo "geneSymbol  geneSynonyms  genes_map_38_104" > CKB_versus_genes_map_38_104.tsv
+echo "geneSymbol	geneSynonyms  genes_map_38_89" > CKB_versus_genes_map_38_89.tsv
 
 ##checking genes of CKB present in ensembl
 while IFS= read genes; do
 
-    geneSymbol=$( echo ${genes} | awk -F ',' '{print $1}')
-    present_genes_map_37_89=$( cat ${genes_map_37_89} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
-    present_genes_map_38_104=$( cat ${genes_map_38_104} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
-    present_genes_map_38_89=$( cat ${genes_map_38_89} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
+    geneSymbol=$( echo ${genes} | awk '{print $1}')
+    synonym=$( echo ${genes} | awk '{print $2}')
+    present_genes_map_37_89=$( cat ${genes_map_37_89} | awk '{print $2}' | grep -w ${geneSymbol} | wc -l)
+    present_genes_map_38_104=$( cat ${genes_map_38_104} | awk '{print $2}' | grep -w ${geneSymbol} | wc -l)
+    present_genes_map_38_89=$( cat ${genes_map_38_89} | awk '{print $2}' | grep -w ${geneSymbol} | wc -l)
 
     if [[ ${present_genes_map_37_89} -eq 1 ]]; then
-    	echo "${geneSymbol}	true" >> CKB_versus_genes_map_37_89.tsv
+    	echo "${geneSymbol} ${synonym}  true" >> CKB_versus_genes_map_37_89.tsv
     else
-	echo "${geneSymbol}     false" >> CKB_versus_genes_map_37_89.tsv
+      echo "${geneSymbol} ${synonym}  false" >> CKB_versus_genes_map_37_89.tsv
     fi
 
     if [[ ${present_genes_map_38_104} -eq 1 ]]; then
-    	echo "${geneSymbol}	true" >> genes_map_38_104.tsv
+    	echo "${geneSymbol} ${synonym}  true" >> genes_map_38_104.tsv
     else
-	echo "${geneSymbol}     false" >> genes_map_38_104.tsv
+      echo "${geneSymbol} ${synonym}  false" >> genes_map_38_104.tsv
     fi
 
     if [[ ${present_genes_map_38_89} -eq 1 ]]; then
-    	echo "${geneSymbol}	true" >> genes_map_38_89.tsv
+    	echo "${geneSymbol} ${synonym}  true" >> genes_map_38_89.tsv
     else
-	echo "${geneSymbol}     false" >> genes_map_38_89.tsv
+      echo "${geneSymbol} ${synonym}  false" >> genes_map_38_89.tsv
     fi
 
 done < ${genesCKB}
-
 
 ##checking genes of ensembl 37_89 present in CKB
 echo "geneSymbol	genes_map_37_89" > genes_map_37_89_versus_CKB.tsv
 
 while IFS= read genes; do
 
-    geneSymbol=$( echo ${genes} | awk -F ',' '{print $1}')
-    present_CKB_genes=$( cat ${genesCKB} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
+    geneSymbol=$( echo ${genes} | awk '{print $2}')
+    present_CKB_genes=$( cat ${genesCKB} | awk '{print $1}' | grep -w ${geneSymbol} | wc -l)
 
     if [[ ${present_CKB_genes} -eq 1 ]]; then
     	echo "${geneSymbol}	true" >> genes_map_37_89_versus_CKB.tsv
@@ -55,15 +54,13 @@ while IFS= read genes; do
 
 done < ${genes_map_37_89}
 
-
-
 ##checking genes of ensembl 38_104 present in CKB
 echo "geneSymbol	genes_map_38_104" > genes_map_38_104_versus_CKB.tsv
 
 while IFS= read genes; do
 
-    geneSymbol=$( echo ${genes} | awk -F ',' '{print $1}')
-    present_CKB_genes=$( cat ${genesCKB} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
+    geneSymbol=$( echo ${genes} | awk '{print $2}')
+    present_CKB_genes=$( cat ${genesCKB} | awk '{print $1}' | grep -w ${geneSymbol} | wc -l)
 
     if [[ ${present_CKB_genes} -eq 1 ]]; then
     	echo "${geneSymbol}	true" >> genes_map_38_104_versus_CKB.tsv
@@ -73,16 +70,13 @@ while IFS= read genes; do
 
 done < ${genes_map_37_89}
 
-
-
-
 ##checking genes of ensembl 38_89 present in CKB
 echo "geneSymbol	genes_map_38_89" > genes_map_38_89_versus_CKB.tsv
 
 while IFS= read genes; do
 
-    geneSymbol=$( echo ${genes} | awk -F ',' '{print $1}')
-    present_CKB_genes=$( cat ${genesCKB} | awk -F ',' '{print $1}' | grep -w ${geneSymbol} | wc -l)
+    geneSymbol=$( echo ${genes} | awk '{print $2}')
+    present_CKB_genes=$( cat ${genesCKB} | awk '{print $1}' | grep -w ${geneSymbol} | wc -l)
 
     if [[ ${present_CKB_genes} -eq 1 ]]; then
     	echo "${geneSymbol}	true" >> genes_map_38_89_versus_CKB.tsv
