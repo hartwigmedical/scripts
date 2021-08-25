@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+bucket=$1 && shift
+file=$1 && shift
+
+[[ -n "${bucket}" ]] || die "No bucket provided. Exiting"
+[[ -n "${file}" ]] || die "No file name provided. Exiting"
+
+nextcloud_dir="STAGING/New-files-Viewing"
+
+file_prefix=$( echo ${file} | sed 's/.pdf//g' | sed 's/.json//g' | sed 's/.log//g')
+temp_folder_path_file=$( pwd )"/temp_cp_${file_prefix}"
+mkdir $temp_folder_path_file
+gsutil cp ${bucket}${file}  $temp_folder_path_file/
+
+info "Uploading ${file} from ${bucket} to Nextcloud for viewing."
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_folder_path_file/${file}"
+
+rm -r $temp_folder_path_file

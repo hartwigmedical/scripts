@@ -71,11 +71,7 @@ fi
 # create folder for report
 mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
-output_dir_data_report=${temp_folder_path}/patient_report_prod_data
-if [[ ! -d "${output_dir_data_report}" ]]; then
-    mkdir ${output_dir_data_report}
-fi
-
+output_dir_data_report=${temp_folder_path}/new_report
 
 ## running patient reporter
 ref_sample_mandatory=1
@@ -124,6 +120,7 @@ fi
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -144,12 +141,17 @@ fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
 gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
-gsutil -q cp -r ${temp_folder_path}/patient_report_prod_data/* gs://patient-reporter-manual-prod-1/
 rm -r ${temp_folder_path}/ 2>&1
 info "The report and the related log + json file can be found in gs://patient-reporter-manual-prod-1/:"
 gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
 ### upload report to NC
-upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+
+if [[ "${sample:0:6}" == "COREDB" ]]; then
+    upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
+    info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+fi
+
 echo ""
