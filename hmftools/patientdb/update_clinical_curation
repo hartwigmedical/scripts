@@ -5,9 +5,10 @@ source message_functions || exit 1
 echo ""
 echo "-- UPDATE LIMS -- "
 update_lims
+sync_clinicaldb_resources_to_gcp
 
 echo ""
-echo "-- UPDATE CLINICAL CUTATION FILES -- "
+echo "-- UPDATE CLINICAL CURATION FILES -- "
 # updates the files curated_primary_tumor.tsv & patient_tumor_curation_status.tsv
 run_clinical_patient_db_prod_gcp
 
