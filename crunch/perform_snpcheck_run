@@ -59,26 +59,26 @@ if [[ "$snpcheck_vcf_ref" == "" || "$snpcheck_vcf_ref_array" == "" || "$snpcheck
     warn "One (or both) of the vcf files for the snpcheck could not be found (see warnings above). The snpcheck will not be performed."
 else
     info "...The snpcheck will now be performed..."
-    info "Overview array:"
+    echo "OVERVIEW ARRAY:"
     perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep -v '\[INFO\]' | awk 'v && NR==1{ print "" $0}NR==1{ print "Ref_array: " $0}NR==2{ print "Ref      : " $0 }NR==3{ print "Tumor    : " $0}'
     #
-    info "The snpcheck Ref-array vs Ref gave the result:"
+    echo "THE SNPCHECK REF-ARRAY VS REF GAVE THE RESULT:"
     if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - )  | grep "FAIL" | wc -l ) > 0 ]]; then
-        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - )
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) | tail -5
     else
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) | grep "FINAL RESULT"
     fi
     #
-    info "The snpcheck Ref-array vs Tumor gave the result:"
+    echo "THE SNPCHECK REF-ARRAY VS TUMOR GAVE THE RESULT:"
     if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FAIL" | wc -l ) > 0 ]]; then
-        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | tail -5
     else
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FINAL RESULT"
     fi
     #
-    info "The snpcheck Ref vs Tumor gave the result:"
+    echo "THE SNPCHECK REF VS TUMOR GAVE THE RESULT:"
     if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FAIL" | wc -l ) > 0 ]]; then
-        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | tail -5
     else
         perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FINAL RESULT"
     fi
