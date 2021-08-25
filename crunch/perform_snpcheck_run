@@ -18,8 +18,10 @@ run_count=$(jq 'length' <<< "${runs_json}")
 bucket=$( echo $runs_json | jq -r '.[].bucket' )
 sample_name_tumor=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
 barcode_tumor=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_tumor}'") | .barcode' | cut -d"_" -f1 )
-sample_name_ref=$( echo $runs_json | jq -r '.[].set.ref_sample' )
-barcode_ref=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref}'") | .barcode' | cut -d"_" -f1 )
+sample_name_ref_match=$( echo $runs_json | jq -r '.[].set.ref_sample' )
+barcode_ref=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample_name_ref_match}'") | .barcode' | cut -d"_" -f1 )
+sample_name_ref=$( hmf_api_get "samples?barcode=${barcode_ref}" | jq -r '.[].name' )
+
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -37,19 +39,47 @@ else
     info "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
 fi
 
-snpcheck_vcf_tumor="${set_url}${sample_name_tumor}/snp_genotype/snp_genotype_output.vcf"
-if [[ "$snpcheck_vcf_tumor" == "" ]]; then
-    warn "No snpcheckvcf is found in ${set_url}${sample_name_tumor}/snp_genotype/ for ${barcode_tumor} (${sample_name_tumor})"
+snpcheck_vcf_ref_array=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | head -1 | awk '{ print $3 }' )
+if [[ "$snpcheck_vcf_ref_array" == "" ]]; then
+    warn "No Ref-array snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${barcode_ref} (${sample_name_ref})"
 fi
 
-snpcheck_vcf_ref=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | head -1 | awk '{ print $3 }' )
+snpcheck_vcf_ref=$( gsutil ls "${set_url}${sample_name_ref_match}/snp_genotype/*.vcf*" )
 if [[ "$snpcheck_vcf_ref" == "" ]]; then
-    warn "No snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${barcode_ref} (${sample_name_ref})"
+    warn "No Ref snpcheckvcf is found in ${set_url}${sample_name_ref_match}/snp_genotype/ for ${barcode_ref} (${sample_name_ref_match})"
 fi
 
-if [[ "$snpcheck_vcf_tumor" == "" || "$snpcheck_vcf_ref" == "" ]]; then
+snpcheck_vcf_tumor=$( gsutil ls "${set_url}${sample_name_tumor}/snp_genotype/*.vcf*" )
+if [[ "$snpcheck_vcf_tumor" == "" ]]; then
+    warn "No Tumor snpcheckvcf is found in ${set_url}${sample_name_tumor}/snp_genotype/ for ${barcode_tumor} (${sample_name_tumor})"
+fi
+
+
+if [[ "$snpcheck_vcf_ref" == "" || "$snpcheck_vcf_ref_array" == "" || "$snpcheck_vcf_ref_array" == ""  ]]; then
     warn "One (or both) of the vcf files for the snpcheck could not be found (see warnings above). The snpcheck will not be performed."
 else
-    info "The snpcheck will now be performed:"
-    perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_tumor - ) <( gsutil cp $snpcheck_vcf_ref - )
+    info "...The snpcheck will now be performed..."
+    info "Overview array:"
+    perform_snpcheck.pl <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep -v '\[INFO\]' | awk 'v && NR==1{ print "" $0}NR==1{ print "Ref_array: " $0}NR==2{ print "Ref      : " $0 }NR==3{ print "Tumor    : " $0}'
+    #
+    info "The snpcheck Ref-array vs Ref gave the result:"
+    if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - )  | grep "FAIL" | wc -l ) > 0 ]]; then
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - )
+    else
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_ref - ) | grep "FINAL RESULT"
+    fi
+    #
+    info "The snpcheck Ref-array vs Tumor gave the result:"
+    if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FAIL" | wc -l ) > 0 ]]; then
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )
+    else
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )  | grep "FINAL RESULT"
+    fi
+    #
+    info "The snpcheck Ref vs Tumor gave the result:"
+    if [[ $( perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FAIL" | wc -l ) > 0 ]]; then
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - )
+    else
+        perform_snpcheck.pl  <( gsutil cp $snpcheck_vcf_ref_array - ) <( gsutil cp $snpcheck_vcf_tumor - ) | grep "FINAL RESULT"
+    fi
 fi

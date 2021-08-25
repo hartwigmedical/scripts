@@ -127,7 +127,8 @@ main () {
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
             echo "**"
-            echo " Action - if snpcheck is OK update the api using the script: patch_api_run_validate ${set_name}"
+            echo " Action - if snpcheck is FAIL - research the fail (follow SOP)"
+            echo " Action - if snpcheck is OK - update the api using the script: patch_api_run_validate ${set_name}"
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
