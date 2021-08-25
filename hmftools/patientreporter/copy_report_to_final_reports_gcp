@@ -97,6 +97,26 @@ else
     fi
 fi
 
+## get reporting info
+
+if [[ ${report} == *"corrected"* ]]; then
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep correction )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | grep correction | awk '{ print $4 }' )
+else
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample} )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | awk '{ print $4 }' )
+fi
+
+if [[ ${reporting_info} == "" ]]; then
+    warn "No record found for ${sample} in the file ${reporting_db_file}. ${reporting_db_file} before finalizing everything. Please check what went wrong. Exiting. "
+    exit 1
+fi
+
+current_date=$(date '+%d-%b-%Y')
+reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
+
+
+
 ## copy report from pipeline/manual bucket to final
 
 if [[ "${report_type}" == "pipeline" ]]; then
@@ -116,20 +136,11 @@ if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]
     info "Final reports + jsons stored for ${sample}:"
     gsutil ls ${url_bucket_report_final} | grep "${sample}"
 else
-    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong."
+    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
     exit 1
 fi
 
-if [[ ${report} == *"corrected"* ]]; then
-    reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep correction )
-    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | grep correction | awk '{ print $4 }' )
-else
-    reporting_info=$( cat ${reporting_db_file} | grep ${sample} )
-    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | awk '{ print $4 }' )
-fi
-
-current_date=$(date '+%d-%b-%Y')
-reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
+## add reporting info to registration file
 
 
 if [[ ${report} == *"corrected"* ]]; then
