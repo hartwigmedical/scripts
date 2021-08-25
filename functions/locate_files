@@ -117,7 +117,7 @@ locate_pilot_sigs() {
 }
 
 locate_prod_orange() {
-    echo ${base_path}/tools/orange/1.0/orange.jar
+    echo ${base_path}/tools/orange/1.1/orange.jar
 }
 
 locate_pilot_orange() {
