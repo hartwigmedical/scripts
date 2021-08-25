@@ -2,9 +2,32 @@
 
 source message_functions || exit 1
 
-sample_name=$1 && shift
+set=$1 && shift
 
-[[ -n "${sample_name}" ]] || die "No sample_name provided. Exiting"
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+####
 
 reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
 sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
@@ -14,94 +37,115 @@ url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 
 echo ""
-echo "--- Report for ${sample_name} has been shared (again; in case of correction) - final processing will start: ---"
+echo "--- Report for ${sample} has been shared (again; in case of correction) - final processing will start: ---"
 
 report_type="none"
 
 ## check whether report exists in pipeline bucket
-if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
+if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
+    info "No report available for ${sample} in pipeline bucket ${url_bucket_report_pipline}"
 else
-    info "Report available for ${sample_name} in pipeline bucket ${url_bucket_report_pipline}"
-    report_name=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample_name}" | grep .pdf | head -1 | cut -d"/" -f4 )
+    info "Report available for ${sample} in pipeline bucket ${url_bucket_report_pipline}"
+    report=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample}" | grep dna_analysis_report.pdf | head -1 )
+    report=$( echo ${report#"${url_bucket_report_pipline}"} )
+    json=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample} | grep ${barcode} | grep ".json")
+    json=$( echo ${json#"${url_bucket_report_pipline}"} )
     report_type="pipeline"
 fi
 
 ## check whether report exists in manual bucket
-if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
+if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
+    info "No report available for ${sample} in manual bucket ${url_bucket_report_manual}"
     if [[ "${report_type}" == "none" ]]; then
         warn "Report does not exist in ${url_bucket_report_pipline} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
         exit 1
     else
-        info "Conclusion: the pipeline report ${report_name} will be finalized."
+        info "Conclusion: the pipeline report ${report} will be finalized."
     fi
 else
-    if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
-        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | grep corrected | head -1 | cut -d"/" -f4 )
+    if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+        report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | head -1 )
+        report=$( echo ${report#"${url_bucket_report_manual}"} )
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
+        json=$( echo ${json#"${url_bucket_report_manual}"} )
+
     else
-        report_name=$( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | head -1 | cut -d"/" -f4 )
+        report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
+        report=$( echo ${report#"${url_bucket_report_manual}"} )
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
+        json=$( echo ${json#"${url_bucket_report_manual}"} )
     fi
-    info "Report available for ${sample_name} in manual bucket ${url_bucket_report_pipline}"
-    info "Conclusion: the manual report ${report_name} will be finalized (goes over the pipeline report)."
+    info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
+    info "Conclusion: the manual report ${report} will be finalized (goes over the pipeline report)."
     report_type="manual"
 fi
 
 ## check wether report already exists in final bucket
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample_name}" | grep .pdf | wc -l ) > 0 ]]; then
-     warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-     warn "See also the record in sharing db:"
-     cat ${sharing_db_file} | grep "${sample_name}"
-     exit 1
+if [[ ${report} == *"corrected"* ]]; then
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+        warn "See also the record in sharing db:"
+        cat ${sharing_db_file} | grep "${sample}"
+        exit 1
+    fi
+else
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
+         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+         warn "See also the record in sharing db:"
+         cat ${sharing_db_file} | grep "${sample}"
+         exit 1
+    fi
 fi
 
 ## copy report from pipeline/manual bucket to final
 
 if [[ "${report_type}" == "pipeline" ]]; then
-    gsutil -q cp ${url_bucket_report_pipline}${report_name} ${url_bucket_report_final}${report_name}
+    gsutil -q cp ${url_bucket_report_pipline}${report} ${url_bucket_report_final}${report}
+    gsutil -q cp ${url_bucket_report_pipline}${json} ${url_bucket_report_final}${json}
 else
-    gsutil -q cp ${url_bucket_report_manual}${report_name} ${url_bucket_report_final}${report_name}
+    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}${report}
+    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_manual}${json}
 fi
 
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report_name}" | wc -l ) > 0 ]]; then
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
     if [[ "${report_type}" == "pipeline" ]]; then
-        info "Report copied from ${url_bucket_report_pipline}${report_name} to final archive ${url_bucket_report_final} on gcp."
+        info "Report copied from ${url_bucket_report_pipline}${report} to final archive ${url_bucket_report_final} on gcp."
     else
-        info "Report copied from ${url_bucket_report_manual}${report_name} to final archive ${url_bucket_report_final} on gcp."
+        info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
     fi
-    info "Final reports stored for ${sample_name}:"
-    gsutil ls ${url_bucket_report_final} | grep "${report_name}"
+    info "Final reports + jsons stored for ${sample}:"
+    gsutil ls ${url_bucket_report_final} | grep "${sample}"
 else
     warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong."
     exit 1
 fi
 
-if [[ ${report_name} == *"corrected"* ]]; then
-    reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} | grep correction )
-    reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | grep correction | awk '{ print $4 }' )
+if [[ ${report} == *"corrected"* ]]; then
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep correction )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | grep correction | awk '{ print $4 }' )
 else
-    reporting_info=$( cat ${reporting_db_file} | grep ${sample_name} )
-    reporting_date=$( cat ${reporting_db_file} | grep ${sample_name} | awk '{ print $4 }' )
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample} )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | awk '{ print $4 }' )
 fi
 
 current_date=$(date '+%d-%b-%Y')
 reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
 
 
-if [[ ${report_name} == *"corrected"* ]]; then
+if [[ ${report} == *"corrected"* ]]; then
     echo ${reporting_info} >> ${sharing_db_file}
-    info "A record has been added for ${sample_name} to ${sharing_db_file}"
-    info "Reports shared registration for ${sample_name}:"
-    cat ${sharing_db_file}  | grep ${sample_name}
+    info "A record has been added for ${sample} to ${sharing_db_file}"
+    info "Reports shared registration for ${sample}:"
+    cat ${sharing_db_file}  | grep ${sample}
 else
-    if [[ $( cat ${sharing_db_file}  | grep ${sample_name} | wc -l ) == 0 ]]; then
+    if [[ $( cat ${sharing_db_file}  | grep ${sample} | wc -l ) == 0 ]]; then
         echo ${reporting_info} >> ${sharing_db_file}
-         info "A record has been added for ${sample_name} to ${sharing_db_file}"
-         info "Reports shared registration for ${sample_name}:"
-         cat ${sharing_db_file}  | grep ${sample_name}
+         info "A record has been added for ${sample} to ${sharing_db_file}"
+         info "Reports shared registration for ${sample}:"
+         cat ${sharing_db_file}  | grep ${sample}
     else
-        warn "The report ${report_name} is already in the registration file ${sharing_db_file}:"
-        cat ${sharing_db_file}  | grep ${sample_name}
+        warn "The report ${report} is already in the registration file ${sharing_db_file}:"
+        cat ${sharing_db_file}  | grep ${sample}
         warn "No new record added."
     fi
 fi
