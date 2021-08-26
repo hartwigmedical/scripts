@@ -8,7 +8,7 @@ source api_functions || exit 1
 
 run_dir=$1 && shift
 
-output_dir_report=/data/cpct/pilot_reports
+output_dir_report=/data/experiments/210826_david_DEV-2140_anonymization-patient-reporter/
 
 patient_reporter_jar=/data/experiments/210826_david_DEV-2140_anonymization-patient-reporter/patient-reporter-7.23-jar-with-dependencies.jar
 
