@@ -5,10 +5,13 @@ source message_functions || exit 1
 actin_submission="HMFregACTN"
 
 info "Querying LIMS regarding ACTIN samples"
-query_lims.pl -type samples -filter "submission=${actin_submission}"
+query_lims.pl -type samples -filter "submission=${actin_submission}" | grep -v ^##
+echo ""
 
 info "Querying API regarding ACTIN samples"
-hmf_api_get 'samples?submission=${actin_submission}' | jq
+api samples "${actin_submission}" submission
+echo ""
 
 info "Querying API regarding ACTIN runs"
-hmf_api_get 'runs?submission=${actin_submission}' | jq
+api runs "${actin_submission}" submission
+echo ""
