@@ -36,8 +36,8 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=/data/experiments/ckb_protect_verification/ckb_reports
-output_dir_data=${run_dir}/patient_report_ckb_data
+output_dir_report=/data/cpct/pilot_reports
+output_dir_data=/data/cpct/pilot_reports
 if [[ ! -d "${output_dir_data}" ]]; then
     info "${output_dir_data} does not exist yet, creating..."
     mkdir ${output_dir_data}
