@@ -12,4 +12,4 @@ fi
 output_dir=${run_dir}/virusbreakend
 virus_interpreter_jar=/data/common/tools/virus-interpreter_v1.0/virus-interpreter.jar
 
-do_run_virus_interpreter ${run_dir} ${virus_interpreter_jar} ${output_dir}
+do_run_virus_interpreter_datastore ${run_dir} ${virus_interpreter_jar} ${output_dir}

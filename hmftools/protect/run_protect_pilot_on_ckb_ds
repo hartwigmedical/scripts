@@ -15,4 +15,4 @@ serve_actionability_dir=$HOME/serve_ckb
 output_dir=${run_dir}/protect_pilot_ckb
 protect_jar=/data/common/tools/protect_pilot/protect.jar
 
-do_run_protect_pilot ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} -log_debug
+do_run_protect_pilot_datastore ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} -log_debug
