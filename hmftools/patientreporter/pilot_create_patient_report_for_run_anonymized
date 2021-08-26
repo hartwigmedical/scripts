@@ -127,6 +127,5 @@ java -jar "${patient_reporter_jar}" \
     -virus_blacklist_tsv "${virus_blacklist_tsv}" \
     -output_dir_data "${output_dir_data}" \
     -output_dir_report "${output_dir_report}" \
-    -ref_genome_version 37 \
     -log_debug \
     "$@"
