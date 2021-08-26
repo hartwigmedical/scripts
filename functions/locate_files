@@ -81,7 +81,7 @@ locate_pilot_purple() {
 }
 
 locate_prod_virus_interpreter() {
-    echo ${base_path}/tools/virus-interpreter_v1.0/virus-interpreter.jar
+    echo ${base_path}/tools/virus-interpreter/1.0/virus-interpreter.jar
 }
 
 locate_pilot_virus_interpreter() {
@@ -170,7 +170,7 @@ locate_prod_protect() {
 }
 
 locate_pilot_protect() {
-    echo ${base_path}/tools/protect_pilot/protect.jar
+    echo ${base_path}/tools/protect/pilot/protect.jar
 }
 
 locate_pilot_cuppa() {
