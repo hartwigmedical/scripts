@@ -15,12 +15,13 @@ gsutil -mq cp -rn gs://common-tools/* /data/tools/
 cd /data/repos/scripts && git pull
 info "Done"
 
+info "Syncing ops data from ops-vm used in development"
+gsutil -mq cp -rn gs://data-vm-resources-prod-1/* /data
+info "Done"
+
 info "Syncing datasets with dsync"
 credentials=/tmp/credentials.properties
 gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reader  --project=hmf-secrets | sed s/\"//g  > ${credentials}
-
-info "Syncing ops data from ops-vm used in development"
-gsutil -mq cp -rn gs://data-vm-resources-prod-1/* /data
 
 api_url=http://api.prod-1
 local_path=/data/datasets
