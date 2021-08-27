@@ -11,7 +11,7 @@ echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut
 echo ${endpoint}
 echo ${endpoint}"/oauth/token"
 curl --request POST \
-  --url ${endpoint}"/oauth/token" \
+  --url "${endpoint}/oauth/token" \
   --header 'Accept: application/json' \
   --header 'content-type: multipart/form-data;' \
   --form grant_type=password \
