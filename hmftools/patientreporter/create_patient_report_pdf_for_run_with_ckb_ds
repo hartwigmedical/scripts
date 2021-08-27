@@ -7,6 +7,8 @@ source message_functions || exit 1
 
 run_dir=$1 && shift
 
+patient_reporter_jar=$(locate_pilot_patient_reporter)
+
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
@@ -36,8 +38,8 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=/data/cpct/pilot_reports
-output_dir_data=/data/cpct/pilot_reports
+output_dir_report=/data/cpct/ckb_reports
+output_dir_data=/data/cpct/ckb_reports
 if [[ ! -d "${output_dir_data}" ]]; then
     info "${output_dir_data} does not exist yet, creating..."
     mkdir ${output_dir_data}
@@ -68,7 +70,26 @@ taxonomy_db_tsv=/data/common/dbs/virus_interpreter/taxonomy_db.tsv
 virus_interpretation_tsv=/data/common/dbs/virus_interpreter/virus_interpretation.tsv
 virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
 
-do_run_base_patient_reporter \
+patient_reporter_jar=$(locate_prod_patient_reporter)
+
+reporting_db_tsv=$(locate_reporting_db_tsv)
+primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
+lims_dir=/data/ops/lims/prod
+
+rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
+company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
+signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
+
+expected_pipeline_version=$(extract_expected_pipeline_version)
+
+java -jar ${patient_reporter_jar} \
+    -reporting_db_tsv ${reporting_db_tsv} \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
