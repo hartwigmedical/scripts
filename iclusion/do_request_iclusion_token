@@ -9,7 +9,7 @@ username=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep user
 password=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
 
 echo ${endpoint}
-echo ${endpoint}""/oauth/token"
+echo ${endpoint}"/oauth/token"
 curl --request POST \
   --url ${endpoint}"/oauth/token" \
   --header 'Accept: application/json' \
