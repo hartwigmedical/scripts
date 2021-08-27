@@ -13,8 +13,9 @@ sop_regex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
 lms_sub_jsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -exact -json | jq '.[-1]')
 lms_smp_jsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
-api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -filter "status!=Unregistered" -json)
-api_rns_jsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
+
+api_smp_jsn=$(hmf_api_get "samples?submission=${submission}" | jq '[.[] | select(.status != "Unregistered")]')
+api_rns_jsn=$(hmf_api_get "runs?set_name_contains=${submission}")
 
 analysis_type=$(echo "${lms_sub_jsn}" | jq -r ".analysis_type" )
 project_name=$(echo "${lms_sub_jsn}" | jq -r ".project_name" )
