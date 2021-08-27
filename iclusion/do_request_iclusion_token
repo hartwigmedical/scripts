@@ -14,7 +14,7 @@ curl --request POST \
   --header 'Accept: application/json' \
   --header 'content-type: multipart/form-data;' \
   --form grant_type=password \
-  --form client_id=${client_id} \
-  --form client_secret=${client_secret} \
-  --form username=${username} \
-  --form password=${password}
+  --form "client_id=${client_id}" \
+  --form "client_secret=${client_secret}" \
+  --form "username=${username}" \
+  --form "password=${password}"
