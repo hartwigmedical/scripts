@@ -8,7 +8,6 @@ client_secret=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep
 username=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep username= | cut -d"=" -f2 | sed 's/"//g')
 password=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
 
-echo "test"
 echo ${endpoint}
 curl --request POST \
   --url "${endpoint}/oauth/token" \
