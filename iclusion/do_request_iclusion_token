@@ -2,14 +2,12 @@
 
 api_credentials=$1 && shift
 
-echo "test ${api_credentials}"
-endpoint=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g')
-client_id=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_id= | cut -d"=" -f2 | sed 's/"//g')
-client_secret=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_secret= | cut -d"=" -f2 | sed 's/"//g')
-username=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep username= | cut -d"=" -f2 | sed 's/"//g')
-password=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
+endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
+client_id=$(echo "${api_credentials}" | grep client_id: | cut -d" " -f2)
+client_secret=$(echo "${api_credentials}" | grep client_secret: | cut -d" " -f2)
+username=$(echo "${api_credentials}" | grep username: | cut -d" " -f2)
+password=$(echo "${api_credentials}" | grep password: | cut -d" " -f2)
 
-echo ${endpoint}
 curl --request POST \
   --url "${endpoint}/oauth/token" \
   --header 'Accept: application/json' \

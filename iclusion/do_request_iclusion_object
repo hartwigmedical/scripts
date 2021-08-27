@@ -5,7 +5,7 @@ api_credentials=$1 && shift
 
 token=$(do_request_iclusion_token ${api_credentials} | jq -r '.access_token')
 
-endpoint=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g')
+endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
 
 curl --request GET \
   --url "${endpoint}/${object}" \
