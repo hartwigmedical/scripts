@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-object="$1" && shift
-api_credentials="$1" && shift
-echo "$api_credentials"
+object=$1 && shift
+api_credentials=$1 && shift
+
 token=$(do_request_iclusion_token "${api_credentials}" | jq -r '.access_token')
-echo "token $token"
+
 endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
 
 curl --request GET \
