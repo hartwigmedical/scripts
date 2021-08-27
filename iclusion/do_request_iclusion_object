@@ -4,6 +4,7 @@ object=$1 && shift
 api_credentials=$1 && shift
 
 token=$(do_request_iclusion_token ${api_credentials} | jq -r '.access_token')
+echo "test1"
 
 endpoint=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g')
 
