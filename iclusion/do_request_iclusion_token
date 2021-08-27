@@ -7,7 +7,7 @@ client_id=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep cli
 client_secret=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_secret= | cut -d"=" -f2 | sed 's/"//g')
 username=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep username= | cut -d"=" -f2 | sed 's/"//g')
 password=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
-
+echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g'
 echo ${endpoint}
 echo ${endpoint}"/oauth/token"
 curl --request POST \
