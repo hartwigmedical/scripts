@@ -8,12 +8,13 @@ client_secret=$(echo "${api_credentials}" | grep client_secret: | cut -d" " -f2)
 username=$(echo "${api_credentials}" | grep username: | cut -d" " -f2)
 password=$(echo "${api_credentials}" | grep password: | cut -d" " -f2)
 
+echo ${endpoint}
 curl --request POST \
   --url "${endpoint}/oauth/token" \
   --header 'Accept: application/json' \
   --header 'content-type: multipart/form-data;' \
   --form grant_type=password \
-  --form client_id=${client_id} \
-  --form client_secret=${client_secret} \
-  --form username=${username} \
-  --form password=${password}
+  --form "client_id=${client_id}" \
+  --form "client_secret=${client_secret}" \
+  --form "username=${username}"" \
+  --form "password=${password}"
