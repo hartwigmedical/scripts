@@ -27,7 +27,7 @@ my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission index1
 my @SUM_FIELDS = qw( submission id name yld q30 index1 index2 );
 my $ROUND_DECIMALS = 1; # Q30 with one decimal by default
 
-## QC limits should be in sync with those from api (see: query_api.pl -type platforms)
+## QC limits should be in sync with those from api (can be checked with cmd "api platforms")
 my %SETTINGS_PER_PLATFORM = (
     'NovaSeq' => {
         'platform_name' => "NOVASEQ",
