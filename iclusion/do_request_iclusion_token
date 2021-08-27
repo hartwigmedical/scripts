@@ -8,9 +8,10 @@ client_secret=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep
 username=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep username= | cut -d"=" -f2 | sed 's/"//g')
 password=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
 
-echo "${endpoint}/oauth/token"
+echo ${endpoint}
+echo ${endpoint}""/oauth/token"
 curl --request POST \
-  --url "${endpoint}/oauth/token" \
+  --url ${endpoint}"/oauth/token" \
   --header 'Accept: application/json' \
   --header 'content-type: multipart/form-data;' \
   --form grant_type=password \
