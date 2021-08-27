@@ -16,5 +16,5 @@ curl --request POST \
   --form grant_type=password \
   --form "client_id=${client_id}" \
   --form "client_secret=${client_secret}" \
-  --form "username=${username}"" \
+  --form "username=${username}" \
   --form "password=${password}"
