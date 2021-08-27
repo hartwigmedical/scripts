@@ -33,7 +33,8 @@ if [[ "${non_val_count}" -gt 0 ]]; then
 fi
 
 info "Creating job file (${create_job})"
-for run_name in $(jq -r '.[] | select(.status == "Validated") | .name' "${runs_json}"); do
+for run_name in $(jq -r '.[] | select(.status == "Validated") | .set.name' "${runs_json}"); do
+    [[ "${run_name}" != "null" ]] || die "Unable to extract run name from ${runs_json}. Received null."
     echo "${CREATE_ARIA_SCRIPT} ${run_name}"
 done > "${create_job}"
 chmod +x "${create_job}"
