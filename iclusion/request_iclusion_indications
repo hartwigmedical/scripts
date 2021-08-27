@@ -2,4 +2,4 @@
 
 api_credentials=$( gcloud secrets versions access "latest" --secret=iclusion-api-credentials --project=hmf-secrets )
 
-do_request_iclusion_object "indications" ${api_credentials}
+do_request_iclusion_object "indications" "${api_credentials}"
