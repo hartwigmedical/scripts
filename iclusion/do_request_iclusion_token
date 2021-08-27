@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 api_credentials=$1 && shift
-
+echo "1"
 endpoint=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g')
 client_id=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_id= | cut -d"=" -f2 | sed 's/"//g')
 client_secret=$(echo ${api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_secret= | cut -d"=" -f2 | sed 's/"//g')
