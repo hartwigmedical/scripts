@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-api_credentials=$1 && shift
+api_credentials="$1" && shift
 
 endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
 client_id=$(echo "${api_credentials}" | grep client_id: | cut -d" " -f2)
