@@ -13,7 +13,7 @@ purple_version=2.53
 info "Count analysis purple version v${purple_version}"
 health_check_processed_runs | grep -c "This analysis has been done with purple version=${purple_version}"
 
-source_path=/data/gcp/qc_fail_runs
+source_path=/data/gcp/processed_runs
 
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
@@ -31,6 +31,8 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/cpct/runs/
         info "Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
+        info "Loading set ${run} into diagnotic db"
+        load_run_into_diagnostic_db /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
         #info "Copying set ${run} to /data/cpct/reportable_runs"
@@ -43,6 +45,8 @@ for run in ${process_runs}; do
             mv ${source_path}/${run} /data/cpct/runs/
             info "Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
+            info "Loading set ${run} into diagnotic db"
+            load_run_into_diagnostic_db /data/cpct/runs/${run}
         fi
     fi
 done
