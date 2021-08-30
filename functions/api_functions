@@ -5,6 +5,7 @@ locate_analysis_bucket() {
     local sample=${biopsy}
     local api_request="datasets/${biopsy}"
 
+    # It does not matter what object we pick exactly, as long as we pick something that exists in the analysis bucket.
     bucket=$(hmf_api_get "${api_request}" | jq -r ".structural_variants_purple.${sample}.path" | tr "/" "\t" | cut -f 3)
     echo "gs://${bucket}"
 }
