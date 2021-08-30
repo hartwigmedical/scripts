@@ -9,8 +9,7 @@ sample_name=$1 && shift
 sample_present=$( execute_sql_on_diagnostic_prod "SELECT * FROM hmfpatients.purity \
 where sampleId = '${sample_name}';" )
 
-echo "sample_name: ${sample_name}"
-if [[ "${sample_name}" != ^CORE01 ]]; then
+if [[ "${sample_name}" != CORE01* ]]; then
     if [[ $( echo "${sample_present}" | wc -l ) < 2 ]]; then
         warn 'Sample not present in diagnostic database. SQL query check not performed.'
         exit 1
