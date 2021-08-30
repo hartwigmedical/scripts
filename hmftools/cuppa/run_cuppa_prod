@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source metadata_functions || exit 1
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+cuppa_jar=$(locate_cuppa_prod)
+cuppa_dir=${run_dir}/cuppa
+sample_data_dir=${run_dir}/cuppa_sample_data
+
+info "Creating and populating sample data dir '${sample_data_dir}'"
+create_or_cleanup_dir ${sample_data_dir}
+cp ${run_dir}/linx/* ${sample_data_dir}/
+cp ${run_dir}/purple/* ${sample_data_dir}/
+
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
+purple_structural_variant_vcf=$(locate_purple_structural_variants ${run_dir})
+
+java -Xmx4G -jar ${cuppa_jar} \
+     -categories DNA \
+     -ref_data_dir /data/resources/private/cuppa \
+     -sample_data ${tumor_sample} \
+     -sample_data_dir ${sample_data_dir} \
+     -sample_sv_file ${purple_structural_variant_vcf} \
+     -sample_somatic_vcf ${purple_somatic_variant_vcf} \
+     -output_dir ${cuppa_dir}
