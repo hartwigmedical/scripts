@@ -13,7 +13,7 @@ db_user=$( echo ${credentials} | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | s
 db_pass=$( echo ${credentials} | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
 db_host=$( echo ${credentials} | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
 db_port=$( echo ${credentials} | sed 's/ /\n/g' | grep port= | cut -d"=" -f2 | sed 's/"//g' )
-db_url=$("mysql://${db_host}:${db_port}/${vicc_db}?serverTimezone=CET")
+db_url=$(echo "mysql://${db_host}:${db_port}/${vicc_db}?serverTimezone=CET")
 
 info "Loading vicc into SQL into ${db_url}"
 
