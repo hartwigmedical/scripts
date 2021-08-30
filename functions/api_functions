@@ -1,31 +1,34 @@
 #!/usr/bin/env bash
 
-# There are 4 types of runs:
-#  - v5 run. In this case the v5 run holds all the output.
-#  - v4 run. In this case, the run info, v3 rerun and v4 rerun are all identical.
-#  - v3 run, with a v4 rerun. In this case, the run and v3 rerun are identical, the v4 rerun is separate.
-#  - pre-v3 run, with a v3 rerun and a v4 rerun. In this case all 3 run infos will be different.
+locate_analysis_bucket() {
+    local biopsy=$1
+    local sample=${biopsy}
+    local api_request="datasets/${biopsy}"
+
+    bucket=$(hmf_api_get "${api_request}" | jq -r ".structural_variants_purple.${sample}.path" | tr "/" "\t" | cut -f 3)
+    echo "gs://${bucket}"
+}
 
 locate_tumor_cram() {
-  local biopsy=$1
-  local sample=${biopsy}
-  local api_request="datasets/${biopsy}"
+    local biopsy=$1
+    local sample=${biopsy}
+    local api_request="datasets/${biopsy}"
 
-  hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
+    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
 }
 
 locate_reference_cram() {
-  local biopsy=$1
-  local sample=""
-  sample=$(echo "$biopsy" | cut -c1-12)R
-  local api_request="datasets/${biopsy}"
+    local biopsy=$1
+    local sample=""
+    sample=$(echo "$biopsy" | cut -c1-12)R
+    local api_request="datasets/${biopsy}"
 
-  hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
+    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
 }
 
 load_sample_name_for_barcode() {
-  local barcode=$1 && shift
-  hmf_api_get "samples?barcode=${barcode}" | jq -r '.[0].name'
+    local barcode=$1 && shift
+    hmf_api_get "samples?barcode=${barcode}" | jq -r '.[0].name'
 }
 
 load_ref_sample_id_for_set() {
