@@ -1,7 +1,3 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
-
-credentials=$(locate_ckb_pilot_database_credentials)
-
-do_recreate_ckb_database ${credentials} ckb_db_pilot
+do_recreate_ckb_database ckb_db_pilot

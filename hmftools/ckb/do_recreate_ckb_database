@@ -3,16 +3,17 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-credentials=$1 && shift
 ckb_db=$1 && shift
 
 # Resources
 ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_db.sql
 
 # Database details
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_host=$(locate_gcp_prod_database_host)
+credentials=$( gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-writer --project=hmf-secrets )
+
+db_user=$( echo ${credentials} | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | sed 's/"//g' )
+db_pass=$( echo ${credentials} | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
+db_host=$( echo ${credentials} | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
 
 info "Rebuilding CKB db '${ckb_db}' on '${db_host} using ${ckb_database_sql}"
 
