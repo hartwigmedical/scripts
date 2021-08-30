@@ -9,11 +9,12 @@ sample_name=$1 && shift
 sample_present=$( execute_sql_on_diagnostic_prod "SELECT * FROM hmfpatients.purity \
 where sampleId = '${sample_name}';" )
 
-if [[ $( echo "${sample_present}" | wc -l ) < 2 ]]; then
-    warn 'Sample not present in diagnostic database. SQL query check not performed.'
-    exit 1
+if [[ "${sample_name}" =~ ^CORE01 ]]; then
+    if [[ $( echo "${sample_present}" | wc -l ) < 2 ]]; then
+        warn 'Sample not present in diagnostic database. SQL query check not performed.'
+        exit 1
+    fi
 fi
-
 
 germline_variants=$( execute_sql_on_diagnostic_prod "SELECT * FROM hmfpatients.germlineVariant \
 WHERE ( (gene IN (SELECT gene FROM driverGenePanel WHERE reportGermlineVariant=1 OR reportGermlineHotspot=1) AND pathogenic AND filter <> 'PASS') \
