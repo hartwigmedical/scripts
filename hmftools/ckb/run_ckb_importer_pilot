@@ -5,10 +5,14 @@ source locate_files || exit 1
 ckb_jar=$(locate_pilot_ckb_importer)
 
 # Database details
-credentials=$(locate_ckb_pilot_database_credentials)
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+credentials=$( gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-writer --project=hmf-secrets )
+
+database_name="ckb_db_pilot"
+db_user=$( echo ${credentials} | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | sed 's/"//g' )
+db_pass=$( echo ${credentials} | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
+db_host=$( echo ${credentials} | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
+db_port=$( echo ${credentials} | sed 's/ /\n/g' | grep port= | cut -d"=" -f2 | sed 's/"//g' )
+db_url=$("mysql://${db_host}:${db_port}/${database_name}")
 
 ckb_dir=$(locate_ckb_flex_data_dir)
 
