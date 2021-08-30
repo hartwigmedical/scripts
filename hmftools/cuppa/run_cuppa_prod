@@ -25,6 +25,7 @@ cp -r ${run_dir}/purple/* ${sample_data_dir}/
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_structural_variant_vcf=$(locate_purple_structural_variants ${run_dir})
 
+info "Running Cuppa on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
      -categories DNA \
      -ref_data_dir /data/resources/private/cuppa \

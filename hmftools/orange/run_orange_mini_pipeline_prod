@@ -14,8 +14,11 @@ if [[ ! -d ${run_dir}/linx/plot ]]; then
     mkdir -p ${run_dir}/linx/plot
 fi
 
+# See also DEV-2196
+run_cuppa_prod ${run_dir}
+
 # See also DEV-2195
 generate_cup_report_pipeline ${run_dir}
 
 # See also DEV-2027
-run_orange_prod_no_c_d_evidence ${run_dir}
+run_orange_prod ${run_dir}
