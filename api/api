@@ -94,8 +94,8 @@ main(){
         jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ini status version bucket id
-        jq -r '.[] | [.set.name, .set.entity_id, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum entity_id ini status version bucket id
+        jq -r '.[] | [.set.name, .set.ref_sample, .set.tumor_sample, .set.entity_id, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "platforms" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
         jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
