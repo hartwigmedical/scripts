@@ -5,8 +5,6 @@ source metadata_functions || exit 1
 source lims_functions || exit 1
 source message_functions || exit 1
 
-# TODO Will be prod once v1.4 is upgraded.
-
 run_dir=$1 && shift
 output_dir=$1 && shift
 serve_actionability_dir=$1 && shift
@@ -19,9 +17,6 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-primary_tumor_location=$(get_tumorlocation_for_biopsy ${tumor_sample})
-info "Tumor Location of this patient is: ${primary_tumor_location}"
-
 if [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
@@ -32,7 +27,7 @@ if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
-doid_json=/data/resources/disease_ontology/201015_doid.json
+doid_json=/data/resources/public/disease_ontology/201015_doid.json
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
