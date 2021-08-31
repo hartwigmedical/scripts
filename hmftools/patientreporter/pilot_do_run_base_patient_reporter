@@ -2,7 +2,7 @@
 
 source locate_files || exit 1
 
-patient_reporter_jar=$(locate_pilot_patient_reporter)
+patient_reporter_jar=$(locate_pilot_patient_reporter_ds)
 
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv

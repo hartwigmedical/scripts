@@ -7,7 +7,7 @@ source message_functions || exit 1
 
 run_dir=$1 && shift
 
-patient_reporter_jar=$(locate_pilot_patient_reporter)
+patient_reporter_jar=$(locate_pilot_patient_reporter_ds)
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
@@ -70,7 +70,7 @@ taxonomy_db_tsv=/data/common/dbs/virus_interpreter/taxonomy_db.tsv
 virus_interpretation_tsv=/data/common/dbs/virus_interpreter/virus_interpretation.tsv
 virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
 
-patient_reporter_jar=$(locate_prod_patient_reporter)
+patient_reporter_jar=$(locate_prod_patient_reporter_ds)
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv

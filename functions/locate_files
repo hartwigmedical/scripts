@@ -128,11 +128,11 @@ locate_pilot_orange() {
     echo ${base_path}/tools/orange/pilot/orange.jar
 }
 
-locate_prod_patient_reporter() {
+locate_prod_patient_reporter_ds() {
     echo ${base_path}/tools/patientreporter_v7.23/patient-reporter.jar
 }
 
-locate_pilot_patient_reporter() {
+locate_pilot_patient_reporter_ds() {
     echo ${base_path}/tools/patientreporter_pilot/patient-reporter.jar
 }
 
@@ -169,8 +169,7 @@ locate_pilot_serve() {
 }
 
 locate_prod_protect() {
-    # Cannot update to v1.4 yet as long as diagnostics pipeline occasionally needs a protect rerun.
-    echo ${base_path}/tools/protect_v1.3/protect.jar
+    echo ${base_path}/tools/protect/v1.4/protect.jar
 }
 
 locate_pilot_protect() {
