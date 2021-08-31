@@ -763,7 +763,7 @@ locate_gatk_germline_variants() {
     local ref_sample=$1 && shift
 
     local germline_vcf=""
-    local gatk_dir=${run_dir}/gatk_germline/${ref_sample}/germline_caller
+    local gatk_dir=${run_dir}/gatk_germline
 
     if [[ -d ${gatk_dir} ]]; then
         germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.germline.vcf.gz")
