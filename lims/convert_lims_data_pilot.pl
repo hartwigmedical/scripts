@@ -491,11 +491,17 @@ sub addAccessSamplesToSamples{
                 $blood_samples_by_name{ $name } = $row_info;
             }
         }
-        elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ){
-            if ( exists $tissue_samples_by_coupe{ $coupe } and $failed ){
-                sayWarn("    Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed");
-            }else{
-                $tissue_samples_by_coupe{ $coupe } = $row_info;
+        elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ) {
+            ## Since Sep 2021 there can be more linked coupes separated by comma
+            my @coupe_barcodes = split(",", $coupe);
+            foreach my $coupe_barcode (@coupe_barcodes){
+                next if isSkipValue($coupe_barcode);
+                if (exists $tissue_samples_by_coupe{ $coupe_barcode } and $failed) {
+                    sayWarn("    Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed");
+                }
+                else {
+                    $tissue_samples_by_coupe{ $coupe_barcode } = $row_info;
+                }
             }
         }
         elsif ( $source eq 'DNA-BLOOD' and not isSkipValue($name) ){
