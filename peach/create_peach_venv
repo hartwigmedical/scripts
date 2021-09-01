@@ -32,7 +32,6 @@ fi
 
 # Sanity checks
 [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
-[[ -n ${run_dir} ]] || die "Variable 'rundir' has not been set."
 [[ -f ${peach_requirements} ]] || die "peach requirements file should be a file: ${peach_requirements}."
 [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
