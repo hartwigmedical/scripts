@@ -12,7 +12,8 @@ db_user=$( echo ${credentials} | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | s
 db_pass=$( echo ${credentials} | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
 db_host=$( echo ${credentials} | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
 db_port=$( echo ${credentials} | sed 's/ /\n/g' | grep port= | cut -d"=" -f2 | sed 's/"//g' )
-db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET")
+database_specific_credentials=$(cat /data/resources/mysql_credentials/database_dependencies)
+db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${database_specific_credentials}")
 
 ckb_dir=$(locate_ckb_flex_data_dir)
 
