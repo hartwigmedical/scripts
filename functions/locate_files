@@ -116,6 +116,10 @@ locate_prod_sigs() {
     echo ${base_path}/tools/sigs/1.0/sigs.jar
 }
 
+locate_prod_sigs_ds() {
+    echo ${base_path}/tools/sigs_v1.0/sigs.jar
+}
+
 locate_pilot_sigs() {
     echo ${base_path}/tools/sigs/pilot/sigs.jar
 }
