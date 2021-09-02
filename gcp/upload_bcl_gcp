@@ -4,7 +4,7 @@ source slack_functions || exit 1
 source message_functions || exit 1
 
 flowcells_dir="/data1/illumina_data"
-bucket="bcl-input-prod"
+bucket="bcl-input-prod-1"
 gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
 
 if [[ "$#" -ne 1 ]]; then
