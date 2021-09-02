@@ -181,8 +181,8 @@ process_sample() {
             process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
         fi
 
-    done < <(echo "$fastq_json" | jq -cr '.[] | [.bucket//"hmf-fastq-storage",.name_r1//"NA",.name_r2//"NA"] | @tsv')
-    # in case bucket is missing check default bucket hmf-fastq-storage
+    done < <(echo "$fastq_json" | jq -cr '.[] | [.bucket//"",.name_r1//"NA",.name_r2//"NA"] | @tsv')
+    # in case bucket is missing check default bucket
 
     echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$cmd_file"
 }

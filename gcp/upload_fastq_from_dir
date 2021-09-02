@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 input_dir_with_fastq=$1
 gcp_account="hmf-ops@hmf-database.iam.gserviceaccount.com"
-gcp_fastq_bucket="hmf-fastq-storage"
+gcp_fastq_bucket=""
 
 if [[ "$#" -ne 1 ]]; then
     echo "Descr: Uploads fastq files in directory to bucket ${gcp_fastq_bucket}"

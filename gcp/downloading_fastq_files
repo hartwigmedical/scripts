@@ -12,7 +12,7 @@ fi
 
 switch_to_hmf_ops_service_account
 
-gs_fastq_path=$(gsutil -u hmf-database ls gs://hmf-fastq-storage | grep ${sampleId_ref})
+gs_fastq_path=$(gsutil -u hmf-database ls gs:// | grep ${sampleId_ref})
 ds_path=/data/gcp/fastq_upload/${sampleId_tumor}_fastq/
 
 info "Downloading fastq for ${sampleId_ref} from ${gs_fastq_path}"

@@ -22,7 +22,7 @@ for TYPE in "${DB_TYPES[@]}"; do
     ## Fastq is the largest type and sometimes takes too long leading to timeout
     ## Below filter reduces to only those files still in bucket
     if [[ "${TYPE}" == "fastq" ]]; then
-        API_URL+="?bucket=hmf-fastq-storage"
+        API_URL+="?bucket="
     fi
     OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
     OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
