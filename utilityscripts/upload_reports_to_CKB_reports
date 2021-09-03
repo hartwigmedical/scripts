@@ -7,3 +7,4 @@ for report in /data/cpct/ckb_reports/*.pdf; do
     info "Uploading ${report} to Nextcloud for summary creation"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
 done
+
