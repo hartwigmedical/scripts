@@ -29,8 +29,6 @@ for run in ${process_runs}; do
     elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
-        info "Copy run to hmf-crunch at GCP"
-        copy_run_to_gcp_crunch_project ${run}
         info "Loading set ${run} into diagnotic db"
         load_run_into_diagnostic_db /data/cpct/runs/${run}
     else
