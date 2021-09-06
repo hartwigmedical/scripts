@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
 source message_functions || exit 1
 
-val_base='/data/giab/validation/sets'
 gatk_path='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
-ref_genome_fasta=$(locate_ref_genome_37_fasta_file_ds)
+rtg="/data/common/tools/rtg-tools_v3.6.2/installation/rtg-tools-3.6.2-bc71ee0/rtg"
+ref_genome_fasta='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
 rtg_sdf_path='/data/common/dbs/RTGSDF_GRCh37/'
 
 truth_version='NIST_v3.2.2';
@@ -16,14 +15,13 @@ truth_vcf_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2
 truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
 truth_vcf_path_snv=$(echo ${truth_vcf_path} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/')
 
-if [[ ! -w "${val_base}" ]]; then error "validation base not writable (${val_base})"; fi
 if [[ ! -f "${gatk_path}" ]]; then error "GATK JAR not available (${gatk_path})"; fi
 if [[ ! -f "${ref_genome_fasta}" ]]; then error "Ref fasta not available (${ref_genome_fasta})"; fi
 if [[ ! -f "${truth_vcf_path}" ]]; then error "truth VCF not available (${truth_vcf_path})"; fi
 if [[ ! -f "${truth_bed_path}" ]]; then error "truth BED not available (${truth_bed_path})"; fi
 if [[ ! -d "${rtg_sdf_path}" ]]; then error "RTG SDF directory not found (${rtg_sdf_path})"; fi
 if [[ ! $(command -v datamash) ]]; then error "Dependency 'datamash' not found"; fi
-if [[ ! $(command -v rtg) ]]; then error "Dependency 'rtg' not found"; fi
+if [[ ! $(command -v $rtg) ]]; then error "Dependency 'rtg' not found"; fi
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
@@ -35,6 +33,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 run_path=$1 && shift
+if [[ ! -w "${run_path}" ]]; then error "Run path not writable (${run_path})"; fi
 
 ## -----
 ## Checks and Setup
@@ -45,8 +44,7 @@ if [[ ! -d "${run_path}" ]]; then error "Provided run path does not exist?"; fi
 input_vcf_path=$(find "${run_path}" -wholename "*/germline_caller/*.germline.vcf.gz")
 if [[ ! -f "${input_vcf_path}" ]]; then error "No germline VCF found (${run_path})"; fi
 
-run_name=$(basename "${run_path}")
-output_dir="${val_base}/${run_name}_Validation"
+output_dir="${run_path}/verification"
 tmp_dir="${output_dir}/tmp"
 
 if [[ -d "${output_dir}" ]]; then error "output_dir already exists (${output_dir})"; fi
@@ -54,8 +52,6 @@ if [[ -d "${output_dir}" ]]; then error "output_dir already exists (${output_dir
 info "Creating output dir (${output_dir})"
 mkdir -p "${output_dir}"
 mkdir -p "${tmp_dir}"
-info "Copying germline vcf (${input_vcf_path})"
-cp ${input_vcf_path}* "${output_dir}"
 
 ## -----
 ## VCF preparation
@@ -74,11 +70,11 @@ else
 fi
 
 info "Running RTGTools bgzip on ${start_vcf_name}"
-rtg bgzip "${start_vcf_path}"
+$rtg bgzip "${start_vcf_path}"
 start_vcf_path="${start_vcf_path}.gz"
 start_vcf_name="${start_vcf_name}.gz"
 info "Running RTGTools index on ${start_vcf_name}"
-rtg index -f vcf "${start_vcf_path}"
+$rtg index -f vcf "${start_vcf_path}"
 
 ## -----
 ## Use GATK SelectVariants to separate SNVs and INDELs
@@ -138,7 +134,7 @@ else
 fi
 
 info "Running RTGtools vcfeval (${rtg_out_name})"
-rtg vcfeval \
+$rtg vcfeval \
     --template "${rtg_sdf_path}" \
     --threads=8 \
     --baseline="${truth_vcf_path_snv}" \
