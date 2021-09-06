@@ -217,7 +217,7 @@ sub parseTsvCsv{
         next if isSkipValue( $key );
         my $reason_not_to_store = checkKeyToStore( \%store, $key );
         if ( $should_be_unique and $reason_not_to_store ){
-            sayWarn("SKIPPING sample (name: $name) for reason: $reason_not_to_store") and next;
+            sayWarn("SKIPPING object (name: $name) from $file for reason: $reason_not_to_store") and next;
         }
 
         ## Checks OK: fix some fields and store object
