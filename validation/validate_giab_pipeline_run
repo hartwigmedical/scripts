@@ -8,46 +8,47 @@ ref_genome_fasta='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo
 rtg_sdf_path='/data/common/dbs/RTGSDF_GRCh37/'
 
 truth_version='NIST_v3.2.2';
-truth_dir_path="/data/giab/truth/${truth_version}/"
+truth_dir_path="/data/giab/truth/${truth_version}"
 truth_bed_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed'
 truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 truth_vcf_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.vcf.gz'
 truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
-truth_vcf_path_snv=$(echo ${truth_vcf_path} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/')
+truth_vcf_path_snv=${truth_vcf_path//.vcf.gz/_SNP.vcf.gz}
 
-if [[ ! -f "${gatk_path}" ]]; then error "GATK JAR not available (${gatk_path})"; fi
-if [[ ! -f "${ref_genome_fasta}" ]]; then error "Ref fasta not available (${ref_genome_fasta})"; fi
-if [[ ! -f "${truth_vcf_path}" ]]; then error "truth VCF not available (${truth_vcf_path})"; fi
-if [[ ! -f "${truth_bed_path}" ]]; then error "truth BED not available (${truth_bed_path})"; fi
-if [[ ! -d "${rtg_sdf_path}" ]]; then error "RTG SDF directory not found (${rtg_sdf_path})"; fi
-if [[ ! $(command -v datamash) ]]; then error "Dependency 'datamash' not found"; fi
-if [[ ! $(command -v $rtg) ]]; then error "Dependency 'rtg' not found"; fi
+[[ -f "${gatk_path}" ]] || die "GATK JAR not available (${gatk_path})"
+[[ -f "${ref_genome_fasta}" ]] || die "Ref fasta not available (${ref_genome_fasta})"
+[[ -f "${truth_vcf_path}" ]] || die "truth VCF not available (${truth_vcf_path})"
+[[ -f "${truth_bed_path}" ]] || die "truth BED not available (${truth_bed_path})"
+[[ -d "${rtg_sdf_path}" ]] || die "RTG SDF directory not found (${rtg_sdf_path})"
+[[ $(command -v datamash) ]] || die "Dependency not found (datamash)"
+[[ $(command -v $rtg) ]] || die "Dependency not found (${rtg})"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
-    echo " Usage: $(basename $0) <path-to-pipeline-dir>"
-    echo "        $(basename $0) /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG"
+    echo " Usage: $(basename "$0") <path-to-pipeline-dir>"
+    echo "        $(basename "$0") /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG"
     echo "-----"
     exit 1
 fi
 
 run_path=$1 && shift
-if [[ ! -w "${run_path}" ]]; then error "Run path not writable (${run_path})"; fi
 
 ## -----
 ## Checks and Setup
 ## -----
-if [[ ! -d "${run_path}" ]]; then error "Provided run path does not exist?"; fi
+[[ -d "${run_path}" ]] || die "Provided run path does not exist?"
+[[ -w "${run_path}" ]] || die "Run path not writable (${run_path})"
 
 ## find input VCF
+info "Starting GIAB verification with input directory ${run_path}"
 input_vcf_path=$(find "${run_path}" -wholename "*/germline_caller/*.germline.vcf.gz")
-if [[ ! -f "${input_vcf_path}" ]]; then error "No germline VCF found (${run_path})"; fi
+[[ -f "${input_vcf_path}" ]] || die "No germline VCF found (${run_path})"
 
 output_dir="${run_path}/verification"
 tmp_dir="${output_dir}/tmp"
 
-if [[ -d "${output_dir}" ]]; then error "output_dir already exists (${output_dir})"; fi
+[[ -d "${output_dir}" ]] && die "output_dir already exists (${output_dir})"
 
 info "Creating output dir (${output_dir})"
 mkdir -p "${output_dir}"
@@ -66,7 +67,7 @@ elif [[ ${input_vcf_path} =~ .gz$ ]]; then
     info "Germline VCF is compressed: gunzippig to ${start_vcf_path}"
     gunzip -c "${input_vcf_path}" > "${start_vcf_path}"
 else
-    error "Germline VCF of unsupported extension"
+    die "Germline VCF of unsupported extension"
 fi
 
 info "Running RTGTools bgzip on ${start_vcf_name}"
@@ -95,7 +96,7 @@ else
         -V "${start_vcf_path}" \
         -selectType SNP \
         -o "${snp_vcf_path}"
-    if [[ $? -ne 0 ]]; then { error "GATK SelectVariants Failed"; } fi
+    [[ $? -eq 0 ]] || die "GATK SelectVariants Failed"
 fi
 
 ## no INDELs for now
@@ -111,9 +112,9 @@ fi
 ## run RTGtools vcfeval
 ## -----
 call_name="${snp_vcf_name}"
-call_name=$(echo "${call_name}" | sed 's/\.filtered_variants\.vcf\.gz//')
-call_name=$(echo "${call_name}" | sed 's/\.annotated\.vcf\.gz//')
-call_name=$(echo "${call_name}" | sed 's/\.germline\.vcf\.gz//')
+call_name=${call_name/.filtered_variants.vcf.gz/}
+call_name=${call_name/.annotated.vcf.gz/}
+call_name=${call_name/.germline.vcf.gz/}
 
 rtg_out_name="${truth_version}_vs_${call_name}_truthBed";
 rtg_out_path="${output_dir}/${rtg_out_name}"
@@ -127,8 +128,8 @@ wgs_csv_out_path="${output_dir}/wgs_metrics.csv"
 wgs_metrics_count=$(find "${run_path}" -name "*.wgsmetrics" | wc -l)
 if [[ "${wgs_metrics_count}" -eq 1 ]]; then
     wgs_metrics_path=$(find "${run_path}" -name "*.wgsmetrics")
-    cat "${wgs_metrics_path}" | grep -A1 GENOME | datamash transpose -W > "${wgs_tsv_out_path}"
-    cat "${wgs_metrics_path}" | grep -A1 GENOME | datamash transpose -W --output-delimiter "," > "${wgs_csv_out_path}"
+    grep -A1 GENOME "${wgs_metrics_path}" | datamash transpose -W > "${wgs_tsv_out_path}"
+    grep -A1 GENOME "${wgs_metrics_path}" | datamash transpose -W --output-delimiter "," > "${wgs_csv_out_path}"
 else
     warn "Search for wgsmetrics found ${wgs_metrics_count} files"
 fi
@@ -143,10 +144,10 @@ $rtg vcfeval \
     --output "${rtg_out_path}"
 
 info "Reformatting RTGtools vcfeval results into csv/tsv"
-cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace > "${rtg_tsv_out_path}"
-cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace --output-delimiter "," > "${rtg_csv_out_path}"
+grep -P "Threshold|None" "${sum_out_path}" | datamash transpose --whitespace > "${rtg_tsv_out_path}"
+grep -P "Threshold|None" "${sum_out_path}" | datamash transpose --whitespace --output-delimiter "," > "${rtg_csv_out_path}"
 
 info "Final output written to:"
 info "  WGSMetrics: ${wgs_tsv_out_path}"
 info "  RTGTools: ${rtg_tsv_out_path}"
-info "Finished with $(basename $0)"
+info "Finished with $(basename "$0")"
