@@ -15,8 +15,10 @@ fi
 orange_jar=$(locate_prod_orange)
 doid_json=/data/resources/public/disease_ontology/201015_doid.json
 output_dir=${run_dir}/orange
+output_dir_no_germline=${run_dir}/orange_no_germline
 
 create_or_cleanup_dir ${output_dir}
+create_or_cleanup_dir ${output_dir_no_germline}
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -70,11 +72,51 @@ if [[ ! -z ${cuppa_feature_plot} ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
 
+echo "[INFO] Starting generating ORANGE report including germline results"
 java -Xms2G -Xmx8G -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
+    -doid_json ${doid_json} \
+    ${pipeline_version_cmd} \
+    -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
+    -ref_sample_flagstat_file ${ref_sample_flagstat_file} \
+    -tumor_sample_wgs_metrics_file ${tumor_sample_wgs_metrics_file} \
+    -tumor_sample_flagstat_file ${tumor_sample_flagstat_file} \
+    -sage_germline_gene_coverage_tsv ${sage_germline_gene_coverage_tsv} \
+    -sage_somatic_ref_sample_bqr_plot ${sage_somatic_ref_sample_bqr_plot} \
+    -sage_somatic_tumor_sample_bqr_plot ${sage_somatic_tumor_sample_bqr_plot} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
+    -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+    -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+    -purple_plot_directory ${purple_plot_directory} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_breakend_tsv ${linx_breakend_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+    -linx_driver_tsv ${linx_driver_tsv} \
+    -linx_plot_directory ${linx_plot_directory} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -cuppa_conclusion_txt ${cuppa_conclusion_txt} \
+    -cuppa_result_csv ${cuppa_result_csv} \
+    -cuppa_summary_plot ${cuppa_summary_plot} \
+    ${cuppa_feature_plot_cmd} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
+    -peach_genotype_tsv ${peach_genotype_tsv} \
+    -protect_evidence_tsv ${protect_evidence_tsv} \
+    "$@"
+
+echo "[INFO] Starting generating ORANGE report excluding germline results"
+java -Xms2G -Xmx8G -jar ${orange_jar} \
+    -disable_germline \
+    -tumor_sample_id ${tumor_sample} \
+    -reference_sample_id ${reference_sample} \
+    -primary_tumor_doids ${primary_tumor_doids} \
+    -output_dir ${output_dir_no_germline} \
     -doid_json ${doid_json} \
     ${pipeline_version_cmd} \
     -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
