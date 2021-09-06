@@ -56,9 +56,6 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/cpct/runs/
         info "Create patient report for ${run}"
         create_patient_report_for_run /data/cpct/runs/${run}
-        info "Copy run to hmf-crunch at GCP"
-        copy_run_to_gcp_crunch_project ${run}
-
 
         if [[ ${purity_int} -ge 20 ]]; then
             info "Generating CUPPA ruo report"
@@ -76,8 +73,6 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/cpct/runs/
         info "Create patient report for ${run}"
         create_patient_report_for_run /data/cpct/runs/${run}
-        info "Copy run to hmf-crunch at GCP"
-        copy_run_to_gcp_crunch_project ${run}
 
         if [[ ${purity_int} -ge 20 ]]; then
             info "Generating CUPPA ruo report"
@@ -92,8 +87,6 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/cpct/runs/
         info "Create patient report for ${run}"
         create_patient_report_for_run /data/cpct/runs/${run}
-        info "Copy run to hmf-crunch at GCP"
-        copy_run_to_gcp_crunch_project ${run}
         info "Loading set ${run} into diagnotic db"
         load_run_into_diagnostic_db /data/cpct/runs/${run}
     else
@@ -108,8 +101,6 @@ for run in ${process_runs}; do
         elif [[ ${cohort} == "WIDE" ]]; then
             info "Moving set ${run} to /data/cpct/runs"
             mv ${source_path}/${run} /data/cpct/runs/
-            info "Copy run to hmf-crunch at GCP"
-            copy_run_to_gcp_crunch_project ${run}
             info "Loading set ${run} into diagnotic db"
             load_run_into_diagnostic_db /data/cpct/runs/${run}
         fi
