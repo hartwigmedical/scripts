@@ -44,7 +44,7 @@ get_doids_for_biopsy() {
     patient="${BASH_REMATCH[1]}"
     # sanity check on match count
     count="$(cat "${doid_file}" | awk -v patient="${patient}" '$1==patient' | wc -l)"
-    [[ "${count}" < 2 ]] || die "Patient ${patient} matches more than one line in ${doid_file}"
+    [[ "${count}" -lt 2 ]] || die "Patient ${patient} matches more than one line in ${doid_file}"
 
     doids=$(cat "${doid_file}" | grep -P "^${patient}" | cut -f${column_index})
     echo "${doids}"
@@ -74,7 +74,7 @@ get_doids_for_biopsy_pilot() {
     patient="${BASH_REMATCH[1]}"
     # sanity check on match count
     count="$(cat "${doid_file}" | awk -v patient="${patient}" '$1==patient' | wc -l)"
-    [[ "${count}" < 2 ]] || die "Patient ${patient} matches more than one line in ${doid_file}"
+    [[ "${count}" -lt 2 ]] || die "Patient ${patient} matches more than one line in ${doid_file}"
 
     doids=$(cat "${doid_file}" | grep -P "^${patient}" | cut -f${column_index})
     echo "${doids}"
@@ -84,7 +84,7 @@ get_doids_file() {
     doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
         # Temporary until this has a proper location on GCP
-        doid_file="$HOME/clinical_data/curated_primary_tumor.tsv"
+        doid_file="/data/actin/config/clinical_data/curated_primary_tumor.tsv"
     fi
     echo ${doid_file}
 }
@@ -93,7 +93,7 @@ get_doids_file_pilot() {
     doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
         # Temporary until this has a proper location on GCP
-        doid_file="$HOME/clinical_data/pilot_curated_primary_tumor.tsv"
+        doid_file="/data/actin/config/clinical_data/pilot_curated_primary_tumor.tsv"
     fi
     echo ${doid_file}
 }
