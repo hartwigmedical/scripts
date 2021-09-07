@@ -324,7 +324,7 @@ locate_ref_genome_37_fasta_file_ds() {
 }
 
 locate_ref_genome_37_fasta_file_gcp() {
-    echo ${base_path}/resources/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    echo ${base_path}/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 
 locate_ref_genome_38_fasta_file_ds() {
@@ -332,7 +332,7 @@ locate_ref_genome_38_fasta_file_ds() {
 }
 
 locate_ref_genome_38_fasta_file_gcp() {
-    echo ${base_path}/resources/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+    echo ${base_path}/resources/bucket/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
 }
 
 locate_ref_genome_37_to_38_chain() {
