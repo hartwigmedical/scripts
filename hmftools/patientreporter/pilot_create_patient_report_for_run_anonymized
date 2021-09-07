@@ -121,9 +121,6 @@ java -jar "${patient_reporter_jar}" \
     -protect_evidence_tsv "${protect_evidence_tsv}" \
     -germline_reporting_tsv "${germline_reporting_tsv}" \
     -sample_summary_tsv "${sample_summary_tsv}" \
-    -taxonomy_db_tsv "${taxonomy_db_tsv}" \
-    -virus_interpretation_tsv "${virus_interpretation_tsv}" \
-    -virus_blacklist_tsv "${virus_blacklist_tsv}" \
     -output_dir_data "${output_dir_data}" \
     -output_dir_report "${output_dir_report}" \
     -log_debug \
