@@ -84,7 +84,7 @@ get_doids_file() {
     doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
         # Temporary until this has a proper location on GCP
-        doid_file="/data/actin/config/clinical_data/curated_primary_tumor.tsv"
+        doid_file="/data/actin/custom_resources/clinical_data/curated_primary_tumor.tsv"
     fi
     echo ${doid_file}
 }
@@ -93,7 +93,7 @@ get_doids_file_pilot() {
     doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
         # Temporary until this has a proper location on GCP
-        doid_file="/data/actin/config/clinical_data/pilot_curated_primary_tumor.tsv"
+        doid_file="/data/actin/custom_resources/clinical_data/pilot_curated_primary_tumor.tsv"
     fi
     echo ${doid_file}
 }
