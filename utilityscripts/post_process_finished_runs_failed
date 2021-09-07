@@ -26,7 +26,7 @@ for run in ${process_runs}; do
     elif [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
         info "Moving set ${run} to /data/core/runs"
         mv ${source_path}/${run} /data/core/runs/
-    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
+    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" || ${cohort} == "ACTIN" ]]; then
         info "Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
         info "Loading set ${run} into diagnotic db"
