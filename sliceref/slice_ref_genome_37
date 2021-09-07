@@ -1,4 +1,14 @@
-# Format = chr:start-end
+#!/usr/bin/env bash
 
-region=$1
-/data/common/tools/samtools_v1.10/samtools faidx /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta ${region}
+source message_functions || exit 1
+source locate_files || exit 1
+
+# Format = chr:start-end
+region=$1 && shift
+
+if [[ -z ${region} ]]; then
+    error "No region passed. Exiting"
+fi
+
+ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
+/data/tools/samtools/1.10/samtools faidx ${ref_genome_fasta_file} ${region}
