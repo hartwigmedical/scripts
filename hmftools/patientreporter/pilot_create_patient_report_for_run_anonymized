@@ -86,6 +86,7 @@ sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 
 expected_pipeline_version="5.22"
 
+mkdir --parents "${output_dir_report}/good/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv "${primary_tumor_tsv}" \
@@ -127,6 +128,7 @@ java -jar "${patient_reporter_jar}" \
     -log_debug \
     "$@"
 
+mkdir --parents "${output_dir_report}/insufficient_dna/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -140,9 +142,11 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_dna" \
     -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_run_id "${tumor_sample_run_id}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     "$@"
 
+mkdir --parents "${output_dir_report}/insufficient_tcp_deep_wgs/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -156,13 +160,16 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_tcp_deep_wgs" \
     -ref_sample_id "${ref_sample}" \
+    -ref_sample_run_id "${ref_sample_run_id}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_run_id "${tumor_sample_run_id}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -purple_purity_tsv "${purple_purity_tsv}" \
     -purple_qc_file "${purple_qc_file}" \
     "$@"
 
+mkdir --parents "${output_dir_report}/insufficient_tcp_shallow_wgs/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -176,11 +183,14 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_tcp_shallow_wgs" \
     -ref_sample_id "${ref_sample}" \
+    -ref_sample_run_id "${ref_sample_run_id}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_run_id "${tumor_sample_run_id}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     "$@"
 
+mkdir --parents "${output_dir_report}/sufficient_tcp_qc_failure/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -194,13 +204,16 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "sufficient_tcp_qc_failure" \
     -ref_sample_id "${ref_sample}" \
+    -ref_sample_run_id "${ref_sample_run_id}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_run_id "${tumor_sample_run_id}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -purple_purity_tsv "${purple_purity_tsv}" \
     -purple_qc_file "${purple_qc_file}" \
     "$@"
 
+mkdir --parents "${output_dir_report}/technical_failure/data/"
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -214,5 +227,6 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "technical_failure" \
     -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_run_id "${tumor_sample_run_id}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     "$@"
