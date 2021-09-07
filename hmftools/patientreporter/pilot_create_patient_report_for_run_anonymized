@@ -117,7 +117,6 @@ java -jar "${patient_reporter_jar}" \
     -chord_prediction_txt "${chord_prediction_txt}" \
     -molecular_tissue_origin_txt "${molecular_tissue_origin_txt}" \
     -molecular_tissue_origin_plot "${molecular_tissue_origin_plot}" \
-    -virus_breakend_tsv "${virus_breakend_tsv}" \
     -peach_genotype_tsv "${peach_genotype_tsv}" \
     -protect_evidence_tsv "${protect_evidence_tsv}" \
     -germline_reporting_tsv "${germline_reporting_tsv}" \
