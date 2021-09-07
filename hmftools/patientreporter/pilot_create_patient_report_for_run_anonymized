@@ -7,10 +7,10 @@ source message_functions || exit 1
 source api_functions || exit 1
 
 run_dir=$1 && shift
-
-output_dir_report=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/
-
-patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.24-jar-with-dependencies.jar
+output_dir_report=$1 && shift
+patient_reporter_jar=$1 && shift
+# output_dir_report=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/
+# patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.24-jar-with-dependencies.jar
 
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
@@ -77,12 +77,14 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog "${run_dir}")
 chord_prediction_txt=$(locate_chord_prediction "${run_dir}")
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt "${run_dir}")
 molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot "${run_dir}")
-annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
+annotated_virus_tsv=$(locate_virus_annotation_tsv "${run_dir}")
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv "${run_dir}")
 protect_evidence_tsv=$(locate_protect_evidence "${run_dir}")
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting_pilot.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
+
+expected_pipeline_version="5.22"
 
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
@@ -91,7 +93,7 @@ java -jar "${patient_reporter_jar}" \
     -rva_logo "${rva_logo}" \
     -company_logo "${company_logo}" \
     -signature "${signature}" \
-    -expected_pipeline_version "5.22" \
+    -expected_pipeline_version "${expected_pipeline_version}" \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     -ref_sample_id "${ref_sample}" \
     -ref_sample_run_id "${ref_sample_run_id}" \
@@ -119,8 +121,98 @@ java -jar "${patient_reporter_jar}" \
     -protect_evidence_tsv "${protect_evidence_tsv}" \
     -germline_reporting_tsv "${germline_reporting_tsv}" \
     -sample_summary_tsv "${sample_summary_tsv}" \
-    -output_dir_data "${output_dir_data}" \
-    -output_dir_report "${output_dir_report}" \
+    -output_dir_data "${output_dir_report}/good/data/" \
+    -output_dir_report "${output_dir_report}/good/" \
     -ref_genome_version 37 \
     -log_debug \
+    "$@"
+
+java -jar "${patient_reporter_jar}" \
+    -reporting_db_tsv "${reporting_db_tsv}" \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -output_dir_report "${output_dir_report}/insufficient_dna/" \
+    -output_dir_data "${output_dir_report}/insufficient_dna/data/" \
+    -qc_fail \
+    -qc_fail_reason "insufficient_dna" \
+    -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_barcode "${tumor_sample_barcode}" \
+    "$@"
+
+java -jar "${patient_reporter_jar}" \
+    -reporting_db_tsv "${reporting_db_tsv}" \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -output_dir_report "${output_dir_report}/insufficient_tcp_deep_wgs/" \
+    -output_dir_data "${output_dir_report}/insufficient_tcp_deep_wgs/data/" \
+    -qc_fail \
+    -qc_fail_reason "insufficient_tcp_deep_wgs" \
+    -ref_sample_id "${ref_sample}" \
+    -ref_sample_barcode "${ref_sample_barcode}" \
+    -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_barcode "${tumor_sample_barcode}" \
+    -purple_purity_tsv "${purple_purity_tsv}" \
+    -purple_qc_file "${purple_qc_file}" \
+    "$@"
+
+java -jar "${patient_reporter_jar}" \
+    -reporting_db_tsv "${reporting_db_tsv}" \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -output_dir_report "${output_dir_report}/insufficient_tcp_shallow_wgs/" \
+    -output_dir_data "${output_dir_report}/insufficient_tcp_shallow_wgs/data/" \
+    -qc_fail \
+    -qc_fail_reason "insufficient_tcp_shallow_wgs" \
+    -ref_sample_id "${ref_sample}" \
+    -ref_sample_barcode "${ref_sample_barcode}" \
+    -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_barcode "${tumor_sample_barcode}" \
+    "$@"
+
+java -jar "${patient_reporter_jar}" \
+    -reporting_db_tsv "${reporting_db_tsv}" \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -output_dir_report "${output_dir_report}/sufficient_tcp_qc_failure/" \
+    -output_dir_data "${output_dir_report}/sufficient_tcp_qc_failure/data/" \
+    -qc_fail \
+    -qc_fail_reason "sufficient_tcp_qc_failure" \
+    -ref_sample_id "${ref_sample}" \
+    -ref_sample_barcode "${ref_sample_barcode}" \
+    -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_barcode "${tumor_sample_barcode}" \
+    -purple_purity_tsv "${purple_purity_tsv}" \
+    -purple_qc_file "${purple_qc_file}" \
+    "$@"
+
+java -jar "${patient_reporter_jar}" \
+    -reporting_db_tsv "${reporting_db_tsv}" \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -output_dir_report "${output_dir_report}/technical_failure/" \
+    -output_dir_data "${output_dir_report}/technical_failure/data/" \
+    -qc_fail \
+    -qc_fail_reason "technical_failure" \
+    -tumor_sample_id "${tumor_sample}" \
+    -tumor_sample_barcode "${tumor_sample_barcode}" \
     "$@"
