@@ -8,9 +8,9 @@ source api_functions || exit 1
 
 run_dir=$1 && shift
 
-output_dir_report=/data/experiments/210826_david_DEV-2140_anonymization-patient-reporter/
+output_dir_report=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/
 
-patient_reporter_jar=/data/experiments/210826_david_DEV-2140_anonymization-patient-reporter/patient-reporter-7.23-jar-with-dependencies.jar
+patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.23-jar-with-dependencies.jar
 
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
