@@ -8,7 +8,7 @@ if [[ "$(hostname)" != "datastore" ]]; then
     error "This script is meant to be executed at datastore. Exiting."
 fi
 
-for server in crunch00{2,3}; do
+for server in crunch00{1,2}; do
     info "---"
     info "Executing \"${pull_script}\" at server ${server}"
     # Need to configure umask to 0002 which sets permissions of all new files on particular crunch to 664.
