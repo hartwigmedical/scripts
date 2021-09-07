@@ -11,7 +11,7 @@ fi
 
 # copying data from bucket
 info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"
-gsutil cp gs://hmf-cruncah-resources/serve/ckb/${zip_file} /data/resources/ckb/
+gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} /data/resources/ckb/
 
 # unzip file
 info "Unziping file ${zip_file}"
