@@ -121,5 +121,6 @@ java -jar "${patient_reporter_jar}" \
     -sample_summary_tsv "${sample_summary_tsv}" \
     -output_dir_data "${output_dir_data}" \
     -output_dir_report "${output_dir_report}" \
+    -ref_genome_version 37 \
     -log_debug \
     "$@"
