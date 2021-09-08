@@ -103,6 +103,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo "${company_logo}" \
     -signature "${signature}" \
     -expected_pipeline_version "${expected_pipeline_version}" \
+    -override_pipeline_version \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     -ref_sample_id "${ref_sample}" \
     -ref_sample_run_id "${ref_sample_run_id}" \
@@ -145,6 +146,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -output_dir_report "${output_dir_report}/insufficient_dna/" \
     -output_dir_data "${output_dir_report}/insufficient_dna/data/" \
     -qc_fail \
@@ -165,6 +167,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -output_dir_report "${output_dir_report}/insufficient_tcp_deep_wgs/" \
     -output_dir_data "${output_dir_report}/insufficient_tcp_deep_wgs/data/" \
     -qc_fail \
@@ -190,6 +193,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -output_dir_report "${output_dir_report}/insufficient_tcp_shallow_wgs/" \
     -output_dir_data "${output_dir_report}/insufficient_tcp_shallow_wgs/data/" \
     -qc_fail \
@@ -213,6 +217,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -output_dir_report "${output_dir_report}/sufficient_tcp_qc_failure/" \
     -output_dir_data "${output_dir_report}/sufficient_tcp_qc_failure/data/" \
     -qc_fail \
@@ -238,6 +243,7 @@ java -jar "${patient_reporter_jar}" \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version ${expected_pipeline_version} \
+    -override_pipeline_version \
     -output_dir_report "${output_dir_report}/technical_failure/" \
     -output_dir_data "${output_dir_report}/technical_failure/data/" \
     -qc_fail \
