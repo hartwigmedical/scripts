@@ -41,8 +41,16 @@ if [[ -z "${ref_sample_barcode}" ]]; then
     ref_sample_barcode=$(find_ref_barcode_for_sample_name "${tumor_sample_run_id}")
 fi
 
-tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
-ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
+if [[ "${tumor_sample_barcode}" == "COLO829V003TVAL" ]]; then
+  tumor_sample="COLO829v003T"
+else
+  tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
+fi
+if [[ "${ref_sample_barcode}" == "COLO829V003RVAL" ]]; then
+  ref_sample="COLO829v003R"
+else
+  ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
+fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_run_id}" || -z "${ref_sample_barcode}" \
           || -z "${tumor_sample}" || -z "${tumor_sample_run_id}" || -z "${tumor_sample_barcode}" ]]; then
