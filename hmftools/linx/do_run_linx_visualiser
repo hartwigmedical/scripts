@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
 source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 linx_jar=$1 && shift
 input_dir=$1 && shift
 
 # Load metadata
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 circos_binary=/data/tools/circos/0.69.6/bin/circos
 
+info "Running linx visualiser for ${sample}"
 java -Xmx8G -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
-    -sample ${tumor_sample} \
+    -sample ${sample} \
     -ref_genome_version 37 \
     -circos ${circos_binary} \
     -vis_file_dir ${input_dir} \
