@@ -11,8 +11,7 @@ sample_id=$(load_tumor_sample_from_metadata ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
 taxonomy_db_tsv=/data/resources/virus_interpreter/taxonomy_db.tsv
-virus_whitelist_tsv=/data/resources/virus_interpreter/virus_whitelist.tsv
-virus_blacklist_tsv=/data/resources/virus_interpreter/virus_blacklist.tsv
+virus_reporting_db_tsv=/home/lieke/dataset_copy/virus_reporting_db.tsv
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
@@ -22,8 +21,7 @@ java -jar ${virus_interpreter_jar} \
     -sample_id ${sample_id} \
     -virus_breakend_tsv ${virus_breakend_tsv} \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
-    -virus_whitelist_tsv ${virus_whitelist_tsv} \
-    -virus_blacklist_tsv ${virus_blacklist_tsv} \
+    -virus_reporting_db_tsv ${virus_reporting_db_tsv} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -tumor_sample_wgs_metrics_file ${tumor_sample_wgs_metrics_file} \
