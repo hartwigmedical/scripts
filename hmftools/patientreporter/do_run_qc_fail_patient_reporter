@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source lims_functions || exit 1
-source metadata_functions || exit 1
 source message_functions || exit 1
 
 tumor_sample=$1 && shift
@@ -21,11 +20,6 @@ fi
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
-
-if [[ -z "${tumor_sample_barcode}" ]]; then
-    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
-fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
     warn "Incomplete information for reporter. Exiting"
