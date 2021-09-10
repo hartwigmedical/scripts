@@ -11,7 +11,7 @@ samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samples
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
-for i in {2,3}; do
+for i in {1,2}; do
     crunch_name="crunch${i}.prod-1"
     info "Checking ${crunch_name} for samplesheets"
 
