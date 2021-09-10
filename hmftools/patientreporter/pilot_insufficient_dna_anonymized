@@ -71,7 +71,6 @@ fi
 
 expected_pipeline_version="5.22"
 
-
 java -jar "${patient_reporter_jar}" \
     -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
