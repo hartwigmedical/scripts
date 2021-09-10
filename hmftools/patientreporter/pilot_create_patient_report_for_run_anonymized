@@ -41,16 +41,8 @@ if [[ -z "${ref_sample_barcode}" ]]; then
     ref_sample_barcode=$(find_ref_barcode_for_sample_name "${tumor_sample_run_id}")
 fi
 
-if [[ "${tumor_sample_barcode}" == "COLO829V003TVAL" ]]; then
-  tumor_sample="COLO829v003T"
-else
-  tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
-fi
-if [[ "${ref_sample_barcode}" == "COLO829V003RVAL" ]]; then
-  ref_sample="COLO829v003R"
-else
-  ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
-fi
+tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
+ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_run_id}" || -z "${ref_sample_barcode}" \
           || -z "${tumor_sample}" || -z "${tumor_sample_run_id}" || -z "${tumor_sample_barcode}" ]]; then
@@ -62,12 +54,6 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_run_id}" || -z "${ref_sample_barcod
     warn "  tumor_sample run id: ${tumor_sample_run_id}"
     warn "  tum sample barcode: ${tumor_sample_barcode}"
     exit 1;
-fi
-
-output_dir_data=${run_dir}/patient_report_pilot_data
-if [[ ! -d "${output_dir_data}" ]]; then
-    info "${output_dir_data} does not exist yet, creating..."
-    mkdir "${output_dir_data}"
 fi
 
 pipeline_version_file=${run_dir}/pipeline.version
