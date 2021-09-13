@@ -9,6 +9,7 @@ main() {
   info "Started ${SCRIPT_NAME}"
 
   bam=$1 && shift
+  samtools=$1 && shift
 
   # sanity checks
   [[ -n ${bam} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
@@ -19,7 +20,7 @@ main() {
 
   if [[ ! -f ${all_depth} ]]; then
     info "Start samtools depth"
-    samtools depth -o "${all_depth}" -s -J "${bam}" || die "Could not determine depth of bam file"
+    "${samtools}" depth -o "${all_depth}" -s -J "${bam}" || die "Could not determine depth of bam file"
     info "Finished samtools depth"
   fi
 
