@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+MIN_COVERAGE=50
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  bam=$1 && shift
+
+  # sanity checks
+  [[ -n ${bam} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
+  [[ -f ${bam} ]] || die "Bam argument does not point to file"
+
+  all_depth="${bam}.all.depth"
+  min_coverage_depth="${bam}.min${MIN_COVERAGE}.depth"
+
+  if [[ ! -f ${all_depth} ]]; then
+    info "Start samtools depth"
+    samtools depth -o "${all_depth}" -s -J "${bam}" || die "Could not determine depth of bam file"
+    info "Finished samtools depth"
+  fi
+
+  if [[ ! -f ${min_coverage_depth} ]]; then
+    info "Start filtering depth file"
+    awk -v min="${MIN_COVERAGE}" '$3>=min' "${all_depth}" > "${min_coverage_depth}" || die "Could not filter depth file"
+    info "Finished filtering depth file"
+  fi
+
+  info "Total number of bases:"
+  awk '{sum+=$3;} END{print sum;}' "${all_depth}"
+
+  info "Average coverage of bases with coverage over ${MIN_COVERAGE}"
+  awk '{n++;sum+=$3} END {print n?sum/n:0}' "${min_coverage_depth}"
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"
