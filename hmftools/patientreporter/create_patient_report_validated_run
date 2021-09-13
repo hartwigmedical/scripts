@@ -84,12 +84,13 @@ echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please 
 read answer_protect
 if [[ $answer_protect == 'Y' ]]; then
     run_protect_prod_on_vicc_gcp ${set} ${barcode} ${sample} ${pipeline_version} ${temp_folder_path}
-    echo '[INPUT] Do you also want to edit the PROTECT file? Please answer Y or N.'
-    read answer_edit_protect
-    if [[ $answer_edit_protect == 'Y' ]]; then
-        vi $temp_folder_path/protect/${sample}.protect.tsv
-    fi
 fi
+echo '[INPUT] Do you want to manually edit the PROTECT file? Please answer Y or N.'
+read answer_edit_protect
+if [[ $answer_edit_protect == 'Y' ]]; then
+    vi $temp_folder_path/protect/${sample}.protect.tsv
+fi
+
 
 ### doid check (specifally important when rerun of protect)
 report_doid=$( get_doids_for_biopsy ${sample} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
