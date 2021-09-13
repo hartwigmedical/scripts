@@ -104,8 +104,7 @@ info "The report and the related log + json file can be found in gs://patient-re
 gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
 ### upload report to NC
-#upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
-upload_report_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 if [[ "${sample:0:6}" == "COREDB" ]]; then
