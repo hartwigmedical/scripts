@@ -47,7 +47,7 @@ function process_sheet () {
     run_info_file="${run_base}/RunInfo.xml"
     expected_cycle_count="NA"
     if [[ -f "${run_info_file}" ]]; then
-        expected_cycle_count=$(cat "${run_info_file}" | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add)
+        expected_cycle_count=$(xmllint --xpath 'sum(//RunInfo/Run/Reads/Read/@NumCycles)' "${run_info_file}")
     fi
 
     echo ""
