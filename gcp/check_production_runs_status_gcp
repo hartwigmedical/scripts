@@ -267,7 +267,7 @@ main () {
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
-            if [[ "${!set_name_error}" == "reporting_error" ]]; then
+            if [[ "${!set_name_error}" == "reporting_summary_error" ]]; then
                 counter=$((counter+1))
                 echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
@@ -297,7 +297,7 @@ main () {
         if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
-            if [[ "${!set_name_error}" == "reporting_summary_error" ]]; then
+            if [[ "${!set_name_error}" == "reporting_error" ]]; then
                 counter=$((counter+1))
                 echo "---------"
                 db_status=$(echo "${run_info}" | cut -f4)
