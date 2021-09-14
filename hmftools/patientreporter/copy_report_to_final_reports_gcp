@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source lims_functions || exit 1
 
 set=$1 && shift
 
@@ -8,6 +9,7 @@ set=$1 && shift
 
 if [[ "${#set}" < 18 ]]; then
     sample="${set}"
+    barcode=$(find_barcode_for_sample_name ${sample})
 else
     #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
     inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
