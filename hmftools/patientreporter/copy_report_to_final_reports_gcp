@@ -4,27 +4,31 @@ source message_functions || exit 1
 
 set=$1 && shift
 
-[[ -n "${set}" ]] || die "No set provided. Exiting"
+[[ -n "${set}" ]] || die "No set or sampleId provided. Exiting"
 
-#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
-inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
-exc_buckets="research-pipeline-output-prod"
-runs_json=$(
-  hmf_api_get "runs?set_name=${set}" | \
-  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
-  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
-)
-run_count=$(jq 'length' <<< "${runs_json}")
-bucket=$( echo $runs_json | jq -r '.[].bucket' )
-pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
-sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
-barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+if [[ "${#set}" < 18 ]]; then
+    sample="${set}"
+else
+    #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+    inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+    exc_buckets="research-pipeline-output-prod"
+    runs_json=$(
+      hmf_api_get "runs?set_name=${set}" | \
+      jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+      '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+    )
+    run_count=$(jq 'length' <<< "${runs_json}")
+    bucket=$( echo $runs_json | jq -r '.[].bucket' )
+    pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
+    sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+    barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
 
-[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+    [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
-if [[ ${run_count} == 0 ]]; then
-    warn "No run was found for ${set} on gcp."
-    exit 1
+    if [[ ${run_count} == 0 ]]; then
+        warn "No run was found for ${set} on gcp."
+        exit 1
+    fi
 fi
 
 ####
