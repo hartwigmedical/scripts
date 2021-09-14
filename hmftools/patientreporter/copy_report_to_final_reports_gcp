@@ -130,7 +130,7 @@ if [[ "${report_type}" == "pipeline" ]]; then
     gsutil -q cp ${url_bucket_report_pipline}${json} ${url_bucket_report_final}${json}
 else
     gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}${report}
-    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_manual}${json}
+    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}${json}
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
