@@ -36,6 +36,7 @@ if [[ "$error" == *"CommandException"* ]]; then
     exit 1
 fi
 
+gsutil cat ${protect_url}run.log
 report_doid=$( get_doids_for_biopsy ${sample_name} | sed -e $'s/;/,/g' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( gsutil cat ${protect_url}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' | tr -d ' ')
 if [[ ${protect_doid} == "" ]]; then
