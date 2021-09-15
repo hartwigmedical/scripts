@@ -18,7 +18,7 @@ main() {
     [[ -f ${fastq} ]] || die "Fastq argument does not point to file: ${fastq}"
     [[ "${fastq}" == *.fastq.gz ]] || die "Fastq file does not have form *.fastq.gz: ${fastq}"
 
-    file_base_count=$(zcat "${fastq}" | awk 'BEGIN{sum=0;}{if(NR%4==2){sum+=length($0);}}END{print sum;}') || die "Could not get base count for ${fastq}"
+    file_base_count=$(zcat "${fastq}" | awk 'BEGIN{sum=0;}{if(NR%4==2){sum+=length($0);}}END{printf "%.0f", sum;}') || die "Could not get base count for ${fastq}"
     total_base_count=$((total_base_count+file_base_count)) || die "Could not add base count of file ${fastq}"
   done
 
