@@ -8,7 +8,6 @@ main() {
   info "Started ${SCRIPT_NAME}"
 
   bam=$1 && shift
-  output=$1 && shift
   samtools=$1 && shift  # version 1.13 or greater
 
   # sanity checks
@@ -16,7 +15,7 @@ main() {
   [[ -f ${bam} ]] || die "Bam argument does not point to file: ${bam}"
   [[ "${bam}" == *.bam ]] || die "Bam argument does have format *.bam: ${bam}"
 
-  "${samtools}" stats --most-inserts --sparse --threads 3 "${bam}" > "${output}" || die "Could not get samtool stats for ${bam}"
+  "${samtools}" stats --most-inserts --sparse --threads 3 "${bam}" || die "Could not get samtool stats for ${bam}"
 
   info "Finished ${SCRIPT_NAME}"
 }
