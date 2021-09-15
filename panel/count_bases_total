@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+# Pass arguments as something like "count_bases_total /some/path/file*.fastq.gz"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  total_base_count=0
+
+  while [[ $# -gt 0 ]]; do
+    fastq=$1 && shift
+
+    # sanity checks
+    [[ -f ${fastq} ]] || die "Fastq argument does not point to file: ${fastq}"
+    [[ "${fastq}" == *.fastq.gz ]] || die "Fastq file does not have form *.fastq.gz: ${fastq}"
+
+    file_base_count=$(zcat "${fastq}" | awk 'BEGIN{sum=0;}{if(NR%4==2){sum+=length($0);}}END{print sum;}') || die "Could not get base count for ${fastq}"
+    total_base_count=$((total_base_count+file_base_count)) || die "Could not add base count of file ${fastq}"
+  done
+
+  info "Count of bases: ${total_base_count}"
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"

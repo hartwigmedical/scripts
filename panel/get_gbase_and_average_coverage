@@ -9,10 +9,10 @@ main() {
   info "Started ${SCRIPT_NAME}"
 
   bam=$1 && shift
-  samtools=$1 && shift
+  samtools=$1 && shift  # version 1.13 or greater
 
   # sanity checks
-  [[ -n ${bam} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
+  [[ -n ${samtools} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
   [[ -f ${bam} ]] || die "Bam argument does not point to file"
 
   all_depth="${bam}.all.depth"
@@ -30,7 +30,7 @@ main() {
     info "Finished filtering depth file"
   fi
 
-  info "Total number of bases:"
+  info "Total mapped number of bases (excluding overlaps):"
   awk '{sum+=$3;} END{print sum;}' "${all_depth}"
 
   info "Average coverage of bases with coverage over ${MIN_COVERAGE}"

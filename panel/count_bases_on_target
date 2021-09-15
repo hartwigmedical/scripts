@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  bam=$1 && shift
+  bed=$1 && shift
+  samtools=$1 && shift  # version 1.13 or greater
+
+  # sanity checks
+  [[ -n ${samtools} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
+  [[ -f ${bam} ]] || die "Bam argument does not point to file: ${bam}"
+  [[ "${bam}" == *.bam ]] || die "Bam argument does have format *.bam: ${bam}"
+
+  count=$("${samtools}" depth -s -J -b "${bed}" "${bam}" | awk '{sum+=$3;} END{print sum;}') || die "Could not get count"
+  info "Count of bases on target (minus overlap within read pair): ${count}"
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"
