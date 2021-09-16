@@ -9,10 +9,13 @@ import pysam
 
 WIDER_BED = "wider.bed"
 SAMTOOLS_FILTERED_BAM = "samtools_filtered.bam"
+SAMTOOLS_FILTERED_BAM_INDEX = f"{SAMTOOLS_FILTERED_BAM}.bai"
 PYTHON_FILTERED_BAM = "python_filtered.bam"
+PYTHON_FILTERED_BAM_INDEX = f"{PYTHON_FILTERED_BAM}.bai"
 DEPTH_FILE = "relevant.depth"
 
 MAX_TARGET_DISTANCE = 500
+THREAD_COUNT = 4
 
 
 class Config(NamedTuple):
@@ -42,8 +45,16 @@ class Config(NamedTuple):
         return self.working_directory / SAMTOOLS_FILTERED_BAM
 
     @property
+    def samtools_filtered_bam_index_path(self) -> Path:
+        return self.working_directory / SAMTOOLS_FILTERED_BAM_INDEX
+
+    @property
     def python_filtered_bam_path(self) -> Path:
         return self.working_directory / PYTHON_FILTERED_BAM
+
+    @property
+    def python_filtered_bam_index_path(self) -> Path:
+        return self.working_directory / PYTHON_FILTERED_BAM_INDEX
 
     @property
     def depth_path(self) -> Path:
@@ -68,19 +79,35 @@ def main(config: Config) -> None:
 
     if not config.samtools_filtered_bam_path.exists():
         logging.info(f"Creating samtools-filtered bam file")
-        delete_if_exists(config.python_filtered_bam_path)
+        delete_if_exists(config.samtools_filtered_bam_index_path)
         create_samtools_filtered_bam(config)
         assert config.samtools_filtered_bam_path.exists(), "Samtools filtering failed"
     else:
         logging.info(f"Samtools-filtered bam file already exists")
 
+    if not config.samtools_filtered_bam_index_path.exists():
+        logging.info(f"Creating samtools-filtered bam index file")
+        delete_if_exists(config.python_filtered_bam_path)
+        create_bam_index(config.samtools_filtered_bam_path, config.samtools)
+        assert config.samtools_filtered_bam_index_path.exists(), "Samtools filtered bam indexing failed"
+    else:
+        logging.info(f"Samtools-filtered bam file already exists")
+
     if not config.python_filtered_bam_path.exists():
         logging.info(f"Creating python-filtered bam file")
-        delete_if_exists(config.depth_path)
+        delete_if_exists(config.python_filtered_bam_index_path)
         create_python_filtered_bam(config)
         assert config.python_filtered_bam_path.exists(), "Python filtering failed"
     else:
         logging.info(f"Python-filtered bam file already exists")
+
+    if not config.python_filtered_bam_index_path.exists():
+        logging.info(f"Creating samtools-filtered bam index file")
+        delete_if_exists(config.depth_path)
+        create_bam_index(config.python_filtered_bam_path, config.samtools)
+        assert config.python_filtered_bam_index_path.exists(), "Python filtered bam indexing failed"
+    else:
+        logging.info(f"Samtools-filtered bam file already exists")
 
     if not config.depth_path.exists():
         logging.info(f"Creating samtools depth file")
@@ -112,6 +139,8 @@ def create_samtools_filtered_bam(config: Config) -> None:
         "--with-header",
         "--target-file",
         config.wider_bed_path,
+        "--threads",
+        THREAD_COUNT - 1,
         config.bam_path,
     ]
     with open(config.samtools_filtered_bam_path, "w") as f:
@@ -140,6 +169,11 @@ def create_depth_file(config: Config) -> None:
     ]
     with open(config.depth_path, "w") as f:
         subprocess.run(cli_args, stdout=f)
+
+
+def create_bam_index(bam_path: Path, samtools: Path) -> None:
+    cli_args = [samtools, "index", bam_path, "--threads", THREAD_COUNT - 1]
+    subprocess.run(cli_args)
 
 
 def get_base_count(config: Config) -> None:
