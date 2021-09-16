@@ -60,7 +60,7 @@ def main(config: Config) -> None:
 
     if not config.wider_bed_path.exists():
         logging.info(f"Creating wider bed file")
-        config.samtools_filtered_bam_path.unlink()
+        config.samtools_filtered_bam_path.unlink(missing_ok=False)
         create_wider_bed(config)
         assert config.wider_bed_path.exists(), "Wider bed creation failed"
     else:
@@ -68,7 +68,7 @@ def main(config: Config) -> None:
 
     if not config.samtools_filtered_bam_path.exists():
         logging.info(f"Creating samtools-filtered bam file")
-        config.python_filtered_bam_path.unlink()
+        config.python_filtered_bam_path.unlink(missing_ok=False)
         create_samtools_filtered_bam(config)
         assert config.samtools_filtered_bam_path.exists(), "Samtools filtering failed"
     else:
@@ -76,7 +76,7 @@ def main(config: Config) -> None:
 
     if not config.python_filtered_bam_path.exists():
         logging.info(f"Creating python-filtered bam file")
-        config.depth_path.unlink()
+        config.depth_path.unlink(missing_ok=False)
         create_python_filtered_bam(config)
         assert config.python_filtered_bam_path.exists(), "Python filtering failed"
     else:
