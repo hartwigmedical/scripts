@@ -96,15 +96,12 @@ def main(config: Config) -> None:
 def create_wider_bed(config: Config) -> None:
     with open(config.bed_path, "r") as input_f:
         with open(config.wider_bed_path, "w") as output_f:
-            lines = input_f.read()
-            new_lines = []
-            for line in lines:
+            for line in input_f:
                 chrom, start, end, section_id = line.split("\t")
                 wider_start = max(start - MAX_TARGET_DISTANCE, 0)
                 wider_end = end + MAX_TARGET_DISTANCE
                 new_line = "\t".join([chrom, wider_start, wider_end, section_id])
-                new_lines.append(new_line)
-            output_f.write("\n".join(new_lines))
+                output_f.write(new_line)
 
 
 def create_samtools_filtered_bam(config: Config) -> None:
