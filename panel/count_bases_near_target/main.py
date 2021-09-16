@@ -140,7 +140,7 @@ def create_samtools_filtered_bam(config: Config) -> None:
         "--target-file",
         config.wider_bed_path,
         "--threads",
-        THREAD_COUNT - 1,
+        str(THREAD_COUNT - 1),
         config.bam_path,
     ]
     with open(config.samtools_filtered_bam_path, "w") as f:
@@ -172,7 +172,7 @@ def create_depth_file(config: Config) -> None:
 
 
 def create_bam_index(bam_path: Path, samtools: Path) -> None:
-    cli_args = [samtools, "index", bam_path, "--threads", THREAD_COUNT - 1]
+    cli_args = [samtools, "index", bam_path, "--threads", str(THREAD_COUNT - 1)]
     subprocess.run(cli_args)
 
 
