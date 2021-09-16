@@ -60,7 +60,7 @@ def main(config: Config) -> None:
 
     if not config.wider_bed_path.exists():
         logging.info(f"Creating wider bed file")
-        config.samtools_filtered_bam_path.unlink(missing_ok=False)
+        delete_if_exists(config.samtools_filtered_bam_path)
         create_wider_bed(config)
         assert config.wider_bed_path.exists(), "Wider bed creation failed"
     else:
@@ -68,7 +68,7 @@ def main(config: Config) -> None:
 
     if not config.samtools_filtered_bam_path.exists():
         logging.info(f"Creating samtools-filtered bam file")
-        config.python_filtered_bam_path.unlink(missing_ok=False)
+        delete_if_exists(config.python_filtered_bam_path)
         create_samtools_filtered_bam(config)
         assert config.samtools_filtered_bam_path.exists(), "Samtools filtering failed"
     else:
@@ -76,7 +76,7 @@ def main(config: Config) -> None:
 
     if not config.python_filtered_bam_path.exists():
         logging.info(f"Creating python-filtered bam file")
-        config.depth_path.unlink(missing_ok=False)
+        delete_if_exists(config.depth_path)
         create_python_filtered_bam(config)
         assert config.python_filtered_bam_path.exists(), "Python filtering failed"
     else:
@@ -156,6 +156,11 @@ def set_up_logging() -> None:
     logging.basicConfig(
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
+
+
+def delete_if_exists(path: Path) -> None:
+    if path.exists():
+        path.unlink()
 
 
 def parse_args(sys_args: List[str]) -> Config:
