@@ -113,10 +113,9 @@ def create_samtools_filtered_bam(config: Config) -> None:
         "--target-file",
         config.wider_bed_path,
         config.bam_path,
-        ">",
-        config.samtools_filtered_bam_path
     ]
-    subprocess.run(cli_args)
+    with open(config.samtools_filtered_bam_path) as f:
+        subprocess.run(cli_args, stdout=f)
 
 
 def create_python_filtered_bam(config: Config) -> None:
@@ -138,10 +137,9 @@ def create_depth_file(config: Config) -> None:
         "depth",
         "-s",
         config.python_filtered_bam_path,
-        ">",
-        config.depth_path
     ]
-    subprocess.run(cli_args)
+    with open(config.depth_path) as f:
+        subprocess.run(cli_args, stdout=f)
 
 
 def get_base_count(config: Config) -> None:
