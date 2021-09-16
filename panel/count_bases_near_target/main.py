@@ -114,7 +114,7 @@ def create_samtools_filtered_bam(config: Config) -> None:
         config.wider_bed_path,
         config.bam_path,
     ]
-    with open(config.samtools_filtered_bam_path) as f:
+    with open(config.samtools_filtered_bam_path, "w") as f:
         subprocess.run(cli_args, stdout=f)
 
 
@@ -138,7 +138,7 @@ def create_depth_file(config: Config) -> None:
         "-s",
         config.python_filtered_bam_path,
     ]
-    with open(config.depth_path) as f:
+    with open(config.depth_path, "w") as f:
         subprocess.run(cli_args, stdout=f)
 
 
