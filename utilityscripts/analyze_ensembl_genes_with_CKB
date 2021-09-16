@@ -27,7 +27,7 @@ sed 1d ${genesCKB} | while IFS= read genes; do
     if [[ ${present_genes_map_38_104} -eq 1 ]]; then
     	echo "${geneSymbol};${synonym};true" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_genes_map_38_104.csv
     else
-      echo "${geneSymbol};${synonym};false" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_genes_map_38_104.ccsv
+      echo "${geneSymbol};${synonym};false" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_genes_map_38_104.csv
     fi
 
     if [[ ${present_genes_map_38_89} -eq 1 ]]; then
