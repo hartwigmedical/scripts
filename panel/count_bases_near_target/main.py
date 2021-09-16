@@ -154,7 +154,7 @@ def create_python_filtered_bam(config: Config) -> None:
             relevant_read_names.add(read.reference_name)
 
     with pysam.AlignmentFile(config.bam_path, "rb") as input_f:
-        with pysam.AlignmentFile(config.python_filtered_bam_path, "wb") as output_f:
+        with pysam.AlignmentFile(config.python_filtered_bam_path, "wb", template=input_f) as output_f:
             for read in input_f:
                 if read.reference_name in relevant_read_names:
                     output_f.write(read)
