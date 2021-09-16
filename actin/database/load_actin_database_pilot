@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+actin_database_jar=$(locate_pilot_actin_database)
+clinical_data_directory=$(locate_actin_clinical_data_directory)
+
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -jar ${actin_database_jar} \
+    -clinical_data_directory ${clinical_data_directory} \
+    "$@"

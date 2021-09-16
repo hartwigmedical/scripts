@@ -72,6 +72,10 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
+locate_pilot_actin_database() {
+    echo ${base_path}/tools/actin-database/pilot/actin-database.jar
+}
+
 locate_prod_purple() {
     echo ${base_path}/tools/purple/3.1/purple.jar
 }
@@ -230,6 +234,10 @@ locate_vcftools() {
 }
 
 ################################## Resources ###################################
+
+locate_actin_clinical_data_directory() {
+    echo ${base_path}/resources/custom/actin/ehr_data_dump/210913
+}
 
 locate_driver_gene_panel_37_tsv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv
