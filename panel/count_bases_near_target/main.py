@@ -167,7 +167,7 @@ def parse_args(sys_args: List[str]) -> Config:
     )
     parser.add_argument("--bam", "-i", type=str, required=True, help="Input bam.")
     parser.add_argument("--bed", "-b", type=str, required=True, help="Bed file of target.")
-    parser.add_argument("--samtools", "-s", type=str, required=True, help="Samtools.")
+    parser.add_argument("--samtools", "-s", type=str, required=True, help="Samtools. Version 1.13 or greater.")
     parser.add_argument("--working_dir", "-d", type=str, required=True, help="Working dir.")
 
     args = parser.parse_args(sys_args)
