@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+DIR_NAME="$(dirname "$0")" || exit 1
+
+python3 "${DIR_NAME}/main.py" "$@" || exit 1
