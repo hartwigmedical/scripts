@@ -119,8 +119,8 @@ if [[ ${reporting_info} == "" ]]; then
 fi
 
 current_date=$(date '+%d-%b-%Y')
-reporting_info=$(echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
-
+reporting_info=$( echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
+reporting_info=$( echo "${reporting_info} ${report_type}" )
 
 
 ## copy report from pipeline/manual bucket to final
