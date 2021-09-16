@@ -172,7 +172,7 @@ def create_depth_file(config: Config) -> None:
 
 
 def create_bam_index(bam_path: Path, samtools: Path) -> None:
-    cli_args = [samtools, "index", "--threads", str(THREAD_COUNT - 1), bam_path]
+    cli_args = [samtools, "index", "-@", str(THREAD_COUNT - 1), bam_path]
     subprocess.run(cli_args)
 
 
