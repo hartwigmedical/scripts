@@ -16,7 +16,7 @@ main() {
   [[ -f ${bam} ]] || die "Bam argument does not point to file: ${bam}"
   [[ "${bam}" == *.bam ]] || die "Bam argument does have format *.bam: ${bam}"
 
-  count=$("${samtools}" depth -s -J -b "${bed}" "${bam}" | awk '{sum+=$3;} END{printf "%.0f", sum;}') || die "Could not get count"
+  count=$("${samtools}" depth -s -b "${bed}" "${bam}" | awk '{sum+=$3;} END{printf "%.0f", sum;}') || die "Could not get count"
   info "Count of bases on target (minus overlap within read pair): ${count}"
 
   info "Finished ${SCRIPT_NAME}"
