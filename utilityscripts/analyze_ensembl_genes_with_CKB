@@ -110,7 +110,7 @@ echo "geneSymbol" > /data/experiments/check_ensembl_versus_CKB_genes/output/gene
 while IFS= read genes; do
 
     geneSymbol=$( echo ${genes} | awk '{print $2}')
-    echo "${geneSymbol};false" >> /data/experiments/check_ensembl_versus_CKB_genes/output/genes_map_38_104.csv
+    echo "${geneSymbol}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/genes_map_38_104.csv
 
 done < ${genes_map_37_89}
 
@@ -120,6 +120,6 @@ echo "geneSymbol" > /data/experiments/check_ensembl_versus_CKB_genes/output/gene
 while IFS= read genes; do
 
     geneSymbol=$( echo ${genes} | awk '{print $2}')
-	  echo "${geneSymbol};false" >> /data/experiments/check_ensembl_versus_CKB_genes/output/genes_map_38_89.csv
+	  echo "${geneSymbol}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/genes_map_38_89.csv
 
 done < ${genes_map_37_89}
