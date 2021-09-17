@@ -22,7 +22,8 @@ while IFS= read genes; do
     synonym38_104=","
     synonym38_89=","
 
-    echo $synonym | tr "," "\n" | while read checkSynonym; do
+    CKBSynonymlist=$(echo $synonym | tr "," "\n")
+    for checkSynonym in ${CKBSynonymlist}; do
       synonymPresent37_89=$(cat ${genes_map_37_89} | grep -w ${checkSynonym} | wc -l)
       synonymPresent_38_104=$(cat ${genes_map_37_89} | grep -w ${checkSynonym} | wc -l)
       synonymPresent38_89=$(cat ${genes_map_37_89} | grep -w ${checkSynonym} | wc -l)
