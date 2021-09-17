@@ -25,9 +25,9 @@ while IFS= read genes; do
     CKBSynonymlist=$(echo $synonym | tr "," "\n")
 
     for checkSynonym in ${CKBSynonymlist}; do
-      synonymPresent37_89=$(cat ${genes_map_37_89} | grep -x ${checkSynonym} | wc -l)
-      synonymPresent_38_104=$(cat ${genes_map_37_89} | grep -x ${checkSynonym} | wc -l)
-      synonymPresent38_89=$(cat ${genes_map_37_89} | grep -x ${checkSynonym} | wc -l)
+      synonymPresent37_89=$(cat ${genes_map_37_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
+      synonymPresent_38_104=$(cat ${genes_map_38_104} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
+      synonymPresent38_89=$(cat ${genes_map_38_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
 
       if [[ ${synonymPresent37_89} -eq 1 ]]; then
         synonym37_89+="true,"
