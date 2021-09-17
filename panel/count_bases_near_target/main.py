@@ -102,12 +102,12 @@ def main(config: Config) -> None:
         logging.info(f"Python-filtered bam file already exists")
 
     if not config.python_filtered_bam_index_path.exists():
-        logging.info(f"Creating samtools-filtered bam index file")
+        logging.info(f"Creating python-filtered bam index file")
         delete_if_exists(config.depth_path)
         create_bam_index(config.python_filtered_bam_path, config.samtools)
         assert config.python_filtered_bam_index_path.exists(), "Python filtered bam indexing failed"
     else:
-        logging.info(f"Samtools-filtered bam file already exists")
+        logging.info(f"Python-filtered bam file already exists")
 
     if not config.depth_path.exists():
         logging.info(f"Creating samtools depth file")
@@ -117,7 +117,7 @@ def main(config: Config) -> None:
         logging.info(f"Samtools depth file already exists")
 
     logging.info(f"Calculating total number of useful bases close to target:")
-    get_base_count(config)
+    print_base_count(config)
 
 
 def create_wider_bed(config: Config) -> None:
@@ -176,9 +176,10 @@ def create_bam_index(bam_path: Path, samtools: Path) -> None:
     subprocess.run(cli_args)
 
 
-def get_base_count(config: Config) -> None:
+def print_base_count(config: Config) -> None:
     cli_args = ["awk", '{sum+=$3;} END{printf "%.0f", sum;}', config.depth_path]
     subprocess.run(cli_args)
+    print("\n")
 
 
 def set_up_logging() -> None:
