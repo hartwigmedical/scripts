@@ -141,6 +141,8 @@ def create_samtools_filtered_bam(config: Config) -> None:
         config.wider_bed_path,
         "--threads",
         str(THREAD_COUNT - 1),
+        "--exclude-flags",
+        "DUP",
         config.bam_path,
     ]
     with open(config.samtools_filtered_bam_path, "w") as f:
