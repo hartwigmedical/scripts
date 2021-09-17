@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-genesCKB=/data/experiments/check_ensembl_versus_CKB_genes/input/210910_CKB_genes.tsv
+genesCKB=/data/experiments/check_ensembl_versus_CKB_genes/input/210910_CKB_genes_dump.tsv
 genes_map_37_89=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map_37_89.tsv
 genes_map_38_104=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map_38_104.tsv
 genes_map_38_89=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map_38_89.tsv
