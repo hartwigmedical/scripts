@@ -13,6 +13,7 @@ SAMTOOLS_FILTERED_BAM_INDEX = f"{SAMTOOLS_FILTERED_BAM}.bai"
 PYTHON_FILTERED_BAM = "python_filtered.bam"
 PYTHON_FILTERED_BAM_INDEX = f"{PYTHON_FILTERED_BAM}.bai"
 DEPTH_FILE = "relevant.depth"
+COUNT_FILE = "count.txt"
 
 MAX_TARGET_DISTANCE = 500
 THREAD_COUNT = 4
@@ -59,6 +60,10 @@ class Config(NamedTuple):
     @property
     def depth_path(self) -> Path:
         return self.working_directory / DEPTH_FILE
+
+    @property
+    def count_path(self) -> Path:
+        return self.working_directory / COUNT_FILE
 
 
 def main(config: Config) -> None:
@@ -111,12 +116,19 @@ def main(config: Config) -> None:
 
     if not config.depth_path.exists():
         logging.info(f"Creating samtools depth file")
+        delete_if_exists(config.count_path)
         create_depth_file(config)
         assert config.depth_path.exists(), "Samtools depth failed"
     else:
         logging.info(f"Samtools depth file already exists")
 
-    logging.info(f"Calculating total number of useful bases close to target:")
+    if not config.count_path.exists():
+        logging.info(f"Creating count file")
+        create_count_file(config)
+        assert config.count_path.exists(), "Counting bases failed"
+    else:
+        logging.info(f"Count file already exists")
+
     print_base_count(config)
 
 
@@ -178,10 +190,15 @@ def create_bam_index(bam_path: Path, samtools: Path) -> None:
     subprocess.run(cli_args)
 
 
-def print_base_count(config: Config) -> None:
+def create_count_file(config: Config) -> None:
     cli_args = ["awk", '{sum+=$3;} END{printf "%.0f", sum;}', config.depth_path]
-    subprocess.run(cli_args)
-    print("\n")
+    with open(config.count_path, "w") as f:
+        subprocess.run(cli_args, stdout=f)
+
+
+def print_base_count(config: Config) -> None:
+    with open(config.count_path, "r") as f:
+        logging.info(f"Total number of useful bases close to target: {f.read()}")
 
 
 def set_up_logging() -> None:
