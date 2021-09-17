@@ -3,8 +3,11 @@
 source locate_files || exit 1
 
 actin_database_jar=$(locate_pilot_actin_database)
+
 clinical_feed_directory=$(locate_actin_clinical_feed_directory)
+clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 
 java11 -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
+    -clinical_curation_directory ${clinical_curation_directory} \
     "$@"
