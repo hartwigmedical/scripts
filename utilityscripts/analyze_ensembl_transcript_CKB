@@ -5,13 +5,13 @@ genes_map_37_89=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map
 genes_map_38_104=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map_38_104.tsv
 genes_map_38_89=/data/experiments/check_ensembl_versus_CKB_genes/input/genes_map_38_89.tsv
 
-echo "geneSymbol;geneSynonym;usedGeneSymbol;usedGeneSynonym;transcript;ensembl_gene_transcript37_89;ensembl_exon_transcript37_89;ensembl_gene_transcript38_104;ensembl_exon_transcript38_104;ensembl_gene_transcript38_89;ensembl_exon_transcript38_89" > /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts.csv
+echo "geneSymbol;geneSynonym;usedGeneSynonym;transcript;ensembl_gene_transcript;ensembl_exon_transcript" > /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_37_89.csv
+echo "geneSymbol;geneSynonym;usedGeneSynonym;transcript;ensembl_gene_transcript;ensembl_exon_transcript" > /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_104.csv
+echo "geneSymbol;geneSynonym;usedGeneSynonym;transcript;ensembl_gene_transcript;ensembl_exon_transcript" > /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_89.csv
 
 ##checking genes of CKB present in ensembl
 while IFS= read genes; do
 
-    usedGeneSymbol=""
-    usedGeneSynonym=""
     geneSymbol=$( echo ${genes} | awk '{print $1}')
     synonym=$( echo ${genes} | awk '{print $2}')
     transcipt=$( echo ${genes} | awk '{print $3}')
@@ -19,89 +19,80 @@ while IFS= read genes; do
     present_genes_map_38_104=$( cat ${genes_map_38_104} | awk '{print $2}' | grep -x ${geneSymbol} | wc -l)
     present_genes_map_38_89=$( cat ${genes_map_38_89} | awk '{print $2}' | grep -x ${geneSymbol} | wc -l)
 
-    ensembl_gene_transcript37_89=""
-    ensembl_gene_transcript38_104=""
-    ensembl_gene_transcript38_89=""
-    ensembl_exon_transcript37_89=""
-    ensembl_exon_transcript38_104=""
-    ensembl_exon_transcript38_89=""
+    usedGeneSynonym=""
+    ensembl_gene_transcript37_89synonym=""
+    ensembl_gene_transcript38_104synonym=""
+    ensembl_gene_transcript38_89synonym=""
+    ensembl_exon_transcript37_89synonym=""
+    ensembl_exon_transcript38_104synonym=""
+    ensembl_exon_transcript38_89synonym=""
+
+    ## checking if synonym in ensembl
+            CKBSynonymlist=$( echo $synonym | tr "," "\n" )
+
+            for checkSynonym in ${CKBSynonymlist}; do
+              synonymPresent37_89=$(cat ${genes_map_37_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
+              synonymPresent_38_104=$(cat ${genes_map_38_104} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
+              synonymPresent38_89=$(cat ${genes_map_38_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
+
+              if [[ ${synonymPresent37_89} -eq 1 ]]; then
+                usedGeneSynonym="yes"
+                rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
+                ensembl_gene_transcript37_89synonym=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p | awk '{print $1}')
+                ensembl_exon_transcript37_89synonym=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p| awk '{print $9}')
+              else
+                ensembl_gene_transcript37_89synonym="NA"
+                ensembl_exon_transcript37_89synonym="NA"
+              fi
+
+              if [[ ${synonymPresent_38_104} -eq 1 ]]; then
+                usedGeneSynonym="yes"
+                rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
+                ensembl_gene_transcript38_104synonym=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $1}')
+                ensembl_exon_transcript38_104synonym=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p| awk '{print $9}')
+              else
+                ensembl_gene_transcript38_104synonym="NA"
+                ensembl_exon_transcript38_104synonym="NA"
+              fi
+
+              if [[ ${synonymPresent38_89} -eq 1 ]]; then
+                usedGeneSynonym="yes"
+                rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
+                ensembl_gene_transcript38_89synonym=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $1}')
+                ensembl_exon_transcript38_89synonym=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p| awk '{print $9}')
+              else
+                ensembl_gene_transcript38_89synonym="NA"
+                ensembl_exon_transcript38_89synonym="NA"
+              fi
+            done
+
 
     if [[ ${present_genes_map_37_89} -eq 1 ]]; then
       rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${geneSymbol} | awk 'BEGIN { FS=":"} {print $1}')
       ensembl_gene_transcript37_89=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p | awk '{print $1}')
       ensembl_exon_transcript37_89=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p| awk '{print $9}')
-      usedGeneSymbol="yes"
+      echo "${geneSymbol};${synonym};no;${transcipt};${ensembl_gene_transcript37_89};${ensembl_exon_transcript37_89}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_37_89.csv
     else
-      ensembl_gene_transcript37_89="NA"
-      ensembl_exon_transcript37_89="NA"
-      usedGeneSymbol="no"
+      echo "${geneSymbol};${synonym};${usedGeneSynonym};${transcipt};${ensembl_gene_transcript37_89synonym};${ensembl_exon_transcript37_89synonym}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_37_89.csv
     fi
 
     if [[ ${present_genes_map_38_104} -eq 1 ]]; then
       rowNumber=$(cat ${genes_map_38_104}| awk '{print $2}' | grep -xn ${geneSymbol} | awk 'BEGIN { FS=":"} {print $1}')
       ensembl_gene_transcript38_104=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $1}')
       ensembl_exon_transcript38_104=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $9}')
-      usedGeneSymbol="yes"
+      echo "${geneSymbol};${synonym};no;${transcipt};${ensembl_gene_transcript38_104};${ensembl_exon_transcript38_104}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_104.csv
     else
-      ensembl_gene_transcript38_104="NA"
-      ensembl_exon_transcript38_104="NA"
-      usedGeneSymbol="no"
+      echo "${geneSymbol};${synonym};${usedGeneSynonym};${transcipt};${ensembl_gene_transcript38_104synonym};${ensembl_exon_transcript38_104synonym}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_104.csv
     fi
 
     if [[ ${present_genes_map_38_89} -eq 1 ]]; then
       rowNumber=$(cat ${genes_map_38_89}| awk '{print $2}' | grep -xn ${geneSymbol} | awk 'BEGIN { FS=":"} {print $1}')
       ensembl_gene_transcript38_89=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $1}')
       ensembl_exon_transcript38_89=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $9}')
-      usedGeneSymbol="yes"
+      echo "${geneSymbol};${synonym};no;${transcipt};${ensembl_gene_transcript38_89};${ensembl_exon_transcript38_89}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_89.csv
     else
-      ensembl_gene_transcript38_89="NA"
-      ensembl_exon_transcript38_89="NA"
-      usedGeneSymbol="no"
+      echo "${geneSymbol};${synonym};${usedGeneSynonym};${transcipt};${ensembl_gene_transcript38_89synonym};${ensembl_exon_transcript38_89synonym}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts_38_89.csv
+
     fi
-
-
-    ## checking if synonym in ensembl
-        CKBSynonymlist=$( echo $synonym | tr "," "\n" )
-
-        for checkSynonym in ${CKBSynonymlist}; do
-          synonymPresent37_89=$(cat ${genes_map_37_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
-          synonymPresent_38_104=$(cat ${genes_map_38_104} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
-          synonymPresent38_89=$(cat ${genes_map_38_89} | awk '{print $2}' | grep -x ${checkSynonym} | wc -l)
-
-          if [[ ${synonymPresent37_89} -eq 1 ]]; then
-            rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
-            ensembl_gene_transcript37_89=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p | awk '{print $1}')
-            ensembl_exon_transcript37_89=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p| awk '{print $9}')
-            usedGeneSynonym="yes"
-          else
-            ensembl_gene_transcript37_89="NA"
-            ensembl_exon_transcript37_89="NA"
-            usedGeneSynonym="no"
-          fi
-
-          if [[ ${synonymPresent_38_104} -eq 1 ]]; then
-            rowNumber=$(cat ${genes_map_38_104}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
-            ensembl_gene_transcript38_104=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $1}')
-            ensembl_exon_transcript38_104=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $9}')
-            usedGeneSynonym="yes"
-          else
-            ensembl_gene_transcript38_104="NA"
-            ensembl_exon_transcript38_104="NA"
-            usedGeneSynonym="no"
-          fi
-
-          if [[ ${synonymPresent38_89} -eq 1 ]]; then
-            rowNumber=$(cat ${genes_map_38_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
-            ensembl_gene_transcript38_89=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $1}')
-            ensembl_exon_transcript38_89=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $9}')
-            usedGeneSynonym="yes"
-          else
-            ensembl_gene_transcript38_89="NA"
-            ensembl_exon_transcript38_89="NA"
-            usedGeneSynonym="no"
-          fi
-        done
-
-    echo "${geneSymbol};${synonym};${usedGeneSymbol};${usedGeneSynonym};${transcipt};${ensembl_gene_transcript37_89};${ensembl_exon_transcript37_89};${ensembl_gene_transcript38_104};${ensembl_exon_transcript38_104};${ensembl_gene_transcript38_89};${ensembl_exon_transcript38_89}" >> /data/experiments/check_ensembl_versus_CKB_genes/output/CKB_versus_ensembl_transcripts.csv
 
 done < ${genesCKB}
