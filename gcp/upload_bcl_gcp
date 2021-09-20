@@ -111,7 +111,7 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     slack_info "Starting BCL upload (${flowcell_info})"
     gs_path="gs://${bucket}/${flowcell_name}"
     gcloud auth activate-service-account --key-file "${gcp_cred}"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
     if [[ $? -ne 0 ]]; then
         slack_warn "Something wrong with gsutil rsync BCL upload of '${flowcell_path}' (${flowcell_info})"
         continue
