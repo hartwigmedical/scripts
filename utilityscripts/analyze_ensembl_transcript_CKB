@@ -15,9 +15,9 @@ while IFS= read genes; do
     geneSymbol=$( echo ${genes} | awk '{print $1}')
     synonym=$( echo ${genes} | awk '{print $2}')
     transcipt=$( echo ${genes} | awk '{print $3}')
-    present_genes_map_37_89=$( cat ${genes_map_37_89} | awk 'BEGIN { FS="\t" {print $2}' | grep -x ${geneSymbol} | wc -l)
-    present_genes_map_38_104=$( cat ${genes_map_38_104} | awk 'BEGIN { FS="\t" {print $2}' | grep -x ${geneSymbol} | wc -l)
-    present_genes_map_38_89=$( cat ${genes_map_38_89} | awk 'BEGIN { FS="\t" {print $2}' | grep -x ${geneSymbol} | wc -l)
+    present_genes_map_37_89=$( cat ${genes_map_37_89} | awk 'BEGIN { FS="\t" } {print $2}' | grep -x ${geneSymbol} | wc -l)
+    present_genes_map_38_104=$( cat ${genes_map_38_104} | awk 'BEGIN { FS="\t" } {print $2}' | grep -x ${geneSymbol} | wc -l)
+    present_genes_map_38_89=$( cat ${genes_map_38_89} | awk 'BEGIN { FS="\t" } {print $2}' | grep -x ${geneSymbol} | wc -l)
 
     usedGeneSynonym=""
     ensembl_gene_transcript37_89synonym=""
