@@ -126,11 +126,11 @@ reporting_info=$( echo "${reporting_info} ${report_type}" )
 ## copy report from pipeline/manual bucket to final
 
 if [[ "${report_type}" == "pipeline" ]]; then
-    gsutil -q cp ${url_bucket_report_pipline}${report} ${url_bucket_report_final}${report}
-    gsutil -q cp ${url_bucket_report_pipline}${json} ${url_bucket_report_final}${json}
+    gsutil -q cp ${url_bucket_report_pipline}${report} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_pipline}${json} ${url_bucket_report_final}
 else
-    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}${report}
-    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}${json}
+    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
