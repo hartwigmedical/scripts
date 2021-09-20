@@ -41,26 +41,29 @@ while IFS= read genes; do
                 ensembl_gene_transcript37_89synonym=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p | awk '{print $1}')
                 ensembl_exon_transcript37_89synonym=$(cat ${genes_map_37_89} | sed -n ${rowNumber}p| awk '{print $9}')
               else
+                usedGeneSynonym="no"
                 ensembl_gene_transcript37_89synonym="NA"
                 ensembl_exon_transcript37_89synonym="NA"
               fi
 
               if [[ ${synonymPresent_38_104} -eq 1 ]]; then
                 usedGeneSynonym="yes"
-                rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
+                rowNumber=$(cat ${genes_map_38_104}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
                 ensembl_gene_transcript38_104synonym=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p | awk '{print $1}')
                 ensembl_exon_transcript38_104synonym=$(cat ${genes_map_38_104} | sed -n ${rowNumber}p| awk '{print $9}')
               else
+                usedGeneSynonym="no"
                 ensembl_gene_transcript38_104synonym="NA"
                 ensembl_exon_transcript38_104synonym="NA"
               fi
 
               if [[ ${synonymPresent38_89} -eq 1 ]]; then
                 usedGeneSynonym="yes"
-                rowNumber=$(cat ${genes_map_37_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
+                rowNumber=$(cat ${genes_map_38_89}| awk '{print $2}' | grep -xn ${checkSynonym} | awk 'BEGIN { FS=":"} {print $1}')
                 ensembl_gene_transcript38_89synonym=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p | awk '{print $1}')
                 ensembl_exon_transcript38_89synonym=$(cat ${genes_map_38_89} | sed -n ${rowNumber}p| awk '{print $9}')
               else
+                usedGeneSynonym="no"
                 ensembl_gene_transcript38_89synonym="NA"
                 ensembl_exon_transcript38_89synonym="NA"
               fi
