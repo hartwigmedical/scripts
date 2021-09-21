@@ -35,38 +35,36 @@ fi
 
 ####
 
-reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
-sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
-
-url_bucket_report_pipline="gs://patient-reporter-prod-1/"
+url_bucket_report_auto="gs://patient-reporter-prod-1/"
 url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 url_bucket_report_final="gs://patient-reporter-final-prod-1/"
+sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
 
 echo ""
 echo "--- Report for ${sample} has been shared (again; in case of correction) - final processing will start: ---"
 
 report_type="none"
 
-## check whether report exists in pipeline bucket
-if [[ $( gsutil ls ${url_bucket_report_pipline} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample} in pipeline bucket ${url_bucket_report_pipline}"
+## check whether report exists in auto bucket
+if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
+    info "No report available for ${sample} in auto bucket ${url_bucket_report_auto}"
 else
-    info "Report available for ${sample} in pipeline bucket ${url_bucket_report_pipline}"
-    report=$( gsutil ls ${url_bucket_report_pipline} | grep "${sample}" | grep dna_analysis_report.pdf | head -1 )
-    report=$( echo ${report#"${url_bucket_report_pipline}"} )
-    json=$( gsutil ls ${url_bucket_report_pipline} | grep ${sample} | grep ${barcode} | grep ".json")
-    json=$( echo ${json#"${url_bucket_report_pipline}"} )
-    report_type="pipeline"
+    info "Report available for ${sample} in auto bucket ${url_bucket_report_auto}"
+    report=$( gsutil ls ${url_bucket_report_auto} | grep "${sample}" | grep dna_analysis_report.pdf | head -1 )
+    report=$( echo ${report#"${url_bucket_report_auto}"} )
+    json=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep ".json")
+    json=$( echo ${json#"${url_bucket_report_auto}"} )
+    report_type="auto"
 fi
 
 ## check whether report exists in manual bucket
 if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
     info "No report available for ${sample} in manual bucket ${url_bucket_report_manual}"
     if [[ "${report_type}" == "none" ]]; then
-        warn "Report does not exist in ${url_bucket_report_pipline} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
+        warn "Report does not exist in ${url_bucket_report_auto} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
         exit 1
     else
-        info "Conclusion: the pipeline report ${report} will be finalized."
+        info "Conclusion: the auto report ${report} will be finalized."
     fi
 else
     if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
@@ -82,7 +80,7 @@ else
         json=$( echo ${json#"${url_bucket_report_manual}"} )
     fi
     info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
-    info "Conclusion: the manual report ${report} will be finalized (goes over the pipeline report)."
+    info "Conclusion: the manual report ${report} will be finalized (goes over the auto report)."
     report_type="manual"
 fi
 
@@ -103,7 +101,17 @@ else
     fi
 fi
 
+
 ## get reporting info
+
+if [[ "${report_type}" == "auto" ]]; then
+    mkdir ./temp_reporting_db
+    gsutil cp ${url_bucket_report_auto}reporting_db.tsv ./temp_reporting_db
+    reporting_db_file=./temp_reporting_db/reporting_db.tsv
+else
+    reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
+fi
+
 
 if [[ ${report} == *"corrected"* ]]; then
     reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep correction )
@@ -122,20 +130,24 @@ current_date=$(date '+%d-%b-%Y')
 reporting_info=$( echo "$reporting_info" | sed "s/${reporting_date}/${current_date}/")
 reporting_info=$( echo "${reporting_info} ${report_type}" )
 
+if [[ "${report_type}" == "auto" ]]; then
+    rm -r ./temp_reporting_db
+fi
 
-## copy report from pipeline/manual bucket to final
 
-if [[ "${report_type}" == "pipeline" ]]; then
-    gsutil -q cp ${url_bucket_report_pipline}${report} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_pipline}${json} ${url_bucket_report_final}
+## copy report from auto/manual bucket to final
+
+if [[ "${report_type}" == "auto" ]]; then
+    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
 else
     gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-    if [[ "${report_type}" == "pipeline" ]]; then
-        info "Report copied from ${url_bucket_report_pipline}${report} to final archive ${url_bucket_report_final} on gcp."
+    if [[ "${report_type}" == "auto" ]]; then
+        info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
     else
         info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
     fi
