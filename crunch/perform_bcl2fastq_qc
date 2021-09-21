@@ -84,7 +84,7 @@ for seq_dir in "${seq_dirs[@]}"; do
             req=$(echo "${sample_tsv}" | cut -f3)
 
             yld=$((yld/1000000000))
-            req=$((req/1000000000))
+            req=$(((req+999999999)/1000000000))  # This makes sure that the requirement is rounded up
 
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
             # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
