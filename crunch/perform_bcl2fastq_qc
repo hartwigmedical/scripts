@@ -84,8 +84,13 @@ for seq_dir in "${seq_dirs[@]}"; do
             req=$(echo "${sample_tsv}" | cut -f3)
 
             yld=$((yld/1000000000))
-            req=$(((req+999999999)/1000000000))  # This makes sure that the requirement is rounded up
-
+            if [[ $req -eq 1 ]]; then
+              # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
+              req=0
+            else
+              # The requirement in GBase is rounded up to an integer
+              req=$(((req+999999999)/1000000000))
+            fi
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
             # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
             api_run=$(
