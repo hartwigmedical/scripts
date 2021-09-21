@@ -72,13 +72,13 @@ else
     if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
         report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | head -1 )
         report=$( echo ${report#"${url_bucket_report_manual}"} )
-        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep ".json")
         json=$( echo ${json#"${url_bucket_report_manual}"} )
 
     else
         report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
         report=$( echo ${report#"${url_bucket_report_manual}"} )
-        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep ".json")
         json=$( echo ${json#"${url_bucket_report_manual}"} )
     fi
     info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
