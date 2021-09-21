@@ -106,7 +106,7 @@ fi
 
 if [[ "${report_type}" == "auto" ]]; then
     mkdir ./temp_reporting_db
-    gsutil cp ${url_bucket_report_auto}reporting_db.tsv ./temp_reporting_db
+    gsutil -q cp ${url_bucket_report_auto}reporting_db.tsv ./temp_reporting_db
     reporting_db_file=./temp_reporting_db/reporting_db.tsv
 else
     reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
@@ -122,7 +122,10 @@ else
 fi
 
 if [[ ${reporting_info} == "" ]]; then
-    warn "No record found for ${sample} in the file ${reporting_db_file}. ${reporting_db_file} before finalizing everything. Please check what went wrong. Exiting. "
+    warn "No record found for ${sample} in the file reporting_db.tsv. Please check what went wrong. Exiting. "
+    if [[ "${report_type}" == "auto" ]]; then
+        rm -r ./temp_reporting_db
+    fi
     exit 1
 fi
 
