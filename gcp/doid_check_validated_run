@@ -37,8 +37,12 @@ if [[ "$error" == *"CommandException"* ]]; then
 fi
 
 report_tumorlocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $1 }' )
+report_tumorsublocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $2 }' )
 if [[ "${report_tumorlocation}" == "Unknown" ]]; then
-    warn "The primary tumor location provided is ${report_tumorlocation}"
+    if [[ "${report_tumorsublocation}" == "CUP" ]]; then
+        info "The primary tumor location provided is ${report_tumorlocation}, but it is a CUP so this is correct."
+    else
+        warn "The primary tumor location provided is ${report_tumorlocation} (and it is no CUP)"
 fi
 
 report_doid=$( get_doids_for_biopsy ${sample_name} | sed -e $'s/;/,/g' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
