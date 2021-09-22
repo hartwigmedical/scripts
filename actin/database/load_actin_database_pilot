@@ -9,7 +9,7 @@ clinical_feed_directory=$(locate_actin_clinical_feed_directory)
 clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 
 # Database details
-credentials=$(gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-writer --project=hmf-secrets)
+credentials=$(pull_prod_writer_sql_credentials)
 
 database_name="actin_pilot"
 db_user=$(extract_credentials_value ${credentials} "user")
