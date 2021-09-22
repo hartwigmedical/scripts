@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+extract_credentials_value() {
+    credentials=$1 && shift
+    value=$1 && shift
+    echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g'
+}

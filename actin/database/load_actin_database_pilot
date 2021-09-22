@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source database_functions || exit 1
 
 actin_database_jar=$(locate_pilot_actin_database)
 
@@ -24,8 +25,3 @@ java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
 
-extract_credentials_value() {
-    credentials=$1 && shift
-    value=$1 && shift
-    echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g'
-}
