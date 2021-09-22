@@ -19,10 +19,6 @@ locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
 
-locate_diagnostic_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/prod_diagnostic
-}
-
 locate_prod_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
 }
@@ -30,39 +26,6 @@ locate_prod_database_credentials_cnf() {
 locate_prod_backup_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.backup.prod-1/reader.cnf
 }
-
-locate_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/pilot
-}
-
-locate_pilot_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
-}
-
-locate_reference_validation_sets_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/reference_validation_sets
-}
-
-locate_pipeline_v5_validation_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
-}
-
-locate_vicc_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/vicc_db
-}
-
-locate_vicc_pilot_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/vicc_db_pilot
-}
-
-locate_ckb_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/ckb_db
-}
-
-locate_ckb_pilot_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/ckb_db_pilot
-}
-
 
 ############################# Nextcloud Credentials ############################
 
@@ -98,7 +61,7 @@ locate_prod_cuppa() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.62/patient-db.jar
+    echo ${base_path}/tools/patientdb/3.62/patient-db.jar
 }
 
 locate_diagnostic_patient_db() {
