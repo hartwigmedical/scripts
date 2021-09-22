@@ -2,6 +2,7 @@
 
 import fnmatch
 import os
+import time
 
 DATA_DIRS = ['/data1/illumina_data/', '/data1/illumina_data/TestRuns/']
 NEXTSEQ_IDS = ['NB500901', 'NB500902']
@@ -13,6 +14,9 @@ TMP_RUNNING_FILE = '/tmp/bcl2fastq_running'
 
 
 def convert_bcl(run_dir):
+    # Sleep 1 minute to avoid timing issues with starting conversion when upload to the crunch has just finished
+    time.sleep(60)
+
     log_file = run_dir + '/conversionLog.txt'
     err_file = run_dir + '/conversionError.txt'
     started_file = run_dir + '/conversionStarted.txt'
