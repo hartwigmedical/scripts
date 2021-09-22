@@ -139,7 +139,7 @@ def create_wider_bed(config: Config) -> None:
                 chrom, start, end = line.split("\t")[0:3]
                 wider_start = str(max(int(start) - MAX_TARGET_DISTANCE, 0))
                 wider_end = str(int(end) + MAX_TARGET_DISTANCE)
-                new_line = "\t".join([chrom, wider_start, wider_end])
+                new_line = "\t".join([chrom, wider_start, wider_end]) + "\n"
                 output_f.write(new_line)
 
 
