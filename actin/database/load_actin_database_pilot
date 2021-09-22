@@ -16,7 +16,7 @@ db_user=$(extract_credentials_value "${credentials}" user)
 db_pass=$(extract_credentials_value "${credentials}" password)
 
 database_name="actin_pilot"
-db_url=$(echo "mysql://${db_host}:${db_port}/${database_name}?enabledTLSProtocols=TLSv1,TLSv1.1,TLSv1.2&serverTimezone=CET&useSSL=false")
+db_url="mysql://${db_host}:${db_port}/${database_name}?enabledTLSProtocols=TLSv1,TLSv1.1,TLSv1.2&serverTimezone=CET&useSSL=false"
 
 java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
