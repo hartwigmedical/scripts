@@ -17,7 +17,7 @@ db_pass=$(extract_credentials_value "${credentials}" password)
 db_host=$(extract_credentials_value "${credentials}" host)
 db_port=$(extract_credentials_value "${credentials}" port)
 db_dependencies=$(extract_credentials_value "${credentials}" database_dependencies)
-db_url=$(echo "mysql://${db_host}:${db_port}/${database_name}?${db_dependencies}")
+db_url=$(echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}")
 
 java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
