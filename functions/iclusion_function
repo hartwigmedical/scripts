@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+pull_iclusion_credentials() {
+    echo $(gcloud secrets versions access "latest" --secret=iclusion-api-credentials --project=hmf-secrets)
+}
+
+extract_credentials_value() {
+    credentials=$1 && shift
+    value=$1 && shift
+
+    echo "$(echo ${credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g')"
+}
