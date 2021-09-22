@@ -3,7 +3,6 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
-source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -14,8 +13,7 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
-database="hmfpatients"
-credentials=$(pull_prod_writer_sql_credentials)
+credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} ${credentials} ${patient_db_jar}
+do_load_protect_data ${sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
