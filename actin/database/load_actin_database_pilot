@@ -12,11 +12,11 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 credentials=$(pull_prod_writer_sql_credentials)
 
 database_name="actin_pilot"
-db_user=$(extract_credentials_value ${credentials} "user")
-db_pass=$(extract_credentials_value ${credentials} "password")
-db_host=$(extract_credentials_value ${credentials} "host")
-db_port=$(extract_credentials_value ${credentials} "port")
-db_dependencies=$(extract_credentials_value ${credentials} "database_dependencies")
+db_user=$(extract_credentials_value ${credentials} user)
+db_pass=$(extract_credentials_value ${credentials} password)
+db_host=$(extract_credentials_value ${credentials} host)
+db_port=$(extract_credentials_value ${credentials} port)
+db_dependencies=$(extract_credentials_value ${credentials} database_dependencies)
 db_url=$(echo "mysql://${db_host}:${db_port}/${database_name}?${db_dependencies}")
 
 java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
