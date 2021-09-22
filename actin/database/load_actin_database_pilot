@@ -7,7 +7,25 @@ actin_database_jar=$(locate_pilot_actin_database)
 clinical_feed_directory=$(locate_actin_clinical_feed_directory)
 clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 
-java11 -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -jar ${actin_database_jar} \
+# Database details
+credentials=$(gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-writer --project=hmf-secrets)
+
+database_name="actin_pilot"
+db_user=$(extract_credentials_value ${credentials} "user")
+db_pass=$(extract_credentials_value ${credentials} "password")
+db_host=$(extract_credentials_value ${credentials} "host")
+db_port=$(extract_credentials_value ${credentials} "port")
+db_dependencies=$(extract_credentials_value ${credentials} "database_dependencies")
+db_url=$(echo "mysql://${db_host}:${db_port}/${database_name}?${db_dependencies}")
+
+java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
     -clinical_curation_directory ${clinical_curation_directory} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
+
+extract_credentials_value() {
+    credentials=$1 && shift
+    value=$1 && shift
+    echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g'
+}
