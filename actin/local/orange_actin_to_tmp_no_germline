@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 patient=$1
 
 if [[ -z ${patient} ]]; then
