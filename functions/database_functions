@@ -4,6 +4,10 @@ prod_writer_sql_credentials() {
     echo $(gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-writer --project=hmf-secrets)
 }
 
+prod_reader_sql_credentials() {
+    echo $(gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reader --project=hmf-secrets)
+}
+
 diagnostic_writer_sql_credentials() {
     echo $(gcloud secrets versions access "latest" --secret=mysql-diagnostic-patients-sql-prod-1-writer --project=hmf-secrets)
 }
@@ -23,6 +27,11 @@ extract_database_user() {
     echo $(extract_credentials_value "${credentials}" user)
 }
 
+extract_database_dependencies() {
+    local credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" database_dependencies)
+}
+
 extract_database_password() {
     local credentials=$1 && shift
     echo $(extract_credentials_value "${credentials}" password)
@@ -34,3 +43,15 @@ extract_credentials_value() {
 
     echo "$(echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g')"
 }
+
+pull_iclusion_credentials() {
+    echo $(gcloud secrets versions access "latest" --secret=iclusion-api-credentials --project=hmf-secrets)
+}
+
+extract_credentials_value_iclusion() {
+    credentials=$1 && shift
+    value=$1 && shift
+
+    echo "$(echo ${credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g')"
+}
+
