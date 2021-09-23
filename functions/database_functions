@@ -16,6 +16,16 @@ diagnostic_reader_sql_credentials() {
     echo $(gcloud secrets versions access "latest" --secret=mysql-diagnostic-patients-sql-prod-1-reader --project=hmf-secrets)
 }
 
+extract_database_user() {
+    local credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" user)
+}
+
+extract_database_password() {
+    local credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" password)
+}
+
 extract_database_host() {
     local credentials=$1 && shift
     echo $(extract_credentials_value "${credentials}" host)
@@ -29,16 +39,6 @@ extract_database_port() {
 extract_database_dependencies() {
     local credentials=$1 && shift
     echo $(extract_credentials_value "${credentials}" database_dependencies)
-}
-
-extract_database_user() {
-    local credentials=$1 && shift
-    echo $(extract_credentials_value "${credentials}" user)
-}
-
-extract_database_password() {
-    local credentials=$1 && shift
-    echo $(extract_credentials_value "${credentials}" password)
 }
 
 extract_credentials_value() {
