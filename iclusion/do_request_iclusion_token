@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-api_credentials=$1 && shift
+source iclusion_function || exit 1
 
-endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
-client_id=$(echo "${api_credentials}" | grep client_id: | cut -d" " -f2)
-client_secret=$(echo "${api_credentials}" | grep client_secret: | cut -d" " -f2)
-username=$(echo "${api_credentials}" | grep username: | cut -d" " -f2)
-password=$(echo "${api_credentials}" | grep password: | cut -d" " -f2)
+iclusion_api_credentials=$1 && shift
+
+endpoint=$(extract_iclusion_endpoint "${iclusion_api_credentials}")
+client_id=$(extract_iclusion_client_id "${iclusion_api_credentials}")
+client_secret=$(extract_iclusion_client_secret "${iclusion_api_credentials}")
+username=$(extract_iclusion_username "${iclusion_api_credentials}")
+password=$(extract_iclusion_password "${iclusion_api_credentials}")
 
 curl --request POST \
   --url "${endpoint}/oauth/token" \

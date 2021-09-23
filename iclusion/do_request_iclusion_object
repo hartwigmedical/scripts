@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+source iclusion_function || exit 1
+
 object=$1 && shift
 api_credentials=$1 && shift
 
 token=$(do_request_iclusion_token "${api_credentials}" | jq -r '.access_token')
 
-endpoint=$(echo "${api_credentials}" | grep endpoint: | cut -d" " -f2)
+endpoint=$(extract_iclusion_endpoint "${api_credentials}")
 
 curl --request GET \
   --url "${endpoint}/${object}" \

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
-api_credentials=$( gcloud secrets versions access "latest" --secret=iclusion-api-credentials --project=hmf-secrets )
+source iclusion_function || exit 1
 
-do_request_iclusion_object "indications" "${api_credentials}"
+iclusion_api_credentials=$(iclusion_credentials)
+
+do_request_iclusion_object "indications" "${iclusion_api_credentials}"
