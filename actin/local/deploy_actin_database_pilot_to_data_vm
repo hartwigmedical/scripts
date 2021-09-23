@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+actin_database_jar=${HOME}/hmf/repos/actin/actin-database/target/actin-database-*-jar-with-dependencies.jar
+
+echo "[INFO] Copying ${actin_database_jar} to gs://common-tools/"
+gsutil cp ${actin_database_jar} gs://common-tools/actin-database/pilot/actin-database.jar
+
+echo "[INFO] Copying ${actin_database_jar} to data-vm-prod-1"
+gcloud compute scp ${actin_database_jar} data-vm-prod-1:/data/tools/actin-database/pilot/actin-database.jar
