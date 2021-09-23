@@ -10,7 +10,7 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 
 credentials=$(prod_writer_sql_credentials)
 
-db_host=$(extract_credentials_value "${credentials}" host)
+db_host=$(extract_database_host "${credentials}")
 db_port=$(extract_credentials_value "${credentials}" port)
 db_user=$(extract_credentials_value "${credentials}" user)
 db_pass=$(extract_credentials_value "${credentials}" password)

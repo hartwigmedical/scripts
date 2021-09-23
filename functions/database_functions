@@ -11,7 +11,7 @@ diagnostic_writer_sql_credentials() {
 extract_database_host() {
     credentials=$1 && shift
 
-    echo "$(extract_credentials_value ${credentials} host)"
+    echo $(extract_credentials_value "${credentials}" host)
 }
 
 extract_credentials_value() {
