@@ -10,8 +10,22 @@ diagnostic_writer_sql_credentials() {
 
 extract_database_host() {
     credentials=$1 && shift
-
     echo $(extract_credentials_value "${credentials}" host)
+}
+
+extract_database_port() {
+    credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" port)
+}
+
+extract_database_user() {
+    credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" user)
+}
+
+extract_database_password() {
+    credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" password)
 }
 
 extract_credentials_value() {

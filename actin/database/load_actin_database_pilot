@@ -11,9 +11,9 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 credentials=$(prod_writer_sql_credentials)
 
 db_host=$(extract_database_host "${credentials}")
-db_port=$(extract_credentials_value "${credentials}" port)
-db_user=$(extract_credentials_value "${credentials}" user)
-db_pass=$(extract_credentials_value "${credentials}" password)
+db_port=$(extract_database_port "${credentials}")
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
 
 database_name="actin_pilot"
 db_url="mysql://${db_host}:${db_port}/${database_name}?enabledTLSProtocols=TLSv1,TLSv1.1,TLSv1.2&serverTimezone=CET&useSSL=false"
