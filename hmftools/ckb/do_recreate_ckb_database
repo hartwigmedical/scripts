@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source database_functions || exit 1
 
 ckb_db=$1 && shift
 
@@ -11,9 +12,9 @@ ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_db.sql
 # Database details
 credentials=$(prod_writer_sql_credentials)
 
-db_user=$(extract_credentials_value "${credentials}" user)
-db_pass=$(extract_credentials_value "${credentials}" password)
-db_host=$(extract_credentials_value "${credentials}" host)
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
 
 info "Rebuilding CKB db '${ckb_db}' on '${db_host} using ${ckb_database_sql}"
 
