@@ -41,7 +41,7 @@ extract_credentials_value() {
     local credentials=$1 && shift
     local value=$1 && shift
 
-    echo "$(echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f2 | sed 's/"//g')"
+    echo "$(echo ${credentials} | sed 's/ /\n/g' | grep ${value}= | cut -d"=" -f 2- | sed 's/"//g')"
 }
 
 pull_iclusion_credentials() {
