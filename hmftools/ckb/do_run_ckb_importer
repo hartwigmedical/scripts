@@ -5,7 +5,7 @@ database_name=$1 && shift
 ckb_dir=$1 && shift
 
 # Database details
-credentials=$(pull_prod_writer_sql_credentials)
+credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_credentials_value "${credentials}" user)
 db_pass=$(extract_credentials_value "${credentials}" password)

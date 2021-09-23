@@ -8,7 +8,7 @@ actin_database_jar=$(locate_pilot_actin_database)
 clinical_feed_directory=$(locate_actin_clinical_feed_directory)
 clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 
-credentials=$(pull_prod_writer_sql_credentials)
+credentials=$(prod_writer_sql_credentials)
 
 db_host=$(extract_credentials_value "${credentials}" host)
 db_port=$(extract_credentials_value "${credentials}" port)

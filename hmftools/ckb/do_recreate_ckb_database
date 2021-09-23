@@ -9,7 +9,7 @@ ckb_db=$1 && shift
 ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_db.sql
 
 # Database details
-credentials=$(pull_prod_writer_sql_credentials)
+credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_credentials_value "${credentials}" user)
 db_pass=$(extract_credentials_value "${credentials}" password)
