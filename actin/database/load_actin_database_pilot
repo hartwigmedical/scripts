@@ -14,10 +14,10 @@ db_host=$(extract_database_host "${credentials}")
 db_port=$(extract_database_port "${credentials}")
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_dependencies=$(extract_database_dependencies "${credentials}")
+#db_dependencies=$(extract_database_dependencies "${credentials}")
 
 database_name="actin_pilot"
-db_url="mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}"
+db_url="mysql://${db_host}:${db_port}/${database_name}?enabledTLSProtocols=TLSv1,TLSv1.1,TLSv1.2&serverTimezone=CET&useSSL=false"
 
 java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
