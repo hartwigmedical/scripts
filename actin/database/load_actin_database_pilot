@@ -17,7 +17,7 @@ db_pass=$(extract_database_password "${credentials}")
 db_dependencies=$(extract_database_dependencies "${credentials}")
 
 database_name="actin_pilot"
-db_url="mysql://${db_host}:${db_port}/${database_name}${db_dependencies}"
+db_url="mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}"
 
 java11 -Xmx8G -Xms2G -jar ${actin_database_jar} \
     -clinical_feed_directory ${clinical_feed_directory} \
