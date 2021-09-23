@@ -26,14 +26,14 @@ extract_database_port() {
     echo $(extract_credentials_value "${credentials}" port)
 }
 
-extract_database_user() {
-    local credentials=$1 && shift
-    echo $(extract_credentials_value "${credentials}" user)
-}
-
 extract_database_dependencies() {
     local credentials=$1 && shift
     echo $(extract_credentials_value "${credentials}" database_dependencies)
+}
+
+extract_database_user() {
+    local credentials=$1 && shift
+    echo $(extract_credentials_value "${credentials}" user)
 }
 
 extract_database_password() {
