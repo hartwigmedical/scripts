@@ -12,6 +12,10 @@ diagnostic_writer_sql_credentials() {
     echo $(gcloud secrets versions access "latest" --secret=mysql-diagnostic-patients-sql-prod-1-writer --project=hmf-secrets)
 }
 
+diagnostic_reader_sql_credentials() {
+    echo $(gcloud secrets versions access "latest" --secret=mysql-diagnostic-patients-sql-prod-1-reader --project=hmf-secrets)
+}
+
 extract_database_host() {
     local credentials=$1 && shift
     echo $(extract_credentials_value "${credentials}" host)
