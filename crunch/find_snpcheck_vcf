@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_gcp_files || exit 1
 
 search_remote=FALSE
 dir1='/data/common/snpcheck/'
 dir2='/data/gcp/snpcheckvcfupload/'
-gcp_bucket='hmf-snpcheck'
+vcf_gcp_bucket=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpcheck vcf location at GCP"
 
 print_usage(){
     echo "-----"
@@ -16,7 +17,7 @@ print_usage(){
     echo "        $(basename $0) FR12345678"
     echo "        $(basename $0) -r FR12345678"
     echo " Options:"
-    echo "   -r   Also search bucket location for VCFs and LOGs ($gcp_bucket)"
+    echo "   -r   Also search bucket location for VCFs and LOGs (${vcf_gcp_bucket})"
     echo "-----"
     exit 1
 }
@@ -45,12 +46,12 @@ echo ""
 
 if [[ "${search_remote}" == "TRUE" ]]; then
 
-    info "Checking remote location for VCFs (gs://${gcp_bucket})"
-    gsutil ls "gs://hmf-snpcheck/snpcheckvcfs/*/*${search}*"
+    info "Checking remote location for VCFs (${vcf_gcp_bucket})"
+    gsutil ls "${vcf_gcp_bucket}*/*${search}*"
     echo ""
 
     # since January 2021 logs are no longer written to the snpchecklogs
-    #info "Checking remote location for LOGs (gs://${gcp_bucket})"
+    #info "Checking remote location for LOGs (gs://hmf-snpcheck/snpchecklogs/)"
     #gsutil ls "gs://hmf-snpcheck/snpchecklogs/*${search}*"
     #echo ""
 fi
