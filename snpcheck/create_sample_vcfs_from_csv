@@ -2,11 +2,13 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source locate_gcp_files || exit 1
 
 CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTBASE=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
 SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
-GCPDIR=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
+UPLOADDIR=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
+GCPDIR=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpcheck vcf location at GCP"
 SNPCOUNT="26"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
@@ -16,6 +18,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "        $(basename $0) ${OUTBASE}input/<design>/file.csv"
     echo " Confg:"
     echo "   CODEDIR = ${CODEDIR}"
+    echo "   UPLOADDIR  = ${UPLOADDIR}"
     echo "   GCPDIR  = ${GCPDIR}"
     echo "-----"
     exit 1
@@ -25,7 +28,7 @@ csv_file=$1
 if [[   -z "${csv_file}" ]]; then error "No csv results file provided.."; fi
 if [[ ! -f "${csv_file}" ]]; then error "Input csv file does not exist?"; fi
 if [[ ! -f "${SCRIPT}"  ]]; then error "Script file does not exist?"; fi
-if [[ ! -w "${GCPDIR}"  ]]; then error "Output sync dir not writable ($GCPDIR)"; fi
+if [[ ! -w "${UPLOADDIR}"  ]]; then error "Output sync dir not writable ($UPLOADDIR)"; fi
 
 ## setup design to use
 one_sample=$( cat ${csv_file} | grep ^FR | cut -d"," -f1 | sort | uniq | head -1 )
@@ -58,5 +61,8 @@ info "[TODO] Performs plate QC"
 info "  perform_snpcheck_plate_qc ${vcf_out_dir}"
 info ""
 info "[TODO] Also copy the results to sync dir"
-info "  cp -r ${vcf_out_dir} ${GCPDIR}"
+info "  cp -r ${vcf_out_dir} ${UPLOADDIR}"
+info ""
+info "[TODO] Also sync the results to GCP bucket"
+info "  gsutil -m cp -r ${vcf_out_dir} ${GCPDIR}"
 info ""
