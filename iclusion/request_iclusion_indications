@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source iclusion_function || exit 1
+source iclusion_functions || exit 1
 
 iclusion_api_credentials=$(iclusion_credentials)
 
