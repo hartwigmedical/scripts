@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 source locate_gcp_files || exit 1
 
 search_remote=FALSE
-dir1='/data/common/snpcheck/'
-dir2='/data/gcp/snpcheckvcfupload/'
+dir1=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
+dir2=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
 vcf_gcp_bucket=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpcheck vcf location at GCP"
 
 print_usage(){
@@ -34,14 +35,14 @@ search=$1 # eg FR12345678
 
 echo ""
 info "Searching for snpcheck files matching '${search}'"
-count1=$(find ${dir1} -name "*${search}*.vcf" | wc -l)
+count1=$(find "${dir1}" -name "*${search}*.vcf" | wc -l)
 info "Found ${count1} local VCFs in archive at ops-vm (${dir1})"
-find ${dir1} -name "*${search}*.vcf"
+find "${dir1}" -name "*${search}*.vcf"
 echo ""
 
-count2=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
+count2=$(find "${dir2}" -name "*${search}*.vcf" | wc -l)
 info "Found ${count2} local VCFs in sync location at ops-vm (${dir2})"
-find ${dir2} -name "*${search}*.vcf"
+find "${dir2}" -name "*${search}*.vcf"
 echo ""
 
 if [[ "${search_remote}" == "TRUE" ]]; then

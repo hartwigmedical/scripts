@@ -286,6 +286,14 @@ locate_sample_registration_logs_dir() {
     echo "/data/ops/api/prod/logs/"
 }
 
+locate_snpcheck_dir() {
+    echo "/data/common/snpcheck/"
+}
+
+locate_snpcheck_vcf_upload_dir() {
+    echo "/data/gcp/snpcheckvcfupload/"
+}
+
 #################################### Repos #####################################
 
 locate_repo_dir() {
@@ -1046,3 +1054,5 @@ locate_shallow_tsv() {
     echo ${shallow_seq_tsv}
 }
 
+
+}

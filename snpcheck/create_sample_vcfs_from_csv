@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUTBASE="/data/common/snpcheck"
+OUTBASE=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
 SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
-GCPDIR="/data/gcp/snpcheckvcfupload"
+GCPDIR=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
 SNPCOUNT="26"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Reads the output of genotyping machine and converts to vcf"
     echo " Usage: $(basename $0) <path-to-snpgenotyping-csv-results-file"
-    echo "        $(basename $0) /data/common/snpcheck/input/<design>/file.csv"
+    echo "        $(basename $0) ${OUTBASE}input/<design>/file.csv"
     echo " Confg:"
     echo "   CODEDIR = ${CODEDIR}"
     echo "   GCPDIR  = ${GCPDIR}"
@@ -34,7 +35,7 @@ if [[ ${design_size} -eq 60 ]]; then
     SNPCOUNT="60"
 fi
 DESIGN="${CODEDIR}/${SNPCOUNT}SNPtaq_design.vcf"
-OUTDIR="${OUTBASE}/output/${SNPCOUNT}SNPtaq"
+OUTDIR="${OUTBASE}output/${SNPCOUNT}SNPtaq"
 if [[ ! -f "${DESIGN}" ]]; then error "Design file does not exist (${DESIGN})?"; fi
 if [[ ! -d "${OUTDIR}" ]]; then error "Output dir does not exist (${OUTDIR})?"; fi
 

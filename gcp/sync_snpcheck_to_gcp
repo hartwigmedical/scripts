@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 source locate_gcp_files || exit 1
 
-local_path='/data/gcp/snpcheckvcfupload'
-
+local_path=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
 snpcheck_vcfs_bucket=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpcheck vcf location at GCP"
 
 info "Syncing snpcheck data to GCP!"
 
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -dr ${local_path} "${snpcheck_vcfs_bucket}"
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -dr "${local_path}" "${snpcheck_vcfs_bucket}"
