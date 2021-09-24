@@ -1053,6 +1053,3 @@ locate_shallow_tsv() {
     fi
     echo ${shallow_seq_tsv}
 }
-
-
-}
