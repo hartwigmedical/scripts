@@ -5,7 +5,7 @@ source locate_files || exit 1
 run_dir=$1 && shift
 output_dir=${run_dir}/linx_pilot/
 
-credentials=$(locate_pilot_database_credentials)
+database="hmfpatients_pilot"
 linx_jar=$(locate_pilot_linx)
 
-do_run_linx_pilot ${run_dir} ${credentials} ${linx_jar} ${output_dir} "$@"
+do_run_linx_pilot ${run_dir} ${database} ${linx_jar} ${output_dir} "$@"

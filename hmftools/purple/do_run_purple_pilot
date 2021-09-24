@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
@@ -10,7 +11,7 @@ somatic_vcf=$1 && shift
 structural_vcf=$1 && shift
 sv_recovery_vcf=$1 && shift
 purple_output_dir=$1 && shift
-credentials=$1 && shift
+database=$1 && shift
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -54,11 +55,17 @@ germline_hotspot_vcf=${base_path}/dbs/archive/sage/KnownHotspots.germline.37.vcf
 driver_gene_panel=$(locate_driver_gene_panel_37_tsv_ds)
 
 db_args=""
-if [[ ! -z "${credentials}" ]]; then
-    db_user=$(awk '/^user/ {print $2}' ${credentials})
-    db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-    db_url=$(awk '/^url/ {print $2}' ${credentials})
-    db_args="-db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
+if [[ ! -z "${database}" ]]; then
+   credentials=$(prod_writer_sql_credentials)
+
+   db_user=$(extract_database_user "${credentials}")
+   db_pass=$(extract_database_password "${credentials}")
+   db_host=$(extract_database_host "${credentials}")
+   db_port=$(extract_database_port "${credentials}")
+   db_dependencies=$(extract_database_dependencies "${credentials}")
+   db_url=$( echo "mysql://${db_host}:${db_port}/${database}?serverTimezone=CET${db_dependencies}")
+
+   db_args="-db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
 fi
 
 info "Running purple for ${tumor_sample}"

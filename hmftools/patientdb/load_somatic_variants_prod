@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -14,7 +15,8 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
 
-credentials=$(locate_prod_database_credentials)
+database="hmfpatients"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_somatic_variants ${sample} ${ref_sample} ${somatic_vcf} ${credentials} ${patient_db_jar} "$@"
+do_load_somatic_variants ${sample} ${ref_sample} ${somatic_vcf} ${database} "${credentials}" ${patient_db_jar} "$@"

@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -13,7 +14,8 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 sample_dir=$(locate_sigs_dir ${run_dir})
 
-credentials=$(locate_prod_database_credentials)
+database="hmfpatients"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_sigs_data ${sample} ${sample_dir} ${credentials} ${patient_db_jar} "$@"
+do_load_sigs_data ${sample} ${sample_dir} ${database} "${credentials}" ${patient_db_jar} "$@"

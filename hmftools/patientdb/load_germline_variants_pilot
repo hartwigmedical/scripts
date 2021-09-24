@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -15,5 +16,7 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 germline_vcf=$(locate_purple_germline_variants ${run_dir})
 
 patient_db_jar=$(locate_pilot_patient_db)
+database="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
 
-do_load_germline_variants_pilot ${sample} ${ref_sample} ${germline_vcf} "hmfpatients_pilot" ${patient_db_jar} "$@"
+do_load_germline_variants_pilot ${sample} ${ref_sample} ${germline_vcf} ${database} "${credentials}" ${patient_db_jar} "$@"

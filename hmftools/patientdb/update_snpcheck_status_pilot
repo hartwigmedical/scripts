@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 is_pass=$1 && shift
@@ -11,9 +12,10 @@ if [[ -z "${run_dir}"  || -z "${is_pass}" ]]; then
     error "Not all params passed. Exiting"
 fi
 
-credentials=$(locate_pilot_database_credentials)
+databse="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-do_update_snpcheck_status ${tumor_sample} ${is_pass} ${credentials} ${patient_db_jar}
+do_update_snpcheck_status ${tumor_sample} ${is_pass} ${databse} "${credentials}" ${patient_db_jar}
