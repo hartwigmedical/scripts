@@ -104,7 +104,7 @@ else
     warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
-doid_check_validated_run ${set} "manual"
+cat ${temp_folder_path}/protect/run.log
 
 #### run patient reporter
 
