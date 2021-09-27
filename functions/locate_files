@@ -56,15 +56,15 @@ locate_prod_paddle() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db/3.62/patient-db.jar
+    echo /data/tools/patient-db/3.62/patient-db.jar
 }
 
 locate_diagnostic_patient_db() {
-    echo ${base_path}/tools/patient-db/3.61/patient-db.jar
+    echo /data/tools/patient-db/3.61/patient-db.jar
 }
 
 locate_pilot_patient_db() {
-    echo ${base_path}/tools/patient-db/pilot/patient-db.jar
+    echo /data/tools/patient-db/pilot/patient-db.jar
 }
 
 locate_prod_linx() {
