@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+ckb_zip_file=${HOME}/Downloads/json_file_format/*.zip
+
+info "Copying ${ckb_zip_file} to gs://hmf-crunch-resources/serve/ckb/"
+gsutil cp ${ckb_zip_file} gs://hmf-crunch-resources/serve/ckb/
+info "CKB zip file is uploaded!"
