@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source message_fucntions || exit 1
+source message_functions || exit 1
 
 ckb_zip_file=${HOME}/Downloads/json_file_format/*.zip
 
