@@ -4,7 +4,7 @@ source message_functions || exit 1
 source lims_functions || exit 1
 
 set=$1 && shift
-protect_source=$2 && shift
+protect_source=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
