@@ -4,10 +4,6 @@ source message_functions || exit 1
 
 actin_database_jar=${HOME}/hmf/repos/actin/actin-database/target/actin-database-*-jar-with-dependencies.jar
 
-if [[ ! -f ${action_database_jar} ]]; then
-    error "Could not locate ACTIN database jar"
-fi
-
 info "Copying ${actin_database_jar} to gs://common-tools/"
 gsutil cp ${actin_database_jar} gs://common-tools/actin-database/pilot/actin-database.jar
 
