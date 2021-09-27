@@ -45,7 +45,7 @@ info "Resources used for running protect from: ${serve_actionability_dir}"  &>> 
 do_run_protect ${temp_folder_path} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 
 #### check log file of rerunning protect
-if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread" | wc -l ) > 0 ]]; then
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread\|Error:" | wc -l ) > 0 ]]; then
     warn "Rerunning protect gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
     #cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|ERROR\|Exception in thread"
 else
