@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 
 sql=${HOME}/hmf/repos/actin/actin-database/src/main/resources/generate_database.sql
+
+if [[ ! -f ${sql} ]]; then
+    error "Could not locate ACTIN sql"
+fi
+
 gcloud compute scp ${sql} data-vm-prod-1:/data/resources/custom/actin/sql_database/generate_database.sql

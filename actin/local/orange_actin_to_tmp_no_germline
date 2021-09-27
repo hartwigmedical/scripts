@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 patient=$1
 
 if [[ -z ${patient} ]]; then
-    echo "No patient provided" && exit 1
+    error "No patient provided"
 fi
 
 gcloud compute scp data-vm-prod-1:/data/actin/samples/*${patient}*/orange_no_germline/*.pdf ~/hmf/tmp/
