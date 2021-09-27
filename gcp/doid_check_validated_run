@@ -43,6 +43,7 @@ if [[ "${report_tumorlocation}" == "Unknown" ]]; then
         info "The primary tumor location provided is ${report_tumorlocation}, but it is a CUP so this is correct."
     else
         warn "The primary tumor location provided is ${report_tumorlocation} (and it is no CUP)"
+    fi
 fi
 
 report_doid=$( get_doids_for_biopsy ${sample_name} | sed -e $'s/;/,/g' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
