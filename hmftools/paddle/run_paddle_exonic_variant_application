@@ -16,7 +16,7 @@ cohort_select_samples_sql=/data/repos/scripts/hmftools/paddle/select_dnds_exampl
 info "Writing cohort file to ${cohort_tsv} using ${cohort_select_samples_sql}"
 execute_sql_on_prod ${cohort_select_samples_sql} > ${cohort_tsv}
 
-paddle_jar=/data/common/tools/paddle_v1.0/paddle.jar
+paddle_jar=$(locate_prod_paddle)
 
 # Database details
 database_name="hmfpatients"
