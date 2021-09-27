@@ -152,7 +152,7 @@ locate_pilot_sig_analyser() {
 }
 
 locate_prod_hmf_id_generator() {
-    echo ${base_path}/tools/hmf-id-generator/2.7/hmf-id-generator.jar
+    echo ${base_path}/tools/hmf-id-generator/2.8/hmf-id-generator.jar
 }
 
 locate_pilot_hmf_id_generator() {
