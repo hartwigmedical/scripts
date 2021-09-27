@@ -187,10 +187,6 @@ locate_peach_main() {
     echo "$(locate_repo_dir "peach")/peach"
 }
 
-locate_vcftools() {
-    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
 ################################## Resources ###################################
 
 locate_actin_clinical_feed_directory() {
@@ -205,24 +201,24 @@ locate_driver_gene_panel_37_tsv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv
 }
 
-locate_driver_gene_panel_37_tsv_gcp() {
-    echo ${base_path}/resources/gene_panel/37/DriverGenePanel.37.tsv
+locate_driver_gene_panel_37_tsv() {
+    echo /data/resources/gene_panel/37/DriverGenePanel.37.tsv
 }
 
-locate_driver_gene_panel_38_tsv_gcp() {
-    echo ${base_path}/resources/gene_panel/38/DriverGenePanel.38.tsv
+locate_driver_gene_panel_38_tsv() {
+    echo /data/resources/gene_panel/38/DriverGenePanel.38.tsv
 }
 
 locate_known_fusion_data_37_csv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/fusions/known_fusion_data.37_v3.csv
 }
 
-locate_known_fusion_data_37_csv_gcp() {
-    echo ${base_path}/resources/fusions/37/known_fusion_data.37.csv
+locate_known_fusion_data_37_csv() {
+    echo /data/resources/fusions/37/known_fusion_data.37.csv
 }
 
-locate_known_fusion_data_38_csv_gcp() {
-    echo ${base_path}/resources/fusions/38/known_fusion_data.38.csv
+locate_known_fusion_data_38_csv() {
+    echo /data/resources/fusions/38/known_fusion_data.38.csv
 }
 
 locate_peach_resource_dir() {
@@ -230,39 +226,39 @@ locate_peach_resource_dir() {
 }
 
 locate_pilot_iclusion_trial_tsv() {
-    echo ${base_path}/resources/iclusion/iclusion_trials_pilot.tsv
+    echo /data/resources/iclusion/iclusion_trials_pilot.tsv
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo ${base_path}/resources/iclusion/iclusion_trials_prod.tsv
+    echo /data/resources/iclusion/iclusion_trials_prod.tsv
 }
 
 locate_vicc_json() {
-    echo ${base_path}/resources/vicc/all.json
+    echo /data/resources/vicc/all.json
 }
 
 locate_docm_tsv() {
-    echo ${base_path}/resources/docm/docm_v3.2.tsv
+    echo /data/resources/docm/docm_v3.2.tsv
 }
 
 locate_hartwig_cohort_tsv() {
-    echo ${base_path}/resources/hartwig/hartwig_cohort.tsv
+    echo /data/resources/hartwig/hartwig_cohort.tsv
 }
 
 locate_hartwig_curated_tsv() {
-    echo ${base_path}/resources/hartwig/hartwig_curated.tsv
+    echo /data/resources/hartwig/hartwig_curated.tsv
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/resources/ckb/ckb_flex_dump
+    echo /data/resources/ckb/ckb_flex_dump
 }
 
 locate_ckb_filter_tsv() {
-    echo ${base_path}/resources/serve/ckb_filters.tsv
+    echo /data/resources/serve/ckb_filters.tsv
 }
 
 locate_ckb_filter_tsv_empty() {
-    echo ${base_path}/resources/serve/ckb_filters_empty.tsv
+    echo /data/resources/serve/ckb_filters_empty.tsv
 }
 
 locate_samplesheets_dir() {
