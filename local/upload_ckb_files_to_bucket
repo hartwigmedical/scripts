@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 
+source message_fucntions || exit 1
+
 ckb_zip_file=${HOME}/Downloads/json_file_format/*.zip
 
-info "Copying ${ckb_zip_file} to gs://hmf-crunch-resources/serve/ckb/"
+if [[ ! -f ${ckb_zip_file} ]]; then
+    error "Could not locate ckb zip file!"
+fi
+
+info "Uploading ${ckb_zip_file} to gs://hmf-crunch-resources/serve/ckb/"
 gsutil cp ${ckb_zip_file} gs://hmf-crunch-resources/serve/ckb/
-info "CKB zip file is uploaded!"
+info "CKB zip file has been uploaded!"
