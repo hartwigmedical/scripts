@@ -4,7 +4,7 @@ source locate_files || exit 1
 
 id_generator_jar=$(locate_prod_hmf_id_generator)
 database="hmfpatients"
-sample_hashes_in=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
-sample_hashes_out=/data/common/dbs/idgenerator/hashes/new_prod_sample_hashes.csv
+sample_hashes_in=/data/resources/custom/idgenerator/hashes/sample_hashes.csv
+sample_hashes_out=//data/resources/custom/idgenerator/hashes/new_prod_sample_hashes.csv
 
 do_run_amber_hmf_id_generator ${id_generator_jar} ${database} ${sample_hashes_in} ${sample_hashes_out}
