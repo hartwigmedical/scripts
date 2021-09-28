@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source gcp_functions || exit 1
 source message_functions || exit 1
 
 command -v realpath > /dev/null || die "Utility 'realpath' not found"
