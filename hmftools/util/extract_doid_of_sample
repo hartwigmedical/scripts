@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-source lims_functions || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source api_functions || exit 1
 
 tumor_sample=$1 && shift
 
 info "Start extracting doids"
-primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
 
 if [[ -z "${primary_tumor_doids}" ]]; then
     warn "Could not determine tumor DOIDs for ${tumor_sample}."
