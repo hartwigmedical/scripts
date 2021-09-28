@@ -11,10 +11,7 @@ credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_host=$(extract_database_host "${credentials}")
-db_port=$(extract_database_port "${credentials}")
-db_dependencies=$(extract_database_dependencies "${credentials}")
-db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}")
+db_url=$(construct_database_url "${credentials}" "${database_name}")
 
 java -Xms2G -Xmx10G -Dorg.jooq.no-logo=true -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \

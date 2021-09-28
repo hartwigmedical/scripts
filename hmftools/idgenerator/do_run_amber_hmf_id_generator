@@ -13,7 +13,7 @@ credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_url=$(construct_database_url "${credentials}", ${database_name})
+db_url=$(construct_database_url "${credentials}" ${database_name})
 
 java -jar ${id_generator_jar} \
     -password ${password} \
