@@ -127,6 +127,10 @@ if [[ ${HOSTNAME} != "datastore" ]]; then
     done
 fi
 
+for seq_dir in "${seq_dirs[@]}"; do
+    cmds_to_execute+=("archive_flowcell_to_bucket ${seq_dir}")
+done
+
 printHeader "Extra actions"
 for cmd in "${cmds_to_execute[@]}"; do
     echo "${cmd}"
