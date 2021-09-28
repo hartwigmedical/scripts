@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 if [[ $# -ne 3 || "${1}" == "-h" || "${1}" == "--help" ]]; then
     echo "-----"
@@ -20,7 +21,9 @@ new_tag="${barcode}-${new_sample}"
 
 info "OLD tag: $old_tag"
 info "NEW tag: $new_tag"
-mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -name "${old_tag}_*.vcf" -or -name "${old_tag}-Duplo_*.vcf")
+snpcheck_dir=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
+snpcheck_upload_dir=$(locate_snpcheck_vcf_upload_dir) || die "Could not get snpcheck upload dir"
+mapfile -t vcfs < <(find "${snpcheck_dir}" "${snpcheck_upload_dir}" -name "${old_tag}_*.vcf" -or -name "${old_tag}-Duplo_*.vcf")
 vcf_count=${#vcfs[@]}
 
 info "Printing rename code for ${vcf_count} VCFs (remember to sync to GCP afterwards!)"

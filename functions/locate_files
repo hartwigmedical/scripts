@@ -10,19 +10,6 @@ fi
 
 ############################# Database Credentials #############################
 
-locate_gcp_prod_database_host() {
-    echo $(cat ${base_path}/dbs/mysql_credentials/gcp_database_host)
-    cat "${base_path}/dbs/mysql_credentials/gcp_database_host"
-}
-
-locate_prod_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/prod
-}
-
-locate_diagnostic_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/prod_diagnostic
-}
-
 locate_prod_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
 }
@@ -30,39 +17,6 @@ locate_prod_database_credentials_cnf() {
 locate_prod_backup_database_credentials_cnf() {
     echo ${base_path}/dbs/mysql_credentials/patients.sql.backup.prod-1/reader.cnf
 }
-
-locate_pilot_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/pilot
-}
-
-locate_pilot_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
-}
-
-locate_reference_validation_sets_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/reference_validation_sets
-}
-
-locate_pipeline_v5_validation_database_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
-}
-
-locate_vicc_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/vicc_db
-}
-
-locate_vicc_pilot_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/vicc_db_pilot
-}
-
-locate_ckb_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/ckb_db
-}
-
-locate_ckb_pilot_database_credentials() {
-    echo ${base_path}/resources/mysql_credentials/ckb_db_pilot
-}
-
 
 ############################# Nextcloud Credentials ############################
 
@@ -97,16 +51,20 @@ locate_prod_cuppa() {
     echo ${base_path}/tools/cuppa/1.4/cuppa.jar
 }
 
+locate_prod_paddle() {
+    echo ${base_path}/tools/paddle/1.0/paddle.jar
+}
+
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.62/patient-db.jar
+    echo /data/tools/patient-db/3.62/patient-db.jar
 }
 
 locate_diagnostic_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.61/patient-db.jar
+    echo /data/tools/patient-db/3.61/patient-db.jar
 }
 
 locate_pilot_patient_db() {
-    echo ${base_path}/tools/patient-db_pilot/patient-db.jar
+    echo /data/tools/patient-db/pilot/patient-db.jar
 }
 
 locate_prod_linx() {
@@ -178,7 +136,7 @@ locate_pilot_serve() {
 }
 
 locate_prod_protect() {
-    echo ${base_path}/tools/protect/1.4/protect.jar
+    echo /data/tools/protect/1.4/protect.jar
 }
 
 locate_pilot_protect() {
@@ -194,7 +152,7 @@ locate_pilot_sig_analyser() {
 }
 
 locate_prod_hmf_id_generator() {
-    echo ${base_path}/tools/hmf-id-generator/2.7/hmf-id-generator.jar
+    echo ${base_path}/tools/hmf-id-generator/2.8/hmf-id-generator.jar
 }
 
 locate_pilot_hmf_id_generator() {
@@ -229,10 +187,6 @@ locate_peach_main() {
     echo "$(locate_repo_dir "peach")/peach"
 }
 
-locate_vcftools() {
-    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
 ################################## Resources ###################################
 
 locate_actin_clinical_feed_directory() {
@@ -247,24 +201,24 @@ locate_driver_gene_panel_37_tsv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv
 }
 
-locate_driver_gene_panel_37_tsv_gcp() {
-    echo ${base_path}/resources/gene_panel/37/DriverGenePanel.37.tsv
+locate_driver_gene_panel_37_tsv() {
+    echo /data/resources/gene_panel/37/DriverGenePanel.37.tsv
 }
 
-locate_driver_gene_panel_38_tsv_gcp() {
-    echo ${base_path}/resources/gene_panel/38/DriverGenePanel.38.tsv
+locate_driver_gene_panel_38_tsv() {
+    echo /data/resources/gene_panel/38/DriverGenePanel.38.tsv
 }
 
 locate_known_fusion_data_37_csv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/fusions/known_fusion_data.37_v3.csv
 }
 
-locate_known_fusion_data_37_csv_gcp() {
-    echo ${base_path}/resources/fusions/37/known_fusion_data.37.csv
+locate_known_fusion_data_37_csv() {
+    echo /data/resources/fusions/37/known_fusion_data.37.csv
 }
 
-locate_known_fusion_data_38_csv_gcp() {
-    echo ${base_path}/resources/fusions/38/known_fusion_data.38.csv
+locate_known_fusion_data_38_csv() {
+    echo /data/resources/fusions/38/known_fusion_data.38.csv
 }
 
 locate_peach_resource_dir() {
@@ -272,39 +226,39 @@ locate_peach_resource_dir() {
 }
 
 locate_pilot_iclusion_trial_tsv() {
-    echo ${base_path}/resources/iclusion/iclusion_trials_pilot.tsv
+    echo /data/resources/iclusion/iclusion_trials_pilot.tsv
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo ${base_path}/resources/iclusion/iclusion_trials_prod.tsv
+    echo /data/resources/iclusion/iclusion_trials_prod.tsv
 }
 
 locate_vicc_json() {
-    echo ${base_path}/resources/vicc/all.json
+    echo /data/resources/vicc/all.json
 }
 
 locate_docm_tsv() {
-    echo ${base_path}/resources/docm/docm_v3.2.tsv
+    echo /data/resources/docm/docm_v3.2.tsv
 }
 
 locate_hartwig_cohort_tsv() {
-    echo ${base_path}/resources/hartwig/hartwig_cohort.tsv
+    echo /data/resources/hartwig/hartwig_cohort.tsv
 }
 
 locate_hartwig_curated_tsv() {
-    echo ${base_path}/resources/hartwig/hartwig_curated.tsv
+    echo /data/resources/hartwig/hartwig_curated.tsv
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/resources/ckb/ckb_flex_dump
+    echo /data/resources/ckb/ckb_flex_dump
 }
 
 locate_ckb_filter_tsv() {
-    echo ${base_path}/resources/serve/ckb_filters.tsv
+    echo /data/resources/serve/ckb_filters.tsv
 }
 
 locate_ckb_filter_tsv_empty() {
-    echo ${base_path}/resources/serve/ckb_filters_empty.tsv
+    echo /data/resources/serve/ckb_filters_empty.tsv
 }
 
 locate_samplesheets_dir() {
@@ -321,6 +275,14 @@ locate_sample_registration_registered_jsons_dir() {
 
 locate_sample_registration_logs_dir() {
     echo "/data/ops/api/prod/logs/"
+}
+
+locate_snpcheck_dir() {
+    echo "/data/common/snpcheck/"
+}
+
+locate_snpcheck_vcf_upload_dir() {
+    echo "/data/gcp/snpcheckvcfupload/"
 }
 
 #################################### Repos #####################################
@@ -1049,8 +1011,16 @@ locate_protect_evidence_pilot_vicc() {
 
 ##################################### LIMS #####################################
 
-locate_reporting_db_tsv() {
+locate_reporting_db_generate_tsv() {
     local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv
+    if [[ ! -f "${reporting_db_tsv}" ]]; then
+        error "Unable to locate reporting db TSV. Exiting."
+    fi
+    echo ${reporting_db_tsv}
+}
+
+locate_reporting_db_sharing_tsv() {
+    local reporting_db_tsv=/data/ops/lims/prod/final_sharing_db.tsv
     if [[ ! -f "${reporting_db_tsv}" ]]; then
         error "Unable to locate reporting db TSV. Exiting."
     fi
@@ -1082,4 +1052,3 @@ locate_shallow_tsv() {
     fi
     echo ${shallow_seq_tsv}
 }
-

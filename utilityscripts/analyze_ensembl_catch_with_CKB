@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+
+genesCKB=/data/experiments/check_ensembl_versus_CKB_genes/input/210910_CKB_genes_dump.tsv
+genes_map_37_89=/data/experiments/check_ensembl_versus_CKB_genes/ensembl_data/ensembl_37_89_gene_data.csv
+genes_map_38_104=/data/experiments/check_ensembl_versus_CKB_genes/ensembl_data/ensembl_38_104_gene_data.csv
+genes_map_38_89=/data/experiments/check_ensembl_versus_CKB_genes/ensembl_data/ensembl_38_89_gene_data.csv
+
+echo "geneSymbol;geneSynonyms;genes_map_37_89_map;synonyms_genes_map_37_89_map;synonyms_map_37_89_map" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_37_89.csv
+echo "geneSymbol;geneSynonyms;genes_map_38_104_map;synonyms_genes_map_38_104_map;synonyms_map_38_104_map" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_104.csv
+echo "geneSymbol;geneSynonyms;genes_map_38_89_map;synonyms_genes_map_38_89_map;synonyms_map_38_89_map" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_89.csv
+
+##checking genes of CKB present in ensembl catch
+while IFS= read genes; do
+
+    geneSymbol=$( echo ${genes} | awk '{print $1}')
+    synonym=$( echo ${genes} | awk '{print $2}')
+    present_genes_map_37_89=$( cat ${genes_map_37_89} | awk 'BEGIN { FS="," } {print $2}'  | grep -x ${geneSymbol} | wc -l)
+    present_genes_map_38_104=$( cat ${genes_map_38_104} | awk 'BEGIN { FS="," } {print $2}' | grep -x ${geneSymbol} | wc -l)
+    present_genes_map_38_89=$( cat ${genes_map_38_89} | awk 'BEGIN { FS="," } {print $2}' | grep -x ${geneSymbol} | wc -l)
+
+    ## checking if synonym in ensembl
+    synonym37_89=","
+    synonym38_104=","
+    synonym38_89=","
+    CKBSynonymlist=$( echo $synonym | tr "," "\n" )
+
+    for checkSynonym in ${CKBSynonymlist}; do
+      synonymPresent37_89=$(cat ${genes_map_37_89} | awk 'BEGIN { FS="," } {print $2}' | grep -x ${checkSynonym} | wc -l)
+      synonymPresent_38_104=$(cat ${genes_map_38_104} | awk 'BEGIN { FS="," } {print $2}' | grep -x ${checkSynonym} | wc -l)
+      synonymPresent38_89=$(cat ${genes_map_38_89} | awk 'BEGIN { FS="," } {print $2}' | grep -x ${checkSynonym} | wc -l)
+
+      if [[ ${synonymPresent37_89} -eq 1 ]]; then
+        synonym37_89+="true,"
+      else
+        synonym37_89+="false,"
+      fi
+
+      if [[ ${synonymPresent_38_104} -eq 1 ]]; then
+        synonym38_104+="true,"
+      else
+        synonym38_104+="false,"
+      fi
+
+      if [[ ${synonymPresent38_89} -eq 1 ]]; then
+        synonym38_89+="true,"
+      else
+        synonym38_89+="false,"
+      fi
+    done
+
+    ## check is synonym is used
+    synonym37_89map=$( echo ${synonym37_89} | grep true | wc -l )
+    synonym38_104map=$( echo ${synonym38_104} | grep true | wc -l)
+    synonym38_89_map=$( echo ${synonym38_89} | grep true | wc -l)
+    synonym37_89mapValue=""
+    synonym38_104mapValue=""
+    synonym38_89_mapValue=""
+
+    if [[ ${synonym37_89map} -eq 1 ]]; then
+      synonym37_89mapValue="true"
+    else
+      synonym37_89mapValue="false"
+    fi
+
+    if [[ ${synonym38_104map} -eq 1 ]]; then
+      synonym38_104mapValue="true"
+    else
+      synonym38_104mapValue="false"
+    fi
+
+    if [[ ${synonym38_89_map} -eq 1 ]]; then
+      synonym38_89_mapValue="true"
+    else
+      synonym38_89_mapValue="false"
+    fi
+
+    if [[ ${present_genes_map_37_89} -eq 1 ]]; then
+    	echo "${geneSymbol};${synonym};true;${synonym37_89};${synonym37_89mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_37_89.csv
+    else
+      echo "${geneSymbol};${synonym};false;${synonym37_89};${synonym37_89mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_37_89.csv
+    fi
+
+    if [[ ${present_genes_map_38_104} -eq 1 ]]; then
+    	echo "${geneSymbol};${synonym};true;${synonym38_104};${synonym38_104mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_104.csv
+    else
+      echo "${geneSymbol};${synonym};false;${synonym38_104};${synonym38_104mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_104.csv
+    fi
+
+    if [[ ${present_genes_map_38_89} -eq 1 ]]; then
+    	echo "${geneSymbol};${synonym};true;${synonym38_89};${synonym38_89_mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_89.csv
+    else
+      echo "${geneSymbol};${synonym};false;${synonym38_89};${synonym38_89_mapValue}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/CKB_versus_genes_map_38_89.csv
+    fi
+
+done < ${genesCKB}
+
+##checking genes of ensembl 37_89 present in CKB
+echo "geneSymbol" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_37_89.csv
+
+while IFS= read genes; do
+
+    geneSymbol=$( echo ${genes} | awk 'BEGIN { FS="," } {print $2}')
+    echo "${geneSymbol}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_37_89.csv
+
+done < ${genes_map_37_89}
+
+##checking genes of ensembl 38_104 present in CKB
+echo "geneSymbol" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_38_104.csv
+
+while IFS= read genes; do
+
+    geneSymbol=$( echo ${genes} | awk 'BEGIN { FS="," } {print $2}')
+    echo "${geneSymbol}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_38_104.csv
+
+done < ${genes_map_38_104}
+
+##checking genes of ensembl 38_89 present in CKB
+echo "geneSymbol" > /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_38_89.csv
+
+while IFS= read genes; do
+
+    geneSymbol=$( echo ${genes} | awk 'BEGIN { FS="," } {print $2}')
+	  echo "${geneSymbol}" >> /data/experiments/check_ensembl_versus_CKB_genes/output_ensembl_catch/genes_map_38_89.csv
+
+done < ${genes_map_38_89}

@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source database_functions || exit 1
 
 sample=$1 && shift
 structural_vcf=$1 && shift
+database_name=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
 # Database details
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
+db_port=$(extract_database_port "${credentials}")
+db_dependencies=$(extract_database_dependencies "${credentials}")
+db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}")
 
 info "Loading structural variant data for ${sample}"
 

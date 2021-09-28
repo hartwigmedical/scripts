@@ -2,11 +2,18 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
-credentials=$(locate_prod_database_credentials)
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+# Database details
+credentials=$(prod_reader_sql_credentials)
+
+database_name="hmf_patients"
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
+db_port=$(extract_database_port "${credentials}")
+database_dependencies=$(extract_database_dependencies "${credentials}")
+db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${database_dependencies}")
 
 sampleId=$1
 
@@ -15,10 +22,10 @@ if [[ -z "${sampleId}" ]]; then
 fi
 
 cup_ref_dir=/data/experiments/cup/ref/
-cuppa_jar=/data/common/tools/cuppa_v1.4/cuppa.jar
+cuppa_jar=/data/tools/cuppa_v1.4/cuppa.jar
 output_dir=/data/experiments/nina_cup_experiments/cup_output_data/sample_data/
 report_dir=/data/experiments/nina_cup_experiments/cup_output_data/reports/
-report_script=/data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R
+report_script=/data/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R
 
 echo "CUPPA analysis for ${sampleId}"
 echo "Sample output: ${output_dir}"

@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source database_functions || exit 1
 
 sql_file_or_select_statement=$1 && shift
 database_name=$1 && shift
 credentials=$1 && shift
 from_file='true'
 
-user=$( echo $credentials | sed 's/ /\n/g' | grep user= | cut -d"=" -f2 | sed 's/"//g' )
-password=$( echo $credentials | sed 's/ /\n/g' | grep password= | cut -d"=" -f2  | sed 's/"//g' )
-host=$( echo $credentials | sed 's/ /\n/g' | grep host= | cut -d"=" -f2 | sed 's/"//g' )
-port=$( echo $credentials | sed 's/ /\n/g' | grep port= | cut -d"=" -f2 | sed 's/"//g' )
-
-
+user=$(extract_database_user "${credentials}")
+password=$(extract_database_password "${credentials}")
+host=$(extract_database_host "${credentials}")
+port=$(extract_database_port "${credentials}")
 
 if [[ ! -f "${sql_file_or_select_statement}" ]]; then
     if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then

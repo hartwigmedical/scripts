@@ -9,7 +9,7 @@ if [[ -z "${month}" ]]; then
     error "No month provided. Exiting"
 fi
 
-reporting_db_tsv=$(locate_reporting_db_tsv)
+reporting_db_tsv=$(locate_reporting_db_sharing_tsv)
 monthly_patient_report_overview_tsv="/data/ops/lims/prod/montly_overview_reporting_db/20_${month}_overview.tsv"
 
 info "Creating 20_${month}_overview_tmp.tsv file"

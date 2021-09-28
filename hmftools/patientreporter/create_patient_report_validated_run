@@ -104,7 +104,6 @@ else
     warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
-
 #### run patient reporter
 
 pipeline_version_file=${temp_folder_path}/pipeline.version
@@ -220,8 +219,8 @@ if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientr
     warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
     #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
 else
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep 'WARN -' | grep "has already been reported"
-    info "No warnings/errors (except already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep 'WARN ' | grep "has already been reported"
+    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder

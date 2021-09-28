@@ -4,6 +4,7 @@ source message_functions || exit 1
 source lims_functions || exit 1
 
 set=$1 && shift
+protect_source=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
@@ -28,13 +29,7 @@ fi
 
 ####
 
-protect_url="gs://${bucket}/${set}/protect/"
 
-error=$( gsutil ls ${protect_url} 2>&1)
-if [[ "$error" == *"CommandException"* ]]; then
-    warn "Run protect output does not exist in ${bucket} on gcp."
-    exit 1
-fi
 
 report_tumorlocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $1 }' )
 report_tumorsublocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $2 }' )
@@ -43,10 +38,22 @@ if [[ "${report_tumorlocation}" == "Unknown" ]]; then
         info "The primary tumor location provided is ${report_tumorlocation}, but it is a CUP so this is correct."
     else
         warn "The primary tumor location provided is ${report_tumorlocation} (and it is no CUP)"
+    fi
 fi
 
 report_doid=$( get_doids_for_biopsy ${sample_name} | sed -e $'s/;/,/g' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
-protect_doid=$( gsutil cat ${protect_url}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' | tr -d ' ')
+if [[ "${protect_source}" == "manual" ]]; then
+    temp_folder_path_protect=$( pwd )"/temp_cp_${set}/protect/"
+    protect_doid=$( cat ${temp_folder_path_protect}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' | tr -d ' ')
+else
+    protect_url="gs://${bucket}/${set}/protect/"
+    error=$( gsutil ls ${protect_url} 2>&1)
+    if [[ "$error" == *"CommandException"* ]]; then
+        warn "Run protect output does not exist in ${bucket} on gcp."
+        exit 1
+    fi
+    protect_doid=$( gsutil cat ${protect_url}run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' | tr -d ' ')
+fi
 if [[ ${protect_doid} == "" ]]; then
     warn "Checking primary tumor doid: the doid of protect ${protect_doid} is not known"
 elif [[ ${protect_doid} == ${report_doid} ]]; then

@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 
+source iclusion_functions || exit 1
+
 iclusion_importer_jar=$1 && shift
 iclusion_trial_tsv=$1 && shift
 
-iclusion_api_credentials=$( gcloud secrets versions access "latest" --secret=iclusion-api-credentials --project=hmf-secrets )
+## iclusion credentials
+iclusion_api_credentials=$(iclusion_credentials)
 
-iclusion_endpoint=$(echo ${iclusion_api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep endpoint= | cut -d"=" -f2 | sed 's/"//g')
-iclusion_client_id=$(echo ${iclusion_api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_id= | cut -d"=" -f2 | sed 's/"//g')
-iclusion_client_secret=$(echo ${iclusion_api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep client_secret= | cut -d"=" -f2 | sed 's/"//g')
-iclusion_user=$(echo ${iclusion_api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep username= | cut -d"=" -f2 | sed 's/"//g')
-iclusion_password=$(echo ${iclusion_api_credentials} | sed 's/: /=/g' | sed 's/ /\n/g' | grep password= | cut -d"=" -f2 | sed 's/"//g')
+iclusion_endpoint=$(extract_database_endpoint "${iclusion_api_credentials}")
+iclusion_client_id=$(extract_database_client_id "${iclusion_api_credentials}")
+iclusion_client_secret=$(extract_database_client_secret "${iclusion_api_credentials}")
+iclusion_user=$(extract_database_username "${iclusion_api_credentials}")
+iclusion_password=$(extract_database_password "${iclusion_api_credentials}")
 
 java -jar ${iclusion_importer_jar} \
     -iclusion_endpoint ${iclusion_endpoint} \

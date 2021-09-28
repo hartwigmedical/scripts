@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 sample_ids_file=$1
 cup_ref_dir=$2
@@ -11,10 +12,15 @@ run_id=$4
 echo "Running Cuppa for for cohort ${sample_ids_file}"
 
 # Database details
-credentials=$(locate_prod_database_credentials)
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+credentials=$(prod_reader_sql_credentials)
+
+database_name="hmf_patients"
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
+db_port=$(extract_database_port "${credentials}")
+db_dependencies=$(extract_database_dependencies "${credentials}")
+db_url=$( echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}")
 
 siga_jar=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
 cuppa_jar=/data/common/tools/cuppa_pilot/cuppa.jar

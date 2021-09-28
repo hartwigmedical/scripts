@@ -4,18 +4,26 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 task_id="updateReportingOverview"
-rep_src_file=$(locate_reporting_db_tsv)
+rep_src_file_generating=$(locate_reporting_db_generate_tsv)
+rep_src_file_sharing=$(locate_reporting_db_sharing_tsv)
 nas_loc="/volume1/web/overviews/reporting"
 
 ## Sanity check
-if [[ ! -f "${rep_src_file}" ]]; then 
-    error "Source file does not exist (${rep_src_file})"
+if [[ ! -f "${rep_src_file_generating}" ]]; then
+    error "Source file does not exist (${rep_src_file_generating})"
+fi
+
+if [[ ! -f "${rep_src_file_sharing}" ]]; then
+    error "Source file does not exist (${rep_src_file_sharing})"
 fi
 
 ## Syncing source file twice (second time as txt which can be read directly in browser)
 info "START with ${task_id} $(date '+%y%m%d')"
-info " Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
-copy_file_to_nas "${rep_src_file}" "${nas_loc}/"
-copy_file_to_nas "${rep_src_file}" "${nas_loc}/reporting_db.txt"
+info " Syncing ${rep_src_file_generating} from datastore to NAS (to ${nas_loc})"
+copy_file_to_nas "${rep_src_file_generating}" "${nas_loc}/"
+copy_file_to_nas "${rep_src_file_generating}" "${nas_loc}/reporting_db_generating.txt"
+info " Syncing ${rep_src_file_sharing} from datastore to NAS (to ${nas_loc})"
+copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/"
+copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/reporting_db_sharing.txt"
 info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
 info "DONE with ${task_id}"

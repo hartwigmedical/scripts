@@ -83,8 +83,7 @@ get_doids_for_biopsy_pilot() {
 get_doids_file() {
     doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
-        # Temporary until this has a proper location on GCP
-        doid_file="/data/resources/custom/clinical_data/curated_primary_tumor.tsv"
+        warn "DOIDs file not found. On GCP you should use API to retrieve DOIDs!"
     fi
     echo ${doid_file}
 }
@@ -92,8 +91,7 @@ get_doids_file() {
 get_doids_file_pilot() {
     doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
     if [[ ! -f ${doid_file} ]]; then
-        # Temporary until this has a proper location on GCP
-        doid_file="/data/resources/custom/clinical_data/pilot_curated_primary_tumor.tsv"
+        warn "DOIDs file not found. On GCP you should use API to retrieve DOIDs!"
     fi
     echo ${doid_file}
 }

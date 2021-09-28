@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_gcp_files || exit 1
 
 set=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
+
+vcf_gcp_bucket=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpcheck vcf location at GCP"
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
@@ -39,9 +42,9 @@ else
     info "The reference file for the snpcheck is from another sample: $barcode_tumor=$sample_name_tumor (tumor) <> $barcode_ref=$sample_name_ref (ref)."
 fi
 
-snpcheck_vcf_ref_array=$( gsutil ls -l  "gs://hmf-snpcheck/snpcheckvcfs/*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | head -1 | awk '{ print $3 }' )
+snpcheck_vcf_ref_array=$( gsutil ls -l  "${vcf_gcp_bucket}*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | head -1 | awk '{ print $3 }' )
 if [[ "$snpcheck_vcf_ref_array" == "" ]]; then
-    warn "No Ref-array snpcheckvcf is found in gs://hmf-snpcheck/snpcheckvcfs/ for ${barcode_ref} (${sample_name_ref})"
+    warn "No Ref-array snpcheckvcf is found in ${vcf_gcp_bucket} for ${barcode_ref} (${sample_name_ref})"
 fi
 
 snpcheck_vcf_ref=$( gsutil ls "${set_url}${sample_name_ref_match}/snp_genotype/*.vcf*" )

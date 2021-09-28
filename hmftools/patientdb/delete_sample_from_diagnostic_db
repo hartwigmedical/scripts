@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 sample=$1 && shift
 
@@ -10,6 +11,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 patient_db_jar=$(locate_diagnostic_patient_db)
-credentials=$(locate_diagnostic_database_credentials)
+credentials=$(diagnostic_writer_sql_credentials)
+database="hmfpatients"
 
-do_delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}
+do_delete_sample_from_database ${sample} ${database} "${credentials}" ${patient_db_jar}

@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -14,7 +15,8 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
-credentials=$(locate_pilot_database_credentials)
+database="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_peach_data ${sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${credentials} ${patient_db_jar} "$@"
+do_load_peach_data ${sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${database} "${credentials}" ${patient_db_jar} "$@"

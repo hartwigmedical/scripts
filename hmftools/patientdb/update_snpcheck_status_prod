@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 sample=$1 && shift
 is_pass=$1 && shift
@@ -10,7 +11,8 @@ if [[ -z "${run_dir}"  || -z "${is_pass}" ]]; then
     error "Not all params passed. Exiting"
 fi
 
-credentials=$(locate_prod_database_credentials)
+database="hmfpatients"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_update_snpcheck_status ${sample} ${is_pass} ${credentials} ${patient_db_jar}
+do_update_snpcheck_status ${sample} ${is_pass} ${database} "${credentials}" ${patient_db_jar}

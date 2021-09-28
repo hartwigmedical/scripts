@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source metadata_functions || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -16,7 +17,8 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 
-credentials=$(locate_prod_database_credentials)
+database="hmfpatients"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
+do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${database} "${credentials}" ${patient_db_jar}

@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source database_functions || exit 1
 
 sample=$1 && shift
 
@@ -9,7 +10,8 @@ if [[ -z "${sample}" ]]; then
     error "No sample is provided to $(basename $0). Exiting."
 fi
 
-credentials=$(locate_pilot_database_credentials)
+database="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}
+do_delete_sample_from_database ${sample} ${database} "${credentials}" ${patient_db_jar}

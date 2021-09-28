@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+cpct_date=$1 && shift
+drup_date=$1 && shift
+
+if [[ -z "${cpct_date}" ]]; then
+    error "No cpct data provided. Exiting"
+fi
+
+if [[ -z "${drup_date}" ]]; then
+    error "No drup date provided. Exiting"
+fi
+
+info "Extracting WIDE eCRF files"
+gsutil cp gs://hmf-ops-data/ecrf/210423_wide_pre_avl_treatments.csv /data/ecrf/wide_pre_avl_treatments.csv
+gsutil cp gs://hmf-ops-data/ecrf/210423_wide_biopsies.csv /data/ecrf/wide_biopsies.csv
+gsutil cp gs://hmf-ops-data/ecrf/210401_wide_avl_treatments.csv /data/ecrf/wide_avl_treatments.csv
+gsutil cp gs://hmf-ops-data/ecrf/210401_wide_responses.csv /data/ecrf/wide_responses.csv
+gsutil cp gs://hmf-ops-data/ecrf/210401_wide_five_days.csv /data/ecrf/wide_five_days.csv
+info "WIDE eCRF files are updated"
+
+info "Extracting CPCT eCRF files"
+gsutil cp gs://hmf-ops-data/ecrf/${cpct_date}_cpct_ecrf.xml /data/ecrf/cpct_ecrf.xml
+gsutil cp gs://hmf-ops-data/ecrf/${cpct_date}_cpct_form_status.csv /data/ecrf/cpct_form_status.csv
+info "CPCT eCRF files are updated"
+
+info "Extracting DRUP eCRF files"
+gsutil cp gs://hmf-ops-data/ecrf/${drup_date}_drup_ecrf.xml /data/ecrf/drup_ecrf.xml
+info "DRUP eCRF files are updated"
+
+info "All eCRF are updated in vm!"

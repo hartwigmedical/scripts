@@ -67,7 +67,7 @@ protect_evidence_tsv=$(locate_protect_evidence_pilot_ckb ${run_dir})
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 
-reporting_db_tsv=$(locate_reporting_db_tsv)
+reporting_db_tsv=$(locate_reporting_db_generate_tsv)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 

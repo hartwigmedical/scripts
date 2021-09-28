@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source locate_files || exit 1
 source message_functions || exit 1
 
 work_dir=$1 && shift
@@ -21,7 +22,7 @@ if [[ ! -f "${work_dir}/DndsMutations.tsv" ]]; then
     error "No DNDS mutations file found in ${work_dir}. Exiting!"
 fi
 
-paddle_jar=/data/common/tools/paddle_v1.0/paddle.jar
+paddle_jar=$(locate_prod_paddle)
 
 info "Running paddle driver application with work dir '${work_dir}'"
 
