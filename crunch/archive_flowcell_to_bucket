@@ -25,6 +25,8 @@ target_dir="${bucket}/${flowcell_name}"
 # sanity checks
 [[ -d "${flowcell_dir}" ]] || die "Directory not found (${flowcell_dir})"
 
+switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
+
 # perform sync
 info "Starting sync of ${flowcell_dir} to bucket path ${target_dir} (excluding BCL and images)"
 gsutil -m rsync -r \
