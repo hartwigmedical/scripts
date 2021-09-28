@@ -4,6 +4,7 @@ source locate_files || exit 1
 source metadata_functions || exit 1
 source lims_functions || exit 1
 source message_functions || exit 1
+source api_functions || exit
 
 run_dir=$1 && shift
 output_dir=$1 && shift
@@ -20,7 +21,7 @@ reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 if [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
-    primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+    primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
 fi
 
 if [[ -z "${primary_tumor_doids}" ]]; then

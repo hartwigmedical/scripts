@@ -15,9 +15,6 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
-primary_tumor_doids=$(get_tumorlocation_for_biopsy ${tumor_sample})
-info "The primary tumor doid is: ${primary_tumor_doids}"
-
 if [[ -z "${tumor_sample_barcode}" ]]; then
     info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
