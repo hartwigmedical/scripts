@@ -3,13 +3,18 @@ library(tidyr)
 
 ensemblPath37 = '~/data/ensembl_hg37/'
 ensemblPath38 = '~/data/ensembl_hg38/'
+
+# following switch to use HGNC for gene names
+ensemblPath37 = '~/data/ensembl_db/ensembl_37_104/'
+ensemblPath38 = '~/data/ensembl_db/ensembl_38_104/'
 outputDir = '~/data/fusion_ref/'
-fileVersion = 'v3'
+fileVersion = 'v4'
 
 # export from Google sheet and move & rename
 # mv ~/Downloads/HMF\ Fusion\ Knowledgebase\ -\ Main-2.tsv ./HmfKnownFusionSheet.tsv
 #rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet.tsv')
 rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210419.tsv')
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210927.tsv')
 
 ensemblGeneData37 = read.csv(paste0(ensemblPath37,'ensembl_gene_data.csv'))
 ensemblGeneData38 = read.csv(paste0(ensemblPath38,'ensembl_gene_data.csv'))
@@ -24,6 +29,17 @@ View(rawFusionData %>% group_by(Type) %>% count)
 View(rawFusionData %>% filter(as.character(FiveGene)!=as.character(FiveGeneRef38)|as.character(ThreeGene)!=as.character(ThreeGeneRef38)) %>%
        select(Type,FiveGene,FiveGeneRef38,ThreeGene,ThreeGeneRef38,everything()))
 
+# confirm all genes are in Ensembl
+
+nrow(rawFusionData %>% filter(FiveGene!=''&!(FiveGene %in% c('IGH','IGL','IGK')) & !(FiveGene %in% ensemblGeneData37$GeneName))) # none
+nrow(rawFusionData %>% filter(ThreeGene!='' & !(ThreeGene %in% ensemblGeneData37$GeneName))) # none
+
+nrow(rawFusionData %>% filter(FiveGene!=''&!(FiveGene %in% c('IGH','IGL','IGK')) & !(FiveGene %in% ensemblGeneData38$GeneName))) # none
+nrow(rawFusionData %>% filter(ThreeGene!='' & !(ThreeGene %in% ensemblGeneData38$GeneName))) # none
+
+
+
+
 # write each file version of known_fusion_data for Linx and Isofox
 write.csv(rawFusionData %>% select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange,HighImpactPromiscuous,Overrides),
           paste0(outputDir,'known_fusion_data.37_',fileVersion,'.csv'),row.names = F,quote = F)
@@ -31,8 +47,6 @@ write.csv(rawFusionData %>% select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,
 write.csv(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene=ThreeGeneRef38,CancerTypes,PubMedId,KnownExonTranscript,
                                    KnownExonUpRange,KnownExonDownRange,HighImpactPromiscuous,Overrides=OverridesRef38),
           paste0(outputDir,'known_fusion_data.38_',fileVersion,'.csv'),row.names = F,quote = F)
-
-# Type,FiveGene,ThreeGene,CancerTypes,PubMedId,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange,HighImpactPromiscuous,Overrides
 
 ## GRIPSS BED-PE files (37 and 38)
 
