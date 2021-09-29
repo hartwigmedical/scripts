@@ -60,4 +60,11 @@ info "Finished sync of ${flowcell_dir}"
 # perform sync to bucket
 info "Starting sync of ${flowcell_name} to bucket path ${target_bucket_dir} (excluding BCL and images)"
 gsutil -mq rsync -r "${tmp_local_dir}" "${target_bucket_dir}" || die "Rsync of '${flowcell_dir}' failed!"
+info "Finished sync of ${flowcell_name} to bucket"
+
+# delete local tmp dir
+info "Delete local tmp dir ${tmp_local_dir}"
+rm -r "${tmp_local_dir}" || die "Could not remove local data dir"
+info "Deleted local tmp dir"
+
 info "Finished syncing ${flowcell_name}"
