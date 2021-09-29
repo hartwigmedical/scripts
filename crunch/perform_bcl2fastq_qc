@@ -127,13 +127,22 @@ if [[ ${HOSTNAME} != "datastore" ]]; then
     done
 fi
 
-for seq_dir in "${seq_dirs[@]}"; do
-    cmds_to_execute+=("archive_flowcell_to_bucket ${seq_dir}")
-done
-
 printHeader "Extra actions"
 for cmd in "${cmds_to_execute[@]}"; do
     echo "${cmd}"
+done
+
+printHeader "Extra actions on ops VM"
+current_hostname=$(hostname) || die "Could not get hostname"
+if [[ "${current_hostname}" == "crunch001" ]]; then
+  crunch_name="crunch1.prod-1"
+elif [[ "${current_hostname}" == "crunch002" ]]; then
+  crunch_name="crunch2.prod-1"
+else
+  die "Unknown hostname: ${current_hostname}"
+fi
+for seq_run in "${seq_runs[@]}"; do
+    echo "archive_flowcell_to_bucket ${crunch_name} ${seq_run}"
 done
 
 echo ""
