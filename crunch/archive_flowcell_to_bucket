@@ -54,7 +54,7 @@ rsync -trh \
   --exclude "*RTALogs/*FileCopyLog*.tsv" \
   --exclude "*RTALogs/*GlobalLog*.tsv" \
   --info=progress2 \
-"${crunch}:${flowcell_dir}" "${tmp_local_dir}" || die "Rsync of '${flowcell_dir}' to local dir failed!"
+"${crunch}:${flowcell_dir}" "${TMP_LOCAL_BASE_DIR}" || die "Rsync of '${flowcell_dir}' to local dir failed!"
 info "Finished sync of ${flowcell_dir}"
 
 # perform sync to bucket
