@@ -202,11 +202,11 @@ locate_driver_gene_panel_37_tsv_ds() {
 }
 
 locate_driver_gene_panel_37_tsv() {
-    echo /data/resources/gene_panel/37/DriverGenePanel.37.tsv
+    echo /data/repos/common-resources-public/gene_panel/37/DriverGenePanel.37.tsv
 }
 
 locate_driver_gene_panel_38_tsv() {
-    echo /data/resources/gene_panel/38/DriverGenePanel.38.tsv
+    echo /data/repos/common-resources-public/gene_panel/38/DriverGenePanel.38.tsv
 }
 
 locate_known_fusion_data_37_csv_ds() {
@@ -214,11 +214,11 @@ locate_known_fusion_data_37_csv_ds() {
 }
 
 locate_known_fusion_data_37_csv() {
-    echo /data/resources/fusions/37/known_fusion_data.37.csv
+    echo /data/repos/common-resources-public/fusions/37/known_fusion_data.37.csv
 }
 
 locate_known_fusion_data_38_csv() {
-    echo /data/resources/fusions/38/known_fusion_data.38.csv
+    echo /data/repos/common-resources-public/fusions/38/known_fusion_data.38.csv
 }
 
 locate_peach_resource_dir() {
@@ -299,7 +299,7 @@ locate_ref_genome_37_fasta_file_ds() {
 }
 
 locate_ref_genome_37_fasta_file_gcp() {
-    echo ${base_path}/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    echo ${base_path}/resources/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 
 locate_ref_genome_38_fasta_file_ds() {
@@ -307,7 +307,7 @@ locate_ref_genome_38_fasta_file_ds() {
 }
 
 locate_ref_genome_38_fasta_file_gcp() {
-    echo ${base_path}/resources/bucket/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+    echo ${base_path}/resources/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
 }
 
 locate_ref_genome_37_to_38_chain() {
