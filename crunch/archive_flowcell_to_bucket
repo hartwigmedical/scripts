@@ -6,38 +6,58 @@ source message_functions || exit 1
 command -v realpath > /dev/null || die "Utility 'realpath' not found"
 command -v gsutil > /dev/null || die "Utility 'gsutil' not found"
 
-bucket="gs://hmf-ops-data/sequencer_archive/"
+CRUNCH_BASE_DIR="/data1/illumina_data"
+TMP_LOCAL_BASE_DIR="/tmp/flowcells"
+BUCKET_BASE_DIR="gs://hmf-ops-data/sequencer_archive"
+
+SCRIPT_NAME="$(basename "$0")"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo " Usage: $(basename $0) <path-to-flowcell-directory>"
-    echo "        $(basename $0) /data1/illumina_data/210402_NB500902_0301_AH2V53BGXJ"
-    echo " Descr: Syncs complete flowcell directory to bucket ${bucket} excluding BCL, images, logs"
+    echo " Usage: ${SCRIPT_NAME} <crunch-name> <flowcell-name>"
+    echo "        ${SCRIPT_NAME} crunch2.prod-1 210402_NB500902_0301_AH2V53BGXJ"
+    echo " Descr: Syncs complete flowcell directory to bucket dir ${BUCKET_BASE_DIR} excluding BCL, images, logs. Run this on the ops VM."
     echo "-----"
     exit 1
 fi
-flowcell_dir=$1
-
-# use absolute path and strip trailing slash if present
-flowcell_dir=$(realpath "${flowcell_dir}")
-flowcell_name="${flowcell_dir##*/}"
-target_dir="${bucket}/${flowcell_name}"
+crunch=$1 && shift
+flowcell_name=$1 && shift
 
 # sanity checks
-[[ -d "${flowcell_dir}" ]] || die "Directory not found (${flowcell_dir})"
+[[ -n ${crunch} ]] || die "No crunch server provided: crunch=${crunch}"
+[[ -n ${flowcell_name} ]] || die "No crunch server provided: flowcell_name=${flowcell_name}"
 
-switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
+flowcell_dir="${CRUNCH_BASE_DIR}/${flowcell_name}"
+tmp_local_dir="${TMP_LOCAL_BASE_DIR}/${flowcell_name}"
+target_bucket_dir="${BUCKET_BASE_DIR}/${flowcell_name}"
 
-# perform sync
-info "Starting sync of ${flowcell_dir} to bucket path ${target_dir} (excluding BCL and images)"
-gsutil -m rsync -r \
-  -x ".*\.bcl\.gz$" \
-  -x ".*\.cbcl$" \
-  -x ".*Data/Intensities/BaseCalls/L0.*$" \
-  -x ".*\.fastq\.gz$" \
-  -x ".*Images.*$" \
-  -x ".*Read.*Cycle.*\.log$" \
-  -x ".*RTALogs/.*FileCopyLog.*\.tsv$" \
-  -x ".*RTALogs/.*GlobalLog.*\.tsv$" \
-"${flowcell_dir}" "${target_dir}" || die "Rsync of '${flowcell_dir}' failed!"
-info "Finished syncing ${flowcell_dir}"
+# check whether flowcell already exists in bucket
+if ! gsutil -q stat "${target_bucket_dir}"; then
+  die "Flowcell already exists in bucket. To delete run: gsutil -m rm -r ${target_bucket_dir}"
+fi
+
+# ensure local dir is clean
+if [[ -d ${tmp_local_dir} ]]; then
+  rm -r "${tmp_local_dir}"
+fi
+mkdir --parents "${tmp_local_dir}"
+
+# perform sync to local
+info "Starting sync of ${flowcell_dir} to local path ${tmp_local_dir} (excluding BCL and images)"
+rsync -trh \
+  --exclude "*.bcl.gz" \
+  --exclude "*.cbcl" \
+  --exclude "*Data/Intensities/BaseCalls/L0*" \
+  --exclude "*.fastq.gz" \
+  --exclude "*Images*" \
+  --exclude "*Read*Cycle*.log" \
+  --exclude "*RTALogs/*FileCopyLog*.tsv" \
+  --exclude "*RTALogs/*GlobalLog*.tsv" \
+  --info=progress2 \
+"${crunch}:${flowcell_dir}" "${tmp_local_dir}" || die "Rsync of '${flowcell_dir}' to local dir failed!"
+info "Finished sync of ${flowcell_dir}"
+
+# perform sync to bucket
+info "Starting sync of ${flowcell_name} to bucket path ${target_bucket_dir} (excluding BCL and images)"
+gsutil -m rsync -r "${tmp_local_dir}" "${target_bucket_dir}" || die "Rsync of '${flowcell_dir}' failed!"
+info "Finished syncing ${flowcell_name}"
