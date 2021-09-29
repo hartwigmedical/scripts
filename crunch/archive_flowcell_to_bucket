@@ -7,7 +7,7 @@ command -v realpath > /dev/null || die "Utility 'realpath' not found"
 command -v gsutil > /dev/null || die "Utility 'gsutil' not found"
 
 CRUNCH_BASE_DIR="/data1/illumina_data"
-TMP_LOCAL_BASE_DIR="/tmp/flowcells"
+TMP_LOCAL_BASE_DIR="/data/tmp/flowcells"
 BUCKET_BASE_DIR="gs://hmf-ops-data/sequencer_archive"
 
 SCRIPT_NAME="$(basename "$0")"
