@@ -32,7 +32,7 @@ tmp_local_dir="${TMP_LOCAL_BASE_DIR}/${flowcell_name}"
 target_bucket_dir="${BUCKET_BASE_DIR}/${flowcell_name}"
 
 # check whether flowcell already exists in bucket
-if ! gsutil -q stat "${target_bucket_dir}"; then
+if gsutil -q stat "${target_bucket_dir}"; then
   die "Flowcell already exists in bucket. To delete run: gsutil -m rm -r ${target_bucket_dir}"
 fi
 
