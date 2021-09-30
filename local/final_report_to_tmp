@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+patientId=$1
+
+if [[ -z ${patientId} ]]; then
+    error "No patient ID provided"
+fi
+
+gsutil cp gs://patient-reporter-final-prod-1/${patientId}*.pdf ~/hmf/tmp/
