@@ -31,7 +31,6 @@ parser.add_option("--des",	dest="design_vcf", help="Path to design template VCF,
 # --------------------------------------------------------
 
 def CheckArguments(options):
-
 	# ---- CSV file ---
 	if not options.csv_file or not os.path.exists(options.csv_file):
 		print("Invalid VCF file %s"%(options.csv_file))
@@ -61,10 +60,10 @@ def ReadFileById(filename, ftype):
 	# SET defaults
 	delim, key, head = False, False, False
 
-        if ftype is 'txt':
-                delim = "\t"
-                key = 'NCBI_SNP_Reference'
-                head = ' #'
+	if ftype is 'txt':
+		delim = "\t"
+		key = 'NCBI_SNP_Reference'
+		head = ' #'
 
 	if ftype is 'csv':
 		delim = ','
