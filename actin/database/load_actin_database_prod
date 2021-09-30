@@ -3,6 +3,6 @@
 source locate_files || exit 1
 
 actin_database_jar=$(locate_pilot_actin_database)
-actin_database_name="actin_pilot"
+actin_database_name="actin"
 
 do_load_actin_database ${actin_database_jar} ${actin_database_name}
