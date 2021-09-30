@@ -108,7 +108,7 @@ def ReadFileById(filename, ftype):
 				sample_id = colnames[-1]
 			if ftype is 'csv':
 				# SAMPLE ID can be retrieved by header
-				sample_id = dicto['Sample_ID']
+				sample_id, sample_name = dicto['Sample_ID'].split("_")
 
 			# clean up SAMPLE ID
 			sample_id = sample_id.replace(" ","").replace("_","-").replace("/","-").replace("\\","-")
