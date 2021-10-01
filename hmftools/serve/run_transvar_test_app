@@ -10,27 +10,27 @@ gene_38=$1 && shift
 protein_38=$1 && shift
 transcript_38=$1 && shift
 
-if [[ ! -z ${gene_37} ]]; then
+if [[ -z ${gene_37} ]]; then
     error "No gene name of V37 is provided!"
 fi
 
-if [[ ! -z ${gene_38} ]]; then
+if [[ -z ${gene_38} ]]; then
     error "No gene name of V37 is provided!"
 fi
 
-if [[ ! -z ${protein_37} ]]; then
+if [[ -z ${protein_37} ]]; then
     error "No protein of V37 is provided!"
 fi
 
-if [[ ! -z ${protein_38} ]]; then
+if [[ -z ${protein_38} ]]; then
     error "No protein of V37 is provided!"
 fi
 
-if [[ ! -z ${transcript_37} ]]; then
+if [[ -z ${transcript_37} ]]; then
     error "No transcript of gene V37 is provided!"
 fi
 
-if [[ ! -z ${transcript_38} ]]; then
+if [[ -z ${transcript_38} ]]; then
     error "No transcript of gene V38 is provided!"
 fi
 
