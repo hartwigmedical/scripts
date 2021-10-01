@@ -2,16 +2,41 @@
 
 source locate_files || exit 1
 
+gene_37=$1 && shift
+gene_38=$1 && shift
+protein_37=$1 && shift
+protein_38=$1 && shift
+transcript_37=$1 && shift
+transcript_38=$1 && shift
+
+if [ ! -z ${gene_37} ]; then
+    error "No gene name of V37 is provided!"
+fi
+
+if [ ! -z ${gene_38} ]; then
+    error "No gene name of V37 is provided!"
+fi
+
+if [ ! -z ${protein_37} ]; then
+    error "No protein of V37 is provided!"
+fi
+
+if [ ! -z ${protein_38} ]; then
+    error "No protein of V37 is provided!"
+fi
+
+if [ ! -z ${transcript_37} ]; then
+    error "No transcript of gene V37 is provided!"
+fi
+
+if [ ! -z ${transcript_38} ]; then
+    error "No transcript of gene V38 is provided!"
+fi
+
 serve_jar=$(locate_pilot_serve)
 
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
 ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file_gcp)
-gene_37=BRAF
-gene_38=BRAF
-protein_37=V600E
-protein_38=null
-transcript_37=ENST00000288602
-transcript_38=V600E
 
 java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
      -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
