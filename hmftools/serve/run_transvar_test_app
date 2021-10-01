@@ -3,10 +3,11 @@
 source locate_files || exit 1
 
 gene_37=$1 && shift
-gene_38=$1 && shift
 protein_37=$1 && shift
-protein_38=$1 && shift
 transcript_37=$1 && shift
+
+gene_38=$1 && shift
+protein_38=$1 && shift
 transcript_38=$1 && shift
 
 if [ ! -z ${gene_37} ]; then
