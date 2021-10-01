@@ -16,6 +16,6 @@ fi
 info "START with ${task_id} $(date '+%y%m%d')"
 info " Syncing ${rep_src_file_sharing} from datastore to NAS (to ${nas_loc})"
 copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/"
-copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/reporting_db_sharing.txt"
+copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/final_sharing_db.txt"
 info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
 info "DONE with ${task_id}"
