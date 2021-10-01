@@ -4,4 +4,22 @@ source locate_files || exit 1
 
 serve_jar=$(locate_pilot_serve)
 
-java -Xmx8G -cp ${serve_jar}com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
+ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file_gcp)
+gene_37=BRAF
+gene_38=BRAF
+protein_37=V600E
+protein_38=null
+transcript_37=ENST00000288602
+transcript_38=V600E
+
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
+     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
+     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
+     -gene_37 ${gene_37} \
+     -gene_38 ${gene_38} \
+     -protein_37 ${protein_37} \
+     -protein_38 ${protein_38} \
+     -transcript_37 ${transcript_37} \
+     -transcript_38 ${transcript_38} \
+     "$@"
