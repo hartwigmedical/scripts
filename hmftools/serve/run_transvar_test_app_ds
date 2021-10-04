@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+gene_37=$1 && shift
+protein_37=$1 && shift
+transcript_37=$1 && shift
+
+gene_38=$1 && shift
+protein_38=$1 && shift
+transcript_38=$1 && shift
+
+if [[ -z ${gene_37} ]]; then
+    error "No gene name of V37 is provided!"
+fi
+
+if [[ -z ${gene_38} ]]; then
+    error "No gene name of V37 is provided!"
+fi
+
+if [[ -z ${protein_37} ]]; then
+    error "No protein of V37 is provided!"
+fi
+
+if [[ -z ${protein_38} ]]; then
+    error "No protein of V37 is provided!"
+fi
+
+if [[ -z ${transcript_37} ]]; then
+    error "No transcript of gene V37 is provided!"
+fi
+
+if [[ -z ${transcript_38} ]]; then
+    error "No transcript of gene V38 is provided!"
+fi
+
+serve_jar=/data/common/tools/serve_pilot/serve.jar
+
+ref_genome_37_fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+ref_genome_38_fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
+     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
+     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
+     -gene_37 ${gene_37} \
+     -gene_38 ${gene_38} \
+     -protein_37 ${protein_37} \
+     -protein_38 ${protein_38} \
+     -transcript_37 ${transcript_37} \
+     -transcript_38 ${transcript_38} \
+     "$@"
