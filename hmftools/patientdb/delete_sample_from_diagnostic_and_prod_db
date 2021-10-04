@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit
+
 sample=$1 && shift
 
 if [[ -z "${sample}" ]]; then
