@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "No sample is provided to $(basename $0). Exiting."
+fi
+
+info "Delete sample ${sample} from diagnostic db"
+delete_sample_from_diagnostic_db ${sample}
+
+info "Delete sample ${sample} from prod db"
+delete_sample_from_prod_db ${sample}
