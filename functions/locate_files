@@ -8,16 +8,6 @@ if [[ ! -d ${base_path} ]]; then
     base_path="/data"
 fi
 
-############################# Database Credentials #############################
-
-locate_prod_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.prod-1/reader.cnf
-}
-
-locate_prod_backup_database_credentials_cnf() {
-    echo ${base_path}/dbs/mysql_credentials/patients.sql.backup.prod-1/reader.cnf
-}
-
 ############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
