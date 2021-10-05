@@ -64,7 +64,8 @@ def main(config: Config) -> None:
             f.write(nucleotides_string)
 
     with open(nucleotides_file, "r+") as f:
-        nucleotides = set(f.readline().split(""))
+        line = f.readline()
+        nucleotides = {char for char in line}
 
     logging.info(f"nucleotides: {nucleotides}")
 
