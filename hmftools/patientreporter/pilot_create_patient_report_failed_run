@@ -121,6 +121,7 @@ fi
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+    ls ${temp_folder_path}/new_report
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
