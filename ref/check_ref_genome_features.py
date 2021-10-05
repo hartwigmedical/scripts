@@ -2,16 +2,18 @@ import argparse
 import concurrent.futures
 import logging
 import sys
+from copy import deepcopy
 from pathlib import Path
-from typing import List, NamedTuple, Tuple, Optional, Set
+from typing import List, NamedTuple, Tuple, Optional, Set, Dict
 
 import pysam
 
+# See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
+
 DESIRED_AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}
-AUTOSOME_CONTIG_NAMES = DESIRED_AUTOSOME_CONTIG_NAMES.union({str(n) for n in range(1, 23)})
-X_CHROMOSOME_CONTIG_NAMES = {"chrX", "X"}
-Y_CHROMOSOME_CONTIG_NAMES = {"chrY", "Y"}
-MITOCHONDRIAL_CONTIG_NAMES = {"chrM", "M", "MT"}
+X_CHROMOSOME_CONTIG_NAMES = {"chrX"}
+Y_CHROMOSOME_CONTIG_NAMES = {"chrY"}
+MITOCHONDRIAL_CONTIG_NAMES = {"chrM"}
 EBV_CONTIG_NAMES = {"chrEBV"}
 HS38D1_CONTIG_NAMES = {f"KN{i}.1" for i in range(707606, 707993)}.union(f"JTFH0{j}.1" for j in range(1000001, 1001999))
 
@@ -28,10 +30,12 @@ Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for 
 class Config(NamedTuple):
     ref_genome_path: Path
     rcrs_path: Path
+    chrom_alias_path: Path
 
     def validate(self) -> None:
         assert_file_exists(self.ref_genome_path)
         assert_file_exists(self.rcrs_path)
+        assert_file_exists(self.chrom_alias_path)
 
 
 class CategorizedContigNames(NamedTuple):
@@ -46,20 +50,36 @@ class CategorizedContigNames(NamedTuple):
     uncategorized_contigs: Tuple[str]
 
 
+class ContigNameTranslator(object):
+    """Standardizes names if it can. Returns argument as is if it cannot."""
+    def __init__(self, contig_name_to_standard_name: Dict[str, str]) -> None:
+        self._contig_name_to_standard_name = deepcopy(contig_name_to_standard_name)
+
+    def standardize(self, contig_name: str) -> str:
+        if contig_name in self._contig_name_to_standard_name:
+            return self._contig_name_to_standard_name[contig_name]
+        else:
+            return contig_name
+
+
 def main(config: Config) -> None:
     set_up_logging()
     config.validate()
 
-    categorized_contig_names = get_categorized_contig_names(config)
+    contig_name_translator = get_contig_name_translator(config.chrom_alias_path)
+
+    categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
     logging.info(categorized_contig_names)
 
     has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
-    y_test_nucleotides = get_nucleotides_from_string(get_y_test_sequence(config, categorized_contig_names.y))
+    y_test_nucleotides = get_nucleotides_from_string(
+        get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y)
+    )
     logging.info(f"nucleotides at y par1 test region: {y_test_nucleotides}")
 
     nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
     if not nucleotides_file.exists():
-        nucleotides = get_nucleotides(config)
+        nucleotides = get_nucleotides(config.ref_genome_path)
         nucleotides_string = "".join(sorted(list(nucleotides)))
         with open(nucleotides_file, "w+") as f:
             f.write(nucleotides_string)
@@ -91,8 +111,22 @@ def main(config: Config) -> None:
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
 
 
-def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
-    with pysam.Fastafile(config.ref_genome_path) as genome_f:
+def get_contig_name_translator(chrom_alias_path: Path) -> ContigNameTranslator:
+    contig_name_to_standard_name = {}
+    with open(chrom_alias_path, "r") as f:
+        for line in f:
+            contig_name, standard_name, source = line.split("\t")
+            if contig_name in contig_name_to_standard_name:
+                raise ValueError(f"Encountered contig name multiple times: {contig_name}")
+            contig_name_to_standard_name[contig_name] = standard_name
+    return ContigNameTranslator(contig_name_to_standard_name)
+
+
+def get_categorized_contig_names(
+        ref_genome_path: Path,
+        contig_name_translator: ContigNameTranslator,
+) -> CategorizedContigNames:
+    with pysam.Fastafile(ref_genome_path) as genome_f:
         contig_names = list(genome_f.references)
 
     autosome_contigs: List[str] = []
@@ -106,21 +140,22 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
     uncategorized_contigs: List[str] = []
 
     for contig_name in contig_names:
-        if contig_name in AUTOSOME_CONTIG_NAMES:
+        standardized_contig_name = contig_name_translator.standardize(contig_name)
+        if standardized_contig_name in DESIRED_AUTOSOME_CONTIG_NAMES:
             autosome_contigs.append(contig_name)
-        elif contig_name in X_CHROMOSOME_CONTIG_NAMES:
+        elif standardized_contig_name in X_CHROMOSOME_CONTIG_NAMES:
             x_contigs.append(contig_name)
-        elif contig_name in Y_CHROMOSOME_CONTIG_NAMES:
+        elif standardized_contig_name in Y_CHROMOSOME_CONTIG_NAMES:
             y_contigs.append(contig_name)
-        elif contig_name in MITOCHONDRIAL_CONTIG_NAMES:
+        elif standardized_contig_name in MITOCHONDRIAL_CONTIG_NAMES:
             mitochondrial_contigs.append(contig_name)
-        elif contig_name in EBV_CONTIG_NAMES:
+        elif standardized_contig_name in EBV_CONTIG_NAMES:
             ebv_contigs.append(contig_name)
-        elif is_decoy_contig_name(contig_name):
+        elif is_decoy_contig_name(standardized_contig_name):
             decoy_contigs.append(contig_name)
-        elif is_unlocalized_contig_name(contig_name):
+        elif is_unlocalized_contig_name(standardized_contig_name):
             unlocalized_contigs.append(contig_name)
-        elif is_unplaced_contig_name(contig_name):
+        elif is_unplaced_contig_name(standardized_contig_name):
             unplaced_contigs.append(contig_name)
         else:
             uncategorized_contigs.append(contig_name)
@@ -176,25 +211,25 @@ def is_unplaced_contig_name(contig_name: str) -> bool:
     return contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] != DECOY_SUFFIX
 
 
-def mitochondrial_sequence_is_rcrs(config: Config, mitochondrial_contig_name: str) -> bool:
+def mitochondrial_sequence_is_rcrs(config: Config, ref_mitochondrial_contig_name: str) -> bool:
     with pysam.Fastafile(config.rcrs_path) as rcrs_f:
         if rcrs_f.nreferences != 1:
             raise ValueError(f"rCRS FASTA file has more than one contig")
         rcrs_genome = rcrs_f.fetch(rcrs_f.references[0])
     with pysam.Fastafile(config.ref_genome_path) as genome_f:
-        mitochondrial_from_ref = genome_f.fetch(mitochondrial_contig_name)
+        mitochondrial_from_ref = genome_f.fetch(ref_mitochondrial_contig_name)
     return rcrs_genome == mitochondrial_from_ref
 
 
-def get_y_test_sequence(config: Config, y_contig_name: str) -> str:
-    with pysam.Fastafile(config.ref_genome_path) as genome_f:
+def get_y_test_sequence(ref_genome_path: Path, y_contig_name: str) -> str:
+    with pysam.Fastafile(ref_genome_path) as genome_f:
         return genome_f.fetch(y_contig_name, Y_PAR1_TEST_REGION[0], Y_PAR1_TEST_REGION[1])
 
 
-def get_nucleotides(config: Config) -> Set[str]:
+def get_nucleotides(ref_genome_path: Path) -> Set[str]:
     futures = []
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        with pysam.Fastafile(config.ref_genome_path) as genome_f:
+        with pysam.Fastafile(ref_genome_path) as genome_f:
             for contig_name in genome_f.references:
                 contig = genome_f.fetch(contig_name)
                 futures.append(executor.submit(get_nucleotides_from_string, contig))
@@ -235,15 +270,26 @@ def parse_args(sys_args: List[str]) -> Config:
     parser = argparse.ArgumentParser(
         prog="check_hg38_ref_genome_features",
         description=(
-            "Check important features for ref genome FASTA file. Correctness is not guaranteed, especially for hg19."
+            "Check important features for ref genome FASTA file. Correctness is not guaranteed, especially for hg19. "
+            "See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files."
         ),
     )
     parser.add_argument("--fasta", "-i", type=str, required=True, help="Fasta file for ref genome.")
     parser.add_argument("--rcrs", "-r", type=str, required=True, help="Fasta file for rCRS mitochondrial genome.")
+    parser.add_argument(
+        "--chrom_alias",
+        "-c",
+        type=str,
+        required=True,
+        help=(
+            "Txt file with chrom name translations. "
+            "Source: https://hgdownload.cse.ucsc.edu/goldenPath/mm10/database/chromAlias.txt.gz"
+        )
+    )
 
     args = parser.parse_args(sys_args)
 
-    config = Config(Path(args.fasta), Path(args.rcrs))
+    config = Config(Path(args.fasta), Path(args.rcrs), Path(args.chrom_alias))
     return config
 
 
