@@ -13,4 +13,7 @@ run_clinical_patient_db_prod
 
 echo ""
 echo "-- UPDATE DOID IN API -- "
-update_ptum_doids_in_api
+timestamp="$(date +%y%m%d_%H%M)"
+script_name="update_ptum_doids_in_api"
+log="/data/ops/logs/${timestamp}_${script_name}.log"
+${script_name} -m patch > "${log}" 2>&1
