@@ -114,8 +114,8 @@ fi
 
 
 if [[ ${report} == *"corrected"* ]]; then
-    reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep correction )
-    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | grep correction | awk '{ print $4 }' )
+    reporting_info=$( cat ${reporting_db_file} | grep ${sample} | grep corrected )
+    reporting_date=$( cat ${reporting_db_file} | grep ${sample} | grep corrected | awk '{ print $4 }' )
 else
     reporting_info=$( cat ${reporting_db_file} | grep ${sample} )
     reporting_date=$( cat ${reporting_db_file} | grep ${sample} | awk '{ print $4 }' )
