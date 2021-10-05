@@ -13,6 +13,7 @@ X_CHROMOSOME_CONTIG_NAMES = {"chrX", "X"}
 Y_CHROMOSOME_CONTIG_NAMES = {"chrY", "Y"}
 MITOCHONDRIAL_CONTIG_NAMES = {"chrM", "M", "MT"}
 EBV_CONTIG_NAMES = {"chrEBV"}
+HS38D1_CONTIG_NAMES = {f"KN{i}.1" for i in range(707606, 707993)}.union(f"JTFH0{j}" for j in range(1000001, 1001999))
 
 DECOY_SUFFIX = "_decoy"
 UNLOCALIZED_SUFFIX = "_random"
@@ -115,11 +116,11 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
             mitochondrial_contigs.append(contig_name)
         elif contig_name in EBV_CONTIG_NAMES:
             ebv_contigs.append(contig_name)
-        elif contig_name[-6:] == DECOY_SUFFIX and contig_name[:6] == UNPLACED_PREFIX:
+        elif is_decoy_contig_name(contig_name):
             decoy_contigs.append(contig_name)
-        elif contig_name[-7:] == UNLOCALIZED_SUFFIX:
+        elif is_unlocalized_contig_name(contig_name):
             unlocalized_contigs.append(contig_name)
-        elif contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] != DECOY_SUFFIX:
+        elif is_unplaced_contig_name(contig_name):
             unplaced_contigs.append(contig_name)
         else:
             uncategorized_contigs.append(contig_name)
@@ -159,6 +160,20 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
         tuple(uncategorized_contigs),
     )
     return categorized_contigs
+
+
+def is_decoy_contig_name(contig_name: str) -> bool:
+    decoy_in_gca_for_alignment_pipeline = (contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] == DECOY_SUFFIX)
+    in_hs38d1 = (contig_name in HS38D1_CONTIG_NAMES)
+    return decoy_in_gca_for_alignment_pipeline or in_hs38d1
+
+
+def is_unlocalized_contig_name(contig_name: str) -> bool:
+    return contig_name[-7:] == UNLOCALIZED_SUFFIX
+
+
+def is_unplaced_contig_name(contig_name: str) -> bool:
+    return contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] != DECOY_SUFFIX
 
 
 def mitochondrial_sequence_is_rcrs(config: Config, mitochondrial_contig_name: str) -> bool:
