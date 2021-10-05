@@ -7,17 +7,20 @@ from typing import List, NamedTuple, Tuple, Optional, Set
 
 import pysam
 
-AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}.union({str(n) for n in range(1, 23)})
+DESIRED_AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}
+AUTOSOME_CONTIG_NAMES = DESIRED_AUTOSOME_CONTIG_NAMES.union({str(n) for n in range(1, 23)})
 X_CHROMOSOME_CONTIG_NAMES = {"chrX", "X"}
 Y_CHROMOSOME_CONTIG_NAMES = {"chrY", "Y"}
 MITOCHONDRIAL_CONTIG_NAMES = {"chrM", "M", "MT"}
 EBV_CONTIG_NAMES = {"chrEBV"}
 
+DECOY_SUFFIX = "_decoy"
 UNLOCALIZED_SUFFIX = "_random"
 UNPLACED_PREFIX = "chrUn_"
 
-UNKNOWN_NUCLEOTIDE = "N"
-STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", UNKNOWN_NUCLEOTIDE}
+STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
+SOFTMASKED_NUCLEOTIDES = {"a", "c", "g", "t", "n"}
+UNKNOWN_NUCLEOTIDES = {"N", "n"}
 Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for both GRCh37 and GRCh38
 
 
@@ -35,7 +38,8 @@ class CategorizedContigNames(NamedTuple):
     x: str
     y: str
     mitochondrial: str
-    ebv_contigs: Optional[str]
+    ebv: Optional[str]
+    decoys: Tuple[str]
     unlocalized_contigs: Tuple[str]
     unplaced_contigs: Tuple[str]
     uncategorized_contigs: Tuple[str]
@@ -49,17 +53,30 @@ def main(config: Config) -> None:
     logging.info(categorized_contig_names)
 
     has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
-    logging.info(f"has_rcrs: {has_rcrs}")
-
     y_test_nucleotides = get_nucleotides_from_string(get_y_test_sequence(config, categorized_contig_names.y))
     logging.info(f"nucleotides at y par1 test region: {y_test_nucleotides}")
-    has_non_hardmasked_nucleotides_at_y_par1 = bool(y_test_nucleotides.difference({UNKNOWN_NUCLEOTIDE}))
-    logging.info(f"has_non_hardmasked_nucleotides_at_y_par1: {has_non_hardmasked_nucleotides_at_y_par1}")
-
     nucleotides = get_nucleotides(config)
     logging.info(f"nucleotides: {nucleotides}")
-    has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES))
-    logging.info(f"has_semi_ambiguous_iub_codes: {has_semi_ambiguous_iub_codes}")
+
+    uses_desired_chrom_names = bool(set(categorized_contig_names).intersection(DESIRED_AUTOSOME_CONTIG_NAMES))
+    has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
+    has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
+    has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
+
+    logging.info(f"FEATURES GENOME:")
+    logging.info(f"Unplaced contigs: {bool(categorized_contig_names.unplaced_contigs)}")
+    logging.info(f"Unlocalized contigs: {bool(categorized_contig_names.unlocalized_contigs)}")
+    logging.info(f"ALTS: ?")
+    logging.info(f"rCRS mitochondrial sequence: {has_rcrs}")
+    logging.info(f"Accession numbers: False?")
+    logging.info(f"Uses 'chr1' chrom names: {uses_desired_chrom_names}")
+    logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
+    logging.info(f"Decoys (hs38d1): {bool(categorized_contig_names.decoys)}")
+    logging.info(f"EBV: {categorized_contig_names.ebv is not None}")
+    logging.info(f"Patches: ?")
+    logging.info(f"PhiX: ?")
+    logging.info(f"Semi ambiguous IUB codes: {has_semi_ambiguous_iub_codes}")
+    logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
 
 
 def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
@@ -71,6 +88,7 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
     y_contigs: List[str] = []
     mitochondrial_contigs: List[str] = []
     ebv_contigs: List[str] = []
+    decoy_contigs: List[str] = []
     unlocalized_contigs: List[str] = []
     unplaced_contigs: List[str] = []
     uncategorized_contigs: List[str] = []
@@ -86,9 +104,11 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
             mitochondrial_contigs.append(contig_name)
         elif contig_name in EBV_CONTIG_NAMES:
             ebv_contigs.append(contig_name)
+        elif contig_name[-6:] == DECOY_SUFFIX and contig_name[:6] == UNPLACED_PREFIX:
+            decoy_contigs.append(contig_name)
         elif contig_name[-7:] == UNLOCALIZED_SUFFIX:
             unlocalized_contigs.append(contig_name)
-        elif contig_name[:6] == UNPLACED_PREFIX:
+        elif contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] != DECOY_SUFFIX:
             unplaced_contigs.append(contig_name)
         else:
             uncategorized_contigs.append(contig_name)
@@ -122,6 +142,7 @@ def get_categorized_contig_names(config: Config) -> CategorizedContigNames:
         y_contigs[0],
         mitochondrial_contigs[0],
         ebv_contigs[0] if len(ebv_contigs) == 1 else None,
+        tuple(decoy_contigs),
         tuple(unlocalized_contigs),
         tuple(unplaced_contigs),
         tuple(uncategorized_contigs),
