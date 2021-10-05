@@ -58,7 +58,7 @@ def main(config: Config) -> None:
     nucleotides = get_nucleotides(config)
     logging.info(f"nucleotides: {nucleotides}")
 
-    uses_desired_chrom_names = bool(set(categorized_contig_names).intersection(DESIRED_AUTOSOME_CONTIG_NAMES))
+    uses_desired_chrom_names = bool(set(categorized_contig_names.autosomes).intersection(DESIRED_AUTOSOME_CONTIG_NAMES))
     has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
