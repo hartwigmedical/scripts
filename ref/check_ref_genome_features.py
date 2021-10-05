@@ -13,7 +13,7 @@ X_CHROMOSOME_CONTIG_NAMES = {"chrX", "X"}
 Y_CHROMOSOME_CONTIG_NAMES = {"chrY", "Y"}
 MITOCHONDRIAL_CONTIG_NAMES = {"chrM", "M", "MT"}
 EBV_CONTIG_NAMES = {"chrEBV"}
-HS38D1_CONTIG_NAMES = {f"KN{i}.1" for i in range(707606, 707993)}.union(f"JTFH0{j}" for j in range(1000001, 1001999))
+HS38D1_CONTIG_NAMES = {f"KN{i}.1" for i in range(707606, 707993)}.union(f"JTFH0{j}.1" for j in range(1000001, 1001999))
 
 DECOY_SUFFIX = "_decoy"
 UNLOCALIZED_SUFFIX = "_random"
