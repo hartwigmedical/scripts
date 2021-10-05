@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+cat /data/ops/cron/logs/run_clinical_patient_db_prod.log
