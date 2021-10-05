@@ -55,7 +55,17 @@ def main(config: Config) -> None:
     has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
     y_test_nucleotides = get_nucleotides_from_string(get_y_test_sequence(config, categorized_contig_names.y))
     logging.info(f"nucleotides at y par1 test region: {y_test_nucleotides}")
-    nucleotides = get_nucleotides(config)
+
+    nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
+    if not nucleotides_file.exists():
+        nucleotides = get_nucleotides(config)
+        nucleotides_string = "".join(sorted(list(nucleotides)))
+        with open(nucleotides_file, "w+") as f:
+            f.write(nucleotides_string)
+
+    with open(nucleotides_file, "r+") as f:
+        nucleotides = set(f.read().split())
+
     logging.info(f"nucleotides: {nucleotides}")
 
     uses_desired_chrom_names = bool(set(categorized_contig_names.autosomes).intersection(DESIRED_AUTOSOME_CONTIG_NAMES))
