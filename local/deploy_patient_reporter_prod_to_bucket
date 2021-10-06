@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+patient_reporter_jar=${HOME}/hmf/repos/hmftools/patient-reporter/target/patient-reporter-*-jar-with-dependencies.jar
+
+if [ ! -f ${patient_reporter_jar} ]; then
+    error "Could not locate patient reporter jar!"
+fi
+
+info "Copying ${patient_reporter_jar} to gs://common-tools/"
+gsutil cp ${patient_reporter_jar} gs://common-tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar
+
