@@ -33,11 +33,13 @@ def do_analysis(
     ordered_sample_with_coverage_info_list = [
         (bam.stem, sample_to_coverage_info[bam.stem]) for bam in program_config.bams
     ]
-    for min_coverage in program_config.min_coverages:
-        output_dir = program_config.output_dir / str(min_coverage)
-        write_analyses(
-            ordered_sample_with_coverage_info_list, analysis_type_config, min_coverage, panel, output_dir,
-        )
+    write_analyses(
+        ordered_sample_with_coverage_info_list,
+        analysis_type_config,
+        program_config.min_coverages,
+        panel,
+        program_config.output_dir,
+    )
 
 
 def get_coverage_intervals(analysis_type_config: AnalysisTypeConfig, panel: Panel) -> Set[Interval]:
@@ -68,7 +70,7 @@ def get_coverage_intervals(analysis_type_config: AnalysisTypeConfig, panel: Pane
 def write_analyses(
         sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
         analysis_type_config: AnalysisTypeConfig,
-        min_coverage: int,
+        min_coverages: Tuple[int],
         panel: Panel,
         output_dir: Path,
 ) -> None:
@@ -76,33 +78,38 @@ def write_analyses(
         OutputWriter.write_baf_coverage_file(
             sample_with_coverage_info_list, panel.baf_sites, output_dir)
     if analysis_type_config.exome:
-        OutputWriter.write_exome_count_min_coverage_file(
-            sample_with_coverage_info_list, panel.exons, min_coverage, output_dir)
         OutputWriter.write_exome_cumulative_coverage_analysis(
             sample_with_coverage_info_list, panel.exons, output_dir)
+        for min_coverage in min_coverages:
+            OutputWriter.write_exome_count_min_coverage_file(
+                sample_with_coverage_info_list, panel.exons, min_coverage, output_dir / str(min_coverage))
     if analysis_type_config.fusion:
-        OutputWriter.write_fusion_count_min_coverage_file(
-            sample_with_coverage_info_list, panel.fusion_sites, min_coverage, output_dir)
         OutputWriter.write_fusion_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.fusion_sites, output_dir)
+        for min_coverage in min_coverages:
+            OutputWriter.write_fusion_count_min_coverage_file(
+                sample_with_coverage_info_list, panel.fusion_sites, min_coverage, output_dir / str(min_coverage))
     if analysis_type_config.hotspot:
         OutputWriter.write_hotspot_coverage_file(
             sample_with_coverage_info_list, panel.hotspots, output_dir)
     if analysis_type_config.msi:
-        OutputWriter.write_msi_count_min_coverage_file(
-            sample_with_coverage_info_list, panel.msi_sites, min_coverage, output_dir)
         OutputWriter.write_msi_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.msi_sites, output_dir)
+        for min_coverage in min_coverages:
+            OutputWriter.write_msi_count_min_coverage_file(
+                sample_with_coverage_info_list, panel.msi_sites, min_coverage, output_dir / str(min_coverage))
     if analysis_type_config.pgx:
-        OutputWriter.write_pgx_count_min_coverage_file(
-            sample_with_coverage_info_list, panel.pgx_sites, min_coverage, output_dir)
         OutputWriter.write_pgx_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.pgx_sites, output_dir)
+        for min_coverage in min_coverages:
+            OutputWriter.write_pgx_count_min_coverage_file(
+                sample_with_coverage_info_list, panel.pgx_sites, min_coverage, output_dir / str(min_coverage))
     if analysis_type_config.tert:
-        OutputWriter.write_tert_count_min_coverage_file(
-            sample_with_coverage_info_list, panel.tert_site, min_coverage, output_dir)
         OutputWriter.write_tert_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.tert_site, output_dir)
+        for min_coverage in min_coverages:
+            OutputWriter.write_tert_count_min_coverage_file(
+                sample_with_coverage_info_list, panel.tert_site, min_coverage, output_dir / str(min_coverage))
 
 
 def create_depth_file(samtools: Path, bam: Path, depth_file: Path) -> None:
