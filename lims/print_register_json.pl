@@ -337,8 +337,17 @@ sub processSample{
         ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
         if ( $other_ref eq "Yes" ){
             my $new_name_ref = $patient . 'R';
-            my $new_barcode_ref = $barcode_ref . "_c2f" . $date;
-            push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS so adding suffix to the REF barcode ($new_barcode_ref)" );
+            my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready") | length'`;
+            if ( $ready_new_ref_sample_count == 1 ){
+                my $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode';
+                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Reusing existing REF barcode ($new_barcode_ref)" );
+            } elsif ( $ready_new_ref_sample_count == 0 ) {
+                my $new_barcode_ref = $barcode_ref . "_c2f" . $date;
+                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Adding suffix to create new REF barcode ($new_barcode_ref)" );
+            } else {
+                my $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode';
+                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Out of multiple choices, randomly chose existing REF barcode ($new_barcode_ref)" );
+            }
             $name_ref = $new_name_ref;
             $barcode_ref = $new_barcode_ref;
             $submission_ref = $submission;
