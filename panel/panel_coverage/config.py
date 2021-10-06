@@ -8,6 +8,7 @@ from util import assert_file_exists
 class Config(NamedTuple):
     panel_config_dir: Path
     output_dir: Path
+    min_coverages: Tuple[int]
 
 
 class PanelFileConfig(NamedTuple):

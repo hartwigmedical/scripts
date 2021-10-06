@@ -22,6 +22,16 @@ def main(config: Config) -> None:
     )
     panel_file_config.validate()
 
+    analysis_type_config = AnalysisTypeConfig(
+        baf=True,
+        exome=True,
+        fusion=True,
+        hotspot=True,
+        msi=True,
+        pgx=True,
+        tert=True,
+    )
+
     # sample_with_depth_file_list: List[Tuple[str, str]] = [
     #     ("COLO829vP01R", Path.home() / "depths/COLO829vP01R.bam.depth"),
     #     ("COLO829vP01T", Path.home() / "depths/COLO829vP01T.bam.depth"),
@@ -37,37 +47,17 @@ def main(config: Config) -> None:
         ("FR30728561.non_umi_dedup", Path.home() / "depths/FR30728561.non_umi_dedup.bam.depth"),
         ("FR30728562.non_umi_dedup", Path.home() / "depths/FR30728562.non_umi_dedup.bam.depth"),
     ]
-    output_dir_50 = config.output_dir / "/50/"
-    output_dir_100 = config.output_dir / "/100/"
-    output_dir_200 = config.output_dir / "/200/"
-    # output_dir_500 = config.output_dir / "/500/"
 
-    analysis_todo_config = AnalysisTypeConfig(
-        baf=True,
-        exome=True,
-        fusion=True,
-        hotspot=True,
-        msi=True,
-        pgx=True,
-        tert=True,
-    )
-    config_50 = AnalysisConfig(
-        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 50, output_dir_50
-    )
-    config_100 = AnalysisConfig(
-        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 100, output_dir_100
-    )
-    config_200 = AnalysisConfig(
-        tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 200, output_dir_200
-    )
-    # config_500 = Config(
-    #     tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 500, output_dir_500
-    # )
-    #
-    do_analysis(config_50)
-    do_analysis(config_100)
-    do_analysis(config_200)
-    # do_analysis(config_500)
+    for min_coverage in config.min_coverages:
+        analysis_output_dir = config.output_dir / str(min_coverage)
+        analysis_config = AnalysisConfig(
+            tuple(sample_with_depth_file_list),
+            panel_file_config,
+            analysis_type_config,
+            min_coverage,
+            analysis_output_dir,
+        )
+        do_analysis(analysis_config)
 
 
 def parse_args(sys_args: List[str]) -> Config:
@@ -79,9 +69,12 @@ def parse_args(sys_args: List[str]) -> Config:
     )
     parser.add_argument("--panel_config_dir", "-p", type=Path, required=True, help="Dir with panel config files.")
     parser.add_argument("--output_dir", "-o", type=Path, required=True, help="Output dir.")
+    parser.add_argument(
+        "--min_coverage", "-c", type=int, required=True, help="Min coverage. Can be specificied multiple times."
+    )
     args = parser.parse_args(sys_args)
 
-    config = Config(args.panel_config_dir, args.output_dir)
+    config = Config(args.panel_config_dir, args.output_dir, tuple(args.min_coverage))
     return config
 
 
