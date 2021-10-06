@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 switch_to_hmf_ops_service_account() {
-    gcp_set_account "hmf-ops@hmf-database.iam.gserviceaccount.com"
+    gcp_set_account "hmf-ops@hmf-ops.iam.gserviceaccount.com"
 }
 
 gcp_set_account() {
