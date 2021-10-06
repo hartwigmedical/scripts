@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Set, List, Tuple
 
-from config import Config, AnalysisTodoConfig, Panel
+from config import AnalysisConfig, AnalysisTypeConfig, Panel
 from genome import Interval
 from output_writer import OutputWriter
 from panel_reader import PanelReader
 from util import parallel_get_sample_to_coverage_info, CoverageInfo
 
 
-def do_analysis(config: Config) -> None:
+def do_analysis(config: AnalysisConfig) -> None:
     panel = PanelReader.get_panel(config.panel_file_config)
 
     coverage_intervals = get_coverage_intervals(config.analysis_todo_config, panel)
@@ -24,7 +24,7 @@ def do_analysis(config: Config) -> None:
     )
 
 
-def get_coverage_intervals(analysis_todo_config: AnalysisTodoConfig, panel: Panel) -> Set[Interval]:
+def get_coverage_intervals(analysis_todo_config: AnalysisTypeConfig, panel: Panel) -> Set[Interval]:
     coverage_intervals: Set[Interval] = set()
     if analysis_todo_config.baf:
         baf_intervals = {baf_site.get_site_interval() for baf_site in panel.baf_sites}
@@ -51,7 +51,7 @@ def get_coverage_intervals(analysis_todo_config: AnalysisTodoConfig, panel: Pane
 
 def write_analyses(
         sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-        analysis_todo_config: AnalysisTodoConfig,
+        analysis_todo_config: AnalysisTypeConfig,
         min_coverage: int,
         panel: Panel,
         output_dir: Path,

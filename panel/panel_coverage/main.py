@@ -1,23 +1,26 @@
+import argparse
+import sys
 from pathlib import Path
 from typing import List, Tuple
 
-from config import PanelFileConfig, AnalysisTodoConfig, Config
+from config import PanelFileConfig, AnalysisTypeConfig, AnalysisConfig, Config
 from analysis import do_analysis
 
 
-def main() -> None:
+def main(config: Config) -> None:
     # See gs://hmf-crunch-experiments/210518_david_FUNC-79_panel-v1-coverage-analysis/config/ in hmf-crunch for panel config files
     # Depth files are output of samtools depth
     panel_file_config = PanelFileConfig(
-        all_genes_tsv=Path.home() / "config/all_genes.38.tsv",
-        baf_sites_list=Path.home() / "config/baf_points_list_v1.tsv",
-        fusion_sites_list=Path.home() / "config/fusion_intron_list_v1.tsv",
-        gene_list=Path.home() / "config/gene_list_v2.txt",
-        hotspot_list=Path.home() / "config/hotspot_list_grch38_v1.tsv",
-        msi_sites_list=Path.home() / "config/msi_list_v1.tsv",
-        pgx_sites_list=Path.home() / "config/pgx_target_list_v1.tsv",
-        tert_site=Path.home() / "config/tert_promoter_list_v1.tsv",
+        all_genes_tsv=config.panel_config_dir / "all_genes.38.tsv",
+        baf_sites_list=config.panel_config_dir / "baf_points_list_v1.tsv",
+        fusion_sites_list=config.panel_config_dir / "fusion_intron_list_v1.tsv",
+        gene_list=config.panel_config_dir / "gene_list_v2.txt",
+        hotspot_list=config.panel_config_dir / "hotspot_list_grch38_v1.tsv",
+        msi_sites_list=config.panel_config_dir / "msi_list_v1.tsv",
+        pgx_sites_list=config.panel_config_dir / "pgx_target_list_v1.tsv",
+        tert_site=config.panel_config_dir / "tert_promoter_list_v1.tsv",
     )
+    panel_file_config.validate()
 
     # sample_with_depth_file_list: List[Tuple[str, str]] = [
     #     ("COLO829vP01R", Path.home() / "depths/COLO829vP01R.bam.depth"),
@@ -39,7 +42,7 @@ def main() -> None:
     output_dir_200 = Path.home() / "coverage_analysis_200/"
     # output_dir_500 = Path.home() / "coverage_analysis_500/"
 
-    analysis_todo_config = AnalysisTodoConfig(
+    analysis_todo_config = AnalysisTypeConfig(
         baf=True,
         exome=True,
         fusion=True,
@@ -48,22 +51,13 @@ def main() -> None:
         pgx=True,
         tert=True,
     )
-    # analysis_todo_config = AnalysisTodoConfig(
-    #     baf=False,
-    #     exome=True,
-    #     fusion=False,
-    #     hotspot=False,
-    #     msi=False,
-    #     pgx=False,
-    #     tert=False,
-    # )
-    config_50 = Config(
+    config_50 = AnalysisConfig(
         tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 50, output_dir_50
     )
-    config_100 = Config(
+    config_100 = AnalysisConfig(
         tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 100, output_dir_100
     )
-    config_200 = Config(
+    config_200 = AnalysisConfig(
         tuple(sample_with_depth_file_list), panel_file_config, analysis_todo_config, 200, output_dir_200
     )
     # config_500 = Config(
@@ -76,5 +70,19 @@ def main() -> None:
     # do_analysis(config_500)
 
 
+def parse_args(sys_args: List[str]) -> Config:
+    parser = argparse.ArgumentParser(
+        prog="panel_coverage",
+        description=(
+            "Determine coverage performance of panel bams at interesting sites."
+        ),
+    )
+    parser.add_argument("--panel_config_dir", "-p", type=Path, required=True, help="Dir with panel config files.")
+    args = parser.parse_args(sys_args)
+
+    config = Config(args.config_dir)
+    return config
+
+
 if __name__ == "__main__":
-    main()
+    main(parse_args(sys.argv[1:]))

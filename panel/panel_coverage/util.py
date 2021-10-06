@@ -147,3 +147,8 @@ def get_chrom_to_position_to_overlapping_intervals(intervals: Set[Interval]) -> 
                 chrom_to_position_to_exons[interval.chromosome][position] = set()
             chrom_to_position_to_exons[interval.chromosome][position].add(interval)
     return chrom_to_position_to_exons
+
+
+def assert_file_exists(path: Path) -> None:
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
