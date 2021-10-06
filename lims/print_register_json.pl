@@ -340,13 +340,13 @@ sub processSample{
             my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready") | length'`;
             my $new_barcode_ref;
             if ( $ready_new_ref_sample_count == 1 ){
-                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"'`;
+                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
                 push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Reusing existing REF barcode ($new_barcode_ref)" );
             } elsif ( $ready_new_ref_sample_count == 0 ) {
                 $new_barcode_ref = $barcode_ref . "_c2f" . $date;
                 push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Adding suffix to create new REF barcode ($new_barcode_ref)" );
             } else {
-                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"'`;
+                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
                 push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Out of multiple choices, randomly chose existing REF barcode ($new_barcode_ref)" );
             }
             $name_ref = $new_name_ref;
