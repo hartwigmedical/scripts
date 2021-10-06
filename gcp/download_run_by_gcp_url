@@ -7,7 +7,7 @@ gcp_url=''
 download_path=''
 exclude_crams=''
 billing_project="hmf-database"
-switch_to_hmf_ops="true"
+switch_to_hmf_ops="false"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -22,7 +22,7 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "   -d  Directory to download to"
     echo "   -e  Exclude any BAMs/CRAMs"
     echo "   -p  Set user project to be billed for the download. Default is hmf-database."
-    echo "   -o  Do not switch to hmf-ops service account"
+    echo "   -o  Switch to hmf-ops service account"
     echo "---"
     exit 1
 fi
@@ -42,7 +42,7 @@ while getopts ":u:d:ep:o" opt; do
       billing_project="${OPTARG}"
       ;;
     o)
-      switch_to_hmf_ops="false"
+      switch_to_hmf_ops="true"
       ;;
     \?)
       error "Invalid option: -${OPTARG}"
