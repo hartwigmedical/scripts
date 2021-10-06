@@ -44,6 +44,17 @@ cupClassData <- cupPlotData %>%
   filter(DataType != 'GENDER') %>%
   mutate(DataLabel = DataType)
 
+## Ensure logical order in summary plot when including RNA data
+  if ('RNA COMBINED' %in% cupClassData$DataType)
+  {
+    orderPlot = c("COMBINED","RNA COMBINED","ALT SJ COHORT","EXPRESSION PAIRWISE","DNA COMBINED","FEATURE","GENOMIC POSITION SIMILARITY","SNV 96 PAIRWISE SIMILARITY")
+
+    cupClassData$DataType <- factor(cupClassData$DataType, orderPlot)
+    cupClassData$DataLabel <- factor(cupClassData$DataLabel, orderPlot)
+
+    cupClassData <- cupClassData[order(cupClassData$DataType), ]
+  }
+
 ## Make sure data in SEX is not overwritten with GENDER CLASSIFIER data
 cupGender <- cupPlotData %>%
   filter(DataType == 'GENDER' & Category == 'SAMPLE_TRAIT') %>%
