@@ -38,41 +38,6 @@ def parallel_get_sample_to_coverage_info(
     return sample_to_coverage_info
 
 
-def parallel_get_sample_to_interval_to_cumulative_coverage(
-        sample_with_depth_file_list: List[Tuple[str, str]], intervals: Set[Interval]) -> Dict[str, Dict[Interval, int]]:
-    print("Before cumulative_coverage process pool")
-    with ProcessPoolExecutor() as executor:
-        sample_to_future = {
-            sample: executor.submit(get_interval_to_cumulative_coverage, depth_file, intervals)
-            for sample, depth_file in sample_with_depth_file_list
-        }
-        sample_to_interval_to_cumulative_coverage = {
-            sample: future.result()
-            for sample, future in sample_to_future.items()
-        }
-    print("After cumulative_coverage process pool")
-    return sample_to_interval_to_cumulative_coverage
-
-
-def parallel_get_sample_to_interval_to_count_with_min_coverage(
-        sample_with_depth_file_list: List[Tuple[str, str]],
-        intervals: Set[Interval],
-        min_coverage: int
-) -> Dict[str, Dict[Interval, int]]:
-    print("Before min_coverage process pool")
-    with ProcessPoolExecutor() as executor:
-        sample_to_future = {
-            sample: executor.submit(get_interval_to_count_with_min_coverage, depth_file, intervals, min_coverage)
-            for sample, depth_file in sample_with_depth_file_list
-        }
-        sample_to_interval_to_count_with_min_coverage = {
-            sample: future.result()
-            for sample, future in sample_to_future.items()
-        }
-    print("After min_coverage process pool")
-    return sample_to_interval_to_count_with_min_coverage
-
-
 def get_interval_to_cumulative_coverage(depth_file: str, intervals: Set[Interval]) -> Dict[Interval, int]:
     try:
         chrom_to_position_to_intervals = get_chrom_to_position_to_overlapping_intervals(intervals)
