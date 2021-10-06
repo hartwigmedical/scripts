@@ -11,6 +11,7 @@ do_update_actin_curation_file "${dir}/${prefix} - Non-oncological History.tsv" "
 do_update_actin_curation_file "${dir}/${prefix} - ECG.tsv" "${dir}/ecg.tsv"
 do_update_actin_curation_file "${dir}/${prefix} - Cancer Related Complication.tsv" "${dir}/cancer_related_complication.tsv"
 do_update_actin_curation_file "${dir}/${prefix} - Toxicity.tsv" "${dir}/toxicity.tsv"
+do_update_actin_curation_file "${dir}/${prefix} - Medication Dosage.tsv" "${dir}/medication_dosage.tsv"
 
 do_update_actin_curation_file "${dir}/${prefix} - Laboratory Translation.tsv" "${dir}/laboratory_translation.tsv"
 do_update_actin_curation_file "${dir}/${prefix} - Allergy Translation.tsv" "${dir}/allergy_translation.tsv"
