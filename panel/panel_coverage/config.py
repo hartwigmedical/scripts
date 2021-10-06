@@ -7,6 +7,7 @@ from util import assert_file_exists
 
 class Config(NamedTuple):
     panel_config_dir: Path
+    output_dir: Path
 
 
 class PanelFileConfig(NamedTuple):

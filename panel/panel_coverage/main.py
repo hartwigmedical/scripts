@@ -37,10 +37,10 @@ def main(config: Config) -> None:
         ("FR30728561.non_umi_dedup", Path.home() / "depths/FR30728561.non_umi_dedup.bam.depth"),
         ("FR30728562.non_umi_dedup", Path.home() / "depths/FR30728562.non_umi_dedup.bam.depth"),
     ]
-    output_dir_50 = Path.home() / "coverage_analysis_50/"
-    output_dir_100 = Path.home() / "coverage_analysis_100/"
-    output_dir_200 = Path.home() / "coverage_analysis_200/"
-    # output_dir_500 = Path.home() / "coverage_analysis_500/"
+    output_dir_50 = config.output_dir / "/50/"
+    output_dir_100 = config.output_dir / "/100/"
+    output_dir_200 = config.output_dir / "/200/"
+    # output_dir_500 = config.output_dir / "/500/"
 
     analysis_todo_config = AnalysisTypeConfig(
         baf=True,
@@ -78,9 +78,10 @@ def parse_args(sys_args: List[str]) -> Config:
         ),
     )
     parser.add_argument("--panel_config_dir", "-p", type=Path, required=True, help="Dir with panel config files.")
+    parser.add_argument("--output_dir", "-o", type=Path, required=True, help="Output dir.")
     args = parser.parse_args(sys_args)
 
-    config = Config(args.config_dir)
+    config = Config(args.panel_config_dir, args.output_dir)
     return config
 
 
