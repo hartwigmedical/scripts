@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Set, List, Tuple
 
 from config import Config, AnalysisTodoConfig, Panel
@@ -53,7 +54,7 @@ def write_analyses(
         analysis_todo_config: AnalysisTodoConfig,
         min_coverage: int,
         panel: Panel,
-        output_dir: str
+        output_dir: Path,
 ) -> None:
     if analysis_todo_config.baf:
         OutputWriter.write_baf_coverage_file(

@@ -12,7 +12,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             baf_sites_list: Tuple[BafSite],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started BAF point coverage analysis")
         baf_site_output_file = f"{output_dir}/baf_coverage.tsv"
@@ -54,7 +54,7 @@ class OutputWriter(object):
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             exons: Tuple[Exon],
             min_coverage: int,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started exome min coverage count analysis")
         exon_min_coverage_count_output_file = f"{output_dir}/exon_min_coverage_count.{min_coverage}.tsv"
@@ -90,7 +90,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             exons: Tuple[Exon],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started exome cumulative coverage analysis")
         exon_coverage_output_file = f"{output_dir}/exon_cumulative_coverage.tsv"
@@ -127,7 +127,7 @@ class OutputWriter(object):
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             fusion_sites_list: Tuple[FusionSite],
             min_coverage: int,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started fusion min coverage count analysis")
         fusion_site_min_coverage_count_output_file = f"{output_dir}/fusion_site_min_coverage_count.{min_coverage}.tsv"
@@ -170,7 +170,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             fusion_sites_list: Tuple[FusionSite],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started fusion cumulative coverage analysis")
         fusion_site_cumulative_coverage_output_file = f"{output_dir}/fusion_site_cumulative_coverage.tsv"
@@ -213,7 +213,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             hotspot_list: Tuple[Position],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started hotspot coverage analysis")
         hotspot_output_file = f"{output_dir}/hotspot_coverage.tsv"
@@ -243,14 +243,13 @@ class OutputWriter(object):
 
         print("Finished hotspot coverage analysis")
 
-
     @classmethod
     def write_msi_count_min_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             msi_sites_list: Tuple[MsiSite],
             min_coverage: int,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started msi min coverage count analysis")
         msi_site_min_coverage_count_output_file = f"{output_dir}/msi_site_min_coverage_count.{min_coverage}.tsv"
@@ -300,7 +299,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             msi_sites_list: Tuple[MsiSite],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started msi cumulative coverage analysis")
         msi_site_cumulative_coverage_output_file = f"{output_dir}/msi_site_cumulative_coverage.tsv"
@@ -351,7 +350,7 @@ class OutputWriter(object):
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             pgx_sites_list: Tuple[PgxSite],
             min_coverage: int,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started pgx min coverage count analysis")
         pgx_site_min_coverage_count_output_file = f"{output_dir}/pgx_site_min_coverage_count.{min_coverage}.tsv"
@@ -393,7 +392,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             pgx_sites_list: Tuple[PgxSite],
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started pgx cumulative coverage analysis")
         pgx_site_cumulative_coverage_output_file = f"{output_dir}/pgx_site_cumulative_coverage.tsv"
@@ -436,7 +435,7 @@ class OutputWriter(object):
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             tert_site: Interval,
             min_coverage: int,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started tert min coverage count analysis")
         tert_site_min_coverage_count_output_file = f"{output_dir}/tert_site_min_coverage_count.{min_coverage}.tsv"
@@ -475,7 +474,7 @@ class OutputWriter(object):
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
             tert_site: Interval,
-            output_dir: str,
+            output_dir: Path,
     ) -> None:
         print("Started tert cumulative coverage analysis")
         tert_site_cumulative_coverage_output_file = f"{output_dir}/tert_site_cumulative_coverage.tsv"
