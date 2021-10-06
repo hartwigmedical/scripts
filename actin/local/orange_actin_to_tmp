@@ -8,4 +8,4 @@ if [[ -z ${patient} ]]; then
     error "No patient provided"
 fi
 
-gcloud compute scp data-vm-prod-1:/data/actin/samples/*${patient}*/orange/*.pdf ~/hmf/tmp/
+gcloud compute scp data-vm-prod-1:/data/actin/*${patient}*/orange/*.pdf ~/hmf/tmp/
