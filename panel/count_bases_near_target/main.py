@@ -1,5 +1,6 @@
 import argparse
 import logging
+import multiprocessing
 import subprocess
 import sys
 from pathlib import Path
@@ -16,7 +17,7 @@ DEPTH_FILE = "relevant.depth"
 COUNT_FILE = "count.txt"
 
 MAX_TARGET_DISTANCE = 500
-THREAD_COUNT = 4
+THREAD_COUNT = multiprocessing.cpu_count()
 
 
 class Config(NamedTuple):
