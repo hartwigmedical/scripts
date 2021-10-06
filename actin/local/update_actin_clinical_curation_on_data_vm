@@ -13,3 +13,4 @@ do_update_actin_curation_file "${dir}/${prefix} - Cancer Related Complication.ts
 do_update_actin_curation_file "${dir}/${prefix} - Toxicity.tsv" "${dir}/toxicity.tsv"
 
 do_update_actin_curation_file "${dir}/${prefix} - Laboratory Translation.tsv" "${dir}/laboratory_translation.tsv"
+do_update_actin_curation_file "${dir}/${prefix} - Allergy Translation.tsv" "${dir}/allergy_translation.tsv"
