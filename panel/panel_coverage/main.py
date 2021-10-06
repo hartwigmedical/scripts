@@ -54,10 +54,10 @@ def parse_args(sys_args: List[str]) -> ProgramConfig:
         "--working_dir", "-w", type=Path, required=True, help="Working dir to store intermediate files."
     )
     parser.add_argument(
-        "--min_coverage", "-c", type=int, required=True, help="Min coverage. Can be specified multiple times."
+        "--min_coverage", "-c", type=int, required=True, action="append", help="Min coverage. Can be specified multiple times."
     )
     parser.add_argument(
-        "--bam", "-b", type=Path, required=True, help="Path to bam. Can be specified multiple times."
+        "--bam", "-b", type=Path, required=True, action="append", help="Path to bam. Can be specified multiple times."
     )
     args = parser.parse_args(sys_args)
 
