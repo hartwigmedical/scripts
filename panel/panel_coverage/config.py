@@ -5,7 +5,7 @@ from genome import BafSite, FusionSite, Position, MsiSite, PgxSite, Interval, Ex
 from util import assert_file_exists
 
 
-class Config(NamedTuple):
+class ProgramConfig(NamedTuple):
     panel_config_dir: Path
     output_dir: Path
     samtools: Path
@@ -43,14 +43,6 @@ class AnalysisTypeConfig(NamedTuple):
     msi: bool
     pgx: bool
     tert: bool
-
-
-class AnalysisConfig(NamedTuple):
-    sample_with_depth_file_pairs: Tuple[Tuple[str, Path]]
-    panel_file_config: PanelFileConfig
-    analysis_todo_config: AnalysisTypeConfig
-    min_coverage: int
-    output_dir: Path
 
 
 class Panel(NamedTuple):

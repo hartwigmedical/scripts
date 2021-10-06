@@ -1,30 +1,30 @@
 import argparse
-import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
-from config import PanelFileConfig, AnalysisTypeConfig, AnalysisConfig, Config
+from config import PanelFileConfig, AnalysisTypeConfig, ProgramConfig
 from analysis import do_analysis
 from util import assert_file_exists
 
 
-def main(config: Config) -> None:
-    # See gs://hmf-crunch-experiments/210518_david_FUNC-79_panel-v1-coverage-analysis/config/ in hmf-crunch for panel config files
+def main(program_config: ProgramConfig) -> None:
+    # See gs://hmf-crunch-experiments/210518_david_FUNC-79_panel-v1-coverage-analysis/config/
+    # in hmf-crunch for panel config files
 
     panel_file_config = PanelFileConfig(
-        all_genes_tsv=config.panel_config_dir / "all_genes.38.tsv",
-        baf_sites_list=config.panel_config_dir / "baf_points_list_v1.tsv",
-        fusion_sites_list=config.panel_config_dir / "fusion_intron_list_v1.tsv",
-        gene_list=config.panel_config_dir / "gene_list_v2.txt",
-        hotspot_list=config.panel_config_dir / "hotspot_list_grch38_v1.tsv",
-        msi_sites_list=config.panel_config_dir / "msi_list_v1.tsv",
-        pgx_sites_list=config.panel_config_dir / "pgx_target_list_v1.tsv",
-        tert_site=config.panel_config_dir / "tert_promoter_list_v1.tsv",
+        all_genes_tsv=program_config.panel_config_dir / "all_genes.38.tsv",
+        baf_sites_list=program_config.panel_config_dir / "baf_points_list_v1.tsv",
+        fusion_sites_list=program_config.panel_config_dir / "fusion_intron_list_v1.tsv",
+        gene_list=program_config.panel_config_dir / "gene_list_v2.txt",
+        hotspot_list=program_config.panel_config_dir / "hotspot_list_grch38_v1.tsv",
+        msi_sites_list=program_config.panel_config_dir / "msi_list_v1.tsv",
+        pgx_sites_list=program_config.panel_config_dir / "pgx_target_list_v1.tsv",
+        tert_site=program_config.panel_config_dir / "tert_promoter_list_v1.tsv",
     )
     panel_file_config.validate()
-    assert_file_exists(config.samtools)
-    for bam in config.bams:
+    assert_file_exists(program_config.samtools)
+    for bam in program_config.bams:
         assert_file_exists(bam)
 
     analysis_type_config = AnalysisTypeConfig(
@@ -37,36 +37,10 @@ def main(config: Config) -> None:
         tert=True,
     )
 
-    config.working_dir.mkdir(parents=True, exist_ok=True)
-
-    sample_with_depth_file_list: List[Tuple[str, Path]] = []
-    for bam in config.bams:
-        depth_file = config.working_dir / f"{bam.name}.depth"
-        if not depth_file.exists():
-            create_depth_file(config.samtools, bam, depth_file)
-        if not depth_file.exists():
-            raise FileNotFoundError(f"Depth file creation failed: {depth_file}")
-        sample_with_depth_file_list.append((bam.stem, depth_file))
-
-    for min_coverage in config.min_coverages:
-        analysis_output_dir = config.output_dir / str(min_coverage)
-        analysis_config = AnalysisConfig(
-            tuple(sample_with_depth_file_list),
-            panel_file_config,
-            analysis_type_config,
-            min_coverage,
-            analysis_output_dir,
-        )
-        do_analysis(analysis_config)
+    do_analysis(program_config, panel_file_config, analysis_type_config)
 
 
-def create_depth_file(samtools: Path, bam: Path, depth_file: Path) -> None:
-    cli_args = [samtools, "depth", "-s", bam]
-    with open(depth_file, "w") as depth_f:
-        subprocess.run(cli_args, stdout=depth_f)
-
-
-def parse_args(sys_args: List[str]) -> Config:
+def parse_args(sys_args: List[str]) -> ProgramConfig:
     parser = argparse.ArgumentParser(
         prog="panel_coverage",
         description=(
@@ -88,7 +62,7 @@ def parse_args(sys_args: List[str]) -> Config:
     args = parser.parse_args(sys_args)
 
     sorted_min_coverages: List[int] = sorted(args.min_coverage)
-    config = Config(
+    config = ProgramConfig(
         args.panel_config_dir,
         args.output_dir,
         args.samtools,

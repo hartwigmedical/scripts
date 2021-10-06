@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 from typing import NamedTuple, Tuple
 
 import pandas as pd
@@ -44,7 +45,7 @@ class AllGenesData(object):
         self.df = deepcopy(df)
 
     @classmethod
-    def from_file(cls, path: str) -> "AllGenesData":
+    def from_file(cls, path: Path) -> "AllGenesData":
         df = pd.read_csv(
             path, sep="\t", names=cls.COLUMN_NAMES, index_col=False, usecols=cls.USED_COLS, dtype=cls.COLUMN_TO_TYPE)
         return AllGenesData(df)

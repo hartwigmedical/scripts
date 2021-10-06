@@ -9,7 +9,7 @@ class PanelReader(object):
     def get_panel(cls, config: PanelFileConfig) -> Panel:
         baf_sites = cls.__get_baf_sites(config)
         fusion_sites = cls.__get_fusion_sites(config)
-        hotspot = cls.__get_hostpot(config)
+        hotspot = cls.__get_hotspot(config)
         msi_sites = cls.__get_msi_sites(config)
         panel_exons = cls.__get_panel_exons(config)
         pgx_sites = cls.__get_pgx_sites(config)
@@ -56,7 +56,7 @@ class PanelReader(object):
         return tuple(gene_list)
 
     @classmethod
-    def __get_hostpot(cls, config: PanelFileConfig) -> Tuple[Position]:
+    def __get_hotspot(cls, config: PanelFileConfig) -> Tuple[Position]:
         with open(config.hotspot_list) as hotspot_list_f:
             split_lines = [line.split("\t") for line in hotspot_list_f.read().split("\n") if line != ""]
         hotspot_list = [Position(f"chr{chromosome}", int(position_str)) for chromosome, position_str in split_lines]
