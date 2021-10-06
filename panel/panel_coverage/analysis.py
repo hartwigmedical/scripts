@@ -28,17 +28,15 @@ def do_analysis(
     panel = PanelReader.get_panel(panel_file_config)
     coverage_intervals = get_coverage_intervals(analysis_type_config, panel)
 
+    sample_to_coverage_info = parallel_get_sample_to_coverage_info(
+        sample_to_depth_file, coverage_intervals, program_config.min_coverages)
+    ordered_sample_with_coverage_info_list = [
+        (bam.stem, sample_to_coverage_info[bam.stem]) for bam in program_config.bams
+    ]
     for min_coverage in program_config.min_coverages:
-        sample_to_coverage_info = parallel_get_sample_to_coverage_info(
-            sample_to_depth_file, coverage_intervals, min_coverage)
-        sample_with_coverage_info_list = [
-            (sample, sample_to_coverage_info[sample]) for sample in sample_to_depth_file.keys()
-        ]
-    
         output_dir = program_config.output_dir / str(min_coverage)
-    
         write_analyses(
-            sample_with_coverage_info_list, analysis_type_config, min_coverage, panel, output_dir,
+            ordered_sample_with_coverage_info_list, analysis_type_config, min_coverage, panel, output_dir,
         )
 
 
