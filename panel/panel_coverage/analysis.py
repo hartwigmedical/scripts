@@ -16,7 +16,7 @@ def do_analysis(
 ) -> None:
     program_config.working_dir.mkdir(parents=True, exist_ok=True)
 
-    sample_to_depth_file = Dict[str, Path]
+    sample_to_depth_file: Dict[str, Path] = {}
     for bam in program_config.bams:
         depth_file = program_config.working_dir / f"{bam.name}.depth"
         if not depth_file.exists():
