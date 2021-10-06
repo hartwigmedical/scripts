@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source metadata_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# To correct for the missing SIG data - see also DEV-2196
+run_cuppa_prod ${run_dir}
+
+Rscript /data/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R ${tumor_sample} ~/dataset_copy/tumor_sample/cuppa/ ~/dataset_copy/tumor_sample/cuppa/ true
