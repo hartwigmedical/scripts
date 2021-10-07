@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Running ACTIN clinical algo - pilot"
+run_actin_clinical_pilot
+
+info "Loading ACTIN data into pilot database"
+load_actin_database_pilot
