@@ -16,8 +16,8 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
-locate_pilot_actin_database() {
-    echo ${base_path}/tools/actin-database/pilot/actin-database.jar
+locate_pilot_actin() {
+    echo ${base_path}/tools/actin/pilot/actin.jar
 }
 
 locate_prod_purple() {
