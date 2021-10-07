@@ -2,7 +2,6 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
-source database_functions || exit 1
 
 actin_jar=$1 && shift
 json_output_file=$1 && shift
