@@ -20,7 +20,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
-java11 -Xmx8G -Xms2G -cp ${actin_jar} com.hartwig.actin.database.DatabaseLoader \
+java11 -Xmx8G -Xms2G -cp ${actin_jar} com.hartwig.actin.database.DatabaseLoaderApplication \
     -clinical_feed_directory ${clinical_feed_directory} \
     -clinical_curation_directory ${clinical_curation_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
