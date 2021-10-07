@@ -82,13 +82,13 @@ def write_analyses(
             sample_with_coverage_info_list, panel.exons, output_dir)
         for min_coverage in min_coverages:
             OutputWriter.write_exome_count_min_coverage_file(
-                sample_with_coverage_info_list, panel.exons, min_coverage, output_dir / str(min_coverage))
+                sample_with_coverage_info_list, panel.exons, min_coverage, output_dir)
     if analysis_type_config.fusion:
         OutputWriter.write_fusion_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.fusion_sites, output_dir)
         for min_coverage in min_coverages:
             OutputWriter.write_fusion_count_min_coverage_file(
-                sample_with_coverage_info_list, panel.fusion_sites, min_coverage, output_dir / str(min_coverage))
+                sample_with_coverage_info_list, panel.fusion_sites, min_coverage, output_dir)
     if analysis_type_config.hotspot:
         OutputWriter.write_hotspot_coverage_file(
             sample_with_coverage_info_list, panel.hotspots, output_dir)
@@ -97,19 +97,19 @@ def write_analyses(
             sample_with_coverage_info_list, panel.msi_sites, output_dir)
         for min_coverage in min_coverages:
             OutputWriter.write_msi_count_min_coverage_file(
-                sample_with_coverage_info_list, panel.msi_sites, min_coverage, output_dir / str(min_coverage))
+                sample_with_coverage_info_list, panel.msi_sites, min_coverage, output_dir)
     if analysis_type_config.pgx:
         OutputWriter.write_pgx_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.pgx_sites, output_dir)
         for min_coverage in min_coverages:
             OutputWriter.write_pgx_count_min_coverage_file(
-                sample_with_coverage_info_list, panel.pgx_sites, min_coverage, output_dir / str(min_coverage))
+                sample_with_coverage_info_list, panel.pgx_sites, min_coverage, output_dir)
     if analysis_type_config.tert:
         OutputWriter.write_tert_cumulative_coverage_file(
             sample_with_coverage_info_list, panel.tert_site, output_dir)
         for min_coverage in min_coverages:
             OutputWriter.write_tert_count_min_coverage_file(
-                sample_with_coverage_info_list, panel.tert_site, min_coverage, output_dir / str(min_coverage))
+                sample_with_coverage_info_list, panel.tert_site, min_coverage, output_dir)
 
 
 def create_depth_file(samtools: Path, bam: Path, depth_file: Path) -> None:
