@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+actin_jar=$(locate_pilot_actin)
+clinical_json_output_file_pilot=$(locate_clinical_json_file_pilot)
+
+do_run_actin_clinical ${actin_jar} ${clinical_json_output_file_pilot}

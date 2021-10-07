@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+actin_jar=$1 && shift
+json_output_file=$1 && shift
+
+if [[ -z ${actin_jar} || -z ${json_output_file} ]]; then
+    error "Parameters missing."
+fi
+
+feed_directory=$(locate_actin_clinical_feed_directory)
+curation_directory=$(locate_actin_clinical_curation_directory)
+
+java11 -Xmx8G -Xms2G -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionConfig \
+    -feed_directory ${feed_directory} \
+    -curation_directory ${curation_directory} \
+    -json_output_file ${json_output_file} \
+    "$@"

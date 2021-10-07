@@ -177,15 +177,21 @@ locate_peach_main() {
     echo "$(locate_repo_dir "peach")/peach"
 }
 
-################################## Resources ###################################
+#################################### ACTIN #####################################
 
 locate_actin_clinical_feed_directory() {
-    echo ${base_path}/resources/custom/actin/ehr_data_dump/211004
+    echo /data/resources/custom/actin/ehr_data_dump/211004
 }
 
 locate_actin_clinical_curation_directory() {
-    echo ${base_path}/resources/custom/actin/clinical_curation
+    echo /data/resources/custom/actin/clinical_curation
 }
+
+locate_clinical_json_file_pilot() {
+    echo /data/actin/clinical/clinical_model_pilot.json
+}
+
+################################## Resources ###################################
 
 locate_driver_gene_panel_37_tsv_ds() {
     echo ${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv
