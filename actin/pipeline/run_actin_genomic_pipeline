@@ -28,9 +28,8 @@ run_cuppa_dna_prod ${run_dir}
 # To generate the CUPPA report as a picture (png) - see also DEV-2195
 generate_cup_report_pipeline ${run_dir}
 
+download_isofox_to_run_dir ${run_dir}
 if [[ -d ${run_dir}/isofox ]]; then
-    cp -r ${run_dir}/cuppa ${run_dir}/cuppa_dna
-
     run_cuppa_dna_rna_prod ${run_dir}
     do_generate_cup_report_pipeline ${run_dir} ${run_dir}/cuppa_dna_rna
 fi
