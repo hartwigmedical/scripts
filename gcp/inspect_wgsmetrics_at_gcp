@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
+
+set=$1 && shift
+
+include_inis="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini"
+exclude_buckets="research-pipeline-output-prod"
+
+[[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
+
+info "Retrieving API set info..."
+set_json=$(hmf_api_get "sets?name=${set}" | jq '.[-1]')
+mapfile -t sample_names < <( jq -r '.samples[].name' <<< "${set_json}")
+info "Retrieving API run info (including ${include_inis} and excluding ${exclude_buckets} for run selection)..."
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$include_inis" --arg buckets "$exclude_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+
+[[ -n "${bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
+
+info "Performing cat for each sample in run..."
+for sample_name in "${sample_names[@]}"; do
+    file_url="gs://${bucket}/${set}/${sample_name}/bam_metrics/${sample_name}.wgsmetrics"
+    info "WGSMetrics from ${file_url}:"
+    gsutil cat "${file_url}" | grep -A1 GENOME | datamash transpose
+done
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"
+
