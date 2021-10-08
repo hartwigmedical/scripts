@@ -3,6 +3,6 @@
 source locate_files || exit 1
 
 actin_jar=$(locate_pilot_actin)
-clinical_json_output_file_pilot=$(locate_clinical_json_file_pilot)
+output_directory=$(locate_actin_clinical_directory)
 
-do_run_actin_clinical ${actin_jar} ${clinical_json_output_file_pilot}
+do_run_actin_clinical ${actin_jar} ${output_directory}

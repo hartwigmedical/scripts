@@ -4,9 +4,9 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 actin_jar=$1 && shift
-json_output_file=$1 && shift
+output_directory=$1 && shift
 
-if [[ -z ${actin_jar} || -z ${json_output_file} ]]; then
+if [[ -z ${actin_jar} || -z ${output_directory} ]]; then
     error "Parameters missing."
 fi
 
@@ -16,5 +16,5 @@ curation_directory=$(locate_actin_clinical_curation_directory)
 java11 -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \
     -feed_directory ${feed_directory} \
     -curation_directory ${curation_directory} \
-    -json_output_file ${json_output_file} \
+    -output_directory ${output_directory} \
     "$@"

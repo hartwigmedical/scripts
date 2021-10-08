@@ -11,7 +11,7 @@ if [[ -z ${actin_jar} || -z ${actin_database_name} ]]; then
     error "Parameters missing."
 fi
 
-clinical_json_file_pilot=$(locate_clinical_json_file_pilot)
+clinical_directory=$(locate_actin_clinical_directory)
 
 credentials=$(prod_writer_sql_credentials)
 
@@ -20,6 +20,6 @@ db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
 java11 -cp ${actin_jar} com.hartwig.actin.database.ClinicalLoaderApplication \
-    -clinical_model_json ${clinical_json_file_pilot} \
+    -clinical_directory ${clinical_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

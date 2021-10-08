@@ -187,8 +187,8 @@ locate_actin_clinical_curation_directory() {
     echo /data/resources/custom/actin/clinical_curation
 }
 
-locate_clinical_json_file_pilot() {
-    echo /data/actin/clinical/clinical_model_pilot.json
+locate_actin_clinical_directory() {
+    echo /data/actin/clinical
 }
 
 ################################## Resources ###################################
