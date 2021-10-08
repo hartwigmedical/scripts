@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 from pathlib import Path
 from typing import List
@@ -11,6 +12,8 @@ from util import assert_file_exists
 def main(program_config: ProgramConfig) -> None:
     # See gs://hmf-crunch-experiments/210518_david_FUNC-79_panel-v1-coverage-analysis/config/
     # in hmf-crunch for panel config files
+
+    set_up_logging()
 
     panel_file_config = PanelFileConfig(
         all_genes_tsv=program_config.panel_config_dir / "all_genes.38.tsv",
@@ -38,6 +41,12 @@ def main(program_config: ProgramConfig) -> None:
     )
 
     do_analysis(program_config, panel_file_config, analysis_type_config)
+
+
+def set_up_logging() -> None:
+    logging.basicConfig(
+        format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
+    )
 
 
 def parse_args(sys_args: List[str]) -> ProgramConfig:

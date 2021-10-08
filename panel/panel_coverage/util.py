@@ -1,3 +1,4 @@
+import logging
 from concurrent.futures import ProcessPoolExecutor
 from copy import deepcopy
 from pathlib import Path
@@ -24,7 +25,7 @@ def parallel_get_sample_to_coverage_info(
         intervals: Set[Interval],
         min_coverages: Tuple[int],
 ) -> Dict[str, CoverageInfo]:
-    print("Before coverage_info process pool")
+    logging.info("Before coverage_info process pool")
     with ProcessPoolExecutor() as executor:
         sample_to_future = {
             sample: executor.submit(get_coverage_info, depth_file, intervals, min_coverages)
@@ -34,7 +35,7 @@ def parallel_get_sample_to_coverage_info(
             sample: future.result()
             for sample, future in sample_to_future.items()
         }
-    print("After coverage_info process pool")
+    logging.info("After coverage_info process pool")
     return sample_to_coverage_info
 
 

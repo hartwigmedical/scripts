@@ -37,7 +37,7 @@ main() {
   average_coverage_above_minimum=$(awk '{n++;sum+=$3} END {printf "%.0f", n?sum/n:0}' "${min_coverage_depth}") \
           || die "Could not determine average coverage over ${MIN_COVERAGE}"
   info "Average coverage of bases with coverage over ${MIN_COVERAGE}: ${average_coverage_above_minimum}"
-  
+
   info "Finished ${SCRIPT_NAME}"
 }
 
