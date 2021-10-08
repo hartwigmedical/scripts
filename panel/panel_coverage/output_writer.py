@@ -56,7 +56,7 @@ class OutputWriter(object):
             min_coverage: int,
             output_dir: Path,
     ) -> None:
-        print("Started exome min coverage count analysis")
+        print(f"Started exome min coverage {min_coverage} count analysis")
         exon_min_coverage_count_output_file = f"{output_dir}/exon_min_coverage_count.{min_coverage}.tsv"
         gene_min_coverage_count_output_file = f"{output_dir}/gene_min_coverage_count.{min_coverage}.tsv"
         if Path(exon_min_coverage_count_output_file).exists() or Path(gene_min_coverage_count_output_file).exists():
@@ -83,7 +83,7 @@ class OutputWriter(object):
             sample_to_gene_to_min_coverage_count, samples, exons, gene_min_coverage_count_output_file
         )
 
-        print("Finished exome min coverage count analysis")
+        print(f"Finished exome min coverage {min_coverage} count analysis")
 
     @classmethod
     def write_exome_cumulative_coverage_analysis(
@@ -129,7 +129,7 @@ class OutputWriter(object):
             min_coverage: int,
             output_dir: Path,
     ) -> None:
-        print("Started fusion min coverage count analysis")
+        print(f"Started fusion min coverage {min_coverage} count analysis")
         fusion_site_min_coverage_count_output_file = f"{output_dir}/fusion_site_min_coverage_count.{min_coverage}.tsv"
         if Path(fusion_site_min_coverage_count_output_file).exists():
             error_msg = (
@@ -163,7 +163,7 @@ class OutputWriter(object):
                 line = "\t".join(line_data) + "\n"
                 exon_o.write(line)
 
-        print("Finished fusion min coverage count analysis")
+        print(f"Finished fusion min coverage {min_coverage} count analysis")
 
     @classmethod
     def write_fusion_cumulative_coverage_file(
@@ -251,7 +251,7 @@ class OutputWriter(object):
             min_coverage: int,
             output_dir: Path,
     ) -> None:
-        print("Started msi min coverage count analysis")
+        print(f"Started msi min coverage {min_coverage} count analysis")
         msi_site_min_coverage_count_output_file = f"{output_dir}/msi_site_min_coverage_count.{min_coverage}.tsv"
         if Path(msi_site_min_coverage_count_output_file).exists():
             error_msg = (
@@ -292,7 +292,7 @@ class OutputWriter(object):
                 line = "\t".join(line_data) + "\n"
                 exon_o.write(line)
 
-        print("Finished msi min coverage count analysis")
+        print(f"Finished msi min coverage {min_coverage} count analysis")
 
     @classmethod
     def write_msi_cumulative_coverage_file(
@@ -352,7 +352,7 @@ class OutputWriter(object):
             min_coverage: int,
             output_dir: Path,
     ) -> None:
-        print("Started pgx min coverage count analysis")
+        print(f"Started pgx min coverage {min_coverage} count analysis")
         pgx_site_min_coverage_count_output_file = f"{output_dir}/pgx_site_min_coverage_count.{min_coverage}.tsv"
         if Path(pgx_site_min_coverage_count_output_file).exists():
             error_msg = (
@@ -385,7 +385,7 @@ class OutputWriter(object):
                 line = "\t".join(line_data) + "\n"
                 exon_o.write(line)
 
-        print("Finished pgx min coverage count analysis")
+        print(f"Finished pgx min coverage {min_coverage} count analysis")
 
     @classmethod
     def write_pgx_cumulative_coverage_file(
@@ -437,7 +437,7 @@ class OutputWriter(object):
             min_coverage: int,
             output_dir: Path,
     ) -> None:
-        print("Started tert min coverage count analysis")
+        print(f"Started tert min coverage {min_coverage} count analysis")
         tert_site_min_coverage_count_output_file = f"{output_dir}/tert_site_min_coverage_count.{min_coverage}.tsv"
         if Path(tert_site_min_coverage_count_output_file).exists():
             error_msg = (
@@ -467,7 +467,7 @@ class OutputWriter(object):
             line = "\t".join(line_data) + "\n"
             exon_o.write(line)
 
-        print("Finished tert min coverage count analysis")
+        print(f"Finished tert min coverage {min_coverage} count analysis")
 
     @classmethod
     def write_tert_cumulative_coverage_file(
