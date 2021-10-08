@@ -70,6 +70,8 @@ main () {
     base_som_var=$(locate_purple_somatic_variants "${base_run_path}")
      test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
      base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
+    base_vir_ins="${base_run_path}/linx/${base_tum_sample}.linx.viral_inserts.tsv"
+    test_vir_ins="${test_run_path}/linx/${test_tum_sample}.linx.viral_inserts.tsv"
 
     all_cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
     all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}")
@@ -77,14 +79,18 @@ main () {
 
     print_header "REQUIRED FILES EXISTENCE check"
     all_crams_present="TRUE"
-    for file in "${all_base_files[@]}" "${all_test_files[@]}" "${all_cram_files[@]}"; do
+    for file in "${all_base_files[@]}"; do
+        [[ -f "${file}" ]] || die "  Base file does not exist ($file)"
+    done
+    for file in "${all_test_files[@]}"; do
+        [[ -f "${file}" ]] || die "  Test file does not exist ($file)"
+    done
+    for file in "${all_cram_files[@]}"; do
         if [[ -f "${file}" ]]; then
             info "  OK file found (${file})"
-        elif [[ "${file}" =~ .cram$ ]]; then
+        else
             info_and_warn "  Expected CRAM not found (${file})"
             all_crams_present="FALSE"
-        else
-            die "  File does not exist ($file)"
         fi
     done
 

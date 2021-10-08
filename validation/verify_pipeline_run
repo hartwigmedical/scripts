@@ -12,7 +12,7 @@ print_usage(){
     echo "   -t  truth_run  Path to directory of truth run"
     echo "   -f  force      Continue if output directory already exists"
     echo " Example:"
-    echo "   $(basename $0) -u gs://path/to/run/ -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
+    echo "   $(basename $0) -u gs://path/to/rundir -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
     echo " Notes:"
     echo "   - Run with nohup since this includes downloading from GCP"
     echo "-----"
@@ -39,8 +39,8 @@ main() {
     info "Starting with script $(basename $0)"
     
     ## some input sanity checks
-    [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir (${out_dir})?"
-    [[ -n "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url (${gcp_url})"
+    [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir format (${out_dir})?"
+    [[ -n "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url format (${gcp_url})"
     if [[ "${sanity_checks}" == "TRUE" ]]; then
         [[ ! -d "${out_dir}" ]] || die "Dir exists (${out_dir})"
     fi
@@ -143,14 +143,16 @@ download_run_from_gcp() {
     touch "${check_log}"
     
     info "Starting download from GCP (you can track progress in log ${log_file})"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}" 2>&1
-    [[ $? -eq 0 ]] || die "Something went wrong with download"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync \
+        -r -x ".*\.bam$|.*\.cram$" "${gcp_url}/" "${run_dir}/" \
+        > "${log_file}" 2>&1 || die "Something went wrong with download"
 
     info "Starting re-download from GCP (to check sync completeness)"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}.check" 2>&1
-    [[ $? -eq 0 ]] || die "Something went wrong with re-download"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync \
+        -r -x ".*\.bam$|.*\.cram$" "${gcp_url}/" "${run_dir}/" \
+        > "${log_file}.check" 2>&1 || die "Something went wrong with re-download"
 
-    line_count=$(cat "${check_log}" | grep -v 'Building sync' | grep -v 'Starting sync' | wc -l)
+    line_count=$(grep -cvP "Building sync|Starting sync" "${check_log}")
     [[ "${line_count}" -eq 0 ]] || die "Download check log seems to contain downloaded files (pls check ${check_log})"
 }
 
