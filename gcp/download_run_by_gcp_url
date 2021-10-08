@@ -21,7 +21,7 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "   -u  GCP url to download from"
     echo "   -d  Directory to download to"
     echo "   -e  Exclude any BAMs/CRAMs"
-    echo "   -p  Set user project to be billed for the download. Default is hmf-database."
+    echo "   -p  Set user project to be billed for the download. Default is ${billing_project}."
     echo "   -o  Switch to hmf-ops service account"
     echo "---"
     exit 1
