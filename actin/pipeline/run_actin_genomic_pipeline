@@ -53,6 +53,8 @@ download_isofox_to_run_dir ${run_dir}
 if [[ -d ${run_dir}/isofox ]]; then
     run_cuppa_dna_rna_prod ${run_dir}
     do_generate_cup_report_pipeline ${run_dir} ${run_dir}/cuppa_dna_rna
+else
+    info "Skipping RNA post-pipeline since isofox seems missing!"
 fi
 
 # Run standard ORANGE in production - see also DEV-2027
