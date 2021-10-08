@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
+source metadata_functions || exit 1
+source message_functions || exit 1
+
 run_dir=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${cuppa_dir}" ]]; then
+if [[ -z "${run_dir}" ]]; then
     error "Missing params. Exiting"
 fi
 
