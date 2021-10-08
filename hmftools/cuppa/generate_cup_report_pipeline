@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions || exit 1
 source message_functions || exit 1
 
 run_dir=$1 && shift
@@ -9,8 +8,6 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+cuppa_dir=${run_dir}/cuppa
 
-cuppa_dir=${run_dir}/cuppa/
-
-Rscript $(dirname $0)/CupGenerateReport_pipeline.R ${tumor_sample} ${cuppa_dir}
+do_generate_cup_report_pipeline ${run_dir} ${cuppa_dir}
