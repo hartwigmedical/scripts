@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 ref_dir=/data/resources/private/cuppa
-cuppa_dir=${run_dir}/cuppa
+cuppa_dir=${run_dir}/cuppa_dna
 cuppa_jar=$(locate_prod_cuppa)
 
 do_run_cuppa_dna ${run_dir} ${ref_dir} ${cuppa_dir} ${cuppa_jar}
