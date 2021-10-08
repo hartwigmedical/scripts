@@ -22,7 +22,7 @@ if [[ -d ${run_dir} ]]; then
 fi
 
 info "Copying ${orig_run_dir} to ${run_dir}"
-cp -r ${origin_run_dir} ${run_dir}
+cp -r ${orig_run_dir} ${run_dir}
 
 if [[ ! -d ${run_dir}/linx/plot ]]; then
     # LINX plot dir does not get propagated through GS in case of no drivers - see also DEV-2201
