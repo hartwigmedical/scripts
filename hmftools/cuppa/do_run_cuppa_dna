@@ -16,6 +16,10 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
+if [[ ! -d ${cuppa_dir} ]]; then
+    mkdir -p ${cuppa_dir}
+fi
+
 tmp_sample_data_dir=${run_dir}/cuppa_sample_data_dna
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
