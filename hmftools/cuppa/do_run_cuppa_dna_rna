@@ -27,7 +27,7 @@ cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_structural_variant_vcf=$(locate_purple_structural_variants ${run_dir})
 
-info "Running Cuppa DNA on ${run_dir}"
+info "Running Cuppa DNA-RNA on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
     -categories ALL \
     -ref_data_dir ${ref_data_dir} \
