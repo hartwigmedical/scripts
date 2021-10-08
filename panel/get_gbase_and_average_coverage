@@ -20,7 +20,7 @@ main() {
 
   if [[ ! -f ${all_depth} ]]; then
     info "Start samtools depth"
-    "${samtools}" depth -o "${all_depth}" -s -J "${bam}" || die "Could not determine depth of bam file"
+    "${samtools}" depth -o "${all_depth}" -s "${bam}" || die "Could not determine depth of bam file"
     info "Finished samtools depth"
   fi
 
