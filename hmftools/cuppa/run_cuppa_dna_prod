@@ -13,4 +13,4 @@ ref_dir=/data/resources/private/cuppa
 cuppa_dir=${run_dir}/cuppa
 cuppa_jar=$(locate_prod_cuppa)
 
-do_run_cuppa_dna ${run_dir} ${cuppa_dir} ${cuppa_jar}
+do_run_cuppa_dna ${run_dir} ${ref_dir} ${cuppa_dir} ${cuppa_jar}
