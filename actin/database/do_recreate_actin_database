@@ -3,10 +3,10 @@
 source message_functions || exit 1
 source database_functions || exit 1
 
-actin_db=$1 && shift
+actin_database_name=$1 && shift
 
-if [[ -z "${actin_db}" ]]; then
-    error "No ACTIN db provided. Exiting"
+if [[ -z "${actin_database_name}" ]]; then
+    error "Missing params. Exiting"
 fi
 
 # Resources
@@ -20,8 +20,8 @@ db_port=$(extract_database_port "${credentials}")
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 
-info "Rebuilding ACTIN db '${actin_db}' on '${db_host}' using ${actin_database_sql}"
+info "Rebuilding ACTIN db '${actin_database_name}' on '${db_host}' using ${actin_database_sql}"
 
-mysql ${actin_db} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${actin_database_sql}
+mysql ${actin_database_name} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${actin_database_sql}
 
 info "Done!"
