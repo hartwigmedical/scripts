@@ -3,11 +3,26 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
-    error "No run dir passed. Exiting";
+if [[ -z "${sample}" ]]; then
+    error "Missing params. Exiting";
 fi
+
+orig_run_dir=/data/datasets/${sample}
+
+if [[ ! -d ${orig_run_dir} ]]; then
+    error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
+fi
+
+run_dir=/data/actin/genomic/${sample}
+if [[ -d ${run_dir} ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r ${run_dir}
+fi
+
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r ${origin_run_dir} ${run_dir}
 
 if [[ ! -d ${run_dir}/linx/plot ]]; then
     # LINX plot dir does not get propagated through GS in case of no drivers - see also DEV-2201
