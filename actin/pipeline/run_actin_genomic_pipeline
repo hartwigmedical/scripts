@@ -3,11 +3,26 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
-    error "No run dir passed. Exiting";
+if [[ -z "${sample}" ]]; then
+    error "Missing params. Exiting";
 fi
+
+orig_run_dir=/data/datasets/${sample}
+
+if [[ ! -d ${orig_run_dir} ]]; then
+    error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
+fi
+
+run_dir=/data/actin/genomic/${sample}
+if [[ -d ${run_dir} ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r ${run_dir}
+fi
+
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r ${orig_run_dir} ${run_dir}
 
 if [[ ! -d ${run_dir}/linx/plot ]]; then
     # LINX plot dir does not get propagated through GS in case of no drivers - see also DEV-2201
@@ -23,11 +38,24 @@ if [[ ! -f ${pipeline_version_file} ]]; then
     echo ${version} >> ${pipeline_version_file}
 fi
 
+# Retain cuppa_conclusion. TODO Should be fixed in ORANGE
+cp -r ${run_dir}/cuppa ${run_dir}/cuppa_orig
+
 # To correct for the missing SIG data - see also DEV-2196
 run_cuppa_dna_prod ${run_dir}
-
 # To generate the CUPPA report as a picture (png) - see also DEV-2195
 generate_cup_report_pipeline ${run_dir}
+
+info "Copying original Cuppa conclusion back into new cuppa dir"
+cp ${run_dir}/cuppa_orig/${sample}.cuppa.conclusion.txt ${run_dir}/cuppa/
+
+download_isofox_to_run_dir ${run_dir}
+if [[ -d ${run_dir}/isofox ]]; then
+    run_cuppa_dna_rna_prod ${run_dir}
+    do_generate_cup_report_pipeline ${run_dir} ${run_dir}/cuppa_dna_rna
+else
+    info "Skipping RNA post-pipeline since isofox seems missing!"
+fi
 
 # Run standard ORANGE in production - see also DEV-2027
 run_orange_prod ${run_dir} -max_evidence_level C
