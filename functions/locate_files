@@ -197,8 +197,8 @@ locate_actin_clinical_directory() {
 
 locate_rna_analysis_bucket() {
     local sample=$1 && shift
-    rna_analysis_bucket=""
-    if [[ $(gsutil -q stat gs://hmf-rna-analysis/samples/${sample}) ]]; then
+    local rna_analysis_bucket=""
+    if [[ $(gsutil -q stat "gs://hmf-rna-analysis/samples/${sample}/Log.out") ]]; then
         rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
     fi
 
