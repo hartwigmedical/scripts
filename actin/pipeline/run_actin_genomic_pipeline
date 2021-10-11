@@ -49,13 +49,8 @@ generate_cup_report_pipeline ${run_dir}
 info "Copying original Cuppa conclusion back into new cuppa dir"
 cp ${run_dir}/cuppa_orig/${sample}.cuppa.conclusion.txt ${run_dir}/cuppa/
 
-download_isofox_to_run_dir ${run_dir}
-if [[ -d ${run_dir}/isofox ]]; then
-    run_cuppa_dna_rna_prod ${run_dir}
-    do_generate_cup_report_pipeline ${run_dir} ${run_dir}/cuppa_dna_rna
-else
-    info "Skipping RNA post-pipeline since isofox seems missing!"
-fi
+# Check if RNA data is present and if yes -> post-process all RNA and integrate with DNA.
+post_process_actin_rna ${run_dir}
 
 # Run standard ORANGE in production - see also DEV-2027
 run_orange_prod ${run_dir} -max_evidence_level C
