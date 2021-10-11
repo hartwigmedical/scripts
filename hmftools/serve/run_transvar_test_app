@@ -36,8 +36,8 @@ fi
 
 serve_jar=$(locate_pilot_serve)
 
-ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
-ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file_gcp)
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
+ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
 
 java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
      -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \

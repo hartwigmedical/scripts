@@ -10,5 +10,5 @@ if [[ -z ${region} ]]; then
     error "No region passed. Exiting"
 fi
 
-ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file_gcp)
+ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file)
 /data/tools/samtools/1.10/samtools faidx ${ref_genome_fasta_file} ${region}
