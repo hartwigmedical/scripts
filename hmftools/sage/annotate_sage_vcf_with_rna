@@ -16,8 +16,8 @@ reference="${sample}_RNA"
 reference_bam="${run_dir}/rna_bam/${sample}.sorted.dups.bam"
 reference_genome=$(locate_ref_genome_37_fasta_file)
 
-sage_vcf=$(locate_sage_somatic_variants ${run_dir})
-out_vcf="${run_dir}/sage_somatic/${sample}.sage.somatic.filtered.rna.vcf.gz"
+input_vcf=$(locate_purple_somatic_variants ${run_dir})
+out_vcf="${run_dir}/purple/${sample}.purple.somatic.with_rna.vcf.gz"
 
 sage_jar=$(locate_prod_sage)
 
@@ -25,5 +25,5 @@ sage_jar=$(locate_prod_sage)
 java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplication \
     -reference ${reference} -reference_bam ${reference_bam} \
     -ref_genome ${reference_genome} \
-    -input_vcf ${sage_vcf} \
+    -input_vcf ${input_vcf} \
     -out ${out_vcf}
