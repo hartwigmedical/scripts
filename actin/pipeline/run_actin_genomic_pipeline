@@ -38,7 +38,7 @@ if [[ ! -f ${pipeline_version_file} ]]; then
     echo ${version} >> ${pipeline_version_file}
 fi
 
-# Retain cuppa_conclusion. TODO Should be fixed in ORANGE
+# Retain original cuppa for cuppa_conclusion. TODO Should be fixed in ORANGE
 cp -r ${run_dir}/cuppa ${run_dir}/cuppa_orig
 
 # To correct for the missing SIG data - see also DEV-2196
