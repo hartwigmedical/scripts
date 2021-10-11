@@ -1,3 +1,21 @@
 #!/usr/bin/env bash
 
-echo "work in progress"
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+download_isofox_to_run_dir ${run_dir}
+if [[ -d ${run_dir}/isofox ]]; then
+    run_cuppa_dna_rna_prod ${run_dir}
+    do_generate_cup_report_pipeline ${run_dir} ${run_dir}/cuppa_dna_rna
+fi
+
+download_rna_bam_to_run_dir ${run_dir}
+if [[ -d ${run_dir}/rna_bam ]]; then
+    annotate_somatic_variants_with_rna ${run_dir}
+fi

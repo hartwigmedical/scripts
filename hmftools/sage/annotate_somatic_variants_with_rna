@@ -13,7 +13,7 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 reference="${sample}_RNA"
-reference_bam="${run_dir}/rna_bam/${sample}.sorted.dups.bam"
+reference_bam=$(locate_rna_bam ${run_dir})
 reference_genome=$(locate_ref_genome_37_fasta_file)
 
 input_vcf=$(locate_purple_somatic_variants ${run_dir})

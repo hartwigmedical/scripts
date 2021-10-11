@@ -195,10 +195,36 @@ locate_actin_clinical_directory() {
     echo /data/actin/clinical
 }
 
+##################################### RNA ######################################
+
+locate_rna_bam() {
+    local run_dir=$1 && shift
+
+    local bam=$(find -L "${run_dir}/rna_bam"/ -type f -name "*.sorted.dups.bam")
+
+    echo ${bam}
+}
+
+locate_rna_sage_directory() {
+    local run_dir=$1 && shift
+
+    echo "${run_dir}/rna_sage"
+}
+
+locate_rna_annotated_somatic_variants() {
+    local run_dir=$1 && shift
+
+    local rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
+    local rna_annotated_vcf=$(find -L "${rna_sage_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
+
+    echo ${rna_annotated_vcf}
+}
+
 locate_rna_analysis_bucket() {
     local sample=$1 && shift
     local rna_analysis_bucket=""
 
+    # Assume the Log.out always exists in case of RNA pipeline performed.
     gsutil -q stat "gs://hmf-rna-analysis/samples/${sample}/Log.out"
     if [[ $? == 0 ]]; then
         rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
@@ -210,67 +236,67 @@ locate_rna_analysis_bucket() {
 ################################## Resources ###################################
 
 locate_driver_gene_panel_37_tsv_ds() {
-    echo ${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv
+    echo "${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv"
 }
 
 locate_driver_gene_panel_37_tsv() {
-    echo /data/repos/common-resources-public/gene_panel/37/DriverGenePanel.37.tsv
+    echo "/data/repos/common-resources-public/gene_panel/37/DriverGenePanel.37.tsv"
 }
 
 locate_driver_gene_panel_38_tsv() {
-    echo /data/repos/common-resources-public/gene_panel/38/DriverGenePanel.38.tsv
+    echo "/data/repos/common-resources-public/gene_panel/38/DriverGenePanel.38.tsv"
 }
 
 locate_known_fusion_data_37_csv_ds() {
-    echo ${base_path}/dbs/has_been_moved_to_gcp/fusions/known_fusion_data.37_v3.csv
+    echo "${base_path}/dbs/has_been_moved_to_gcp/fusions/known_fusion_data.37_v3.csv"
 }
 
 locate_known_fusion_data_37_csv() {
-    echo /data/repos/common-resources-public/fusions/37/known_fusion_data.37.csv
+    echo "/data/repos/common-resources-public/fusions/37/known_fusion_data.37.csv"
 }
 
 locate_known_fusion_data_38_csv() {
-    echo /data/repos/common-resources-public/fusions/38/known_fusion_data.38.csv
+    echo "/data/repos/common-resources-public/fusions/38/known_fusion_data.38.csv"
 }
 
 locate_peach_resource_dir() {
-    echo ${base_path}/dbs/peach
+    echo "${base_path}/dbs/peach"
 }
 
 locate_pilot_iclusion_trial_tsv() {
-    echo /data/resources/iclusion/iclusion_trials_pilot.tsv
+    echo "/data/resources/iclusion/iclusion_trials_pilot.tsv"
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo /data/resources/iclusion/iclusion_trials_prod.tsv
+    echo "/data/resources/iclusion/iclusion_trials_prod.tsv"
 }
 
 locate_vicc_json() {
-    echo /data/resources/vicc/all.json
+    echo "/data/resources/vicc/all.json"
 }
 
 locate_docm_tsv() {
-    echo /data/resources/docm/docm_v3.2.tsv
+    echo "/data/resources/docm/docm_v3.2.tsv"
 }
 
 locate_hartwig_cohort_tsv() {
-    echo /data/resources/hartwig/hartwig_cohort.tsv
+    echo "/data/resources/hartwig/hartwig_cohort.tsv"
 }
 
 locate_hartwig_curated_tsv() {
-    echo /data/resources/hartwig/hartwig_curated.tsv
+    echo "/data/resources/hartwig/hartwig_curated.tsv"
 }
 
 locate_ckb_flex_data_dir() {
-    echo /data/resources/ckb/ckb_flex_dump
+    echo "/data/resources/ckb/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
-    echo /data/resources/serve/ckb_filters.tsv
+    echo "/data/resources/serve/ckb_filters.tsv"
 }
 
 locate_ckb_filter_tsv_empty() {
-    echo /data/resources/serve/ckb_filters_empty.tsv
+    echo "/data/resources/serve/ckb_filters_empty.tsv"
 }
 
 locate_samplesheets_dir() {
