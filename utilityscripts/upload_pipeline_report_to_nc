@@ -36,7 +36,7 @@ json=$( echo ${json#"gs://patient-reporter-prod-1/"} )
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $report &> /dev/null
 info "The report $report is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
-if [[ "${sample:0:6}" == "COREDB" ]]; then
+if [[ "${sample:0:6}" == "COREDB01" ]]; then
     upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $json &> /dev/null
     info "The json file $json is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 fi
