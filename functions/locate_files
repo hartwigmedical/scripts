@@ -197,10 +197,17 @@ locate_actin_clinical_directory() {
 
 ##################################### RNA ######################################
 
+locate_rna_bam_directory() {
+    local run_dir=$1 && shift
+
+    echo "${run_dir}/rna_bam"
+}
+
 locate_rna_bam() {
     local run_dir=$1 && shift
 
-    local bam=$(find -L "${run_dir}/rna_bam"/ -type f -name "*.sorted.dups.bam")
+    local bam_directory=$(locate_rna_bam_directory ${run_dir})
+    local bam=$(find -L "${bam_directory}/" -type f -name "*.sorted.dups.bam")
 
     echo ${bam}
 }
