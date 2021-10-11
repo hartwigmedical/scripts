@@ -6,7 +6,7 @@ source database_functions || exit 1
 actin_database_name=$1 && shift
 
 if [[ -z "${actin_database_name}" ]]; then
-    error "Missing params. Exiting"
+    error "Parameters missing. Exiting"
 fi
 
 # Resources

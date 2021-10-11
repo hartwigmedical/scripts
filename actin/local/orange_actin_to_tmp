@@ -5,7 +5,7 @@ source message_functions || exit 1
 patient=$1
 
 if [[ -z ${patient} ]]; then
-    error "No patient provided"
+    error "No patient provided. Exiting."
 fi
 
 gcloud compute scp data-vm-prod-1:/data/actin/genomic/*${patient}*/orange/*.pdf ~/hmf/tmp/

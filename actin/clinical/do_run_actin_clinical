@@ -7,7 +7,7 @@ actin_jar=$1 && shift
 output_directory=$1 && shift
 
 if [[ -z ${actin_jar} || -z ${output_directory} ]]; then
-    error "Parameters missing."
+    error "Parameters missing. Exiting."
 fi
 
 feed_directory=$(locate_actin_clinical_feed_directory)

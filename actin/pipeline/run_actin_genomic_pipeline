@@ -6,7 +6,7 @@ source locate_files || exit 1
 sample=$1 && shift
 
 if [[ -z "${sample}" ]]; then
-    error "Missing params. Exiting";
+    error "Parameters missing. Exiting.";
 fi
 
 orig_run_dir=/data/datasets/${sample}
