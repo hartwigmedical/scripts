@@ -50,7 +50,7 @@ info "Copying original Cuppa conclusion back into new cuppa dir"
 cp ${run_dir}/cuppa_orig/${sample}.cuppa.conclusion.txt ${run_dir}/cuppa/
 
 # Check if RNA data is present and if yes -> post-process all RNA and integrate with DNA.
-post_process_actin_rna ${run_dir}
+run_actin_rna_post_process ${run_dir}
 
 # Run standard ORANGE in production - see also DEV-2027
 run_orange_prod ${run_dir} -max_evidence_level C
