@@ -38,6 +38,8 @@ main() {
           || die "Could not determine average coverage over ${MIN_COVERAGE}"
   info "Average coverage of bases with coverage over ${MIN_COVERAGE}: ${average_coverage_above_minimum}"
 
+  rm "${all_depth}"
+
   info "Finished ${SCRIPT_NAME}"
 }
 
