@@ -195,6 +195,16 @@ locate_actin_clinical_directory() {
     echo /data/actin/clinical
 }
 
+locate_rna_analysis_bucket() {
+    local sample=$1 && shift
+    rna_analysis_bucket=""
+    if [[ $(gsutil -q stat gs://hmf-rna-analysis/samples/${sample}) ]]; then
+        rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
+    fi
+
+    echo ${rna_analysis_bucket}
+}
+
 ################################## Resources ###################################
 
 locate_driver_gene_panel_37_tsv_ds() {
