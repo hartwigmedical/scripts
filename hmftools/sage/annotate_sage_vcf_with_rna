@@ -21,6 +21,7 @@ out_vcf="${run_dir}/sage_somatic/${sample}.sage.somatic.filtered.rna.vcf.gz"
 
 sage_jar=$(locate_prod_sage)
 
+# With SAGE v2.9+ the package of the append app will change to com.hartwig.hmftools.sage.apps
 java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplication \
     -reference ${reference} -reference_bam ${reference_bam} \
     -ref_genome ${reference_genome} \
