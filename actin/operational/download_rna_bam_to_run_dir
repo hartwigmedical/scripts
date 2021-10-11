@@ -14,8 +14,9 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 rna_analysis_bucket=$(locate_rna_analysis_bucket ${tumor_sample})
 if [[ ! -z ${rna_analysis_bucket} ]]; then
-    info "Downloading RNA bam to ${run_dir}/rna_bam"
-    gsutil -m cp -r ${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam* ${run_dir}/
+    rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
+    info "Downloading RNA bam to ${rna_bam_directory}"
+    gsutil -m cp -r ${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam* ${rna_bam_directory}/
 else
     warn "Could not locate RNA analysis bucket for ${tumor_sample}. RNA pipeline not run yet?"
 fi
