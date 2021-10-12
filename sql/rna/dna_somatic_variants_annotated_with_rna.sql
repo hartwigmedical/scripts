@@ -1,4 +1,4 @@
-SELECT a.*, group_concat(likelihoodMethod) as driversInGene, purity
+SELECT a.*, group_concat(likelihoodMethod) AS driversInGene, purity
 FROM
 	(SELECT sampleId,chromosome,position,gene,ref,alt,canonicalCodingEffect,alleleReadCount/totalReadCount AS DNAVaf,rnaAlleleReadCount/rnaTotalReadCount AS
 	RNAVaf,alleleReadCount,totalReadCount,rnaAlleleReadCount,rnaTotalReadCount,copyNumber,reported

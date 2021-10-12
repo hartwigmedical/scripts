@@ -1,4 +1,4 @@
-SELECT primaryTumorLocation, cuppaTumorLocation, b.reportedType, dnaFusionCount, a.*
+SELECT primaryTumorLocation, cuppaTumorLocation, b.reportedType, dnaFusionCount, svFusion.reported AS reportedDna, a.*
 FROM
 (SELECT * FROM rnaFusion WHERE
 (name LIKE 'SLC45A3%' OR
@@ -79,5 +79,5 @@ LEFT JOIN clinical
     ON a.sampleId=clinical.sampleId
 LEFT JOIN cuppa
     ON a.sampleId=cuppa.sampleId
-WHERE svFusion.sampleId IS NULL AND a.sampleId in ('XXX') AND (b.reportedType IS NULL OR b.reportedType != 'KNOWN_PAIR')
+WHERE (svFusion.sampleId IS NULL OR svFusion.reported != 1) AND a.sampleId in ('XXX') AND (b.reportedType IS NULL OR b.reportedType != 'KNOWN_PAIR')
 ORDER BY b.reportedType, a.name, a.sampleId;
