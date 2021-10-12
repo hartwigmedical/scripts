@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-actin_jar=${HOME}/hmf/repos/actin/actin-system/target/actin-system-*-jar-with-dependencies.jar
+actin_jar=${HOME}/hmf/repos/actin/system/target/system-*-jar-with-dependencies.jar
 
 #info "Copying ${actin_jar} to gs://common-tools/"
 #gsutil cp ${actin_jar} gs://common-tools/actin/pilot/actin.jar
