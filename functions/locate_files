@@ -327,7 +327,7 @@ locate_snpcheck_dir() {
 }
 
 locate_snpcheck_vcf_upload_dir() {
-    echo "/data/gcp/snpcheckvcfupload/"
+    echo "/data/common/snpcheck/gcp-sync"
 }
 
 #################################### Repos #####################################

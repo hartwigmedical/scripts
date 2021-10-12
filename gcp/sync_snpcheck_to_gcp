@@ -9,4 +9,4 @@ snpcheck_vcfs_bucket=$(locate_snpcheck_vcfs_at_gcp) || die "Could not get snpche
 
 info "Syncing snpcheck data to GCP!"
 
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -dr "${local_path}" "${snpcheck_vcfs_bucket}"
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r "${local_path}" "${snpcheck_vcfs_bucket}"
