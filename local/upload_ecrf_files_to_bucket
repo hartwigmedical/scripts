@@ -22,7 +22,7 @@ fi
 info "Uploading ${ecrf_files_cpct_xml} to gs://hmf-ops-data/ecrf/"
 gsutil cp ${ecrf_files_cpct_xml} gs://hmf-ops-data/ecrf/
 
-info "Uploading ${ecrf_files_cpct_csv} to ggs://hmf-ops-data/ecrf/"
+info "Uploading ${ecrf_files_cpct_csv} to gs://hmf-ops-data/ecrf/"
 gsutil cp ${ecrf_files_cpct_csv} gs://hmf-ops-data/ecrf/
 
 info "Uploading ${ecrf_files_drup_xml} to gs://hmf-ops-data/ecrf/"
