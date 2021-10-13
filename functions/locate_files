@@ -247,11 +247,11 @@ locate_driver_gene_panel_37_tsv_ds() {
 }
 
 locate_driver_gene_panel_37_tsv() {
-    echo "/data/repos/common-resources-public/gene_panel/37/DriverGenePanel.37.tsv"
+    echo "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv"
 }
 
 locate_driver_gene_panel_38_tsv() {
-    echo "/data/repos/common-resources-public/gene_panel/38/DriverGenePanel.38.tsv"
+    echo "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
 }
 
 locate_known_fusion_data_37_csv_ds() {
@@ -259,11 +259,11 @@ locate_known_fusion_data_37_csv_ds() {
 }
 
 locate_known_fusion_data_37_csv() {
-    echo "/data/repos/common-resources-public/fusions/37/known_fusion_data.37.csv"
+    echo "/data/resources/public/fusions/37/known_fusion_data.37.csv"
 }
 
 locate_known_fusion_data_38_csv() {
-    echo "/data/repos/common-resources-public/fusions/38/known_fusion_data.38.csv"
+    echo "/data/resources/public/fusions/38/known_fusion_data.38.csv"
 }
 
 locate_peach_resource_dir() {
