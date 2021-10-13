@@ -21,10 +21,11 @@ sage_jar=$(locate_prod_sage)
 rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
 create_or_cleanup_dir ${rna_sage_directory}
 
+
 germline_input_vcf=$(locate_purple_germline_variants ${run_dir})
 germline_out="${rna_sage_directory}/${sample}.purple.germline.with_rna.vcf.gz"
 
-# With SAGE v2.9+ the package of the append app will change to com.hartwig.hmftools.sage.apps
+info "Running SAGE RNA annotation on germline variants for ${sample}"
 java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplication \
     -reference ${reference} -reference_bam ${reference_bam} \
     -ref_genome ${ref_genome} \
@@ -34,7 +35,7 @@ java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplicat
 somatic_input_vcf=$(locate_purple_somatic_variants ${run_dir})
 somatic_out="${rna_sage_directory}/${sample}.purple.somatic.with_rna.vcf.gz"
 
-# With SAGE v2.9+ the package of the append app will change to com.hartwig.hmftools.sage.apps
+info "Running SAGE RNA annotation on somatic variants for ${sample}"
 java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplication \
     -reference ${reference} -reference_bam ${reference_bam} \
     -ref_genome ${ref_genome} \
