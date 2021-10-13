@@ -2,12 +2,12 @@
 
 source message_functions || exit 1
 
-dataFile=$1 && shift
+data_file=$1 && shift
 
-iclusionFile="iclusion_trials_prod.tsv"
-iclusionPath="/data/resources/iclusion/"
-iclusionFileDate=$( echo ${dataFile}_${iclusionFile})
+iclusion_file="iclusion_trials_prod.tsv"
+iclusion_path="/data/resources/iclusion"
+iclusion_file_date=$(echo ${data_file}_${iclusion_file})
 
 info "Uploading iClusion file to gs://hmf-crunch-resources/serve/iclusion/"
-gsutil cp ${iclusionPath}${iclusionFile} gs://hmf-crunch-resources/serve/iclusion/${iclusionFileDate}
+gsutil cp ${iclusion_path}/${iclusion_file} gs://hmf-crunch-resources/serve/iclusion/${iclusion_file_date}
 info "iClusion has been uploaded in bucket!"
