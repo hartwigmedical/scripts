@@ -344,7 +344,7 @@ locate_ref_genome_37_fasta_file_ds() {
 }
 
 locate_ref_genome_37_fasta_file() {
-    echo /data/resources/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    echo /data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 
 locate_ref_genome_38_fasta_file_ds() {
@@ -352,15 +352,15 @@ locate_ref_genome_38_fasta_file_ds() {
 }
 
 locate_ref_genome_38_fasta_file() {
-    echo /data/resources/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+    echo /data/resources/bucket/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
 }
 
 locate_ref_genome_37_to_38_chain() {
-    echo /data/resources/reference_genome_liftover/hg19ToHg38.over.chain
+    echo /data/resources/custom/reference_genome_liftover/hg19ToHg38.over.chain
 }
 
 locate_ref_genome_38_to_37_chain() {
-    echo /data/resources/reference_genome_liftover/hg38ToHg19.over.chain
+    echo /data/resources/custom/reference_genome_liftover/hg38ToHg19.over.chain
 }
 
 ##################################  METRICS ####################################
