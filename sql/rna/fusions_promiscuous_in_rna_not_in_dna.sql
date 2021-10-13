@@ -67,8 +67,6 @@ name LIKE '%TFE3' OR
 name LIKE '%TFEB' OR
 name LIKE '%USP6' OR
 name LIKE '%NCOA1') AND LEFT(NAME,1) !="_" AND (svType IN ('BND','INV','INS') OR abs(positionUp-positionDown)>1e6)
-OR
-name IN ('EGFR_EGFR','ALK_ALK','BRAF_BRAF','KIT_KIT','EGFR_EGFR','MET_MET','FLT3_FLT3','BRAF_BRAF','CTNNB1_CTNNB1','EGFR_EGFR','AHR_AHR','PDGFRA_PDGFRA','KMT2A_KMT2A')
 )
 AS a
 LEFT JOIN (SELECT DISTINCT NAME, reportedType, count(*) AS dnaFusionCount FROM svFusion GROUP BY 1,2) AS b
