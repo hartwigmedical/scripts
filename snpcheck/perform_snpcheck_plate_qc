@@ -12,14 +12,14 @@ snpcheck_dir=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
 if [[ -z "${vcf_dir_path}" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename "$0") \${pathToDirWithVCFs}"
-    echo "    Eg: $(basename "$0") ${snpcheck_dir}output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
+    echo "    Eg: $(basename "$0") ${snpcheck_dir}/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
     echo "---"
     exit 1
 fi
 
 if [[ ! -d "${vcf_dir_path}" ]]; then error "Dir does not exist (${vcf_dir_path})"; fi
 
-qc_logs_path="${snpcheck_dir}qc"
+qc_logs_path="${snpcheck_dir}/qc"
 nas_path="/volume1/web/qc/snpcheck"
 
 vcf_dir_name=$(basename "${vcf_dir_path}")
