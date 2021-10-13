@@ -5,7 +5,8 @@ source message_functions || exit 1
 api_json=$1 && shift
 sample_name=$1 && shift
 
-run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
+##run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
+run_id=12
 has_reliable_purity=$( cat ${api_json} | jq .has_reliable_purity)
 sample_barcode=$(cat ${api_json} | jq .barcode)
 report_date=$(cat ${api_json} | jq .report_date)
@@ -18,20 +19,21 @@ has_reliable_quality=$(cat ${api_json} | jq .has_reliable_quality)
 url_bucket_report_auto="gs://patient-reporter-prod-1/"
 url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 
-if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
-else
-    info "Report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
-    source="automatic"
-fi
+#if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+#    info "No report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
+#else
+#    info "Report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
+#    source="automatic"
+#fi
+#
+### check whether report exists in manual bucket
+#if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+#    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
+#else
+#    source="manual"
+#fi
 
-## check whether report exists in manual bucket
-if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
-else
-    source="manual"
-fi
-
+source="manual"
 info "Adding entry to created API"
 curl --silent --show-error \
       -H "Content-Type: application/json" \
