@@ -34,11 +34,11 @@ locate_pilot_purple() {
 
 #TODO: Move to v1.1 when validation to done
 locate_prod_virus_interpreter() {
-    echo "${base_path}/tools/virus-interpreter/1.0/virus-interpreter.jar"
+    echo "/data/tools/virus-interpreter/1.0/virus-interpreter.jar"
 }
 
 locate_pilot_virus_interpreter() {
-    echo "${base_path}/tools/virus-interpreter/pilot/virus-interpreter.jar"
+    echo "/data/tools/virus-interpreter/pilot/virus-interpreter.jar"
 }
 
 locate_prod_cuppa() {
@@ -51,18 +51,6 @@ locate_pilot_cuppa() {
 
 locate_prod_paddle() {
     echo "/data/tools/paddle/1.0/paddle.jar"
-}
-
-locate_prod_patient_db() {
-    echo "/data/tools/patient-db/3.62/patient-db.jar"
-}
-
-locate_diagnostic_patient_db() {
-    echo "/data/tools/patient-db/3.61/patient-db.jar"
-}
-
-locate_pilot_patient_db() {
-    echo "/data/tools/patientdb/pilot/patient-db.jar"
 }
 
 locate_prod_linx() {
@@ -91,6 +79,18 @@ locate_prod_orange() {
 
 locate_pilot_orange() {
     echo "/data/tools/orange/pilot/orange.jar"
+}
+
+locate_prod_patient_db() {
+    echo "/data/tools/patient-db/3.62/patient-db.jar"
+}
+
+locate_diagnostic_patient_db() {
+    echo "/data/tools/patient-db/3.61/patient-db.jar"
+}
+
+locate_pilot_patient_db() {
+    echo "/data/tools/patientdb/pilot/patient-db.jar"
 }
 
 locate_prod_patient_reporter_ds() {
