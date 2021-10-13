@@ -11,7 +11,7 @@ fi
 ############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
-    echo "{base_path}/dbs/nextcloud_credentials/nextcloud_credentials"
+    echo "${base_path}/dbs/nextcloud_credentials/nextcloud_credentials"
 }
 
 ##################################### JARS #####################################
