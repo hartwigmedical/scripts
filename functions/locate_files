@@ -184,7 +184,7 @@ locate_peach_main() {
 #################################### ACTIN #####################################
 
 locate_actin_clinical_feed_directory() {
-    echo "/data/resources/custom/actin/ehr_data_dump/211004"
+    echo "/data/resources/custom/actin/ehr_data_dump/actin_ehr_dump"
 }
 
 locate_actin_clinical_curation_directory() {
