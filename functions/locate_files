@@ -11,66 +11,70 @@ fi
 ############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
-    echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
+    echo "{base_path}/dbs/nextcloud_credentials/nextcloud_credentials"
 }
 
 ##################################### JARS #####################################
 
 locate_pilot_actin() {
-    echo /data/tools/actin/pilot/actin.jar
+    echo "/data/tools/actin/pilot/actin.jar"
 }
 
 locate_prod_sage() {
-    echo /data/tools/sage/2.8/sage.jar
+    echo "/data/tools/sage/2.8/sage.jar"
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple/3.1/purple.jar
+    echo "/data/tools/purple/3.1/purple.jar"
 }
 
 locate_pilot_purple() {
-    echo ${base_path}/tools/purple/pilot/purple.jar
+    echo "/data/tools/purple/pilot/purple.jar"
 }
 
 #TODO: Move to v1.1 when validation to done
 locate_prod_virus_interpreter() {
-    echo ${base_path}/tools/virus-interpreter/1.0/virus-interpreter.jar
+    echo "${base_path}/tools/virus-interpreter/1.0/virus-interpreter.jar"
 }
 
 locate_pilot_virus_interpreter() {
-    echo ${base_path}/tools/virus-interpreter/pilot/virus-interpreter.jar
+    echo "${base_path}/tools/virus-interpreter/pilot/virus-interpreter.jar"
 }
 
 locate_prod_cuppa() {
-    echo ${base_path}/tools/cuppa/1.4/cuppa.jar
+    echo "/data/tools/cuppa/1.4/cuppa.jar"
+}
+
+locate_pilot_cuppa() {
+    echo "/data/tools/cuppa/pilot/cuppa.jar"
 }
 
 locate_prod_paddle() {
-    echo ${base_path}/tools/paddle/1.0/paddle.jar
+    echo "/data/tools/paddle/1.0/paddle.jar"
 }
 
 locate_prod_patient_db() {
-    echo /data/tools/patient-db/3.62/patient-db.jar
+    echo "/data/tools/patient-db/3.62/patient-db.jar"
 }
 
 locate_diagnostic_patient_db() {
-    echo /data/tools/patient-db/3.61/patient-db.jar
+    echo "/data/tools/patient-db/3.61/patient-db.jar"
 }
 
 locate_pilot_patient_db() {
-    echo /data/tools/patientdb/pilot/patient-db.jar
+    echo "/data/tools/patientdb/pilot/patient-db.jar"
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/linx/1.16/linx.jar
+    echo "/data/tools/linx/1.16/linx.jar"
 }
 
 locate_pilot_linx() {
-    echo ${base_path}/tools/linx/pilot/linx.jar
+    echo "/data/tools/linx/pilot/linx.jar"
 }
 
 locate_prod_sigs() {
-    echo ${base_path}/tools/sigs/1.0/sigs.jar
+    echo "/data/tools/sigs/1.0/sigs.jar"
 }
 
 locate_prod_sigs_ds() {
@@ -78,95 +82,91 @@ locate_prod_sigs_ds() {
 }
 
 locate_pilot_sigs() {
-    echo ${base_path}/tools/sigs/pilot/sigs.jar
+    echo "/data/tools/sigs/pilot/sigs.jar"
 }
 
 locate_prod_orange() {
-    echo ${base_path}/tools/orange/1.1/orange.jar
+    echo "/data/tools/orange/1.1/orange.jar"
 }
 
 locate_pilot_orange() {
-    echo ${base_path}/tools/orange/pilot/orange.jar
+    echo "/data/tools/orange/pilot/orange.jar"
 }
 
 locate_prod_patient_reporter_ds() {
-    echo ${base_path}/tools/patientreporter_v7.23/patient-reporter.jar
+    echo "${base_path}/tools/patientreporter_v7.23/patient-reporter.jar"
 }
 
 locate_pilot_patient_reporter_ds() {
-    echo ${base_path}/tools/patientreporter_pilot/patient-reporter.jar
+    echo "${base_path}/tools/patientreporter_pilot/patient-reporter.jar"
 }
 
 locate_prod_vicc_importer() {
-    echo ${base_path}/tools/vicc-importer/1.1/vicc-importer.jar
+    echo "/data/tools/vicc-importer/1.1/vicc-importer.jar"
 }
 
 locate_pilot_vicc_importer() {
-    echo ${base_path}/tools/vicc-importer/pilot/vicc-importer.jar
+    echo "/data/tools/vicc-importer/pilot/vicc-importer.jar"
 }
 
 locate_prod_iclusion_importer() {
-    echo ${base_path}/tools/iclusion-importer/1.3/iclusion-importer.jar
+    echo "/data/tools/iclusion-importer/1.3/iclusion-importer.jar"
 }
 
 locate_pilot_iclusion_importer() {
-    echo ${base_path}/tools/iclusion-importer/pilot/iclusion-importer.jar
+    echo "/data/tools/iclusion-importer/pilot/iclusion-importer.jar"
 }
 
 locate_prod_ckb_importer() {
-    echo ${base_path}/tools/ckb-importer/1.1/ckb-importer.jar
+    echo "/data/tools/ckb-importer/1.1/ckb-importer.jar"
 }
 
 locate_pilot_ckb_importer() {
-    echo ${base_path}/tools/ckb-importer/pilot/ckb-importer.jar
+    echo "/data/tools/ckb-importer/pilot/ckb-importer.jar"
 }
 
 locate_prod_serve() {
-    echo ${base_path}/tools/serve/1.6/serve.jar
+    echo "/data/tools/serve/1.6/serve.jar"
 }
 
 locate_pilot_serve() {
-    echo ${base_path}/tools/serve/pilot/serve.jar
+    echo "/data/tools/serve/pilot/serve.jar"
 }
 
 locate_prod_protect() {
-    echo /data/tools/protect/1.4/protect.jar
+    echo "/data/tools/protect/1.4/protect.jar"
 }
 
 locate_pilot_protect() {
-    echo ${base_path}/tools/protect/pilot/protect.jar
-}
-
-locate_pilot_cuppa() {
-    echo ${base_path}/tools/cuppa/pilot/cuppa.jar
+    echo "/data/tools/protect/pilot/protect.jar"
 }
 
 locate_pilot_sig_analyser() {
-    echo ${base_path}/tools/sig-analyser/pilot/sig-analyser.jar
+    echo "/data/tools/sig-analyser/pilot/sig-analyser.jar"
 }
 
 locate_prod_hmf_id_generator() {
-    echo ${base_path}/tools/hmf-id-generator/2.8/hmf-id-generator.jar
+    echo "/data/tools/hmf-id-generator/2.8/hmf-id-generator.jar"
 }
 
 locate_pilot_hmf_id_generator() {
-    echo ${base_path}/tools/hmf-id-generator/pilot/hmf-id-generator.jar
+    echo "/data/tools/hmf-id-generator/pilot/hmf-id-generator.jar"
 }
 
 locate_prod_datarequest() {
-    echo ${base_path}/tools/datarequest/datarequest_prod.jar
+    echo "/data/tools/datarequest/datarequest_prod.jar"
 }
 
 locate_pilot_datarequest() {
-    echo ${base_path}/tools/datarequest/datarequest_pilot.jar
+    echo "/data/tools/datarequest/datarequest_pilot.jar"
 }
 
 locate_dsync() {
-    echo ${base_path}/tools/dsync/1.3.2/dsync.jar
+    echo "/data/tools/dsync/1.3.2/dsync.jar"
 }
 
 locate_run_contexts_writer() {
-    echo ${base_path}/tools/run_contexts_writer/clinical-db-loader.jar
+    echo "/data/tools/run_contexts_writer/clinical-db-loader.jar"
 }
 
 ############################# PIPELINE VERSION #################################
@@ -184,15 +184,15 @@ locate_peach_main() {
 #################################### ACTIN #####################################
 
 locate_actin_clinical_feed_directory() {
-    echo /data/resources/custom/actin/ehr_data_dump/211004
+    echo "/data/resources/custom/actin/ehr_data_dump/211004"
 }
 
 locate_actin_clinical_curation_directory() {
-    echo /data/resources/custom/actin/clinical_curation
+    echo "/data/resources/custom/actin/clinical_curation"
 }
 
 locate_actin_clinical_directory() {
-    echo /data/actin/clinical
+    echo "/data/actin/clinical"
 }
 
 ##################################### RNA ######################################
@@ -340,27 +340,27 @@ locate_repo_dir() {
 ################################# REF GENOME ###################################
 
 locate_ref_genome_37_fasta_file_ds() {
-    echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    echo "${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 }
 
 locate_ref_genome_37_fasta_file() {
-    echo /data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    echo "/data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 }
 
 locate_ref_genome_38_fasta_file_ds() {
-    echo ${base_path}/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+    echo "${base_path}/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 }
 
 locate_ref_genome_38_fasta_file() {
-    echo /data/resources/bucket/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+    echo "/data/resources/bucket/reference_genome/38/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 }
 
 locate_ref_genome_37_to_38_chain() {
-    echo /data/resources/custom/reference_genome_liftover/hg19ToHg38.over.chain
+    echo "/data/resources/custom/reference_genome_liftover/hg19ToHg38.over.chain"
 }
 
 locate_ref_genome_38_to_37_chain() {
-    echo /data/resources/custom/reference_genome_liftover/hg38ToHg19.over.chain
+    echo "/data/resources/custom/reference_genome_liftover/hg38ToHg19.over.chain"
 }
 
 ##################################  METRICS ####################################
