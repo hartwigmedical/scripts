@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+fastq_dir=$1 && shift
+output_csv=$1 && shift
+
+if [[ -z "${fastq_dir}" || -z "${output_csv}" ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+java -Xmx4G -jar /data/tools/fastq-stats/pilot/fastq-stats.jar \
+    -fastq_dir ${fastq_dir} \
+    -out ${output_csv} \
+    -threadCount 4
