@@ -8,9 +8,7 @@ source message_functions || exit 1
 #sample_object=$(curl --fail --silent --show-error \
 #                          -H "Content-Type: application/json" \
 #                          -X GET http://api.pilot-1/hmf/v1/reports/created?sample_barcode=${sample_barcode} )
-#report_type=$(cat ${api_json} | jq .report_type)
-#sample_barcode=$(cat ${api_json} | jq .barcode)
-#report_date=$(cat ${api_json} | jq .report_date)
+
 
 report_created_id=0 ## fix
 current_date=$(date '+%d-%b-%Y')
