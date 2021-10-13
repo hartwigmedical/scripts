@@ -307,23 +307,23 @@ locate_ckb_filter_tsv_empty() {
 }
 
 locate_samplesheets_dir() {
-    echo "/data/samplesheets/"
+    echo "/data/samplesheets"
 }
 
 locate_sample_registration_unregistered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons/"
+    echo "/data/ops/api/prod/jsons"
 }
 
 locate_sample_registration_registered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons/registered/"
+    echo "/data/ops/api/prod/jsons/registered"
 }
 
 locate_sample_registration_logs_dir() {
-    echo "/data/ops/api/prod/logs/"
+    echo "/data/ops/api/prod/logs"
 }
 
 locate_snpcheck_dir() {
-    echo "/data/common/snpcheck/"
+    echo "/data/common/snpcheck"
 }
 
 locate_snpcheck_vcf_upload_dir() {
