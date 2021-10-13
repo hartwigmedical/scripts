@@ -6,7 +6,7 @@ api_json=$1 && shift
 sample_name=$1 && shift
 
 ##run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
-run_id=12
+
 has_reliable_purity=$( cat ${api_json} | jq .has_reliable_purity)
 sample_barcode=$(cat ${api_json} | jq .barcode)
 report_date=$(cat ${api_json} | jq .report_date)
@@ -34,11 +34,13 @@ url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 #fi
 
 source="manual"
+
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s}' "has_reliable_purity" ${has_reliable_purity} "sample_barcode" "${sample_barcode}""report_date" "${report_date}" "purity" ${purity} "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" ${has_reliable_quality}"source" "${source}" "sample_name" ${sample_name})
+##data1=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s,}' "has_reliable_purity" ${has_reliable_purity} "sample_barcode" "${sample_barcode}""report_date" "${report_date}" "purity" ${purity} "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" ${has_reliable_quality}"source" "${source}" "sample_name" ${sample_name} "run_id" ${run_id})
+
 info "Adding entry to created API"
 curl --silent --show-error \
       -H "Content-Type: application/json" \
       -H "Accept: application/json" \
       -X POST http://api.pilot-1/hmf/v1/reports/created \
-      --data '{ "run_id": ${run_id},"has_reliable_purity": ${has_reliable_purity}, "sample_barcode": ${sample_barcode},
-       "report_date": ${report_date},"purity": ${purity},"report_type": ${report_type},"cohort": ${cohort},
-       "has_reliable_quality": ${has_reliable_quality},  "source": ${source}, "sample_name": ${sample_name} }'
+      --data "${data}"
