@@ -2,15 +2,23 @@
 
 source message_functions || exit 1
 
-#api_json=$1 && shift
-#sample_barcode=$1 && shift
+sample_barcode=$1 && shift
 
-#sample_object=$(curl --fail --silent --show-error \
-#                          -H "Content-Type: application/json" \
-#                          -X GET http://api.pilot-1/hmf/v1/reports/created?sample_barcode=${sample_barcode} )
+sample_object=$(curl --fail --silent --show-error \
+                          -H "Content-Type: application/json" \
+                          -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
 
+## extract correct report created id
+size_object=$(echo ${sample_object} | jq '. | length')
+if [[ ${size_object} -eq 0 ]]; then
+  warn "No created entry is present. Add entry first in created endpoint"
+  exit 1
+elif [[ ${size_object} -eq 1 ]]; then
+  report_created_id=$(echo ${sample_object} | jq .[].id)
+else
+  report_created_id=0
+fi
 
-report_created_id=0 ## fix
 current_date=$(date '+%d-%b-%YT%H:%M:%S')
 data=$(printf '{"%s": "%s", "%s": %s}' "share_date" "${current_date}" "report_created_id" "${report_created_id}")
 
