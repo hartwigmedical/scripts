@@ -55,7 +55,7 @@ else
     json=$( echo ${json#"${url_bucket_report_auto}"} )
     api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
     api=$( echo ${api#"${url_bucket_report_auto}"} )
-    report_type=$(gsutil cat ${api} | jq .report_type)
+    report_type=$(gsutil cat ${api} | jq '.report_type')
     source="automatic"
 fi
 
@@ -76,7 +76,7 @@ else
         json=$( echo ${json#"${url_bucket_report_manual}"} )
         api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
         api=$( echo ${api#"${url_bucket_report_auto}"} )
-        report_type=$(gsutil cat ${api} | jq .report_type)
+        report_type=$(gsutil cat ${api} | jq '.report_type')
     else
         report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
         report=$( echo ${report#"${url_bucket_report_manual}"} )
@@ -84,7 +84,7 @@ else
         json=$( echo ${json#"${url_bucket_report_manual}"} )
         api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
         api=$( echo ${api#"${url_bucket_report_auto}"} )
-        report_type=$(gsutil cat ${api} | jq .report_type)
+        report_type=$(gsutil cat ${api} | jq '.report_type')
     fi
     info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
     info "Conclusion: the manual report ${report} will be finalized (goes over the auto report)."
