@@ -2,7 +2,7 @@
 
 sql=${HOME}/hmf/repos/actin/actin-database/src/main/resources/generate_database.sql
 
-if [[ ! -f ${sql} ]]; then
+if [[ ! -f "${sql}" ]]; then
     error "Could not locate ACTIN sql"
 fi
 

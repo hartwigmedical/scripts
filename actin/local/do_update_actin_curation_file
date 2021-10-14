@@ -3,10 +3,10 @@
 source_file=$1 && shift
 target_file=$1 && shift
 
-if [[ -f ${source_file} ]]; then
+if [[ -f "${source_file}" ]]; then
     mv "${source_file}" "${target_file}"
 fi
 
-if [[ -f ${target_file} ]]; then
+if [[ -f "${target_file}" ]]; then
     gcloud compute scp ${target_file} data-vm-prod-1:/data/resources/custom/actin/clinical_curation/
 fi

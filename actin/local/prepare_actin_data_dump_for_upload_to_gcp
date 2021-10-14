@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 dir=$1
 
-if [[ -z ${dir} ]]; then
+if [[ -z "${dir}" ]]; then
     error "No dir passed. Exiting."
 fi
 

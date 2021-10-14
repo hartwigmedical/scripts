@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 patient=$1
 
-if [[ -z ${patient} ]]; then
+if [[ -z "${patient}" ]]; then
     error "No patient provided. Exiting."
 fi
 

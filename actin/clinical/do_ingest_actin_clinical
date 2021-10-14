@@ -6,7 +6,7 @@ source locate_files || exit 1
 actin_jar=$1 && shift
 output_directory=$1 && shift
 
-if [[ -z ${actin_jar} || -z ${output_directory} ]]; then
+if [[ -z "${actin_jar}" || -z "${output_directory}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
