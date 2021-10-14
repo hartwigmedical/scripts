@@ -3,6 +3,8 @@
 source message_functions || exit 1
 source locate_reporting_api || exit 1
 
+set -e
+
 sample_barcode=$1 && shift
 report_type=$1 && shift
 
