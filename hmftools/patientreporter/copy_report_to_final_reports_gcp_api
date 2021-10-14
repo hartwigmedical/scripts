@@ -91,9 +91,10 @@ else
     source="manual"
 fi
 
+reporting_id=$(extract_reporting_id ${barcode} ${report_type})
+
 ## check wether report already exists in final bucket
 if [[ ${report} == *"corrected"* ]]; then
-    reporting_id=$(extract_reporting_id ${barcode} ${report_type})
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
         warn "See also the record in sharing api:"
@@ -102,11 +103,10 @@ if [[ ${report} == *"corrected"* ]]; then
         exit 1
     fi
 else
-    reporting_id=$(extract_reporting_id ${barcode}  ${report_type})
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
          warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
          warn "See also the record in sharing api:"
-        extract_object_created ${barcode} ${report_type}
+         extract_object_created ${barcode} ${report_type}
          extract_object_shared ${reporting_id} ${report_type}
          exit 1
     fi
@@ -140,21 +140,25 @@ fi
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then
-    info "A record has been added for ${sample} to sharing api"
-    patch_api_sharing_report ${barcode} ${report_type}
-    info "Reports shared registration for ${sample}:"
-    reporting_id=$(extract_reporting_id ${barcode}  ${report_type})
-    extract_object_created ${barcode} ${report_type}
-    extract_object_shared ${reporting_id} ${report_type}
+    if [[ $(extract_object_shared ${reporting_id} ${report_type} | jq '. | length')  == 0 ]]; then
+      info "A record has been added for ${sample} to sharing api"
+      patch_api_sharing_report ${barcode} ${report_type}
+      info "Reports shared registration for ${sample}:"
+      extract_object_created ${barcode} ${report_type}
+      extract_object_shared ${reporting_id} ${report_type}
+    else
+      warn "The report ${report} is already in the sharing api"
+      extract_object_created ${barcode} ${report_type}
+      extract_object_shared ${reporting_id} ${report_type}
+      warn "No new record added."
+    fi
 else
-  reporting_id=$(extract_reporting_id ${barcode} ${report_type})
-    if [[ $(   extract_object_shared ${reporting_id} | jq '.length' ) == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id} ${report_type} | jq '. | length')  == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"
          patch_api_sharing_report ${barcode} ${report_type}
          info "Reports shared registration for ${sample}:"
-        extract_object_created ${barcode} ${report_type}
+         extract_object_created ${barcode} ${report_type}
          extract_object_shared ${reporting_id} ${report_type}
-
     else
         warn "The report ${report} is already in the sharing api"
         extract_object_created ${barcode} ${report_type}
