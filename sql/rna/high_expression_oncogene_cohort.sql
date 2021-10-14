@@ -11,6 +11,6 @@ WHERE g.gene IN
 LEFT JOIN driverCatalog d ON d.sampleId=a.sampleId AND d.gene=a.gene
 INNER JOIN geneCopyNumber g ON g.sampleId=a.sampleId AND g.gene=a.gene
 INNER JOIN purity p ON a.sampleId=p.sampleId
-WHERE percentileCohort > 0.95
+WHERE percentileCohort > 0.95 AND a.sampleId IN (SELECT sampleId FROM rnaStatistics WHERE qcStatus='PASS')
 GROUP BY gene, sampleId
 ORDER BY gene, percentileCohort DESC;
