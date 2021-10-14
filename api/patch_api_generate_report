@@ -28,25 +28,26 @@ has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 url_bucket_report_auto="gs://patient-reporter-prod-1/"
 url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 
+source_report="None"
 if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
     info "No report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
 else
     info "Report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
-    source="automatic"
+    source_report="automatic"
 fi
 
 ## check whether report exists in manual bucket
 if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
     info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
 else
-    source="manual"
+    source_report="manual"
 fi
 
 ## check if it is a failed run
 if [[ ${report_type} == "dna_analysis_report"* ]];then
-  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": %s}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source}" "sample_name" "${sample_name}", "run_id" "${run_id}")
+  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": %s}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}", "run_id" "${run_id}")
 else
-  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source}" "sample_name" "${sample_name}")
+  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
 fi
 
 ### Execute patch reporting created endpoint
