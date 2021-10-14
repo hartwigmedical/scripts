@@ -89,22 +89,24 @@ else
 fi
 
 ## check wether report already exists in final bucket
+corrected="none"
 if [[ ${report} == *"corrected"* ]]; then
+    corrected="corrected"
+    reporting_id=$(extract_reporting_id ${barcode} ${corrected})
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
         warn "See also the record in sharing api:"
-        reporting_id=$(extract_reporting_id ${barcode})
-        extract_object_created ${barcode}
-        extract_object_shared ${reporting_id}
+        extract_object_created ${barcode} ${corrected}
+        extract_object_shared ${reporting_id} ${corrected}
         exit 1
     fi
 else
+    reporting_id=$(extract_reporting_id ${barcode} ${corrected})
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
          warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
          warn "See also the record in sharing api:"
-         reporting_id=$(extract_reporting_id ${barcode})
-         extract_object_created ${barcode}
-         extract_object_shared ${reporting_id}
+         extract_object_created ${barcode} ${corrected}
+         extract_object_shared ${reporting_id} ${corrected}
          exit 1
     fi
 fi
@@ -139,25 +141,23 @@ fi
 
 if [[ ${report} == *"corrected"* ]]; then
     info "A record has been added for ${sample} to sharing api"
-    patch_api_sharing_report ${barcode}
+    patch_api_sharing_report ${barcode} ${corrected}
     info "Reports shared registration for ${sample}:"
-    reporting_id=$(extract_reporting_id ${barcode})
-    extract_object_created ${barcode}
+    reporting_id=$(extract_reporting_id ${barcode} ${corrected})
+    extract_object_created ${barcode} ${corrected}
     extract_object_shared ${reporting_id}
 else
-  sampleInSharingAPI=$(hmf_api_get "reports/shared/7576" | jq . )
-    if [[ $(  ${sampleInSharingAPI}| grep ${sample} | wc -l ) == 0 ]]; then
+  reporting_id=$(extract_reporting_id ${barcode} ${corrected})
+    if [[ $(   extract_object_shared ${reporting_id} | jq '.length' ) == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"
-         patch_api_sharing_report ${barcode}
+         patch_api_sharing_report ${barcode} ${corrected}
          info "Reports shared registration for ${sample}:"
-         reporting_id=$(extract_reporting_id ${barcode})
-         extract_object_created ${barcode}
+         extract_object_created ${barcode} ${corrected}
          extract_object_shared ${reporting_id}
 
     else
         warn "The report ${report} is already in the sharing api"
-        reporting_id=$(extract_reporting_id ${barcode})
-        extract_object_created ${barcode}
+        extract_object_created ${barcode} ${corrected}
         extract_object_shared ${reporting_id}
         warn "No new record added."
     fi
