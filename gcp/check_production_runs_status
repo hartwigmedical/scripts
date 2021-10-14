@@ -2,9 +2,6 @@
 
 source message_functions || exit 1
 
-reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
-sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
-
 failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insufficient_tcp_corrected\|insufficient_dna\|insufficient_tcp_deep_wgs\|insufficient_tcp_deep_wgs_corrected\|insufficient_tcp_shallow_wgs\|insufficient_tcp_shallow_wgs_corrected\|qc_fail_report\|sufficient_tcp_qc_failure"
 
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
