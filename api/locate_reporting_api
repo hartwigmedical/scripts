@@ -11,7 +11,7 @@ extract_reporting_id() {
     else
       sample_object=$(curl --fail --silent --show-error \
                               -H "Content-Type: application/json" \
-                              -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected )
+                              -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected} )
     fi
 
     size_object=$(echo ${sample_object} | jq '. | length')
@@ -37,7 +37,7 @@ extract_object_created() {
     else
           sample_object=$(curl --fail --silent --show-error \
                                   -H "Content-Type: application/json" \
-                                  -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected )
+                                  -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected} )
     fi
 
 
