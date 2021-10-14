@@ -17,7 +17,7 @@ extract_reporting_id() {
       echo ${sample_object} | jq .[].id
     else
       ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq .[0].id
+      echo ${sample_object} | jq .[-1].id
     fi
 }
 
@@ -37,7 +37,7 @@ extract_object_created() {
       echo ${sample_object}
     else
       ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq '.[0]'
+      echo ${sample_object} | jq '.[-1]'
     fi
 }
 
@@ -56,6 +56,6 @@ extract_object_shared() {
       echo ${sample_object} | jq .[].id
     else
       ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq '.[0]'
+      echo ${sample_object} | jq '.[-1]'
     fi
 }
