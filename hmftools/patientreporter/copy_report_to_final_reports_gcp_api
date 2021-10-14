@@ -42,7 +42,7 @@ url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 echo ""
 echo "--- Report for ${sample} has been shared (again; in case of correction) - final processing will start: ---"
 
-source="none"
+report_source="none"
 
 ## check whether report exists in auto bucket
 if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
@@ -56,13 +56,13 @@ else
     api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
     api=$( echo ${api#"${url_bucket_report_auto}"} )
     report_type=$(gsutil cat ${api} | jq '.report_type')
-    source="automatic"
+    report_source="automatic"
 fi
 
 ## check whether report exists in manual bucket
 if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | wc -l ) == 0 ]]; then
     info "No report available for ${sample} in manual bucket ${url_bucket_report_manual}"
-    if [[ "${source}" == "none" ]]; then
+    if [[ "${report_source}" == "none" ]]; then
         warn "Report does not exist in ${url_bucket_report_auto} or ${url_bucket_report_manual} on gcp so cannot be made final.  Please check. Exiting"
         exit 1
     else
@@ -88,7 +88,7 @@ else
     fi
     info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
     info "Conclusion: the manual report ${report} will be finalized (goes over the auto report)."
-    source="manual"
+    report_source="manual"
 fi
 
 reporting_id=$(extract_reporting_id ${barcode} ${report_type})
@@ -114,7 +114,7 @@ fi
 
 ## copy report from auto/manual bucket to final
 
-if [[ "${source}" == "automatic" ]]; then
+if [[ "${report_source}" == "automatic" ]]; then
     gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
@@ -125,7 +125,7 @@ else
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-    if [[ "${source}" == "automatic" ]]; then
+    if [[ "${report_source}" == "automatic" ]]; then
         info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
     else
         info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
