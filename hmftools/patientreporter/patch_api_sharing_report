@@ -11,8 +11,8 @@ source message_functions || exit 1
 
 
 report_created_id=0 ## fix
-current_date=$(date '+%d-%b-%Y')
-data=$(printf '{"%s": %s, "%s": %s}' "share_date" "${current_date}" "report_created_id" "${report_created_id}")
+current_date=$(date '+%d-%b-%YT%H:%M:%S')
+data=$(printf '{"%s": "%s", "%s": %s}' "share_date" "${current_date}" "report_created_id" "${report_created_id}")
 
 info "Adding entry to shared API"
 curl --silent --show-error \
