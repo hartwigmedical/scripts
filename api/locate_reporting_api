@@ -2,17 +2,12 @@
 
 extract_reporting_id() {
     sample_barcode=$1 && shift
-    corrected=$1 && shift
+    report_type=$1 && shift
 
-    if [[ ${corrected} -eq "corrected" ]];then
-      sample_object=$(curl --fail --silent --show-error \
+    sample_object=$(curl --fail --silent --show-error \
                                     -H "Content-Type: application/json" \
-                                    -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
-    else
-      sample_object=$(curl --fail --silent --show-error \
-                              -H "Content-Type: application/json" \
-                              -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected} )
-    fi
+                                    -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}$report_type=${report_type} )
+
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
@@ -28,18 +23,11 @@ extract_reporting_id() {
 
 extract_object_created() {
     sample_barcode=$1 && shift
-    corrected=$1 && shift
+    report_type=$1 && shift
 
-    if [[ ${corrected} -eq "corrected" ]];then
-          sample_object=$(curl --fail --silent --show-error \
-                                        -H "Content-Type: application/json" \
-                                        -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
-    else
-          sample_object=$(curl --fail --silent --show-error \
-                                  -H "Content-Type: application/json" \
-                                  -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${corrected} )
-    fi
-
+    sample_object=$(curl --fail --silent --show-error \
+                                       -H "Content-Type: application/json" \
+                                       -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}$report_type=${report_type} )
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
@@ -55,7 +43,6 @@ extract_object_created() {
 
 extract_object_shared() {
     reporting_id=$1 && shift
-    corrected=$1 && shift
 
     sample_object=$(curl --fail --silent --show-error \
                               -H "Content-Type: application/json" \
