@@ -17,7 +17,7 @@ month=$(echo ${report_date} | awk -F '-' '{print $2}')
 month=$(date -d "${month} 1" +%m)
 year=$(echo ${report_date} | awk -F '-' '{print $3}')
 timestamp=$(date '+%H:%M:%S' -r ${api_json})
-report_date=$(echo ${day}-${month}-${year}"T"${timestamp})
+report_date=$(echo ${year}-${month}-${day}"T"${timestamp})
 
 purity=$(echo ${json_file} | jq .purity)
 report_type=$(echo ${json_file} | jq .report_type)
