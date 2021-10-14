@@ -2,6 +2,9 @@
 
 source message_functions || exit 1
 
+reporting_db_file=/data/ops/lims/prod/reporting_db.tsv
+sharing_db_file=/data/ops/lims/prod/final_sharing_db.tsv
+
 failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insufficient_tcp_corrected\|insufficient_dna\|insufficient_tcp_deep_wgs\|insufficient_tcp_deep_wgs_corrected\|insufficient_tcp_shallow_wgs\|insufficient_tcp_shallow_wgs_corrected\|qc_fail_report\|sufficient_tcp_qc_failure"
 
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
@@ -40,6 +43,8 @@ main () {
     current_fini_runs=$(select_runs_to_check "${all_fini_runs}" "${major_version}")
     current_proc_runs=$(select_runs_to_check "${all_proc_runs}" "${major_version}")
     current_wait_runs=$(select_runs_to_check "${all_wait_runs}" "")
+
+    echo $current_vali_runs
 
 
     # Now ready to check each status on by one
