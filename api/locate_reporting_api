@@ -1,0 +1,59 @@
+#!/bin/bash
+
+extract_reporting_id() {
+    sample_barcode=$1 && shift
+
+    sample_object=$(curl --fail --silent --show-error \
+                              -H "Content-Type: application/json" \
+                              -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
+
+    size_object=$(echo ${sample_object} | jq '. | length')
+    if [[ ${size_object} -eq 0 ]]; then
+      warn "No created entry is present. Add entry first in created endpoint"
+      exit 1
+    elif [[ ${size_object} -eq 1 ]]; then
+      echo ${sample_object} | jq .[].id
+    else
+      ## TODO
+      echo 0
+    fi
+}
+
+extract_object_created() {
+    sample_barcode=$1 && shift
+
+    sample_object=$(curl --fail --silent --show-error \
+                              -H "Content-Type: application/json" \
+                              -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
+
+    size_object=$(echo ${sample_object} | jq '. | length')
+    if [[ ${size_object} -eq 0 ]]; then
+      warn "No created entry is present. Add entry first in created endpoint"
+      exit 1
+    elif [[ ${size_object} -eq 1 ]]; then
+      echo ${sample_object}
+    else
+      ## TODO
+      echo ${sample_object}
+    fi
+}
+
+extract_object_shared() {
+    reporting_id=$1 && shift
+
+    sample_object=$(curl --fail --silent --show-error \
+                              -H "Content-Type: application/json" \
+                              -X GET http://api.pilot-1/hmf/v1/reports/shared?report_created_id=${reporting_id} )
+
+    size_object=$(echo ${sample_object} | jq '. | length')
+    if [[ ${size_object} -eq 0 ]]; then
+      warn "No created entry is present. Add entry first in created endpoint"
+      exit 1
+    elif [[ ${size_object} -eq 1 ]]; then
+      echo ${sample_object} | jq .[].id
+    else
+      ## TODO
+      echo 0
+    fi
+}
+
