@@ -80,6 +80,7 @@ fi
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+  #  api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -107,9 +108,16 @@ gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
-if [[ "${sample:0:6}" == "COREDB" ]]; then
+if [[ "${sample:0:6}" -eq "COREDB01" ]]; then
     upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
     info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 fi
+
+### Patch reporting created endpoint
+#echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+#read answer
+#if [[ $answer == 'Y' ]]; then
+#  patch_api_generate_report ${api} ${sample}
+#fi
 
 echo ""
