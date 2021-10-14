@@ -9,7 +9,7 @@ report_type=$1 && shift
 ## extract correct report created id
 report_created_id=$(extract_reporting_id ${sample_barcode} ${report_type})
 
-current_date=$(date '+%d-%m-%YT%H:%M:%S')
+current_date=$(date '+%Y-%m-%dT%H:%M:%S')
 data=$(printf '{"%s": "%s", "%s": %s}' "share_date" "${current_date}" "report_created_id" "${report_created_id}")
 
 info "Adding entry to shared API"
