@@ -1,0 +1,14 @@
+#!/bin/bash
+
+sample_object=$1 && shift
+
+size_object=$(echo ${sample_object} | jq '. | length')
+if [[ ${size_object} -eq 0 ]]; then
+  warn "No created entry is present. Add entry first in created endpoint"
+  exit 1
+elif [[ ${size_object} -eq 1 ]]; then
+  echo ${sample_object} | jq .[].id
+else
+  ## TODO
+  echo 0
+fi
