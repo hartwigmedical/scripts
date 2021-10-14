@@ -44,9 +44,6 @@ main () {
     current_proc_runs=$(select_runs_to_check "${all_proc_runs}" "${major_version}")
     current_wait_runs=$(select_runs_to_check "${all_wait_runs}" "")
 
-    echo $current_vali_runs
-
-
     # Now ready to check each status on by one
 
     echo ""
@@ -54,6 +51,7 @@ main () {
     echo "### FAILED RUNS THAT NOT HAVE BEEN REPORTED BEFORE ( please solve! ):"
     counter=0
     while read -r run_info; do
+      echo ${run_info}
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         db_status=$(echo "${run_info}" | cut -f3)
