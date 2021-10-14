@@ -28,20 +28,20 @@ has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 url_bucket_report_auto="gs://patient-reporter-prod-1/"
 url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 
-source_report="None"
-if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
-else
-    info "Report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
-    source_report="automatic"
-fi
-
-## check whether report exists in manual bucket
-if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
-    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
-else
-    source_report="manual"
-fi
+source_report="automatic"
+#if [[ $( gsutil ls ${url_bucket_report_auto} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+#    info "No report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
+#else
+#    info "Report available for ${sample_name} in auto bucket ${url_bucket_report_auto}"
+#    source_report="automatic"
+#fi
+#
+### check whether report exists in manual bucket
+#if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample_name}" | grep .pdf | wc -l ) == 0 ]]; then
+#    info "No report available for ${sample_name} in manual bucket ${url_bucket_report_manual}"
+#else
+#    source_report="manual"
+#fi
 
 ## check if it is a failed run
 if [[ ${report_type} == "dna_analysis_report"* ]];then
