@@ -12,7 +12,7 @@ extract_reporting_id() {
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
       warn "No reporting created entry is present. Add entry first in created endpoint"
-      exit 1
+      error 1
     elif [[ ${size_object} -eq 1 ]]; then
       echo ${sample_object} | jq .[].id
     else
@@ -31,7 +31,7 @@ extract_reporting_id_on_barcode() {
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
-      warn "No reporting created entry is present. Add entry first in created endpoint"
+      error "No reporting created entry is present. Add entry first in created endpoint"
       exit 1
     elif [[ ${size_object} -eq 1 ]]; then
       echo ${sample_object} | jq .[].id
@@ -51,7 +51,7 @@ extract_object_created() {
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
-      warn "No created entry is present. Add entry first in created endpoint"
+      error "No created entry is present. Add entry first in created endpoint"
       exit 1
     elif [[ ${size_object} -eq 1 ]]; then
       echo ${sample_object}
@@ -69,7 +69,7 @@ xtract_object_created_on_reporting_id() {
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
-      warn "No created entry is present. Add entry first in created endpoint"
+      error "No created entry is present. Add entry first in created endpoint"
       exit 1
     elif [[ ${size_object} -eq 1 ]]; then
       echo ${sample_object}
@@ -88,7 +88,7 @@ extract_object_shared() {
 
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
-      warn "No created entry is present. Add entry first in created endpoint"
+      error "No created entry is present. Add entry first in created endpoint"
       exit 1
     elif [[ ${size_object} -eq 1 ]]; then
       echo ${sample_object} | jq .[].id
