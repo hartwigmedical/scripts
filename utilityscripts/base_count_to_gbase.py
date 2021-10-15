@@ -15,9 +15,10 @@ class Config(NamedTuple):
 def main(config: Config) -> None:
     gbases = Decimal(config.base_count) / BASES_IN_GBASE
     if config.round_like is not None:
-        round_like = Decimal(config.round_like)
+        round_like = config.round_like
         sign, digits, exponent = round_like.as_tuple()
         if exponent > 0:
+            # Never want the rounding to be more coarse than an integer number of gbase
             round_like = round_like.quantize(Decimal("1"), rounding=ROUND_DOWN)
 
         gbases = gbases.quantize(round_like, rounding=ROUND_DOWN)
