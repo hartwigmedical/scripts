@@ -25,13 +25,17 @@ api_curl_post () {
     data=$1 && shift
     environment=$1 && shift
 
-    api_url=$(api_url ${environment})
+    echo $request
+    echo ${data
+    echo $environment}
+
+    api_url=$(api_url "${environment}")
     url="${api_url}/${request}"
-    curl --silent --show-error \
-          -H "Content-Type: application/json" \
-          -H "Accept: application/json" \
-          -X POST "${url}" \
-          --data "${data}"
+#    curl --silent --show-error \
+#          -H "Content-Type: application/json" \
+#          -H "Accept: application/json" \
+#          -X POST "${url}" \
+#          --data "${data}"
 }
 
 extract_wrapper_api_endpoint() {
