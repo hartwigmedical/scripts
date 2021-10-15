@@ -7,6 +7,8 @@ PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
 ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Fastq"
+CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROUNDING_SCRIPT="${CODEDIR}/../utilityscripts/base_count_to_gbase.py"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     script=$(basename "$0")
@@ -83,14 +85,15 @@ for seq_dir in "${seq_dirs[@]}"; do
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
 
-            yld=$((yld/1000000000))
             if [[ $req -eq 1 ]]; then
               # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
-              req=0
+              req_gbase="0"
             else
-              # The requirement in GBase is rounded up to an integer
-              req=$(((req+999999999)/1000000000))
+              # The requirement in GBase is converted to gbase
+              req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req to gbase: ${req}"
             fi
+            yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req}") || \
+                  die "Could not convert yld to gbase: ${yld}"
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
             # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
             api_run=$(
@@ -104,12 +107,12 @@ for seq_dir in "${seq_dirs[@]}"; do
             set_name=$(cut -f3 <<< "${api_run}")
 
             if [[ "${api_run_tsv}" == "" ]]; then
-                status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
+                status_info="q=${q30_seq} y=${yld_seq}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
             else
                 run_status=$(echo "${api_run_tsv}" | cut -f1)
                 ini=$(echo "${api_run_tsv}" | cut -f2)
                 ini=${ini/.ini/}
-                status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
+                status_info="q=${q30_seq} y=${yld_seq}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t$set_name"
             fi
         fi
         echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
