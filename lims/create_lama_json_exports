@@ -14,13 +14,13 @@ echo "[INFO] Creating temp dir $TMP_DIR"
 mkdir $TMP_DIR
 
 for collection in "${COLLECTIONS[@]}"; do
-    echo "[INFO] Exporting LAMA collection ${collection}..."
-    out_dir="${TMP_DIR}/PatientExport.json"
-    mongoexport --host lama.mongo.prod-1 --db LAMA -c Patients --out "${out_dir}" --jsonArray --username="$USER" --password="$PASSWORD"
+    out_file="${TMP_DIR}/${collection}.json"
+    echo "[INFO] Exporting LAMA collection ${collection} to ${out_file}..."
+    mongoexport --host lama.mongo.prod-1 --db LAMA -c "${collection}" --out "${out_file}" --jsonArray --username="$USER" --password="$PASSWORD"
 done
 
 echo "[INFO] Uploading $TMP_DIR contents to bucket $BUCKET"
-gsutil cp "$TMP_DIR/*.json" "gs://$BUCKET/"
+gsutil -m cp "$TMP_DIR/*.json" "gs://$BUCKET/"
 
 echo "[INFO] Removing $TMP_DIR"
 rm -r $TMP_DIR
