@@ -49,7 +49,8 @@ extract_wrapper_api_endpoint() {
 
     api_url=$(api_url "${environment}")
     request="${api_url}/${query}"
-    echo api_curl_get "${request}"
+    getRequest=$(api_curl_get "${request}")
+    echo ${getRequest}
 }
 
 extract_wrapper_api() {
