@@ -49,6 +49,7 @@ sub parseLamaSampleStatus{
     my ($objects) = @_;
 
     my %lama_status_dict = (
+        '_id' => 'received_sample_id',
         'prepStatus' => 'lab_status',
         'registrationDateTime' => 'registration_date_epoch',
         'sampleId' => 'sample_name',
