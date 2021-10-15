@@ -14,4 +14,4 @@ report_created_id=$(extract_reporting_id ${sample_barcode} ${report_type})
 data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
 
 info "Adding entry to shared API"
-api_curl_post "reports/shared" ${data} "pilot"
+api_curl_post "reports/shared" "${data}" "pilot"

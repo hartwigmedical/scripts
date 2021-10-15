@@ -30,7 +30,7 @@ api_curl_post () {
     curl --silent --show-error \
           -H "Content-Type: application/json" \
           -H "Accept: application/json" \
-          -X POST ${url} \
+          -X POST "${url}" \
           --data "${data}"
 }
 
@@ -38,16 +38,16 @@ extract_wrapper_api_endpoint() {
     query=$1 && shift
     environment=$1 && shift
 
-    api_url=$(api_url ${environment})
+    api_url=$(api_url "${environment}")
     request="${api_url}/${query}"
-    echo api_curl_get ${request}
+    echo api_curl_get "${request}"
 }
 
 extract_wrapper_api() {
     url=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api_endpoint "${url}" ${environment})
+    sample_object=$(extract_wrapper_api_endpoint "${url}" "${environment}")
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
       error "No reporting created entry is present. Add entry first in created endpoint"
@@ -65,7 +65,7 @@ extract_reporting_id() {
     report_type=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" ${environment})
+    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" "${environment}")
     echo ${sample_object} | jq .id
 }
 
@@ -73,7 +73,7 @@ extract_reporting_id_on_barcode() {
     sample_barcode=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(echo extract_wrapper_api "reports/created?barcode=${sample_barcode}" ${environment})
+    sample_object=$(echo extract_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
     echo ${sample_object} | jq .id
 }
 
@@ -81,7 +81,7 @@ extract_object_created_on_reporting_id() {
     id=$1 && shift
     environment=$1 && shift
 
-    echo extract_wrapper_api "reports/created?id=${id}"
+    echo extract_wrapper_api "reports/created?id=${id}" "${environment}"
 }
 
 extract_object_created() {
@@ -89,7 +89,7 @@ extract_object_created() {
     report_type=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" ${environment})
+    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" "${environment}")
     echo ${sample_object}
 }
 
@@ -97,6 +97,6 @@ extract_object_shared() {
     reporting_id=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "shared?report_created_id=${reporting_id}" ${environment})
+    sample_object=$(extract_wrapper_api "shared?report_created_id=${reporting_id}" "${environment}")
     echo ${sample_object}
 }

@@ -51,4 +51,4 @@ fi
 
 ### Execute patch reporting created endpoint
 info "Adding entry to created API"
-api_curl_post "reports/created" ${data} "pilot"
+api_curl_post "reports/created" "${data}" "pilot"
