@@ -57,7 +57,11 @@ sub parseLamaSampleStatus{
     );
 
     my %lama_status_cohort_dict = (
-        'cohortCode' => 'cohort',
+        'cohortCode'        => 'cohort',
+        'reportViral'       => 'report_viral',
+        'reportGermline'    => 'report_germline',
+        'reportPGX'         => 'report_pgx',
+        'isShallowStandard' => 'shallowseq',
     );
 
     foreach my $object (@$objects){
