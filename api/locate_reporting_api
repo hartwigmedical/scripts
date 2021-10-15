@@ -8,7 +8,8 @@ api_url() {
   elif [[ "${environment}" == "pilot" ]]; then
       echo "http://api.pilot-1/hmf/v1"
   else
-      die "Environment should be either prod or pilot"
+      error "Environment should be either prod or pilot"
+      exit 1
   fi
 }
 
