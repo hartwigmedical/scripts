@@ -29,6 +29,7 @@ api_curl_post () {
 
     api_url=$(api_url "${environment}")
     url="${api_url}/${request}"
+    echo $url
     curl --silent --show-error \
           -H "Content-Type: application/json" \
           -H "Accept: application/json" \
