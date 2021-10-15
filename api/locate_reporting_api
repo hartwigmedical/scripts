@@ -1,6 +1,6 @@
 #!/bin/bash
 
-locate message_functions
+source message_functions
 
 api_url() {
   environment=$1 && shift
