@@ -55,6 +55,7 @@ extract_wrapper_api() {
     environment=$1 && shift
 
     sample_object=$(extract_wrapper_api_endpoint "${url}" "${environment}")
+    echo $sample_object
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
       error "No reporting created entry is present. Add entry first in created endpoint"

@@ -9,7 +9,7 @@ sample_barcode=$1 && shift
 report_type=$1 && shift
 
 ## extract correct report created id
-report_created_id=$(extract_reporting_id ${sample_barcode} ${report_type} "pilot")
+report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" "pilot")
 
 data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
 
