@@ -43,10 +43,11 @@ def add_significant_digits_if_less_precise_than_integer(number: Decimal) -> Deci
     return a Decimal object that is equal to the input as a number but that has exponent 0.
     In all other cases, return the input Decimal object.
 
-    1.2e4 -> 1200
+    1.2e3 -> 1200
     1314 -> 1314
     14284.13214 -> 14284.13214
     1e-9 -> 1e-9
+    3e4 -> 30000
     """
     exponent = number.as_tuple()[2]
     if exponent > 0:
