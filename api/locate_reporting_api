@@ -26,8 +26,8 @@ api_curl_post () {
     environment=$1 && shift
 
     echo $request
-    echo ${data
-    echo $environment}
+    echo ${data}
+    echo ${environment}
 
     api_url=$(api_url "${environment}")
     url="${api_url}/${request}"
