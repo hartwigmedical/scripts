@@ -32,12 +32,59 @@ my $lamaSampleStatus = readJson($lamaSampleStatusJson);
 #print Dumper $lamaCohort;
 
 sayInfo("First Objects:");
-printFirstOfArray($lamaCohort, "Cohort");
-printFirstOfArray($lamaIsolation, "Isolation");
-printFirstOfArray($lamaPatient, "Patient");
-#parseLama($lamaCohort);
+#printFirstOfArray($lamaCohort, "Cohort");
+#printFirstOfArray($lamaIsolation, "Isolation");
+#printFirstOfArray($lamaPatient, "Patient");
+parseLamaSampleStatus($lamaSampleStatus);
+printFirstOfArray($lamaSampleStatus, "Status");
 
-sub parseLama{
+sub epochToDate{
+    # epoch time in miliseconds
+    my ($epoch) = @_;
+    my $registrationDate = strftime "%Y-%m-%d", localtime $epoch/1000;
+    return $registrationDate;
+}
+
+sub parseLamaSampleStatus{
+    my ($objects) = @_;
+
+    my %lama_status_dict = (
+        'prepStatus' => 'lab_status',
+        'registrationDateTime' => 'registration_date_epoch',
+        'sampleId' => 'sample_name',
+        'frBarcodeDNA' => 'sample_id'
+    );
+
+    my %lama_status_cohort_dict = (
+        'cohortCode' => 'cohort',
+    );
+
+    foreach my $object (@$objects){
+
+        # there is no barcode in case a sample has not been prepped yet
+        my $sampleBarcode = $object->{frBarcodeDNA};
+        next unless defined $sampleBarcode;
+
+        # debug
+        #if ( $sampleBarcode eq 'FR12244536' ){
+        #    print Dumper $object;
+        #    die;
+        #}
+
+        my %status = ();
+        while (my ($src_key, $tgt_key) = each %lama_status_dict){
+            $status{$tgt_key} = $object->{$src_key};
+        }
+        while (my ($src_key, $tgt_key) = each %lama_status_cohort_dict){
+            $status{$tgt_key} = $object->{cohort}->{$src_key};
+        }
+        $status{registration_date} = epochToDate($status{registration_date_epoch});
+        #say join(" ", $sampleName, $sampleBarcode, $cohortCode, $regDate, $labStatus);
+        print Dumper \%status;
+    }
+}
+
+sub parseLamaCohort{
     my ($objects) = @_;
     foreach my $object (@$objects){
         my $isShallowStandard = $object->{isShallowStandard};
