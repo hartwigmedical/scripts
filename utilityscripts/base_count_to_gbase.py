@@ -13,6 +13,9 @@ class Config(NamedTuple):
 
 
 def main(config: Config) -> None:
+    if config.base_count < 0:
+        raise ValueError(f"Base count cannot be negative: {config.base_count}")
+
     gbases = Decimal(config.base_count) / BASES_IN_GBASE
     if config.round_like is not None:
         round_like = config.round_like
