@@ -92,7 +92,7 @@ for seq_dir in "${seq_dirs[@]}"; do
               # The requirement in GBase is converted to gbase
               req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req to gbase: ${req}"
             fi
-            yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req}") || \
+            yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
                   die "Could not convert yld to gbase: ${yld}"
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
             # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
