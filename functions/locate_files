@@ -195,6 +195,14 @@ locate_actin_clinical_directory() {
     echo "/data/actin/clinical"
 }
 
+locate_actin_genomic_directory() {
+    echo "/data/actin/genomic"
+}
+
+locate_actin_reports_directory() {
+    echo "/data/actin/reports"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
