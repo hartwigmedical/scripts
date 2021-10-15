@@ -47,6 +47,9 @@ extract_wrapper_api_endpoint() {
     query=$1 && shift
     environment=$1 && shift
 
+    echo ${query}
+    echo $environment
+
     api_url=$(api_url "${environment}")
     request="${api_url}/${query}"
     getRequest=$(api_curl_get "${request}")
