@@ -3,7 +3,7 @@
 api_url() {
   environment=$1 && shift
 
-  echo $environment
+  echo "$environment"
 
   if [[ "${environment}" == "prod" ]]; then
       echo "http://api.prod-1/hmf/v1"
