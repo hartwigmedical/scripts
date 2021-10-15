@@ -1,99 +1,81 @@
 #!/bin/bash
 
-extract_reporting_id() {
-    sample_barcode=$1 && shift
-    report_type=$1 && shift
+api_curl_get () {
+    local url=$1 && shift
+    curl --fail --silent --show-error \
+          -H "Content-Type: application/json" \
+          -X GET "${url}"
+}
 
-    sample_object=$(curl --fail --silent --show-error \
-                                    -H "Content-Type: application/json" \
-                                    -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${report_type} )
+api_curl_post () {
+    local request=$1 && shift
+    local data=$1 && shift
 
+    api_url="http://api.pilot-1/hmf/v1"
+    url="${api_url}/${request}"
+    curl --silent --show-error \
+          -H "Content-Type: application/json" \
+          -H "Accept: application/json" \
+          -X POST ${url} \
+          --data "${data}"
+}
 
+extract_wrapper_api_endpoint() {
+  query=$1 && shift
+
+    api_url="http://api.pilot-1/hmf/v1/"
+    request="${api_url}/${query}"
+    echo api_curl_get ${request}
+}
+
+extract_wrapper_api_endpoint() {
+    url=$1 && shift
+
+    sample_object=$(extract_wrapper_api_endpoint "${url}")
     size_object=$(echo ${sample_object} | jq '. | length')
     if [[ ${size_object} -eq 0 ]]; then
       warn "No reporting created entry is present. Add entry first in created endpoint"
       error 1
     elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object} | jq .[].id
+      echo ${sample_object} | jq .[]
     else
       ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq .[-1].id
+      echo ${sample_object} | jq .[-1]
     fi
+}
+
+extract_reporting_id() {
+    sample_barcode=$1 && shift
+    report_type=$1 && shift
+
+    sample_object=$(extract_wrapper_api_endpoint "reports/created?barcode=${sample_barcode}&report_type=${report_type}")
+    echo ${sample_object} | jq .id
 }
 
 extract_reporting_id_on_barcode() {
     sample_barcode=$1 && shift
 
-    sample_object=$(curl --fail --silent --show-error \
-                                    -H "Content-Type: application/json" \
-                                    -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode} )
+    sample_object=$(echo extract_wrapper_api_endpoint "reports/created?barcode=${sample_barcode}")
+    echo ${sample_object} | jq .id
+}
 
+extract_object_created_on_reporting_id() {
+    id=$1 && shift
 
-    size_object=$(echo ${sample_object} | jq '. | length')
-    if [[ ${size_object} -eq 0 ]]; then
-      error "No reporting created entry is present. Add entry first in created endpoint"
-      exit 1
-    elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object} | jq .[].id
-    else
-      ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq .[-1].id
-    fi
+    echo extract_wrapper_api_endpoint "reports/created?id=${id}"
 }
 
 extract_object_created() {
     sample_barcode=$1 && shift
     report_type=$1 && shift
 
-    sample_object=$(curl --fail --silent --show-error \
-                                       -H "Content-Type: application/json" \
-                                       -X GET http://api.pilot-1/hmf/v1/reports/created?barcode=${sample_barcode}&report_type=${report_type} )
-
-    size_object=$(echo ${sample_object} | jq '. | length')
-    if [[ ${size_object} -eq 0 ]]; then
-      error "No created entry is present. Add entry first in created endpoint"
-      exit 1
-    elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object}
-    else
-      ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq '.[-1]'
-    fi
-}
-
-xtract_object_created_on_reporting_id() {
-    id=$1 && shift
-    sample_object=$(curl --fail --silent --show-error \
-                                       -H "Content-Type: application/json" \
-                                       -X GET http://api.pilot-1/hmf/v1/reports/created?id=${id} )
-
-    size_object=$(echo ${sample_object} | jq '. | length')
-    if [[ ${size_object} -eq 0 ]]; then
-      error "No created entry is present. Add entry first in created endpoint"
-      exit 1
-    elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object}
-    else
-      ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq '.[-1]'
-    fi
+    sample_object=$(extract_wrapper_api_endpoint "reports/created?barcode=${sample_barcode}&report_type=${report_type}")
+    echo ${sample_object}
 }
 
 extract_object_shared() {
     reporting_id=$1 && shift
 
-    sample_object=$(curl --fail --silent --show-error \
-                              -H "Content-Type: application/json" \
-                              -X GET http://api.pilot-1/hmf/v1/reports/shared?report_created_id=${reporting_id} )
-
-    size_object=$(echo ${sample_object} | jq '. | length')
-    if [[ ${size_object} -eq 0 ]]; then
-      error "No created entry is present. Add entry first in created endpoint"
-      exit 1
-    elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object} | jq .[].id
-    else
-      ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq '.[-1].id'
-    fi
+    sample_object=$(extract_wrapper_api_endpoint "shared?report_created_id=${reporting_id}" )
+    echo ${sample_object}
 }
