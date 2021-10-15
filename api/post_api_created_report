@@ -10,15 +10,6 @@ json_file=$( cat ${api_json})
 has_reliable_purity=$( echo ${json_file} | jq .has_reliable_purity)
 sample_barcode=$(echo ${json_file} | jq .barcode)
 
-##extract correct report date
-report_date=$(echo ${json_file} | jq .report_date | tr -d '"')
-day=$(echo ${report_date} | awk -F '-' '{print $1}')
-month=$(echo ${report_date} | awk -F '-' '{print $2}')
-month=$(date -d "${month} 1" +%m)
-year=$(echo ${report_date} | awk -F '-' '{print $3}')
-timestamp=$(date '+%H:%M:%S' -r ${api_json})
-report_date=$(echo ${year}-${month}-${day}"T"${timestamp})
-
 purity=$(echo ${json_file} | jq .purity)
 report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
@@ -48,11 +39,13 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
+data=$(printf '{"%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": %s' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}", "run_id" "${run_id}")
 ## check if it is a failed run
-if [[ ${report_type} == "dna_analysis_report"* ]];then
-  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": %s}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}", "run_id" "${run_id}")
+if [[ -z ${run_id} ]];then
+  data=$(echo ${data} "}")
 else
-  data=$(printf '{"%s": %s, "%s": %s, "%s": "%s", "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "report_date" "${report_date}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
+  run_id_format=$(printf '"%s": %s}' "run_id" "${run_id}")
+  data=$(echo ${data} ${run_id_format})
 fi
 
 ### Execute patch reporting created endpoint

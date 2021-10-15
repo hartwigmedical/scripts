@@ -159,7 +159,7 @@ fi
 #echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 #read answer
 #if [[ $answer == 'Y' ]]; then
-#  patch_api_generate_report ${api} ${sample}
+#  post_api_created_report ${api} ${sample}
 #fi
 
 echo ""
