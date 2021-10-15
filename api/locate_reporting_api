@@ -2,7 +2,7 @@
 
 api_url() {
   environment=$1 && shift
-
+  echo "api_url"
   echo "$environment"
 
   if [[ "${environment}" == "prod" ]]; then
@@ -27,6 +27,7 @@ api_curl_post () {
     data=$1 && shift
     environment=$1 && shift
 
+    echo "api_curl_post"
     echo $request
     echo ${data}
     echo ${environment}
