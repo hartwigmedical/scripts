@@ -16,7 +16,8 @@ mkdir $TMP_DIR
 for collection in "${COLLECTIONS[@]}"; do
     out_file="${TMP_DIR}/${collection}.json"
     echo "[INFO] Exporting LAMA collection ${collection} to ${out_file}..."
-    mongoexport --host lama.mongo.prod-1 --db LAMA -c "${collection}" --out "${out_file}" --jsonArray --username="$USER" --password="$PASSWORD"
+    mongoexport --host=lama.mongo.prod-1 --db=LAMA --username="$USER" --password="$PASSWORD" --jsonArray \
+        --collection="${collection}" --out="${out_file}"
 done
 
 echo "[INFO] Uploading $TMP_DIR contents to bucket $BUCKET"
