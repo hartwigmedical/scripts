@@ -4,8 +4,6 @@ source message_functions
 
 api_url() {
   environment=$1 && shift
-  echo "api_url"
-  echo "$environment"
 
   if [[ "${environment}" == "prod" ]]; then
       echo "http://api.prod-1/hmf/v1"
@@ -22,14 +20,8 @@ api_curl_post () {
     data=$1 && shift
     environment=$1 && shift
 
-    echo "api_curl_post"
-    echo $request
-    echo ${data}
-    echo ${environment}
-
     api_url=$(api_url "${environment}")
     url="${api_url}/${request}"
-    echo $url
     curl --silent --show-error \
           -H "Content-Type: application/json" \
           -H "Accept: application/json" \
