@@ -1,5 +1,7 @@
 #!/bin/bash
 
+locate message_functions
+
 api_url() {
   environment=$1 && shift
   echo "api_url"
