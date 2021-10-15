@@ -29,11 +29,11 @@ api_curl_post () {
 
     api_url=$(api_url "${environment}")
     url="${api_url}/${request}"
-#    curl --silent --show-error \
-#          -H "Content-Type: application/json" \
-#          -H "Accept: application/json" \
-#          -X POST "${url}" \
-#          --data "${data}"
+    curl --silent --show-error \
+          -H "Content-Type: application/json" \
+          -H "Accept: application/json" \
+          -X POST "${url}" \
+          --data "${data}"
 }
 
 extract_wrapper_api() {
