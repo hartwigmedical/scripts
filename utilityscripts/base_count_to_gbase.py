@@ -1,6 +1,6 @@
 import argparse
 import sys
-from decimal import Decimal, ROUND_DOWN, InvalidOperation
+from decimal import Decimal, ROUND_DOWN
 from typing import List, NamedTuple, Optional
 
 
@@ -16,16 +16,49 @@ def main(config: Config) -> None:
     if config.base_count < 0:
         raise ValueError(f"Base count cannot be negative: {config.base_count}")
 
-    gbases = Decimal(config.base_count) / BASES_IN_GBASE
     if config.round_like is not None:
-        round_like = config.round_like
-        sign, digits, exponent = round_like.as_tuple()
-        if exponent > 0:
-            # Never want the rounding to be more coarse than an integer number of gbase
-            round_like = round_like.quantize(Decimal("1"), rounding=ROUND_DOWN)
+        round_like = add_significant_digits_if_less_precise_than_integer(config.round_like)
 
-        gbases = gbases.quantize(round_like, rounding=ROUND_DOWN)
-    print(gbases.normalize())
+        # Round down to the same number of decimals as round_like.
+        gbases = (Decimal(config.base_count) / BASES_IN_GBASE).quantize(round_like, rounding=ROUND_DOWN)
+    else:
+        gbases = Decimal(config.base_count) / BASES_IN_GBASE
+
+    # Strip as many zeroes from the right as possible
+    normalized_gbases = gbases.normalize()
+
+    # If we stripped so many zeroes that scientific notation is necessary to represent the number (e.g. 1200 -> 1.2e3),
+    # increase the precision to get the result back to an integer (so  back to 1200).
+    pretty_gbases = add_significant_digits_if_less_precise_than_integer(normalized_gbases)
+
+    print(pretty_gbases)
+
+
+def add_significant_digits_if_less_precise_than_integer(number: Decimal) -> Decimal:
+    """
+    If input does not have enough significant to be cleanly represented as an integer,
+    add significant zeroes until it does.
+
+    In other words, if the exponent of the input Decimal object is greater than 0,
+    return a Decimal object that is equal to the input as a number but that has exponent 0.
+    In all other cases, return the input Decimal object.
+
+    1.2e4 -> 1200
+    1314 -> 1314
+    14284.13214 -> 14284.13214
+    1e-9 -> 1e-9
+    """
+    exponent = number.as_tuple()[2]
+    if exponent > 0:
+        # This doesn't actually do any rounding
+        result = number.quantize(Decimal("1"), rounding=ROUND_DOWN)
+    else:
+        result = number
+
+    if result != number:
+        raise ValueError(f"Accidentally rounded decimal: input={number}, result={result}")
+
+    return result
 
 
 def parse_args(sys_args: List[str]) -> Config:
