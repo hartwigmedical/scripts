@@ -88,6 +88,6 @@ extract_object_shared() {
     reporting_id=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "shared?report_created_id=${reporting_id}" "${environment}")
+    sample_object=$(extract_wrapper_api "reports/shared?report_created_id=${reporting_id}" "${environment}")
     echo ${sample_object}
 }
