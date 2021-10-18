@@ -302,7 +302,7 @@ def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
 
         result[summary.get_canonical_name()] = result[summary.get_canonical_name()].union(summary.get_aliases())
 
-    for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES:
+    for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES.items():
         result[canonical_name] = result[canonical_name].union(aliases)
 
     return dict(result)
