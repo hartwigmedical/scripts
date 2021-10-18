@@ -101,7 +101,7 @@ def main(config: Config) -> None:
     y_test_nucleotides = get_nucleotides_from_string(
         get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y)
     )
-    logging.info(f"nucleotides at y par1 test region: {y_test_nucleotides}")
+    logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
 
     nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
     if not nucleotides_file.exists():
@@ -114,7 +114,7 @@ def main(config: Config) -> None:
         line = f.readline()
         nucleotides = {char for char in line}
 
-    logging.info(f"nucleotides: {nucleotides}")
+    logging.info(f"nucleotides: {sorted(nucleotides)}")
 
     uses_canonical_chrom_names = bool(
         all(
