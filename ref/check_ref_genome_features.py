@@ -1,11 +1,13 @@
 import argparse
 import concurrent.futures
 import logging
+import re
 import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import List, NamedTuple, Tuple, Optional, Set, Dict
 
+from google.cloud import storage
 import pysam
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -30,12 +32,14 @@ Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for 
 class Config(NamedTuple):
     ref_genome_path: Path
     rcrs_path: Path
-    chrom_alias_path: Path
+    contig_alias_bucket_path: str
 
     def validate(self) -> None:
         assert_file_exists(self.ref_genome_path)
         assert_file_exists(self.rcrs_path)
-        assert_file_exists(self.chrom_alias_path)
+        if not re.fullmatch(r"gs://.+", self.contig_alias_bucket_path):
+            raise ValueError(f"Contig alias bucket path is not of the form 'gs://some/file/path'")
+        assert_file_exists_in_bucket(self.contig_alias_bucket_path)
 
 
 class CategorizedContigNames(NamedTuple):
@@ -52,12 +56,12 @@ class CategorizedContigNames(NamedTuple):
 
 class ContigNameTranslator(object):
     """Standardizes names if it can. Returns argument as is if it cannot."""
-    def __init__(self, contig_name_to_standard_name: Dict[str, str]) -> None:
-        self._contig_name_to_standard_name = deepcopy(contig_name_to_standard_name)
+    def __init__(self, contig_name_to_canonical_name: Dict[str, str]) -> None:
+        self._contig_name_to_canonical_name = deepcopy(contig_name_to_canonical_name)
 
     def standardize(self, contig_name: str) -> str:
-        if contig_name in self._contig_name_to_standard_name:
-            return self._contig_name_to_standard_name[contig_name]
+        if contig_name in self._contig_name_to_canonical_name:
+            return self._contig_name_to_canonical_name[contig_name]
         else:
             return contig_name
 
@@ -66,7 +70,7 @@ def main(config: Config) -> None:
     set_up_logging()
     config.validate()
 
-    contig_name_translator = get_contig_name_translator(config.chrom_alias_path)
+    contig_name_translator = get_contig_name_translator(config.contig_alias_bucket_path)
 
     categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
     logging.info(categorized_contig_names)
@@ -111,20 +115,21 @@ def main(config: Config) -> None:
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
 
 
-def get_contig_name_translator(chrom_alias_path: Path) -> ContigNameTranslator:
-    contig_name_to_standard_name = {}
-    with open(chrom_alias_path, "r") as f:
-        for line in f:
-            contig_name, standard_name, source = line.split("\t")
-            if contig_name in contig_name_to_standard_name:
-                raise ValueError(f"Encountered contig name multiple times: {contig_name}")
-            contig_name_to_standard_name[contig_name] = standard_name
-    return ContigNameTranslator(contig_name_to_standard_name)
+def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTranslator:
+    contig_alias_text = get_blob(contig_alias_bucket_path).download_as_text()
+
+    contig_name_to_canonical_name = {}
+    for line in contig_alias_text:
+        contig_name, canonical_name = line.split("\t")
+        if contig_name in contig_name_to_canonical_name:
+            raise ValueError(f"Encountered contig name multiple times: {contig_name}")
+        contig_name_to_canonical_name[contig_name] = canonical_name
+    return ContigNameTranslator(contig_name_to_canonical_name)
 
 
 def get_categorized_contig_names(
-        ref_genome_path: Path,
-        contig_name_translator: ContigNameTranslator,
+    ref_genome_path: Path,
+    contig_name_translator: ContigNameTranslator,
 ) -> CategorizedContigNames:
     with pysam.Fastafile(ref_genome_path) as genome_f:
         contig_names = list(genome_f.references)
@@ -266,6 +271,17 @@ def assert_file_exists(path: Path) -> None:
         raise ValueError(f"File does not exist: {path}")
 
 
+def assert_file_exists_in_bucket(path: str) -> None:
+    if not get_blob(path).exists():
+        raise ValueError(f"File in bucket does not exist: {path}")
+
+
+def get_blob(path: str) -> storage.Blob:
+    bucket_name = path.split("/")[2]
+    relative_path = "/".join(path.split("/")[3:])
+    return storage.Client().get_bucket(bucket_name).get_blob(relative_path)
+
+
 def parse_args(sys_args: List[str]) -> Config:
     parser = argparse.ArgumentParser(
         prog="check_hg38_ref_genome_features",
@@ -274,22 +290,21 @@ def parse_args(sys_args: List[str]) -> Config:
             "See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files."
         ),
     )
-    parser.add_argument("--fasta", "-i", type=str, required=True, help="Fasta file for ref genome.")
-    parser.add_argument("--rcrs", "-r", type=str, required=True, help="Fasta file for rCRS mitochondrial genome.")
+    parser.add_argument("--fasta", "-i", type=Path, required=True, help="Fasta file for ref genome.")
+    parser.add_argument("--rcrs", "-r", type=Path, required=True, help="Fasta file for rCRS mitochondrial genome.")
     parser.add_argument(
-        "--chrom_alias",
+        "--contig_alias",
         "-c",
         type=str,
         required=True,
         help=(
-            "Txt file with chrom name translations. "
-            "Source: https://hgdownload.cse.ucsc.edu/goldenPath/mm10/database/chromAlias.txt.gz"
+            "Bucket path to TSV file with contig name translations. Source: create_contig_translation_file.py"
         )
     )
 
     args = parser.parse_args(sys_args)
 
-    config = Config(Path(args.fasta), Path(args.rcrs), Path(args.chrom_alias))
+    config = Config(args.fasta, args.rcrs, args.contig_alias)
     return config
 
 
