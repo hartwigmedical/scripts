@@ -12,7 +12,7 @@ import pysam
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
-DESIRED_AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}
+AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}
 X_CHROMOSOME_CONTIG_NAMES = {"chrX"}
 Y_CHROMOSOME_CONTIG_NAMES = {"chrY"}
 MITOCHONDRIAL_CONTIG_NAMES = {"chrM"}
@@ -58,6 +58,20 @@ class CategorizedContigNames(NamedTuple):
     novel_patch_contigs: Tuple[str]
     uncategorized_contigs: Tuple[str]
 
+    def get_contig_names(self) -> Tuple[str]:
+        contig_names = [self.x, self.y, self.mitochondrial]
+        if self.ebv is not None:
+            contig_names.append(self.ebv)
+        contig_names.extend(self.autosomes)
+        contig_names.extend(self.decoys)
+        contig_names.extend(self.unlocalized_contigs)
+        contig_names.extend(self.unplaced_contigs)
+        contig_names.extend(self.alt_contigs)
+        contig_names.extend(self.fix_patch_contigs)
+        contig_names.extend(self.novel_patch_contigs)
+        contig_names.extend(self.uncategorized_contigs)
+        return tuple(contig_names)
+
 
 class ContigNameTranslator(object):
     """Standardizes names if it can. Returns argument as is if it cannot."""
@@ -69,6 +83,9 @@ class ContigNameTranslator(object):
             return self._contig_name_to_canonical_name[contig_name]
         else:
             return contig_name
+
+    def is_canonical(self, contig_name: str) -> bool:
+        return contig_name in self._contig_name_to_canonical_name.values()
 
 
 def main(config: Config) -> None:
@@ -99,7 +116,12 @@ def main(config: Config) -> None:
 
     logging.info(f"nucleotides: {nucleotides}")
 
-    uses_desired_chrom_names = bool(set(categorized_contig_names.autosomes).intersection(DESIRED_AUTOSOME_CONTIG_NAMES))
+    uses_canonical_chrom_names = bool(
+        all(
+            contig_name_translator.is_canonical(contig_name)
+            for contig_name in categorized_contig_names.get_contig_names()
+        )
+    )
     has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
@@ -108,14 +130,13 @@ def main(config: Config) -> None:
     logging.info(f"Unplaced contigs: {bool(categorized_contig_names.unplaced_contigs)}")
     logging.info(f"Unlocalized contigs: {bool(categorized_contig_names.unlocalized_contigs)}")
     logging.info(f"ALTS: {bool(categorized_contig_names.alt_contigs)}")
-    logging.info(f"rCRS mitochondrial sequence: {has_rcrs}")
-    logging.info(f"Accession numbers: ?")
-    logging.info(f"Uses 'chr1' chrom names: {uses_desired_chrom_names}")  # TODO: do this properly !!
-    logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
     logging.info(f"Decoys (hs38d1): {bool(categorized_contig_names.decoys)}")
-    logging.info(f"EBV: {categorized_contig_names.ebv is not None}")
     logging.info(f"Patches: {bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)}")
-    logging.info(f"PhiX: ?")
+    logging.info(f"EBV: {categorized_contig_names.ebv is not None}")
+    logging.info(f"PhiX: False?")
+    logging.info(f"rCRS mitochondrial sequence: {has_rcrs}")
+    logging.info(f"Uses canonical contig names, so 'chr1' etc.: {uses_canonical_chrom_names}")
+    logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
     logging.info(f"Semi ambiguous IUB codes: {has_semi_ambiguous_iub_codes}")
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
 
@@ -157,7 +178,7 @@ def get_categorized_contig_names(
 
     for contig_name in contig_names:
         standardized_contig_name = contig_name_translator.standardize(contig_name)
-        if standardized_contig_name in DESIRED_AUTOSOME_CONTIG_NAMES:
+        if standardized_contig_name in AUTOSOME_CONTIG_NAMES:
             autosome_contigs.append(contig_name)
         elif standardized_contig_name in X_CHROMOSOME_CONTIG_NAMES:
             x_contigs.append(contig_name)
