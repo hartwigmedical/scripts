@@ -116,6 +116,7 @@ class Contig(NamedTuple):
             self.get_canonical_name(),
             self.sequence_name,
             self.genbank_accession_number,
+            f"CHR_{self.sequence_name}"
         }
         if self.refseq_accession_number is not None:
             aliases.add(self.refseq_accession_number)
