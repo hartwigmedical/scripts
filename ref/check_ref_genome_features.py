@@ -119,7 +119,7 @@ def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTrans
     contig_alias_text = get_blob(contig_alias_bucket_path).download_as_text()
 
     contig_name_to_canonical_name = {}
-    for line in contig_alias_text:
+    for line in contig_alias_text.split("\n"):
         split_line = line.split("\t")
         if len(split_line) != 2:
             raise ValueError(f"Incorrect length line: {line}")
