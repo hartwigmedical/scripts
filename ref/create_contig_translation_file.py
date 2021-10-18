@@ -2,8 +2,9 @@ import argparse
 import logging
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import List, NamedTuple, Optional, Set
+from typing import List, NamedTuple, Optional, Set, DefaultDict, Dict
 
 from google.cloud import storage
 
@@ -237,17 +238,10 @@ def main(config: Config) -> None:
 
     config.validate()
 
-    contigs = get_contigs()
+    text = get_translation_text_from_bucket_files()
 
-    for contig in contigs:
-        canonical_name_adjustment = contig.get_canonical_name() != contig.ucsc_style_name
-        if canonical_name_adjustment and contig.ucsc_style_name is not None and not contig.is_novel_patch():
-            error_msg = (
-                f"Our canonical name does not match the given USCS-style name for no clear reason: {contig}"
-            )
-            raise ValueError(error_msg)
+    canonical_contig_name_to_aliases = get_canonical_name_to_aliases(text)
 
-    canonical_contig_name_to_aliases = {contig.get_canonical_name(): contig.get_aliases() for contig in contigs}
     logging.debug(f"canonical_contig_name_to_aliases=\n{canonical_contig_name_to_aliases}")
 
     seen_aliases = set()
@@ -284,13 +278,29 @@ def main(config: Config) -> None:
     logging.info(f"Finished {SCRIPT_NAME}")
 
 
-def get_contigs() -> List[Contig]:
-    text = get_translation_text_from_bucket_files()
-    # skip empty lines and headers starting with "'"#"
-    contigs = [
-        Contig.from_line(line.replace("\r", "")) for line in text.split("\n") if line and line[0] != "#"
-    ]
-    return contigs
+def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
+    result: DefaultDict[str, Set[str]] = defaultdict(set)
+    for line in text.split("\n"):
+        if not line or line[0] == "#":
+            # skip empty lines and headers starting with "'"#"
+            continue
+
+        contig = Contig.from_line(line.replace("\r", ""))
+
+        unexplained_canonical_name_mismatch = (
+                contig.get_canonical_name() != contig.ucsc_style_name
+                and contig.ucsc_style_name is not None
+                and not contig.is_novel_patch()
+        )
+        if unexplained_canonical_name_mismatch:
+            error_msg = (
+                f"Our canonical name does not match the given USCS-style name for no clear reason: {contig}"
+            )
+            raise ValueError(error_msg)
+
+        result[contig.get_canonical_name()] = result[contig.get_canonical_name()].union(contig.get_aliases())
+
+    return dict(result)
 
 
 def get_translation_text_from_bucket_files() -> str:
