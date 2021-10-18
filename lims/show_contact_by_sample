@@ -28,5 +28,5 @@ if [[ $(jq 'length' <<< "${groups}") -lt 1 ]]; then
 fi
 group=$(jq '.[-1]' <<< "${groups}")
 
-info "Sample $sample_name with submission $submission_id is linked to contact group $group_id"rt
+info "Sample $sample_name with submission $submission_id is linked to contact group $group_id"
 jq -r 'to_entries[] | .key + ": " + .value' <<< "${group}" | grep -v ^group_id | sort
