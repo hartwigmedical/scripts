@@ -97,7 +97,6 @@ def main(config: Config) -> None:
     categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
     logging.debug(categorized_contig_names)
 
-    has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
     y_test_nucleotides = get_nucleotides_from_string(
         get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y)
     )
@@ -116,6 +115,13 @@ def main(config: Config) -> None:
 
     logging.info(f"nucleotides: {sorted(nucleotides)}")
 
+    has_unplaced_contigs = bool(categorized_contig_names.unplaced_contigs)
+    has_unlocalized_contigs = bool(categorized_contig_names.unlocalized_contigs)
+    has_alts = bool(categorized_contig_names.alt_contigs)
+    has_decoys = bool(categorized_contig_names.decoys)
+    has_patches = bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)
+    has_ebv = categorized_contig_names.ebv is not None
+    has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
     uses_canonical_chrom_names = bool(
         all(
             contig_name_translator.is_canonical(contig_name)
@@ -127,18 +133,35 @@ def main(config: Config) -> None:
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
 
     logging.info(f"FEATURES GENOME:")
-    logging.info(f"Unplaced contigs: {bool(categorized_contig_names.unplaced_contigs)}")
-    logging.info(f"Unlocalized contigs: {bool(categorized_contig_names.unlocalized_contigs)}")
-    logging.info(f"ALTS: {bool(categorized_contig_names.alt_contigs)}")
-    logging.info(f"Decoys (hs38d1): {bool(categorized_contig_names.decoys)}")
-    logging.info(f"Patches: {bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)}")
-    logging.info(f"EBV: {categorized_contig_names.ebv is not None}")
-    logging.info(f"PhiX: False?")
+
+    logging.info(f"Unplaced contigs: {has_unplaced_contigs}")
+    logging.info(f"Unlocalized contigs: {has_unlocalized_contigs}")
+    logging.info(f"Alts: {has_alts}")
+    logging.info(f"Decoys (hs38d1): {has_decoys}")
+    logging.info(f"Patches: {has_patches}")
+    logging.info(f"EBV: {has_ebv}")
     logging.info(f"rCRS mitochondrial sequence: {has_rcrs}")
     logging.info(f"Uses canonical contig names, so 'chr1' etc.: {uses_canonical_chrom_names}")
     logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
     logging.info(f"Semi ambiguous IUB codes: {has_semi_ambiguous_iub_codes}")
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
+    logging.info(f"PhiX: False?")
+    logging.info(f"")
+    logging.info(f"For easy copy-paste:")
+    answers: List[bool] = [
+        has_unplaced_contigs,
+        has_unlocalized_contigs,
+        has_alts,
+        has_decoys, 
+        has_patches,
+        has_ebv,
+        has_rcrs,
+        uses_canonical_chrom_names,
+        has_only_hardmasked_nucleotides_at_y_par1,
+        has_semi_ambiguous_iub_codes,
+        has_softmasked_nucleotides,
+    ]
+    print("\n".join(["Yes" if answer else "No" for answer in answers]))
 
 
 def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTranslator:
