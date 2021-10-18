@@ -142,8 +142,8 @@ elif [[ "${current_hostname}" == "crunch002" ]]; then
 else
   die "Unknown hostname: ${current_hostname}"
 fi
-for seq_run in "${seq_runs[@]}"; do
-    echo "archive_flowcell_to_bucket ${crunch_name} ${seq_run}"
+for seq_dir in "${seq_dirs[@]}"; do
+    echo "archive_flowcell_to_bucket ${crunch_name} ${seq_dir}"
 done
 
 echo ""

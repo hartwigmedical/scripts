@@ -3,10 +3,8 @@
 source gcp_functions || exit 1
 source message_functions || exit 1
 
-command -v realpath > /dev/null || die "Utility 'realpath' not found"
 command -v gsutil > /dev/null || die "Utility 'gsutil' not found"
 
-CRUNCH_BASE_DIR="/data1/illumina_data"
 TMP_LOCAL_BASE_DIR="/data/tmp/flowcells"
 BUCKET_BASE_DIR="gs://hmf-ops-archive/sequencer_archive"
 
@@ -14,20 +12,20 @@ SCRIPT_NAME="$(basename "$0")"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo " Usage: ${SCRIPT_NAME} <crunch-name> <flowcell-name>"
-    echo "        ${SCRIPT_NAME} crunch2.prod-1 210402_NB500902_0301_AH2V53BGXJ"
+    echo " Usage: ${SCRIPT_NAME} <crunch-name> <flowcell-path>"
+    echo "        ${SCRIPT_NAME} crunch2.prod-1 /data1/illumina_data/210402_NB500902_0301_AH2V53BGXJ"
     echo " Descr: Syncs complete flowcell directory to bucket dir ${BUCKET_BASE_DIR} excluding BCL, images, logs. Run this on the ops VM."
     echo "-----"
     exit 1
 fi
 crunch=$1 && shift
-flowcell_name=$1 && shift
+flowcell_dir=${1%/} && shift  # remove trailing slash, if present
 
 # sanity checks
 [[ -n ${crunch} ]] || die "No crunch server provided: crunch=${crunch}"
-[[ -n ${flowcell_name} ]] || die "No crunch server provided: flowcell_name=${flowcell_name}"
+[[ -n ${flowcell_path} ]] || die "No flowcell dir provided: flowcell_dir=${flowcell_dir}"
 
-flowcell_dir="${CRUNCH_BASE_DIR}/${flowcell_name}"
+flowcell_name="${flowcell_dir##*/}"
 tmp_local_dir="${TMP_LOCAL_BASE_DIR}/${flowcell_name}"
 target_bucket_dir="${BUCKET_BASE_DIR}/${flowcell_name}"
 
