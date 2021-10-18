@@ -231,7 +231,7 @@ def is_unlocalized_contig_name(contig_name: str) -> bool:
 
 
 def is_unplaced_contig_name(contig_name: str) -> bool:
-    return contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(DECOY_SUFFIX)
+    return contig_name.startswith(UNPLACED_PREFIX) and not contig_name.endswith(DECOY_SUFFIX)
 
 
 def is_alt_contig_name(contig_name: str) -> bool:
