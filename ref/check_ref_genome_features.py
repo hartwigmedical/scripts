@@ -120,7 +120,10 @@ def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTrans
 
     contig_name_to_canonical_name = {}
     for line in contig_alias_text:
-        contig_name, canonical_name = line.split("\t")
+        split_line = line.split("\t")
+        if len(split_line) != 2:
+            raise ValueError(f"Incorrect length line: {line}")
+        contig_name, canonical_name = split_line
         if contig_name in contig_name_to_canonical_name:
             raise ValueError(f"Encountered contig name multiple times: {contig_name}")
         contig_name_to_canonical_name[contig_name] = canonical_name
