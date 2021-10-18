@@ -23,7 +23,7 @@ flowcell_dir=${1%/} && shift  # remove trailing slash, if present
 
 # sanity checks
 [[ -n ${crunch} ]] || die "No crunch server provided: crunch=${crunch}"
-[[ -n ${flowcell_path} ]] || die "No flowcell dir provided: flowcell_dir=${flowcell_dir}"
+[[ -n ${flowcell_dir} ]] || die "No flowcell dir provided: flowcell_dir=${flowcell_dir}"
 
 flowcell_name="${flowcell_dir##*/}"
 tmp_local_dir="${TMP_LOCAL_BASE_DIR}/${flowcell_name}"
