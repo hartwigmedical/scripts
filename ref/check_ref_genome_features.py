@@ -17,11 +17,13 @@ X_CHROMOSOME_CONTIG_NAMES = {"chrX"}
 Y_CHROMOSOME_CONTIG_NAMES = {"chrY"}
 MITOCHONDRIAL_CONTIG_NAMES = {"chrM"}
 EBV_CONTIG_NAMES = {"chrEBV"}
-HS38D1_CONTIG_NAMES = {f"KN{i}.1" for i in range(707606, 707993)}.union(f"JTFH0{j}.1" for j in range(1000001, 1001999))
 
+UNPLACED_PREFIX = "chrUn_"
 DECOY_SUFFIX = "_decoy"
 UNLOCALIZED_SUFFIX = "_random"
-UNPLACED_PREFIX = "chrUn_"
+FIX_PATCH_SUFFIX = "_fix"
+NOVEL_PATCH_SUFFIX = "_novel"
+ALT_SUFFIX = "_alt"
 
 STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
 SOFTMASKED_NUCLEOTIDES = {"a", "c", "g", "t", "n"}
@@ -51,6 +53,9 @@ class CategorizedContigNames(NamedTuple):
     decoys: Tuple[str]
     unlocalized_contigs: Tuple[str]
     unplaced_contigs: Tuple[str]
+    alt_contigs: Tuple[str]
+    fix_patch_contigs: Tuple[str]
+    novel_patch_contigs: Tuple[str]
     uncategorized_contigs: Tuple[str]
 
 
@@ -102,14 +107,14 @@ def main(config: Config) -> None:
     logging.info(f"FEATURES GENOME:")
     logging.info(f"Unplaced contigs: {bool(categorized_contig_names.unplaced_contigs)}")
     logging.info(f"Unlocalized contigs: {bool(categorized_contig_names.unlocalized_contigs)}")
-    logging.info(f"ALTS: ?")
+    logging.info(f"ALTS: {bool(categorized_contig_names.alt_contigs)}")
     logging.info(f"rCRS mitochondrial sequence: {has_rcrs}")
-    logging.info(f"Accession numbers: False?")
-    logging.info(f"Uses 'chr1' chrom names: {uses_desired_chrom_names}")
+    logging.info(f"Accession numbers: ?")
+    logging.info(f"Uses 'chr1' chrom names: {uses_desired_chrom_names}")  # TODO: do this properly !!
     logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
     logging.info(f"Decoys (hs38d1): {bool(categorized_contig_names.decoys)}")
     logging.info(f"EBV: {categorized_contig_names.ebv is not None}")
-    logging.info(f"Patches: ?")
+    logging.info(f"Patches: {bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)}")
     logging.info(f"PhiX: ?")
     logging.info(f"Semi ambiguous IUB codes: {has_semi_ambiguous_iub_codes}")
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
@@ -145,6 +150,9 @@ def get_categorized_contig_names(
     decoy_contigs: List[str] = []
     unlocalized_contigs: List[str] = []
     unplaced_contigs: List[str] = []
+    alt_contigs: List[str] = []
+    fix_patch_contigs: List[str] = []
+    novel_patch_contigs: List[str] = []
     uncategorized_contigs: List[str] = []
 
     for contig_name in contig_names:
@@ -165,6 +173,12 @@ def get_categorized_contig_names(
             unlocalized_contigs.append(contig_name)
         elif is_unplaced_contig_name(standardized_contig_name):
             unplaced_contigs.append(contig_name)
+        elif is_alt_contig_name(standardized_contig_name):
+            alt_contigs.append(contig_name)
+        elif is_fix_patch_contig_name(standardized_contig_name):
+            fix_patch_contigs.append(contig_name)
+        elif is_novel_patch_contig_name(standardized_contig_name):
+            novel_patch_contigs.append(contig_name)
         else:
             uncategorized_contigs.append(contig_name)
 
@@ -200,15 +214,16 @@ def get_categorized_contig_names(
         tuple(decoy_contigs),
         tuple(unlocalized_contigs),
         tuple(unplaced_contigs),
+        tuple(alt_contigs),
+        tuple(fix_patch_contigs),
+        tuple(novel_patch_contigs),
         tuple(uncategorized_contigs),
     )
     return categorized_contigs
 
 
 def is_decoy_contig_name(contig_name: str) -> bool:
-    decoy_in_gca_for_alignment_pipeline = (contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] == DECOY_SUFFIX)
-    in_hs38d1 = (contig_name in HS38D1_CONTIG_NAMES)
-    return decoy_in_gca_for_alignment_pipeline or in_hs38d1
+    return contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] == DECOY_SUFFIX
 
 
 def is_unlocalized_contig_name(contig_name: str) -> bool:
