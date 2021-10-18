@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_reporting_api || exit 1
 
 failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insufficient_tcp_corrected\|insufficient_dna\|insufficient_tcp_deep_wgs\|insufficient_tcp_deep_wgs_corrected\|insufficient_tcp_shallow_wgs\|insufficient_tcp_shallow_wgs_corrected\|qc_fail_report\|sufficient_tcp_qc_failure"
 
