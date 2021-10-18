@@ -9,7 +9,9 @@ from google.cloud import storage
 
 SCRIPT_NAME = "create_chrom_translation_file"
 SOURCE_FILE_BUCKET = "hmf-crunch-experiments"
-NON_DECOY_TRANSLATION_FILE_PATH = "211005_david_DEV-2170_GRCh38-ref-genome-comparison/GCA_000001405.28_GRCh38.p13_assembly_report.txt"
+NON_DECOY_OLD_TRANSLATION_FILE_PATH = "211005_david_DEV-2170_GRCh38-ref-genome-comparison/GCA_000001405.15_GRCh38_assembly_report.txt"
+# original source: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/GCA_000001405.15_GRCh38_assembly_report.txt
+NON_DECOY_NEW_TRANSLATION_FILE_PATH = "211005_david_DEV-2170_GRCh38-ref-genome-comparison/GCA_000001405.28_GRCh38.p13_assembly_report.txt"
 # original source: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.28_GRCh38.p13/GCA_000001405.28_GRCh38.p13_assembly_report.txt
 DECOY_TRANSLATION_FILE_PATH = "211005_david_DEV-2170_GRCh38-ref-genome-comparison/GCA_000786075.2_hs38d1_assembly_report.txt"
 # original source: https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/786/075/GCA_000786075.2_hs38d1/GCA_000786075.2_hs38d1_assembly_report.txt
@@ -293,9 +295,10 @@ def get_contigs() -> List[Contig]:
 
 def get_translation_text_from_bucket_files() -> str:
     bucket = storage.Client().get_bucket(SOURCE_FILE_BUCKET)
-    non_decoy_text = bucket.get_blob(NON_DECOY_TRANSLATION_FILE_PATH).download_as_text()
+    non_decoy_old_text = bucket.get_blob(NON_DECOY_OLD_TRANSLATION_FILE_PATH).download_as_text()
+    non_decoy_new_text = bucket.get_blob(NON_DECOY_NEW_TRANSLATION_FILE_PATH).download_as_text()
     decoy_text = bucket.get_blob(DECOY_TRANSLATION_FILE_PATH).download_as_text()
-    combined_text = f"{non_decoy_text}\n{decoy_text}"
+    combined_text = f"{non_decoy_old_text}\n{non_decoy_new_text}\n{decoy_text}"
     return combined_text
 
 
