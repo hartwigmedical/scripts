@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, NamedTuple, Dict, Optional, Set
+from typing import List, NamedTuple, Optional, Set
 
 from google.cloud import storage
 
@@ -245,7 +245,7 @@ def main(config: Config) -> None:
             raise ValueError(error_msg)
 
     canonical_contig_name_to_aliases = {contig.get_canonical_name(): contig.get_aliases() for contig in contigs}
-    logging.info(canonical_contig_name_to_aliases)
+    logging.debug(f"canonical_contig_name_to_aliases=\n{canonical_contig_name_to_aliases}")
 
     seen_aliases = set()
     for canonical_name, aliases in canonical_contig_name_to_aliases.items():
@@ -261,8 +261,24 @@ def main(config: Config) -> None:
     total_alias_count = len(set.union(*canonical_contig_name_to_aliases.values()))
     sum_of_alias_counts = sum(len(aliases) for aliases in canonical_contig_name_to_aliases.values())
     if total_alias_count != sum_of_alias_counts:
-        error_msg = f"At least one alias present for more than one canonical contig name: {total_alias_count}, {sum_of_alias_counts}"
+        error_msg = (
+            f"At least one alias present for more than one canonical contig name: "
+            f"total_count={total_alias_count}, sum_of_counts={sum_of_alias_counts}"
+        )
         raise ValueError(error_msg)
+
+    alias_canonical_name_pairs = [
+        (alias, canonical_name)
+        for canonical_name, aliases in canonical_contig_name_to_aliases.items()
+        for alias in sorted(aliases)
+    ]
+    logging.debug(f"alias_canonical_name_pairs=\n{alias_canonical_name_pairs}")
+    translation_text = "\n".join(f"{alias}\t{canonical_name}" for alias, canonical_name in alias_canonical_name_pairs)
+    logging.debug(f"translation_text=\n{translation_text}")
+    with open(config.output_path, "w") as f:
+        f.write(translation_text)
+
+    logging.info(f"Finished {SCRIPT_NAME}")
 
 
 def get_contigs() -> List[Contig]:
