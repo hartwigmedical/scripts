@@ -43,7 +43,7 @@ class Config(NamedTuple):
         assert_file_does_not_exist(self.output_path)
 
 
-class Contig(NamedTuple):
+class ContigSummary(NamedTuple):
     sequence_name: str
     sequence_role: str
     assigned_molecule: str
@@ -54,7 +54,7 @@ class Contig(NamedTuple):
     ucsc_style_name: Optional[str]
 
     @classmethod
-    def from_line(cls, line: str) -> "Contig":
+    def from_line(cls, line: str) -> "ContigSummary":
         split_line = line.split("\t")
 
         if len(split_line) != 10:
@@ -86,7 +86,7 @@ class Contig(NamedTuple):
         if ucsc_style_name == "na":
             ucsc_style_name = None
 
-        contig = Contig(
+        contig = ContigSummary(
             sequence_name, sequence_role, assigned_molecule, assigned_molecule_type, genbank_accession_number,
             refseq_accession_number, assembly_unit, ucsc_style_name,
         )
@@ -285,20 +285,20 @@ def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
             # skip empty lines and headers starting with "'"#"
             continue
 
-        contig = Contig.from_line(line.replace("\r", ""))
+        summary = ContigSummary.from_line(line.replace("\r", ""))
 
         unexplained_canonical_name_mismatch = (
-                contig.get_canonical_name() != contig.ucsc_style_name
-                and contig.ucsc_style_name is not None
-                and not contig.is_novel_patch()
+            summary.get_canonical_name() != summary.ucsc_style_name
+            and summary.ucsc_style_name is not None
+            and not summary.is_novel_patch()
         )
         if unexplained_canonical_name_mismatch:
             error_msg = (
-                f"Our canonical name does not match the given USCS-style name for no clear reason: {contig}"
+                f"Our canonical name does not match the given USCS-style name for no clear reason: {summary}"
             )
             raise ValueError(error_msg)
 
-        result[contig.get_canonical_name()] = result[contig.get_canonical_name()].union(contig.get_aliases())
+        result[summary.get_canonical_name()] = result[summary.get_canonical_name()].union(summary.get_aliases())
 
     return dict(result)
 
