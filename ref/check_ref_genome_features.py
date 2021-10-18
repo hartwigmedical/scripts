@@ -78,7 +78,7 @@ def main(config: Config) -> None:
     contig_name_translator = get_contig_name_translator(config.contig_alias_bucket_path)
 
     categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
-    logging.info(categorized_contig_names)
+    logging.debug(categorized_contig_names)
 
     has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
     y_test_nucleotides = get_nucleotides_from_string(
