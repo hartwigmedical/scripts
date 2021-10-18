@@ -72,7 +72,7 @@ extract_object_created_on_reporting_id() {
     environment=$1 && shift
 
     sample_object=$(extract_wrapper_api "reports/created?id=${id}" "${environment}")
-    echo ${}sample_object}
+    echo ${sample_object}
 }
 
 extract_object_created() {
