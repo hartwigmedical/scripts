@@ -82,7 +82,7 @@ class ContigNameTranslator(object):
         if contig_name in self._contig_name_to_canonical_name:
             return self._contig_name_to_canonical_name[contig_name]
         else:
-            return contig_name
+            raise ValueError(f"Could not standardize '{contig_name}'")
 
     def is_canonical(self, contig_name: str) -> bool:
         return contig_name in self._contig_name_to_canonical_name.values()
