@@ -35,6 +35,8 @@ ALTS_ASSEMBLY_UNITS = {f"ALT_REF_LOCI_{i}" for i in range(1, 36)}
 
 UNKNOWN_CHROM = "chrUn"
 
+HARDCODED_CANONICAL_NAME_TO_ALIASES = {"chrEBV": {"chrEBV", "EBV", "AJ507799.2", "NC_007605"}}
+
 
 class Config(NamedTuple):
     output_path: Path
@@ -299,6 +301,9 @@ def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
             raise ValueError(error_msg)
 
         result[summary.get_canonical_name()] = result[summary.get_canonical_name()].union(summary.get_aliases())
+
+    for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES:
+        result[canonical_name] = result[canonical_name].union(aliases)
 
     return dict(result)
 
