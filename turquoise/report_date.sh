@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-input_file="/data/ops/lims/prod/reporting_db.tsv"
+input_file="/data/ops/lims/prod/final_sharing_db.tsv"
 wd="$HOME/.turquoise/data"
 out_dir="$HOME/.turquoise"
 
