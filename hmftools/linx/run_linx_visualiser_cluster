@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+run_dir=$1 && shift
+clusterId=$1 && shift
+
+input_dir=${run_dir}/linx
+
+linx_jar=$(locate_prod_linx)
+
+# Can pass "-clusterId {id}" to plot a single cluster
+do_run_linx_visualiser ${run_dir} ${linx_jar} ${input_dir} -clusterId ${clusterId} "$@"
