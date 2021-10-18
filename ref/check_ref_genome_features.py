@@ -223,15 +223,27 @@ def get_categorized_contig_names(
 
 
 def is_decoy_contig_name(contig_name: str) -> bool:
-    return contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] == DECOY_SUFFIX
+    return contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(DECOY_SUFFIX)
 
 
 def is_unlocalized_contig_name(contig_name: str) -> bool:
-    return contig_name[-7:] == UNLOCALIZED_SUFFIX
+    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(UNLOCALIZED_SUFFIX)
 
 
 def is_unplaced_contig_name(contig_name: str) -> bool:
-    return contig_name[:6] == UNPLACED_PREFIX and contig_name[-6:] != DECOY_SUFFIX
+    return contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(DECOY_SUFFIX)
+
+
+def is_alt_contig_name(contig_name: str) -> bool:
+    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(ALT_SUFFIX)
+
+
+def is_fix_patch_contig_name(contig_name: str) -> bool:
+    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(FIX_PATCH_SUFFIX)
+
+
+def is_novel_patch_contig_name(contig_name: str) -> bool:
+    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(NOVEL_PATCH_SUFFIX)
 
 
 def mitochondrial_sequence_is_rcrs(config: Config, ref_mitochondrial_contig_name: str) -> bool:
