@@ -8,6 +8,7 @@ from typing import List, NamedTuple, Optional, Set, DefaultDict, Dict
 
 from google.cloud import storage
 
+import ref.ref_util
 from ref_util import set_up_logging, assert_file_does_not_exist
 
 SCRIPT_NAME = "create_chrom_translation_file"
@@ -312,9 +313,9 @@ def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
 
 def get_translation_text_from_bucket_files() -> str:
     bucket = storage.Client().get_bucket(SOURCE_FILE_BUCKET)
-    non_decoy_old_text = bucket.get_blob(NON_DECOY_OLD_TRANSLATION_FILE_PATH).download_as_text()
-    non_decoy_new_text = bucket.get_blob(NON_DECOY_NEW_TRANSLATION_FILE_PATH).download_as_text()
-    decoy_text = bucket.get_blob(DECOY_TRANSLATION_FILE_PATH).download_as_text()
+    non_decoy_old_text = ref.ref_util.get_blob(NON_DECOY_OLD_TRANSLATION_FILE_PATH).download_as_text()
+    non_decoy_new_text = ref.ref_util.get_blob(NON_DECOY_NEW_TRANSLATION_FILE_PATH).download_as_text()
+    decoy_text = ref.ref_util.get_blob(DECOY_TRANSLATION_FILE_PATH).download_as_text()
     combined_text = f"{non_decoy_old_text}\n{non_decoy_new_text}\n{decoy_text}"
     return combined_text
 

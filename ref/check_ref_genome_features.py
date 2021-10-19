@@ -4,12 +4,11 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, NamedTuple, Tuple, Set
+from typing import List, NamedTuple, Tuple, Set, Optional
 
-from google.cloud import storage
 import pysam
 
-from ref_util import set_up_logging, assert_file_exists, ContigNameTranslator
+from ref_util import set_up_logging, assert_file_exists, ContigNameTranslator, assert_file_exists_in_bucket, get_blob
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -34,12 +33,13 @@ Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for 
 
 class Config(NamedTuple):
     ref_genome_path: Path
-    rcrs_path: Path
+    rcrs_path: Optional[Path]
     contig_alias_bucket_path: str
 
     def validate(self) -> None:
         assert_file_exists(self.ref_genome_path)
-        assert_file_exists(self.rcrs_path)
+        if self.rcrs_path is not None:
+            assert_file_exists(self.rcrs_path)
         if not re.fullmatch(r"gs://.+", self.contig_alias_bucket_path):
             raise ValueError(f"Contig alias bucket path is not of the form 'gs://some/file/path'")
         assert_file_exists_in_bucket(self.contig_alias_bucket_path)
@@ -116,6 +116,7 @@ def main(config: Config) -> None:
     has_alts = bool(categorized_contig_names.alt_contigs)
     has_decoys = bool(categorized_contig_names.decoys)
     has_patches = bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)
+
     if len(categorized_contig_names.ebv_contigs) == 1:
         has_ebv = True
     elif len(categorized_contig_names.ebv_contigs) == 0:
@@ -123,8 +124,15 @@ def main(config: Config) -> None:
     else:
         logging.warning(f"Found more than one EBV contig: {categorized_contig_names.ebv_contigs}")
         has_ebv = None
-    if len(categorized_contig_names.mitochondrial_contigs) == 1:
+
+    if config.rcrs_path is not None and  len(categorized_contig_names.mitochondrial_contigs) == 1:
         has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial_contigs[0])
+    elif config.rcrs_path is None:
+        warn_msg = (
+            f"rCRS argument not provided, so skipping comparison of mitochondrial sequence."
+        )
+        logging.warning(warn_msg)
+        has_rcrs = None
     else:
         warn_msg = (
             f"Did not find exactly one mitochondrial contig: "
@@ -132,10 +140,12 @@ def main(config: Config) -> None:
         )
         logging.warning(warn_msg)
         has_rcrs = None
+
     uses_canonical_chrom_names = all(
         contig_name_translator.is_canonical(contig_name)
         for contig_name in categorized_contig_names.get_contig_names()
     )
+
     if len(categorized_contig_names.y_contigs) == 1:
         y_test_nucleotides = get_nucleotides_from_string(
             get_y_test_sequence(categorized_contig_names.y_contigs[0], config.ref_genome_path)
@@ -149,6 +159,7 @@ def main(config: Config) -> None:
         )
         logging.warning(warn_msg)
         has_only_hardmasked_nucleotides_at_y_par1 = None
+
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
     if categorized_contig_names.alt_contigs:
@@ -338,17 +349,6 @@ def get_nucleotides_from_string(sequence: str) -> Set[str]:
     return nucleotides
 
 
-def assert_file_exists_in_bucket(path: str) -> None:
-    if not get_blob(path).exists():
-        raise ValueError(f"File in bucket does not exist: {path}")
-
-
-def get_blob(path: str) -> storage.Blob:
-    bucket_name = path.split("/")[2]
-    relative_path = "/".join(path.split("/")[3:])
-    return storage.Client().get_bucket(bucket_name).get_blob(relative_path)
-
-
 def parse_args(sys_args: List[str]) -> Config:
     parser = argparse.ArgumentParser(
         prog="check_ref_genome_features",
@@ -358,13 +358,20 @@ def parse_args(sys_args: List[str]) -> Config:
         ),
     )
     parser.add_argument("--fasta", "-i", type=Path, required=True, help="Fasta file for ref genome.")
-    parser.add_argument("--rcrs", "-r", type=Path, required=True, help="Fasta file for rCRS mitochondrial genome.")
     parser.add_argument(
         "--contig_alias",
         "-c",
         type=str,
         required=True,
         help="Bucket path to TSV file with contig name translations. Source: create_contig_translation_file.py.",
+    )
+
+    parser.add_argument(
+        "--rcrs",
+        "-r",
+        type=Path,
+        required=False,
+        help="(Optional) Fasta file for rCRS mitochondrial genome.",
     )
 
     args = parser.parse_args(sys_args)

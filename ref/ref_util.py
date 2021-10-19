@@ -50,6 +50,22 @@ def assert_file_does_not_exist(path: Path) -> None:
         raise ValueError(f"File exists: {path}")
 
 
+def assert_dir_does_not_exist(path: Path) -> None:
+    if path.is_dir():
+        raise ValueError(f"Dir exists: {path}")
+
+
 def delete_if_exists(path: Path) -> None:
     if path.exists():
         path.unlink()
+
+
+def assert_file_exists_in_bucket(path: str) -> None:
+    if not get_blob(path).exists():
+        raise ValueError(f"File in bucket does not exist: {path}")
+
+
+def get_blob(path: str) -> storage.Blob:
+    bucket_name = path.split("/")[2]
+    relative_path = "/".join(path.split("/")[3:])
+    return storage.Client().get_bucket(bucket_name).get_blob(relative_path)
