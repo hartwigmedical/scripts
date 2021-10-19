@@ -62,13 +62,9 @@ main () {
 
         echo ${barcode}
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-        if [[ -z ${report_created_id} ]];then
-          exists_in_success_run_dirs=0
-          exists_in_qcfail_run_dirs=0
-        else
-          exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-          exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-        fi
+        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l )
+        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+
 
         if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
