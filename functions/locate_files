@@ -203,6 +203,10 @@ locate_actin_reports_directory() {
     echo "/data/actin/reports"
 }
 
+locate_actin_minimal_molecular_json() {
+    echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
