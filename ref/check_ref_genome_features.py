@@ -152,7 +152,7 @@ def main(config: Config) -> None:
     )
     if len(categorized_contig_names.y_contigs) == 1:
         y_test_nucleotides = get_nucleotides_from_string(
-            get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y_contigs[0])
+            get_y_test_sequence(categorized_contig_names.y_contigs[0], config.ref_genome_path)
         )
         logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
         has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
@@ -165,6 +165,13 @@ def main(config: Config) -> None:
         has_only_hardmasked_nucleotides_at_y_par1 = None
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
+    if all(is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+        alts_are_padded = True
+    elif all(not is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+        alts_are_padded = False
+    else:
+        logging.warning(f"Could not determine whether alts are padded with N's (or n's)")
+        alts_are_padded = None
 
     logging.info(f"FEATURES GENOME:")
 
@@ -179,6 +186,7 @@ def main(config: Config) -> None:
     logging.info(f"PAR hardmask (not fully accurate): {has_only_hardmasked_nucleotides_at_y_par1}")
     logging.info(f"Semi ambiguous IUB codes: {has_semi_ambiguous_iub_codes}")
     logging.info(f"Has softmasked nucleotides: {has_softmasked_nucleotides}")
+    logging.info(f"Alts are padded with N: {alts_are_padded}")
     logging.info(f"PhiX: False?")
     logging.info(f"")
     logging.info(f"For easy copy-paste:")
@@ -194,6 +202,7 @@ def main(config: Config) -> None:
         has_only_hardmasked_nucleotides_at_y_par1,
         has_semi_ambiguous_iub_codes,
         has_softmasked_nucleotides,
+        alts_are_padded,
     ]
     value_to_answer = {True: "Yes", False: "No", None: "?"}
     print("\n".join([value_to_answer[answer] for answer in answers]))
@@ -315,9 +324,19 @@ def mitochondrial_sequence_is_rcrs(config: Config, ref_mitochondrial_contig_name
     return rcrs_genome == mitochondrial_from_ref
 
 
-def get_y_test_sequence(ref_genome_path: Path, y_contig_name: str) -> str:
+def get_y_test_sequence(y_contig_name: str, ref_genome_path: Path) -> str:
     with pysam.Fastafile(ref_genome_path) as genome_f:
         return genome_f.fetch(y_contig_name, Y_PAR1_TEST_REGION[0], Y_PAR1_TEST_REGION[1])
+
+
+def is_definitely_padded_with_n(contig_name: str, ref_genome_path: Path) -> bool:
+    with pysam.Fastafile(ref_genome_path) as genome_f:
+        contig_sequence = genome_f.fetch(contig_name)
+
+    first_1000_nucleotides = get_nucleotides(contig_sequence[:1000])
+    last_1000_nucleotides = get_nucleotides(contig_sequence[-1000:])
+
+    return first_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES) and last_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES)
 
 
 def get_nucleotides(ref_genome_path: Path) -> Set[str]:
