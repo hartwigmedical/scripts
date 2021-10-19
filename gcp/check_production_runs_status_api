@@ -60,7 +60,6 @@ main () {
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-        echo ${barcode}
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l )
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
@@ -96,8 +95,8 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
+        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
         if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
@@ -125,8 +124,8 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
+        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
             counter=$((counter+1))
@@ -155,8 +154,8 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
+        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
         if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
             counter=$((counter+1))
@@ -178,8 +177,8 @@ main () {
         barcode=$(echo "${set_name}" | awk -F '_' '{print $4}')
 
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | jq '.length')
+        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
         if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
             validation_ss_run=1

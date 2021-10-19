@@ -141,7 +141,7 @@ fi
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then
-    if [[ $(extract_object_shared ${reporting_id}  "pilot" | jq '. | length')  == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id}  "pilot" | wc -l)  == 0 ]]; then
       info "A record has been added for ${sample} to sharing api"
       post_api_sharing_report ${barcode} ${report_type} "pilot"
       info "Reports shared registration for ${sample}:"
@@ -154,7 +154,7 @@ if [[ ${report} == *"corrected"* ]]; then
       warn "No new record added."
     fi
 else
-    if [[ $(extract_object_shared ${reporting_id} "pilot" | jq '. | length')  == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id} "pilot" | wc -l)  == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"
          post_api_sharing_report ${barcode} ${report_type} "pilot"
          info "Reports shared registration for ${sample}:"
