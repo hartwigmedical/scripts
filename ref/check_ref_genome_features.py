@@ -335,8 +335,10 @@ def get_y_test_sequence(y_contig_name: str, ref_genome_path: Path) -> str:
 
 def is_definitely_padded_with_n(contig_name: str, ref_genome_path: Path) -> bool:
     with pysam.Fastafile(ref_genome_path) as genome_f:
-        first_1000_nucleotides = genome_f.fetch(contig_name, 0, 1000)
-        last_1000_nucleotides = genome_f.fetch(contig_name, start=genome_f.get_reference_length(contig_name)-1000)
+        first_1000_nucleotides = get_nucleotides_from_string(
+            genome_f.fetch(contig_name, 0, 1000))
+        last_1000_nucleotides = get_nucleotides_from_string(
+            genome_f.fetch(contig_name, start=genome_f.get_reference_length(contig_name)-1000))
 
     return first_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES) and last_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES)
 
