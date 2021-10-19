@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 patient=$1
 
@@ -8,4 +9,4 @@ if [[ -z "${patient}" ]]; then
     error "No patient provided. Exiting."
 fi
 
-gcloud compute scp data-vm-prod-1:/data/actin/genomic/*${patient}*/orange/*.pdf ~/hmf/tmp/
+gcloud compute scp data-vm-prod-1:$(locate_actin_genomic_directory)/*${patient}*/orange/*.pdf ~/hmf/tmp/

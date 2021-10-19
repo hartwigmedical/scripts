@@ -15,7 +15,7 @@ if [[ ! -d ${orig_run_dir} ]]; then
     error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
 fi
 
-run_dir=/data/actin/genomic/${sample}
+run_dir=$(locate_actin_genomic_directory)/${sample}
 if [[ -d ${run_dir} ]]; then
     info "Cleaning up ${run_dir}"
     rm -r ${run_dir}
