@@ -396,7 +396,7 @@ def get_blob(path: str) -> storage.Blob:
 
 def parse_args(sys_args: List[str]) -> Config:
     parser = argparse.ArgumentParser(
-        prog="check_hg38_ref_genome_features",
+        prog="check_ref_genome_features",
         description=(
             "Check important features for ref genome FASTA file. Correctness is not guaranteed, especially for hg19. "
             "See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files."
@@ -409,9 +409,7 @@ def parse_args(sys_args: List[str]) -> Config:
         "-c",
         type=str,
         required=True,
-        help=(
-            "Bucket path to TSV file with contig name translations. Source: create_contig_translation_file.py"
-        )
+        help="Bucket path to TSV file with contig name translations. Source: create_contig_translation_file.py.",
     )
 
     args = parser.parse_args(sys_args)
