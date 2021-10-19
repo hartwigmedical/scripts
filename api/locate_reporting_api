@@ -29,28 +29,7 @@ api_curl_post () {
           --data "${data}"
 }
 
-extract_wrapper_api() {
-    url=$1 && shift
-    environment=$1 && shift
-
-    if [[ ${environment} == "pilot" ]]; then
-        sample_object=$(hmf_api_get -t "${url}")
-    else
-        sample_object=$(hmf_api_get "${url}")
-    fi
-    size_object=$(echo ${sample_object} | jq '. | length')
-    if [[ ${size_object} -eq 0 ]]; then
-      error "No reporting created entry is present. Add entry first in created endpoint"
-      exit 1
-    elif [[ ${size_object} -eq 1 ]]; then
-      echo ${sample_object} | jq .[]
-    else
-      ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq .[-1]
-    fi
-}
-
-extract_wrapper_api_data() {
+retrieve_wrapper_api() {
     url=$1 && shift
     environment=$1 && shift
 
@@ -73,7 +52,7 @@ extract_reporting_id() {
     report_type=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
     sample_object_report_type=$(echo ${sample_object} |  jq ". | select (.report_type == \"${report_type}\")")
     echo ${sample_object_report_type} | jq .id
 }
@@ -82,7 +61,7 @@ extract_reporting_id_on_barcode() {
     sample_barcode=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
     echo ${sample_object} | jq .id
 }
 
@@ -90,7 +69,7 @@ extract_object_created_on_reporting_id() {
     id=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api "reports/created?id=${id}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?id=${id}" "${environment}")
     echo ${sample_object} | jq .
 }
 
@@ -99,7 +78,7 @@ extract_object_created() {
     report_type=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api_data "reports/created?barcode=${sample_barcode}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
     sample_object_report_type=$(echo ${sample_object} |  jq ". | select (.report_type == \"${report_type}\")")
     echo ${sample_object_report_type} | jq .
 }
@@ -108,6 +87,6 @@ extract_object_shared() {
     reporting_id=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(extract_wrapper_api_data "reports/shared?report_created_id=${reporting_id}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/shared?report_created_id=${reporting_id}" "${environment}")
     echo ${sample_object} | jq .
 }

@@ -3,8 +3,6 @@
 source message_functions || exit 1
 source locate_reporting_api || exit 1
 
-set -e
-
 sample_barcode=$1 && shift
 report_type=$1 && shift
 
@@ -12,6 +10,11 @@ report_type=$1 && shift
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" "pilot")
 
 data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
+
+if [[ -z ${report_created_id} ]];then
+  error "No reporting created entry is present. Add entry first in created endpoint"
+  exit 1
+fi
 
 info "Adding entry to shared API"
 api_curl_post "reports/shared" "${data}" "pilot"
