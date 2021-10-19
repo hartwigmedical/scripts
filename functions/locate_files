@@ -1070,10 +1070,17 @@ locate_protect_evidence_pilot_vicc() {
 
 locate_orange_json() {
     local run_dir=$1
-    local orange_json=$(find -L ${run_dir}/orange/ -type f -name "*.orange.json")
+    local orange_json=""
+
+    local orange_dir=${run_dir}/orange
+    if [[ -d ${orange_dir} ]]; then
+        orange_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
+    fi
+
     if [[ -z "${orange_json}" ]]; then
         error "Unable to locate ORANGE json in ${run_dir}."
     fi
+
     echo ${orange_json}
 }
 
