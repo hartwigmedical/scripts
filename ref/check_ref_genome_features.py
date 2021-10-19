@@ -3,12 +3,13 @@ import concurrent.futures
 import logging
 import re
 import sys
-from copy import deepcopy
 from pathlib import Path
-from typing import List, NamedTuple, Tuple, Set, Dict
+from typing import List, NamedTuple, Tuple, Set
 
 from google.cloud import storage
 import pysam
+
+from ref_util import set_up_logging, assert_file_exists, ContigNameTranslator
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -75,26 +76,11 @@ class CategorizedContigNames(NamedTuple):
         return tuple(contig_names)
 
 
-class ContigNameTranslator(object):
-    """Standardizes names if it can. Returns argument as is if it cannot."""
-    def __init__(self, contig_name_to_canonical_name: Dict[str, str]) -> None:
-        self._contig_name_to_canonical_name = deepcopy(contig_name_to_canonical_name)
-
-    def standardize(self, contig_name: str) -> str:
-        if contig_name in self._contig_name_to_canonical_name:
-            return self._contig_name_to_canonical_name[contig_name]
-        else:
-            raise ValueError(f"Could not standardize '{contig_name}'")
-
-    def is_canonical(self, contig_name: str) -> bool:
-        return contig_name in self._contig_name_to_canonical_name.values()
-
-
 def main(config: Config) -> None:
     set_up_logging()
     config.validate()
 
-    contig_name_translator = get_contig_name_translator(config.contig_alias_bucket_path)
+    contig_name_translator = ContigNameTranslator.from_blob(get_blob(config.contig_alias_bucket_path))
 
     categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
     logging.debug(categorized_contig_names)
@@ -210,21 +196,6 @@ def main(config: Config) -> None:
     ]
     value_to_answer = {True: "Yes", False: "No", None: "?"}
     print("\n".join([value_to_answer[answer] for answer in answers]))
-
-
-def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTranslator:
-    contig_alias_text = get_blob(contig_alias_bucket_path).download_as_text()
-
-    contig_name_to_canonical_name = {}
-    for line in contig_alias_text.split("\n"):
-        split_line = line.split("\t")
-        if len(split_line) != 2:
-            raise ValueError(f"Incorrect length line: {line}")
-        contig_name, canonical_name = split_line
-        if contig_name in contig_name_to_canonical_name:
-            raise ValueError(f"Encountered contig name multiple times: {contig_name}")
-        contig_name_to_canonical_name[contig_name] = canonical_name
-    return ContigNameTranslator(contig_name_to_canonical_name)
 
 
 def get_categorized_contig_names(
@@ -365,22 +336,6 @@ def get_nucleotides_from_string(sequence: str) -> Set[str]:
     for nucleotide in sequence:
         nucleotides.add(nucleotide)
     return nucleotides
-
-
-def set_up_logging() -> None:
-    logging.basicConfig(
-        format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-
-def delete_if_exists(path: Path) -> None:
-    if path.exists():
-        path.unlink()
-
-
-def assert_file_exists(path: Path) -> None:
-    if not path.is_file():
-        raise ValueError(f"File does not exist: {path}")
 
 
 def assert_file_exists_in_bucket(path: str) -> None:

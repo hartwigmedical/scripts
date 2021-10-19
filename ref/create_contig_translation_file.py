@@ -8,6 +8,8 @@ from typing import List, NamedTuple, Optional, Set, DefaultDict, Dict
 
 from google.cloud import storage
 
+from ref_util import set_up_logging, assert_file_does_not_exist
+
 SCRIPT_NAME = "create_chrom_translation_file"
 SOURCE_FILE_BUCKET = "hmf-crunch-experiments"
 NON_DECOY_OLD_TRANSLATION_FILE_PATH = "211005_david_DEV-2170_GRCh38-ref-genome-comparison/GCA_000001405.15_GRCh38_assembly_report.txt"
@@ -315,17 +317,6 @@ def get_translation_text_from_bucket_files() -> str:
     decoy_text = bucket.get_blob(DECOY_TRANSLATION_FILE_PATH).download_as_text()
     combined_text = f"{non_decoy_old_text}\n{non_decoy_new_text}\n{decoy_text}"
     return combined_text
-
-
-def set_up_logging() -> None:
-    logging.basicConfig(
-        format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-
-def assert_file_does_not_exist(path: Path) -> None:
-    if path.is_file():
-        raise ValueError(f"File exists: {path}")
 
 
 def parse_args(sys_args: List[str]) -> Config:

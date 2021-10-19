@@ -7,6 +7,8 @@ from concurrent import futures
 from pathlib import Path
 from typing import List, NamedTuple, Tuple, Dict, DefaultDict, Set
 
+from ref_util import assert_file_exists, set_up_logging
+
 SCRIPT_NAME = "create_chrom_translation_file_old"
 
 
@@ -137,22 +139,6 @@ def add_hardcoded_aliases(canonical_contig_name_to_aliases: DefaultDict[str, Set
     canonical_contig_name_to_aliases["chrX"].add("X")
     canonical_contig_name_to_aliases["chrY"].add("Y")
     canonical_contig_name_to_aliases["chrM"].add("MT")
-
-
-def set_up_logging() -> None:
-    logging.basicConfig(
-        format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-
-def delete_if_exists(path: Path) -> None:
-    if path.exists():
-        path.unlink()
-
-
-def assert_file_exists(path: Path) -> None:
-    if not path.is_file():
-        raise ValueError(f"File does not exist: {path}")
 
 
 def parse_args(sys_args: List[str]) -> Config:
