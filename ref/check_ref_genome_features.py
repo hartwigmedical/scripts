@@ -5,7 +5,7 @@ import re
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import List, NamedTuple, Tuple, Optional, Set, Dict
+from typing import List, NamedTuple, Tuple, Set, Dict
 
 from google.cloud import storage
 import pysam
@@ -46,10 +46,10 @@ class Config(NamedTuple):
 
 class CategorizedContigNames(NamedTuple):
     autosomes: Tuple[str]
-    x: str
-    y: str
-    mitochondrial: str
-    ebv: Optional[str]
+    x_contigs: Tuple[str]
+    y_contigs: Tuple[str]
+    mitochondrial_contigs: Tuple[str]
+    ebv_contigs: Tuple[str]
     decoys: Tuple[str]
     unlocalized_contigs: Tuple[str]
     unplaced_contigs: Tuple[str]
@@ -59,10 +59,12 @@ class CategorizedContigNames(NamedTuple):
     uncategorized_contigs: Tuple[str]
 
     def get_contig_names(self) -> Tuple[str]:
-        contig_names = [self.x, self.y, self.mitochondrial]
-        if self.ebv is not None:
-            contig_names.append(self.ebv)
+        contig_names = []
         contig_names.extend(self.autosomes)
+        contig_names.extend(self.x_contigs)
+        contig_names.extend(self.y_contigs)
+        contig_names.extend(self.mitochondrial_contigs)
+        contig_names.extend(self.ebv_contigs)
         contig_names.extend(self.decoys)
         contig_names.extend(self.unlocalized_contigs)
         contig_names.extend(self.unplaced_contigs)
@@ -97,11 +99,6 @@ def main(config: Config) -> None:
     categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
     logging.debug(categorized_contig_names)
 
-    y_test_nucleotides = get_nucleotides_from_string(
-        get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y)
-    )
-    logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
-
     nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
     if not nucleotides_file.exists():
         nucleotides = get_nucleotides(config.ref_genome_path)
@@ -115,20 +112,57 @@ def main(config: Config) -> None:
 
     logging.info(f"nucleotides: {sorted(nucleotides)}")
 
+    if len(categorized_contig_names.autosomes) != 22:
+        warn_msg = (
+            f"Did not find exactly 22 autosome contigs: "
+            f"autosomes={categorized_contig_names.autosomes}"
+        )
+        logging.warning(warn_msg)
+    if len(categorized_contig_names.x_contigs) != 1:
+        warn_msg = (
+            f"Did not find exactly one X contig: "
+            f"x={categorized_contig_names.x_contigs}"
+        )
+        logging.warning(warn_msg)
+
     has_unplaced_contigs = bool(categorized_contig_names.unplaced_contigs)
     has_unlocalized_contigs = bool(categorized_contig_names.unlocalized_contigs)
     has_alts = bool(categorized_contig_names.alt_contigs)
     has_decoys = bool(categorized_contig_names.decoys)
     has_patches = bool(categorized_contig_names.fix_patch_contigs) or bool(categorized_contig_names.novel_patch_contigs)
-    has_ebv = categorized_contig_names.ebv is not None
-    has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial)
-    uses_canonical_chrom_names = bool(
-        all(
-            contig_name_translator.is_canonical(contig_name)
-            for contig_name in categorized_contig_names.get_contig_names()
+    if len(categorized_contig_names.ebv_contigs) == 1:
+        has_ebv = True
+    elif len(categorized_contig_names.ebv_contigs) == 0:
+        has_ebv = False
+    else:
+        logging.warning(f"Found more than one EBV contig: {categorized_contig_names.ebv_contigs}")
+        has_ebv = None
+    if len(categorized_contig_names.mitochondrial_contigs) == 1:
+        has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial_contigs[0])
+    else:
+        warn_msg = (
+            f"Did not find exactly one mitochondrial contig: "
+            f"mitochondrial={categorized_contig_names.mitochondrial_contigs}"
         )
+        logging.warning(warn_msg)
+        has_rcrs = None
+    uses_canonical_chrom_names = all(
+        contig_name_translator.is_canonical(contig_name)
+        for contig_name in categorized_contig_names.get_contig_names()
     )
-    has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
+    if len(categorized_contig_names.y_contigs) == 1:
+        y_test_nucleotides = get_nucleotides_from_string(
+            get_y_test_sequence(config.ref_genome_path, categorized_contig_names.y_contigs[0])
+        )
+        logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
+        has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
+    else:
+        warn_msg = (
+            f"Did not find exactly one Y contig: "
+            f"y={categorized_contig_names.y_contigs}"
+        )
+        logging.warning(warn_msg)
+        has_only_hardmasked_nucleotides_at_y_par1 = None
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
 
@@ -152,7 +186,7 @@ def main(config: Config) -> None:
         has_unplaced_contigs,
         has_unlocalized_contigs,
         has_alts,
-        has_decoys, 
+        has_decoys,
         has_patches,
         has_ebv,
         has_rcrs,
@@ -161,7 +195,8 @@ def main(config: Config) -> None:
         has_semi_ambiguous_iub_codes,
         has_softmasked_nucleotides,
     ]
-    print("\n".join(["Yes" if answer else "No" for answer in answers]))
+    value_to_answer = {True: "Yes", False: "No", None: "?"}
+    print("\n".join([value_to_answer[answer] for answer in answers]))
 
 
 def get_contig_name_translator(contig_alias_bucket_path: str) -> ContigNameTranslator:
@@ -228,33 +263,13 @@ def get_categorized_contig_names(
 
     if uncategorized_contigs:
         raise ValueError(f"Uncategorized contigs: {uncategorized_contigs}")
-    if len(mitochondrial_contigs) != 1:
-        error_msg = (
-            f"Did not find exactly one mitochondrial contig: "
-            f"mitochondrial={mitochondrial_contigs}, uncategorized={uncategorized_contigs}"
-        )
-        raise ValueError(error_msg)
-    if len(x_contigs) != 1:
-        error_msg = (
-            f"Did not find exactly one X contig: "
-            f"x={x_contigs}, uncategorized={uncategorized_contigs}"
-        )
-        raise ValueError(error_msg)
-    if len(y_contigs) != 1:
-        error_msg = (
-            f"Did not find exactly one Y contig: "
-            f"y={y_contigs}, uncategorized={uncategorized_contigs}"
-        )
-        raise ValueError(error_msg)
-    if len(ebv_contigs) > 1:
-        raise ValueError(f"Found more than one EBV contig: {ebv_contigs}")
 
     categorized_contigs = CategorizedContigNames(
         tuple(autosome_contigs),
-        x_contigs[0],
-        y_contigs[0],
-        mitochondrial_contigs[0],
-        ebv_contigs[0] if len(ebv_contigs) == 1 else None,
+        tuple(x_contigs),
+        tuple(y_contigs),
+        tuple(mitochondrial_contigs),
+        tuple(ebv_contigs),
         tuple(decoy_contigs),
         tuple(unlocalized_contigs),
         tuple(unplaced_contigs),
