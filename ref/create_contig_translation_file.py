@@ -35,7 +35,7 @@ ALTS_ASSEMBLY_UNITS = {f"ALT_REF_LOCI_{i}" for i in range(1, 36)}
 
 UNKNOWN_CHROM = "chrUn"
 
-HARDCODED_CANONICAL_NAME_TO_ALIASES = {"chrEBV": {"chrEBV", "EBV", "AJ507799.2", "NC_007605"}}
+HARDCODED_CANONICAL_NAME_TO_ALIASES = {"chrEBV": {"chrEBV", "EBV", "AJ507799.2", "NC_007605.1"}}
 
 
 class Config(NamedTuple):
