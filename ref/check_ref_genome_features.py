@@ -333,8 +333,8 @@ def is_definitely_padded_with_n(contig_name: str, ref_genome_path: Path) -> bool
     with pysam.Fastafile(ref_genome_path) as genome_f:
         contig_sequence = genome_f.fetch(contig_name)
 
-    first_1000_nucleotides = get_nucleotides(contig_sequence[:1000])
-    last_1000_nucleotides = get_nucleotides(contig_sequence[-1000:])
+    first_1000_nucleotides = get_nucleotides_from_string(contig_sequence[:1000])
+    last_1000_nucleotides = get_nucleotides_from_string(contig_sequence[-1000:])
 
     return first_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES) and last_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES)
 
