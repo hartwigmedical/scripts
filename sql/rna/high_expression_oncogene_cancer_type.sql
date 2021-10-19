@@ -4,12 +4,12 @@ FROM
 WHERE (primaryTumorLocation, g.gene) IN
 	(SELECT primaryTumorLocation, gene FROM geneExpression g INNER JOIN clinical c ON g.sampleId=c.sampleId
 	WHERE gene IN (SELECT gene FROM driverGenePanel WHERE likelihoodType='ONCO')
-	AND percentileCancer > 0.9
+	AND percentileCancer > 0.90
 	AND g.sampleId IN ('XXX'))
 ) AS a
 LEFT JOIN driverCatalog d ON d.sampleId=a.sampleId AND d.gene=a.gene
 INNER JOIN geneCopyNumber g ON g.sampleId=a.sampleId AND g.gene=a.gene
 INNER JOIN purity p ON a.sampleId=p.sampleId
-WHERE percentileCancer > 0.9 AND a.sampleId IN (SELECT sampleId FROM rnaStatistics WHERE qcStatus='PASS')
+WHERE percentileCancer > 0.90 AND a.sampleId IN (SELECT sampleId FROM rnaStatistics WHERE qcStatus='PASS')
 GROUP BY gene, sampleId
 ORDER BY gene, percentileCancer DESC;
