@@ -73,7 +73,7 @@ extract_object_created_on_reporting_id() {
     environment=$1 && shift
 
     sample_object=$(extract_wrapper_api "reports/created?id=${id}" "${environment}")
-    echo ${sample_object}
+    echo ${sample_object} | jq .
 }
 
 extract_object_created() {
@@ -83,7 +83,7 @@ extract_object_created() {
 
     sample_object=$(extract_wrapper_api "reports/created?barcode=${sample_barcode}" "${environment}")
     sample_object_report_type=$(echo ${sample_object} |  jq ". | select (.report_type == \"${report_type}\")")
-    echo ${sample_object_report_type}
+    echo ${sample_object_report_type} | jq .
 }
 
 extract_object_shared() {
@@ -91,5 +91,5 @@ extract_object_shared() {
     environment=$1 && shift
 
     sample_object=$(extract_wrapper_api "reports/shared?report_created_id=${reporting_id}" "${environment}")
-    echo ${sample_object}
+    echo ${sample_object} | jq .
 }
