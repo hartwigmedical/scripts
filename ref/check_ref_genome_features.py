@@ -165,12 +165,16 @@ def main(config: Config) -> None:
         has_only_hardmasked_nucleotides_at_y_par1 = None
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
-    if all(is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
-        alts_are_padded = True
-    elif all(not is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
-        alts_are_padded = False
+    if categorized_contig_names.alt_contigs:
+        if all(is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+            alts_are_padded = True
+        elif all(not is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+            alts_are_padded = False
+        else:
+            logging.warning(f"Could not determine whether alts are padded with N's (or n's)")
+            alts_are_padded = None
     else:
-        logging.warning(f"Could not determine whether alts are padded with N's (or n's)")
+        logging.warning(f"There are no alts that could be padded with N's (or n's)")
         alts_are_padded = None
 
     logging.info(f"FEATURES GENOME:")
