@@ -9,9 +9,11 @@ nas_loc="/volume1/web/overviews/rnaseq"
 
 task="rna_overview_${YYMMDD}"
 tmp_dir="/tmp/${task}"
-api_jsn="${tmp_dir}/api.json"
 sql_tsv="${tmp_dir}/sql.txt"
-api_tsv="${tmp_dir}/api.txt"
+api_runs_jsn="${tmp_dir}/api_runs.json"
+api_runs_tsv="${tmp_dir}/api_runs.txt"
+api_samples_jsn="${tmp_dir}/api_samples.json"
+api_samples_tsv="${tmp_dir}/api_samples.txt"
 sum_out="${tmp_dir}/summary.txt"
 
 [[ -d "${tmp_dir}" ]] || mkdir "${tmp_dir}"
@@ -22,21 +24,27 @@ info "Starting with ${task} creation ($YYMMDD)" | tee "${sum_out}"
 info "Writing output to directory ${tmp_dir}" | tee "${sum_out}"
 
 execute_sql_on_prod "SELECT sampleId AS '#sampleId',readLength,totalFragments FROM rnaStatistics" > "${sql_tsv}"
-hmf_api_get "samples?type=tumor-rna" > "${api_jsn}"
+hmf_api_get "samples?type=tumor-rna" > "${api_samples_jsn}"
+hmf_api_get "runs?ini=RNA.ini&status=Validated" > "${api_runs_jsn}"
 
-printf "#%s\t%s\t%s\t%s\t%s\n" "name" "barcode" "status" "yield" "q30" > "${api_tsv}"
-jq -r '.[] | [.name,.barcode,.status,.yld,.q30] | @tsv' "${api_jsn}" | sort | uniq >> "${api_tsv}"
+printf "#%s\t%s\t%s\t%s\t%s\n" "name" "barcode" "status" "yield" "q30" > "${api_samples_tsv}"
+jq -r '.[] | [.name,.barcode,.status,.yld,.q30] | @tsv' "${api_samples_jsn}" | sort | uniq >> "${api_samples_tsv}"
+
+printf "#%s\t%s\t%s\t%s\t%s\n" "setname" "ini" "status" "bucket" "version" > "${api_runs_tsv}"
+jq -r '.[] | [.set.name,.ini,.status,.bucket,.version] | @tsv' "${api_runs_jsn}" | sort | uniq >> "${api_runs_tsv}"
 
 count_sql_all=$(grep -vc ^# "${sql_tsv}")
-count_api_all=$(grep -vc ^# "${api_tsv}")
-count_api_rdy=$(grep -v ^# "${api_tsv}" | grep -cP "Ready|Unregistered")
-count_api_ins=$(grep -v ^# "${api_tsv}" | grep -cPv "Ready|Unregistered")
+count_api_all=$(grep -vc ^# "${api_samples_tsv}")
+count_api_rdy=$(grep -v ^# "${api_samples_tsv}" | grep -cP "Ready|Unregistered")
+count_api_ins=$(grep -v ^# "${api_samples_tsv}" | grep -cPv "Ready|Unregistered")
+count_api_val_runs=$(grep -v ^# "${api_runs_tsv}" | grep -cP "Validated")
 sql_api_diff=$((count_api_all - count_sql_all))
 
-info "Number of samples from SQL: ${count_sql_all}" | tee -a "${sum_out}"
+info "Number of Validated runs from API: ${count_api_val_runs}" | tee -a "${sum_out}"
 info "Number of samples from API: ${count_api_all}" | tee -a "${sum_out}"
 info "  Of which ready/unregistered: ${count_api_rdy}" | tee -a "${sum_out}"
 info "  Of which insufficient: ${count_api_ins}" | tee -a "${sum_out}"
+info "Number of samples from SQL: ${count_sql_all}" | tee -a "${sum_out}"
 info "Difference between API and SQL: ${sql_api_diff}" | tee -a "${sum_out}"
 
 info "Finished with ${task}" | tee -a "${sum_out}"
