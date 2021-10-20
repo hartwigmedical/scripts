@@ -4,26 +4,14 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import List, NamedTuple, Tuple, Set, Optional
+from typing import List, NamedTuple, Set, Optional
 
 import pysam
 
-from ref_util import set_up_logging, assert_file_exists, ContigNameTranslator, assert_file_exists_in_bucket, get_blob
+from ref_util import set_up_logging, assert_file_exists, ContigNameTranslator, assert_file_exists_in_bucket, get_blob, \
+    ContigCategorizer
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
-
-AUTOSOME_CONTIG_NAMES = {f"chr{n}" for n in range(1, 23)}
-X_CHROMOSOME_CONTIG_NAMES = {"chrX"}
-Y_CHROMOSOME_CONTIG_NAMES = {"chrY"}
-MITOCHONDRIAL_CONTIG_NAMES = {"chrM"}
-EBV_CONTIG_NAMES = {"chrEBV"}
-
-UNPLACED_PREFIX = "chrUn_"
-DECOY_SUFFIX = "_decoy"
-UNLOCALIZED_SUFFIX = "_random"
-FIX_PATCH_SUFFIX = "_fix"
-NOVEL_PATCH_SUFFIX = "_novel"
-ALT_SUFFIX = "_alt"
 
 STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
 SOFTMASKED_NUCLEOTIDES = {"a", "c", "g", "t", "n"}
@@ -45,44 +33,17 @@ class Config(NamedTuple):
         assert_file_exists_in_bucket(self.contig_alias_bucket_path)
 
 
-class CategorizedContigNames(NamedTuple):
-    autosomes: Tuple[str]
-    x_contigs: Tuple[str]
-    y_contigs: Tuple[str]
-    mitochondrial_contigs: Tuple[str]
-    ebv_contigs: Tuple[str]
-    decoys: Tuple[str]
-    unlocalized_contigs: Tuple[str]
-    unplaced_contigs: Tuple[str]
-    alt_contigs: Tuple[str]
-    fix_patch_contigs: Tuple[str]
-    novel_patch_contigs: Tuple[str]
-    uncategorized_contigs: Tuple[str]
-
-    def get_contig_names(self) -> Tuple[str]:
-        contig_names = []
-        contig_names.extend(self.autosomes)
-        contig_names.extend(self.x_contigs)
-        contig_names.extend(self.y_contigs)
-        contig_names.extend(self.mitochondrial_contigs)
-        contig_names.extend(self.ebv_contigs)
-        contig_names.extend(self.decoys)
-        contig_names.extend(self.unlocalized_contigs)
-        contig_names.extend(self.unplaced_contigs)
-        contig_names.extend(self.alt_contigs)
-        contig_names.extend(self.fix_patch_contigs)
-        contig_names.extend(self.novel_patch_contigs)
-        contig_names.extend(self.uncategorized_contigs)
-        return tuple(contig_names)
-
-
 def main(config: Config) -> None:
     set_up_logging()
     config.validate()
 
     contig_name_translator = ContigNameTranslator.from_blob(get_blob(config.contig_alias_bucket_path))
 
-    categorized_contig_names = get_categorized_contig_names(config.ref_genome_path, contig_name_translator)
+    with pysam.Fastafile(config.ref_genome_path) as genome_f:
+        contig_names = list(genome_f.references)
+
+    contig_categorizer = ContigCategorizer(contig_name_translator)
+    categorized_contig_names = contig_categorizer.get_categorized_contig_names(contig_names)
     logging.debug(categorized_contig_names)
 
     nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
@@ -125,7 +86,7 @@ def main(config: Config) -> None:
         logging.warning(f"Found more than one EBV contig: {categorized_contig_names.ebv_contigs}")
         has_ebv = None
 
-    if config.rcrs_path is not None and  len(categorized_contig_names.mitochondrial_contigs) == 1:
+    if config.rcrs_path is not None and len(categorized_contig_names.mitochondrial_contigs) == 1:
         has_rcrs = mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial_contigs[0])
     elif config.rcrs_path is None:
         warn_msg = (
@@ -163,9 +124,13 @@ def main(config: Config) -> None:
     has_semi_ambiguous_iub_codes = bool(nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES))
     has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
     if categorized_contig_names.alt_contigs:
-        if all(is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+        alt_is_definitely_padded_list = [
+            is_definitely_padded_with_n(contig, config.ref_genome_path)
+            for contig in categorized_contig_names.alt_contigs
+        ]
+        if all(is_padded for is_padded in alt_is_definitely_padded_list):
             alts_are_padded = True
-        elif all(not is_definitely_padded_with_n(contig, config.ref_genome_path) for contig in categorized_contig_names.alt_contigs):
+        elif all(not is_padded for is_padded in alt_is_definitely_padded_list):
             alts_are_padded = False
         else:
             logging.warning(f"Could not determine whether alts are padded with N's (or n's)")
@@ -207,97 +172,6 @@ def main(config: Config) -> None:
     ]
     value_to_answer = {True: "Yes", False: "No", None: "?"}
     print("\n".join([value_to_answer[answer] for answer in answers]))
-
-
-def get_categorized_contig_names(
-    ref_genome_path: Path,
-    contig_name_translator: ContigNameTranslator,
-) -> CategorizedContigNames:
-    with pysam.Fastafile(ref_genome_path) as genome_f:
-        contig_names = list(genome_f.references)
-
-    autosome_contigs: List[str] = []
-    x_contigs: List[str] = []
-    y_contigs: List[str] = []
-    mitochondrial_contigs: List[str] = []
-    ebv_contigs: List[str] = []
-    decoy_contigs: List[str] = []
-    unlocalized_contigs: List[str] = []
-    unplaced_contigs: List[str] = []
-    alt_contigs: List[str] = []
-    fix_patch_contigs: List[str] = []
-    novel_patch_contigs: List[str] = []
-    uncategorized_contigs: List[str] = []
-
-    for contig_name in contig_names:
-        standardized_contig_name = contig_name_translator.standardize(contig_name)
-        if standardized_contig_name in AUTOSOME_CONTIG_NAMES:
-            autosome_contigs.append(contig_name)
-        elif standardized_contig_name in X_CHROMOSOME_CONTIG_NAMES:
-            x_contigs.append(contig_name)
-        elif standardized_contig_name in Y_CHROMOSOME_CONTIG_NAMES:
-            y_contigs.append(contig_name)
-        elif standardized_contig_name in MITOCHONDRIAL_CONTIG_NAMES:
-            mitochondrial_contigs.append(contig_name)
-        elif standardized_contig_name in EBV_CONTIG_NAMES:
-            ebv_contigs.append(contig_name)
-        elif is_decoy_contig_name(standardized_contig_name):
-            decoy_contigs.append(contig_name)
-        elif is_unlocalized_contig_name(standardized_contig_name):
-            unlocalized_contigs.append(contig_name)
-        elif is_unplaced_contig_name(standardized_contig_name):
-            unplaced_contigs.append(contig_name)
-        elif is_alt_contig_name(standardized_contig_name):
-            alt_contigs.append(contig_name)
-        elif is_fix_patch_contig_name(standardized_contig_name):
-            fix_patch_contigs.append(contig_name)
-        elif is_novel_patch_contig_name(standardized_contig_name):
-            novel_patch_contigs.append(contig_name)
-        else:
-            uncategorized_contigs.append(contig_name)
-
-    if uncategorized_contigs:
-        raise ValueError(f"Uncategorized contigs: {uncategorized_contigs}")
-
-    categorized_contigs = CategorizedContigNames(
-        tuple(autosome_contigs),
-        tuple(x_contigs),
-        tuple(y_contigs),
-        tuple(mitochondrial_contigs),
-        tuple(ebv_contigs),
-        tuple(decoy_contigs),
-        tuple(unlocalized_contigs),
-        tuple(unplaced_contigs),
-        tuple(alt_contigs),
-        tuple(fix_patch_contigs),
-        tuple(novel_patch_contigs),
-        tuple(uncategorized_contigs),
-    )
-    return categorized_contigs
-
-
-def is_decoy_contig_name(contig_name: str) -> bool:
-    return contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(DECOY_SUFFIX)
-
-
-def is_unlocalized_contig_name(contig_name: str) -> bool:
-    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(UNLOCALIZED_SUFFIX)
-
-
-def is_unplaced_contig_name(contig_name: str) -> bool:
-    return contig_name.startswith(UNPLACED_PREFIX) and not contig_name.endswith(DECOY_SUFFIX)
-
-
-def is_alt_contig_name(contig_name: str) -> bool:
-    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(ALT_SUFFIX)
-
-
-def is_fix_patch_contig_name(contig_name: str) -> bool:
-    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(FIX_PATCH_SUFFIX)
-
-
-def is_novel_patch_contig_name(contig_name: str) -> bool:
-    return not contig_name.startswith(UNPLACED_PREFIX) and contig_name.endswith(NOVEL_PATCH_SUFFIX)
 
 
 def mitochondrial_sequence_is_rcrs(config: Config, ref_mitochondrial_contig_name: str) -> bool:
