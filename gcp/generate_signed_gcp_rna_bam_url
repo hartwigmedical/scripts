@@ -29,7 +29,14 @@ print_usage(){
     gsutil -q stat "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam"
     if [[ $? -eq 1 ]]; then
         warn "Unable to locate bam file in bucket (URL='${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam')"
-          die "Not all files are present at expected location in bucket. Exiting."
+          die "bam file is not present at expected location in bucket. Exiting."
+    fi
+
+ ## sanity check on existence of bam.bai file in bucket
+    gsutil -q stat "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai"
+    if [[ $? -eq 1 ]]; then
+        warn "Unable to locate bam.bai file in bucket (URL='${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai')"
+          die "bam.bai file is not present at expected location in bucket. Exiting."
     fi
 
 signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam")
