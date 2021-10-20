@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+biopsy_name=$1 && shift # tumor sample ID
+
+PRESIGN_SECONDS=172800
+PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
+
+key_file="/data/credentials/hmf-download"
+region="europe-west4"
+bucket="gs://hmf-rna-analysis/samples/"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Prints presigned BAM and BAI URLs by biopsy name"
+    echo " Usage: $(basename $0) \${biopsy-name}"
+    echo "        $(basename $0) <tumor sample ID>"
+    echo "  Note: URLs will be valid for ${PRESIGN_SECONDS} seconds (${PRESIGN_DAYS} days)"
+    echo "-----"
+    exit 1
+}
+
+if [[ -z "${biopsy_name}" ]] ; then
+    print_usage
+fi
+
+signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam")
+signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai")
+
+#[[ "${signed_bam_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bam_url})"
+#[[ "${signed_bai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bai_url})"
+
+info "URLs for sample ID ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
+
+info "BAM external URL: ${signed_bam_url}"
+info "BAI external URL: ${signed_bai_url}"
