@@ -2,6 +2,8 @@
 
 set -e
 
+source message_functions || exit 1
+
 credentials=$(gcloud secrets versions access "latest" --secret="mysql-api-sql-prod-1-reader" --project=hmf-secrets)
 usr=$(echo "${credentials}" | grep user | cut -d "=" -f2)
 pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)

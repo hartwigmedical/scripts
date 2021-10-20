@@ -43,19 +43,21 @@ main () {
     base_tum_sample=$(jq -r '.tumor.sampleName' "${base_meta_file}")
     test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-    tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss health_checker linx peach purple protect sage_germline sage_somatic sigs virusbreakend)
-    files_to_diff=("protect/${test_tum_sample}.protect.tsv")
+    tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss health_checker \
+      linx peach purple protect sage_germline sage_somatic sigs virusbreakend)
 
     print_header "Settings"
     info "  BASE DIR: ${base_run_path}"
     info "  TEST DIR: ${test_run_path}"
     info "  BASE version: ${base_pip_vsn}"
     info "  TEST version: ${test_pip_vsn}"
-    info "  BASE sample: ${base_tum_sample}"
-    info "  TEST sample: ${test_tum_sample}"
+    info "  BASE REF sample: ${base_ref_sample}"
+    info "  TEST REF sample: ${test_ref_sample}"
+    info "  BASE TUM sample: ${base_tum_sample}"
+    info "  TEST TUM sample: ${test_tum_sample}"
 
-    [[ "${base_tum_sample}" == "${test_tum_sample}" ]] || die "Tumor sample names differ (not supported due to file naming)"
-    [[ "${base_ref_sample}" == "${test_ref_sample}" ]] || die "Reference sample names differ (not supported due to file naming)"
+    [[ "${base_tum_sample}" == "${test_tum_sample}" ]] || warn "Tum names differ (${base_tum_sample} vs ${test_tum_sample})"
+    [[ "${base_ref_sample}" == "${test_ref_sample}" ]] || warn "Ref names differ (${base_ref_sample} vs ${test_ref_sample})"
 
     base_ref_cram="${base_run_path}/${base_ref_sample}/cram/${base_ref_sample}.cram"
     test_ref_cram="${test_run_path}/${test_ref_sample}/cram/${test_ref_sample}.cram"
@@ -95,7 +97,9 @@ main () {
     done
 
     print_header "BAM/CRAM header check"
-    if [[ "${all_crams_present}" == "TRUE" ]]; then
+    if [[ "${all_crams_present}" == "FALSE" ]]; then
+        info "  NOTE: not all CRAMs were present so skipping CRAM specific checks"
+    else
         base_header=$(samtools view -H "${base_tum_cram}" | grep '^@RG')
         test_header=$(samtools view -H "${test_tum_cram}" | grep '^@RG')
         if [[ $(diff <(echo "${base_header}") <(echo "${test_header}") | wc -l) -eq 0 ]]; then
@@ -107,29 +111,25 @@ main () {
             echo "# TEST header (${test_tum_cram}):" 1>&2
             echo "${test_header}" 1>&2
         fi
-    else
-        info "  NOTE: not all CRAMs were present so skipping CRAM specific checks"
     fi
 
     print_header "PER TOOL DIRECTORY check"
     for tool_name in ${tool_dirs_to_check[*]}; do
-        check_tool_directory "${base_run_path}" "${test_run_path}" "${tool_name}"
+        check_tool_directory "${tool_name}" "${base_run_path}" "${test_run_path}" "${base_ref_sample}" "${test_ref_sample}" "${base_tum_sample}" "${test_tum_sample}"
     done
 
     print_header "FILE DIFF check (only for subset of files)"
-    for rel_file_path in ${files_to_diff[*]}; do
-        diff_file "${base_run_path}" "${test_run_path}" "${rel_file_path}"
-    done
+    diff_file ".protect.tsv"
 
     print_header "TOOL VERSIONS check"
     check_tool_versions_from_run_log "${base_run_path}" "${test_run_path}"
 
     print_header "VCF VARIANT COUNT check"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.somatic.vcf.gz" "INCLUDE_ALL"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.somatic.vcf.gz" "ONLY_PASS"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.sv.vcf.gz" "INCLUDE_ALL"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.sv.vcf.gz" "NO_PON"
-    diff_vcf "${base_run_path}" "${test_run_path}" "${base_ref_sample}/germline_caller/${base_ref_sample}.germline.vcf.gz" "ONLY_PASS"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.somatic.vcf.gz" "INCLUDE_ALL"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.somatic.vcf.gz" "ONLY_PASS"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.sv.vcf.gz" "INCLUDE_ALL"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.sv.vcf.gz" "NO_PON"
+    diff_vcf "${base_run_path}" "${test_run_path}" "germline_caller/*.germline.vcf.gz" "ONLY_PASS"
 
     print_header "FILE CONTENTS prints"
     info "CHORD file content"
@@ -145,15 +145,15 @@ main () {
 diff_vcf () {
     local base_run_path=$1 && shift
     local test_run_path=$1 && shift
-    local rel_file_path=$1 && shift
+    local file_name_regex=$1 && shift
     local filter=$1 && shift
 
     base_count=0
     test_count=0
 
     # prefix name with * to allow match in case of run path is absolute
-    base_vcf=$(find "${base_run_path}" -wholename "*${rel_file_path}")
-    test_vcf=$(find "${test_run_path}" -wholename "*${rel_file_path}")
+    base_vcf=$(find "${base_run_path}" -wholename "*${file_name_regex}")
+    test_vcf=$(find "${test_run_path}" -wholename "*${file_name_regex}")
     die_unless_file_exists "${base_vcf}"
     die_unless_file_exists "${test_vcf}"
 
@@ -171,37 +171,41 @@ diff_vcf () {
     fi
 
     if [[ "${base_count}" -eq "${test_count}" ]]; then
-        info "  OK Identical variant count (${base_count}) for VCF file (${rel_file_path}) using filter ${filter}"
+        info "  OK Identical variant count (${base_count}) for VCF file (${file_name_regex}) using filter ${filter}"
     else
-        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF file (${rel_file_path}) using filter ${filter}"
+        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF file (${file_name_regex}) using filter ${filter}"
     fi
 }
 
 diff_file () {
-    local base_run_path=$1 && shift
-    local test_run_path=$1 && shift
-    local rel_file_path=$1 && shift
+    local file_suffix=$1 && shift
+    #local base_file_path=$1 && shift
+    #local test_file_path=$1 && shift
 
     # prefix name with * to allow match in case of run path is absolute
-    base_file_path=$(find "${base_run_path}" -wholename "*${rel_file_path}")
-    test_file_path=$(find "${test_run_path}" -wholename "*${rel_file_path}")
-    [[ -n "${base_file_path}" ]] || die "NO ${rel_file_path} found in BASE run"
-    [[ -n "${test_file_path}" ]] || die "NO ${rel_file_path} found in TEST run"
+    base_file_path=$(find "${base_run_path}" -wholename "*${file_suffix}")
+    test_file_path=$(find "${test_run_path}" -wholename "*${file_suffix}")
+    [[ -n "${base_file_path}" ]] || die "No base file provided for diff (${base_file_path} vs ${test_file_path})"
+    [[ -n "${test_file_path}" ]] || die "No test file provided for diff (${base_file_path} vs ${test_file_path})"
 
     diff_result=$(diff "$base_file_path" "$test_file_path" | wc -l)
     if [[ "$diff_result" == 0 ]]; then
-        info "  OK Identical diff for file (${rel_file_path})"
+        info "  OK Identical diff for file (${file_suffix})"
     else
-        info_and_warn "  DIFFERENT content found for file (${rel_file_path})"
+        info_and_warn "  DIFFERENT content found for file (${file_suffix})"
         warn "    BASE file: ${base_file_path}"
         warn "    TEST file: ${test_file_path}"
     fi
 }
 
 check_tool_directory () {
+    local tool_name=$1 && shift
     local base_run_path=$1 && shift
     local test_run_path=$1 && shift
-    local tool_name=$1 && shift
+    local base_ref_sample=$1 && shift
+    local test_ref_sample=$1 && shift
+    local base_tum_sample=$1 && shift
+    local test_tum_sample=$1 && shift
 
     info "Checking directory $tool_name"
 
@@ -233,8 +237,14 @@ check_tool_directory () {
         -not -name "*.png" -not -name "*.jpg" -not -name "*.svg" \
     | while read -r base_file_path; do
         file_name=$(basename "${base_file_path}");
+
+        # Most files contain the sample name in file name
+        file_name="${file_name//${base_tum_sample}/${test_tum_sample}}"
+        file_name="${file_name//${base_ref_sample}/${test_ref_sample}}"
+
         file_path="${tool_name}/${file_name}"
         test_file_path="${test_run_path}/${file_path}"
+
         base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
         test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
         if [[ ${base_count} -eq ${test_count} ]]; then
