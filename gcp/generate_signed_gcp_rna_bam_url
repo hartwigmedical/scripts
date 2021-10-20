@@ -2,50 +2,49 @@
 
 source message_functions || exit 1
 
-biopsy_name=$1 && shift # tumor sample ID
+sampleId=$1 && shift # tumor sample ID
 
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
 key_file="/data/credentials/hmf-download"
 region="europe-west4"
-bucket="gs://hmf-rna-analysis/samples/"
+internal_bam_url="gs://hmf-rna-analysis/samples/${sampleId}/${sampleId}.sorted.dups.bam"
+internal_bai_url="gs://hmf-rna-analysis/samples/${sampleId}/${sampleId}.sorted.dups.bam.bai"
 
 print_usage(){
     echo "-----"
-    echo " Descr: Prints presigned BAM and BAI URLs by biopsy name"
-    echo " Usage: $(basename $0) \${biopsy-name}"
-    echo "        $(basename $0) <tumor sample ID>"
+    echo " Descr: Prints presigned RNA BAM and BAI URLs by sample ID"
+    echo " Usage: $(basename $0) \${sampleId}"
     echo "  Note: URLs will be valid for ${PRESIGN_SECONDS} seconds (${PRESIGN_DAYS} days)"
     echo "-----"
     exit 1
 }
 
-    if [[ -z "${biopsy_name}" ]] ; then
+    if [[ -z "${sampleId}" ]] ; then
         print_usage
     fi
 
  ## sanity check on existence of bam file in bucket
-    gsutil -q stat "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam"
+    gsutil -q stat "${internal_bam_url}"
     if [[ $? -eq 1 ]]; then
-        warn "Unable to locate bam file in bucket (URL='${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam')"
-          die "bam file is not present at expected location in bucket. Exiting."
+        warn "Unable to locate bam file in bucket (URL='${internal_bam_url}')"
+          die "Bam file is not present at expected location in bucket. Exiting."
     fi
 
  ## sanity check on existence of bam.bai file in bucket
-    gsutil -q stat "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai"
+    gsutil -q stat "${internal_bai_url}"
     if [[ $? -eq 1 ]]; then
-        warn "Unable to locate bam.bai file in bucket (URL='${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai')"
-          die "bam.bai file is not present at expected location in bucket. Exiting."
+        warn "Unable to locate bam.bai file in bucket (URL='${internal_bai_url})"
+          die "Bai file is not present at expected location in bucket. Exiting."
     fi
 
-signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam")
-signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai")
+signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}")
+signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}")
 
-#[[ "${signed_bam_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bam_url})"
-#[[ "${signed_bai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bai_url})"
+info "URLs for sample ID ${sampleId} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
 
-info "URLs for sample ID ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
-
-info "BAM external URL: ${signed_bam_url}"
-info "BAI external URL: ${signed_bai_url}"
+info "RNA BAM internal URL: ${internal_bam_url}"
+info "RNA BAI internal URL: ${internal_bai_url}"
+info "RNA BAM external URL: ${signed_bam_url}"
+info "RNA BAI external URL: ${signed_bai_url}"
