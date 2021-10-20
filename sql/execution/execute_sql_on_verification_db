@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+source secrets_functions || exit 1
+
+sql_file_or_select_statement=$1 && shift
+
+credentials=$(get_secret_from_secret_manager "mysql-diagnostic-patients-sql-pilot-1-writer")
+user=$(extract_database_user "${credentials}")
+password=$(extract_database_password "${credentials}")
+host="diagnostic-genomic.sql.pilot-1"
+port="3306"
+database_name="hmfpatients"
+from_file='true'
+
+if [[ ! -f "${sql_file_or_select_statement}" ]]; then
+    if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then
+        error "Provided sql is not an existing file but no SELECT statement either (${sql_file_or_select_statement}). Exiting."
+    else
+        from_file='false'
+    fi
+fi
+
+if [[ "$credentials" == "" ]]; then
+    error "No credentials available. Exiting."
+fi
+
+if [[ "${from_file}" == "true" ]]; then
+    mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < "${sql_file_or_select_statement}"
+else
+    mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}" --execute="${sql_file_or_select_statement}" --batch
+fi
+
