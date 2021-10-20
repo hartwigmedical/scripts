@@ -21,9 +21,16 @@ print_usage(){
     exit 1
 }
 
-if [[ -z "${biopsy_name}" ]] ; then
-    print_usage
-fi
+    if [[ -z "${biopsy_name}" ]] ; then
+        print_usage
+    fi
+
+ ## sanity check on existence of bam file in bucket
+    gsutil -q stat "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam"
+    if [[ $? -eq 1 ]]; then
+        warn "Unable to locate bam file in bucket (URL='${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam')"
+          die "Not all files are present at expected location in bucket. Exiting."
+    fi
 
 signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam")
 signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${bucket}${biopsy_name}/${biopsy_name}.sorted.dups.bam.bai")
