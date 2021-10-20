@@ -8,8 +8,8 @@ credentials=$(gcloud secrets versions access "latest" --secret="mysql-api-sql-pr
 usr=$(echo "${credentials}" | grep user | cut -d "=" -f2)
 pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
 
-[[ -n "$user" ]] || die "Unable to retrieve user from secret"
-[[ -n "$pass" ]] || die "Unable to retrieve password from secret"
+[[ -n "$usr" ]] || die "Unable to retrieve user from secret"
+[[ -n "$pwd" ]] || die "Unable to retrieve password from secret"
 
 sql="select sample_name, barcode, share_date, report_type, cohort, purity, has_reliable_quality, has_reliable_purity, run_id, source from report_shared LEFT JOIN report_created ON report_shared.report_created_id = report_created.id;"
 mysql --user="${usr}" --password="${pwd}" --host="apidb.prod-1" --port="3306" --database="hmf" --execute="${sql}" --batch
