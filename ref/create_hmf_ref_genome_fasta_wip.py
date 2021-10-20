@@ -63,7 +63,7 @@ def main(config: Config) -> None:
 
     config.validate()
 
-    config.working_dir.mkdir(parents=True)
+    config.working_dir.mkdir(parents=True, exist_ok=True)
 
     with open(config.get_source_list_path(), "w") as f:
         logging.info(f"Writing sources to file: {config.get_source_list_path()}")
