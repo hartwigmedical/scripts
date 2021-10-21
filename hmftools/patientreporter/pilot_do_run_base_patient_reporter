@@ -18,5 +18,6 @@ java -jar ${patient_reporter_jar} \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -expected_pipeline_version "5.22" \
+    -udi_di "(01)8720299486003(8012)v5.22" \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"
