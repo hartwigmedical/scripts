@@ -13,8 +13,9 @@ import requests
 
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysisConfig, \
     ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, ContigNameTranslator, assert_file_exists_in_bucket, get_blob, \
-    assert_file_does_not_exist, assert_dir_does_not_exist, ContigCategorizer, ContigType, Assembly
+from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
+    assert_file_does_not_exist, assert_dir_does_not_exist
+from ref.contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
