@@ -11,5 +11,5 @@ pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
 [[ -n "$usr" ]] || die "Unable to retrieve user from secret"
 [[ -n "$pwd" ]] || die "Unable to retrieve password from secret"
 
-sql="select barcode as tumorBarcode, sample_name as sampleName, cohort, DATE_FORMAT(share_date, '%d-%m-%Y') as reportDate, report_type as reportType, purity, has_reliable_quality as hasReliableQuality, has_reliable_purity as hasReliablePurity, source from report_shared LEFT JOIN report_created ON report_shared.report_created_id = report_created.id;"
+sql="select barcode as tumorBarcode, sample_name as sampleName, cohort, DATE_FORMAT(share_time, '%d-%m-%Y') as reportDate, report_type as reportType, purity, has_reliable_quality as hasReliableQuality, has_reliable_purity as hasReliablePurity, source from report_shared LEFT JOIN report_created ON report_shared.report_created_id = report_created.id;"
 mysql --user="${usr}" --password="${pwd}" --host="apidb.prod-1" --port="3306" --database="hmf" --execute="${sql}" --batch

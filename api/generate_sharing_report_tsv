@@ -18,7 +18,7 @@ jq '.[].id' shared.json | while read shared_id; do
     barcode=$(echo "${created_record}" | jq -r '.barcode' | sed 's#^null$#N/A#')
     sample_name=$(echo "${created_record}" | jq -r '.sample_name' | sed 's#^null$#N/A#')
     cohort=$(echo "${created_record}" | jq -r '.cohort' | sed 's#^null$#N/A#')
-    share_date=$(date "+%d-%b-%Y" --date="$(echo $shared_record | jq -r '.share_date')")
+    share_date=$(date "+%d-%b-%Y" --date="$(echo $shared_record | jq -r '.share_time')")
     report_type="$(echo "${created_record}" | jq -r '.report_type')"
     purity="$(echo "${created_record}" | jq -r '.cohort' | sed 's#^null$#N/A#')"
     rel_q="$(echo "${created_record}" | jq -r '.has_reliable_quality' | sed 's#^null$#N/A#')"
