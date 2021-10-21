@@ -178,7 +178,9 @@ def main(config: Config) -> None:
 
     logging.info("Moving temp output file to real output file")
     config.get_temp_output_path().rename(config.output_path)
-    Path(f"{config.get_temp_output_path()}.fai").unlink(missing_ok=True)
+
+    logging.info("Clean up ")
+    Path(f"{config.get_temp_output_path()}.fai").unlink()
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
     # TODO: Put used files and result in bucket? Or just do this manually afterwards.
