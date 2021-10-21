@@ -2,20 +2,27 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, NamedTuple, Optional
 
-from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalysisConfig, ReferenceGenomeFeatureAnalyzer
+from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer
 from ref_util import set_up_logging
 
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
 
-def main(config: ReferenceGenomeFeatureAnalysisConfig) -> None:
-    set_up_logging()
-    config.validate()
+class Config(NamedTuple):
+    ref_genome_path: Path
+    rcrs_path: Optional[Path]
+    contig_alias_bucket_path: str
 
-    analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(config)
+
+def main(config: Config) -> None:
+    set_up_logging()
+
+    analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
+        config.ref_genome_path, config.rcrs_path, config.contig_alias_bucket_path,
+    )
 
     logging.info(f"FEATURES GENOME:")
 
@@ -52,7 +59,7 @@ def main(config: ReferenceGenomeFeatureAnalysisConfig) -> None:
     print("\n".join([value_to_answer[answer] for answer in answers]))
 
 
-def parse_args(sys_args: List[str]) -> ReferenceGenomeFeatureAnalysisConfig:
+def parse_args(sys_args: List[str]) -> Config:
     parser = argparse.ArgumentParser(
         prog="check_ref_genome_features",
         description=(
@@ -79,7 +86,7 @@ def parse_args(sys_args: List[str]) -> ReferenceGenomeFeatureAnalysisConfig:
 
     args = parser.parse_args(sys_args)
 
-    config = ReferenceGenomeFeatureAnalysisConfig(args.fasta, args.rcrs, args.contig_alias)
+    config = Config(args.fasta, args.rcrs, args.contig_alias)
     return config
 
 

@@ -1,5 +1,4 @@
 import logging
-import re
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -9,20 +8,6 @@ from ref_util import assert_file_exists, assert_file_exists_in_bucket, get_blob,
     get_nucleotides_from_fasta, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, \
     UNKNOWN_NUCLEOTIDES
 from contig_classification import ContigNameTranslator, ContigCategorizer
-
-
-class ReferenceGenomeFeatureAnalysisConfig(NamedTuple):
-    ref_genome_path: Path
-    rcrs_path: Optional[Path]
-    contig_alias_bucket_path: str
-
-    def validate(self) -> None:
-        assert_file_exists(self.ref_genome_path)
-        if self.rcrs_path is not None:
-            assert_file_exists(self.rcrs_path)
-        if not re.fullmatch(r"gs://.+", self.contig_alias_bucket_path):
-            raise ValueError(f"Contig alias bucket path is not of the form 'gs://some/file/path'")
-        assert_file_exists_in_bucket(self.contig_alias_bucket_path)
 
 
 class ReferenceGenomeFeatureAnalysis(NamedTuple):
@@ -44,9 +29,17 @@ class ReferenceGenomeFeatureAnalyzer(object):
     Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for both GRCh37 and GRCh38
 
     @classmethod
-    def do_analysis(cls, config: ReferenceGenomeFeatureAnalysisConfig) -> ReferenceGenomeFeatureAnalysis:
-        contig_name_translator = ContigNameTranslator.from_blob(get_blob(config.contig_alias_bucket_path))
-        with pysam.Fastafile(config.ref_genome_path) as genome_f:
+    def do_analysis(
+            cls, ref_genome_path: Path, rcrs_path: Optional[Path], contig_alias_bucket_path: str,
+    ) -> ReferenceGenomeFeatureAnalysis:
+        # Assert that files exist where they should
+        assert_file_exists(ref_genome_path)
+        if rcrs_path is not None:
+            assert_file_exists(rcrs_path)
+        assert_file_exists_in_bucket(contig_alias_bucket_path)
+
+        contig_name_translator = ContigNameTranslator.from_blob(get_blob(contig_alias_bucket_path))
+        with pysam.Fastafile(ref_genome_path) as genome_f:
             contig_names = list(genome_f.references)
 
         contig_categorizer = ContigCategorizer(contig_name_translator)
@@ -61,7 +54,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             warn_msg = f"Did not find exactly one X contig: x={categorized_contig_names.x_contigs}"
             logging.warning(warn_msg)
 
-        nucleotides = get_nucleotides_from_fasta(config.ref_genome_path)
+        nucleotides = get_nucleotides_from_fasta(ref_genome_path)
         logging.info(f"nucleotides: {sorted(nucleotides)}")
 
         has_unplaced_contigs = bool(categorized_contig_names.unplaced_contigs)
@@ -79,9 +72,11 @@ class ReferenceGenomeFeatureAnalyzer(object):
         else:
             logging.warning(f"Found more than one EBV contig: {categorized_contig_names.ebv_contigs}")
             has_ebv = None
-        if config.rcrs_path is not None and len(categorized_contig_names.mitochondrial_contigs) == 1:
-            has_rcrs = cls._mitochondrial_sequence_is_rcrs(config, categorized_contig_names.mitochondrial_contigs[0])
-        elif config.rcrs_path is None:
+        if rcrs_path is not None and len(categorized_contig_names.mitochondrial_contigs) == 1:
+            has_rcrs = cls._mitochondrial_sequence_is_rcrs(
+                ref_genome_path, rcrs_path, categorized_contig_names.mitochondrial_contigs[0],
+            )
+        elif rcrs_path is None:
             warn_msg = (
                 f"rCRS argument not provided, so skipping comparison of mitochondrial sequence."
             )
@@ -100,7 +95,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
         )
         if len(categorized_contig_names.y_contigs) == 1:
             y_test_nucleotides = get_nucleotides_from_string(
-                cls._get_y_test_sequence(categorized_contig_names.y_contigs[0], config.ref_genome_path)
+                cls._get_y_test_sequence(categorized_contig_names.y_contigs[0], ref_genome_path)
             )
             logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
             has_only_hardmasked_nucleotides_at_y_par1 = not bool(y_test_nucleotides.difference(UNKNOWN_NUCLEOTIDES))
@@ -117,7 +112,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
         has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
         if categorized_contig_names.alt_contigs:
             alt_is_definitely_padded_list = [
-                cls._is_definitely_padded_with_n(contig, config.ref_genome_path)
+                cls._is_definitely_padded_with_n(contig, ref_genome_path)
                 for contig in categorized_contig_names.alt_contigs
             ]
             if all(is_padded for is_padded in alt_is_definitely_padded_list):
@@ -149,14 +144,15 @@ class ReferenceGenomeFeatureAnalyzer(object):
     @classmethod
     def _mitochondrial_sequence_is_rcrs(
             cls,
-            config: ReferenceGenomeFeatureAnalysisConfig,
+            ref_genome_path: Path,
+            rcrs_path: Path,
             ref_mitochondrial_contig_name: str,
     ) -> bool:
-        with pysam.Fastafile(config.rcrs_path) as rcrs_f:
+        with pysam.Fastafile(rcrs_path) as rcrs_f:
             if rcrs_f.nreferences != 1:
                 raise ValueError(f"rCRS FASTA file has more than one contig")
             rcrs_genome = rcrs_f.fetch(rcrs_f.references[0])
-        with pysam.Fastafile(config.ref_genome_path) as genome_f:
+        with pysam.Fastafile(ref_genome_path) as genome_f:
             mitochondrial_from_ref = genome_f.fetch(ref_mitochondrial_contig_name)
         return rcrs_genome == mitochondrial_from_ref
 

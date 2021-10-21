@@ -1,5 +1,6 @@
 import concurrent.futures
 import logging
+import re
 from pathlib import Path
 from typing import Set
 
@@ -37,9 +38,11 @@ def delete_if_exists(path: Path) -> None:
         path.unlink()
 
 
-def assert_file_exists_in_bucket(path: str) -> None:
-    if not get_blob(path).exists():
-        raise ValueError(f"File in bucket does not exist: {path}")
+def assert_file_exists_in_bucket(bucket_path: str) -> None:
+    if not re.fullmatch(r"gs://.+", bucket_path):
+        raise ValueError(f"Path is not of the form 'gs://some/file/path': {bucket_path}")
+    if not get_blob(bucket_path).exists():
+        raise ValueError(f"File in bucket does not exist: {bucket_path}")
 
 
 def get_blob(path: str) -> storage.Blob:

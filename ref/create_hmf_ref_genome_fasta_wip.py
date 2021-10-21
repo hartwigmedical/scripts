@@ -2,7 +2,6 @@ import argparse
 import gzip
 import hashlib
 import logging
-import re
 import shutil
 import sys
 from pathlib import Path
@@ -11,8 +10,7 @@ from typing import List, NamedTuple, FrozenSet, Set
 import pysam
 import requests
 
-from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysisConfig, \
-    ReferenceGenomeFeatureAnalysis
+from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist
 from contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
@@ -55,8 +53,6 @@ class Config(NamedTuple):
     output_path: Path
 
     def validate(self) -> None:
-        if not re.fullmatch(r"gs://.+", self.contig_alias_bucket_path):
-            raise ValueError(f"Contig alias bucket path is not of the form 'gs://some/file/path'")
         assert_file_exists_in_bucket(self.contig_alias_bucket_path)
         assert_dir_does_not_exist(self.working_dir)
         assert_file_does_not_exist(self.output_path)
@@ -218,10 +214,9 @@ def assert_created_ref_genome_matches_expectations(
                 actual_sequence = temp_f.fetch(contig_name_translator.standardize(contig_name))
                 if actual_sequence != expected_sequence:
                     raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
-    feature_analysis_config = ReferenceGenomeFeatureAnalysisConfig(
-        config.get_temp_output_path(), None, config.contig_alias_bucket_path
+    feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
+        config.get_temp_output_path(), None, config.contig_alias_bucket_path,
     )
-    feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(feature_analysis_config)
     expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
         has_unplaced_contigs=True,
         has_unlocalized_contigs=True,
