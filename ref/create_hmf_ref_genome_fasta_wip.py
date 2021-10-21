@@ -11,7 +11,7 @@ from typing import List, NamedTuple, FrozenSet, Set
 import pysam
 import requests
 
-from ref.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysisConfig, \
+from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysisConfig, \
     ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, ContigNameTranslator, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist, ContigCategorizer, ContigType, Assembly

@@ -5,7 +5,7 @@ from typing import NamedTuple, Optional
 
 import pysam
 
-from ref.ref_util import assert_file_exists, assert_file_exists_in_bucket, ContigNameTranslator, get_blob, \
+from ref_util import assert_file_exists, assert_file_exists_in_bucket, ContigNameTranslator, get_blob, \
     ContigCategorizer, get_nucleotides, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, \
     UNKNOWN_NUCLEOTIDES
 
