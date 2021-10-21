@@ -231,7 +231,7 @@ class ContigSummary(NamedTuple):
 
 
 def main(config: Config) -> None:
-    # We don't use the USCS-style names from the file because not all contigs have such a name in the file,
+    # We don't use the UCSC-style names from the file because not all contigs have such a name in the file,
     # and because alt scaffolds ans novel patches share the '_alt' suffix in this file.
     # We instead use '_novel' for novel patches.
     set_up_logging()
@@ -296,7 +296,7 @@ def get_canonical_name_to_aliases(text: str) -> Dict[str, Set[str]]:
         )
         if unexplained_canonical_name_mismatch:
             error_msg = (
-                f"Our canonical name does not match the given USCS-style name for no clear reason: {summary}"
+                f"Our canonical name does not match the given UCSC-style name for no clear reason: {summary}"
             )
             raise ValueError(error_msg)
 
