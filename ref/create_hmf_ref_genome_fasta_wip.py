@@ -15,11 +15,11 @@ from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, Referenc
     ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist
-from ref.contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
+from contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
-SCRIPT_NAME = "create_hmf_ref_genome_fasta"
+SCRIPT_NAME = "create_hmf_ref_genome_fasta_wip"
 
 REFSEQ_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
 DECOY_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/786/075/GCA_000786075.2_hs38d1/GCA_000786075.2_hs38d1_genomic.fna.gz"

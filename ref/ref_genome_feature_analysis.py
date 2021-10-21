@@ -8,7 +8,7 @@ import pysam
 from ref_util import assert_file_exists, assert_file_exists_in_bucket, get_blob, \
     get_nucleotides_from_fasta, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, \
     UNKNOWN_NUCLEOTIDES
-from ref.contig_classification import ContigNameTranslator, ContigCategorizer
+from contig_classification import ContigNameTranslator, ContigCategorizer
 
 
 class ReferenceGenomeFeatureAnalysisConfig(NamedTuple):
