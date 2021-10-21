@@ -11,6 +11,8 @@ from typing import List, NamedTuple, FrozenSet, Set
 import pysam
 import requests
 
+from ref.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysisConfig, \
+    ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, ContigNameTranslator, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist, ContigCategorizer, ContigType, Assembly
 
@@ -55,7 +57,7 @@ class Config(NamedTuple):
         if not re.fullmatch(r"gs://.+", self.contig_alias_bucket_path):
             raise ValueError(f"Contig alias bucket path is not of the form 'gs://some/file/path'")
         assert_file_exists_in_bucket(self.contig_alias_bucket_path)
-        # assert_dir_does_not_exist(self.working_dir)  # TODO: reenable
+        assert_dir_does_not_exist(self.working_dir)
         assert_file_does_not_exist(self.output_path)
 
     def get_source_list_path(self) -> Path:
@@ -145,34 +147,111 @@ def main(config: Config) -> None:
     logging.info(f"Creating contig name translator")
     contig_name_translator = ContigNameTranslator.from_blob(get_blob(config.contig_alias_bucket_path))
 
-    # get_local_copy_fasta_file(REFSEQ_FASTA_SOURCE, config.get_refseq_fasta_path())  # TODO: reenable
-    # get_local_copy_fasta_file(DECOY_FASTA_SOURCE, config.get_decoy_fasta_path())  # TODO: reenable
-    # get_local_copy_fasta_file(EBV_FASTA_SOURCE, config.get_ebv_fasta_path())  # TODO: reenable
-    #
-    # logging.info(f"Combining FASTA files into a single file.")
-    # combine_files(
-    #     [config.get_refseq_fasta_path(), config.get_decoy_fasta_path(), config.get_ebv_fasta_path()],
-    #     config.get_master_fasta_path(),  # TODO: reenable
-    # )
+    get_local_copy_fasta_file(REFSEQ_FASTA_SOURCE, config.get_refseq_fasta_path())
+    get_local_copy_fasta_file(DECOY_FASTA_SOURCE, config.get_decoy_fasta_path())
+    get_local_copy_fasta_file(EBV_FASTA_SOURCE, config.get_ebv_fasta_path())
+
+    logging.info(f"Combining FASTA files into a single file.")
+    combine_files(
+        [config.get_refseq_fasta_path(), config.get_decoy_fasta_path(), config.get_ebv_fasta_path()],
+        config.get_master_fasta_path(),
+    )
 
     logging.info("Categorize contigs in master FASTA file")
     contig_categorizer = ContigCategorizer(contig_name_translator)
 
-    with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
-        contig_names = list(master_f.references)
-
-    contig_name_to_type = {name: contig_categorizer.get_contig_type(name) for name in contig_names}
-
     classification = ContigDesirabilityClassification.create()
 
-    assert_seen_contig_types_match_expected(set(contig_name_to_type.values()), classification)
+    assert_master_fasta_contig_types_match_expected(config, contig_categorizer, classification)
 
     logging.info(f"Creating temp version of output FASTA file: {config.get_temp_output_path()}.")
-    with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
-        with open(config.get_temp_output_path(), "w") as out_f:
+    write_hmf_ref_genome_fasta(
+        config.get_master_fasta_path(),
+        config.get_temp_output_path(),
+        contig_categorizer,
+        contig_name_translator,
+        classification,
+    )
+
+    logging.info("Asserting that output is as expected")
+    assert_created_ref_genome_matches_expectations(config, contig_categorizer, contig_name_translator, classification)
+
+    logging.info("Moving temp output file to real output file")
+    config.get_temp_output_path().rename(config.output_path)
+    Path(f"{config.get_temp_output_path()}.fai").unlink(missing_ok=True)
+    # TODO: Add option to exclude decoys
+    # TODO: Add option to skip removing softmasks
+    # TODO: Put used files and result in bucket? Or just do this manually afterwards.
+    # TODO: Create requirements file to make this script properly reproducible with venv.
+    #       Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
+
+    logging.info(f"Finished {SCRIPT_NAME}")
+
+
+def assert_created_ref_genome_matches_expectations(
+        config: Config,
+        contig_categorizer: ContigCategorizer,
+        contig_name_translator: ContigNameTranslator,
+        classification: ContigDesirabilityClassification,
+) -> None:
+    with pysam.Fastafile(config.get_temp_output_path()) as temp_f:
+        with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
+            contigs_expected_to_be_copied = {
+                contig_name for contig_name in master_f.references
+                if contig_categorizer.get_contig_type(contig_name) in classification.desired_contig_types
+            }
+            contigs_expected_in_output = {
+                contig_name_translator.standardize(contig_name) for contig_name in contigs_expected_to_be_copied
+            }
+            if set(temp_f.references) != contigs_expected_in_output:
+                error_msg = (
+                    f"Contigs in output file not as expected: "
+                    f"expected={contigs_expected_in_output}, actual={sorted(temp_f.references)}"
+                )
+                raise ValueError(error_msg)
+
+            for contig_name in contigs_expected_to_be_copied:
+                expected_sequence = master_f.fetch(contig_name).upper()
+                actual_sequence = temp_f.fetch(contig_name_translator.standardize(contig_name))
+                if actual_sequence != expected_sequence:
+                    raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
+    feature_analysis_config = ReferenceGenomeFeatureAnalysisConfig(
+        config.get_temp_output_path(), None, config.contig_alias_bucket_path
+    )
+    feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(feature_analysis_config)
+    expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
+        has_unplaced_contigs=True,
+        has_unlocalized_contigs=True,
+        has_alts=False,
+        has_decoys=True,
+        has_patches=False,
+        has_ebv=True,
+        has_rcrs=None,
+        uses_canonical_chrom_names=True,
+        has_only_hardmasked_nucleotides_at_y_par1=False,
+        has_semi_ambiguous_iub_codes=True,
+        has_softmasked_nucleotides=False,
+        alts_are_padded=None,
+    )
+    if feature_analysis != expected_feature_analysis:
+        error_msg = f"Not all features as expected: expected={expected_feature_analysis}, actual={feature_analysis}"
+        raise ValueError(error_msg)
+
+
+def write_hmf_ref_genome_fasta(
+        source_fasta: Path,
+        target_fasta: Path,
+        contig_categorizer: ContigCategorizer,
+        contig_name_translator: ContigNameTranslator,
+        classification: ContigDesirabilityClassification,
+) -> None:
+    with pysam.Fastafile(source_fasta) as master_f:
+        contig_names = list(master_f.references)
+
+        with open(target_fasta, "w") as out_f:
             for contig_name in contig_names:
                 logging.info(f"Handling {contig_name}")
-                contig_type = contig_name_to_type[contig_name]
+                contig_type = contig_categorizer.get_contig_type(contig_name)
                 if contig_type in classification.desired_contig_types:
                     logging.info(f"Include {contig_name} in output file")
                     sequence = master_f.fetch(contig_name).upper()
@@ -186,44 +265,6 @@ def main(config: Config) -> None:
                     out_f.write(header + "\n")
                     for i in range(0, len(sequence), FASTA_LINE_WRAP):
                         out_f.write(sequence[i:i + FASTA_LINE_WRAP] + "\n")
-
-    logging.info("Asserting that output is as expected")
-    with pysam.Fastafile(config.get_temp_output_path()) as temp_f:
-        contigs_expected_to_be_copied = {
-            contig_name for contig_name, contig_type in contig_name_to_type.items()
-            if contig_type in classification.desired_contig_types
-        }
-        contigs_expected_in_output = {
-            contig_name_translator.standardize(contig_name) for contig_name in contigs_expected_to_be_copied
-        }
-        if set(temp_f.references) != contigs_expected_in_output:
-            error_msg = (
-                f"Contigs in output file not as expected: "
-                f"expected={contigs_expected_in_output}, actual={sorted(temp_f.references)}"
-            )
-            raise ValueError(error_msg)
-        with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
-            for contig_name in contigs_expected_to_be_copied:
-                expected_sequence = master_f.fetch(contig_name).upper()
-                actual_sequence = temp_f.fetch(contig_name_translator.standardize(contig_name))
-                if actual_sequence != expected_sequence:
-                    raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
-
-    logging.info("Moving temp output file to real output file")
-    config.get_temp_output_path().rename(config.output_path)
-    Path(f"{config.get_temp_output_path()}.fai").unlink(missing_ok=True)
-    # TODO: Extract contig names from master file, and figure out which contigs we want
-    # TODO: Put these contigs into output file, including proper header lines for each contig,
-    #       and filtering out decoys and removing soft-masks if configured to do this
-    #       At first include decoys and remove soft-masks. Can always add options to not do these things later
-    #       TODO: Figure out what these header lines should look like
-    # TODO: Add automatic checks to see whether the file is correct and as expected.
-    # TODO: move tmp output file to actual output file location
-    # TODO: Put used files and result in bucket? Or just do this manually, afterwards.
-    # TODO: Create requirements file to make this script properly reproducible with venv.
-    #       Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
-
-    logging.info(f"Finished {SCRIPT_NAME}")
 
 
 def get_header(contig_name: str, standardized_contig_name: str, contig_type: ContigType, sequence: str) -> str:
@@ -259,9 +300,14 @@ def get_contig_role(contig_type: ContigType) -> str:
         raise ValueError(f"Encountered contig type without an assigned role: {contig_type}")
 
 
-def assert_seen_contig_types_match_expected(
-        seen_contig_types: Set[ContigType], classification: ContigDesirabilityClassification
+def assert_master_fasta_contig_types_match_expected(
+        config: Config,
+        contig_categorizer: ContigCategorizer,
+        classification: ContigDesirabilityClassification,
 ) -> None:
+    with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
+        seen_contig_types = {contig_categorizer.get_contig_type(name) for name in master_f.references}
+
     expected_contig_types = classification.get_expected_contig_types()
     if seen_contig_types != expected_contig_types:
         sorted_seen_contig_names = sorted(contig_type.name for contig_type in seen_contig_types)
