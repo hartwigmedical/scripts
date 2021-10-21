@@ -77,7 +77,7 @@ for seq_dir in "${seq_dirs[@]}"; do
         api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
         if [[ "${api_samples_json}" == "[]" ]]; then
             yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "1") || \
-                  die "Could not convert yld_seq_base_count to gbase (not in API): ${yld_seq_base_count}"
+                  die "Could not convert yld_seq_base_count for ${sample_id} to gbase (not in API): ${yld_seq_base_count}"
             status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
         else
             sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
@@ -92,12 +92,12 @@ for seq_dir in "${seq_dirs[@]}"; do
               req_gbase="0"
             else
               # The requirement in GBase is converted to gbase
-              req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req to gbase: ${req}"
+              req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
             fi
             yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
-                  die "Could not convert yld to gbase: ${yld}"
+                  die "Could not convert yld for ${sample_id} to gbase: ${yld}"
             yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
-                  die "Could not convert yld_seq_base_count to gbase: ${yld_seq_base_count}"
+                  die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld_seq_base_count}"
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
             # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
             api_run=$(
