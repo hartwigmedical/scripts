@@ -167,28 +167,58 @@ def main(config: Config) -> None:
 
     assert_seen_contig_types_match_expected(set(contig_name_to_type.values()), classification)
 
-    logging.info("Create output FASTA file.")
+    logging.info(f"Creating temp version of output FASTA file: {config.get_temp_output_path()}.")
     with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
         with open(config.get_temp_output_path(), "w") as out_f:
-            logging.info(classification.desired_contig_types)
             for contig_name in contig_names:
-                logging.info(contig_name)
+                logging.info(f"Handling {contig_name}")
                 contig_type = contig_name_to_type[contig_name]
                 if contig_type in classification.desired_contig_types:
-                    sequence = master_f.fetch(contig_name, end=200).upper()  # TODO: remove limit
+                    logging.info(f"Include {contig_name} in output file")
+                    sequence = master_f.fetch(contig_name).upper()
                     header = get_header(
                         contig_name,
                         contig_name_translator.standardize(contig_name),
                         contig_type,
                         sequence,
                     )
-                    logging.info(header)
+                    logging.info(f"Header: {header}")
+                    out_f.write(header + "\n")
+                    for i in range(0, len(sequence), FASTA_LINE_WRAP):
+                        out_f.write(sequence[i:i + FASTA_LINE_WRAP] + "\n")
 
+    logging.info("Asserting that output is as expected")
+    with pysam.Fastafile(config.get_temp_output_path()) as temp_f:
+        contigs_expected_to_be_copied = {
+            contig_name for contig_name, contig_type in contig_name_to_type.items()
+            if contig_type in classification.desired_contig_types
+        }
+        contigs_expected_in_output = {
+            contig_name_translator.standardize(contig_name) for contig_name in contigs_expected_to_be_copied
+        }
+        if set(temp_f.references) != contigs_expected_in_output:
+            error_msg = (
+                f"Contigs in output file not as expected: "
+                f"expected={contigs_expected_in_output}, actual={sorted(temp_f.references)}"
+            )
+            raise ValueError(error_msg)
+        with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
+            for contig_name in contigs_expected_to_be_copied:
+                expected_sequence = master_f.fetch(contig_name).upper()
+                actual_sequence = temp_f.fetch(contig_name_translator.standardize(contig_name))
+                if actual_sequence != expected_sequence:
+                    raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
+
+    logging.info("Moving temp output file to real output file")
+    config.get_temp_output_path().rename(config.output_path)
+    Path(f"{config.get_temp_output_path()}.fai").unlink(missing_ok=True)
     # TODO: Extract contig names from master file, and figure out which contigs we want
     # TODO: Put these contigs into output file, including proper header lines for each contig,
     #   and filtering out decoys and removing soft-masks if configured to do this
     #       A first include decoys and remove soft-masks. Can always add options to not do these things later
-    #       TODO: Figure out what these header liens should look like
+    #       TODO: Figure out what these header lines should look like
+    # TODO: Add automatic checks to see whether the file is correct and as expected.
+    # TODO: move tmp output file to actual output file location
     # TODO: Put used files and result in bucket? Or just do this manually, afterwards.
     # TODO: Create requirements file to make this script properly reproducible with venv.
     #       Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
