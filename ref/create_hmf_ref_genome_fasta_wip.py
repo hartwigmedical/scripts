@@ -214,8 +214,8 @@ def main(config: Config) -> None:
     Path(f"{config.get_temp_output_path()}.fai").unlink(missing_ok=True)
     # TODO: Extract contig names from master file, and figure out which contigs we want
     # TODO: Put these contigs into output file, including proper header lines for each contig,
-    #   and filtering out decoys and removing soft-masks if configured to do this
-    #       A first include decoys and remove soft-masks. Can always add options to not do these things later
+    #       and filtering out decoys and removing soft-masks if configured to do this
+    #       At first include decoys and remove soft-masks. Can always add options to not do these things later
     #       TODO: Figure out what these header lines should look like
     # TODO: Add automatic checks to see whether the file is correct and as expected.
     # TODO: move tmp output file to actual output file location
@@ -260,7 +260,7 @@ def get_contig_role(contig_type: ContigType) -> str:
 
 
 def assert_seen_contig_types_match_expected(
-    seen_contig_types: Set[ContigType], classification: ContigDesirabilityClassification
+        seen_contig_types: Set[ContigType], classification: ContigDesirabilityClassification
 ) -> None:
     expected_contig_types = classification.get_expected_contig_types()
     if seen_contig_types != expected_contig_types:

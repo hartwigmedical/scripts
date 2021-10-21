@@ -1,10 +1,16 @@
+import concurrent.futures
 import logging
 from copy import deepcopy
 from enum import Enum, unique, auto
 from pathlib import Path
-from typing import Dict, NamedTuple, Tuple, List
+from typing import Dict, NamedTuple, Tuple, List, Set
 
+import pysam
 from google.cloud import storage
+
+STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
+SOFTMASKED_NUCLEOTIDES = {"a", "c", "g", "t", "n"}
+UNKNOWN_NUCLEOTIDES = {"N", "n"}
 
 
 class ContigNameTranslator(object):
@@ -333,3 +339,27 @@ def get_blob(path: str) -> storage.Blob:
     bucket_name = path.split("/")[2]
     relative_path = "/".join(path.split("/")[3:])
     return storage.Client().get_bucket(bucket_name).get_blob(relative_path)
+
+
+def get_nucleotides(ref_genome_path: Path) -> Set[str]:
+    futures = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        with pysam.Fastafile(ref_genome_path) as genome_f:
+            for contig_name in genome_f.references:
+                contig = genome_f.fetch(contig_name)
+                futures.append(executor.submit(get_nucleotides_from_string, contig))
+
+    nucleotides = set()
+    for future in futures:
+        try:
+            nucleotides = nucleotides.union(future.result())
+        except Exception as exc:
+            raise ValueError(exc)
+    return nucleotides
+
+
+def get_nucleotides_from_string(sequence: str) -> Set[str]:
+    nucleotides = set()
+    for nucleotide in sequence:
+        nucleotides.add(nucleotide)
+    return nucleotides
