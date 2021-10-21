@@ -94,8 +94,12 @@ for seq_dir in "${seq_dirs[@]}"; do
               # The requirement in GBase is converted to gbase
               req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
             fi
-            yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
-                  die "Could not convert yld for ${sample_id} to gbase: ${yld}"
+            if [[ "${yld}" == "" ]]; then
+              yld_gbase="0"
+            else
+              yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
+                    die "Could not convert yld for ${sample_id} to gbase: ${yld}"
+            fi
             yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
                   die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld_seq_base_count}"
             # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
