@@ -51,6 +51,7 @@ purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
+purple_somatic_chromosome_arm_tsv=$(locate_purple_somatic_chromosome_arm_tsv ${run_dir})
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
@@ -78,6 +79,7 @@ pilot_do_run_base_patient_reporter \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+    -purple_somatic_chromosome_arm_tsv ${purple_somatic_chromosome_arm_tsv} \
     -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
@@ -91,6 +93,5 @@ pilot_do_run_base_patient_reporter \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -output_dir_data ${output_dir_data} \
-    -ref_genome_version 37 \
     -log_debug \
     "$@"
