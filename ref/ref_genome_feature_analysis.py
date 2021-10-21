@@ -53,31 +53,15 @@ class ReferenceGenomeFeatureAnalyzer(object):
 
         logging.debug(categorized_contig_names)
 
-        # Cache nucleotides in file, since this is slow
-        nucleotides_file = Path(f"{config.ref_genome_path}.nucleotides")
-        if not nucleotides_file.exists():
-            nucleotides = get_nucleotides(config.ref_genome_path)
-            nucleotides_string = "".join(sorted(list(nucleotides)))
-            with open(nucleotides_file, "w+") as f:
-                f.write(nucleotides_string)
-        with open(nucleotides_file, "r+") as f:
-            line = f.readline()
-            nucleotides = {char for char in line}
-
-        logging.info(f"nucleotides: {sorted(nucleotides)}")
-
         if len(categorized_contig_names.autosomes) != 22:
-            warn_msg = (
-                f"Did not find exactly 22 autosome contigs: "
-                f"autosomes={categorized_contig_names.autosomes}"
-            )
+            warn_msg = f"Did not find exactly 22 autosome contigs: autosomes={categorized_contig_names.autosomes}"
             logging.warning(warn_msg)
         if len(categorized_contig_names.x_contigs) != 1:
-            warn_msg = (
-                f"Did not find exactly one X contig: "
-                f"x={categorized_contig_names.x_contigs}"
-            )
+            warn_msg = f"Did not find exactly one X contig: x={categorized_contig_names.x_contigs}"
             logging.warning(warn_msg)
+
+        nucleotides = get_nucleotides(config.ref_genome_path)
+        logging.info(f"nucleotides: {sorted(nucleotides)}")
 
         has_unplaced_contigs = bool(categorized_contig_names.unplaced_contigs)
         has_unlocalized_contigs = bool(categorized_contig_names.unlocalized_contigs)
