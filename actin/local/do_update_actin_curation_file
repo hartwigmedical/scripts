@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 source_file=$1 && shift
 target_file=$1 && shift
 
-if [[ -f "${source_file}" ]]; then
-    mv "${source_file}" "${target_file}"
+if [[ -z "${source_file}" || -z "${target_file}" ]]; then
+    error "Missing parameters. Exiting."
 fi
 
-if [[ -f "${target_file}" ]]; then
-    gcloud compute scp ${target_file} data-vm-prod-1:/data/resources/custom/actin/clinical_curation/
-fi
+target_dir="/data/resources/custom/actin/clinical_curation"
+
+do_update_actin_resource_file "${source_file}" "${target_file}" "${target_dir}"

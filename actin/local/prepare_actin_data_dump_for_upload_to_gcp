@@ -5,7 +5,7 @@ source message_functions || exit 1
 dir=$1
 
 if [[ -z "${dir}" ]]; then
-    error "No dir passed. Exiting."
+    error "Parameters missing. Exiting."
 fi
 
 mv "${dir}/Actin_Data_Extractie-Questionnaire.tsv" "${dir}/questionnaire.tsv"
