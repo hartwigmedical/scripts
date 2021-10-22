@@ -15,6 +15,7 @@ subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-su
 family="pipeline5-5-23"
 preemptible="FALSE"
 vm_project="hmf-crunch"
+startup_script="NONE"
 
 print_usage() {
     script=$(basename "$0")
@@ -24,12 +25,13 @@ print_usage() {
     echo "Examp: ${script} -n ${USER}-test-vm"
     echo ""
     echo "Options:"
-    echo "  -i image_name      Image name [default is most recent ${family} image]"
-    echo "  -p image_project   Image project [${image_project}]"
-    echo "  -m machine_type    VM machine type [${machine_type}]"
-    echo "  -s disk_size       VM boot disk size [${disk_size}]"
-    echo "  -t disk_type       VM boot disk type [${disk_type}]"
-    echo "  -e                 Make VM pre-emptible"
+    echo "  -i image_name          Image name [default is most recent ${family} image]"
+    echo "  -p image_project       Image project [${image_project}]"
+    echo "  -m machine_type        VM machine type [${machine_type}]"
+    echo "  -s disk_size           VM boot disk size [${disk_size}]"
+    echo "  -t disk_type           VM boot disk type [${disk_type}]"
+    echo "  -e                     Make VM pre-emptible"
+    echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
     echo ""
     echo "See also:"
     echo "  https://cloud.google.com/compute/docs/disks"
@@ -43,7 +45,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:p:i:m:s:t:e' flag; do
+while getopts ':n:p:i:m:s:t:ed:' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         i) image_name=${OPTARG} ;;
@@ -52,6 +54,7 @@ while getopts ':n:p:i:m:s:t:e' flag; do
         s) disk_size=${OPTARG} ;;
         t) disk_type=${OPTARG} ;;
         e) preemptible="TRUE" ;;
+        d) startup_script=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -77,11 +80,12 @@ if [[ -z "${image_name}" ]]; then
 fi
 
 info "Details of VM to be created:"
-info "    Name: ${vm_name}"
-info " Project: ${current_project}"
-info "   Image: ${image_name} in ${image_project}"
-info "  Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
-info " Account: ${service_account}"
+info "          Name: ${vm_name}"
+info "       Project: ${current_project}"
+info "         Image: ${image_name} in ${image_project}"
+info "        Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
+info "       Account: ${service_account}"
+info "Startup script: ${startup_script}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
@@ -90,6 +94,12 @@ if [[ "${preemptible}" == "TRUE" ]]; then
     preemptible_arg=" --preemptible"
 else
     preemptible_arg=""
+fi
+
+if [[ "${startup_script}" != "NONE" ]]; then
+    startup_script_arg=" --metadata-from-file=startup-script=${startup_script}"
+else
+    startup_script_arg=""
 fi
 
 info "Start creating VM instance ${vm_name}"
@@ -106,7 +116,8 @@ gcloud compute instances create "${vm_name}" \
 --network "${network}" \
 --subnet "${subnet}" \
 --no-address \
-${preemptible_arg} || die "Something wrong with VM creation. Check the gcloud response."
+${preemptible_arg} \
+${startup_script_arg} || die "Something wrong with VM creation. Check the gcloud response."
 
 info "VM usage:"
 info "  Access: gcloud compute ssh ${vm_name}"
