@@ -8,10 +8,12 @@ from typing import List, NamedTuple, FrozenSet, Set
 
 import pysam
 
+from contig_classification import ContigCategorizer
+from contig_name_translation import ContigNameTranslator
+from contig_types import Assembly, ContigType
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress
-from contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -140,7 +142,9 @@ def main(config: Config) -> None:
         f.write(text)
 
     logging.info(f"Creating contig name translator")
-    contig_name_translator = ContigNameTranslator.from_blob(get_blob(config.contig_alias_bucket_path))
+    contig_name_translator = ContigNameTranslator.from_contig_alias_text(
+        get_blob(config.contig_alias_bucket_path).download_as_text(),
+    )
 
     get_local_copy_fasta_file(REFSEQ_FASTA_SOURCE, config.get_refseq_fasta_path())
     get_local_copy_fasta_file(DECOY_FASTA_SOURCE, config.get_decoy_fasta_path())

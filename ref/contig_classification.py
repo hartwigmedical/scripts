@@ -1,36 +1,7 @@
-from copy import deepcopy
-from enum import unique, Enum, auto
-from typing import Dict, NamedTuple, Tuple, List
+from typing import NamedTuple, Tuple, List
 
-from google.cloud import storage
-
-
-class ContigNameTranslator(object):
-    """Standardizes names if it can. Returns argument as is if it cannot."""
-    def __init__(self, contig_name_to_canonical_name: Dict[str, str]) -> None:
-        self._contig_name_to_canonical_name = deepcopy(contig_name_to_canonical_name)
-
-    @classmethod
-    def from_blob(cls, blob: storage.Blob) -> "ContigNameTranslator":
-        contig_name_to_canonical_name = {}
-        for line in blob.download_as_text().split("\n"):
-            split_line = line.split("\t")
-            if len(split_line) != 2:
-                raise ValueError(f"Incorrect length line: {line}")
-            contig_name, canonical_name = split_line
-            if contig_name in contig_name_to_canonical_name:
-                raise ValueError(f"Encountered contig name multiple times: {contig_name}")
-            contig_name_to_canonical_name[contig_name] = canonical_name
-        return ContigNameTranslator(contig_name_to_canonical_name)
-
-    def standardize(self, contig_name: str) -> str:
-        if contig_name in self._contig_name_to_canonical_name:
-            return self._contig_name_to_canonical_name[contig_name]
-        else:
-            raise ValueError(f"Could not standardize '{contig_name}'")
-
-    def is_canonical(self, contig_name: str) -> bool:
-        return contig_name in self._contig_name_to_canonical_name.values()
+from contig_name_translation import ContigNameTranslator
+from contig_types import ContigType
 
 
 class CategorizedContigNames(NamedTuple):
@@ -60,50 +31,6 @@ class CategorizedContigNames(NamedTuple):
         contig_names.extend(self.fix_patch_contigs)
         contig_names.extend(self.novel_patch_contigs)
         return tuple(contig_names)
-
-
-@unique
-class Assembly(Enum):
-    GRCH38 = auto()
-    HS38D1 = auto()
-    OTHER = auto()
-
-
-@unique
-class ContigType(Enum):
-    AUTOSOME = auto()
-    X = auto()
-    Y = auto()
-    MITOCHONDRIAL = auto()
-    EBV = auto()
-    DECOY = auto()
-    UNLOCALIZED = auto()
-    UNPLACED = auto()
-    ALT = auto()
-    FIX_PATCH = auto()
-    NOVEL_PATCH = auto()
-    UNCATEGORIZABLE = auto()
-
-    def get_assembly(self) -> Assembly:
-        grch38_contigs = {
-            self.AUTOSOME,
-            self.X,
-            self.Y,
-            self.MITOCHONDRIAL,
-            self.UNLOCALIZED,
-            self.UNPLACED,
-            self.ALT,
-            self.FIX_PATCH,
-            self.NOVEL_PATCH,
-        }
-        if self in grch38_contigs:
-            return Assembly.GRCH38
-        elif self == self.DECOY:
-            return Assembly.HS38D1
-        elif self in {self.EBV, self.UNCATEGORIZABLE}:
-            return Assembly.OTHER
-        else:
-            raise ValueError(f"Unrecognized contig type: {self}")
 
 
 class ContigCategorizer(object):

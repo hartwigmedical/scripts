@@ -4,10 +4,11 @@ from typing import NamedTuple, Optional
 
 import pysam
 
+from contig_classification import ContigCategorizer
+from contig_name_translation import ContigNameTranslator
 from ref_util import assert_file_exists, assert_file_exists_in_bucket, get_blob, \
     get_nucleotides_from_fasta, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, \
     UNKNOWN_NUCLEOTIDES
-from contig_classification import ContigNameTranslator, ContigCategorizer
 
 
 class ReferenceGenomeFeatureAnalysis(NamedTuple):
@@ -38,7 +39,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             assert_file_exists(rcrs_path)
         assert_file_exists_in_bucket(contig_alias_bucket_path)
 
-        contig_name_translator = ContigNameTranslator.from_blob(get_blob(contig_alias_bucket_path))
+        contig_name_translator = ContigNameTranslator.from_contig_alias_text(get_blob(contig_alias_bucket_path).download_as_text())
         with pysam.Fastafile(ref_genome_path) as genome_f:
             contig_names = list(genome_f.references)
 

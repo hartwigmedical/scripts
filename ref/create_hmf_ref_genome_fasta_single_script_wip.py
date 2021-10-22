@@ -17,6 +17,7 @@ RCRS_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GC
 
 REFSEQ_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_assembly_report.txt"
 DECOY_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/786/075/GCA_000786075.2_hs38d1/GCA_000786075.2_hs38d1_assembly_report.txt"
+EBV_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/402/265/GCF_002402265.1_ASM240226v1/GCF_002402265.1_ASM240226v1_assembly_report.txt"
 
 SOURCES_LIST_FILE_NAME = "sources.txt"
 
@@ -46,6 +47,9 @@ class Config(NamedTuple):
     def get_local_decoy_assembly_report_path(self) -> Path:
         return self.get_local_source_file_dir() / DECOY_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
 
+    def get_local_ebv_assembly_report_path(self) -> Path:
+        return self.get_local_source_file_dir() / EBV_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
+
     def get_source_list_path(self) -> Path:
         return self.get_local_source_file_dir() / SOURCES_LIST_FILE_NAME
 
@@ -67,6 +71,7 @@ def main(config: Config) -> None:
     download_file(RCRS_FASTA_SOURCE, config.get_local_compressed_rcrs_fasta_path())
     download_file(REFSEQ_ASSEMBLY_REPORT_SOURCE, config.get_local_refseq_assembly_report_path())
     download_file(DECOY_ASSEMBLY_REPORT_SOURCE, config.get_local_decoy_assembly_report_path())
+    download_file(EBV_ASSEMBLY_REPORT_SOURCE, config.get_local_ebv_assembly_report_path())
 
     with open(config.get_source_list_path(), "w") as f:
         logging.info(f"Writing sources to file: {config.get_source_list_path()}")
@@ -77,10 +82,9 @@ def main(config: Config) -> None:
             f"RCRS_FASTA_SOURCE: {RCRS_FASTA_SOURCE}",
             f"REFSEQ_ASSEMBLY_REPORT_SOURCE: {REFSEQ_ASSEMBLY_REPORT_SOURCE}",
             f"DECOY_ASSEMBLY_REPORT_SOURCE: {DECOY_ASSEMBLY_REPORT_SOURCE}",
+            f"EBV_ASSEMBLY_REPORT_SOURCE: {EBV_ASSEMBLY_REPORT_SOURCE}",
         ]
         f.write("\n".join(lines))
-
-    
 
     logging.info(f"Finished {SCRIPT_NAME}")
 
