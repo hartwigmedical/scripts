@@ -1,5 +1,4 @@
 import argparse
-import gzip
 import hashlib
 import logging
 import shutil
@@ -8,11 +7,10 @@ from pathlib import Path
 from typing import List, NamedTuple, FrozenSet, Set
 
 import pysam
-import requests
 
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
-    assert_file_does_not_exist, assert_dir_does_not_exist
+    assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress
 from contig_classification import ContigNameTranslator, Assembly, ContigType, ContigCategorizer
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -327,20 +325,6 @@ def get_local_copy_fasta_file(source: str, target: Path) -> None:
 
     logging.info(f"Decompressing downloaded file {compressed_target}.")
     decompress(compressed_target, target)
-
-
-def download_file(source: str, target: Path) -> None:
-    response = requests.get(source, stream=True)
-    response.raise_for_status()
-    with open(target, 'wb') as f:
-        for block in response.iter_content(1024):
-            f.write(block)
-
-
-def decompress(source: Path, target: Path) -> None:
-    with gzip.open(source, "rb") as f_in:
-        with open(target, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
 
 
 def combine_files(sources: List[Path], target: Path) -> None:
