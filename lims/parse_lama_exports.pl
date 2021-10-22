@@ -13,6 +13,17 @@ use Email::Valid;
 use POSIX qw(strftime);
 use 5.01000;
 
+my %DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP = (
+    startConcentration=>1,
+    patientGermlineChoice=>1,
+    primaryTumorType=>1,
+    biopsySite=>1,
+    shallowPurity=>1,
+    finalPurity=>1,
+    coupeBarcode=>1,
+    concentration=>1
+);
+
 my %lama_patient_tumor_sample_dict = (
     'refFrBarcode'          => 'ref_sample_id',
     'patientId'             => 'patient_id',
@@ -28,8 +39,13 @@ my %lama_patient_tumor_sample_dict = (
 );
 
 my %lama_isolation_isolate_dict = (
-    '_id'         => 'original_container_id',
-    'isolationNr' => 'isolation_id'
+    '_id'           => 'original_container_id',
+    'isolationNr'   => 'isolation_id',
+    'coupeBarcode'  => 'coupe_barcode',
+    'sampleId'      => 'sample_name',
+    'frBarcode'     => 'sample_id',
+    'isolationNr'   => 'isolation_id',
+    'concentration' => 'conc'
 );
 
 my %lama_libraryprep_libraries_dict = (
@@ -63,7 +79,7 @@ my %lama_status_cohort_dict = (
 );
 
 
-my $input_dir = "./lama_export";
+my $input_dir = "./jsons";
 
 my $lamaIsolationJson = $input_dir . '/Isolations.json';
 my $lamaPatientJson = $input_dir . '/Patients.json';
@@ -105,16 +121,18 @@ sub printJson{
     my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
 
-    sayInfo("  Writing output to $lims_file:");
-    sayInfo("    $sample_count samples");
-    sayInfo("    $status_count statuses");
-    sayInfo("    $isolation_count isolations");
-    sayInfo("    $prep_count preps");
-    sayInfo("  Investigate with:");
+    sayInfo(" Writing output to $lims_file:");
+    sayInfo("   $sample_count samples");
+    sayInfo("   $status_count statuses");
+    sayInfo("   $isolation_count isolations");
+    sayInfo("   $prep_count preps");
+    sayInfo(" Investigate with:");
     print " cat $lims_file | jq '.sample' | less\n";
     print " cat $lims_file | jq '.status' | less\n";
     print " cat $lims_file | jq '.isolation' | less\n";
     print " cat $lims_file | jq '.prep' | less\n";
+    print " cat $lims_file | jq '.sample.FB05298354'\n";
+    print " cat $lims_file | jq '.status.FR30543060'\n";
 
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
     print $lims_json_fh $lims_txt;
@@ -130,19 +148,12 @@ sub storeRecordByKey{
 
 sub copyFieldsFromObject{
     my ($object, $info_tag, $fieldsTranslationTable, $store) = @_;
-    my %skip_warning_fields = (
-        startConcentration=>1,
-        patientGermlineChoice=>1,
-        primaryTumorType=>1,
-        biopsySite=>1,
-        shallowPurity=>1,
-        finalPurity=>1
-    );
+
     while (my ($src_key, $tgt_key) = each %$fieldsTranslationTable){
         if (exists $object->{$src_key}){
             $store->{$tgt_key} = $object->{$src_key};
         }
-        elsif(exists $skip_warning_fields{$src_key}){
+        elsif(exists $DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP{$src_key}){
             # ignore the fact field is missing
         }
         else{
@@ -218,14 +229,18 @@ sub parseLamaIsolation{
         my $sop = $experiment->{sopVersion};
 
         foreach my $isolate (@{$experiment->{isolates}}) {
-            my $store_key = $isolate->{_id};
-            my %info = ('sop' => $sop);
+            my $store_key = $isolate->{frBarcode};
+            my $status = $isolate->{status};
+
+            # Only store info when OK
+            next unless $status eq "Finished";
+
+            my %info = ();
             my $info_tag = "isolation->$store_key";
             copyFieldsFromObject($isolate, $info_tag, \%lama_isolation_isolate_dict, \%info);
 
             # TODO: check if we need to diff dates to store most recent isolation info
-            #sayWarn("Isolation key will be overwritten ($store_key)") if exists $store{$store_key};
-            $store{$store_key} = \%info;
+            storeRecordByKey(\%info, $store_key, \%store, "isolation");
         }
     }
     return \%store;
