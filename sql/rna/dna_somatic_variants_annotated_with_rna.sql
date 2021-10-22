@@ -8,5 +8,5 @@ FROM
 		ON a.sampleId=b.sampleId AND a.gene=b.gene
     LEFT JOIN purity p
 		ON a.sampleId=p.sampleId
-WHERE a.sampleId IN ('XXX') AND reported
+WHERE a.sampleId IN ('XXX') AND (reported OR (canonicalCodingEffect in ('SPLICE','MISSENSE','NONSENSE_OR_FRAMESHIFT') AND a.gene IN (SELECT gene FROM driverGenePanel) AND a.filter = 'PASS'))
 ORDER BY a.sampleId, a.gene;
