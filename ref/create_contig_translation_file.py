@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import List, NamedTuple
 
-from contig_name_translation import get_contig_alias_text_from_assembly_reports_text
+from contig_name_translation import ContigAliasTextWriter
 from ref_util import set_up_logging, assert_file_does_not_exist, get_blob
 
 SCRIPT_NAME = "create_chrom_translation_file"
@@ -33,7 +33,7 @@ def main(config: Config) -> None:
 
     assembly_reports_text = get_translation_text_from_bucket_files()
 
-    contig_alias_text = get_contig_alias_text_from_assembly_reports_text(assembly_reports_text)
+    contig_alias_text = ContigAliasTextWriter.get_contig_alias_text_from_assembly_reports_text(assembly_reports_text)
 
     with open(config.output_path, "w") as f:
         f.write(contig_alias_text)

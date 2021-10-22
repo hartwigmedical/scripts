@@ -35,20 +35,6 @@ class ContigNameTranslator(object):
         return contig_name in self._contig_name_to_canonical_name.values()
 
 
-ASSEMBLED_CONTIG_ROLE = "assembled-molecule"
-UNLOCALIZED_CONTIG_ROLE = "unlocalized-scaffold"
-UNPLACED_CONTIG_ROLE = "unplaced-scaffold"
-FIX_PATCH_CONTIG_ROLE = "fix-patch"
-NOVEL_PATCH_CONTIG_ROLE = "novel-patch"
-ALT_CONTIG_ROLE = "alt-scaffold"
-ASSIGNED_MOLECULE_TYPE_CHROMOSOME = "Chromosome"
-ASSIGNED_MOLECULE_TYPE_UNKNOWN = "na"
-ASSIGNED_MOLECULE_TYPE_MITOCHONDRION = "Mitochondrion"
-PRIMARY_ASSEMBLY_UNIT = "Primary Assembly"
-PATCHES_ASSEMBLY_UNIT = "PATCHES"
-NON_NUCLEAR_UNIT = "non-nuclear"
-ALTS_ASSEMBLY_UNITS = {f"ALT_REF_LOCI_{i}" for i in range(1, 36)}
-UNKNOWN_CHROM = "chrUn"
 HARDCODED_CANONICAL_NAME_TO_ALIASES = {"chrEBV": {"chrEBV", "EBV", "AJ507799.2", "NC_007605.1"}}
 
 
@@ -103,6 +89,28 @@ class ContigSummary(NamedTuple):
 
 
 class ContigSummaryInterpreter(object):
+    ASSIGNED_MOLECULES_AUTOSOME = {str(i) for i in range(1, 23)}
+    ASSIGNED_MOLECULE_X = "X"
+    ASSIGNED_MOLECULE_Y = "Y"
+    ASSIGNED_MOLECULE_MITOCHONDRION = "MT"
+    ASSIGNED_MOLECULE_NA = "na"
+
+    ASSIGNED_MOLECULE_TYPE_CHROMOSOME = "Chromosome"
+    ASSIGNED_MOLECULE_TYPE_NA = "na"
+    ASSIGNED_MOLECULE_TYPE_MITOCHONDRION = "Mitochondrion"
+
+    ASSEMBLY_UNIT_PRIMARY = "Primary Assembly"
+    ASSEMBLY_UNIT_PATCHES = "PATCHES"
+    ASSEMBLY_UNIT_NON_NUCLEAR = "non-nuclear"
+    ASSEMBLY_UNITS_ALT = {f"ALT_REF_LOCI_{i}" for i in range(1, 36)}
+
+    CONTIG_ROLE_ASSEMBLED = "assembled-molecule"
+    CONTIG_ROLE_UNLOCALIZED = "unlocalized-scaffold"
+    CONTIG_ROLE_UNPLACED = "unplaced-scaffold"
+    CONTIG_ROLE_FIX_PATCH = "fix-patch"
+    CONTIG_ROLE_NOVEL_PATCH = "novel-patch"
+    CONTIG_ROLE_ALT = "alt-scaffold"
+
     @classmethod
     def get_canonical_name(cls, summary: ContigSummary) -> str:
         contig_type = cls.get_contig_type(summary)
@@ -188,11 +196,12 @@ class ContigSummaryInterpreter(object):
 
     @classmethod
     def get_assigned_molecule_proper_name(cls, assigned_molecule: str) -> str:
-        if assigned_molecule in {str(i) for i in range(1, 23)} or assigned_molecule in {"X", "Y"}:
+        if (assigned_molecule in cls.ASSIGNED_MOLECULES_AUTOSOME
+                or assigned_molecule in {cls.ASSIGNED_MOLECULE_X, cls.ASSIGNED_MOLECULE_Y}):
             return f"chr{assigned_molecule}"
-        elif assigned_molecule == "MT":
+        elif assigned_molecule == cls.ASSIGNED_MOLECULE_MITOCHONDRION:
             return "chrM"
-        elif assigned_molecule == "na":
+        elif assigned_molecule == cls.ASSIGNED_MOLECULE_NA:
             return "chrUn"
         else:
             raise ValueError(f"Do not recognize chrom name: {assigned_molecule}")
@@ -200,60 +209,60 @@ class ContigSummaryInterpreter(object):
     @classmethod
     def is_autosome(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ASSEMBLED_CONTIG_ROLE
-                and summary.assigned_molecule in {str(i) for i in range(1, 23)}
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
+                and summary.assigned_molecule in cls.ASSIGNED_MOLECULES_AUTOSOME
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
 
     @classmethod
     def is_x(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ASSEMBLED_CONTIG_ROLE
-                and summary.assigned_molecule == "X"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_X
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
 
     @classmethod
     def is_y(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ASSEMBLED_CONTIG_ROLE
-                and summary.assigned_molecule == "Y"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_Y
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
 
     @classmethod
     def is_ebv(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ASSEMBLED_CONTIG_ROLE
-                and summary.assigned_molecule == "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
 
     @classmethod
     def is_unlocalized(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == UNLOCALIZED_CONTIG_ROLE
-                and summary.assigned_molecule != "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_UNLOCALIZED
+                and summary.assigned_molecule != cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
 
     @classmethod
     def is_unplaced(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == UNPLACED_CONTIG_ROLE
-                and summary.assigned_molecule == "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_UNKNOWN
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_UNPLACED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_NA
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
                 and "decoy" not in summary.sequence_name
         )
         return result
@@ -261,115 +270,122 @@ class ContigSummaryInterpreter(object):
     @classmethod
     def is_fix_patch(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == FIX_PATCH_CONTIG_ROLE
-                and summary.assigned_molecule != "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PATCHES_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_FIX_PATCH
+                and summary.assigned_molecule != cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PATCHES
         )
         return result
 
     @classmethod
     def is_novel_patch(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == NOVEL_PATCH_CONTIG_ROLE
-                and summary.assigned_molecule != "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit == PATCHES_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_NOVEL_PATCH
+                and summary.assigned_molecule != cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PATCHES
         )
         return result
 
     @classmethod
     def is_alt(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ALT_CONTIG_ROLE
-                and summary.assigned_molecule != "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_CHROMOSOME
-                and summary.assembly_unit in ALTS_ASSEMBLY_UNITS
+                summary.sequence_role == cls.CONTIG_ROLE_ALT
+                and summary.assigned_molecule != cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assembly_unit in cls.ASSEMBLY_UNITS_ALT
         )
         return result
 
     @classmethod
     def is_mitochondrion(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == ASSEMBLED_CONTIG_ROLE
-                and summary.assigned_molecule == "MT"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_MITOCHONDRION
-                and summary.assembly_unit == NON_NUCLEAR_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_MITOCHONDRION
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_MITOCHONDRION
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_NON_NUCLEAR
         )
         return result
 
     @classmethod
     def is_decoy(cls, summary: ContigSummary) -> bool:
         result = (
-                summary.sequence_role == UNPLACED_CONTIG_ROLE
-                and summary.assigned_molecule == "na"
-                and summary.assigned_molecule_type == ASSIGNED_MOLECULE_TYPE_UNKNOWN
-                and summary.assembly_unit == PRIMARY_ASSEMBLY_UNIT
+                summary.sequence_role == cls.CONTIG_ROLE_UNPLACED
+                and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_NA
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_NA
+                and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
                 and re.fullmatch(r"decoy\d{5}", summary.sequence_name)
         )
         return result
 
 
-def get_contig_alias_text_from_assembly_reports_text(assembly_reports_text: str) -> str:
-    # We don't use the UCSC-style names from the file because not all contigs have such a name in the file,
-    # and because alt scaffolds ans novel patches share the '_alt' suffix in this file.
-    # We instead use '_novel' for novel patches.
-    canonical_contig_name_to_aliases = get_canonical_name_to_aliases(assembly_reports_text)
-    logging.debug(f"canonical_contig_name_to_aliases=\n{canonical_contig_name_to_aliases}")
-    assert_no_contradictions(canonical_contig_name_to_aliases)
-    contig_alias_text = get_text_for_contig_alias_file(canonical_contig_name_to_aliases)
-    logging.debug(f"contig_alias_text=\n{contig_alias_text}")
-    return contig_alias_text
+class ContigAliasTextWriter(object):
+    @classmethod
+    def get_contig_alias_text_from_assembly_reports_text(cls, assembly_reports_text: str) -> str:
+        # We don't use the UCSC-style names from the file because not all contigs have such a name in the file,
+        # and because alt scaffolds ans novel patches share the '_alt' suffix in this file.
+        # We instead use '_novel' for novel patches.
+        canonical_contig_name_to_aliases = cls.get_canonical_name_to_aliases(assembly_reports_text)
+        logging.debug(f"canonical_contig_name_to_aliases=\n{canonical_contig_name_to_aliases}")
 
+        cls.assert_no_contradictions(canonical_contig_name_to_aliases)
 
-def get_canonical_name_to_aliases(assembly_reports_text: str) -> Dict[str, Set[str]]:
-    result: DefaultDict[str, Set[str]] = defaultdict(set)
-    for line in assembly_reports_text.split("\n"):
-        if not line or line[0] == "#":
-            # skip empty lines and headers starting with "'"#"
-            continue
+        contig_alias_text = cls.get_text_for_contig_alias_file(canonical_contig_name_to_aliases)
+        logging.debug(f"contig_alias_text=\n{contig_alias_text}")
 
-        summary = ContigSummary.from_line(line.replace("\r", ""))
+        return contig_alias_text
 
-        canonical_name = ContigSummaryInterpreter.get_canonical_name(summary)
-        aliases = ContigSummaryInterpreter.get_aliases(summary)
+    @classmethod
+    def get_canonical_name_to_aliases(cls, assembly_reports_text: str) -> Dict[str, Set[str]]:
+        result: DefaultDict[str, Set[str]] = defaultdict(set)
+        for line in assembly_reports_text.split("\n"):
+            if not line or line[0] == "#":
+                # skip empty lines and headers starting with "'"#"
+                continue
 
-        result[canonical_name] = result[canonical_name].union(aliases)
+            summary = ContigSummary.from_line(line.replace("\r", ""))
 
-    for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES.items():  
-        # TODO: remove this when no longer needed
-        result[canonical_name] = result[canonical_name].union(aliases)
+            canonical_name = ContigSummaryInterpreter.get_canonical_name(summary)
+            aliases = ContigSummaryInterpreter.get_aliases(summary)
 
-    return dict(result)
+            result[canonical_name] = result[canonical_name].union(aliases)
 
+        for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES.items():
+            # TODO: remove this when no longer needed
+            result[canonical_name] = result[canonical_name].union(aliases)
 
-def assert_no_contradictions(canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> None:
-    seen_aliases = set()
-    for canonical_name, aliases in canonical_contig_name_to_aliases.items():
-        if seen_aliases.intersection(aliases):
+        return dict(result)
+
+    @classmethod
+    def assert_no_contradictions(cls, canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> None:
+        seen_aliases = set()
+        for canonical_name, aliases in canonical_contig_name_to_aliases.items():
+            if seen_aliases.intersection(aliases):
+                error_msg = (
+                    f"Some alias(es) present for more than one contig: "
+                    f"contig={canonical_name}, overlap={seen_aliases.intersection(aliases)}"
+                )
+                raise ValueError(error_msg)
+            else:
+                seen_aliases = seen_aliases.union(aliases)
+
+        total_alias_count = len(set.union(*canonical_contig_name_to_aliases.values()))
+        sum_of_alias_counts = sum(len(aliases) for aliases in canonical_contig_name_to_aliases.values())
+        if total_alias_count != sum_of_alias_counts:
             error_msg = (
-                f"Some alias(es) present for more than one contig: "
-                f"contig={canonical_name}, overlap={seen_aliases.intersection(aliases)}"
+                f"At least one alias present for more than one canonical contig name: "
+                f"total_count={total_alias_count}, sum_of_counts={sum_of_alias_counts}"
             )
             raise ValueError(error_msg)
-        else:
-            seen_aliases = seen_aliases.union(aliases)
 
-    total_alias_count = len(set.union(*canonical_contig_name_to_aliases.values()))
-    sum_of_alias_counts = sum(len(aliases) for aliases in canonical_contig_name_to_aliases.values())
-    if total_alias_count != sum_of_alias_counts:
-        error_msg = (
-            f"At least one alias present for more than one canonical contig name: "
-            f"total_count={total_alias_count}, sum_of_counts={sum_of_alias_counts}"
+    @classmethod
+    def get_text_for_contig_alias_file(cls, canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> str:
+        alias_canonical_name_pairs = [
+            (alias, canonical_name)
+            for canonical_name, aliases in canonical_contig_name_to_aliases.items()
+            for alias in sorted(aliases)
+        ]
+        contig_alias_text = "\n".join(
+            f"{alias}\t{canonical_name}" for alias, canonical_name in alias_canonical_name_pairs
         )
-        raise ValueError(error_msg)
-
-
-def get_text_for_contig_alias_file(canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> str:
-    alias_canonical_name_pairs = [
-        (alias, canonical_name)
-        for canonical_name, aliases in canonical_contig_name_to_aliases.items()
-        for alias in sorted(aliases)
-    ]
-    contig_alias_text = "\n".join(f"{alias}\t{canonical_name}" for alias, canonical_name in alias_canonical_name_pairs)
-    return contig_alias_text
+        return contig_alias_text
