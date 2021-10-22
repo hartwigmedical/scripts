@@ -13,6 +13,7 @@ main() {
   disksize="200GB"  # default argument
   vm_type="n1-standard"  # default argument
   pre_emptible_arg=""  # default argument
+  startup_script_arg=""  # default argument
 
   UNRECOGNIZED=()
   while [[ $# -gt 0 ]]
@@ -30,6 +31,8 @@ main() {
         vm_type="$1" && shift;;
       -e|--preemptible)  # optional
         pre_emptible_arg="-e";;
+      -s|--startupscript)  # optional
+        startup_script_arg="-d $1" && shift;;
       *)
         UNRECOGNIZED+=("${key}");;
     esac
@@ -42,7 +45,8 @@ main() {
   latest_image=$(gcloud --project="${IMAGE_PROJECT}" compute images describe-from-family "base-image" | grep name | cut -d" " -f2) \
         || die "Unable to describe-from-family from project ${IMAGE_PROJECT}"
 
-  make_vm -n "${name}" -m "${vm_type}-${corecount}" -i "${latest_image}" -p "${IMAGE_PROJECT}" -s "${disksize}" ${pre_emptible_arg}
+  make_vm -n "${name}" -m "${vm_type}-${corecount}" -i "${latest_image}" -p "${IMAGE_PROJECT}" \
+        -s "${disksize}" ${pre_emptible_arg} ${startup_script_arg}
 }
 
 main "$@"
