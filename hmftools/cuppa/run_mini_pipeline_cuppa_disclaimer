@@ -20,6 +20,9 @@ if [[ -d ${run_dir} ]]; then
     rm -r ${run_dir}
 fi
 
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r ${orig_run_dir} ${run_dir}
+
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # To correct for the missing SIG data - see also DEV-2196
