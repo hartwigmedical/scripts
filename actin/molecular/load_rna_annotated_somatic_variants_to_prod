@@ -20,7 +20,7 @@ somatic_vcf=$(locate_rna_annotated_somatic_variants ${run_dir})
 patient_db_jar=$(locate_prod_patient_db)
 
 # Database details
-database="hmfpatients_pilot"
+database="hmfpatients"
 credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")

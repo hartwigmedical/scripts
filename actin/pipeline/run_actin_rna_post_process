@@ -18,5 +18,5 @@ fi
 download_rna_bam_to_run_dir ${run_dir}
 if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     annotate_somatic_variants_with_rna ${run_dir}
-    load_rna_annotated_somatic_variants_to_pilot ${run_dir}
+    load_rna_annotated_somatic_variants_to_prod ${run_dir}
 fi
