@@ -10,13 +10,13 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 download_isofox_to_run_dir ${run_dir}
-if [[ -d ${run_dir}/isofox ]]; then
+if [[ -d "${run_dir}/isofox" ]]; then
     run_cuppa_dna_rna_prod ${run_dir}
     generate_cup_dna_rna_report_pipeline ${run_dir}
 fi
 
 download_rna_bam_to_run_dir ${run_dir}
-if [[ -d $(locate_rna_bam_directory ${run_dir}) ]]; then
+if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     annotate_somatic_variants_with_rna ${run_dir}
     load_rna_annotated_somatic_variants_to_pilot ${run_dir}
 fi
