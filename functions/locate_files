@@ -195,8 +195,8 @@ locate_actin_clinical_directory() {
     echo "/data/actin/clinical"
 }
 
-locate_actin_genomic_directory() {
-    echo "/data/actin/genomic"
+locate_actin_molecular_directory() {
+    echo "/data/actin/molecular"
 }
 
 locate_actin_reports_directory() {
