@@ -11,8 +11,8 @@ fi
 
 clinical_json="$(locate_actin_clinical_directory)/${sample}.clinical.json"
 
-genomic_dir="$(locate_actin_molecular_directory)/${sample}"
-molecular_json=$(locate_orange_json ${genomic_dir})
+molecular_dir="$(locate_actin_molecular_directory)/${sample}"
+molecular_json=$(locate_orange_json ${molecular_dir})
 
 if [[ -z "${molecular_json}" ]]; then
     molecular_json=$(locate_actin_minimal_molecular_json)
