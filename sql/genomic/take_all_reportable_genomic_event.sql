@@ -2,7 +2,7 @@ select sampleId, fitMethod, qcStatus, purity from purity where sampleId = "XXX";
 select * from driverCatalog where sampleId = "XXX";
 select * from svFusion where sampleId = "XXX" and reported = 1;
 select * from svBreakend where sampleId = "XXX"  and reportedDisruption = 1;
-select * from virusBreakend where sampleId = "XXX";
+select * from virusAnnotation where sampleId = "XXX" and reported = 1;
 select * from peachGenotype where sampleId = "XXX";
 select * from chord where sampleId = "XXX";
 select sampleId, msIndelsPerMb, msStatus from purity where sampleId = "XXX";
