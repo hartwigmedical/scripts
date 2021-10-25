@@ -7,10 +7,10 @@ create_or_cleanup_dir() {
     if [[ -d "${dir}" ]]; then
         if [[ "$(ls -A ${dir})" ]]; then
             info "Dir '${dir}' exists and will be cleaned"
-            rm -r ${dir}/*
+            rm -r "${dir}/*"
         fi
     else
-        mkdir -p ${dir}
+        mkdir -p "${dir}"
         info "Dir created: '${dir}'"
     fi
 }
