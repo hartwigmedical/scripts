@@ -195,8 +195,8 @@ locate_actin_clinical_curation_directory() {
     echo "/data/resources/custom/actin/clinical_curation"
 }
 
-locate_actin_treatment_config_directory() {
-    echo "/data/resources/custom/actin/treatment_config"
+locate_actin_trial_config_directory() {
+    echo "/data/resources/custom/actin/trial_config"
 }
 
 locate_actin_clinical_directory() {
