@@ -9,6 +9,6 @@ if [[ -z "${source_file}" || -z "${target_file}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-target_dir="/data/resources/custom/actin/treatment"
+target_dir="/data/resources/custom/actin/treatment_config"
 
 do_update_actin_resource_file "${source_file}" "${target_file}" "${target_dir}"
