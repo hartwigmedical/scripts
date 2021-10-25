@@ -137,7 +137,7 @@ java -jar ${patient_reporter_jar} \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
     -virus_interpretation_tsv ${virus_interpretation_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
-    -override_pipeline_version xx \
+    -override_pipeline_version \
     -only_create_pdf \
     -output_dir_data ${output_dir_data} \
     "$@"
