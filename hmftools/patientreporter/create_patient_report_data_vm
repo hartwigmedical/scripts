@@ -6,7 +6,26 @@ source lims_functions || exit 1
 source message_functions || exit 1
 source api_functions || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+orig_run_dir=/data/datasets/${sample}
+
+if [[ ! -d ${orig_run_dir} ]]; then
+    error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
+fi
+
+run_dir=${HOME}/dataset_copy/${sample}
+if [[ -d ${run_dir} ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r ${run_dir}
+fi
+
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r ${orig_run_dir} ${run_dir}
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
@@ -76,6 +95,12 @@ signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.p
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
+output_dir_data=${run_dir}/patient_report_prod_data
+if [[ ! -d "${output_dir_data}" ]]; then
+    info "${output_dir_data} does not exist yet, creating..."
+    mkdir ${output_dir_data}
+fi
+
 java -jar ${patient_reporter_jar} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -114,4 +139,5 @@ java -jar ${patient_reporter_jar} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
     -override_pipeline_version xx \
     -only_create_pdf \
+    -output_dir_data ${output_dir_data} \
     "$@"
