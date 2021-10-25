@@ -9,7 +9,7 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_clinical_directory)/${sample}.clinical.json"
+clinical_json="$(locate_actin_clinical_json ${sample})"
 
 molecular_dir="$(locate_actin_molecular_directory)/${sample}"
 molecular_json="$(locate_orange_json ${molecular_dir})"

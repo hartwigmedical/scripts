@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
-sql=${HOME}/hmf/repos/actin/database/src/main/resources/generate_database.sql
+database_sql="${HOME}/hmf/repos/actin/database/src/main/resources/generate_database.sql"
 
-if [[ ! -f "${sql}" ]]; then
+if [[ ! -f "${database_sql}" ]]; then
     error "Could not locate ACTIN sql. Exiting"
 fi
 
-gcloud compute scp ${sql} data-vm-prod-1:/data/resources/custom/actin/sql_database/generate_database.sql
+gcloud compute scp ${database_sql} data-vm-prod-1:$(locate_actin_database_sql_script)

@@ -183,6 +183,10 @@ locate_peach_main() {
 
 #################################### ACTIN #####################################
 
+locate_actin_database_sql_script() {
+    echo "/data/resources/custom/actin/sql_database/generate_database.sql"
+}
+
 locate_actin_clinical_feed_directory() {
     echo "/data/resources/custom/actin/ehr_data_dump/actin_ehr_dump"
 }
@@ -191,8 +195,28 @@ locate_actin_clinical_curation_directory() {
     echo "/data/resources/custom/actin/clinical_curation"
 }
 
+locate_actin_treatment_config_directory() {
+    echo "/data/resources/custom/actin/treatment_config"
+}
+
 locate_actin_clinical_directory() {
     echo "/data/actin/clinical"
+}
+
+locate_actin_clinical_json() {
+    local sample=$1 && shift
+    local clinical_dir=$(locate_actin_clinical_directory)
+
+    if [[ ! -d "${clinical_dir}" ]]; then
+        error "Unable to locate ACTIN clinical directory"
+    fi
+
+    local clinical_json="${clinical_dir}/${sample}.clinical.json"
+    if [[ ! -f ${clinical_json} ]]; then
+        error "Could not locate clinical json for sample '${sample}'"
+    fi
+
+    echo "${clinical_json}"
 }
 
 locate_actin_molecular_directory() {
@@ -201,6 +225,10 @@ locate_actin_molecular_directory() {
 
 locate_actin_reports_directory() {
     echo "/data/actin/reports"
+}
+
+locate_actin_treatment_directory() {
+    echo "/data/resources/custom/actin/treatment"
 }
 
 locate_actin_minimal_molecular_json() {

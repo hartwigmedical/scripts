@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source database_functions || exit 1
+source locate_files || exit 1
 
 actin_database_name=$1 && shift
 
@@ -10,7 +11,7 @@ if [[ -z "${actin_database_name}" ]]; then
 fi
 
 # Resources
-actin_database_sql=/data/resources/custom/actin/sql_database/generate_database.sql
+actin_database_sql=$(locate_actin_database_sql_script)
 
 # Database details
 credentials=$(prod_writer_sql_credentials)

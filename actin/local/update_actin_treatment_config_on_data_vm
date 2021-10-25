@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dir=$HOME/Downloads
+dir="${HOME}/Downloads"
 
 prefix="EMC Trial Database"
 
