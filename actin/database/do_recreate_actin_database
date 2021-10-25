@@ -11,7 +11,7 @@ if [[ -z "${actin_database_name}" ]]; then
 fi
 
 # Resources
-actin_database_sql=$(locate_actin_database_sql_script)
+actin_database_sql="$(locate_actin_database_sql_script)"
 
 # Database details
 credentials=$(prod_writer_sql_credentials)

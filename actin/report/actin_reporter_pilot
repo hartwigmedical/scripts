@@ -11,7 +11,7 @@ fi
 
 clinical_json="$(locate_actin_clinical_json ${sample})"
 
-molecular_dir="$(locate_actin_molecular_directory)/${sample}"
+molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
 molecular_json="$(locate_orange_json ${molecular_dir})"
 
 if [[ -z "${molecular_json}" ]]; then

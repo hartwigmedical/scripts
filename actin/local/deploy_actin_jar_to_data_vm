@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
-actin_jar=${HOME}/hmf/repos/actin/system/target/system-*-jar-with-dependencies.jar
+version="0.1"
+actin_jar="${HOME}/hmf/repos/actin/system/target/system-${version}-jar-with-dependencies.jar"
 
 #info "Copying ${actin_jar} to gs://common-tools/"
 #gsutil cp ${actin_jar} gs://common-tools/actin/pilot/actin.jar
 
 info "Copying ${actin_jar} to data-vm-prod-1"
-gcloud compute scp ${actin_jar} data-vm-prod-1:/data/tools/actin/pilot/actin.jar
+gcloud compute scp ${actin_jar} data-vm-prod-1:$(locate_pilot_actin)

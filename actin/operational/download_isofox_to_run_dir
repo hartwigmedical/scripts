@@ -13,9 +13,9 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 rna_analysis_bucket=$(locate_rna_analysis_bucket ${tumor_sample})
-if [[ ! -z ${rna_analysis_bucket} ]]; then
+if [[ ! -z "${rna_analysis_bucket}" ]]; then
     info "Downloading isofox to ${run_dir}/isofox"
-    gsutil -m cp -r ${rna_analysis_bucket}/isofox ${run_dir}/
+    gsutil -m cp -r "${rna_analysis_bucket}/isofox" "${run_dir}/"
 else
     warn "Could not locate RNA analysis bucket for ${tumor_sample}. RNA pipeline not run yet?"
 fi

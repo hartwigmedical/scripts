@@ -208,7 +208,7 @@ locate_actin_clinical_json() {
     local clinical_dir=$(locate_actin_clinical_directory)
 
     if [[ ! -d "${clinical_dir}" ]]; then
-        error "Unable to locate ACTIN clinical directory"
+        error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
     fi
 
     local clinical_json="${clinical_dir}/${sample}.clinical.json"
@@ -221,6 +221,22 @@ locate_actin_clinical_json() {
 
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
+}
+
+locate_actin_molecular_directory_for_sample() {
+    local sample=$1 && shift
+    local molecular_dir=$(locate_actin_molecular_directory)
+
+    if [[ ! -d "${molecular_dir}" ]]; then
+        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
+    fi
+
+    local molecular_sample_dir="${molecular_dir}/${sample}"
+    if [[ ! -d ${molecular_sample_dir} ]]; then
+        error "Could not locate molecular dir for sample '${sample}'"
+    fi
+
+    echo "${molecular_sample_dir}"
 }
 
 locate_actin_reports_directory() {
