@@ -181,7 +181,7 @@ locate_peach_main() {
     echo "$(locate_repo_dir "peach")/peach"
 }
 
-#################################### ACTIN #####################################
+############################## ACTIN Resources #################################
 
 locate_actin_database_sql_script() {
     echo "/data/resources/custom/actin/sql_database/generate_database.sql"
@@ -198,6 +198,16 @@ locate_actin_clinical_curation_directory() {
 locate_actin_trial_config_directory() {
     echo "/data/resources/custom/actin/trial_config"
 }
+
+locate_actin_treatment_directory() {
+    echo "/data/resources/custom/actin/treatment"
+}
+
+locate_actin_minimal_molecular_json() {
+    echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
+}
+
+################################# ACTIN Data ###################################
 
 locate_actin_clinical_directory() {
     echo "/data/actin/clinical"
@@ -239,16 +249,12 @@ locate_actin_molecular_directory_for_sample() {
     echo "${molecular_sample_dir}"
 }
 
+locate_actin_algo_directory() {
+    echo "/data/actin/algo"
+}
+
 locate_actin_reports_directory() {
     echo "/data/actin/reports"
-}
-
-locate_actin_treatment_directory() {
-    echo "/data/resources/custom/actin/treatment"
-}
-
-locate_actin_minimal_molecular_json() {
-    echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
 }
 
 ##################################### RNA ######################################
