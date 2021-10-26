@@ -32,6 +32,9 @@ main() {
       peach_main="$1" && shift
       optional_peach_args+=("--main ${peach_main}")  # Optional argument
       ;;
+      -v|--venv)
+      optional_peach_args+=("--venv $1") && shift  # Optional argument
+      ;;
       -p|--panel)
       panel_name="$1" && shift
       optional_peach_args+=("--panel ${panel_name}")  # Optional argument
