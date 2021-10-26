@@ -17,10 +17,9 @@ main() {
   local key
   local base_dir
   local peach_main
-  local optional_peach_main_arg
   local panel_name
-  local optional_panel_arg
-  local optional_reference_assembly_version_arg
+  local optional_peach_args
+  local unrecognized_options
 
   while [[ $# -gt 0 ]]
   do
@@ -31,17 +30,17 @@ main() {
       ;;
       -m|--main)
       peach_main="$1" && shift
-      optional_peach_main_arg=" --main ${peach_main}"  # Optional argument
+      optional_peach_args+=("--main ${peach_main}")  # Optional argument
       ;;
       -p|--panel)
       panel_name="$1" && shift
-      optional_panel_arg=" --panel ${panel_name}"  # Optional argument
+      optional_peach_args+=("--panel ${panel_name}")  # Optional argument
       ;;
       -a|--vcf_reference_assembly_version)
-      optional_reference_assembly_version_arg=" --vcf_reference_assembly_version $1" && shift  # Optional argument
+      optional_peach_args+=("--vcf_reference_assembly_version $1") && shift  # Optional argument
       ;;
       *)    # Unknown option
-      OTHER_OPTIONS+=("$key") # Save it in an array for later
+      unrecognized_options+=("$key") # Save it in an array for later
       ;;
   esac
   done
@@ -53,26 +52,16 @@ main() {
   if [[ -z ${peach_main} ]]; then
     peach_main=""
   fi
-  if [[ -z ${optional_peach_main_arg} ]]; then
-    optional_peach_main_arg=""
-  fi
   if [[ -z ${panel_name} ]]; then
     panel_name=""
   fi
-  if [[ -z ${optional_panel_arg} ]]; then
-    optional_panel_arg=""
-  fi
-  if [[ -z ${optional_reference_assembly_version_arg} ]]; then
-    optional_reference_assembly_version_arg=""
-  fi
   
   # Sanity checks
-  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+  [[ "${#unrecognized_options[@]}" -eq 0 ]] || die "Unrecognized options! : ${unrecognized_options[*]}"
   [[ -d ${base_dir} ]] || die "base_dir should be a dir: ${base_dir}."
   
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${base_dir}" "${optional_panel_arg}" \
-      "${optional_peach_main_arg}" "${optional_reference_assembly_version_arg}" \
+  run_peach_pilot_on_subdirs "${base_dir}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
@@ -84,10 +73,7 @@ main() {
 
 run_peach_pilot_on_subdirs() {
   local base_dir=$1 && shift
-  local optional_panel_arg=$1 && shift
-  local optional_recreate_bed_arg=$1 && shift
-  local optional_peach_main_arg=$1 && shift
-  local optional_reference_assembly_version_arg=$1 && shift
+  optional_peach_args=("$@")
 
   if [[ -z "${base_dir}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
@@ -95,9 +81,7 @@ run_peach_pilot_on_subdirs() {
 
   info "Subdirs: $(ls "${base_dir}")"
   find "${base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
-      run_peach_pilot --rundir {} \
-      ${optional_panel_arg} ${optional_recreate_bed_arg} \
-      ${optional_peach_main_arg} ${optional_reference_assembly_version_arg} \
+      run_peach_pilot --rundir {} "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
 
