@@ -92,23 +92,23 @@ else
     report_source="manual"
 fi
 
-reporting_id=$(extract_reporting_id ${barcode} ${report_type} "pilot")
+reporting_id=$(extract_reporting_id ${barcode} ${report_type} "prod")
 
 ## check wether report already exists in final bucket
 if [[ ${report} == *"corrected"* ]]; then
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
         warn "See also the record in sharing api:"
-        extract_object_created ${barcode}  ${report_type} "pilot"
-        extract_object_shared ${reporting_id} "pilot"
+        extract_object_created ${barcode}  ${report_type} "prod"
+        extract_object_shared ${reporting_id} "prod"
         exit 1
     fi
 else
     if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
          warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
          warn "See also the record in sharing api:"
-         extract_object_created ${barcode} ${report_type} "pilot"
-         extract_object_shared ${reporting_id} "pilot"
+         extract_object_created ${barcode} ${report_type} "prod"
+         extract_object_shared ${reporting_id} "prod"
          exit 1
     fi
 fi
@@ -141,29 +141,29 @@ fi
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then
-    if [[ $(extract_object_shared ${reporting_id}  "pilot" | wc -l)  == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
       info "A record has been added for ${sample} to sharing api"
-      post_api_sharing_report ${barcode} ${report_type} "pilot"
+      post_api_sharing_report ${barcode} ${report_type} "prod"
       info "Reports shared registration for ${sample}:"
-      extract_object_created ${barcode} ${report_type} "pilot"
-      extract_object_shared ${reporting_id} "pilot"
+      extract_object_created ${barcode} ${report_type} "prod"
+      extract_object_shared ${reporting_id} "prod"
     else
       warn "The report ${report} is already in the sharing api"
-      extract_object_created ${barcode} ${report_type} "pilot"
-      extract_object_shared ${reporting_id} "pilot"
+      extract_object_created ${barcode} ${report_type} "prod"
+      extract_object_shared ${reporting_id} "prod"
       warn "No new record added."
     fi
 else
-    if [[ $(extract_object_shared ${reporting_id} "pilot" | wc -l)  == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"
-         post_api_sharing_report ${barcode} ${report_type} "pilot"
+         post_api_sharing_report ${barcode} ${report_type} "prod"
          info "Reports shared registration for ${sample}:"
-         extract_object_created ${barcode} ${report_type} "pilot"
-         extract_object_shared ${reporting_id} "pilot"
+         extract_object_created ${barcode} ${report_type} "prod"
+         extract_object_shared ${reporting_id} "prod"
     else
         warn "The report ${report} is already in the sharing api"
-        extract_object_created ${barcode} ${report_type} "pilot"
-        extract_object_shared ${reporting_id} "pilot"
+        extract_object_created ${barcode} ${report_type} "prod"
+        extract_object_shared ${reporting_id} "prod"
         warn "No new record added."
     fi
 fi
