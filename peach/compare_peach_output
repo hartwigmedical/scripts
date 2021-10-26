@@ -17,7 +17,7 @@ main() {
   local key
   local base_dir
   local peach_main
-  local panel_name
+  local panel_path
   local optional_peach_args
   local unrecognized_options
 
@@ -36,8 +36,8 @@ main() {
       optional_peach_args+=("--venv" "$1") && shift  # Optional argument
       ;;
       -p|--panel)
-      panel_name="$1" && shift
-      optional_peach_args+=("--panel" "${panel_name}")  # Optional argument
+      panel_path="$1" && shift
+      optional_peach_args+=("--panel" "${panel_path}")  # Optional argument
       ;;
       -a|--vcf_reference_assembly_version)
       optional_peach_args+=("--vcf_reference_assembly_version" "$1") && shift  # Optional argument
@@ -55,8 +55,8 @@ main() {
   if [[ -z ${peach_main} ]]; then
     peach_main=""
   fi
-  if [[ -z ${panel_name} ]]; then
-    panel_name=""
+  if [[ -z ${panel_path} ]]; then
+    panel_path=""
   fi
   
   # Sanity checks
@@ -68,6 +68,7 @@ main() {
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
+  local panel_name="${panel_path##*/}"
   compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" \
       || die "Could not compare PEACH output to control"
   

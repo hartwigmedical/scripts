@@ -17,7 +17,7 @@ main() {
   local run_dir
   local peach_main
   local venv_dir
-  local panel_name
+  local panel_path
   local optional_reference_assembly_version_arg
 
   while [[ $# -gt 0 ]]
@@ -34,7 +34,7 @@ main() {
       venv_dir="$1" && shift  # Optional argument
       ;;
       -p|--panel)
-      panel_name="$1" && shift  # Optional argument
+      panel_path="$1" && shift  # Optional argument
       ;;
       -a|--vcf_reference_assembly_version)
       optional_reference_assembly_version_arg=" --vcf_reference_assembly_version $1" && shift  # Optional argument
@@ -52,8 +52,10 @@ main() {
   if [[ -z ${venv_dir} ]]; then
     venv_dir=$(locate_peach_venv_dir) || die "Could not get default PEACH venv dir"
   fi
-  if [[ -z ${panel_name} ]]; then
-    panel_name="${MINIMAL_DPYD_PANEL_NAME}"
+  if [[ -z ${panel_path} ]]; then
+    local peach_resource_dir
+    peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
+    local panel_path="${peach_resource_dir}/panelfiles/${MINIMAL_DPYD_PANEL_NAME}"
   fi
   if [[ -z ${optional_reference_assembly_version_arg} ]]; then
     optional_reference_assembly_version_arg=""
@@ -66,6 +68,7 @@ main() {
   [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
 
   # Get argument values
+  local panel_name="${panel_path##*/}"
   local output_dir
   output_dir=$(get_output_dir "${run_dir}" "${panel_name}") || die "Could not get output dir"
   local peach_version
@@ -76,13 +79,10 @@ main() {
   tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
   local germline_vcf
   germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
-  local peach_resource_dir
-  peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
-  local panel_file="${peach_resource_dir}/panelfiles/${panel_name}"
 
   # Check input file existence
   [[ -f ${germline_vcf} ]] || die "Germline vcf could not be found"
-  [[ -f ${panel_file} ]] || die "Panel file could not be found"
+  [[ -f ${panel_path} ]] || die "Panel file could not be found"
 
   # Start virtual venv
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
@@ -103,7 +103,7 @@ main() {
       "--sample_r_id" "${ref_sample}" \
       "--tool_version" "${peach_version}" \
       "--outputdir" "${output_dir}"  \
-      "--panel" "${panel_file}" \
+      "--panel" "${panel_path}" \
       ${optional_reference_assembly_version_arg} \
       || die "PEACH pilot failed"
 
