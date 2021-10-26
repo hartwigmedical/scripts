@@ -40,13 +40,11 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s"' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
 if [[ -z ${run_id} ]];then
-  data=$(echo ${data} "}")
+  data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s"}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
 else
-  run_id_format=$(printf ',"%s": %s}' "run_id" "${run_id}")
-  data=$(echo ${data} ${run_id_format})
+  data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": %s}' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}" "run_id" "${run_id}")
 fi
 
 echo ${data}
