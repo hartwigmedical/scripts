@@ -16,7 +16,6 @@ main() {
   # Parse args
   local key
   local base_dir
-  local original
   local peach_main
   local optional_peach_main_arg
   local panel_name
@@ -38,9 +37,6 @@ main() {
       panel_name="$1" && shift
       optional_panel_arg=" --panel ${panel_name}"  # Optional argument
       ;;
-      -o|--original)
-      original=true  # Optional argument
-      ;;
       -a|--vcf_reference_assembly_version)
       optional_reference_assembly_version_arg=" --vcf_reference_assembly_version $1" && shift  # Optional argument
       ;;
@@ -53,9 +49,6 @@ main() {
   # Default values for arguments
   if [[ -z ${base_dir} ]]; then
     base_dir="/data/experiments/peach/test_runs"
-  fi
-  if [[ -z ${original} ]]; then
-    original=false
   fi
   if [[ -z ${peach_main} ]]; then
     peach_main=""
@@ -83,7 +76,7 @@ main() {
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
-  compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" "${original}" \
+  compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" \
       || die "Could not compare PEACH output to control"
   
   info "Finished ${SCRIPT_NAME}"
@@ -111,9 +104,8 @@ run_peach_pilot_on_subdirs() {
 compare_peach_pilot_output_to_control() {
   local base_dir=$1 && shift
   local panel_name=$1 && shift
-  local original=$1 && shift
 
-  if [[ -z "${original}" ]]; then
+  if [[ -z "${panel_name}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
@@ -124,7 +116,7 @@ compare_peach_pilot_output_to_control() {
         local output_dir
         output_dir=$(get_output_dir "${subdir}" "${panel_name}") || die "Could not get output dir"
         local control_dir
-        control_dir=$(get_control_dir "${subdir}" "${panel_name}" "${original}") || die "Could not get control dir"
+        control_dir=$(get_control_dir "${subdir}" "${panel_name}") || die "Could not get control dir"
 
         compare_directory_contents "${output_dir}" "${control_dir}" || die "Could not compare directory contents"
       else
@@ -197,21 +189,15 @@ get_output_dir() {
 get_control_dir() {
   local subdir=$1 && shift
   local panel_name=$1 && shift
-  local original=$1 && shift
 
-  if [[ -z "${original}" ]]; then
+  if [[ -z "${panel_name}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
   local output_dir_name
   output_dir_name=$(get_output_dir_name "${panel_name}") || die "Could not get output dir name"
 
-  local control_dir
-  if [ ${original} = true ] ; then
-      control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
-  else
-      control_dir="${subdir}/${output_dir_name}_control"
-  fi
+  local control_dir="${subdir}/${output_dir_name}_control"
 
   echo "${control_dir}"
 }
