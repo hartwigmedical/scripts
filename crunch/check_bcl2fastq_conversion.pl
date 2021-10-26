@@ -267,7 +267,7 @@ sub checkObjectField{
         my $obj = $objects->{$obj_key};
         my $name = $obj->{'name'};
         next if $name eq 'UNDETERMINED';
-        next if $name =~ /^VirtualSample\d+/;
+        next if $name =~ /^VirtualSample/;
         my $value = 0;
         $value = $obj->{$field} if exists $obj->{$field};
         if ( $value < $min ){
