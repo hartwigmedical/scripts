@@ -30,17 +30,17 @@ main() {
       ;;
       -m|--main)
       peach_main="$1" && shift
-      optional_peach_args+=("--main ${peach_main}")  # Optional argument
+      optional_peach_args+=("--main" "${peach_main}")  # Optional argument
       ;;
       -v|--venv)
-      optional_peach_args+=("--venv $1") && shift  # Optional argument
+      optional_peach_args+=("--venv" "$1") && shift  # Optional argument
       ;;
       -p|--panel)
       panel_name="$1" && shift
-      optional_peach_args+=("--panel ${panel_name}")  # Optional argument
+      optional_peach_args+=("--panel" "${panel_name}")  # Optional argument
       ;;
       -a|--vcf_reference_assembly_version)
-      optional_peach_args+=("--vcf_reference_assembly_version $1") && shift  # Optional argument
+      optional_peach_args+=("--vcf_reference_assembly_version" "$1") && shift  # Optional argument
       ;;
       *)    # Unknown option
       unrecognized_options+=("$key") # Save it in an array for later
