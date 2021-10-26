@@ -156,10 +156,11 @@ if [[ "${sample:0:6}" -eq "COREDB01" ]]; then
 fi
 
 ### Patch reporting created endpoint
+api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
 echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 read answer
 if [[ $answer == 'Y' ]]; then
-  post_api_created_report ${api} ${sample}
+  post_api_created_report ${api_update_json} ${sample}
 fi
 
 echo ""
