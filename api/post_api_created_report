@@ -7,7 +7,7 @@ api_json=$1 && shift
 sample_name=$1 && shift
 
 run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
-json_file=$( cat ${api_json})
+json_file=$( gsutil cat ${api_json})
 has_reliable_purity=$( echo ${json_file} | jq .has_reliable_purity)
 sample_barcode=$(echo ${json_file} | jq .barcode)
 
