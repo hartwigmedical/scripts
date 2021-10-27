@@ -4,7 +4,7 @@ get_primary_tumor_doids_for_sample() {
     local sample=$1
     local api_request="samples?name=${sample}&type=tumor"
 
-    hmf_api_get ${api_request} | jq -r '.[-1].primary_tumor_doids | join(",")'
+    hmf_api_get ${api_request} | jq -r '.[-1].primary_tumor_doids | join(";")'
 }
 
 locate_analysis_bucket() {
