@@ -16,6 +16,14 @@ report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
+if [[  ${has_reliable_purity} == "N/A" ]]; then
+  has_reliable_purity=false
+fi
+
+if [[  ${has_reliable_quality} == "N/A" ]]; then
+  has_reliable_quality=false
+fi
+
 ## check report is manual or automatically generated
 url_bucket_report_auto="gs://patient-reporter-prod-1/"
 url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
