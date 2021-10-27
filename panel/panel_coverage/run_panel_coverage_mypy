@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+DIR_NAME="$(dirname "$0")" || exit 1
+
+export MYPYPATH="${MYPYPATH}:${DIR_NAME}"
+mypy "${DIR_NAME}" --config-file "${DIR_NAME}/mypy.ini" --namespace-packages --explicit-package-bases || exit 1
