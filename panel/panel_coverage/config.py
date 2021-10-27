@@ -10,8 +10,8 @@ class ProgramConfig(NamedTuple):
     output_dir: Path
     samtools: Path
     working_dir: Path
-    min_coverages: Tuple[int]
-    bams: Tuple[Path]
+    min_coverages: Tuple[int, ...]
+    bams: Tuple[Path, ...]
 
 
 class PanelFileConfig(NamedTuple):
@@ -46,10 +46,10 @@ class AnalysisTypeConfig(NamedTuple):
 
 
 class Panel(NamedTuple):
-    baf_sites: Tuple[BafSite]
-    exons: Tuple[Exon]
-    fusion_sites: Tuple[FusionSite]
-    hotspots: Tuple[Position]
-    msi_sites: Tuple[MsiSite]
-    pgx_sites: Tuple[PgxSite]
+    baf_sites: Tuple[BafSite, ...]
+    exons: Tuple[Exon, ...]
+    fusion_sites: Tuple[FusionSite, ...]
+    hotspots: Tuple[Position, ...]
+    msi_sites: Tuple[MsiSite, ...]
+    pgx_sites: Tuple[PgxSite, ...]
     tert_site: Interval

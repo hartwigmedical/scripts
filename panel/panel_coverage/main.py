@@ -71,7 +71,7 @@ def parse_args(sys_args: List[str]) -> ProgramConfig:
     args = parser.parse_args(sys_args)
 
     sorted_min_coverages: List[int] = sorted(args.min_coverage)
-    sorted_bams: List[str] = sorted(args.bam)
+    sorted_bams: List[Path] = sorted(args.bam)
     config = ProgramConfig(
         args.panel_config_dir,
         args.output_dir,

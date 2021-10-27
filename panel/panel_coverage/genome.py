@@ -109,7 +109,7 @@ class Exome(object):
         exome_df = exome_df.reset_index(drop=True)
         return Exome(exome_df)
 
-    def get_exons(self, gene_list: Tuple[str]) -> Tuple[Exon]:
+    def get_exons(self, gene_list: Tuple[str, ...]) -> Tuple[Exon, ...]:
         relevant_df = self.df[self.df[self.GENE_NAME].isin(gene_list)]
         result = {
             Exon(gene, gene_id, exon_id, Interval(chrom, int(exon_start), int(exon_end)))

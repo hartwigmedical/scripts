@@ -70,7 +70,7 @@ def get_coverage_intervals(analysis_type_config: AnalysisTypeConfig, panel: Pane
 def write_analyses(
         sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
         analysis_type_config: AnalysisTypeConfig,
-        min_coverages: Tuple[int],
+        min_coverages: Tuple[int, ...],
         panel: Panel,
         output_dir: Path,
 ) -> None:
@@ -113,6 +113,6 @@ def write_analyses(
 
 
 def create_depth_file(samtools: Path, bam: Path, depth_file: Path) -> None:
-    cli_args = [samtools, "depth", "-s", bam]
+    cli_args = [str(samtools), "depth", "-s", str(bam)]
     with open(depth_file, "w") as depth_f:
         subprocess.run(cli_args, stdout=depth_f)

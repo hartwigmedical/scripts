@@ -12,7 +12,7 @@ class OutputWriter(object):
     def write_baf_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            baf_sites_list: Tuple[BafSite],
+            baf_sites_list: Tuple[BafSite, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started BAF point coverage analysis")
@@ -53,7 +53,7 @@ class OutputWriter(object):
     def write_exome_count_min_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             min_coverage: int,
             output_dir: Path,
     ) -> None:
@@ -90,7 +90,7 @@ class OutputWriter(object):
     def write_exome_cumulative_coverage_analysis(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started exome cumulative coverage analysis")
@@ -126,7 +126,7 @@ class OutputWriter(object):
     def write_fusion_count_min_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            fusion_sites_list: Tuple[FusionSite],
+            fusion_sites_list: Tuple[FusionSite, ...],
             min_coverage: int,
             output_dir: Path,
     ) -> None:
@@ -170,7 +170,7 @@ class OutputWriter(object):
     def write_fusion_cumulative_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            fusion_sites_list: Tuple[FusionSite],
+            fusion_sites_list: Tuple[FusionSite, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started fusion cumulative coverage analysis")
@@ -213,7 +213,7 @@ class OutputWriter(object):
     def write_hotspot_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            hotspot_list: Tuple[Position],
+            hotspot_list: Tuple[Position, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started hotspot coverage analysis")
@@ -248,7 +248,7 @@ class OutputWriter(object):
     def write_msi_count_min_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            msi_sites_list: Tuple[MsiSite],
+            msi_sites_list: Tuple[MsiSite, ...],
             min_coverage: int,
             output_dir: Path,
     ) -> None:
@@ -299,7 +299,7 @@ class OutputWriter(object):
     def write_msi_cumulative_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            msi_sites_list: Tuple[MsiSite],
+            msi_sites_list: Tuple[MsiSite, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started msi cumulative coverage analysis")
@@ -349,7 +349,7 @@ class OutputWriter(object):
     def write_pgx_count_min_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            pgx_sites_list: Tuple[PgxSite],
+            pgx_sites_list: Tuple[PgxSite, ...],
             min_coverage: int,
             output_dir: Path,
     ) -> None:
@@ -392,7 +392,7 @@ class OutputWriter(object):
     def write_pgx_cumulative_coverage_file(
             cls,
             sample_with_coverage_info_list: List[Tuple[str, CoverageInfo]],
-            pgx_sites_list: Tuple[PgxSite],
+            pgx_sites_list: Tuple[PgxSite, ...],
             output_dir: Path,
     ) -> None:
         logging.info("Started pgx cumulative coverage analysis")
@@ -514,7 +514,7 @@ class OutputWriter(object):
             cls,
             sample_to_exon_to_cumulative_coverage: Dict[str, Dict[Exon, int]],
             samples: List[str],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             exon_coverage_output_file: str,
     ) -> None:
         sorted_exons = cls.__get_sorted_exons(exons)
@@ -543,7 +543,7 @@ class OutputWriter(object):
             cls,
             sample_to_exon_to_min_coverage_count: Dict[str, Dict[Exon, int]],
             samples: List[str],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             exon_coverage_output_file: str,
     ) -> None:
         sorted_exons = cls.__get_sorted_exons(exons)
@@ -572,7 +572,7 @@ class OutputWriter(object):
             cls,
             sample_to_gene_to_cumulative_coverage: Dict[str, Dict[str, int]],
             samples: List[str],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             gene_coverage_output_file: str,
     ) -> None:
         sorted_genes = cls.__get_sorted_genes(exons)
@@ -594,7 +594,7 @@ class OutputWriter(object):
             cls,
             sample_to_gene_to_min_coverage_count: Dict[str, Dict[str, int]],
             samples: List[str],
-            exons: Tuple[Exon],
+            exons: Tuple[Exon, ...],
             gene_coverage_output_file: str,
     ) -> None:
         sorted_genes = cls.__get_sorted_genes(exons)
@@ -616,26 +616,26 @@ class OutputWriter(object):
             cls,
             sample_to_exon_to_integer: Dict[str, Dict[Exon, int]]
     ) -> Dict[str, Dict[str, int]]:
-        sample_to_gene_to_integer: Dict[str, DefaultDict[str, int]] = {}
+        sample_to_gene_to_integer: Dict[str, Dict[str, int]] = {}
         for sample, exon_to_integer in sample_to_exon_to_integer.items():
             gene_to_integer: DefaultDict[str, int] = defaultdict(int)
             for exon, integer in exon_to_integer.items():
                 gene_to_integer[exon.gene] += integer
 
-            sample_to_gene_to_integer[sample] = gene_to_integer
+            sample_to_gene_to_integer[sample] = dict(gene_to_integer)
         return sample_to_gene_to_integer
 
     @classmethod
-    def __get_sorted_genes(cls, exons: Tuple[Exon]) -> List[str]:
+    def __get_sorted_genes(cls, exons: Tuple[Exon, ...]) -> List[str]:
         return sorted(list({exon.gene for exon in exons}))
 
     @classmethod
-    def __get_gene_to_total_exons_length(cls, exons: Tuple[Exon]) -> Dict[str, int]:
+    def __get_gene_to_total_exons_length(cls, exons: Tuple[Exon, ...]) -> Dict[str, int]:
         gene_to_total_exons_length: DefaultDict[str, int] = defaultdict(int)
         for exon in exons:
             gene_to_total_exons_length[exon.gene] += exon.interval.end_position - exon.interval.start_position + 1
         return gene_to_total_exons_length
 
     @classmethod
-    def __get_sorted_exons(cls, exons: Tuple[Exon]) -> List[Exon]:
+    def __get_sorted_exons(cls, exons: Tuple[Exon, ...]) -> List[Exon]:
         return sorted(list(exons), key=lambda x: (x.interval.chromosome, x.interval.start_position))

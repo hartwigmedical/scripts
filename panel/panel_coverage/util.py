@@ -23,7 +23,7 @@ class CoverageInfo(object):
 def parallel_get_sample_to_coverage_info(
         sample_to_depth_file: Dict[str, Path],
         intervals: Set[Interval],
-        min_coverages: Tuple[int],
+        min_coverages: Tuple[int, ...],
 ) -> Dict[str, CoverageInfo]:
     logging.info("Before coverage_info process pool")
     with ProcessPoolExecutor() as executor:
@@ -40,10 +40,8 @@ def parallel_get_sample_to_coverage_info(
 
 
 def get_coverage_info(
-        depth_file: Path, intervals: Set[Interval], min_coverages: Tuple[int]) -> CoverageInfo:
+        depth_file: Path, intervals: Set[Interval], min_coverages: Tuple[int, ...]) -> CoverageInfo:
     try:
-        min_coverages = sorted(min_coverages)
-
         chrom_to_position_to_intervals = get_chrom_to_position_to_overlapping_intervals(intervals)
 
         interval_to_cumulative_coverage = {interval: 0 for interval in intervals}
@@ -55,7 +53,7 @@ def get_coverage_info(
                 chromosome, position_str, coverage_str = line.split("\t")
                 coverage = int(coverage_str)
                 position = int(position_str)
-                for min_coverage in min_coverages:
+                for min_coverage in sorted(min_coverages):
                     if coverage >= min_coverage:
                         for interval in chrom_to_position_to_intervals.get(chromosome, {}).get(position, []):
                             min_coverage_to_interval_to_count_exceeding[min_coverage][interval] += 1

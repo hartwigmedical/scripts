@@ -18,7 +18,7 @@ class PanelReader(object):
         return panel
 
     @classmethod
-    def __get_baf_sites(cls, config: PanelFileConfig) -> Tuple[BafSite]:
+    def __get_baf_sites(cls, config: PanelFileConfig) -> Tuple[BafSite, ...]:
         with open(config.baf_sites_list) as baf_list_f:
             split_lines = [line.split("\t") for line in baf_list_f.read().split("\n") if line != ""]
         baf_sites_list = [
@@ -34,7 +34,7 @@ class PanelReader(object):
         return tuple(baf_sites_list)
 
     @classmethod
-    def __get_fusion_sites(cls, config: PanelFileConfig) -> Tuple[FusionSite]:
+    def __get_fusion_sites(cls, config: PanelFileConfig) -> Tuple[FusionSite, ...]:
         with open(config.fusion_sites_list) as fusion_list_f:
             split_lines = [line.split("\t") for line in fusion_list_f.read().split("\n") if line != ""]
         fusion_sites_list = [
@@ -50,20 +50,20 @@ class PanelReader(object):
         return tuple(fusion_sites_list)
 
     @classmethod
-    def __get_genes(cls, config: PanelFileConfig) -> Tuple[str]:
+    def __get_genes(cls, config: PanelFileConfig) -> Tuple[str, ...]:
         with open(config.gene_list) as gene_list_f:
             gene_list = [gene for gene in gene_list_f.read().split("\n") if gene != ""]
         return tuple(gene_list)
 
     @classmethod
-    def __get_hotspot(cls, config: PanelFileConfig) -> Tuple[Position]:
+    def __get_hotspot(cls, config: PanelFileConfig) -> Tuple[Position, ...]:
         with open(config.hotspot_list) as hotspot_list_f:
             split_lines = [line.split("\t") for line in hotspot_list_f.read().split("\n") if line != ""]
         hotspot_list = [Position(f"chr{chromosome}", int(position_str)) for chromosome, position_str in split_lines]
         return tuple(hotspot_list)
 
     @classmethod
-    def __get_msi_sites(cls, config: PanelFileConfig) -> Tuple[MsiSite]:
+    def __get_msi_sites(cls, config: PanelFileConfig) -> Tuple[MsiSite, ...]:
         with open(config.msi_sites_list) as msi_list_f:
             split_lines = [line.split("\t") for line in msi_list_f.read().split("\n") if line != ""]
         msi_sites_list = [
@@ -85,14 +85,14 @@ class PanelReader(object):
         return tuple(msi_sites_list)
 
     @classmethod
-    def __get_panel_exons(cls, config: PanelFileConfig) -> Tuple[Exon]:
+    def __get_panel_exons(cls, config: PanelFileConfig) -> Tuple[Exon, ...]:
         all_genes_data = AllGenesData.from_file(config.all_genes_tsv)
         exome = Exome.from_all_genes_data(all_genes_data)
         gene = cls.__get_genes(config)
         return exome.get_exons(gene)
 
     @classmethod
-    def __get_pgx_sites(cls, config: PanelFileConfig) -> Tuple[PgxSite]:
+    def __get_pgx_sites(cls, config: PanelFileConfig) -> Tuple[PgxSite, ...]:
         with open(config.pgx_sites_list) as pgx_list_f:
             split_lines = [line.split("\t") for line in pgx_list_f.read().split("\n") if line != ""]
         pgx_sites_list = [
