@@ -22,7 +22,7 @@ if [[ ${has_reliable_purity} == "N/A" ]]; then
   has_reliable_purity=false
 fi
 
-if [[  echo ${has_reliable_quality} == "N/A" ]]; then
+if [[  ${has_reliable_quality} == "N/A" ]]; then
   has_reliable_quality=false
 fi
 
