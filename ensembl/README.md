@@ -18,7 +18,7 @@ $ source [path/to/new/venv, for example: ./ensembl/bin/activate]
 Remember to source the virtualenv before running `main.py`.
 
 ####General usage
-```(ensembl) $ python main.py input.txt```
+```(ensembl) $ python3 main.py input.txt```
 
 ####Arguments
 * `input`: (Required) Path to file with gene names.
