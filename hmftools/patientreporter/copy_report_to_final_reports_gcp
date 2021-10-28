@@ -73,7 +73,7 @@ else
     if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
         report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | head -1 )
         report=$( echo ${report#"${url_bucket_report_manual}"} )
-        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep -v ".json")
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
         json=$( echo ${json#"${url_bucket_report_manual}"} )
         api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
         report_type=$(gsutil cat ${api} | jq '.report_type')
@@ -81,7 +81,7 @@ else
     else
         report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
         report=$( echo ${report#"${url_bucket_report_manual}"} )
-        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep -v ".json")
+        json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json")
         json=$( echo ${json#"${url_bucket_report_manual}"} )
         api=$( gsutil ls ${url_bucket_report_auto} | grep ${sample} | grep ${barcode} | grep "api-update.json")
         report_type=$(gsutil cat ${api} | jq '.report_type')
