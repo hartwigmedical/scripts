@@ -92,7 +92,7 @@ else
     report_source="manual"
 fi
 
-report_type=$( echo $report_type:1:-1)
+report_type=$( echo ${report_type:1:-1})
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} "prod")
 
 echo ${reporting_id}
