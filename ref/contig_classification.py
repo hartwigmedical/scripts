@@ -5,20 +5,20 @@ from contig_types import ContigType
 
 
 class CategorizedContigNames(NamedTuple):
-    autosomes: Tuple[str]
-    x_contigs: Tuple[str]
-    y_contigs: Tuple[str]
-    mitochondrial_contigs: Tuple[str]
-    ebv_contigs: Tuple[str]
-    decoys: Tuple[str]
-    unlocalized_contigs: Tuple[str]
-    unplaced_contigs: Tuple[str]
-    alt_contigs: Tuple[str]
-    fix_patch_contigs: Tuple[str]
-    novel_patch_contigs: Tuple[str]
+    autosomes: Tuple[str, ...]
+    x_contigs: Tuple[str, ...]
+    y_contigs: Tuple[str, ...]
+    mitochondrial_contigs: Tuple[str, ...]
+    ebv_contigs: Tuple[str, ...]
+    decoys: Tuple[str, ...]
+    unlocalized_contigs: Tuple[str, ...]
+    unplaced_contigs: Tuple[str, ...]
+    alt_contigs: Tuple[str, ...]
+    fix_patch_contigs: Tuple[str, ...]
+    novel_patch_contigs: Tuple[str, ...]
 
-    def get_contig_names(self) -> Tuple[str]:
-        contig_names = []
+    def get_contig_names(self) -> Tuple[str, ...]:
+        contig_names: List[str] = []
         contig_names.extend(self.autosomes)
         contig_names.extend(self.x_contigs)
         contig_names.extend(self.y_contigs)

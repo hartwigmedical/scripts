@@ -41,7 +41,7 @@ def main(config: Config) -> None:
     logging.info(f"PhiX: False?")
     logging.info(f"")
     logging.info(f"For easy copy-paste:")
-    answers: List[bool] = [
+    answers = [
         analysis.has_unplaced_contigs,
         analysis.has_unlocalized_contigs,
         analysis.has_alts,

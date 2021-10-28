@@ -2,7 +2,7 @@ import logging
 import re
 from collections import defaultdict
 from copy import deepcopy
-from typing import Dict, NamedTuple, Optional, Set, DefaultDict
+from typing import Dict, NamedTuple, Optional, Set, DefaultDict, List
 
 from contig_types import ContigType
 
@@ -35,9 +35,6 @@ class ContigNameTranslator(object):
         return contig_name in self._contig_name_to_canonical_name.values()
 
 
-HARDCODED_CANONICAL_NAME_TO_ALIASES = {"chrEBV": {"chrEBV", "EBV", "AJ507799.2", "NC_007605.1"}}
-
-
 class ContigSummary(NamedTuple):
     sequence_name: str
     sequence_role: str
@@ -61,10 +58,10 @@ class ContigSummary(NamedTuple):
         assigned_molecule_type = split_line[3]
         genbank_accession_number = split_line[4]
         relationship = split_line[5]
-        refseq_accession_number = split_line[6]
+        refseq_accession_number: Optional[str] = split_line[6]
         assembly_unit = split_line[7]
         # sequence_length = split_line[8]
-        ucsc_style_name = split_line[9]
+        ucsc_style_name: Optional[str] = split_line[9]
 
         if relationship == "<>":
             if genbank_accession_number == "na" or refseq_accession_number != "na":
@@ -98,6 +95,7 @@ class ContigSummaryInterpreter(object):
     ASSIGNED_MOLECULE_TYPE_CHROMOSOME = "Chromosome"
     ASSIGNED_MOLECULE_TYPE_NA = "na"
     ASSIGNED_MOLECULE_TYPE_MITOCHONDRION = "Mitochondrion"
+    ASSIGNED_MOLECULE_TYPE_SEGMENT = "Segment"
 
     ASSEMBLY_UNIT_PRIMARY = "Primary Assembly"
     ASSEMBLY_UNIT_PATCHES = "PATCHES"
@@ -125,7 +123,7 @@ class ContigSummaryInterpreter(object):
         elif contig_type == ContigType.MITOCHONDRIAL:
             canonical_name = assigned_molecule_proper_name
         elif contig_type == ContigType.EBV:
-            canonical_name = assigned_molecule_proper_name
+            canonical_name = "chrEBV"
         elif contig_type == ContigType.DECOY:
             canonical_name = f"{assigned_molecule_proper_name}_{genbank_accession_without_dot}_decoy"
         elif contig_type == ContigType.UNLOCALIZED:
@@ -160,7 +158,8 @@ class ContigSummaryInterpreter(object):
             cls.get_canonical_name(summary),
             summary.sequence_name,
             summary.genbank_accession_number,
-            f"CHR_{summary.sequence_name}"
+            f"CHR_{summary.sequence_name}",
+            cls.get_canonical_name(summary)[3:],
         }
         if summary.refseq_accession_number is not None:
             aliases.add(summary.refseq_accession_number)
@@ -184,7 +183,7 @@ class ContigSummaryInterpreter(object):
             ContigType.FIX_PATCH: cls.is_fix_patch(summary),
             ContigType.NOVEL_PATCH: cls.is_novel_patch(summary),
         }
-        matching_contig_types = [contig_type for contig_type, is_type in contig_type_to_is_type.values() if is_type]
+        matching_contig_types = [contig_type for (contig_type, is_type) in contig_type_to_is_type.items() if is_type]
         if len(matching_contig_types) == 1:
             return matching_contig_types[0]
         else:
@@ -241,7 +240,7 @@ class ContigSummaryInterpreter(object):
         result = (
                 summary.sequence_role == cls.CONTIG_ROLE_ASSEMBLED
                 and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_NA
-                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_CHROMOSOME
+                and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_SEGMENT
                 and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
         )
         return result
@@ -314,53 +313,65 @@ class ContigSummaryInterpreter(object):
                 and summary.assigned_molecule == cls.ASSIGNED_MOLECULE_NA
                 and summary.assigned_molecule_type == cls.ASSIGNED_MOLECULE_TYPE_NA
                 and summary.assembly_unit == cls.ASSEMBLY_UNIT_PRIMARY
-                and re.fullmatch(r"decoy\d{5}", summary.sequence_name)
+                and bool(re.fullmatch(r"decoy\d{5}", summary.sequence_name))
         )
         return result
 
 
-class ContigAliasTextWriter(object):
+class AliasToCanonicalContigNameTextWriter(object):
     @classmethod
-    def get_contig_alias_text_from_assembly_reports_text(cls, assembly_reports_text: str) -> str:
+    def create_text_from_assembly_reports_text(cls, assembly_reports_text: str) -> str:
         # We don't use the UCSC-style names from the file because not all contigs have such a name in the file,
         # and because alt scaffolds ans novel patches share the '_alt' suffix in this file.
         # We instead use '_novel' for novel patches.
-        canonical_contig_name_to_aliases = cls.get_canonical_name_to_aliases(assembly_reports_text)
+        contig_summaries = cls._get_contig_summaries(assembly_reports_text)
+        canonical_contig_name_to_aliases = cls._get_canonical_name_to_aliases(contig_summaries)
         logging.debug(f"canonical_contig_name_to_aliases=\n{canonical_contig_name_to_aliases}")
 
-        cls.assert_no_contradictions(canonical_contig_name_to_aliases)
+        cls._assert_no_contradictions(canonical_contig_name_to_aliases)
 
-        contig_alias_text = cls.get_text_for_contig_alias_file(canonical_contig_name_to_aliases)
+        sorted_canonical_contig_names = cls._get_sorted_canonical_contig_names(contig_summaries)
+
+        alias_canonical_name_pairs = [
+            (alias, canonical_name)
+            for canonical_name in sorted_canonical_contig_names
+            for alias in sorted(canonical_contig_name_to_aliases[canonical_name])
+        ]
+        contig_alias_text = "\n".join(
+            f"{alias}\t{canonical_name}" for alias, canonical_name in alias_canonical_name_pairs
+        )
+
         logging.debug(f"contig_alias_text=\n{contig_alias_text}")
 
         return contig_alias_text
 
     @classmethod
-    def get_canonical_name_to_aliases(cls, assembly_reports_text: str) -> Dict[str, Set[str]]:
-        result: DefaultDict[str, Set[str]] = defaultdict(set)
+    def _get_contig_summaries(cls, assembly_reports_text: str) -> List[ContigSummary]:
+        summaries: List[ContigSummary] = []
         for line in assembly_reports_text.split("\n"):
             if not line or line[0] == "#":
                 # skip empty lines and headers starting with "'"#"
                 continue
+            summaries.append(ContigSummary.from_line(line.replace("\r", "")))
+        return summaries
 
-            summary = ContigSummary.from_line(line.replace("\r", ""))
-
+    @classmethod
+    def _get_canonical_name_to_aliases(cls, contig_summaries: List[ContigSummary]) -> Dict[str, Set[str]]:
+        result: DefaultDict[str, Set[str]] = defaultdict(set)
+        for summary in contig_summaries:
             canonical_name = ContigSummaryInterpreter.get_canonical_name(summary)
             aliases = ContigSummaryInterpreter.get_aliases(summary)
 
             result[canonical_name] = result[canonical_name].union(aliases)
 
-        for canonical_name, aliases in HARDCODED_CANONICAL_NAME_TO_ALIASES.items():
-            # TODO: remove this when no longer needed
-            result[canonical_name] = result[canonical_name].union(aliases)
-
         return dict(result)
 
     @classmethod
-    def assert_no_contradictions(cls, canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> None:
-        seen_aliases = set()
+    def _assert_no_contradictions(cls, canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> None:
+        seen_aliases: Set[str] = set()
         for canonical_name, aliases in canonical_contig_name_to_aliases.items():
             if seen_aliases.intersection(aliases):
+
                 error_msg = (
                     f"Some alias(es) present for more than one contig: "
                     f"contig={canonical_name}, overlap={seen_aliases.intersection(aliases)}"
@@ -379,13 +390,24 @@ class ContigAliasTextWriter(object):
             raise ValueError(error_msg)
 
     @classmethod
-    def get_text_for_contig_alias_file(cls, canonical_contig_name_to_aliases: Dict[str, Set[str]]) -> str:
-        alias_canonical_name_pairs = [
-            (alias, canonical_name)
-            for canonical_name, aliases in canonical_contig_name_to_aliases.items()
-            for alias in sorted(aliases)
-        ]
-        contig_alias_text = "\n".join(
-            f"{alias}\t{canonical_name}" for alias, canonical_name in alias_canonical_name_pairs
+    def _get_sorted_canonical_contig_names(cls, contig_summaries: List[ContigSummary]) -> List[str]:
+        contig_type_canonical_name_pairs = {
+            (ContigSummaryInterpreter.get_contig_type(summary), ContigSummaryInterpreter.get_canonical_name(summary))
+            for summary in contig_summaries
+        }
+        sorted_contig_type_canonical_name_pairs = sorted(
+            contig_type_canonical_name_pairs,
+            key=lambda pair: (pair[0].value, cls._get_chromosome_number(pair[1]), pair[1])
         )
-        return contig_alias_text
+        return [pair[1] for pair in sorted_contig_type_canonical_name_pairs]
+
+    @classmethod
+    def _get_chromosome_number(cls, canonical_contig_name: str) -> int:
+        matches = re.findall(r"^chr\d*", canonical_contig_name)
+        if len(matches) != 1:
+            raise ValueError("Canonical contig name does not start with chr.")
+        match = matches[0]
+        if match == "chr":
+            return 1000
+        else:
+            return int(match[3:])

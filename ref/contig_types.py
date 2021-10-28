@@ -15,12 +15,12 @@ class ContigType(Enum):
     Y = auto()
     MITOCHONDRIAL = auto()
     EBV = auto()
-    DECOY = auto()
     UNLOCALIZED = auto()
     UNPLACED = auto()
     ALT = auto()
     FIX_PATCH = auto()
     NOVEL_PATCH = auto()
+    DECOY = auto()
     UNCATEGORIZABLE = auto()
 
     def get_assembly(self) -> Assembly:

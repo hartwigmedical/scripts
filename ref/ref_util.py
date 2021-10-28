@@ -75,7 +75,7 @@ def get_nucleotides_from_fasta(fasta_path: Path) -> Set[str]:
                 contig = genome_f.fetch(contig_name)
                 futures.append(executor.submit(get_nucleotides_from_string, contig))
 
-    nucleotides = set()
+    nucleotides: Set[str] = set()
     for future in futures:
         try:
             nucleotides = nucleotides.union(future.result())

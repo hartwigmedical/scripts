@@ -66,6 +66,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             bool(categorized_contig_names.fix_patch_contigs)
             or bool(categorized_contig_names.novel_patch_contigs)
         )
+        has_ebv: Optional[bool]
         if len(categorized_contig_names.ebv_contigs) == 1:
             has_ebv = True
         elif len(categorized_contig_names.ebv_contigs) == 0:
@@ -73,6 +74,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
         else:
             logging.warning(f"Found more than one EBV contig: {categorized_contig_names.ebv_contigs}")
             has_ebv = None
+        has_rcrs: Optional[bool]
         if rcrs_path is not None and len(categorized_contig_names.mitochondrial_contigs) == 1:
             has_rcrs = cls._mitochondrial_sequence_is_rcrs(
                 ref_genome_path, rcrs_path, categorized_contig_names.mitochondrial_contigs[0],
@@ -94,6 +96,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             contig_name_translator.is_canonical(contig_name)
             for contig_name in categorized_contig_names.get_contig_names()
         )
+        has_only_hardmasked_nucleotides_at_y_par1: Optional[bool]
         if len(categorized_contig_names.y_contigs) == 1:
             y_test_nucleotides = get_nucleotides_from_string(
                 cls._get_y_test_sequence(categorized_contig_names.y_contigs[0], ref_genome_path)
@@ -111,6 +114,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             nucleotides.difference(STANDARD_NUCLEOTIDES).difference(SOFTMASKED_NUCLEOTIDES)
         )
         has_softmasked_nucleotides = bool(nucleotides.intersection(SOFTMASKED_NUCLEOTIDES))
+        alts_are_padded: Optional[bool]
         if categorized_contig_names.alt_contigs:
             alt_is_definitely_padded_list = [
                 cls._is_definitely_padded_with_n(contig, ref_genome_path)
@@ -155,12 +159,12 @@ class ReferenceGenomeFeatureAnalyzer(object):
             rcrs_genome = rcrs_f.fetch(rcrs_f.references[0])
         with pysam.Fastafile(ref_genome_path) as genome_f:
             mitochondrial_from_ref = genome_f.fetch(ref_mitochondrial_contig_name)
-        return rcrs_genome == mitochondrial_from_ref
+        return bool(rcrs_genome == mitochondrial_from_ref)
 
     @classmethod
     def _get_y_test_sequence(cls, y_contig_name: str, ref_genome_path: Path) -> str:
         with pysam.Fastafile(ref_genome_path) as genome_f:
-            return genome_f.fetch(y_contig_name, cls.Y_PAR1_TEST_REGION[0], cls.Y_PAR1_TEST_REGION[1])
+            return str(genome_f.fetch(y_contig_name, cls.Y_PAR1_TEST_REGION[0], cls.Y_PAR1_TEST_REGION[1]))
 
     @classmethod
     def _is_definitely_padded_with_n(cls, contig_name: str, ref_genome_path: Path) -> bool:
