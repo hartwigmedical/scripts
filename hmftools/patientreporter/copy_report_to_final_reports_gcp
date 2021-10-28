@@ -84,18 +84,15 @@ else
         json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json" | grep -v "api-update")
         json=$( echo ${json#"${url_bucket_report_manual}"} )
         api=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep "api-update.json")
-        echo ${api}
         report_type=$(gsutil cat ${api} | jq '.report_type')
         api=$( echo ${api#"${url_bucket_report_manual}"} )
-        echo ${api}
     fi
     info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
     info "Conclusion: the manual report ${report} will be finalized (goes over the auto report)."
     report_source="manual"
 fi
 
-echo ${report_type}
-
+report_type=$( echo $report_type:1:-1)
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} "prod")
 
 echo ${reporting_id}
