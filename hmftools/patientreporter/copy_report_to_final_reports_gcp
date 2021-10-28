@@ -92,7 +92,11 @@ else
     report_source="manual"
 fi
 
+echo ${report_type}
+
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} "prod")
+
+echo ${reporting_id}
 
 ## check wether report already exists in final bucket
 if [[ ${report} == *"corrected"* ]]; then
