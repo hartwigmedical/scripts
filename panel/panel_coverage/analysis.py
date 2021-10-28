@@ -1,4 +1,6 @@
+import logging
 import subprocess
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Set, List, Tuple, Dict
 
@@ -6,7 +8,7 @@ from config import AnalysisTypeConfig, Panel, PanelFileConfig, ProgramConfig
 from genome import Interval
 from output_writer import OutputWriter
 from panel_reader import PanelReader
-from util import parallel_get_sample_to_coverage_info, CoverageInfo
+from coverage_info import CoverageInfo, parallel_get_sample_to_coverage_info
 
 
 def do_analysis(
@@ -16,16 +18,13 @@ def do_analysis(
 ) -> None:
     program_config.working_dir.mkdir(parents=True, exist_ok=True)
 
-    sample_to_depth_file: Dict[str, Path] = {}
-    for bam in program_config.bams:
-        depth_file = program_config.working_dir / f"{bam.name}.depth"
-        if not depth_file.exists():
-            create_depth_file(program_config.samtools, bam, depth_file)
-        if not depth_file.exists():
-            raise FileNotFoundError(f"Depth file creation failed: {depth_file}")
-        sample_to_depth_file[bam.stem] = depth_file
+    logging.info("Getting samtools depth files")
+    sample_to_depth_file = parallel_get_sample_to_depth_file(program_config)
 
+    logging.info("Getting panel from file")
     panel = PanelReader.get_panel(panel_file_config)
+
+    logging.info("Getting interesting coverage intervals")
     coverage_intervals = get_coverage_intervals(analysis_type_config, panel)
 
     sample_to_coverage_info = parallel_get_sample_to_coverage_info(
@@ -40,6 +39,28 @@ def do_analysis(
         panel,
         program_config.output_dir,
     )
+
+
+def parallel_get_sample_to_depth_file(program_config: ProgramConfig) -> Dict[str, Path]:
+    with ProcessPoolExecutor() as executor:
+        sample_to_future = {
+            bam.stem: executor.submit(get_depth_file, bam, program_config.working_dir, program_config.samtools)
+            for bam in program_config.bams
+        }
+        sample_to_depth_file = {
+            sample: future.result()
+            for sample, future in sample_to_future.items()
+        }
+    return sample_to_depth_file
+
+
+def get_depth_file(bam: Path, working_dir: Path, samtools: Path) -> Path:
+    depth_file = working_dir / f"{bam.name}.depth"
+    if not depth_file.exists():
+        create_depth_file(samtools, bam, depth_file)
+    if not depth_file.exists():
+        raise FileNotFoundError(f"Depth file creation failed: {depth_file}")
+    return depth_file
 
 
 def get_coverage_intervals(analysis_type_config: AnalysisTypeConfig, panel: Panel) -> Set[Interval]:

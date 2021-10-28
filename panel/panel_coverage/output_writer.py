@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Tuple, Dict, DefaultDict
 
 from genome import BafSite, PgxSite, MsiSite, Position, Exon, Interval, FusionSite
-from util import CoverageInfo
+from coverage_info import CoverageInfo
 
 
 class OutputWriter(object):
