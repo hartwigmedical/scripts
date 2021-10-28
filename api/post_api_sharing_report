@@ -11,7 +11,7 @@ report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" "p
 
 data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
 
-if [[ -z ${report_created_id} ]];then
+if [[ ! -z ${report_created_id} ]];then
   error "No reporting created entry is present. Add entry first in created endpoint"
   exit 1
 fi
