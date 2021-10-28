@@ -9,4 +9,8 @@ if [[ -z "${patient}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-gcloud compute scp data-vm-prod-1:$(locate_actin_molecular_directory)/*${patient}*/orange_no_germline/*.pdf ~/hmf/tmp/
+if [[ ! -d ~/hmf/tmp/orange_no_germline ]]; then
+    mkdir ~/hmf/tmp/orange_no_germline
+fi
+
+gcloud compute scp data-vm-prod-1:$(locate_actin_molecular_directory)/*${patient}*/orange_no_germline/*.pdf ~/hmf/tmp/orange_no_germline/

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sampleId=$1 && shift
+
+actin_report_to_tmp ${sampleId}
+orange_report_to_tmp ${sampleId}
+orange_actin_to_tmp_no_germline ${sampleId}
