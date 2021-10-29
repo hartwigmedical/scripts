@@ -4,13 +4,13 @@ import logging
 import shutil
 import sys
 from pathlib import Path
-from typing import List, NamedTuple, FrozenSet, Set
+from typing import List, NamedTuple
 
 import pysam
 
 from contig_classification import ContigCategorizer
 from contig_name_translation import ContigNameTranslator
-from contig_types import Assembly, ContigType
+from contig_types import Assembly, ContigType, ContigTypeDesirabilities
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
     assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress
@@ -76,53 +76,6 @@ class Config(NamedTuple):
         return self.output_path.parent / f"{self.output_path.name}.tmp"
 
 
-class ContigDesirabilityClassification(NamedTuple):
-    desired_contig_types: FrozenSet[ContigType]
-    undesired_contig_types: FrozenSet[ContigType]
-    unexpected_contig_types: FrozenSet[ContigType]
-
-    @classmethod
-    def create(cls) -> "ContigDesirabilityClassification":
-        desired_contig_types = frozenset({
-            ContigType.AUTOSOME,
-            ContigType.X,
-            ContigType.Y,
-            ContigType.MITOCHONDRIAL,
-            ContigType.EBV,
-            ContigType.DECOY,
-            ContigType.UNLOCALIZED,
-            ContigType.UNPLACED,
-        })
-        undesired_contig_types = frozenset({
-            ContigType.ALT,
-            ContigType.FIX_PATCH,
-            ContigType.NOVEL_PATCH,
-        })
-        unexpected_contig_types = frozenset({
-            ContigType.UNCATEGORIZABLE,
-        })
-        result = ContigDesirabilityClassification(desired_contig_types, undesired_contig_types, unexpected_contig_types)
-        result.validate()
-        return result
-
-    def validate(self) -> None:
-        handleable_contig_types = self.desired_contig_types.union(
-            self.undesired_contig_types.union(self.unexpected_contig_types)
-        )
-        if set(contig_type for contig_type in ContigType) != handleable_contig_types:
-            raise ValueError(f"Not all contig types can be handled: handleable_contig_types={handleable_contig_types}")
-        contig_types_categories_overlap = (
-                self.desired_contig_types.intersection(self.undesired_contig_types)
-                or self.desired_contig_types.intersection(self.unexpected_contig_types)
-                or self.undesired_contig_types.intersection(self.unexpected_contig_types)
-        )
-        if contig_types_categories_overlap:
-            raise ValueError(f"Contig type categories overlap (so desired, undesired and unexpected are not disjoint)")
-
-    def get_expected_contig_types(self) -> Set[ContigType]:
-        return set(self.desired_contig_types.union(self.undesired_contig_types))
-
-
 def main(config: Config) -> None:
     set_up_logging()
 
@@ -159,9 +112,13 @@ def main(config: Config) -> None:
     logging.info("Categorize contigs in master FASTA file")
     contig_categorizer = ContigCategorizer(contig_name_translator)
 
-    classification = ContigDesirabilityClassification.create()
+    contig_type_desirabilities = ContigTypeDesirabilities.create()
 
-    assert_master_fasta_contig_types_match_expected(config, contig_categorizer, classification)
+    assert_master_fasta_contig_types_match_expected(
+        config.get_master_fasta_path(),
+        contig_categorizer,
+        contig_type_desirabilities,
+    )
 
     logging.info(f"Creating temp version of output FASTA file: {config.get_temp_output_path()}.")
     write_hmf_ref_genome_fasta(
@@ -169,11 +126,13 @@ def main(config: Config) -> None:
         config.get_temp_output_path(),
         contig_categorizer,
         contig_name_translator,
-        classification,
+        contig_type_desirabilities,
     )
 
     logging.info("Asserting that output is as expected")
-    assert_created_ref_genome_matches_expectations(config, contig_categorizer, contig_name_translator, classification)
+    assert_created_ref_genome_matches_expectations(
+        config, contig_categorizer, contig_name_translator, contig_type_desirabilities,
+    )
 
     logging.info("Moving temp output file to real output file")
     config.get_temp_output_path().rename(config.output_path)
@@ -193,13 +152,13 @@ def assert_created_ref_genome_matches_expectations(
         config: Config,
         contig_categorizer: ContigCategorizer,
         contig_name_translator: ContigNameTranslator,
-        classification: ContigDesirabilityClassification,
+        contig_type_desirabilities: ContigTypeDesirabilities,
 ) -> None:
     with pysam.Fastafile(config.get_temp_output_path()) as temp_f:
         with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
             contigs_expected_to_be_copied = {
                 contig_name for contig_name in master_f.references
-                if contig_categorizer.get_contig_type(contig_name) in classification.desired_contig_types
+                if contig_categorizer.get_contig_type(contig_name) in contig_type_desirabilities.desired_contig_types
             }
             contigs_expected_in_output = {
                 contig_name_translator.standardize(contig_name) for contig_name in contigs_expected_to_be_copied
@@ -243,7 +202,7 @@ def write_hmf_ref_genome_fasta(
         target_fasta: Path,
         contig_categorizer: ContigCategorizer,
         contig_name_translator: ContigNameTranslator,
-        classification: ContigDesirabilityClassification,
+        contig_type_desirabilities: ContigTypeDesirabilities,
 ) -> None:
     with pysam.Fastafile(source_fasta) as master_f:
         contig_names = list(master_f.references)
@@ -252,7 +211,7 @@ def write_hmf_ref_genome_fasta(
             for contig_name in contig_names:
                 logging.info(f"Handling {contig_name}")
                 contig_type = contig_categorizer.get_contig_type(contig_name)
-                if contig_type in classification.desired_contig_types:
+                if contig_type in contig_type_desirabilities.desired_contig_types:
                     logging.info(f"Include {contig_name} in output file")
                     sequence = master_f.fetch(contig_name).upper()
                     header = get_header(
@@ -301,14 +260,14 @@ def get_contig_role(contig_type: ContigType) -> str:
 
 
 def assert_master_fasta_contig_types_match_expected(
-        config: Config,
+        master_fasta_path: Path,
         contig_categorizer: ContigCategorizer,
-        classification: ContigDesirabilityClassification,
+        contig_type_desirabilities: ContigTypeDesirabilities,
 ) -> None:
-    with pysam.Fastafile(config.get_master_fasta_path()) as master_f:
+    with pysam.Fastafile(master_fasta_path) as master_f:
         seen_contig_types = {contig_categorizer.get_contig_type(name) for name in master_f.references}
 
-    expected_contig_types = classification.get_expected_contig_types()
+    expected_contig_types = contig_type_desirabilities.get_expected_contig_types()
     if seen_contig_types != expected_contig_types:
         sorted_seen_contig_names = sorted(contig_type.name for contig_type in seen_contig_types)
         sorted_expected_contig_names = sorted(

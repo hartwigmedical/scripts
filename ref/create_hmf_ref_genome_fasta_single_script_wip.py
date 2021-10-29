@@ -1,11 +1,12 @@
 import argparse
 import logging
 import sys
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import List, NamedTuple
 
-from contig_name_translation import AliasToCanonicalContigNameTextWriter
+from contig_name_translation import AliasToCanonicalContigNameTextWriter, ContigNameTranslator
+from contig_classification import ContigCategorizer
+from contig_types import ContigTypeDesirabilities
 from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -94,6 +95,16 @@ def main(config: Config) -> None:
     with open(config.get_alias_to_canonical_contig_name_path(), "w") as f:
         f.write(contig_alias_text)
 
+    contig_name_translator = ContigNameTranslator.from_contig_alias_text(contig_alias_text)
+    contig_categorizer = ContigCategorizer(contig_name_translator)
+    contig_type_desirabilities = ContigTypeDesirabilities.create()
+
+    # TODO: Add option to exclude decoys
+    # TODO: Add option to skip removing softmasks
+    # TODO: Put used files and result in bucket? Or just do this manually afterwards.
+    # TODO: Create requirements file to make this script properly reproducible with venv.
+    #       Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
+
     logging.info(f"Finished {SCRIPT_NAME}")
 
 
@@ -127,21 +138,6 @@ def download_source_files(config: Config) -> None:
             logging.info(f"Downloaded {name}")
     if download_failed:
         raise ValueError("Download of at least one file has failed")
-
-    # with ProcessPoolExecutor() as executor:
-    #     future_to_name_source_target_triples = {
-    #         executor.submit(download_file, source, target): (name, source, target)
-    #         for name, source, target in download_name_source_target_triples
-    #     }
-    #     for future in as_completed(future_to_name_source_target_triples):
-    #         name, source, target = future_to_name_source_target_triples[future]
-    #         try:
-    #             future.result()
-    #         except Exception as exc:
-    #             logging.error(f"Download of {name} from {source} to {target} has generated an exception: {exc}")
-    #             download_failed = True
-    #         else:
-    #             logging.info(f"Downloaded {name}")
 
     with open(config.get_source_list_path(), "w") as f:
         logging.info(f"Writing sources to file: {config.get_source_list_path()}")

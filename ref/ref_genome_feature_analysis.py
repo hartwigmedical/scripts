@@ -39,7 +39,9 @@ class ReferenceGenomeFeatureAnalyzer(object):
             assert_file_exists(rcrs_path)
         assert_file_exists_in_bucket(contig_alias_bucket_path)
 
-        contig_name_translator = ContigNameTranslator.from_contig_alias_text(get_blob(contig_alias_bucket_path).download_as_text())
+        contig_name_translator = ContigNameTranslator.from_contig_alias_text(
+            get_blob(contig_alias_bucket_path).download_as_text()
+        )
         with pysam.Fastafile(ref_genome_path) as genome_f:
             contig_names = list(genome_f.references)
 
