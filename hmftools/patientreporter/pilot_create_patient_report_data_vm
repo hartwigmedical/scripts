@@ -80,7 +80,7 @@ sample_summary_tsv=/data/dbs/summary_patient_report/summary_samples.tsv
 
 output_dir_report=${HOME}/reports
 
-patient_reporter_jar=/data/tools/patientreporter/pilot/patient-reporter.jar
+patient_reporter_jar=/home/lieke/tmp/patient-reporter.jar
 
 primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/pilot
