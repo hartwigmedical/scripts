@@ -133,4 +133,5 @@ java -jar ${patient_reporter_jar} \
     -override_pipeline_version \
     -only_create_pdf \
     -output_dir_data ${output_dir_data} \
+    -ref_genome_version 37 \
     "$@"
