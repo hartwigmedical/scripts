@@ -12,12 +12,10 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-reference=$(load_ref_sample_from_metadata ${run_dir})
-rna="${sample}_RNA"
 
-somatic_vcf=$(locate_rna_annotated_somatic_variants ${run_dir})
+sample_data_dir=$(dirname ${run_dir})
 
-patient_db_jar="$(locate_prod_patient_db)"
+isofox_jar="$(locate_pilot_isofox)"
 
 database="hmfpatients"
 credentials=$(prod_writer_sql_credentials)
@@ -26,12 +24,11 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database})
 
-info "Loading somatic variant DNA/RNA data for ${sample}"
+info "Loading isofox data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
+java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample ${sample} \
-    -reference ${reference} \
-    -rna ${rna} \
-    -somatic_vcf ${somatic_vcf} \
+    -sample_data_dir ${sample_data_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -log_debug \
     "$@"
