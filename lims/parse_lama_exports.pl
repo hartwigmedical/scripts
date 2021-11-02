@@ -24,18 +24,37 @@ my %DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP = (
     concentration=>1
 );
 
+my %lama_patient__dict = (
+    '_id' => 'hmf_patient_id',
+    'hospitalPatientId' => 'hospital_patient_id'
+);
+
 my %lama_patient_tumor_sample_dict = (
     'refFrBarcode'          => 'ref_sample_id',
     'patientId'             => 'patient_id',
+    'sampleId'              => 'sample_name',
     'hospitalPaSampleId'    => 'hospital_patient_id',
     'patientGermlineChoice' => 'germline_choice',
     'remark'                => 'remark',
     'primaryTumorType'      => 'ptum',
     'biopsySite'            => 'biopsy_site',
-    'sopVersion'            => 'sop',
+    'sopVersion'            => 'blood_registration_sop',
     'collectionDate'        => 'sampling_date',
     'isCUP'                 => 'is_cup',
-    'arrivalHmf'            => 'arrival_date'
+    'arrivalHmf'            => 'arrival_date',
+    'submissionNr'          => 'submission',
+);
+
+my %lama_patient_blood_sample_dict = (
+    'patientId'       => 'patient_id',
+    'remark'          => 'remark',
+    'sopVersion'      => 'blood_registration_sop',
+    'collectionDate'  => 'sampling_date',
+    'arrivalHmf'      => 'arrival_date',
+    'sampleBarcode'   => 'sample_barcode',
+    'sampleId'        => 'sample_name',
+    'submissionNr'    => 'submission',
+    'originalBarcode' => 'original_barcode'
 );
 
 my %lama_isolation_isolate_dict = (
@@ -101,7 +120,8 @@ my $isolationObjects = parseLamaIsolation($lamaIsolation);
 my $sampleObjects = parseLamaPatients($lamaPatient);
 my $prepObjects = parseLamaLibraryPreps($lamaLibraryPrep);
 
-printJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama.json");
+combineAndPrintJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama.json");
+printJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
 #print Dumper $prepObjects;
 
 #dumpRecordsOfArray($lamaSampleStatus, "SampleStatus");
@@ -109,6 +129,52 @@ printJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./la
 #dumpRecordsOfArray($lamaIsolation, "Isolation");
 #dumpRecordsOfArray($lamaPatient, "Patient");
 #dumpRecordsOfArray($lamaLibraryPrep, "LibraryPrep");
+
+sub combineAndPrintJson{
+    my ($samples, $statuses, $isolations, $preps, $output_file) = @_;
+    my %samples = ();
+
+    my $missing_sample_count = 0;
+    my $missing_isolate_count = 0;
+    my $missing_prep_count = 0;
+
+    while (my ($isolate_barcode, $object) = each %$statuses){
+        my $sample_barcode = $object->{received_sample_id};
+        #my $sample_barcode = $object->{received_sample_id};
+
+        # add sample info
+        if ( exists $samples->{$sample_barcode} ){
+            $object->{sample_info} = %{$samples->{$sample_barcode}};
+        }else{
+            #sayWarn("No sample info for $sample_barcode");
+            $missing_sample_count++;
+        }
+
+        # add isolate info
+        if ( exists $isolations->{$isolate_barcode} ){
+            $object->{isolation_info} = %{$isolations->{$isolate_barcode}};
+        }
+        else{
+            sayWarn("No isolation info for $isolate_barcode");
+            $missing_isolate_count++;
+        }
+
+        # store final sample object
+        $samples{$isolate_barcode} = $object;
+    }
+
+    my %lama = ('samples' => \%samples);
+    my $coder = JSON::XS->new->utf8->canonical;
+    my $lama_txt = $coder->encode(\%lama);
+
+    open my $fh, '>', $output_file or die "Unable to open output file ($output_file): $!\n";
+        print $fh $lama_txt;
+    close $fh;
+
+    sayInfo("Missing sample count: $missing_sample_count");
+    sayInfo("Missing isolate count: $missing_isolate_count");
+    sayInfo("Missing prep count: $missing_prep_count");
+}
 
 sub printJson{
     my ($samples, $statuses, $isolations, $preps, $lims_file) = @_;
@@ -127,15 +193,19 @@ sub printJson{
     sayInfo("   $isolation_count isolations");
     sayInfo("   $prep_count preps");
     sayInfo(" Investigate with:");
+
     print " cat $lims_file | jq '.sample' | less\n";
     print " cat $lims_file | jq '.status' | less\n";
     print " cat $lims_file | jq '.isolation' | less\n";
     print " cat $lims_file | jq '.prep' | less\n";
+
     print " cat $lims_file | jq '.sample.FB05298354'\n";
     print " cat $lims_file | jq '.status.FR30543060'\n";
+    print " cat $lims_file | jq '.isolation.FR30543060'\n";
+    print " cat $lims_file | jq '.prep.FR30543060'\n";
 
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
-    print $lims_json_fh $lims_txt;
+        print $lims_json_fh $lims_txt;
     close $lims_json_fh;
 }
 
@@ -154,7 +224,7 @@ sub copyFieldsFromObject{
             $store->{$tgt_key} = $object->{$src_key};
         }
         elsif(exists $DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP{$src_key}){
-            # ignore the fact field is missing
+            # do not warn about some fields if missing
         }
         else{
             sayWarn("No '$src_key' field in object ($info_tag)");
@@ -233,6 +303,10 @@ sub parseLamaIsolation{
             my $status = $isolate->{status};
 
             # Only store info when OK
+            next unless defined $store_key;
+            if( exists $store{$store_key} and $status ne "Finished" ){
+                next;
+            }
             next unless $status eq "Finished";
 
             my %info = ();
