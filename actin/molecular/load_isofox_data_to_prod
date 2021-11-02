@@ -13,7 +13,7 @@ fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-sample_data_dir=$(dirname ${run_dir})
+isofox_data_dir="${run_dir}/isofox"
 
 isofox_jar="$(locate_pilot_isofox)"
 
@@ -28,7 +28,7 @@ info "Loading isofox data for ${sample}"
 
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample ${sample} \
-    -sample_data_dir ${sample_data_dir} \
+    -sample_data_dir ${isofox_data_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"
