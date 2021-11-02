@@ -1,4 +1,6 @@
+import gzip
 import logging
+import shutil
 from pathlib import Path
 from typing import NamedTuple, Optional
 
@@ -6,9 +8,8 @@ import pysam
 
 from contig_classification import ContigCategorizer
 from contig_name_translation import ContigNameTranslator
-from ref_util import assert_file_exists, assert_file_exists_in_bucket, get_blob, \
-    get_nucleotides_from_fasta, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, \
-    UNKNOWN_NUCLEOTIDES
+from ref_util import assert_file_exists, get_nucleotides_from_fasta, get_nucleotides_from_string, STANDARD_NUCLEOTIDES, \
+    SOFTMASKED_NUCLEOTIDES, UNKNOWN_NUCLEOTIDES
 
 
 class ReferenceGenomeFeatureAnalysis(NamedTuple):
@@ -31,17 +32,12 @@ class ReferenceGenomeFeatureAnalyzer(object):
 
     @classmethod
     def do_analysis(
-            cls, ref_genome_path: Path, rcrs_path: Optional[Path], contig_alias_bucket_path: str,
+            cls, ref_genome_path: Path, rcrs_path: Optional[Path], contig_name_translator: ContigNameTranslator,
     ) -> ReferenceGenomeFeatureAnalysis:
         # Assert that files exist where they should
         assert_file_exists(ref_genome_path)
         if rcrs_path is not None:
             assert_file_exists(rcrs_path)
-        assert_file_exists_in_bucket(contig_alias_bucket_path)
-
-        contig_name_translator = ContigNameTranslator.from_contig_alias_text(
-            get_blob(contig_alias_bucket_path).download_as_text()
-        )
         with pysam.Fastafile(ref_genome_path) as genome_f:
             contig_names = list(genome_f.references)
 
@@ -155,10 +151,25 @@ class ReferenceGenomeFeatureAnalyzer(object):
             rcrs_path: Path,
             ref_mitochondrial_contig_name: str,
     ) -> bool:
-        with pysam.Fastafile(rcrs_path) as rcrs_f:
+        do_decompress = rcrs_path.suffix == ".gz"
+        if do_decompress:
+            uncompressed_rcrs_path = rcrs_path.with_suffix("")
+            if uncompressed_rcrs_path.exists():
+                error_msg = (
+                    f"Cannot decompress file {rcrs_path} without overwriting existing file {uncompressed_rcrs_path}"
+                )
+                raise FileExistsError(error_msg)
+            with gzip.open(rcrs_path, "rb") as source_f, open(uncompressed_rcrs_path, "wb") as target_f:
+                shutil.copyfileobj(source_f, target_f)
+        else:
+            uncompressed_rcrs_path = rcrs_path
+        with pysam.Fastafile(uncompressed_rcrs_path) as rcrs_f:
             if rcrs_f.nreferences != 1:
                 raise ValueError(f"rCRS FASTA file has more than one contig")
             rcrs_genome = rcrs_f.fetch(rcrs_f.references[0])
+        if do_decompress:
+            uncompressed_rcrs_path.unlink()
+            (uncompressed_rcrs_path.parent / f"{uncompressed_rcrs_path.name}.fai") .unlink()
         with pysam.Fastafile(ref_genome_path) as genome_f:
             mitochondrial_from_ref = genome_f.fetch(ref_mitochondrial_contig_name)
         return bool(rcrs_genome == mitochondrial_from_ref)

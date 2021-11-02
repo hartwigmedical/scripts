@@ -4,8 +4,9 @@ import sys
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
+from contig_name_translation import ContigNameTranslator
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer
-from ref_util import set_up_logging
+from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob
 
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -20,8 +21,13 @@ class Config(NamedTuple):
 def main(config: Config) -> None:
     set_up_logging()
 
+    assert_file_exists_in_bucket(config.contig_alias_bucket_path)
+    contig_name_translator = ContigNameTranslator.from_contig_alias_text(
+        get_blob(config.contig_alias_bucket_path).download_as_text()
+    )
+
     analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
-        config.ref_genome_path, config.rcrs_path, config.contig_alias_bucket_path,
+        config.ref_genome_path, config.rcrs_path, contig_name_translator,
     )
 
     logging.info(f"FEATURES GENOME:")

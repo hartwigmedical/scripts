@@ -150,7 +150,7 @@ def assert_created_ref_genome_matches_expectations(
                 if actual_sequence != expected_sequence:
                     raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
     feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
-        config.get_temp_output_path(), None, config.contig_alias_bucket_path,
+        config.get_temp_output_path(), None, contig_name_translator,
     )
     expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
         has_unplaced_contigs=True,
