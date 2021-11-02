@@ -7,6 +7,7 @@ from typing import List, NamedTuple
 from contig_name_translation import AliasToCanonicalContigNameTextWriter, ContigNameTranslator
 from contig_classification import ContigCategorizer
 from contig_types import ContigTypeDesirabilities
+from fasta_writer import FastaWriter
 from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -26,6 +27,8 @@ EBV_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/4
 SOURCES_LIST_FILE_NAME = "sources.txt"
 
 ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
+MASTER_FASTA_FILE_NAME = "master.fasta"
+OUTPUT_FASTA_FILE_NAME = "output.fasta"
 
 
 class Config(NamedTuple):
@@ -65,6 +68,12 @@ class Config(NamedTuple):
     def get_alias_to_canonical_contig_name_path(self) -> Path:
         return self.working_dir / ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME
 
+    def get_local_uncompressed_master_fasta_path(self) -> Path:
+        return self.working_dir / MASTER_FASTA_FILE_NAME
+
+    def get_temp_output_fasta_path(self) -> Path:
+        return self.working_dir / f"{OUTPUT_FASTA_FILE_NAME}.tmp"
+
 
 def main(config: Config) -> None:
     set_up_logging()
@@ -95,10 +104,29 @@ def main(config: Config) -> None:
     with open(config.get_alias_to_canonical_contig_name_path(), "w") as f:
         f.write(contig_alias_text)
 
+    logging.info(f"Creating master FASTA file")
+    FastaWriter.combine_compressed_files(
+        [
+            config.get_local_compressed_refseq_fasta_path(),
+            config.get_local_compressed_decoy_fasta_path(),
+            config.get_local_compressed_ebv_fasta_path(),
+        ],
+        config.get_local_uncompressed_master_fasta_path(),
+    )
+
+    logging.info(f"Creating temp version HMFref FASTA file")
     contig_name_translator = ContigNameTranslator.from_contig_alias_text(contig_alias_text)
     contig_categorizer = ContigCategorizer(contig_name_translator)
     contig_type_desirabilities = ContigTypeDesirabilities.create()
 
+    FastaWriter.write_hmf_ref_genome_fasta(
+        config.get_local_uncompressed_master_fasta_path(),
+        config.get_temp_output_fasta_path(),
+        contig_categorizer,
+        contig_name_translator,
+        contig_type_desirabilities,
+    )
+    
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
     # TODO: Put used files and result in bucket? Or just do this manually afterwards.
