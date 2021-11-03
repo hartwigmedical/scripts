@@ -13,18 +13,20 @@ use Email::Valid;
 use POSIX qw(strftime);
 use 5.01000;
 
-my %DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP = (
-    startConcentration=>1,
-    patientGermlineChoice=>1,
-    primaryTumorType=>1,
-    biopsySite=>1,
-    shallowPurity=>1,
-    finalPurity=>1,
-    coupeBarcode=>1,
-    concentration=>1
+my %WARN_IF_ABSENT_FIELDS = (
+    _id=>1,
+    status=>1
 );
 
-my %lama_patient__dict = (
+my %fields_to_merge = (
+    'sample' => {
+        ''
+    },
+    'isolate' => {},
+    'prep' => {},
+);
+
+my %lama_patient_dict = (
     '_id' => 'hmf_patient_id',
     'hospitalPatientId' => 'hospital_patient_id'
 );
@@ -64,10 +66,11 @@ my %lama_isolation_isolate_dict = (
     'sampleId'      => 'sample_name',
     'frBarcode'     => 'sample_id',
     'isolationNr'   => 'isolation_id',
+    'status'        => 'isolation_status',
     'concentration' => 'conc'
 );
 
-my %lama_libraryprep_libraries_dict = (
+my %lama_libraryprep_library_dict = (
     '_id'                => 'sample_id',
     'startConcentration' => 'conc',
     'isShallowSeq'       => 'shallowseq',
@@ -104,16 +107,12 @@ my $lamaIsolationJson = $input_dir . '/Isolations.json';
 my $lamaPatientJson = $input_dir . '/Patients.json';
 my $lamaLibraryPrepJson = $input_dir . '/LibraryPreps.json';
 my $lamaSampleStatusJson = $input_dir . '/SampleStatus.json';
-#my $lamaCohortJson = $input_dir . '/Cohorts.json';
-#my $lamaHospitalJson = $input_dir . '/Hospitals.json';
-#my $lamaLogBookJson = $input_dir . '/LogBooks.json';
-#my $lamaSnpCheckJson = $input_dir . '/SnpChecks.json';
 
+sayInfo("Reading inputs");
 my $lamaIsolation = readJson($lamaIsolationJson);
 my $lamaPatient = readJson($lamaPatientJson);
 my $lamaSampleStatus = readJson($lamaSampleStatusJson);
 my $lamaLibraryPrep = readJson($lamaLibraryPrepJson);
-#my $lamaCohort = ReadJson($lamaCohortJson);
 
 my $statusObjects = parseLamaSampleStatus($lamaSampleStatus);
 my $isolationObjects = parseLamaIsolation($lamaIsolation);
@@ -122,13 +121,6 @@ my $prepObjects = parseLamaLibraryPreps($lamaLibraryPrep);
 
 combineAndPrintJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama.json");
 printJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
-#print Dumper $prepObjects;
-
-#dumpRecordsOfArray($lamaSampleStatus, "SampleStatus");
-#dumpRecordsOfArray($lamaCohort, "Cohort");
-#dumpRecordsOfArray($lamaIsolation, "Isolation");
-#dumpRecordsOfArray($lamaPatient, "Patient");
-#dumpRecordsOfArray($lamaLibraryPrep, "LibraryPrep");
 
 sub combineAndPrintJson{
     my ($samples, $statuses, $isolations, $preps, $output_file) = @_;
@@ -139,30 +131,33 @@ sub combineAndPrintJson{
     my $missing_prep_count = 0;
 
     while (my ($isolate_barcode, $object) = each %$statuses){
-        my $sample_barcode = $object->{received_sample_id};
-        #my $sample_barcode = $object->{received_sample_id};
+        my %sample_to_store = %{$object};
+        my $sample_barcode = $sample_to_store{received_sample_id};
 
-        # add sample info
         if ( exists $samples->{$sample_barcode} ){
-            $object->{sample_info} = %{$samples->{$sample_barcode}};
+            storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
         }else{
-            #sayWarn("No sample info for $sample_barcode");
             $missing_sample_count++;
         }
 
-        # add isolate info
         if ( exists $isolations->{$isolate_barcode} ){
-            $object->{isolation_info} = %{$isolations->{$isolate_barcode}};
+            storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
         }
         else{
-            sayWarn("No isolation info for $isolate_barcode");
             $missing_isolate_count++;
         }
 
-        # store final sample object
-        $samples{$isolate_barcode} = $object;
+        if ( exists $preps->{$isolate_barcode} ){
+            storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
+        }
+        else{
+            $missing_prep_count++;
+        }
+
+        storeRecordByKey(\%sample_to_store, $isolate_barcode, \%samples, "final store $isolate_barcode", 1);
     }
 
+    my $count = scalar keys %samples;
     my %lama = ('samples' => \%samples);
     my $coder = JSON::XS->new->utf8->canonical;
     my $lama_txt = $coder->encode(\%lama);
@@ -171,9 +166,11 @@ sub combineAndPrintJson{
         print $fh $lama_txt;
     close $fh;
 
-    sayInfo("Missing sample count: $missing_sample_count");
-    sayInfo("Missing isolate count: $missing_isolate_count");
-    sayInfo("Missing prep count: $missing_prep_count");
+    sayInfo("Total of $count samples written to $output_file");
+    sayInfo("  $missing_sample_count without sample info in LAMA");
+    sayInfo("  $missing_isolate_count without isolate info in LAMA");
+    sayInfo("  $missing_prep_count without prep info in LAMA");
+
 }
 
 sub printJson{
@@ -187,12 +184,12 @@ sub printJson{
     my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
 
-    sayInfo(" Writing output to $lims_file:");
-    sayInfo("   $sample_count samples");
-    sayInfo("   $status_count statuses");
-    sayInfo("   $isolation_count isolations");
-    sayInfo("   $prep_count preps");
-    sayInfo(" Investigate with:");
+    sayInfo("Writing output to $lims_file:");
+    sayInfo("  $sample_count samples");
+    sayInfo("  $status_count statuses");
+    sayInfo("  $isolation_count isolations");
+    sayInfo("  $prep_count preps");
+    sayInfo("Investigate with:");
 
     print " cat $lims_file | jq '.sample' | less\n";
     print " cat $lims_file | jq '.status' | less\n";
@@ -210,8 +207,10 @@ sub printJson{
 }
 
 sub storeRecordByKey{
-    my ($record, $key, $store, $info_tag) = @_;
-    sayWarn("Store key already exists in store and will be overwritten ($key for $info_tag)") if exists $store->{$key};
+    my ($record, $key, $store, $info_tag, $do_not_warn_if_exists) = @_;
+    if (exists $store->{$key} and not $do_not_warn_if_exists){
+        sayWarn("Store key already exists in store and will be overwritten ($key for $info_tag)");
+    }
     my %copy_of_record = %$record;
     $store->{$key} = \%copy_of_record;
 }
@@ -223,11 +222,11 @@ sub copyFieldsFromObject{
         if (exists $object->{$src_key}){
             $store->{$tgt_key} = $object->{$src_key};
         }
-        elsif(exists $DO_NOT_EXIST_WARNING_FIELDS_TO_SKIP{$src_key}){
-            # do not warn about some fields if missing
+        elsif(exists $WARN_IF_ABSENT_FIELDS{$src_key}){
+            sayWarn("No '$src_key' field in object ($info_tag)");
         }
         else{
-            sayWarn("No '$src_key' field in object ($info_tag)");
+            # do not warn about missing fields by default
         }
     }
 }
@@ -243,26 +242,46 @@ sub parseLamaPatients {
     my ($objects) = @_;
     my %store = ();
 
-    foreach my $object (@$objects) {
-
-        my $patientId = $object->{_id};
-        my $hospitalPatientId = $object->{hospitalPatientId};
-        my $bloodSamples = $object->{bloodSamples};
-        my $tumorSamples = $object->{tumorSamples};
-        my $plasmaSamples = $object->{plasmaSamples};
-
-        foreach my $sample (@$tumorSamples) {
-            my @sampleBarcodes = @{$sample->{sampleBarcodes}};
-            my $info_tag = "patients->" . join("|", @sampleBarcodes);
-
-            my %info = ();
-            copyFieldsFromObject($sample, $info_tag, \%lama_patient_tumor_sample_dict, \%info);
-            foreach my $sampleBarcode (@sampleBarcodes){
-                storeRecordByKey(\%info, $sampleBarcode, \%store, "patient_samples");
-            }
+    foreach my $patient (@$objects) {
+        foreach my $sample (@{$patient->{tumorSamples}}) {
+            processSampleOfPatient($patient, $sample, 'tumor', \%store);
+        }
+        foreach my $sample (@{$patient->{bloodSamples}}) {
+            processSampleOfPatient($patient, $sample, 'blood', \%store);
+        }
+        foreach my $sample (@{$patient->{plasmaSamples}}) {
+            # At time of writing there are no plasma sample in LAMA but future it might
+            processSampleOfPatient($patient, $sample, 'blood', \%store);
         }
     }
     return \%store;
+}
+
+sub processSampleOfPatient {
+    my ($patient, $sample, $sample_type, $store) = @_;
+    my $sample_field_translations;
+    my @sampleBarcodes;
+
+    if( $sample_type eq 'tumor' ){
+        $sample_field_translations = \%lama_patient_tumor_sample_dict;
+        @sampleBarcodes = @{$sample->{sampleBarcodes}};
+    }
+    elsif( $sample_type eq 'blood' ){
+        $sample_field_translations = \%lama_patient_blood_sample_dict;
+        @sampleBarcodes = ($sample->{sampleBarcode});
+    }
+    else{
+        die "Unknown sample type provided to processSampleOfPatient ($sample_type)\n";
+    }
+
+    my $info_tag = "patients->" . join("|", @sampleBarcodes);
+
+    my %info = ();
+    copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
+    copyFieldsFromObject($patient, $info_tag, \%lama_patient_dict, \%info);
+    foreach my $sampleBarcode (@sampleBarcodes) {
+        storeRecordByKey(\%info, $sampleBarcode, $store, "patient_samples");
+    }
 }
 
 sub parseLamaLibraryPreps{
@@ -282,10 +301,8 @@ sub parseLamaLibraryPreps{
 
             my %info = ();
             my $info_tag = "libraryprep->$store_key";
-            copyFieldsFromObject($object, $info_tag, \%lama_libraryprep_libraries_dict, \%info);
-
-            # TODO: check if we need to diff dates to store most recent library prep info
-            storeRecordByKey(\%info, $store_key, \%store, "libraryprep");
+            copyFieldsFromObject($object, $info_tag, \%lama_libraryprep_library_dict, \%info);
+            storeRecordByKey(\%info, $store_key, \%store, "libraryprep", 1);
         }
     }
     return \%store;
@@ -296,25 +313,26 @@ sub parseLamaIsolation{
     my %store = ();
 
     foreach my $experiment (@$objects) {
-        my $sop = $experiment->{sopVersion};
-
         foreach my $isolate (@{$experiment->{isolates}}) {
             my $store_key = $isolate->{frBarcode};
             my $status = $isolate->{status};
 
-            # Only store info when OK
-            next unless defined $store_key;
-            if( exists $store{$store_key} and $status ne "Finished" ){
-                next;
+            if ( not defined $store_key ) {
+                print Dumper $isolate;
+                die "Isolate store key not defined for above object";
             }
-            next unless $status eq "Finished";
+            if ( exists $store{$store_key} ) {
+                my $existing_isolation_status = $store{$store_key}{'isolation_status'};
+                if ( $existing_isolation_status eq 'Finished' and $status eq 'Finished' ){
+                    sayWarn("SKIPPING: Encountered duplicate Finished isolate $store_key ($status)");
+                    next;
+                }
+            }
 
             my %info = ();
             my $info_tag = "isolation->$store_key";
             copyFieldsFromObject($isolate, $info_tag, \%lama_isolation_isolate_dict, \%info);
-
-            # TODO: check if we need to diff dates to store most recent isolation info
-            storeRecordByKey(\%info, $store_key, \%store, "isolation");
+            storeRecordByKey(\%info, $store_key, \%store, "isolation", 1);
         }
     }
     return \%store;
@@ -383,14 +401,4 @@ sub sayInfo{
 sub sayWarn{
     my ($msg) = @_;
     warn "[WARN] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg . "\n";
-}
-
-sub dumpRecordsOfArray{
-    my ($arrayref, $tag) = @_;
-    sayInfo("  Dump first record of $tag");
-    print Dumper $arrayref->[1];
-    sayInfo("  Dump -100 record of $tag");
-    print Dumper $arrayref->[-100];
-    sayInfo("  Dump last record of $tag");
-    print Dumper $arrayref->[-1];
 }
