@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+base_dir="/data/experiments/rna"
+
+# NOTES:
+#  - The ACTN isofox data has to be copied into the experiment ACTN folder
+#  - The ACTN sample along with cancer type has to be added to actn_sample_ids.csv
+
+isofox_jar="$(locate_pilot_isofox)"
+
+info "Running isofox FUSION cohort analyser for ACTIN"
+
+java -cp ${isofox_jar} com.hartwig.hmftools.isofox.cohort.CohortAnalyser \
+    -root_data_dir "${base_dir}/samples/ACTN" \
+    -output_dir "${base_dir}/samples/ACTN" \
+    -sample_data_file "${base_dir}/samples/actn_sample_ids.csv" \
+    -analyses FUSION \
+    -fusion_write_filtered \
+    -fusion_cohort_file "${base_dir}/cohort/hmf_isofox_fusion_cohort.csv" \
+    -known_fusion_file "$(locate_known_fusion_data_37_csv)"
