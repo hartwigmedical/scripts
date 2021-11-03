@@ -18,7 +18,7 @@ if [[ -z "${molecular_json}" ]]; then
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 
-treatment_directory="$(locate_actin_treatment_directory)"
+treatment_database_directory="$(locate_actin_treatment_database_directory)"
 output_directory="$(locate_actin_algo_directory)"
 
 actin_jar="$(locate_pilot_actin)"
@@ -26,6 +26,6 @@ actin_jar="$(locate_pilot_actin)"
 java11 -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
-    -treatment_directory ${treatment_directory} \
+    -treatment_directory ${treatment_database_directory} \
     -output_directory ${output_directory} \
     "$@"

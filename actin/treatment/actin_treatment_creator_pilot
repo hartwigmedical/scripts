@@ -4,7 +4,7 @@ source locate_files || exit 1
 source io_functions || exit 1
 
 trial_config_directory="$(locate_actin_trial_config_directory)"
-output_directory="$(locate_actin_treatment_directory)"
+output_directory="$(locate_actin_treatment_database_directory)"
 
 create_or_cleanup_dir "${output_directory}"
 
