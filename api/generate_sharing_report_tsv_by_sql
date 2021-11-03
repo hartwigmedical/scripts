@@ -12,7 +12,7 @@ pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
 [[ -n "$pwd" ]] || die "Unable to retrieve password from secret"
 
 printf -v sqlcode '%s' \
-"select barcode as tumorBarcode, sample_name as sampleName, cohort, DATE_FORMAT(share_time, '%d-%m-%Y') as reportDate," \
+"select barcode as tumorBarcode, sample_name as sampleName, cohort, DATE_FORMAT(share_time, '%d-%b-%Y') as reportDate," \
 " report_type as reportType, purity, IF(has_reliable_quality, 'true', 'false') hasReliableQuality," \
 " IF(has_reliable_purity, 'true', 'false') hasReliablePurity, source from report_shared" \
 " LEFT JOIN report_created ON report_shared.report_created_id = report_created.id ORDER BY share_time;"
