@@ -50,9 +50,10 @@ retrieve_wrapper_api() {
 extract_reporting_id() {
     sample_barcode=$1 && shift
     report_type=$1 && shift
+    report_source=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}&source=${report_source}" "${environment}")
     echo ${sample_object} | jq .id
 }
 
@@ -75,9 +76,10 @@ extract_object_created_on_reporting_id() {
 extract_object_created() {
     sample_barcode=$1 && shift
     report_type=$1 && shift
+    report_source=$1 && shift
     environment=$1 && shift
 
-    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}" "${environment}")
+    sample_object=$(retrieve_wrapper_api "reports/created?barcode=${sample_barcode}&report_type=${report_type}&source=${report_source}" "${environment}")
     echo ${sample_object} | jq .
 }
 
