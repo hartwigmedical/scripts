@@ -211,6 +211,10 @@ locate_actin_minimal_molecular_json() {
     echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
 }
 
+locate_actin_rna_sample_metadata_file() {
+    echo "/data/experiments/rna/samples/actn_sample_ids.csv"
+}
+
 ################################# ACTIN Data ###################################
 
 locate_actin_clinical_directory() {

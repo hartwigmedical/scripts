@@ -16,7 +16,7 @@ info "Running isofox FUSION cohort analyser for ACTIN"
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.cohort.CohortAnalyser \
     -root_data_dir "${base_dir}/samples/ACTN" \
     -output_dir "${base_dir}/samples/ACTN" \
-    -sample_data_file "${base_dir}/samples/actn_sample_ids.csv" \
+    -sample_data_file $(locate_actin_rna_sample_metadata_file) \
     -analyses FUSION \
     -fusion_write_filtered \
     -fusion_cohort_file "${base_dir}/cohort/hmf_isofox_fusion_cohort.csv" \
