@@ -337,7 +337,7 @@ sub processSample{
         ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
         if ( $other_ref eq "Yes" ){
             my $new_name_ref = $patient . 'R';
-            my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready") | length'`;
+            my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
             my $new_barcode_ref;
             if ( $ready_new_ref_sample_count eq "1" ){
                 $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
