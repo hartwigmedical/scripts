@@ -12,7 +12,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-sample_with_cancertype=$(cat $(locate_actin_rna_sample_metadata_file) | grep ${sample})
+sample_with_cancertype="$(cat $(locate_actin_rna_sample_metadata_file) | grep ${sample})"
 
 if [[ -z ${sample_with_cancertype} ]]; then
     error "Sample ${sample} not present yet in ACTIN rna sample metadata file. Exiting"
@@ -32,7 +32,7 @@ db_url=$(construct_database_url "${credentials}" ${database})
 info "Loading isofox data for ${sample}"
 
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
-    -sample ${sample_with_cancertype} \
+    -sample "${sample_with_cancertype}" \
     -sample_data_dir ${isofox_data_dir} \
     -alt_sj_cohort_file /data/experiments/rna/cohort/isofox_all_genes.alt_sj_cohort.csv \
     -gene_distribution_file /data/experiments/rna/cohort/isofox.gene_distribution.csv \
