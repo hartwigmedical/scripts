@@ -11,6 +11,8 @@ fi
 
 download_isofox_to_run_dir ${run_dir}
 if [[ -d "${run_dir}/isofox" ]]; then
+    # TODO First make sure the pass-fusions are produced as described in produce_rna_pass_fusions
+    #   Also, the sample needs to be present in the sample metadata file for RNA.
     load_isofox_data_to_prod ${run_dir}
 
     run_cuppa_dna_rna_prod ${run_dir}
