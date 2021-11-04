@@ -156,13 +156,15 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
+    # TODO: Do all downloading and writing etc. to a temp version of the file first,
+    #   then change the name when it succeeds.
+    #   Should the temp file contain a random substring or something to distinguish between runs? I think no.
     # TODO: Change output FASTA file name and include version number.
     #   Or maybe just make the final name an input argument.
-    # TODO: Put used files and result in bucket? Or just do this manually afterwards.
-    #   Make that argument optional, and only upload when it is provided!
     # TODO: Remove unused scripts
     # TODO: Create requirements file to make this script properly reproducible with venv.
     #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
+    # TODO: Make the script idempotent, with proper protections against errors partway through ruining things
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
 
@@ -277,7 +279,10 @@ def parse_args(sys_args: List[str]) -> Config:
         "-o",
         type=str,
         default=None,
-        help="Optional argument. Path to output bucket dir. Argument should be of the form 'gs://some/kind/of/path'.",
+        help=(
+            "Optional argument. Path to output bucket dir. Argument should be of the form 'gs://some/kind/of/path'. "
+            "This script will not overwrite existing files in the bucket."
+        ),
     )
 
     args = parser.parse_args(sys_args)

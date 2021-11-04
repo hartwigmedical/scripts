@@ -71,7 +71,7 @@ def upload_directory_to_bucket(source_dir: Path, bucket_dir: str) -> None:
                 target_path = f"{bucket_dir}/{file_path.relative_to(source_dir)}"
                 futures.append(executor.submit(upload_file_to_bucket, file_path, target_path))
 
-    for future in futures:
+    for future in concurrent.futures.as_completed(futures):
         try:
             future.result()
         except Exception as exc:
@@ -81,8 +81,12 @@ def upload_directory_to_bucket(source_dir: Path, bucket_dir: str) -> None:
 def upload_file_to_bucket(source_path: Path, bucket_path: str) -> None:
     logging.info(f"Uploading {source_path} to {bucket_path}")
     assert_file_exists(source_path)
-    get_blob(bucket_path).upload_from_filename(str(source_path))
-    logging.info(f"Finished upload of {source_path} to {bucket_path}")
+    blob = get_blob(bucket_path)
+    if not blob.exists():
+        blob.upload_from_filename(str(source_path))
+        logging.info(f"Finished upload of {source_path} to {bucket_path}")
+    else:
+        raise FileExistsError(f"Cannot upload file {source_path} since it would overwrite an existing file.")
 
 
 def get_text_from_bucket_file(path: str) -> str:
@@ -110,7 +114,7 @@ def get_nucleotides_from_fasta(fasta_path: Path) -> Set[str]:
                 futures.append(executor.submit(get_nucleotides_from_string, contig))
 
     nucleotides: Set[str] = set()
-    for future in futures:
+    for future in concurrent.futures.as_completed(futures):
         try:
             nucleotides = nucleotides.union(future.result())
         except Exception as exc:
