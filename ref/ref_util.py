@@ -36,6 +36,11 @@ def assert_dir_does_not_exist(path: Path) -> None:
         raise ValueError(f"Dir exists: {path}")
 
 
+def assert_dir_exists(path: Path) -> None:
+    if not path.is_dir():
+        raise ValueError(f"Dir does not exist: {path}")
+
+
 def delete_if_exists(path: Path) -> None:
     if path.exists():
         path.unlink()
@@ -56,6 +61,30 @@ def assert_bucket_dir_does_not_exist(bucket_path: str) -> None:
         raise ValueError(f"Bucket dir exists: {bucket_path}")
 
 
+def upload_directory_to_bucket(source_dir: Path, bucket_dir: str) -> None:
+    assert_dir_exists(source_dir)
+
+    futures = []
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for file_path in source_dir.glob("**/*"):
+            if file_path.is_file():
+                target_path = f"{bucket_dir}/{file_path.relative_to(source_dir)}"
+                futures.append(executor.submit(upload_file_to_bucket, file_path, target_path))
+
+    for future in futures:
+        try:
+            future.result()
+        except Exception as exc:
+            raise ValueError(exc)
+
+
+def upload_file_to_bucket(source_path: Path, bucket_path: str) -> None:
+    logging.info(f"Uploading {source_path} to {bucket_path}")
+    assert_file_exists(source_path)
+    get_blob(bucket_path).upload_from_filename(str(source_path))
+    logging.info(f"Finished upload of {source_path} to {bucket_path}")
+
+
 def get_text_from_bucket_file(path: str) -> str:
     text: str = get_blob(path).download_as_text()
     return text
@@ -63,7 +92,7 @@ def get_text_from_bucket_file(path: str) -> str:
 
 def get_blob(path: str) -> storage.Blob:
     bucket_name, relative_path = split_bucket_path(path)
-    return storage.Client().get_bucket(bucket_name).get_blob(relative_path)
+    return storage.Client().get_bucket(bucket_name).blob(relative_path)
 
 
 def split_bucket_path(path: str) -> Tuple[str, str]:

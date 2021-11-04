@@ -11,7 +11,8 @@ from contig_classification import ContigCategorizer
 from contig_types import ContigTypeDesirabilities
 from fasta_writer import FastaWriter
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file
+from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file, \
+    upload_directory_to_bucket
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -151,7 +152,7 @@ def main(config: Config) -> None:
 
     if config.output_bucket_dir is not None:
         logging.info("Upload results to bucket.")
-
+        upload_directory_to_bucket(config.working_dir, config.output_bucket_dir)
     else:
         logging.info("Skip upload of results to bucket.")
 
