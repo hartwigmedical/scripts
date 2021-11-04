@@ -38,6 +38,7 @@ OUTPUT_FASTA_FILE_NAME = "output.fasta"
 class Config(NamedTuple):
     working_dir: Path
     output_bucket_dir: Optional[str]
+    reuse_existing_files: bool
 
     def get_local_source_file_dir(self) -> Path:
         return self.working_dir / "source_files"
@@ -88,44 +89,32 @@ def main(config: Config) -> None:
     logging.info(f"Starting {SCRIPT_NAME}.")
 
     # Sanity checks
-    assert_dir_does_not_exist(config.working_dir)
+    if not config.reuse_existing_files:
+        assert_dir_does_not_exist(config.working_dir)
     if config.output_bucket_dir is not None:
         assert_bucket_dir_does_not_exist(config.output_bucket_dir)
 
-    config.get_local_source_file_dir().mkdir(parents=True)
+    if not config.get_local_source_file_dir().exists():
+        config.get_local_source_file_dir().mkdir(parents=True)
 
     logging.info("Downloading source files.")
     download_source_files(config)
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
-    assembly_reports_text = "\n".join([
-        get_text_from_file(config.get_local_refseq_with_patches_assembly_report_path()),
-        get_text_from_file(config.get_local_refseq_without_patches_assembly_report_path()),
-        get_text_from_file(config.get_local_decoy_assembly_report_path()),
-        get_text_from_file(config.get_local_ebv_assembly_report_path()),
-    ])
-
-    contig_alias_text = AliasToCanonicalContigNameTextWriter.create_text_from_assembly_reports_text(
-        assembly_reports_text
-    )
-
-    with open(get_temp_path(config.get_alias_to_canonical_contig_name_path()), "w") as f:
-        f.write(contig_alias_text)
-    make_temp_version_final(config.get_alias_to_canonical_contig_name_path())
+    if not config.get_alias_to_canonical_contig_name_path().exists():
+        create_contig_alias_file(config)
+    else:
+        logging.info(f"Skipping creation of {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file. Already exists.")
 
     logging.info(f"Creating master FASTA file.")
-    FastaWriter.combine_compressed_files(
-        [
-            config.get_local_compressed_refseq_fasta_path(),
-            config.get_local_compressed_decoy_fasta_path(),
-            config.get_local_compressed_ebv_fasta_path(),
-        ],
-        get_temp_path(config.get_local_uncompressed_master_fasta_path()),
-    )
-    make_temp_version_final(config.get_local_uncompressed_master_fasta_path())
+    if not config.get_local_uncompressed_master_fasta_path().exists():
+        create_master_fasta_file(config)
+    else:
+        logging.info(f"Skipping creation of master FASTA file. Already exists.")
 
-    logging.info(f"Creating temp version HMFref FASTA file.")
-    contig_name_translator = ContigNameTranslator.from_contig_alias_text(contig_alias_text)
+    logging.info(f"Creating temp version of HMFref FASTA file.")
+    with open(config.get_alias_to_canonical_contig_name_path(), "r") as f:
+        contig_name_translator = ContigNameTranslator.from_contig_alias_text(f.read())
     contig_categorizer = ContigCategorizer(contig_name_translator)
     contig_type_desirabilities = ContigTypeDesirabilities.create()
 
@@ -145,9 +134,7 @@ def main(config: Config) -> None:
 
     logging.info("Moving temp output file to final output location.")
     make_temp_version_final(config.get_output_fasta_path())
-
-    logging.info("Clean up.")
-    Path(f"{get_temp_path(config.get_output_fasta_path())}.fai").unlink()
+    Path(f"{get_temp_path(config.get_output_fasta_path())}.fai").rename(Path(f"{config.get_output_fasta_path()}.fai"))
 
     if config.output_bucket_dir is not None:
         logging.info("Upload results to bucket.")
@@ -165,6 +152,33 @@ def main(config: Config) -> None:
     # TODO: Add option to skip removing softmasks
 
     logging.info(f"Finished {SCRIPT_NAME}.")
+
+
+def create_master_fasta_file(config: Config) -> None:
+    FastaWriter.combine_compressed_files(
+        [
+            config.get_local_compressed_refseq_fasta_path(),
+            config.get_local_compressed_decoy_fasta_path(),
+            config.get_local_compressed_ebv_fasta_path(),
+        ],
+        get_temp_path(config.get_local_uncompressed_master_fasta_path()),
+    )
+    make_temp_version_final(config.get_local_uncompressed_master_fasta_path())
+
+
+def create_contig_alias_file(config: Config) -> None:
+    assembly_reports_text = "\n".join([
+        get_text_from_file(config.get_local_refseq_with_patches_assembly_report_path()),
+        get_text_from_file(config.get_local_refseq_without_patches_assembly_report_path()),
+        get_text_from_file(config.get_local_decoy_assembly_report_path()),
+        get_text_from_file(config.get_local_ebv_assembly_report_path()),
+    ])
+    contig_alias_text = AliasToCanonicalContigNameTextWriter.create_text_from_assembly_reports_text(
+        assembly_reports_text
+    )
+    with open(get_temp_path(config.get_alias_to_canonical_contig_name_path()), "w") as f:
+        f.write(contig_alias_text)
+    make_temp_version_final(config.get_alias_to_canonical_contig_name_path())
 
 
 def download_source_files(config: Config) -> None:
@@ -187,6 +201,24 @@ def download_source_files(config: Config) -> None:
         ("EBV_ASSEMBLY_REPORT_SOURCE", EBV_ASSEMBLY_REPORT_SOURCE, config.get_local_ebv_assembly_report_path()),
     ]
 
+    all_files_already_exist_locally = (
+            all(triple[2].exists() for triple in download_name_source_target_triples)
+            and config.get_source_list_path().exists()
+    )
+    some_files_already_exist_locally = (
+            any(triple[2].exists() for triple in download_name_source_target_triples)
+            or config.get_source_list_path().exists()
+    )
+    if all_files_already_exist_locally:
+        logging.info("Skipping downloads. Source files already exist locally.")
+        return
+    elif some_files_already_exist_locally:
+        error_msg = (
+            f"Some of the expected source files already exist locally and other do not. "
+            f"Please delete the existing local source files so new version can be downloaded."
+        )
+        raise ValueError(error_msg)
+
     logging.info(f"Writing sources to file: {config.get_source_list_path()}")
     lines = [f"{name}: {source}" for name, source, _ in download_name_source_target_triples]
     sources_text = "\n".join(lines)
@@ -194,6 +226,7 @@ def download_source_files(config: Config) -> None:
         f.write(sources_text)
     make_temp_version_final(config.get_source_list_path())
 
+    logging.info("Starting downloads of source files")
     download_failed = False
     for name, source, target in download_name_source_target_triples:
         logging.info(f"Start download of {name}")
@@ -206,6 +239,8 @@ def download_source_files(config: Config) -> None:
             logging.info(f"Finished download of {name}")
     if download_failed:
         raise ValueError("Download of at least one file has failed")
+    else:
+        logging.info("Finished downloads of source files")
 
 
 def assert_created_ref_genome_matches_expectations(
@@ -236,7 +271,9 @@ def assert_created_ref_genome_matches_expectations(
                 if actual_sequence != expected_sequence:
                     raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
     feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
-        get_temp_path(config.get_output_fasta_path()), config.get_local_compressed_rcrs_fasta_path(), contig_name_translator,
+        get_temp_path(config.get_output_fasta_path()),
+        config.get_local_compressed_rcrs_fasta_path(),
+        contig_name_translator,
     )
     expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
         has_unplaced_contigs=True,
@@ -284,10 +321,18 @@ def parse_args(sys_args: List[str]) -> Config:
             "This script will not overwrite existing files in the bucket."
         ),
     )
+    parser.add_argument(
+        "--reuse_existing_files",
+        "-u",
+        help=(
+            "Optional argument. Reuse local source files from a previous run of this script."
+        ),
+        action="store_true"
+    )
 
     args = parser.parse_args(sys_args)
 
-    return Config(args.working_dir, args.output_bucket_dir)
+    return Config(args.working_dir, args.output_bucket_dir, args.reuse_existing_files)
 
 
 if __name__ == "__main__":
