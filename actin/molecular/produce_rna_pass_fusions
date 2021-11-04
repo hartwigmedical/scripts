@@ -7,9 +7,9 @@ base_dir="/data/experiments/rna"
 
 # NOTES:
 #  - In the future ISOFOX will directly generate pass_fusions. Until then we have to generate them using this route.
-#  - The ACTN isofox data has to be copied into the experiment ACTN folder
+#  - The ACTN isofox data (${run_dir}/isofox/*) has to be copied into the experiment ACTN folder
 #  - The ACTN sample along with cancer type has to be added to actn_sample_ids.csv
-#  - This script produces pass_fusions in the output dir which need to be copied back to isofox dir.
+#  - This script produces pass_fusions in the output dir which need to be copied back to run_dir isofox dir.
 
 isofox_jar="$(locate_pilot_isofox)"
 
