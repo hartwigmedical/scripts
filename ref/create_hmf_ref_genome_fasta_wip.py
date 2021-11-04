@@ -12,7 +12,7 @@ from contig_types import ContigTypeDesirabilities
 from fasta_writer import FastaWriter
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_util import set_up_logging, assert_file_exists_in_bucket, \
-    assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress, get_text_from_bucket_file
+    assert_file_does_not_exist, assert_dir_does_not_exist, download_file_over_https, decompress, get_text_from_bucket_file
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -175,7 +175,7 @@ def get_local_copy_fasta_file(source: str, target: Path) -> None:
     compressed_target = target.parent / f"{target.name}.gz"
 
     logging.info(f"Downloading compressed file {source} to {compressed_target}.")
-    download_file(source, compressed_target)
+    download_file_over_https(source, compressed_target)
 
     logging.info(f"Decompressing downloaded file {compressed_target}.")
     decompress(compressed_target, target)

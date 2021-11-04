@@ -129,15 +129,33 @@ def get_nucleotides_from_string(sequence: str) -> Set[str]:
     return nucleotides
 
 
-def download_file(source: str, target: Path) -> None:
+def download_file_over_https(source: str, target: Path) -> None:
     response = requests.get(source, stream=True)
     response.raise_for_status()
-    with open(target, 'wb') as f:
+    with open(get_temp_path(target), 'wb') as f:
         for block in response.iter_content(1024):
             f.write(block)
+    make_temp_version_final(target)
 
 
 def decompress(source: Path, target: Path) -> None:
     with gzip.open(source, "rb") as f_in:
         with open(target, "wb") as f_out:
             shutil.copyfileobj(f_in, f_out)
+
+
+def make_temp_version_final(path: Path) -> None:
+    temp_path = get_temp_path(path)
+    logging.info(f"Started moving temporary file {temp_path} to final location {path}")
+    if not temp_path.exists():
+        error_msg = (
+            f"Cannot make temporary version of '{path}' permanent "
+            f"since the temporary version '{temp_path}' doesn't exist."
+        )
+        raise ValueError(error_msg)
+    temp_path.rename(path)
+    logging.info(f"Finished moving temporary file {temp_path} to final location {path}")
+
+
+def get_temp_path(path: Path) -> Path:
+    return path.parent / f"{path.name}.tmp"

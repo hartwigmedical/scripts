@@ -11,8 +11,8 @@ from contig_classification import ContigCategorizer
 from contig_types import ContigTypeDesirabilities
 from fasta_writer import FastaWriter
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file, \
-    upload_directory_to_bucket
+from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file_over_https, \
+    upload_directory_to_bucket, get_temp_path, make_temp_version_final
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -78,11 +78,8 @@ class Config(NamedTuple):
     def get_local_uncompressed_master_fasta_path(self) -> Path:
         return self.working_dir / MASTER_FASTA_FILE_NAME
 
-    def get_temp_output_fasta_path(self) -> Path:
-        return self.working_dir / f"{OUTPUT_FASTA_FILE_NAME}.tmp"
-
     def get_output_fasta_path(self) -> Path:
-        return self.working_dir / f"{OUTPUT_FASTA_FILE_NAME}"
+        return self.working_dir / OUTPUT_FASTA_FILE_NAME
 
 
 def main(config: Config) -> None:
@@ -112,8 +109,9 @@ def main(config: Config) -> None:
         assembly_reports_text
     )
 
-    with open(config.get_alias_to_canonical_contig_name_path(), "w") as f:
+    with open(get_temp_path(config.get_alias_to_canonical_contig_name_path()), "w") as f:
         f.write(contig_alias_text)
+    make_temp_version_final(config.get_alias_to_canonical_contig_name_path())
 
     logging.info(f"Creating master FASTA file.")
     FastaWriter.combine_compressed_files(
@@ -122,8 +120,9 @@ def main(config: Config) -> None:
             config.get_local_compressed_decoy_fasta_path(),
             config.get_local_compressed_ebv_fasta_path(),
         ],
-        config.get_local_uncompressed_master_fasta_path(),
+        get_temp_path(config.get_local_uncompressed_master_fasta_path()),
     )
+    make_temp_version_final(config.get_local_uncompressed_master_fasta_path())
 
     logging.info(f"Creating temp version HMFref FASTA file.")
     contig_name_translator = ContigNameTranslator.from_contig_alias_text(contig_alias_text)
@@ -132,7 +131,7 @@ def main(config: Config) -> None:
 
     FastaWriter.write_hmf_ref_genome_fasta(
         config.get_local_uncompressed_master_fasta_path(),
-        config.get_temp_output_fasta_path(),
+        get_temp_path(config.get_output_fasta_path()),
         contig_categorizer,
         contig_name_translator,
         contig_type_desirabilities,
@@ -144,11 +143,11 @@ def main(config: Config) -> None:
     )
     logging.info("Output is as expected.")
 
-    logging.info("Moving temp output file to real output file.")
-    config.get_temp_output_fasta_path().rename(config.get_output_fasta_path())
+    logging.info("Moving temp output file to final output location.")
+    make_temp_version_final(config.get_output_fasta_path())
 
     logging.info("Clean up.")
-    Path(f"{config.get_temp_output_fasta_path()}.fai").unlink()
+    Path(f"{get_temp_path(config.get_output_fasta_path())}.fai").unlink()
 
     if config.output_bucket_dir is not None:
         logging.info("Upload results to bucket.")
@@ -156,9 +155,6 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
-    # TODO: Do all downloading and writing etc. to a temp version of the file first,
-    #   then change the name when it succeeds.
-    #   Should the temp file contain a random substring or something to distinguish between runs? I think no.
     # TODO: Change output FASTA file name and include version number.
     #   Or maybe just make the final name an input argument.
     # TODO: Remove unused scripts
@@ -190,22 +186,26 @@ def download_source_files(config: Config) -> None:
         ("DECOY_ASSEMBLY_REPORT_SOURCE", DECOY_ASSEMBLY_REPORT_SOURCE, config.get_local_decoy_assembly_report_path()),
         ("EBV_ASSEMBLY_REPORT_SOURCE", EBV_ASSEMBLY_REPORT_SOURCE, config.get_local_ebv_assembly_report_path()),
     ]
+
+    logging.info(f"Writing sources to file: {config.get_source_list_path()}")
+    lines = [f"{name}: {source}" for name, source, _ in download_name_source_target_triples]
+    sources_text = "\n".join(lines)
+    with open(get_temp_path(config.get_source_list_path()), "w") as f:
+        f.write(sources_text)
+    make_temp_version_final(config.get_source_list_path())
+
     download_failed = False
     for name, source, target in download_name_source_target_triples:
+        logging.info(f"Start download of {name}")
         try:
-            download_file(source, target)
+            download_file_over_https(source, target)
         except Exception as exc:
             logging.error(f"Download of {name} from {source} to {target} has generated an exception: {exc}")
             download_failed = True
         else:
-            logging.info(f"Downloaded {name}")
+            logging.info(f"Finished download of {name}")
     if download_failed:
         raise ValueError("Download of at least one file has failed")
-
-    with open(config.get_source_list_path(), "w") as f:
-        logging.info(f"Writing sources to file: {config.get_source_list_path()}")
-        lines = [f"{name}: {source}" for name, source, _ in download_name_source_target_triples]
-        f.write("\n".join(lines))
 
 
 def assert_created_ref_genome_matches_expectations(
@@ -214,7 +214,7 @@ def assert_created_ref_genome_matches_expectations(
         contig_name_translator: ContigNameTranslator,
         contig_type_desirabilities: ContigTypeDesirabilities,
 ) -> None:
-    with pysam.Fastafile(config.get_temp_output_fasta_path()) as temp_f:
+    with pysam.Fastafile(get_temp_path(config.get_output_fasta_path())) as temp_f:
         with pysam.Fastafile(config.get_local_uncompressed_master_fasta_path()) as master_f:
             contigs_expected_to_be_copied = {
                 contig_name for contig_name in master_f.references
@@ -236,7 +236,7 @@ def assert_created_ref_genome_matches_expectations(
                 if actual_sequence != expected_sequence:
                     raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
     feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
-        config.get_temp_output_fasta_path(), config.get_local_compressed_rcrs_fasta_path(), contig_name_translator,
+        get_temp_path(config.get_output_fasta_path()), config.get_local_compressed_rcrs_fasta_path(), contig_name_translator,
     )
     expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
         has_unplaced_contigs=True,
