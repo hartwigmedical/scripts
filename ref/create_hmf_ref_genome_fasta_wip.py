@@ -11,8 +11,8 @@ from contig_name_translation import ContigNameTranslator
 from contig_types import ContigTypeDesirabilities
 from fasta_writer import FastaWriter
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob, \
-    assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress
+from ref_util import set_up_logging, assert_file_exists_in_bucket, \
+    assert_file_does_not_exist, assert_dir_does_not_exist, download_file, decompress, get_text_from_bucket_file
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 
@@ -78,7 +78,7 @@ def main(config: Config) -> None:
 
     logging.info(f"Creating contig name translator")
     contig_name_translator = ContigNameTranslator.from_contig_alias_text(
-        get_blob(config.contig_alias_bucket_path).download_as_text(),
+        get_text_from_bucket_file(config.contig_alias_bucket_path),
     )
 
     get_local_copy_fasta_file(REFSEQ_FASTA_SOURCE, config.get_refseq_fasta_path())

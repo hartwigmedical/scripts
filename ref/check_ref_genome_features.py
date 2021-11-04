@@ -6,7 +6,7 @@ from typing import List, NamedTuple, Optional
 
 from contig_name_translation import ContigNameTranslator
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer
-from ref_util import set_up_logging, assert_file_exists_in_bucket, get_blob
+from ref_util import set_up_logging, assert_file_exists_in_bucket, get_text_from_bucket_file
 
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
@@ -23,7 +23,7 @@ def main(config: Config) -> None:
 
     assert_file_exists_in_bucket(config.contig_alias_bucket_path)
     contig_name_translator = ContigNameTranslator.from_contig_alias_text(
-        get_blob(config.contig_alias_bucket_path).download_as_text()
+        get_text_from_bucket_file(config.contig_alias_bucket_path)
     )
 
     analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(

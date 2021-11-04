@@ -56,6 +56,11 @@ def assert_bucket_dir_does_not_exist(bucket_path: str) -> None:
         raise ValueError(f"Bucket dir exists: {bucket_path}")
 
 
+def get_text_from_bucket_file(path: str) -> str:
+    text: str = get_blob(path).download_as_text()
+    return text
+
+
 def get_blob(path: str) -> storage.Blob:
     bucket_name, relative_path = split_bucket_path(path)
     return storage.Client().get_bucket(bucket_name).get_blob(relative_path)

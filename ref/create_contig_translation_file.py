@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import List, NamedTuple
 
 from contig_name_translation import AliasToCanonicalContigNameTextWriter
-from ref_util import set_up_logging, assert_file_does_not_exist, get_blob
+from ref_util import set_up_logging, assert_file_does_not_exist, get_text_from_bucket_file
 
 SCRIPT_NAME = "create_chrom_translation_file"
 SOURCE_FILE_BUCKET = "hmf-crunch-experiments"
@@ -42,9 +42,9 @@ def main(config: Config) -> None:
 
 
 def get_translation_text_from_bucket_files() -> str:
-    non_decoy_old_text = get_blob(f"gs://{SOURCE_FILE_BUCKET}/{NON_DECOY_OLD_TRANSLATION_FILE_PATH}").download_as_text()
-    non_decoy_new_text = get_blob(f"gs://{SOURCE_FILE_BUCKET}/{NON_DECOY_NEW_TRANSLATION_FILE_PATH}").download_as_text()
-    decoy_text = get_blob(f"gs://{SOURCE_FILE_BUCKET}/{DECOY_TRANSLATION_FILE_PATH}").download_as_text()
+    non_decoy_old_text = get_text_from_bucket_file(f"gs://{SOURCE_FILE_BUCKET}/{NON_DECOY_OLD_TRANSLATION_FILE_PATH}")
+    non_decoy_new_text = get_text_from_bucket_file(f"gs://{SOURCE_FILE_BUCKET}/{NON_DECOY_NEW_TRANSLATION_FILE_PATH}")
+    decoy_text = get_text_from_bucket_file(f"gs://{SOURCE_FILE_BUCKET}/{DECOY_TRANSLATION_FILE_PATH}")
     combined_text = f"{non_decoy_old_text}\n{non_decoy_new_text}\n{decoy_text}"
     return combined_text
 

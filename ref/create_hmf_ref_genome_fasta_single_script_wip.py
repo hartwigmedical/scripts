@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
 import pysam
 
@@ -35,8 +35,8 @@ OUTPUT_FASTA_FILE_NAME = "output.fasta"
 
 
 class Config(NamedTuple):
-    output_bucket_dir: str
     working_dir: Path
+    output_bucket_dir: Optional[str]
 
     def get_local_source_file_dir(self) -> Path:
         return self.working_dir / "source_files"
@@ -90,8 +90,9 @@ def main(config: Config) -> None:
     logging.info(f"Starting {SCRIPT_NAME}.")
 
     # Sanity checks
-    assert_bucket_dir_does_not_exist(config.output_bucket_dir)
     assert_dir_does_not_exist(config.working_dir)
+    if config.output_bucket_dir is not None:
+        assert_bucket_dir_does_not_exist(config.output_bucket_dir)
 
     config.get_local_source_file_dir().mkdir(parents=True)
 
@@ -147,12 +148,22 @@ def main(config: Config) -> None:
 
     logging.info("Clean up.")
     Path(f"{config.get_temp_output_fasta_path()}.fai").unlink()
+
+    if config.output_bucket_dir is not None:
+        logging.info("Upload results to bucket.")
+
+    else:
+        logging.info("Skip upload of results to bucket.")
+
+    # TODO: Change output FASTA file name and include version number.
+    #   Or maybe just make the final name an input argument.
+    # TODO: Put used files and result in bucket? Or just do this manually afterwards.
+    #   Make that argument optional, and only upload when it is provided!
+    # TODO: Remove unused scripts
+    # TODO: Create requirements file to make this script properly reproducible with venv.
+    #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
-    # TODO: Put used files and result in bucket? Or just do this manually afterwards.
-    #       Make that argument optional, and only upload when it is provided!
-    # TODO: Create requirements file to make this script properly reproducible with venv.
-    #       Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
 
     logging.info(f"Finished {SCRIPT_NAME}.")
 
@@ -254,23 +265,23 @@ def parse_args(sys_args: List[str]) -> Config:
         description="Create FASTA file for GRCh38 HMF reference genome.",
     )
     parser.add_argument(
-        "--output_bucket_dir",
-        "-o",
-        type=str,
-        required=True,
-        help="Path to output bucket dir. Argument should be of the form 'gs://some/kind/of/path'.",
-    )
-    parser.add_argument(
         "--working_dir",
         "-w",
         type=Path,
         required=True,
         help="Path to local working directory. If directory does not exist, it is created.",
     )
+    parser.add_argument(
+        "--output_bucket_dir",
+        "-o",
+        type=str,
+        default=None,
+        help="Optional argument. Path to output bucket dir. Argument should be of the form 'gs://some/kind/of/path'.",
+    )
 
     args = parser.parse_args(sys_args)
 
-    return Config(args.output_bucket_dir, args.working_dir)
+    return Config(args.working_dir, args.output_bucket_dir)
 
 
 if __name__ == "__main__":
