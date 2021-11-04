@@ -13,31 +13,37 @@ use Email::Valid;
 use POSIX qw(strftime);
 use 5.01000;
 
+use constant NACHAR => 'NA';
+
 my %WARN_IF_ABSENT_FIELDS = (
     _id=>1,
     status=>1
 );
 
-my %fields_to_merge = (
-    'sample' => {
-        ''
-    },
-    'isolate' => {},
-    'prep' => {},
+my %lama_status_cohort_dict = (
+    'cohortCode'           => 'cohort',
+    'reportViral'          => 'report_viral',
+    'reportGermline'       => 'report_germline',
+    'flagGermlineOnReport' => 'flag_germline_on_report',
+    'reportConclusion'     => 'report_conclusion',
+    'reportPGX'            => 'report_pgx',
+    'isShallowStandard'    => 'shallowseq',
+    'addToDatabase'        => 'add_to_database',
+    'addToDatarequests'    => 'add_to_datarequests',
+    'sendPatientReport'    => 'send_patient_report',
+    'hmfRegEnding'         => 'hmf_reg_ending'
 );
 
 my %lama_patient_dict = (
-    '_id' => 'hmf_patient_id',
+    '_id' => 'patient',
     'hospitalPatientId' => 'hospital_patient_id'
 );
 
 my %lama_patient_tumor_sample_dict = (
     'refFrBarcode'          => 'ref_sample_id',
-    'patientId'             => 'patient_id',
     'sampleId'              => 'sample_name',
-    'hospitalPaSampleId'    => 'hospital_patient_id',
-    'patientGermlineChoice' => 'germline_choice',
-    'remark'                => 'remark',
+    'hospitalPaSampleId'    => 'hospital_pa_sample_id',
+    'patientGermlineChoice' => 'report_germline_level',
     'primaryTumorType'      => 'ptum',
     'biopsySite'            => 'biopsy_site',
     'sopVersion'            => 'blood_registration_sop',
@@ -48,8 +54,6 @@ my %lama_patient_tumor_sample_dict = (
 );
 
 my %lama_patient_blood_sample_dict = (
-    'patientId'       => 'patient_id',
-    'remark'          => 'remark',
     'sopVersion'      => 'blood_registration_sop',
     'collectionDate'  => 'sampling_date',
     'arrivalHmf'      => 'arrival_date',
@@ -62,23 +66,21 @@ my %lama_patient_blood_sample_dict = (
 my %lama_isolation_isolate_dict = (
     '_id'           => 'original_container_id',
     'isolationNr'   => 'isolation_id',
-    'coupeBarcode'  => 'coupe_barcode',
+    'coupeBarcode'  => 'coupes_barcode',
     'sampleId'      => 'sample_name',
     'frBarcode'     => 'sample_id',
-    'isolationNr'   => 'isolation_id',
     'status'        => 'isolation_status',
     'concentration' => 'conc'
 );
 
 my %lama_libraryprep_library_dict = (
-    '_id'                => 'sample_id',
-    'startConcentration' => 'conc',
-    'isShallowSeq'       => 'shallowseq',
-    'yield'              => 'yield',
-    'prepType'           => 'prep_type',
-    'prepNr'             => 'prep_id',
-    'sampleId'           => 'sample_name',
-    'status'             => 'prep_status'
+    '_id'          => 'sample_id',
+    'isShallowSeq' => 'shallowseq',
+    'yield'        => 'yield',
+    'prepType'     => 'prep_type',
+    'prepNr'       => 'prep_id',
+    'sampleId'     => 'sample_name',
+    'status'       => 'prep_status'
 );
 
 my %lama_status_dict = (
@@ -89,17 +91,8 @@ my %lama_status_dict = (
     'frBarcodeDNA'         => 'sample_id',
     'isTissue'             => 'is_tissue',
     'shallowPurity'        => 'shallow_purity',
-    'finalPurity'          => 'final_purity'
+    'finalPurity'          => 'purity'
 );
-
-my %lama_status_cohort_dict = (
-    'cohortCode'        => 'cohort',
-    'reportViral'       => 'report_viral',
-    'reportGermline'    => 'report_germline',
-    'reportPGX'         => 'report_pgx',
-    'isShallowStandard' => 'shallowseq',
-);
-
 
 my $input_dir = "./jsons";
 
@@ -119,12 +112,52 @@ my $isolationObjects = parseLamaIsolation($lamaIsolation);
 my $sampleObjects = parseLamaPatients($lamaPatient);
 my $prepObjects = parseLamaLibraryPreps($lamaLibraryPrep);
 
-combineAndPrintJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama.json");
-printJson($sampleObjects, $statusObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
+my $final_samples = combineObjects($statusObjects, $sampleObjects, $isolationObjects, $prepObjects);
+addMissingFieldsToSamples($final_samples);
 
-sub combineAndPrintJson{
-    my ($samples, $statuses, $isolations, $preps, $output_file) = @_;
-    my %samples = ();
+printJson($final_samples, "./lama.json");
+
+printJsonDebug($statusObjects, $sampleObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
+
+sub addMissingFieldsToSamples{
+    my ($samples) = @_;
+
+    while (my ($barcode, $sample) = each %$samples){
+        my $analysis_type = NACHAR;
+        my $submission = NACHAR;
+        my $original_submission = $sample->{submission};
+
+        if (exists $sample->{hmf_reg_ending} and $sample->{hmf_reg_ending} ne ""){
+            $submission = 'HMFreg' . $sample->{hmf_reg_ending};
+        }
+
+        if ($sample->{is_tissue}){
+            if (1) {
+                $analysis_type = 'Somatic_T';
+            }
+            else{
+                $analysis_type = 'RNAanalysis';
+            }
+        }
+        else{
+            if (1) {
+                $analysis_type = 'Somatic_R';
+            }
+            else{
+                $analysis_type = 'PlasmaAnalysis';
+            }
+        }
+
+        # Add the missing fields
+        $sample->{analysis_type} = 'Somatic_T';
+        $sample->{submission} = $submission;
+        $sample->{original_submission} = $original_submission;
+    }
+}
+
+sub combineObjects{
+    my ($statuses, $samples, $isolations, $preps) = @_;
+    my %lama_samples = ();
 
     my $missing_sample_count = 0;
     my $missing_isolate_count = 0;
@@ -134,49 +167,63 @@ sub combineAndPrintJson{
         my %sample_to_store = %{$object};
         my $sample_barcode = $sample_to_store{received_sample_id};
 
+        # adding sample info to statuses
         if ( exists $samples->{$sample_barcode} ){
-            storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
+            #storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
+            addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
         }else{
             $missing_sample_count++;
         }
 
+        # adding isolate info to statuses
         if ( exists $isolations->{$isolate_barcode} ){
-            storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
+            #storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
+            addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merging in isolate info for $isolate_barcode");
         }
         else{
             $missing_isolate_count++;
         }
 
+        # adding prep info to statuses
         if ( exists $preps->{$isolate_barcode} ){
-            storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
+            #storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
+            addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merging in prep info for $isolate_barcode");
         }
         else{
             $missing_prep_count++;
         }
 
-        storeRecordByKey(\%sample_to_store, $isolate_barcode, \%samples, "final store $isolate_barcode", 1);
+        storeRecordByKey(\%sample_to_store, $isolate_barcode, \%lama_samples, "final store $isolate_barcode", 1);
     }
 
-    my $count = scalar keys %samples;
-    my %lama = ('samples' => \%samples);
+    my $count = scalar keys %lama_samples;
+
+    sayInfo("Total of $count samples stored from LAMA");
+    sayInfo("  $missing_sample_count without sample info");
+    sayInfo("  $missing_isolate_count without isolate info");
+    sayInfo("  $missing_prep_count without prep info");
+
+    return \%lama_samples;
+}
+
+sub printJson{
+    my ($samples, $output_file) = @_;
+
+    my %lama = ('samples' => $samples);
     my $coder = JSON::XS->new->utf8->canonical;
     my $lama_txt = $coder->encode(\%lama);
 
     open my $fh, '>', $output_file or die "Unable to open output file ($output_file): $!\n";
         print $fh $lama_txt;
     close $fh;
-
-    sayInfo("Total of $count samples written to $output_file");
-    sayInfo("  $missing_sample_count without sample info in LAMA");
-    sayInfo("  $missing_isolate_count without isolate info in LAMA");
-    sayInfo("  $missing_prep_count without prep info in LAMA");
-
 }
 
-sub printJson{
-    my ($samples, $statuses, $isolations, $preps, $lims_file) = @_;
-    my $sample_count = scalar keys %$samples;
+sub printJsonDebug{
+    # TODO: can be removed after testing phase
+    my ($statuses, $samples, $isolations, $preps, $lims_file) = @_;
+
     my $status_count = scalar keys %$statuses;
+    my $sample_count = scalar keys %$samples;
     my $isolation_count = scalar keys %$isolations;
     my $prep_count = scalar keys %$preps;
 
@@ -189,13 +236,12 @@ sub printJson{
     sayInfo("  $status_count statuses");
     sayInfo("  $isolation_count isolations");
     sayInfo("  $prep_count preps");
-    sayInfo("Investigate with:");
 
+    sayInfo("Investigate with:");
     print " cat $lims_file | jq '.sample' | less\n";
     print " cat $lims_file | jq '.status' | less\n";
     print " cat $lims_file | jq '.isolation' | less\n";
     print " cat $lims_file | jq '.prep' | less\n";
-
     print " cat $lims_file | jq '.sample.FB05298354'\n";
     print " cat $lims_file | jq '.status.FR30543060'\n";
     print " cat $lims_file | jq '.isolation.FR30543060'\n";
@@ -215,6 +261,13 @@ sub storeRecordByKey{
     $store->{$key} = \%copy_of_record;
 }
 
+sub addRecordFieldsToTargetRecord{
+    my ($record, $target_record) = @_;
+    while (my ($key, $val) = each %$record){
+        $target_record->{$key} = $val;
+    }
+}
+
 sub copyFieldsFromObject{
     my ($object, $info_tag, $fieldsTranslationTable, $store) = @_;
 
@@ -232,7 +285,7 @@ sub copyFieldsFromObject{
 }
 
 sub epochToDate{
-    # epoch time in miliseconds
+    # epoch time in milliseconds
     my ($epoch) = @_;
     my $registrationDate = strftime "%Y-%m-%d", localtime $epoch/1000;
     return $registrationDate;
@@ -249,9 +302,9 @@ sub parseLamaPatients {
         foreach my $sample (@{$patient->{bloodSamples}}) {
             processSampleOfPatient($patient, $sample, 'blood', \%store);
         }
+        # At time of writing no plasma samples are being used
         foreach my $sample (@{$patient->{plasmaSamples}}) {
-            # At time of writing there are no plasma sample in LAMA but future it might
-            processSampleOfPatient($patient, $sample, 'blood', \%store);
+             # do stuff
         }
     }
     return \%store;
@@ -271,7 +324,8 @@ sub processSampleOfPatient {
         @sampleBarcodes = ($sample->{sampleBarcode});
     }
     else{
-        die "Unknown sample type provided to processSampleOfPatient ($sample_type)\n";
+        my $sample_barcode = $sample->{sampleBarcode};
+        die "Unknown sample type provided to processSampleOfPatient (type $sample_type for $sample_barcode)\n";
     }
 
     my $info_tag = "patients->" . join("|", @sampleBarcodes);
@@ -279,6 +333,7 @@ sub processSampleOfPatient {
     my %info = ();
     copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
     copyFieldsFromObject($patient, $info_tag, \%lama_patient_dict, \%info);
+
     foreach my $sampleBarcode (@sampleBarcodes) {
         storeRecordByKey(\%info, $sampleBarcode, $store, "patient_samples");
     }
