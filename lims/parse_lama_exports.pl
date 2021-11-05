@@ -13,6 +13,7 @@ use Email::Valid;
 use POSIX qw(strftime);
 use 5.01000;
 
+use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
 
 my %WARN_IF_ABSENT_FIELDS = (
@@ -70,6 +71,7 @@ my %lama_isolation_isolate_dict = (
     'sampleId'      => 'sample_name',
     'frBarcode'     => 'sample_id',
     'status'        => 'isolation_status',
+    'type'          => 'isolation_type', # currently Blood|RNA|Tissue
     'concentration' => 'conc'
 );
 
@@ -101,6 +103,10 @@ my $lamaPatientJson = $input_dir . '/Patients.json';
 my $lamaLibraryPrepJson = $input_dir . '/LibraryPreps.json';
 my $lamaSampleStatusJson = $input_dir . '/SampleStatus.json';
 
+sayInfo("Reading translation tables");
+my $CNTR_TSV = './center2entity.tsv';
+my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
+
 sayInfo("Reading inputs");
 my $lamaIsolation = readJson($lamaIsolationJson);
 my $lamaPatient = readJson($lamaPatientJson);
@@ -111,47 +117,102 @@ my $statusObjects = parseLamaSampleStatus($lamaSampleStatus);
 my $isolationObjects = parseLamaIsolation($lamaIsolation);
 my $sampleObjects = parseLamaPatients($lamaPatient);
 my $prepObjects = parseLamaLibraryPreps($lamaLibraryPrep);
+my $submissionObjects = {};
 
-my $final_samples = combineObjects($statusObjects, $sampleObjects, $isolationObjects, $prepObjects);
-addMissingFieldsToSamples($final_samples);
+my $samples = combineObjects($statusObjects, $sampleObjects, $isolationObjects, $prepObjects);
+addMissingFieldsToSamples($samples, $submissionObjects, $cntr_dict);
 
-printJson($final_samples, "./lama.json");
+printJson($samples, "./lama.json");
 
 printJsonDebug($statusObjects, $sampleObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
 
 sub addMissingFieldsToSamples{
-    my ($samples) = @_;
+    my ($samples, $submissions, $centers_dict) = @_;
 
     while (my ($barcode, $sample) = each %$samples){
+        my $name = $sample->{sample_name};
+
         my $analysis_type = NACHAR;
         my $submission = NACHAR;
-        my $original_submission = $sample->{submission};
+        my $project_name = NACHAR;
+        my $label = NACHAR;
 
-        if (exists $sample->{hmf_reg_ending} and $sample->{hmf_reg_ending} ne ""){
-            $submission = 'HMFreg' . $sample->{hmf_reg_ending};
-        }
-
-        if ($sample->{is_tissue}){
-            if (1) {
-                $analysis_type = 'Somatic_T';
-            }
-            else{
-                $analysis_type = 'RNAanalysis';
-            }
+        my ($patient_id, $study, $center, $tum_or_ref);
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        if ( $name =~ /$name_regex/ms ){
+            ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
+            $label = $study;
         }
         else{
-            if (1) {
-                $analysis_type = 'Somatic_R';
+            sayWarn("LAMA sample does ($name) because name does not fit $name_regex");
+            $sample->{analysis_type} = 'GaveWarningUponImportingLama';
+            next;
+        }
+
+        my $original_submission = $sample->{submission};
+        my $isolation_type = $sample->{isolation_type};
+
+        if ($isolation_type eq 'Tissue') {
+            # this is DNA from tumor tissue
+            $analysis_type = 'Somatic_T';
+        }
+        elsif ($isolation_type eq 'RNA') {
+            # this is RNA from tumor tissue
+            $analysis_type = 'RNAanalysis';
+        }
+        elsif ($isolation_type eq 'Blood') {
+            # this is DNA from blood
+            $analysis_type = 'Somatic_R';
+        }
+        elsif ($isolation_type eq 'Plasma') {
+            # this is Plasma from blood
+            $analysis_type = 'PlasmaAnalysis';
+        }
+        else{
+            die "Should not happen: encountered unknown isolation type '$isolation_type' ($barcode)"
+        }
+
+        if ( $study eq 'CORE' and $name !~ /^COREDB/ ){
+            ## specifically check for non-ref samples if submission is defined
+            if ( $original_submission eq '' ){
+                if ( $analysis_type ne 'Somatic_R' ){
+                    sayWarn("SKIPPING CORE sample because of incorrect submission id \"$original_submission\" (id:$barcode name:$name)");
+                }
+                ## we only print warning for non R samples but skip them altogether
+                next;
+            }
+            $sample->{ 'entity' } = $original_submission;
+            $sample->{ 'project_name' } = $original_submission;
+
+            ## Set the analysis type for CORE submissions to align with Excel LIMS samples
+            if ( exists $submissions->{ $original_submission } ) {
+                my $submission_object = $submissions->{ $original_submission };
+                $project_name = $submission_object->{ 'project_name' };
+                ## Reset project name for sample (from submission)
+                $sample->{ 'project_name' } = $project_name;
+                ## Add an analysis type to submission
+                $submission->{ 'analysis_type' } = "OncoAct";
             }
             else{
-                $analysis_type = 'PlasmaAnalysis';
+                sayWarn("Unable to update submission \"$original_submission\" because not found in submissions (id:$barcode name:$name)");
             }
+        }
+        ## All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
+        elsif ( exists $centers_dict->{ $center } ){
+            my $centername = $centers_dict->{ $center };
+            $sample->{ 'entity' } = join( "_", $study, $centername );
+        }
+        else {
+            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$barcode name:$name)");
+            next;
         }
 
         # Add the missing fields
-        $sample->{analysis_type} = 'Somatic_T';
+        $sample->{analysis_type} = $analysis_type;
         $sample->{submission} = $submission;
         $sample->{original_submission} = $original_submission;
+        $sample->{project_name} = $project_name;
+        $sample->{label} = $label;
     }
 }
 
@@ -246,6 +307,7 @@ sub printJsonDebug{
     print " cat $lims_file | jq '.status.FR30543060'\n";
     print " cat $lims_file | jq '.isolation.FR30543060'\n";
     print " cat $lims_file | jq '.prep.FR30543060'\n";
+    print " cat $lims_file | jq | less\n";
 
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
         print $lims_json_fh $lims_txt;
@@ -311,21 +373,21 @@ sub parseLamaPatients {
 }
 
 sub processSampleOfPatient {
-    my ($patient, $sample, $sample_type, $store) = @_;
+    my ($patient, $sample, $sample_origin, $store) = @_;
     my $sample_field_translations;
     my @sampleBarcodes;
 
-    if( $sample_type eq 'tumor' ){
+    if( $sample_origin eq 'tumor' ){
         $sample_field_translations = \%lama_patient_tumor_sample_dict;
         @sampleBarcodes = @{$sample->{sampleBarcodes}};
     }
-    elsif( $sample_type eq 'blood' ){
+    elsif( $sample_origin eq 'blood' ){
         $sample_field_translations = \%lama_patient_blood_sample_dict;
         @sampleBarcodes = ($sample->{sampleBarcode});
     }
     else{
         my $sample_barcode = $sample->{sampleBarcode};
-        die "Unknown sample type provided to processSampleOfPatient (type $sample_type for $sample_barcode)\n";
+        die "Unknown sample origin provided to processSampleOfPatient ($sample_origin for $sample_barcode)\n";
     }
 
     my $info_tag = "patients->" . join("|", @sampleBarcodes);
@@ -368,26 +430,36 @@ sub parseLamaIsolation{
     my %store = ();
 
     foreach my $experiment (@$objects) {
-        foreach my $isolate (@{$experiment->{isolates}}) {
-            my $store_key = $isolate->{frBarcode};
-            my $status = $isolate->{status};
 
-            if ( not defined $store_key ) {
+        # When isolation experiment is Processing there are no frBarcodes yet so skip all isolates
+        next if $experiment->{status} eq "Processing";
+
+        foreach my $isolate (@{$experiment->{isolates}}) {
+
+            # Once a isolation experiment is no longer Processing there should be a frBarcode
+            if ( not exists $isolate->{frBarcode} ) {
                 print Dumper $isolate;
                 die "Isolate store key not defined for above object";
             }
-            if ( exists $store{$store_key} ) {
-                my $existing_isolation_status = $store{$store_key}{'isolation_status'};
-                if ( $existing_isolation_status eq 'Finished' and $status eq 'Finished' ){
-                    sayWarn("SKIPPING: Encountered duplicate Finished isolate $store_key ($status)");
-                    next;
+
+            my $barcode = $isolate->{frBarcode};
+            my $new_status = $isolate->{status};
+
+            if ( exists $store{$barcode} ) {
+                my $existing_status = $store{$barcode}{'isolation_status'};
+                if ( $existing_status eq 'Finished' ){
+                    if ($new_status eq 'Finished' ){
+                        die "Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
+                    }
+                    else {
+                        next;
+                    }
                 }
             }
-
             my %info = ();
-            my $info_tag = "isolation->$store_key";
+            my $info_tag = "isolation->$barcode";
             copyFieldsFromObject($isolate, $info_tag, \%lama_isolation_isolate_dict, \%info);
-            storeRecordByKey(\%info, $store_key, \%store, "isolation", 1);
+            storeRecordByKey(\%info, $barcode, \%store, "isolation", 1);
         }
     }
     return \%store;
@@ -430,16 +502,6 @@ sub parseLamaSampleStatus{
     return \%store;
 }
 
-sub parseLamaCohort{
-    my ($objects) = @_;
-    foreach my $object (@$objects){
-        my $isShallowStandard = $object->{isShallowStandard};
-        my $reportPGX = $object->{reportPGX};
-        sayInfo("isShallow = " . $isShallowStandard);
-        sayInfo("reportPGX = " . $reportPGX);
-    }
-}
-
 sub readJson{
     my ($json_file) = @_;
     sayInfo("  Parsing input json file $json_file");
@@ -456,4 +518,27 @@ sub sayInfo{
 sub sayWarn{
     my ($msg) = @_;
     warn "[WARN] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg . "\n";
+}
+
+sub parseDictFile{
+    my ($file, $fileType) = @_;
+    sayInfo("  Parsing input dictionary file $file");
+    my %store = ();
+
+    open my $dict_fh, "<", $file or die "$!: Unable to open file ($file)\n";
+    while ( <$dict_fh> ){
+        next if /^#/ms;
+        chomp;
+        if ( $fileType eq 'center2centername' ){
+            my ( $id, $descr, $name ) = split /\t/;
+            die "[ERROR] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
+            $store{ $id } = $name if ( $id ne EMPTY and $name ne EMPTY );
+        }
+        else{
+            die "[ERROR] File type not set or not recognized ($fileType)\n";
+        }
+    }
+    close $dict_fh;
+
+    return \%store;
 }
