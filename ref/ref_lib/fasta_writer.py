@@ -91,7 +91,7 @@ class FastaWriter(object):
 
         expected_contig_types = contig_type_desirabilities.get_expected_contig_types()
         if seen_contig_types != expected_contig_types:
-            sorted_seen_contig_names = sorted(contig_type.name for contig_type in seen_contig_types)
+            sorted_seen_contig_names = sorted(contig_type.source_file for contig_type in seen_contig_types)
             sorted_expected_contig_names = sorted(
                 contig_type.name for contig_type in expected_contig_types
             )

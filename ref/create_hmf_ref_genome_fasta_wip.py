@@ -14,7 +14,6 @@ from ref_lib.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, 
 from ref_lib.ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
     upload_directory_to_bucket, get_temp_path, make_temp_version_final
 
-# See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
 from ref_lib.source_files import SourceFile, SourceFileDownloader, SourceFileLocator
 
 SCRIPT_NAME = "create_hmf_ref_genome_fasta"
@@ -25,12 +24,16 @@ ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
 MASTER_FASTA_FILE_NAME = "master.fasta"
 SOURCE_FILES_DIR_NAME = "source_files"
 
+# See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
+# TODO: update bucket path to a more correct one
+
 
 class Config(NamedTuple):
     working_dir: Path
     output_fasta_name: str
     output_bucket_dir: Optional[str]
     reuse_existing_files: bool
+    source_files_from_bucket_dir: Optional[str]
 
     def get_local_source_file_dir(self) -> Path:
         return self.working_dir / SOURCE_FILES_DIR_NAME
@@ -50,6 +53,8 @@ def main(config: Config) -> None:
 
     logging.info(f"Starting {SCRIPT_NAME}.")
 
+    logging.info(f"Config values:\n{config}")
+
     # Sanity checks
     if not config.reuse_existing_files:
         assert_dir_does_not_exist(config.working_dir)
@@ -60,7 +65,11 @@ def main(config: Config) -> None:
         config.get_local_source_file_dir().mkdir(parents=True)
 
     logging.info("Downloading source files.")
-    SourceFileDownloader.download_source_files(SourceFile.get_all(), config.get_local_source_file_dir())
+    SourceFileDownloader.download_source_files(
+        SourceFile.get_all(),
+        config.get_local_source_file_dir(),
+        config.source_files_from_bucket_dir,
+    )
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
     if not config.get_alias_to_canonical_contig_name_path().exists():
@@ -111,6 +120,7 @@ def main(config: Config) -> None:
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
     # TODO: Make check_ref_genome_features.py work in similar way to this script
+    # TODO: Move downloading-related stuff from ref_util to source_files.py
 
     logging.info(f"Finished {SCRIPT_NAME}.")
 
@@ -233,15 +243,30 @@ def parse_args(sys_args: List[str]) -> Config:
     parser.add_argument(
         "--reuse_existing_files",
         "-u",
+        help="Optional argument. Reuse local source files from a previous run of this script.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--source_files_from_bucket_dir",
+        "-s",
+        type=str,
+        default=None,
         help=(
-            "Optional argument. Reuse local source files from a previous run of this script."
+            "Optional argument. Get source files from this GCP bucket directory "
+            "instead of downloading them from their original source."
         ),
-        action="store_true"
     )
 
     args = parser.parse_args(sys_args)
 
-    return Config(args.working_dir, args.output_fasta_name, args.output_bucket_dir, args.reuse_existing_files)
+    config = Config(
+        args.working_dir,
+        args.output_fasta_name,
+        args.output_bucket_dir,
+        args.reuse_existing_files,
+        args.source_files_from_bucket_dir,
+    )
+    return config
 
 
 if __name__ == "__main__":

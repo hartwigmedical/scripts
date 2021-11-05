@@ -71,7 +71,7 @@ class SourceFileLocator(object):
 
 
 class DownloadJob(NamedTuple):
-    name: str
+    source_file: SourceFile
     source: str
     target: Path
 
@@ -85,7 +85,7 @@ class SourceFileDownloader(object):
     ) -> None:
         download_jobs = [
             DownloadJob(
-                source_file.name,
+                source_file,
                 SourceFileLocator().get_location(source_file, bucket_dir),
                 SourceFileLocator().get_location(source_file, target_dir)
             ) for source_file in source_files
@@ -112,25 +112,32 @@ class SourceFileDownloader(object):
         if not target_dir.is_dir():
             target_dir.mkdir(parents=True)
 
-        logging.info(f"Writing sources to file: {local_sources_list_file_path}")
-        cls._write_local_sources_list_file(download_jobs, local_sources_list_file_path)
+        if bucket_dir is None:
+            logging.info(f"Writing original sources of files to a file: {local_sources_list_file_path}")
+            cls._write_local_sources_list_file(download_jobs, local_sources_list_file_path)
+        else:
+            logging.info(f"Downloading file with original sources from bucket: {bucket_dir}")
+            download_bucket_file(f"{bucket_dir}/{cls.SOURCES_LIST_FILE_NAME}", local_sources_list_file_path)
 
         logging.info("Starting downloads of source files")
         download_failed = False
         for job in download_jobs:
-            logging.info(f"Start download of {job.name}")
+            logging.info(f"Start download of {job.source_file.name}")
             try:
                 if bucket_dir is None:
+                    logging.info(f"Download over https: {job.source}")
                     cls._download_file_over_https(job.source, job.target)
                 else:
+                    logging.info(f"Download from bucket: {job.source}")
                     download_bucket_file(job.source, job.target)
             except Exception as exc:
                 logging.error(
-                    f"Download of {job.name} from {job.source} to {job.target} has generated an exception: {exc}"
+                    f"Download of {job.source_file.name} from {job.source} to {job.target} "
+                    f"has generated an exception: {exc}"
                 )
                 download_failed = True
             else:
-                logging.info(f"Finished download of {job.name}")
+                logging.info(f"Finished download of {job.source_file.name}")
         if download_failed:
             raise ValueError("Download of at least one file has failed")
         else:
@@ -140,7 +147,7 @@ class SourceFileDownloader(object):
     def _write_local_sources_list_file(
             cls, download_jobs: List[DownloadJob], local_sources_list_file_path: Path,
     ) -> None:
-        local_sources_list_text = "\n".join([f"{job.name}: {job.source}" for job in download_jobs])
+        local_sources_list_text = "\n".join([f"{job.source_file.name}: {job.source}" for job in download_jobs])
         with open(get_temp_path(local_sources_list_file_path), "w") as f:
             f.write(local_sources_list_text)
         make_temp_version_final(local_sources_list_file_path)
