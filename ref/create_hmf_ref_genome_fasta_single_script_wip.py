@@ -71,7 +71,7 @@ def main(config: Config) -> None:
         config.get_local_source_file_dir().mkdir(parents=True)
 
     logging.info("Downloading source files.")
-    SourceFileDownloader.download_source_files_from_original_source(SOURCE_FILES, config.get_local_source_file_dir())
+    SourceFileDownloader.download_source_files(SOURCE_FILES, config.get_local_source_file_dir())
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
     if not config.get_alias_to_canonical_contig_name_path().exists():

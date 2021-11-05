@@ -1,9 +1,10 @@
 import logging
+import requests
 from enum import Enum, auto
 from pathlib import Path
-from typing import Union, Optional, List, NamedTuple, overload, Any
+from typing import List, NamedTuple, overload, Any, Optional
 
-from ref_util import download_file_over_https, make_temp_version_final, get_temp_path
+from ref_util import make_temp_version_final, get_temp_path, download_bucket_file
 
 
 class SourceFile(Enum):
@@ -66,11 +67,13 @@ class SourceFileDownloader(object):
     SOURCES_LIST_FILE_NAME = "sources.txt"
     
     @classmethod
-    def download_source_files_from_original_source(cls, source_files: List[SourceFile], target_dir: Path) -> None:
+    def download_source_files(
+            cls, source_files: List[SourceFile], target_dir: Path, bucket_dir: Optional[str] = None,
+    ) -> None:
         download_jobs = [
             DownloadJob(
                 source_file.name,
-                SourceFileLocator().get_location(source_file),
+                SourceFileLocator().get_location(source_file, bucket_dir),
                 SourceFileLocator().get_location(source_file, target_dir)
             ) for source_file in source_files
         ]
@@ -104,7 +107,10 @@ class SourceFileDownloader(object):
         for job in download_jobs:
             logging.info(f"Start download of {job.name}")
             try:
-                download_file_over_https(job.source, job.target)
+                if bucket_dir is None:
+                    cls._download_file_over_https(job.source, job.target)
+                else:
+                    download_bucket_file(job.source, job.target)
             except Exception as exc:
                 logging.error(
                     f"Download of {job.name} from {job.source} to {job.target} has generated an exception: {exc}"
@@ -125,3 +131,12 @@ class SourceFileDownloader(object):
         with open(get_temp_path(local_sources_list_file_path), "w") as f:
             f.write(local_sources_list_text)
         make_temp_version_final(local_sources_list_file_path)
+
+    @classmethod
+    def _download_file_over_https(cls, source: str, target: Path) -> None:
+        response = requests.get(source, stream=True)
+        response.raise_for_status()
+        with open(get_temp_path(target), 'wb') as f:
+            for block in response.iter_content(1024):
+                f.write(block)
+        make_temp_version_final(target)

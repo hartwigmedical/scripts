@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Set, Tuple
 
 import pysam
-import requests
 from google.cloud import storage
 
 STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
@@ -94,12 +93,19 @@ def get_text_from_bucket_file(path: str) -> str:
     return text
 
 
+def download_bucket_file(source: str, target: Path) -> str:
+    text: str = get_blob(source).download_to_filename(str(target))
+    return text
+
+
 def get_blob(path: str) -> storage.Blob:
     bucket_name, relative_path = split_bucket_path(path)
     return storage.Client().get_bucket(bucket_name).blob(relative_path)
 
 
 def split_bucket_path(path: str) -> Tuple[str, str]:
+    if not path.startswith("gs://"):
+        raise ValueError(f"Path is not a GCP bucket path: {path}")
     bucket_name = path.split("/")[2]
     relative_path = "/".join(path.split("/")[3:])
     return bucket_name, relative_path
@@ -127,15 +133,6 @@ def get_nucleotides_from_string(sequence: str) -> Set[str]:
     for nucleotide in sequence:
         nucleotides.add(nucleotide)
     return nucleotides
-
-
-def download_file_over_https(source: str, target: Path) -> None:
-    response = requests.get(source, stream=True)
-    response.raise_for_status()
-    with open(get_temp_path(target), 'wb') as f:
-        for block in response.iter_content(1024):
-            f.write(block)
-    make_temp_version_final(target)
 
 
 def decompress(source: Path, target: Path) -> None:
