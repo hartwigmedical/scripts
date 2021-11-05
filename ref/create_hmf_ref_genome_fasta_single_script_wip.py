@@ -53,10 +53,7 @@ class Config(NamedTuple):
         return self.get_local_source_file_dir() / EBV_FASTA_SOURCE.split("/")[-1]
 
     def get_local_compressed_rcrs_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / "rCRS.fasta.gz"
-
-    def get_local_uncompressed_rcrs_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / "rCRS.fasta"
+        return self.get_local_source_file_dir() / RCRS_FASTA_SOURCE.split("/")[-1]
 
     def get_local_refseq_with_patches_assembly_report_path(self) -> Path:
         return self.get_local_source_file_dir() / REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
@@ -142,8 +139,6 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
-    # TODO: Change output FASTA file name and include version number.
-    #   Or maybe just make the final name an input argument.
     # TODO: Make it possible to use sources from bucket dir
     # TODO: Remove unused scripts
     # TODO: Create requirements file to make this script properly reproducible with venv.
