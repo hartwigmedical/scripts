@@ -11,7 +11,6 @@ compare_mode="true"
 #check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date report_date analysis_type)
 check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date analysis_type)
 
-#def_names=(COREDB010493T DRUP01440011T DRUP01440011R ACTN01020023T)
 def_barcodes=(FR10244761)
 
 if [[ "${#search_strings[@]}" -eq 0 ]]; then
