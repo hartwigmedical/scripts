@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+LIMS_JSON="/data/ops/lims/prod/lims.json"
+LAMA_JSON="$HOME/tmp/lama.json"
+
+search_strings=("$@")
+compare_mode="true"
+
+#check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date report_date analysis_type)
+check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date analysis_type)
+
+#def_names=(COREDB010493T DRUP01440011T DRUP01440011R ACTN01020023T)
+def_barcodes=(FR10244761)
+
+if [[ "${#search_strings[@]}" -eq 0 ]]; then
+  search_strings=("${def_barcodes[@]}")
+fi
+
+main () {
+  for search_string in "${search_strings[@]}"; do
+    echo "-- Checking sample $search_string --"
+    if [[ "$compare_mode" == "true" ]]; then
+      compare_by_sample_barcode "$search_string"
+    else
+      lims_result=$(query_by_sample "$LIMS_JSON" "$search_string")
+      lama_result=$(query_by_sample "$LAMA_JSON" "$search_string")
+      printf "%s: %s\n" "LIMS" "$lims_result"
+      printf "%s: %s\n" "LAMA" "$lama_result"
+    fi
+  done
+}
+
+compare_by_sample_barcode () {
+  local barcode=$1 && shift
+  lims_result=$(query_lims "$LIMS_JSON" "$barcode")
+  lama_result=$(query_lims "$LAMA_JSON" "$barcode")
+  for field_name in "${check_fields[@]}"; do
+    lims_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lims_result")
+    lama_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lama_result")
+    result="NA"
+    if [[ "$lims_val" == "$lama_val" ]]; then
+      result="OK"
+    else
+      result="FAIL"
+    fi
+    echo "$result: $barcode $field_name ($lims_val vs $lama_val)"
+  done
+}
+
+query_lims () {
+  local json=$1 && shift
+  local barcode=$1 && shift
+  result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -json | jq -r '.[-1]')
+  echo "$result"
+}
+
+main
