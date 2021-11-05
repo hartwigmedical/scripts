@@ -15,14 +15,11 @@ LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
-#ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
-#ACCESS_FILE="LIMS_v4.7_be.accdb"
 FOR_001_FILE="HMF-FOR-001 Received Samples 2021 v5.11.xlsx"
 FOR_002_FILE="HMF-FOR-002 Sample in process 2021 v4.3.xlsx"
 
 NAS_FILES=(
-#  "${NAS_DIR}/04 Current backend/${ACCESS_FILE}"
   "${NAS_DIR}/${FOR_001_FILE}"
   "${NAS_DIR}/${FOR_002_FILE}"
 )
@@ -38,13 +35,9 @@ main() {
 
     mkdir -p "${DAY_DIR}"
 
-#    access_source="${DAY_DIR}/${ACCESS_FILE}" # MS Access LIMS
     for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
     for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
 
-#    access_samp_txt="${DAY_DIR}/access_samples.csv"
-#    access_acti_txt="${DAY_DIR}/access_actions.csv"
-#    access_regi_txt="${DAY_DIR}/access_registration.csv"
     for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
     for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
     for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
@@ -59,33 +52,18 @@ main() {
     gsutil -m -q cp "gs://${LAMA_BUCKET}/*.json" "${DAY_DIR}"
 
     info "Converting input files to text formats"
-#    accdb_table_to_csv "${DAY_DIR}" "${access_samp_txt}" "${access_source}" "tblSamples"
-#    accdb_table_to_csv "${DAY_DIR}" "${access_acti_txt}" "${access_source}" "tblActions"
-#    accdb_table_to_csv "${DAY_DIR}" "${access_regi_txt}" "${access_source}" "tblRegistration"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt}" "${for001_source}" "1" "5"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt}" "${for001_source}" "2" "2"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_cont_txt}" "${for001_source}" "3" "1"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt}" "${for002_source}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
-    find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" | while read -r txt_file; do
+    find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
       symlink_to_latest "${txt_file}" "$SYM_DIR"
     done
 
     info "Finished with $(basename $0)"
 }
-
-#accdb_table_to_csv() {
-#    local output_dir=$1 && shift
-#    local output_csv=$1 && shift
-#    local accdb_file=$1 && shift
-#    local table_name=$1 && shift
-#
-#    info "  Converting '$(basename "${accdb_file}")' table ${table_name}"
-#    ${ACC2CSV} --with-header --quote-all false --input "${accdb_file}" --table "${table_name}" --output "${output_dir}"
-#    [[ $? -eq 0 ]] || die "Accdb conversion to csv FAILED (${table_name})"
-#    mv "${DAY_DIR}/${table_name}.csv" "${output_csv}"
-#}
 
 excel_sheet_to_tsv() {
     local output_dir=$1 && shift

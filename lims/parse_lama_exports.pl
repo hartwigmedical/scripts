@@ -144,27 +144,21 @@ sub addLamaSamplesToLims{
         my %sample_to_store = %{$object};
         my $sample_barcode = $sample_to_store{received_sample_id};
 
-        # adding sample info to statuses
         if (exists $samples->{$sample_barcode}) {
-            #storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
         }
         else {
             $missing_sample_count++;
         }
 
-        # adding isolate info to statuses
         if (exists $isolations->{$isolate_barcode}) {
-            #storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merging in isolate info for $isolate_barcode");
         }
         else {
             $missing_isolate_count++;
         }
 
-        # adding prep info to statuses
         if (exists $preps->{$isolate_barcode}) {
-            #storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merging in prep info for $isolate_barcode");
         }
         else {
@@ -244,9 +238,13 @@ sub addLamaSamplesToLims{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
 
-        # Strip "-" from certain fields
+        # Fix some fields
         $sample_to_store{patient} =~ s/\-//g;
-        $sample_to_store{cohort} =~ s/\-//g;
+        if ( not defined $sample_to_store{cohort}){
+            sayWarn("No cohort for $isolate_barcode and $sample_name")
+        }else{
+            $sample_to_store{cohort} =~ s/\-//g;
+        }
 
         # And store the final result
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%lama_samples, "final storing of $isolate_barcode", 1);
