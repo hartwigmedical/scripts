@@ -93,7 +93,8 @@ my %lama_status_dict = (
     'frBarcodeDNA'         => 'sample_id',
     'isTissue'             => 'is_tissue',
     'shallowPurity'        => 'shallow_purity',
-    'finalPurity'          => 'purity'
+    'finalPurity'          => 'purity',
+    'reportDate'           => 'report_date'
 );
 
 my $input_dir = "./jsons";
@@ -113,152 +114,134 @@ my $lamaPatient = readJson($lamaPatientJson);
 my $lamaSampleStatus = readJson($lamaSampleStatusJson);
 my $lamaLibraryPrep = readJson($lamaLibraryPrepJson);
 
+my $limsObjects = {}; # will contain all sample objects
 my $statusObjects = parseLamaSampleStatus($lamaSampleStatus);
 my $isolationObjects = parseLamaIsolation($lamaIsolation);
 my $sampleObjects = parseLamaPatients($lamaPatient);
 my $prepObjects = parseLamaLibraryPreps($lamaLibraryPrep);
 my $submissionObjects = {};
 
-my $samples = combineObjects($statusObjects, $sampleObjects, $isolationObjects, $prepObjects);
-addMissingFieldsToSamples($samples, $submissionObjects, $cntr_dict);
+$limsObjects = addLamaSamplesToLims($limsObjects, $statusObjects, $sampleObjects, $isolationObjects, $prepObjects, $submissionObjects, $cntr_dict);
 
-printJson($samples, "./lama.json");
+printJson($limsObjects, "./lama.json");
 
 printJsonDebug($statusObjects, $sampleObjects, $isolationObjects, $prepObjects, "./lama_raw.json");
 
-sub addMissingFieldsToSamples{
-    my ($samples, $submissions, $centers_dict) = @_;
-
-    while (my ($barcode, $sample) = each %$samples){
-        my $name = $sample->{sample_name};
-
-        my $analysis_type = NACHAR;
-        my $submission = NACHAR;
-        my $project_name = NACHAR;
-        my $label = NACHAR;
-
-        my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
-        if ( $name =~ /$name_regex/ms ){
-            ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
-            $label = $study;
-        }
-        else{
-            sayWarn("LAMA sample does ($name) because name does not fit $name_regex");
-            $sample->{analysis_type} = 'GaveWarningUponImportingLama';
-            next;
-        }
-
-        my $original_submission = $sample->{submission};
-        my $isolation_type = $sample->{isolation_type};
-
-        if ($isolation_type eq 'Tissue') {
-            # this is DNA from tumor tissue
-            $analysis_type = 'Somatic_T';
-        }
-        elsif ($isolation_type eq 'RNA') {
-            # this is RNA from tumor tissue
-            $analysis_type = 'RNAanalysis';
-        }
-        elsif ($isolation_type eq 'Blood') {
-            # this is DNA from blood
-            $analysis_type = 'Somatic_R';
-        }
-        elsif ($isolation_type eq 'Plasma') {
-            # this is Plasma from blood
-            $analysis_type = 'PlasmaAnalysis';
-        }
-        else{
-            die "Should not happen: encountered unknown isolation type '$isolation_type' ($barcode)"
-        }
-
-        if ( $study eq 'CORE' and $name !~ /^COREDB/ ){
-            ## specifically check for non-ref samples if submission is defined
-            if ( $original_submission eq '' ){
-                if ( $analysis_type ne 'Somatic_R' ){
-                    sayWarn("SKIPPING CORE sample because of incorrect submission id \"$original_submission\" (id:$barcode name:$name)");
-                }
-                ## we only print warning for non R samples but skip them altogether
-                next;
-            }
-            $sample->{ 'entity' } = $original_submission;
-            $sample->{ 'project_name' } = $original_submission;
-
-            ## Set the analysis type for CORE submissions to align with Excel LIMS samples
-            if ( exists $submissions->{ $original_submission } ) {
-                my $submission_object = $submissions->{ $original_submission };
-                $project_name = $submission_object->{ 'project_name' };
-                ## Reset project name for sample (from submission)
-                $sample->{ 'project_name' } = $project_name;
-                ## Add an analysis type to submission
-                $submission->{ 'analysis_type' } = "OncoAct";
-            }
-            else{
-                sayWarn("Unable to update submission \"$original_submission\" because not found in submissions (id:$barcode name:$name)");
-            }
-        }
-        ## All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
-        elsif ( exists $centers_dict->{ $center } ){
-            my $centername = $centers_dict->{ $center };
-            $sample->{ 'entity' } = join( "_", $study, $centername );
-        }
-        else {
-            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$barcode name:$name)");
-            next;
-        }
-
-        # Add the missing fields
-        $sample->{analysis_type} = $analysis_type;
-        $sample->{submission} = $submission;
-        $sample->{original_submission} = $original_submission;
-        $sample->{project_name} = $project_name;
-        $sample->{label} = $label;
-    }
-}
-
-sub combineObjects{
-    my ($statuses, $samples, $isolations, $preps) = @_;
-    my %lama_samples = ();
+sub addLamaSamplesToLims{
+    my ($lims, $statuses, $samples, $isolations, $preps, $submissions, $centers_dict) = @_;
+    my %lama_samples = %{$lims};
 
     my $missing_sample_count = 0;
     my $missing_isolate_count = 0;
     my $missing_prep_count = 0;
 
-    while (my ($isolate_barcode, $object) = each %$statuses){
+    while (my ($isolate_barcode, $object) = each %$statuses) {
         my %sample_to_store = %{$object};
         my $sample_barcode = $sample_to_store{received_sample_id};
 
         # adding sample info to statuses
-        if ( exists $samples->{$sample_barcode} ){
+        if (exists $samples->{$sample_barcode}) {
             #storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
-        }else{
+        }
+        else {
             $missing_sample_count++;
         }
 
         # adding isolate info to statuses
-        if ( exists $isolations->{$isolate_barcode} ){
+        if (exists $isolations->{$isolate_barcode}) {
             #storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merging in isolate info for $isolate_barcode");
         }
-        else{
+        else {
             $missing_isolate_count++;
         }
 
         # adding prep info to statuses
-        if ( exists $preps->{$isolate_barcode} ){
+        if (exists $preps->{$isolate_barcode}) {
             #storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merging in prep info for $isolate_barcode");
         }
-        else{
+        else {
             $missing_prep_count++;
         }
 
+        my $sample_name = $sample_to_store{sample_name};
+        my ($patient_id, $study, $center, $tum_or_ref);
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        if ($sample_name =~ /$name_regex/ms) {
+            ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
+            $sample_to_store{label} = $study;
+        }
+        else {
+            sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex");
+            next;
+        }
+
+        my $original_submission = $sample_to_store{submission};
+        my $isolation_type = $sample_to_store{isolation_type};
+        my $analysis_type = $sample_to_store{isolation_type};
+
+        if ($isolation_type eq 'Tissue') {
+            $analysis_type = 'Somatic_T'; # DNA from tumor tissue
+        }
+        elsif ($isolation_type eq 'RNA') {
+            $analysis_type = 'RNAanalysis'; # RNA from tumor tissue
+        }
+        elsif ($isolation_type eq 'Blood') {
+            $analysis_type = 'Somatic_R'; # DNA from blood
+        }
+        elsif ($isolation_type eq 'Plasma') {
+            $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
+        }
+        else {
+            die "Should not happen: encountered unknown isolation type '$isolation_type' ($isolate_barcode)"
+        }
+
+        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
+            ## specifically check for non-ref samples if submission is defined
+            if ($original_submission eq '') {
+                if ($analysis_type ne 'Somatic_R') {
+                    sayWarn("SKIPPING CORE sample because of incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
+                }
+                ## we only print warning for non R samples but skip them altogether
+                next;
+            }
+
+            ## Set the analysis type for CORE submissions to align with Excel LIMS samples
+            if (exists $submissions->{ $original_submission }) {
+                my $submission_object = $submissions->{ $original_submission };
+                my $project_name = $submission_object->{ 'project_name' };
+                ## Reset project name for sample (from submission)
+                $sample_to_store{project_name} = $project_name;
+                ## Add an analysis type to submission
+                $submission_object->{analysis_type} = "OncoAct";
+            }
+            else {
+                #sayWarn("Unable to update submission \"$original_submission\" because not found in submissions (id:$barcode name:$name)");
+            }
+        }
+        elsif (exists $centers_dict->{ $center }) {
+            ## All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
+            my $centername = $centers_dict->{ $center };
+            my $register_submission = 'HMFreg' . $study;
+            $sample_to_store{original_submission} = $original_submission;
+            $sample_to_store{submission} = $register_submission;
+            $sample_to_store{project_name} = $register_submission;
+            $sample_to_store{entity} = join("_", $study, $centername);
+        }
+        else {
+            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$isolate_barcode name:$sample_name)");
+            next;
+        }
+
+        # Add the missing fields and store final
+        $sample_to_store{analysis_type} = $analysis_type;
+        $sample_to_store{original_submission} = $original_submission;
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%lama_samples, "final store $isolate_barcode", 1);
     }
 
     my $count = scalar keys %lama_samples;
-
     sayInfo("Total of $count samples stored from LAMA");
     sayInfo("  $missing_sample_count without sample info");
     sayInfo("  $missing_isolate_count without isolate info");
@@ -364,10 +347,6 @@ sub parseLamaPatients {
         foreach my $sample (@{$patient->{bloodSamples}}) {
             processSampleOfPatient($patient, $sample, 'blood', \%store);
         }
-        # At time of writing no plasma samples are being used
-        foreach my $sample (@{$patient->{plasmaSamples}}) {
-             # do stuff
-        }
     }
     return \%store;
 }
@@ -472,20 +451,13 @@ sub parseLamaSampleStatus{
     foreach my $object (@$objects){
 
         # there is no barcode in case a sample has not been prepped yet
-        my $sampleBarcode = $object->{frBarcodeDNA};
-        next unless defined $sampleBarcode;
-
-        # debug
-        my $debug_barcode = "";
-        #my $debug_barcode = "FR30543342";
-        if ( $debug_barcode ne "" and $sampleBarcode eq $debug_barcode ){
-            print Dumper $object;
-            die;
-        }
+        my $sampleBarcodeDNA = $object->{frBarcodeDNA};
+        my $sampleBarcodeRNA = $object->{frBarcodeRNA};
+        next unless defined $sampleBarcodeDNA;
 
         # Collect all info into one object
         my %status = ();
-        my $info_tag = "samplestatus->$sampleBarcode";
+        my $info_tag = "samplestatus->$sampleBarcodeDNA";
         copyFieldsFromObject($object, $info_tag, \%lama_status_dict, \%status);
         copyFieldsFromObject($object->{cohort}, $info_tag, \%lama_status_cohort_dict, \%status);
 
@@ -493,7 +465,8 @@ sub parseLamaSampleStatus{
         $status{registration_date} = epochToDate($status{registration_date_epoch});
 
         # Store
-        storeRecordByKey(\%status, $sampleBarcode, \%store, "patient->samples");
+        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "patient->samples($sampleBarcodeDNA)") if defined $sampleBarcodeDNA;
+        storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "patient->samples($sampleBarcodeRNA)") if defined $sampleBarcodeRNA;
 
         # DEBUG
         #my @fields = sort (values %lama_status_dict, values %lama_status_cohort_dict);
