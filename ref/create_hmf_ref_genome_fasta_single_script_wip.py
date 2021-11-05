@@ -11,27 +11,30 @@ from contig_classification import ContigCategorizer
 from contig_types import ContigTypeDesirabilities
 from fasta_writer import FastaWriter
 from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, download_file_over_https, \
+from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
     upload_directory_to_bucket, get_temp_path, make_temp_version_final
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
+from source_files import SourceFile, SourceFileDownloader, SourceFileLocator
 
 SCRIPT_NAME = "create_hmf_ref_genome_fasta"
 
-REFSEQ_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_genomic.fna.gz"
-DECOY_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/786/075/GCA_000786075.2_hs38d1/GCA_000786075.2_hs38d1_genomic.fna.gz"
-EBV_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/402/265/GCF_002402265.1_ASM240226v1/GCF_002402265.1_ASM240226v1_genomic.fna.gz"
-RCRS_FASTA_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_assembly_structure/non-nuclear/assembled_chromosomes/FASTA/chrMT.fna.gz"
-
-REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.39_GRCh38.p13/GCF_000001405.39_GRCh38.p13_assembly_report.txt"
-REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.26_GRCh38/GCF_000001405.26_GRCh38_assembly_report.txt"
-DECOY_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/786/075/GCA_000786075.2_hs38d1/GCA_000786075.2_hs38d1_assembly_report.txt"
-EBV_ASSEMBLY_REPORT_SOURCE = "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/002/402/265/GCF_002402265.1_ASM240226v1/GCF_002402265.1_ASM240226v1_assembly_report.txt"
+SOURCE_FILES = [
+    SourceFile.REFSEQ_FASTA,
+    SourceFile.DECOY_FASTA,
+    SourceFile.EBV_FASTA,
+    SourceFile.RCRS_FASTA,
+    SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
+    SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
+    SourceFile.DECOY_ASSEMBLY_REPORT,
+    SourceFile.EBV_ASSEMBLY_REPORT,
+]
 
 SOURCES_LIST_FILE_NAME = "sources.txt"
 
 ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
 MASTER_FASTA_FILE_NAME = "master.fasta"
+SOURCE_FILES_DIR_NAME = "source_files"
 
 
 class Config(NamedTuple):
@@ -41,34 +44,7 @@ class Config(NamedTuple):
     reuse_existing_files: bool
 
     def get_local_source_file_dir(self) -> Path:
-        return self.working_dir / "source_files"
-
-    def get_local_compressed_refseq_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / REFSEQ_FASTA_SOURCE.split("/")[-1]
-
-    def get_local_compressed_decoy_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / DECOY_FASTA_SOURCE.split("/")[-1]
-
-    def get_local_compressed_ebv_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / EBV_FASTA_SOURCE.split("/")[-1]
-
-    def get_local_compressed_rcrs_fasta_path(self) -> Path:
-        return self.get_local_source_file_dir() / RCRS_FASTA_SOURCE.split("/")[-1]
-
-    def get_local_refseq_with_patches_assembly_report_path(self) -> Path:
-        return self.get_local_source_file_dir() / REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
-
-    def get_local_refseq_without_patches_assembly_report_path(self) -> Path:
-        return self.get_local_source_file_dir() / REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
-
-    def get_local_decoy_assembly_report_path(self) -> Path:
-        return self.get_local_source_file_dir() / DECOY_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
-
-    def get_local_ebv_assembly_report_path(self) -> Path:
-        return self.get_local_source_file_dir() / EBV_ASSEMBLY_REPORT_SOURCE.split("/")[-1]
-
-    def get_source_list_path(self) -> Path:
-        return self.get_local_source_file_dir() / SOURCES_LIST_FILE_NAME
+        return self.working_dir / SOURCE_FILES_DIR_NAME
 
     def get_alias_to_canonical_contig_name_path(self) -> Path:
         return self.working_dir / ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME
@@ -95,7 +71,7 @@ def main(config: Config) -> None:
         config.get_local_source_file_dir().mkdir(parents=True)
 
     logging.info("Downloading source files.")
-    download_source_files(config)
+    SourceFileDownloader.download_source_files_from_original_source(SOURCE_FILES, config.get_local_source_file_dir())
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
     if not config.get_alias_to_canonical_contig_name_path().exists():
@@ -153,9 +129,8 @@ def main(config: Config) -> None:
 def create_master_fasta_file(config: Config) -> None:
     FastaWriter.combine_compressed_files(
         [
-            config.get_local_compressed_refseq_fasta_path(),
-            config.get_local_compressed_decoy_fasta_path(),
-            config.get_local_compressed_ebv_fasta_path(),
+            SourceFileLocator().get_location(source_file, config.get_local_source_file_dir())
+            for source_file in [SourceFile.REFSEQ_FASTA, SourceFile.DECOY_FASTA, SourceFile.EBV_FASTA]
         ],
         get_temp_path(config.get_local_uncompressed_master_fasta_path()),
     )
@@ -163,11 +138,15 @@ def create_master_fasta_file(config: Config) -> None:
 
 
 def create_contig_alias_file(config: Config) -> None:
+    relevant_source_files = [
+        SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
+        SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
+        SourceFile.DECOY_ASSEMBLY_REPORT,
+        SourceFile.EBV_ASSEMBLY_REPORT,
+    ]
     assembly_reports_text = "\n".join([
-        get_text_from_file(config.get_local_refseq_with_patches_assembly_report_path()),
-        get_text_from_file(config.get_local_refseq_without_patches_assembly_report_path()),
-        get_text_from_file(config.get_local_decoy_assembly_report_path()),
-        get_text_from_file(config.get_local_ebv_assembly_report_path()),
+        get_text_from_file(SourceFileLocator().get_location(source_file, config.get_local_source_file_dir()))
+        for source_file in relevant_source_files
     ])
     contig_alias_text = AliasToCanonicalContigNameTextWriter.create_text_from_assembly_reports_text(
         assembly_reports_text
@@ -175,68 +154,6 @@ def create_contig_alias_file(config: Config) -> None:
     with open(get_temp_path(config.get_alias_to_canonical_contig_name_path()), "w") as f:
         f.write(contig_alias_text)
     make_temp_version_final(config.get_alias_to_canonical_contig_name_path())
-
-
-def download_source_files(config: Config) -> None:
-    download_name_source_target_triples = [
-        ("REFSEQ_FASTA_SOURCE", REFSEQ_FASTA_SOURCE, config.get_local_compressed_refseq_fasta_path()),
-        ("DECOY_FASTA_SOURCE", DECOY_FASTA_SOURCE, config.get_local_compressed_decoy_fasta_path()),
-        ("EBV_FASTA_SOURCE", EBV_FASTA_SOURCE, config.get_local_compressed_ebv_fasta_path()),
-        ("RCRS_FASTA_SOURCE", RCRS_FASTA_SOURCE, config.get_local_compressed_rcrs_fasta_path()),
-        (
-            "REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT_SOURCE",
-            REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT_SOURCE,
-            config.get_local_refseq_with_patches_assembly_report_path()
-        ),
-        (
-            "REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT_SOURCE",
-            REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT_SOURCE,
-            config.get_local_refseq_without_patches_assembly_report_path()
-        ),
-        ("DECOY_ASSEMBLY_REPORT_SOURCE", DECOY_ASSEMBLY_REPORT_SOURCE, config.get_local_decoy_assembly_report_path()),
-        ("EBV_ASSEMBLY_REPORT_SOURCE", EBV_ASSEMBLY_REPORT_SOURCE, config.get_local_ebv_assembly_report_path()),
-    ]
-
-    all_files_already_exist_locally = (
-            all(triple[2].exists() for triple in download_name_source_target_triples)
-            and config.get_source_list_path().exists()
-    )
-    some_files_already_exist_locally = (
-            any(triple[2].exists() for triple in download_name_source_target_triples)
-            or config.get_source_list_path().exists()
-    )
-    if all_files_already_exist_locally:
-        logging.info("Skipping downloads. Source files already exist locally.")
-        return
-    elif some_files_already_exist_locally:
-        error_msg = (
-            f"Some of the expected source files already exist locally and other do not. "
-            f"Please delete the existing local source files so new version can be downloaded."
-        )
-        raise ValueError(error_msg)
-
-    logging.info(f"Writing sources to file: {config.get_source_list_path()}")
-    lines = [f"{name}: {source}" for name, source, _ in download_name_source_target_triples]
-    sources_text = "\n".join(lines)
-    with open(get_temp_path(config.get_source_list_path()), "w") as f:
-        f.write(sources_text)
-    make_temp_version_final(config.get_source_list_path())
-
-    logging.info("Starting downloads of source files")
-    download_failed = False
-    for name, source, target in download_name_source_target_triples:
-        logging.info(f"Start download of {name}")
-        try:
-            download_file_over_https(source, target)
-        except Exception as exc:
-            logging.error(f"Download of {name} from {source} to {target} has generated an exception: {exc}")
-            download_failed = True
-        else:
-            logging.info(f"Finished download of {name}")
-    if download_failed:
-        raise ValueError("Download of at least one file has failed")
-    else:
-        logging.info("Finished downloads of source files")
 
 
 def assert_created_ref_genome_matches_expectations(
@@ -268,7 +185,7 @@ def assert_created_ref_genome_matches_expectations(
                     raise ValueError(f"Contig sequences are not identical: contig={contig_name}")
     feature_analysis = ReferenceGenomeFeatureAnalyzer.do_analysis(
         get_temp_path(config.get_output_fasta_path()),
-        config.get_local_compressed_rcrs_fasta_path(),
+        SourceFileLocator().get_location(SourceFile.RCRS_FASTA, config.get_local_source_file_dir()),
         contig_name_translator,
     )
     expected_feature_analysis = ReferenceGenomeFeatureAnalysis(
