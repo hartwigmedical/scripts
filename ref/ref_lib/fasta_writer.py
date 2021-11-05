@@ -7,9 +7,9 @@ from typing import List
 
 import pysam
 
-from contig_classification import ContigCategorizer
-from contig_name_translation import ContigNameTranslator
-from contig_types import ContigType, ContigTypeDesirabilities, Assembly
+from ref_lib.contig_classification import ContigCategorizer
+from ref_lib.contig_name_translation import ContigNameTranslator
+from ref_lib.contig_types import ContigType, ContigTypeDesirabilities, Assembly
 
 
 class FastaWriter(object):

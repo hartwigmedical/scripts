@@ -4,7 +4,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, NamedTuple, overload, Any, Optional
 
-from ref_util import make_temp_version_final, get_temp_path, download_bucket_file
+from ref_lib.ref_util import make_temp_version_final, get_temp_path, download_bucket_file
 
 
 class SourceFile(Enum):
@@ -16,6 +16,19 @@ class SourceFile(Enum):
     REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT = auto()
     DECOY_ASSEMBLY_REPORT = auto()
     EBV_ASSEMBLY_REPORT = auto()
+
+    @classmethod
+    def get_all(cls) -> List["SourceFile"]:
+        return [
+            SourceFile.REFSEQ_FASTA,
+            SourceFile.DECOY_FASTA,
+            SourceFile.EBV_FASTA,
+            SourceFile.RCRS_FASTA,
+            SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.DECOY_ASSEMBLY_REPORT,
+            SourceFile.EBV_ASSEMBLY_REPORT,
+        ]
 
 
 class SourceFileLocator(object):

@@ -4,7 +4,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Dict, NamedTuple, Optional, Set, DefaultDict, List
 
-from contig_types import ContigType
+from ref_lib.contig_types import ContigType
 
 
 class ContigNameTranslator(object):

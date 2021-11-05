@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 from typing import List, NamedTuple, Optional
 
-from contig_name_translation import ContigNameTranslator
-from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer
-from ref_util import set_up_logging, assert_file_exists_in_bucket, get_text_from_bucket_file
+from ref_lib.contig_name_translation import ContigNameTranslator
+from ref_lib.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer
+from ref_lib.ref_util import set_up_logging, assert_file_exists_in_bucket, get_text_from_bucket_file
 
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.

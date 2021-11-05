@@ -6,29 +6,18 @@ from typing import List, NamedTuple, Optional
 
 import pysam
 
-from contig_name_translation import AliasToCanonicalContigNameTextWriter, ContigNameTranslator
-from contig_classification import ContigCategorizer
-from contig_types import ContigTypeDesirabilities
-from fasta_writer import FastaWriter
-from ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
-from ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
+from ref_lib.contig_name_translation import AliasToCanonicalContigNameTextWriter, ContigNameTranslator
+from ref_lib.contig_classification import ContigCategorizer
+from ref_lib.contig_types import ContigTypeDesirabilities
+from ref_lib.fasta_writer import FastaWriter
+from ref_lib.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
+from ref_lib.ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
     upload_directory_to_bucket, get_temp_path, make_temp_version_final
 
 # See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
-from source_files import SourceFile, SourceFileDownloader, SourceFileLocator
+from ref_lib.source_files import SourceFile, SourceFileDownloader, SourceFileLocator
 
 SCRIPT_NAME = "create_hmf_ref_genome_fasta"
-
-SOURCE_FILES = [
-    SourceFile.REFSEQ_FASTA,
-    SourceFile.DECOY_FASTA,
-    SourceFile.EBV_FASTA,
-    SourceFile.RCRS_FASTA,
-    SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
-    SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
-    SourceFile.DECOY_ASSEMBLY_REPORT,
-    SourceFile.EBV_ASSEMBLY_REPORT,
-]
 
 SOURCES_LIST_FILE_NAME = "sources.txt"
 
@@ -71,7 +60,7 @@ def main(config: Config) -> None:
         config.get_local_source_file_dir().mkdir(parents=True)
 
     logging.info("Downloading source files.")
-    SourceFileDownloader.download_source_files(SOURCE_FILES, config.get_local_source_file_dir())
+    SourceFileDownloader.download_source_files(SourceFile.get_all(), config.get_local_source_file_dir())
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
     if not config.get_alias_to_canonical_contig_name_path().exists():

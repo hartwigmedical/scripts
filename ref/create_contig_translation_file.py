@@ -4,8 +4,8 @@ import sys
 from pathlib import Path
 from typing import List, NamedTuple
 
-from contig_name_translation import AliasToCanonicalContigNameTextWriter
-from ref_util import set_up_logging, assert_file_does_not_exist, get_text_from_bucket_file
+from ref_lib.contig_name_translation import AliasToCanonicalContigNameTextWriter
+from ref_lib.ref_util import set_up_logging, assert_file_does_not_exist, get_text_from_bucket_file
 
 SCRIPT_NAME = "create_chrom_translation_file"
 SOURCE_FILE_BUCKET = "hmf-crunch-experiments"

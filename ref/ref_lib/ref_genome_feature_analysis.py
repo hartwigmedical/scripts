@@ -6,9 +6,9 @@ from typing import NamedTuple, Optional
 
 import pysam
 
-from contig_classification import ContigCategorizer
-from contig_name_translation import ContigNameTranslator
-from ref_util import assert_file_exists, get_nucleotides_from_fasta, get_nucleotides_from_string, \
+from ref_lib.contig_classification import ContigCategorizer
+from ref_lib.contig_name_translation import ContigNameTranslator
+from ref_lib.ref_util import assert_file_exists, get_nucleotides_from_fasta, get_nucleotides_from_string, \
     STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, UNKNOWN_NUCLEOTIDES
 
 

@@ -1,7 +1,7 @@
 from typing import NamedTuple, Tuple, List
 
-from contig_name_translation import ContigNameTranslator
-from contig_types import ContigType
+from ref_lib.contig_name_translation import ContigNameTranslator
+from ref_lib.contig_types import ContigType
 
 
 class CategorizedContigNames(NamedTuple):
