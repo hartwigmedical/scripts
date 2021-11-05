@@ -32,11 +32,11 @@ SOURCES_LIST_FILE_NAME = "sources.txt"
 
 ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
 MASTER_FASTA_FILE_NAME = "master.fasta"
-OUTPUT_FASTA_FILE_NAME = "output.fasta"
 
 
 class Config(NamedTuple):
     working_dir: Path
+    output_fasta_name: str
     output_bucket_dir: Optional[str]
     reuse_existing_files: bool
 
@@ -80,7 +80,7 @@ class Config(NamedTuple):
         return self.working_dir / MASTER_FASTA_FILE_NAME
 
     def get_output_fasta_path(self) -> Path:
-        return self.working_dir / OUTPUT_FASTA_FILE_NAME
+        return self.working_dir / self.output_fasta_name
 
 
 def main(config: Config) -> None:
@@ -144,12 +144,13 @@ def main(config: Config) -> None:
 
     # TODO: Change output FASTA file name and include version number.
     #   Or maybe just make the final name an input argument.
+    # TODO: Make it possible to use sources from bucket dir
     # TODO: Remove unused scripts
     # TODO: Create requirements file to make this script properly reproducible with venv.
     #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
-    # TODO: Make the script idempotent, with proper protections against errors partway through ruining things
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
+    # TODO: Make check_ref_genome_features.py work in similar way to this script
 
     logging.info(f"Finished {SCRIPT_NAME}.")
 
@@ -312,8 +313,15 @@ def parse_args(sys_args: List[str]) -> Config:
         help="Path to local working directory. If directory does not exist, it is created.",
     )
     parser.add_argument(
-        "--output_bucket_dir",
+        "--output_fasta_name",
         "-o",
+        type=str,
+        required=True,
+        help="Name of created FASTA file.",
+    )
+    parser.add_argument(
+        "--output_bucket_dir",
+        "-b",
         type=str,
         default=None,
         help=(
@@ -332,7 +340,7 @@ def parse_args(sys_args: List[str]) -> Config:
 
     args = parser.parse_args(sys_args)
 
-    return Config(args.working_dir, args.output_bucket_dir, args.reuse_existing_files)
+    return Config(args.working_dir, args.output_fasta_name, args.output_bucket_dir, args.reuse_existing_files)
 
 
 if __name__ == "__main__":
