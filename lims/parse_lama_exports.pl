@@ -21,18 +21,23 @@ my %WARN_IF_ABSENT_FIELDS = (
     status=>1
 );
 
+my %germline_choice_translation = (
+    'Yes: Only treatable findings' => '1: Behandelbare toevalsbevindingen',
+    'Yes: All findings'            => '2: Alle toevalsbevindingen',
+    'No'                           => '2: No',
+    'Yes'                          => '1: Yes'
+);
+
 my %lama_status_cohort_dict = (
     'cohortCode'           => 'cohort',
+    'reportPGX'            => 'report_pgx',
     'reportViral'          => 'report_viral',
     'reportGermline'       => 'report_germline',
-    'flagGermlineOnReport' => 'flag_germline_on_report',
     'reportConclusion'     => 'report_conclusion',
-    'reportPGX'            => 'report_pgx',
     'isShallowStandard'    => 'shallowseq',
     'addToDatabase'        => 'add_to_database',
     'addToDatarequests'    => 'add_to_datarequests',
-    'sendPatientReport'    => 'send_patient_report',
-    'hmfRegEnding'         => 'hmf_reg_ending'
+    'sendPatientReport'    => 'send_patient_report'
 );
 
 my %lama_patient_dict = (
@@ -238,7 +243,13 @@ sub addLamaSamplesToLims{
         # Add the missing fields and store final
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
-        storeRecordByKey(\%sample_to_store, $isolate_barcode, \%lama_samples, "final store $isolate_barcode", 1);
+
+        # Strip "-" from certain fields
+        $sample_to_store{patient} =~ s/\-//g;
+        $sample_to_store{cohort} =~ s/\-//g;
+
+        # And store the final result
+        storeRecordByKey(\%sample_to_store, $isolate_barcode, \%lama_samples, "final storing of $isolate_barcode", 1);
     }
 
     my $count = scalar keys %lama_samples;

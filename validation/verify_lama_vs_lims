@@ -8,8 +8,30 @@ LAMA_JSON="$HOME/tmp/lama.json"
 search_strings=("$@")
 compare_mode="true"
 
-#check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date report_date analysis_type)
-check_fields=(sample_name sample_id lab_status ref_sample_id submission report_viral entity shallowseq arrival_date analysis_type)
+check_fields=(
+  patient
+  sample_name
+  sample_id
+  submission
+  entity
+  project_name
+  cohort
+  shallowseq
+  analysis_type
+  lab_status
+  ref_sample_id
+  report_viral
+  report_pgx
+  report_germline
+  report_germline_level
+  sampling_date
+  arrival_date
+  biopsy_site
+  hospital_pa_sample_id
+  hospital_patient_id
+  lab_sop_versions
+  yield
+)
 
 def_barcodes=(FR10244761)
 
@@ -35,14 +57,13 @@ compare_by_sample_barcode () {
   local barcode=$1 && shift
   lims_result=$(query_lims "$LIMS_JSON" "$barcode")
   lama_result=$(query_lims "$LAMA_JSON" "$barcode")
+
   for field_name in "${check_fields[@]}"; do
     lims_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lims_result")
     lama_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lama_result")
-    result="NA"
+    result="FAIL"
     if [[ "$lims_val" == "$lama_val" ]]; then
       result="OK"
-    else
-      result="FAIL"
     fi
     echo "$result: $barcode $field_name ($lims_val vs $lama_val)"
   done
