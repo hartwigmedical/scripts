@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 LIMS_JSON="/data/ops/lims/prod/lims.json"
-LAMA_JSON="$HOME/tmp/lama.json"
+LAMA_JSON="/data/ops/lims/pilot/lims.json"
 
 search_strings=("$@")
 compare_mode="true"
@@ -59,14 +59,19 @@ compare_by_sample_barcode () {
   lama_result=$(query_lims "$LAMA_JSON" "$barcode")
 
   for field_name in "${check_fields[@]}"; do
-    lims_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lims_result")
-    lama_val=$(jq --arg key "$field_name" '.[$key]' <<< "$lama_result")
+    lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
+    lama_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lama_result")
     result="FAIL"
-    if [[ "$lims_val" == "$lama_val" ]]; then
+    if [[ "$lims_val" == "" && "$lama_val" == "null" ]]; then
+      result="OK"
+    elif [[ "$lims_val" == "$lama_val" ]]; then
       result="OK"
     fi
     echo "$result: $barcode $field_name ($lims_val vs $lama_val)"
   done
+  echo "# See also:"
+  echo " query_lims.pl -rna -lims $LIMS_JSON -type samples -filter sample_id=$barcode -json"
+  echo " query_lims.pl -rna -lims $LAMA_JSON -type samples -filter sample_id=$barcode -json"
 }
 
 query_lims () {

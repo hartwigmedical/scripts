@@ -272,14 +272,22 @@ sub addLamaSamplesToSamples{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
 
-        # Field fixes
+        # Fix patient ID field
         $sample_to_store{patient} =~ s/\-//g;
-        if ( not exists $sample_to_store{cohort}){
-            sayWarn("No cohort for $isolate_barcode and $sample_name")
-        }else{
-            $sample_to_store{cohort} =~ s/\-//g;
-        }
+
+        # Fix cohort ID field
+        $sample_to_store{cohort} =~ s/\-//g;
+
+        # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
+
+        # Fix germline level
+        if ( exists $sample_to_store{report_germline_level} ){
+            my $level = $sample_to_store{report_germline_level};
+            if ( exists $name_dict->{lama_germline_choice_translation}{$level} ){
+                $sample_to_store{report_germline_level} = $name_dict->{lama_germline_choice_translation}{$level};
+            }
+        }
 
         # And store the final result
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
