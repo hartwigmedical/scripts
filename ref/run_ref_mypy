@@ -5,8 +5,8 @@ DIR_NAME="$(dirname "$0")" || exit 1
 venv_dir="$1" && shift
 
 if [[ -n ${venv_dir} ]]; then
-  create_python_venv --venv_dir "${venv_dir}" --requirements "${DIR_NAME}/requirements.txt"
-  source "${venv_dir}/bin/activate"
+  create_python_venv --venv_dir "${venv_dir}" --requirements "${DIR_NAME}/requirements.txt" || exit 1
+  source "${venv_dir}/bin/activate" || exit 1
 fi
 
 export MYPYPATH="${MYPYPATH}:${DIR_NAME}"

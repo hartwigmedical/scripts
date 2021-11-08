@@ -222,8 +222,22 @@ def parse_args(sys_args: List[str]) -> Config:
             "instead of downloading them from their original source."
         ),
     )
+    parser.add_argument(
+        "--venv_dir",
+        "-v",
+        type=Path,
+        default=None,
+        help="Optional argument. Directory to use for a Python venv. If not provided, no venv is used.",
+    )  # Does nothing. Should be caught and used in shell script already.
 
     args = parser.parse_args(sys_args)
+
+    if args.venv_dir is not None:
+        error_msg = (
+            f"Venv argument should be caught and used in the wrapping shell script, "
+            f"not in the Python script itself: {args.venv_dir}"
+        )
+        raise SyntaxError(error_msg)
 
     config = Config(
         args.working_dir,

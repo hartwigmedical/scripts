@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+DIR_NAME="$(dirname "$0")" || exit 1
+
+while [[ $# -gt 0 ]]
+do
+key="$1" && shift
+case $key in
+    -v|--venv_dir)
+    venv_dir="$1" && shift
+    ;;
+    *)    # Unknown option
+    OTHER_OPTIONS+=("$key") # Save it in an array for later
+    ;;
+esac
+done
+
+if [[ -n ${venv_dir} ]]; then
+  create_python_venv --venv_dir "${venv_dir}" --requirements "${DIR_NAME}/requirements.txt" || exit 1
+  source "${venv_dir}/bin/activate" || exit 1
+fi
+
+export PYTHONPATH="${PYTHONPATH}:${DIR_NAME}"
+python3 "${DIR_NAME}/create_hmf_ref_genome_fasta.py" "${OTHER_OPTIONS[@]}" || exit 1
