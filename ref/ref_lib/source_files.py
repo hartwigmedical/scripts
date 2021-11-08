@@ -83,6 +83,7 @@ class SourceFileDownloader(object):
     def download_source_files(
             cls, source_files: List[SourceFile], target_dir: Path, bucket_dir: Optional[str] = None,
     ) -> None:
+        logging.info(f"Starting download of source files: {[file.name for file in source_files]}")
         download_jobs = [
             DownloadJob(
                 source_file,
@@ -141,7 +142,7 @@ class SourceFileDownloader(object):
         if download_failed:
             raise ValueError("Download of at least one file has failed")
         else:
-            logging.info("Finished downloads of source files")
+            logging.info(f"Finished downloads of source files: {[file.name for file in source_files]}")
 
     @classmethod
     def _write_local_sources_list_file(

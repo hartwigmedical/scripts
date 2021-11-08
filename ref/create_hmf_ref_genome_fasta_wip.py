@@ -73,7 +73,10 @@ def main(config: Config) -> None:
 
     logging.info(f"Creating {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file.")
     if not config.get_alias_to_canonical_contig_name_path().exists():
-        create_contig_alias_file(config)
+        AliasToCanonicalContigNameTextWriter.create_contig_alias_file(
+            config.get_alias_to_canonical_contig_name_path(),
+            config.get_local_source_file_dir(),
+        )
     else:
         logging.info(f"Skipping creation of {ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME} file. Already exists.")
 
@@ -113,7 +116,6 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
-    # TODO: Make it possible to use sources from bucket dir
     # TODO: Remove unused scripts
     # TODO: Create requirements file to make this script properly reproducible with venv.
     #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
@@ -134,25 +136,6 @@ def create_master_fasta_file(config: Config) -> None:
         get_temp_path(config.get_local_uncompressed_master_fasta_path()),
     )
     make_temp_version_final(config.get_local_uncompressed_master_fasta_path())
-
-
-def create_contig_alias_file(config: Config) -> None:
-    relevant_source_files = [
-        SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
-        SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
-        SourceFile.DECOY_ASSEMBLY_REPORT,
-        SourceFile.EBV_ASSEMBLY_REPORT,
-    ]
-    assembly_reports_text = "\n".join([
-        get_text_from_file(SourceFileLocator().get_location(source_file, config.get_local_source_file_dir()))
-        for source_file in relevant_source_files
-    ])
-    contig_alias_text = AliasToCanonicalContigNameTextWriter.create_text_from_assembly_reports_text(
-        assembly_reports_text
-    )
-    with open(get_temp_path(config.get_alias_to_canonical_contig_name_path()), "w") as f:
-        f.write(contig_alias_text)
-    make_temp_version_final(config.get_alias_to_canonical_contig_name_path())
 
 
 def assert_created_ref_genome_matches_expectations(
@@ -204,11 +187,6 @@ def assert_created_ref_genome_matches_expectations(
     if feature_analysis != expected_feature_analysis:
         error_msg = f"Not all features as expected: expected={expected_feature_analysis}, actual={feature_analysis}"
         raise ValueError(error_msg)
-
-
-def get_text_from_file(path: Path) -> str:
-    with open(path, "r") as f:
-        return f.read().replace("\r", "")
 
 
 def parse_args(sys_args: List[str]) -> Config:

@@ -33,7 +33,7 @@ def main(config: Config) -> None:
 
     assembly_reports_text = get_translation_text_from_bucket_files()
 
-    contig_alias_text = AliasToCanonicalContigNameTextWriter.create_text_from_assembly_reports_text(
+    contig_alias_text = AliasToCanonicalContigNameTextWriter._create_text_from_assembly_reports_text(
         assembly_reports_text,
     )
 

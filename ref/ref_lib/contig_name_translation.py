@@ -2,9 +2,12 @@ import logging
 import re
 from collections import defaultdict
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, NamedTuple, Optional, Set, DefaultDict, List
 
 from ref_lib.contig_types import ContigType
+from ref_lib.ref_util import get_text_from_file, get_temp_path, make_temp_version_final
+from ref_lib.source_files import SourceFile, SourceFileLocator
 
 
 class ContigNameTranslator(object):
@@ -320,7 +323,26 @@ class ContigSummaryInterpreter(object):
 
 class AliasToCanonicalContigNameTextWriter(object):
     @classmethod
-    def create_text_from_assembly_reports_text(cls, assembly_reports_text: str) -> str:
+    def create_contig_alias_file(cls, output_path: Path, source_files_dir: Path) -> None:
+        relevant_source_files = [
+            SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.DECOY_ASSEMBLY_REPORT,
+            SourceFile.EBV_ASSEMBLY_REPORT,
+        ]
+        assembly_reports_text = "\n".join([
+            get_text_from_file(SourceFileLocator().get_location(source_file, source_files_dir))
+            for source_file in relevant_source_files
+        ])
+        contig_alias_text = AliasToCanonicalContigNameTextWriter._create_text_from_assembly_reports_text(
+            assembly_reports_text
+        )
+        with open(get_temp_path(output_path), "w") as f:
+            f.write(contig_alias_text)
+        make_temp_version_final(output_path)
+
+    @classmethod
+    def _create_text_from_assembly_reports_text(cls, assembly_reports_text: str) -> str:
         # We don't use the UCSC-style names from the file because not all contigs have such a name in the file,
         # and because alt scaffolds ans novel patches share the '_alt' suffix in this file.
         # We instead use '_novel' for novel patches.

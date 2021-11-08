@@ -93,6 +93,11 @@ def get_text_from_bucket_file(path: str) -> str:
     return text
 
 
+def get_text_from_file(path: Path) -> str:
+    with open(path, "r") as f:
+        return f.read().replace("\r", "")
+
+
 def download_bucket_file(source: str, target: Path) -> str:
     text: str = get_blob(source).download_to_filename(str(target))
     return text
