@@ -4,7 +4,7 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 task_id="updateReportingOverview"
-rep_src_file_sharing=$(locate_reporting_db_sharing_tsv)
+rep_src_file_sharing="/data/ops/lims/prod/sharing_db_generated.tsv"
 nas_loc="/volume1/web/overviews/reporting"
 
 ## Sanity check
@@ -16,6 +16,6 @@ fi
 info "START with ${task_id} $(date '+%y%m%d')"
 info " Syncing ${rep_src_file_sharing} from datastore to NAS (to ${nas_loc})"
 copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/"
-copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/final_sharing_db.txt"
+copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/sharing_db_generated.txt"
 info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"
 info "DONE with ${task_id}"
