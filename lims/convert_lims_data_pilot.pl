@@ -276,6 +276,11 @@ sub addLamaSamplesToSamples{
            }
         }
 
+        # Add non-existing fields that are required downstream
+        if ( not exists $sample_to_store{ptum} ){
+            $sample_to_store{ptum} = "";
+        }
+
         # And store the final result
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
     }
@@ -476,9 +481,6 @@ sub parseLamaSampleStatus{
         my $info_tag = "samplestatus->$sampleBarcodeDNA";
         copyFieldsFromObject($object, $info_tag, $name_dict->{lama_status_dict}, \%status);
         copyFieldsFromObject($object->{cohort}, $info_tag, $name_dict->{lama_status_cohort_dict}, \%status);
-
-        ## Handle exceptional case of DRUPstage3
-        #if ( $object->{cohort} eq "DRUPSTAGE3" )
 
         # Store
         storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "patient->samples($sampleBarcodeDNA)") if defined $sampleBarcodeDNA;
