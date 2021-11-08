@@ -1,9 +1,6 @@
-import gzip
 import hashlib
 import logging
-import shutil
 from pathlib import Path
-from typing import List
 
 import pysam
 
@@ -28,20 +25,6 @@ class FastaWriter(object):
         ContigType.FIX_PATCH: "fix-patch",
         ContigType.NOVEL_PATCH: "novel-patch",
     }
-
-    @classmethod
-    def combine_files(cls, sources: List[Path], target: Path) -> None:
-        with open(target, "wb") as f_out:
-            for source in sources:
-                with open(source, "rb") as f_in:
-                    shutil.copyfileobj(f_in, f_out)
-
-    @classmethod
-    def combine_compressed_files(cls, sources: List[Path], target: Path) -> None:
-        with open(target, "wb") as f_out:
-            for source in sources:
-                with gzip.open(source, "rb") as f_in:
-                    shutil.copyfileobj(f_in, f_out)
 
     @classmethod
     def write_hmf_ref_genome_fasta(
@@ -102,7 +85,9 @@ class FastaWriter(object):
             raise ValueError(error_msg)
 
     @classmethod
-    def _get_header(cls, contig_name: str, standardized_contig_name: str, contig_type: ContigType, sequence: str) -> str:
+    def _get_header(
+            cls, contig_name: str, standardized_contig_name: str, contig_type: ContigType, sequence: str,
+    ) -> str:
         header_entries = [f">{standardized_contig_name}", f"AC:{contig_name}", f"LN:{len(sequence)}"]
         if contig_type == ContigType.UNLOCALIZED:
             region = standardized_contig_name.split("_")[0]

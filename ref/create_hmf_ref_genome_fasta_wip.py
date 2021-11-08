@@ -13,7 +13,7 @@ from ref_lib.fasta_writer import FastaWriter
 from ref_lib.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_lib.ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
     upload_directory_to_bucket, get_temp_path, make_temp_version_final, ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME, \
-    MASTER_FASTA_FILE_NAME, SOURCE_FILES_DIR_NAME
+    MASTER_FASTA_FILE_NAME, SOURCE_FILES_DIR_NAME, combine_compressed_files
 from ref_lib.source_files import SourceFile, SourceFileDownloader, SourceFileLocator
 
 SCRIPT_NAME = "create_hmf_ref_genome_fasta"
@@ -119,7 +119,7 @@ def main(config: Config) -> None:
 
 
 def create_master_fasta_file(config: Config) -> None:
-    FastaWriter.combine_compressed_files(
+    combine_compressed_files(
         [
             SourceFileLocator().get_location(source_file, config.get_local_source_file_dir())
             for source_file in [SourceFile.REFSEQ_FASTA, SourceFile.DECOY_FASTA, SourceFile.EBV_FASTA]

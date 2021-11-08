@@ -1,15 +1,15 @@
 import gzip
 import logging
 import shutil
+import concurrent.futures
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Set
 
 import pysam
 
 from ref_lib.contig_classification import ContigCategorizer
 from ref_lib.contig_name_translation import ContigNameTranslator
-from ref_lib.ref_util import assert_file_exists, get_nucleotides_from_fasta, get_nucleotides_from_string, \
-    STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, UNKNOWN_NUCLEOTIDES
+from ref_lib.ref_util import assert_file_exists, STANDARD_NUCLEOTIDES, SOFTMASKED_NUCLEOTIDES, UNKNOWN_NUCLEOTIDES
 
 
 class ReferenceGenomeFeatureAnalysis(NamedTuple):
@@ -53,7 +53,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             warn_msg = f"Did not find exactly one X contig: x={categorized_contig_names.x_contigs}"
             logging.warning(warn_msg)
 
-        nucleotides = get_nucleotides_from_fasta(ref_genome_path)
+        nucleotides = cls._get_nucleotides_from_fasta(ref_genome_path)
         logging.info(f"nucleotides: {sorted(nucleotides)}")
 
         has_unplaced_contigs = bool(categorized_contig_names.unplaced_contigs)
@@ -96,7 +96,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
         )
         has_only_hardmasked_nucleotides_at_y_par1: Optional[bool]
         if len(categorized_contig_names.y_contigs) == 1:
-            y_test_nucleotides = get_nucleotides_from_string(
+            y_test_nucleotides = cls._get_nucleotides_from_string(
                 cls._get_y_test_sequence(categorized_contig_names.y_contigs[0], ref_genome_path)
             )
             logging.info(f"nucleotides at y par1 test region: {sorted(y_test_nucleotides)}")
@@ -182,13 +182,37 @@ class ReferenceGenomeFeatureAnalyzer(object):
     @classmethod
     def _is_definitely_padded_with_n(cls, contig_name: str, ref_genome_path: Path) -> bool:
         with pysam.Fastafile(ref_genome_path) as genome_f:
-            first_1000_nucleotides = get_nucleotides_from_string(
+            first_1000_nucleotides = cls._get_nucleotides_from_string(
                 genome_f.fetch(contig_name, 0, 1000)
             )
-            last_1000_nucleotides = get_nucleotides_from_string(
+            last_1000_nucleotides = cls._get_nucleotides_from_string(
                 genome_f.fetch(contig_name, start=genome_f.get_reference_length(contig_name) - 1000)
             )
 
         first_1000_nucleotides_all_unknown = first_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES)
         last_1000_nucleotides_all_unknown = last_1000_nucleotides.issubset(UNKNOWN_NUCLEOTIDES)
         return first_1000_nucleotides_all_unknown and last_1000_nucleotides_all_unknown
+
+    @classmethod
+    def _get_nucleotides_from_fasta(cls, fasta_path: Path) -> Set[str]:
+        futures = []
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            with pysam.Fastafile(fasta_path) as genome_f:
+                for contig_name in genome_f.references:
+                    contig = genome_f.fetch(contig_name)
+                    futures.append(executor.submit(cls._get_nucleotides_from_string, contig))
+
+        nucleotides: Set[str] = set()
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                nucleotides = nucleotides.union(future.result())
+            except Exception as exc:
+                raise ValueError(exc)
+        return nucleotides
+
+    @classmethod
+    def _get_nucleotides_from_string(cls, sequence: str) -> Set[str]:
+        nucleotides = set()
+        for nucleotide in sequence:
+            nucleotides.add(nucleotide)
+        return nucleotides

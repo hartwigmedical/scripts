@@ -4,9 +4,8 @@ import logging
 import re
 import shutil
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Tuple, List
 
-import pysam
 from google.cloud import storage
 
 STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
@@ -29,11 +28,6 @@ def assert_file_exists(path: Path) -> None:
         raise ValueError(f"File does not exist: {path}")
 
 
-def assert_file_does_not_exist(path: Path) -> None:
-    if path.is_file():
-        raise ValueError(f"File exists: {path}")
-
-
 def assert_dir_does_not_exist(path: Path) -> None:
     if path.is_dir():
         raise ValueError(f"Dir exists: {path}")
@@ -44,16 +38,16 @@ def assert_dir_exists(path: Path) -> None:
         raise ValueError(f"Dir does not exist: {path}")
 
 
-def delete_if_exists(path: Path) -> None:
-    if path.exists():
-        path.unlink()
+def get_text_from_file(path: Path) -> str:
+    with open(path, "r") as f:
+        return f.read().replace("\r", "")
 
 
-def assert_file_exists_in_bucket(bucket_path: str) -> None:
-    if not re.fullmatch(r"gs://.+", bucket_path):
-        raise ValueError(f"Path is not of the form 'gs://some/file/path': {bucket_path}")
-    if not get_blob(bucket_path).exists():
-        raise ValueError(f"File in bucket does not exist: {bucket_path}")
+def combine_compressed_files(sources: List[Path], target: Path) -> None:
+    with open(target, "wb") as f_out:
+        for source in sources:
+            with gzip.open(source, "rb") as f_in:
+                shutil.copyfileobj(f_in, f_out)
 
 
 def assert_bucket_dir_does_not_exist(bucket_path: str) -> None:
@@ -92,16 +86,6 @@ def upload_file_to_bucket(source_path: Path, bucket_path: str) -> None:
         raise FileExistsError(f"Cannot upload file {source_path} since it would overwrite an existing file.")
 
 
-def get_text_from_bucket_file(path: str) -> str:
-    text: str = get_blob(path).download_as_text()
-    return text
-
-
-def get_text_from_file(path: Path) -> str:
-    with open(path, "r") as f:
-        return f.read().replace("\r", "")
-
-
 def download_bucket_file(source: str, target: Path) -> str:
     text: str = get_blob(source).download_to_filename(str(target))
     return text
@@ -120,34 +104,8 @@ def split_bucket_path(path: str) -> Tuple[str, str]:
     return bucket_name, relative_path
 
 
-def get_nucleotides_from_fasta(fasta_path: Path) -> Set[str]:
-    futures = []
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        with pysam.Fastafile(fasta_path) as genome_f:
-            for contig_name in genome_f.references:
-                contig = genome_f.fetch(contig_name)
-                futures.append(executor.submit(get_nucleotides_from_string, contig))
-
-    nucleotides: Set[str] = set()
-    for future in concurrent.futures.as_completed(futures):
-        try:
-            nucleotides = nucleotides.union(future.result())
-        except Exception as exc:
-            raise ValueError(exc)
-    return nucleotides
-
-
-def get_nucleotides_from_string(sequence: str) -> Set[str]:
-    nucleotides = set()
-    for nucleotide in sequence:
-        nucleotides.add(nucleotide)
-    return nucleotides
-
-
-def decompress(source: Path, target: Path) -> None:
-    with gzip.open(source, "rb") as f_in:
-        with open(target, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
+def get_temp_path(path: Path) -> Path:
+    return path.parent / f"{path.name}.tmp"
 
 
 def make_temp_version_final(path: Path) -> None:
@@ -161,7 +119,3 @@ def make_temp_version_final(path: Path) -> None:
         raise ValueError(error_msg)
     temp_path.rename(path)
     logging.info(f"Finished moving temporary file {temp_path} to final location {path}")
-
-
-def get_temp_path(path: Path) -> Path:
-    return path.parent / f"{path.name}.tmp"
