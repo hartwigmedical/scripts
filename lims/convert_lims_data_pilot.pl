@@ -162,6 +162,7 @@ sayInfo("Finished with $SCRIPT");
 sub addLamaSamplesToSamples{
     my ($lims, $statuses, $samples, $isolations, $preps, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
+    my %dna_blood_samples_by_name = ();
 
     my $missing_sample_count = 0;
     my $missing_isolate_count = 0;
@@ -222,6 +223,11 @@ sub addLamaSamplesToSamples{
         }
         elsif ($isolation_type eq 'Blood') {
             $analysis_type = 'Somatic_R'; # DNA from blood
+            if ( exists $dna_blood_samples_by_name{ $sample_name } ){
+                sayWarn("    Exclude mapping for DNA-BLOOD sample with name \"$sample_name\" because appears multiple times");
+            }else{
+                $dna_blood_samples_by_name{ $sample_name } = $object;
+            }
         }
         elsif ($isolation_type eq 'Plasma') {
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
@@ -270,6 +276,18 @@ sub addLamaSamplesToSamples{
         # Add the missing fields and store final
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
+
+        # If ref_sample_id unknown: find blood counterpart by sampl_name
+        if ( $sample_to_store{analysis_type} eq 'Somatic_T' and $sample_to_store{'ref_sample_id'} eq '' ){
+            my $patient_string = $sample_to_store{ 'patient' };
+            $patient_string =~ s/\-//g; # string this point still with dashes
+            my $ref_sample_name = $patient_string . 'R';
+            if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
+                my $ref_sample = $dna_blood_samples_by_name{ $ref_sample_name };
+                my $ref_sample_id = $ref_sample->{ 'sample_id' };
+                $sample_to_store{ 'ref_sample_id' } = $ref_sample_id;
+            }
+        }
 
         # Fix patient ID field
         $sample_to_store{patient} =~ s/\-//g;
