@@ -164,39 +164,23 @@ sub addLamaSamplesToSamples{
     my %store = %{$lims};
     my %dna_blood_samples_by_name = ();
 
-    my $missing_sample_count = 0;
-    my $missing_isolate_count = 0;
-    my $missing_prep_count = 0;
-
     while (my ($isolate_barcode, $object) = each %$statuses) {
         my %sample_to_store = %{$object};
         my $sample_barcode = $sample_to_store{received_sample_id};
 
         # adding sample info to statuses
         if (exists $samples->{$sample_barcode}) {
-            #storeRecordByKey($samples->{$sample_barcode}, 'lama_sample', \%sample_to_store, "adding sample info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
-        }
-        else {
-            $missing_sample_count++;
         }
 
         # adding isolate info to statuses
         if (exists $isolations->{$isolate_barcode}) {
-            #storeRecordByKey($isolations->{$isolate_barcode}, 'lama_isolate', \%sample_to_store, "adding isolate info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merging in isolate info for $isolate_barcode");
-        }
-        else {
-            $missing_isolate_count++;
         }
 
         # adding prep info to statuses
         if (exists $preps->{$isolate_barcode}) {
-            #storeRecordByKey($preps->{$isolate_barcode}, 'lama_prep', \%sample_to_store, "adding prep info for $isolate_barcode", 1);
             addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merging in prep info for $isolate_barcode");
-        }
-        else {
-            $missing_prep_count++;
         }
 
         my $sample_name = $sample_to_store{sample_name};
@@ -223,11 +207,7 @@ sub addLamaSamplesToSamples{
         }
         elsif ($isolation_type eq 'Blood') {
             $analysis_type = 'Somatic_R'; # DNA from blood
-            if ( exists $dna_blood_samples_by_name{ $sample_name } ){
-                sayWarn("    Exclude mapping for DNA-BLOOD sample with name \"$sample_name\" because appears multiple times");
-            }else{
-                $dna_blood_samples_by_name{ $sample_name } = $object;
-            }
+            $dna_blood_samples_by_name{ $sample_name } = \%sample_to_store;
         }
         elsif ($isolation_type eq 'Plasma') {
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
@@ -242,7 +222,6 @@ sub addLamaSamplesToSamples{
                 if ($analysis_type ne 'Somatic_R') {
                     sayWarn("SKIPPING CORE sample because of incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
                 }
-                ## we only print warning for non R samples but skip them altogether
                 next;
             }
 
@@ -277,18 +256,6 @@ sub addLamaSamplesToSamples{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
 
-        # If ref_sample_id unknown: find blood counterpart by sampl_name
-        if ( $sample_to_store{analysis_type} eq 'Somatic_T' and $sample_to_store{'ref_sample_id'} eq '' ){
-            my $patient_string = $sample_to_store{ 'patient' };
-            $patient_string =~ s/\-//g; # string this point still with dashes
-            my $ref_sample_name = $patient_string . 'R';
-            if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
-                my $ref_sample = $dna_blood_samples_by_name{ $ref_sample_name };
-                my $ref_sample_id = $ref_sample->{ 'sample_id' };
-                $sample_to_store{ 'ref_sample_id' } = $ref_sample_id;
-            }
-        }
-
         # Fix patient ID field
         $sample_to_store{patient} =~ s/\-//g;
 
@@ -298,24 +265,50 @@ sub addLamaSamplesToSamples{
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
 
+        # Translate various field contents
+        translateFieldContents(\%sample_to_store, $name_dict->{lama_content_translations_by_field_name});
+
         # Fix germline level
         if ( exists $sample_to_store{report_germline_level} ){
-            my $level = $sample_to_store{report_germline_level};
-            if ( exists $name_dict->{lama_germline_choice_translation}{$level} ){
-                $sample_to_store{report_germline_level} = $name_dict->{lama_germline_choice_translation}{$level};
-            }
+           my $level = $sample_to_store{report_germline_level};
+           if ( exists $name_dict->{lama_content_translations_by_field_name}{report_germline_level}{$level} ){
+               $sample_to_store{report_germline_level} = $name_dict->{lama_germline_choice_translation}{$level};
+           }
         }
 
         # And store the final result
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
     }
 
-    sayInfo("Added LAMA samples");
-    sayInfo("  $missing_sample_count without sample info");
-    sayInfo("  $missing_isolate_count without isolate info");
-    sayInfo("  $missing_prep_count without prep info");
+    # Need another loop over all samples to complete information
+    while ( my($barcode, $sample) = each %store ){
+        my $analysis_type = $sample->{analysis_type};
+        next unless $analysis_type eq 'Somatic_T';
 
+        # If ref_sample_id unknown: find blood counterpart by sample_name
+        if ( $sample->{analysis_type} eq 'Somatic_T' and $sample->{'ref_sample_id'} eq '' ){
+            my $patient_string = $sample->{ 'patient' };
+            $patient_string =~ s/\-//g; # string this point still with dashes
+            my $ref_sample_name = $patient_string . 'R';
+            if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
+                my $ref_sample_id = $dna_blood_samples_by_name{ $ref_sample_name }{ 'sample_id' };
+                $sample->{'ref_sample_id'} = $ref_sample_id;
+            }
+        }
+    }
     return \%store;
+}
+
+sub translateFieldContents{
+    my ($record, $translation_dict) = @_;
+    while ( my($key, $translations) = each %$translation_dict ){
+        if ( exists $record->{$key} ){
+            my $val = $record->{$key};
+            if ( exists $translations->{$val} ){
+                $record->{$key} = $translations->{$val};
+            }
+        }
+    }
 }
 
 sub storeRecordByKey{
@@ -414,7 +407,7 @@ sub parseLamaLibraryPreps{
             my $status = $object->{status};
 
             # Only store prep info when OK
-            next unless $status eq "Finished";
+            next if $status =~ m/failed/i;
 
             my %info = ();
             my $info_tag = "libraryprep->$store_key";
@@ -1182,13 +1175,6 @@ sub getFieldNameTranslations{
         'Sop_tracking_code' => 'lab_sop_versions',
     );
 
-    my %lama_germline_choice_translation = (
-        'Yes: Only treatable findings' => '1: Behandelbare toevalsbevindingen',
-        'Yes: All findings'            => '2: Alle toevalsbevindingen',
-        'No'                           => '2: No',
-        'Yes'                          => '1: Yes'
-    );
-
     my %lama_status_cohort_dict = (
         '_id'                  => 'cohort',
         'cohortCode'           => 'cohort_code',
@@ -1264,6 +1250,17 @@ sub getFieldNameTranslations{
         'reportDate'           => 'report_date'
     );
 
+    my %lama_content_translations_by_field_name = (
+        'report_germline_level' => {
+            'Yes: Only treatable findings' => '1: Behandelbare toevalsbevindingen',
+            'Yes: All findings' => '2: Alle toevalsbevindingen',
+            'No' => '2: No',
+            'Yes' => '1: Yes'
+        },
+        'lab_status' => {
+            'Processing' => 'In process',
+        }
+    );
 
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
@@ -1276,7 +1273,7 @@ sub getFieldNameTranslations{
         'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
-        'lama_germline_choice_translation' => \%lama_germline_choice_translation,
+        'lama_content_translations_by_field_name' => \%lama_content_translations_by_field_name,
         'lama_status_cohort_dict' => \%lama_status_cohort_dict,
         'lama_patient_dict' => \%lama_patient_dict,
         'lama_patient_tumor_sample_dict' => \%lama_patient_tumor_sample_dict,

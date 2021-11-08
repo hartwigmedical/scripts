@@ -34,30 +34,41 @@ check_fields=(
   yield
 )
 
-def_barcodes=(FR10244761)
-
-if [[ "${#search_strings[@]}" -eq 0 ]]; then
-  search_strings=("${def_barcodes[@]}")
-fi
+rna_barcodes=(FR10244761)
+dna_barcodes=(FR17437143)
 
 main () {
-  for search_string in "${search_strings[@]}"; do
-    echo "-- Checking sample $search_string --"
+  if [[ "${#search_strings[@]}" -gt 0 ]]; then
+    for search_string in "${search_strings[@]}"; do
+      check_sample "$search_string"
+    done
+  else
+    info "## RNA samples ##"
+    for search_string in "${rna_barcodes[@]}"; do
+      check_sample "$search_string"
+    done
+    echo ""
+    info "## DNA samples ##"
+    for search_string in "${dna_barcodes[@]}"; do
+      check_sample "$search_string"
+    done
+  fi
+}
+
+check_sample () {
+  local barcode=$1 && shift
+  echo "-- Checking sample $search_string --"
     if [[ "$compare_mode" == "true" ]]; then
-      compare_by_sample_barcode "$search_string"
+      compare_by_sample_barcode "$barcode"
     else
-      lims_result=$(query_by_sample "$LIMS_JSON" "$search_string")
-      lama_result=$(query_by_sample "$LAMA_JSON" "$search_string")
-      printf "%s: %s\n" "LIMS" "$lims_result"
-      printf "%s: %s\n" "LAMA" "$lama_result"
+      print_tsv_by_sample_barcode "$barcode"
     fi
-  done
 }
 
 compare_by_sample_barcode () {
   local barcode=$1 && shift
-  lims_result=$(query_lims "$LIMS_JSON" "$barcode")
-  lama_result=$(query_lims "$LAMA_JSON" "$barcode")
+  lims_result=$(query_lims "$LIMS_JSON" "$barcode" "json")
+  lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
 
   for field_name in "${check_fields[@]}"; do
     lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
@@ -75,10 +86,25 @@ compare_by_sample_barcode () {
   echo " query_lims.pl -rna -lims $LAMA_JSON -type samples -filter sample_id=$barcode -json"
 }
 
+print_tsv_by_sample_barcode () {
+  local barcode=$1 && shift
+  lims_result=$(query_lims "$LIMS_JSON" "$barcode" "tsv")
+  lama_result=$(query_lims "$LAMA_JSON" "$barcode" "tsv")
+  printf "%s: %s\n" "LIMS" "$lims_result"
+  printf "%s: %s\n" "LAMA" "$lama_result"
+}
+
 query_lims () {
   local json=$1 && shift
   local barcode=$1 && shift
-  result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -json | jq -r '.[-1]')
+  local output=$1 && shift
+  if [[ "$output" == 'json' ]]; then
+    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -json | jq -r '.[-1]')
+  elif [[ "$output" == 'tsv' ]]; then
+    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode")
+  else
+    die "Unknown output type given to query_lims ($output)"
+  fi
   echo "$result"
 }
 
