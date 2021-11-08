@@ -256,25 +256,13 @@ sub addLamaSamplesToSamples{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
 
-        # Fix patient ID field
-        $sample_to_store{patient} =~ s/\-//g;
-
-        # Fix cohort ID field
-        $sample_to_store{cohort} =~ s/\-//g;
-
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
 
-        # Translate various field contents
-        translateFieldContents(\%sample_to_store, $name_dict->{lama_content_translations_by_field_name});
-
-        # Fix germline level
-        if ( exists $sample_to_store{report_germline_level} ){
-           my $level = $sample_to_store{report_germline_level};
-           if ( exists $name_dict->{lama_content_translations_by_field_name}{report_germline_level}{$level} ){
-               $sample_to_store{report_germline_level} = $name_dict->{lama_germline_choice_translation}{$level};
-           }
-        }
+        # Fix/translate various field contents
+        fixFieldContents(\%sample_to_store, $name_dict->{lama_content_translations_by_field_name});
+        $sample_to_store{patient} =~ s/\-//g;
+        $sample_to_store{cohort} =~ s/\-//g;
 
         # Add non-existing fields that are required downstream
         if ( not exists $sample_to_store{ptum} ){
@@ -304,7 +292,7 @@ sub addLamaSamplesToSamples{
     return \%store;
 }
 
-sub translateFieldContents{
+sub fixFieldContents{
     my ($record, $translation_dict) = @_;
     while ( my($key, $translations) = each %$translation_dict ){
         if ( exists $record->{$key} ){
