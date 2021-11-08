@@ -120,7 +120,6 @@ my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
-my $lama_objs = {}; # will contain objects from MS Access LIMS samples table
 my $lims_objs = {}; # will contain all sample objects
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
@@ -357,7 +356,7 @@ sub parseLamaPatients {
 }
 
 sub processSampleOfPatient {
-    my ($patient, $sample, $sample_origin, $store, $lama_patient_tumor_sample_dict) = @_;
+    my ($patient, $sample, $sample_origin, $store) = @_;
     my $sample_field_translations;
     my @sampleBarcodes;
 
@@ -915,6 +914,10 @@ sub fixDateFields{
         elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
             ## case yyyy-mm-dd already ok
             sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
+        }
+        elsif ( exists $old_date->{'$numberLong'}){
+            ## older versions of mongo-export use canonical mode and return a hash with numberLong
+            $new_date = epochToDate($old_date->{'$numberLong'})
         }
         else{
             sayWarn("Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix");

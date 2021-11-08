@@ -26,6 +26,7 @@ check_fields=(
   report_germline_level
   sampling_date
   arrival_date
+  report_date
   biopsy_site
   hospital_pa_sample_id
   hospital_patient_id
