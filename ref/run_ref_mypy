@@ -2,5 +2,12 @@
 
 DIR_NAME="$(dirname "$0")" || exit 1
 
+venv_dir="$1" && shift
+
+if [[ -n ${venv_dir} ]]; then
+  create_python_venv --venv_dir "${venv_dir}" --requirements "${DIR_NAME}/requirements.txt"
+  source "${venv_dir}/bin/activate"
+fi
+
 export MYPYPATH="${MYPYPATH}:${DIR_NAME}"
 mypy "${DIR_NAME}" --config-file "${DIR_NAME}/mypy.ini" --namespace-packages --explicit-package-bases || exit 1
