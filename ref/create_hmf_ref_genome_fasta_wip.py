@@ -107,13 +107,10 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
-    # TODO: Remove unused scripts
     # TODO: Create requirements file to make this script properly reproducible with venv.
     #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
     # TODO: Add option to exclude decoys
     # TODO: Add option to skip removing softmasks
-    # TODO: Make check_ref_genome_features.py work in similar way to this script
-    # TODO: Move downloading-related stuff from ref_util to source_files.py
 
     logging.info(f"Finished {SCRIPT_NAME}.")
 

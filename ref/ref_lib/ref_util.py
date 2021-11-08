@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 from typing import Tuple, List
 
+import requests
 from google.cloud import storage
 
 STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
@@ -86,9 +87,9 @@ def upload_file_to_bucket(source_path: Path, bucket_path: str) -> None:
         raise FileExistsError(f"Cannot upload file {source_path} since it would overwrite an existing file.")
 
 
-def download_bucket_file(source: str, target: Path) -> str:
-    text: str = get_blob(source).download_to_filename(str(target))
-    return text
+def download_bucket_file(source: str, target: Path) -> None:
+    get_blob(source).download_to_filename(str(get_temp_path(target)))
+    make_temp_version_final(target)
 
 
 def get_blob(path: str) -> storage.Blob:
@@ -102,6 +103,15 @@ def split_bucket_path(path: str) -> Tuple[str, str]:
     bucket_name = path.split("/")[2]
     relative_path = "/".join(path.split("/")[3:])
     return bucket_name, relative_path
+
+
+def download_file_over_https(source: str, target: Path) -> None:
+    response = requests.get(source, stream=True)
+    response.raise_for_status()
+    with open(get_temp_path(target), 'wb') as f:
+        for block in response.iter_content(1024):
+            f.write(block)
+    make_temp_version_final(target)
 
 
 def get_temp_path(path: Path) -> Path:

@@ -1,10 +1,9 @@
 import logging
-import requests
 from enum import Enum, auto
 from pathlib import Path
 from typing import List, NamedTuple, overload, Any, Optional
 
-from ref_lib.ref_util import make_temp_version_final, get_temp_path, download_bucket_file
+from ref_lib.ref_util import make_temp_version_final, get_temp_path, download_bucket_file, download_file_over_https
 
 
 class SourceFile(Enum):
@@ -138,7 +137,7 @@ class SourceFileDownloader(object):
             try:
                 if bucket_dir is None:
                     logging.info(f"Download over https: {job.source}")
-                    cls._download_file_over_https(job.source, job.target)
+                    download_file_over_https(job.source, job.target)
                 else:
                     logging.info(f"Download from bucket: {job.source}")
                     download_bucket_file(job.source, job.target)
@@ -163,12 +162,3 @@ class SourceFileDownloader(object):
         with open(get_temp_path(local_sources_list_file_path), "w") as f:
             f.write(local_sources_list_text)
         make_temp_version_final(local_sources_list_file_path)
-
-    @classmethod
-    def _download_file_over_https(cls, source: str, target: Path) -> None:
-        response = requests.get(source, stream=True)
-        response.raise_for_status()
-        with open(get_temp_path(target), 'wb') as f:
-            for block in response.iter_content(1024):
-                f.write(block)
-        make_temp_version_final(target)
