@@ -28,15 +28,15 @@ done
 
 # Provide command to delete existing venv if it exists
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
-    die "Venv dir already exists. To delete, run 'rm -r ${venv_dir}'"
-fi
+    info "Skipping creation since venv dir already exists. To delete, run 'rm -r ${venv_dir}'"
+else
+  # Create venv
+  python3 -m venv "${venv_dir}" || die "Could not create venv"
+  source "${venv_dir}/bin/activate" || die "Could not activate venv"
 
-# Create venv
-python3 -m venv "${venv_dir}" || die "Could not create venv"
-source "${venv_dir}/bin/activate" || die "Could not activate venv"
-
-if [[ -n ${requirements} ]]; then
-  pip install -r "${requirements}" || die "Could not install pip packages"
+  if [[ -n ${requirements} ]]; then
+    pip install -r "${requirements}" || die "Could not install pip packages"
+  fi
 fi
 
 info "Finished creation of Python venv"
