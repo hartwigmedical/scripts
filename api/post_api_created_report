@@ -6,7 +6,6 @@ source locate_reporting_api || exit 1
 api_json=$1 && shift
 sample_name=$1 && shift
 
-run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
 json_file=$( gsutil cat ${api_json})
 has_reliable_purity=$( echo ${json_file} | jq .has_reliable_purity)
 sample_barcode=$(echo ${json_file} | jq .barcode)
@@ -15,6 +14,14 @@ purity=$(echo ${json_file} | jq .purity)
 report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
+
+if [[ ${cohort} -eq "CPCT" || ${cohort} -eq "CPCTpancreas" || ${cohort} -eq "CPCTBLINC" || ${cohort} -eq "DRUP" ||  ${cohort} -eq "DRUPstage3" ||  ${cohort} -eq "WIDE" ||  ${cohort} -eq "COREDB" ||  ${cohort} -eq "COREDB11" ||  ${cohort} -eq "ACTIN" ]]; then
+  run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}')
+elif [[ ${cohort} -eq "CORE" || ${cohort} -eq "CORELR02" || ${cohort} -eq "CORERI02" || ${cohort} -eq "CORELR11" || ${cohort} -eq "CORESC11" ]]; then
+    run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}')
+else
+    warn "Cohort of sample isn't assigned"
+fi
 
 if [[ ${has_reliable_purity} == '"N/A"' && ${has_reliable_quality} == '"N/A"' ]]; then
   has_reliable_purity=null
@@ -46,7 +53,7 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s"' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}")
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
 if [[ -z ${run_id} ]];then
   data=$(echo ${data} "}")
