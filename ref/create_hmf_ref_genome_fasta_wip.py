@@ -12,20 +12,11 @@ from ref_lib.contig_types import ContigTypeDesirabilities
 from ref_lib.fasta_writer import FastaWriter
 from ref_lib.ref_genome_feature_analysis import ReferenceGenomeFeatureAnalyzer, ReferenceGenomeFeatureAnalysis
 from ref_lib.ref_util import set_up_logging, assert_dir_does_not_exist, assert_bucket_dir_does_not_exist, \
-    upload_directory_to_bucket, get_temp_path, make_temp_version_final
-
+    upload_directory_to_bucket, get_temp_path, make_temp_version_final, ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME, \
+    MASTER_FASTA_FILE_NAME, SOURCE_FILES_DIR_NAME
 from ref_lib.source_files import SourceFile, SourceFileDownloader, SourceFileLocator
 
 SCRIPT_NAME = "create_hmf_ref_genome_fasta"
-
-SOURCES_LIST_FILE_NAME = "sources.txt"
-
-ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
-MASTER_FASTA_FILE_NAME = "master.fasta"
-SOURCE_FILES_DIR_NAME = "source_files"
-
-# See gs://hmf-crunch-experiments/211005_david_DEV-2170_GRCh38-ref-genome-comparison/ for required files.
-# TODO: update bucket path to a more correct one
 
 
 class Config(NamedTuple):

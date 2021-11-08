@@ -30,6 +30,15 @@ class SourceFile(Enum):
             SourceFile.EBV_ASSEMBLY_REPORT,
         ]
 
+    @classmethod
+    def get_required_for_contig_alias_file(cls) -> List["SourceFile"]:
+        return [
+            SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
+            SourceFile.DECOY_ASSEMBLY_REPORT,
+            SourceFile.EBV_ASSEMBLY_REPORT,
+        ]
+
 
 class SourceFileLocator(object):
     SOURCE_FILE_TO_ORIGINAL_SOURCE = {
@@ -81,7 +90,11 @@ class SourceFileDownloader(object):
     
     @classmethod
     def download_source_files(
-            cls, source_files: List[SourceFile], target_dir: Path, bucket_dir: Optional[str] = None,
+            cls,
+            source_files: List[SourceFile],
+            target_dir: Path,
+            bucket_dir: Optional[str] = None,
+            create_file_with_sources: bool = True,
     ) -> None:
         logging.info(f"Starting download of source files: {[file.name for file in source_files]}")
         download_jobs = [
@@ -92,18 +105,15 @@ class SourceFileDownloader(object):
             ) for source_file in source_files
         ]
         local_sources_list_file_path = target_dir / cls.SOURCES_LIST_FILE_NAME
-    
-        all_files_already_exist_locally = (
-            all(job.target.exists() for job in download_jobs) and local_sources_list_file_path.exists()
-        )
-        some_files_already_exist_locally = (
-            any(job.target.exists() for job in download_jobs) or local_sources_list_file_path.exists()
-        )
 
-        if all_files_already_exist_locally:
+        local_file_exists_list = [job.target.exists() for job in download_jobs]
+        if create_file_with_sources:
+            local_file_exists_list.append(local_sources_list_file_path.exists())
+
+        if all(local_file_exists_list):
             logging.info("Skipping downloads. Source files already exist locally.")
             return
-        elif some_files_already_exist_locally:
+        elif any(local_file_exists_list):
             error_msg = (
                 f"Some of the expected source files already exist locally and other do not. "
                 f"Please delete the existing local source files so new version can be downloaded."
@@ -113,12 +123,13 @@ class SourceFileDownloader(object):
         if not target_dir.is_dir():
             target_dir.mkdir(parents=True)
 
-        if bucket_dir is None:
-            logging.info(f"Writing original sources of files to a file: {local_sources_list_file_path}")
-            cls._write_local_sources_list_file(download_jobs, local_sources_list_file_path)
-        else:
-            logging.info(f"Downloading file with original sources from bucket: {bucket_dir}")
-            download_bucket_file(f"{bucket_dir}/{cls.SOURCES_LIST_FILE_NAME}", local_sources_list_file_path)
+        if create_file_with_sources:
+            if bucket_dir is None:
+                logging.info(f"Writing original sources of files to a file: {local_sources_list_file_path}")
+                cls._write_local_sources_list_file(download_jobs, local_sources_list_file_path)
+            else:
+                logging.info(f"Downloading file with original sources from bucket: {bucket_dir}")
+                download_bucket_file(f"{bucket_dir}/{cls.SOURCES_LIST_FILE_NAME}", local_sources_list_file_path)
 
         logging.info("Starting downloads of source files")
         download_failed = False

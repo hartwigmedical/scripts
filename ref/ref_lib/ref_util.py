@@ -13,6 +13,10 @@ STANDARD_NUCLEOTIDES = {"A", "C", "G", "T", "N"}
 SOFTMASKED_NUCLEOTIDES = {"a", "c", "g", "t", "n"}
 UNKNOWN_NUCLEOTIDES = {"N", "n"}
 
+ALIAS_TO_CANONICAL_CONTIG_NAME_FILE_NAME = "alias_to_canonical_contig_name.tsv"
+MASTER_FASTA_FILE_NAME = "master.fasta"
+SOURCE_FILES_DIR_NAME = "source_files"
+
 
 def set_up_logging() -> None:
     logging.basicConfig(

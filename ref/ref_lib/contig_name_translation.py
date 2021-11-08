@@ -324,15 +324,9 @@ class ContigSummaryInterpreter(object):
 class AliasToCanonicalContigNameTextWriter(object):
     @classmethod
     def create_contig_alias_file(cls, output_path: Path, source_files_dir: Path) -> None:
-        relevant_source_files = [
-            SourceFile.REFSEQ_WITH_PATCHES_ASSEMBLY_REPORT,
-            SourceFile.REFSEQ_WITHOUT_PATCHES_ASSEMBLY_REPORT,
-            SourceFile.DECOY_ASSEMBLY_REPORT,
-            SourceFile.EBV_ASSEMBLY_REPORT,
-        ]
         assembly_reports_text = "\n".join([
             get_text_from_file(SourceFileLocator().get_location(source_file, source_files_dir))
-            for source_file in relevant_source_files
+            for source_file in SourceFile.get_required_for_contig_alias_file()
         ])
         contig_alias_text = AliasToCanonicalContigNameTextWriter._create_text_from_assembly_reports_text(
             assembly_reports_text
