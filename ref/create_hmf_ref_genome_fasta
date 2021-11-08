@@ -6,12 +6,12 @@ while [[ $# -gt 0 ]]
 do
 key="$1" && shift
 case $key in
-    -v|--venv_dir)
-    venv_dir="$1" && shift
-    ;;
-    *)    # Unknown option
-    OTHER_OPTIONS+=("$key") # Save it in an array for later
-    ;;
+  -v|--venv_dir)
+  venv_dir="$1" && shift
+  ;;
+  *)    # Unknown option
+  OTHER_OPTIONS+=("$key") # Save it in an array for later
+  ;;
 esac
 done
 

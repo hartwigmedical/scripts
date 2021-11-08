@@ -107,10 +107,8 @@ def main(config: Config) -> None:
     else:
         logging.info("Skip upload of results to bucket.")
 
-    # TODO: Create requirements file to make this script properly reproducible with venv.
-    #   Maybe add script to call venv and run script automatically. Maybe to create venv too, if needed.
-    # TODO: Add option to exclude decoys
-    # TODO: Add option to skip removing softmasks
+    # TODO: Maybe add option to keep softmasks
+    # TODO: Maybe add option to exclude decoys
 
     logging.info(f"Finished {SCRIPT_NAME}.")
 
