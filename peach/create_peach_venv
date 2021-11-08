@@ -32,16 +32,9 @@ fi
 
 # Sanity checks
 [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
-[[ -f ${peach_requirements} ]] || die "peach requirements file should be a file: ${peach_requirements}."
-[[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
+[[ -f ${peach_requirements} ]] || die "PEACH requirements file should be a file: ${peach_requirements}."
 
 # Create venv
-if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
-    info "Delete existing PEACH venv"
-    rm -r  "${venv_dir}" || die "Could not delete existing PEACH venv"
-fi
-python3 -m venv "${venv_dir}" || die "Could not create PEACH venv"
-source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
-pip install -r "${peach_requirements}" || die "Could not install PEACH pip packages"
+create_python_venv --venv_dir "${venv_dir}" --requirements "${peach_requirements}"
 
 info "Finished creating PEACH venv"

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+info "Starting creation of Python venv"
+
+# Parse args
+while [[ $# -gt 0 ]]
+do
+key="$1" && shift
+case $key in
+    -v|--venv_dir)
+    venv_dir="$1" && shift
+    ;;
+    -r|--requirements)
+    requirements="$1" && shift  # Optional argument
+    ;;
+    *)    # Unknown option
+    OTHER_OPTIONS+=("$key") # Save it in an array for later
+    ;;
+esac
+done
+
+# Sanity checks
+[[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+[[ -z ${requirements} || -f ${requirements} ]] || die "requirements file should be a file, if provided: ${requirements}."
+
+# Provide command to delete existing venv if it exists
+if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
+    die "Venv dir already exists. To delete, run 'rm -r ${venv_dir}'"
+fi
+
+# Create venv
+python3 -m venv "${venv_dir}" || die "Could not create venv"
+source "${venv_dir}/bin/activate" || die "Could not activate venv"
+
+if [[ -n ${requirements} ]]; then
+  pip install -r "${requirements}" || die "Could not install pip packages"
+fi
+
+info "Finished creation of Python venv"
