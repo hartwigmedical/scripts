@@ -28,6 +28,7 @@ check_fields=(
   arrival_date
   report_date
   biopsy_site
+  ptum
   hospital_pa_sample_id
   hospital_patient_id
   lab_sop_versions
@@ -70,20 +71,31 @@ compare_by_sample_barcode () {
   lims_result=$(query_lims "$LIMS_JSON" "$barcode" "json")
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
 
-  for field_name in "${check_fields[@]}"; do
-    lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
-    lama_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lama_result")
-    result="FAIL"
-    if [[ "$lims_val" == "" && "$lama_val" == "null" ]]; then
-      result="OK"
-    elif [[ "$lims_val" == "$lama_val" ]]; then
-      result="OK"
-    fi
-    echo "$result: $barcode $field_name ($lims_val vs $lama_val)"
-  done
-  echo "# See also:"
-  echo " query_lims.pl -rna -lims $LIMS_JSON -type samples -filter sample_id=$barcode -json"
-  echo " query_lims.pl -rna -lims $LAMA_JSON -type samples -filter sample_id=$barcode -json"
+  if [[ "$lims_result" == 'null' ]]; then
+    printf "%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Sample missing from LIMS"
+  elif [[ "$lama_result" == 'null' ]]; then
+    printf "%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Sample missing from LAMA"
+  else
+    sample_name=$(jq -r '.sample_name' <<< "$lama_result")
+    for field_name in "${check_fields[@]}"; do
+      lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
+      lama_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lama_result")
+      result="FAIL"
+      if [[ "$lims_val" == "" && "$lama_val" == "null" ]]; then
+        result="OK"
+      elif [[ "$lims_val" == "" && "$lama_val" == "NA" ]]; then
+        result="OK"
+      elif [[ "$lims_val" == "$lama_val" ]]; then
+        result="OK"
+      elif [[ "${lims_val^^}" == "${lama_val^^}" ]]; then
+        result="WARN"
+      else
+        result="FAIL"
+      fi
+      #echo "$result: $barcode $sample_name $field_name ($lims_val vs $lama_val)"
+      printf "%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "[$lims_val vs $lama_val]"
+    done
+  fi
 }
 
 print_tsv_by_sample_barcode () {

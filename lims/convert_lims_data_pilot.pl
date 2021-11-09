@@ -198,16 +198,20 @@ sub addLamaSamplesToSamples{
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
         my $analysis_type = $sample_to_store{isolation_type};
+        my $final_target_yield = NACHAR;
 
         if ($isolation_type eq 'Tissue') {
             $analysis_type = 'Somatic_T'; # DNA from tumor tissue
+            $final_target_yield = 300;
         }
         elsif ($isolation_type eq 'RNA') {
             $analysis_type = 'RNAanalysis'; # RNA from tumor tissue
+            $final_target_yield = 15;
         }
         elsif ($isolation_type eq 'Blood') {
             $analysis_type = 'Somatic_R'; # DNA from blood
             $dna_blood_samples_by_name{ $sample_name } = \%sample_to_store;
+            $final_target_yield = 100;
         }
         elsif ($isolation_type eq 'Plasma') {
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
@@ -224,6 +228,8 @@ sub addLamaSamplesToSamples{
                 }
                 next;
             }
+            $sample_to_store{ 'entity' } = $original_submission;
+            $sample_to_store{ 'project_name' } = $original_submission;
 
             ## Set the analysis type for CORE submissions to align with Excel LIMS samples
             if (exists $submissions->{ $original_submission }) {
@@ -255,6 +261,7 @@ sub addLamaSamplesToSamples{
         # Add the missing fields and store final
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
+        $sample_to_store{yield} = $final_target_yield;
 
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
@@ -400,6 +407,7 @@ sub parseLamaLibraryPreps{
             my $status = $object->{status};
 
             # Only store prep info when OK
+            # TODO: Sometimes status stays "Failed" but lab still continues with sequencing!!
             next if $status =~ m/failed/i;
 
             my %info = ();
@@ -459,10 +467,12 @@ sub parseLamaSampleStatus{
 
     foreach my $object (@$objects){
 
-        # there is no barcode in case a sample has not been prepped yet so skip in that case
+        # No frBarcode means sample has not been prepped so skip
         my $sampleBarcodeDNA = $object->{frBarcodeDNA};
         my $sampleBarcodeRNA = $object->{frBarcodeRNA};
-        next unless defined $sampleBarcodeDNA;
+        if ( not defined $sampleBarcodeDNA ){
+            next unless defined $sampleBarcodeDNA;
+        }
 
         # Collect all info into one object
         my %status = ();
@@ -1211,7 +1221,6 @@ sub getFieldNameTranslations{
         '_id'           => 'original_container_id',
         'isolationNr'   => 'isolation_id',
         'coupeBarcode'  => 'coupes_barcode',
-        'sampleId'      => 'sample_name',
         'frBarcode'     => 'sample_id',
         'status'        => 'isolation_status',
         'type'          => 'isolation_type', # currently Blood|RNA|Tissue
@@ -1221,10 +1230,8 @@ sub getFieldNameTranslations{
     my %lama_libraryprep_library_dict = (
         '_id'          => 'sample_id',
         'isShallowSeq' => 'shallowseq',
-        'yield'        => 'yield',
         'prepType'     => 'prep_type',
         'prepNr'       => 'prep_id',
-        'sampleId'     => 'sample_name',
         'status'       => 'prep_status'
     );
 
