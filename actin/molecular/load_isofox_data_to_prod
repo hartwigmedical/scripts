@@ -31,10 +31,6 @@ db_url=$(construct_database_url "${credentials}" ${database})
 
 info "Loading isofox data for ${sample}"
 
-# Not sure what file to use for alt_sj
-#  - option1: /data/experiments/rna/cohort/isofox.hmf_2737.alt_sj_cohort.csv
-#  - option2: /data/experiments/rna/cohort/isofox_all_genes.alt_sj_cohort.csv
-
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample "${sample_with_cancertype}" \
     -sample_data_dir ${isofox_data_dir} \
