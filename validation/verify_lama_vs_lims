@@ -72,11 +72,11 @@ compare_by_sample_barcode () {
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
 
   if [[ "$lims_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Sample missing from LIMS"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Absent_in_LIMS" "Absent_in_LIMS"
   elif [[ "$lama_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Sample missing from LAMA"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Absent_in_LAMA" "Absent_in_LAMA"
   else
-    sample_name=$(jq -r '.sample_name' <<< "$lama_result")
+    sample_name=$(jq -r '.sample_name' <<< "$lims_result")
     for field_name in "${check_fields[@]}"; do
       lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
       lama_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lama_result")
@@ -93,7 +93,7 @@ compare_by_sample_barcode () {
         result="FAIL"
       fi
       #echo "$result: $barcode $sample_name $field_name ($lims_val vs $lama_val)"
-      printf "%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "[$lims_val vs $lama_val]"
+      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "$lims_val" "$lama_val"
     done
   fi
 }
