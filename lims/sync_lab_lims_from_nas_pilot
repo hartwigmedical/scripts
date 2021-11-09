@@ -49,7 +49,7 @@ main() {
     done
 
     info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
-    gsutil -m -q cp "gs://${LAMA_BUCKET}/*.json" "${DAY_DIR}"
+    gsutil -m cp "gs://${LAMA_BUCKET}/*.json" "${DAY_DIR}"
 
     info "Converting input files to text formats"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt}" "${for001_source}" "1" "5"
