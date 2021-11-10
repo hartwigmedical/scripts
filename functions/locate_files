@@ -312,6 +312,16 @@ locate_rna_analysis_bucket() {
 
 ################################## Resources ###################################
 
+locate_cohort_mapping_tsv() {
+    # TODO Move to public resource repo once verified.
+    echo "/data/experiments/orange_cohort/orange_cohort_mapping.tsv"
+}
+
+locate_cohort_percentiles_tsv() {
+    # TODO Move to public resource repo once verified.
+    echo "/data/experiments/orange_cohort/orange_cohort_percentiles.tsv"
+}
+
 locate_doid_json() {
     echo "/data/resources/public/disease_ontology/201015_doid.json"
 }

@@ -13,10 +13,13 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 orange_jar=$(locate_pilot_orange)
-doid_json=$(locate_doid_json)
 output_dir=${run_dir}/orange_pilot
 
 create_or_cleanup_dir ${output_dir}
+
+doid_json=$(locate_doid_json)
+cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
+cohort_percentiles_tsv=$(locate_cohort_percentiles_tsv)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -75,6 +78,8 @@ java -jar ${orange_jar} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
+    -cohort_mapping_tsv ${cohort_mapping_tsv} \
+    -cohort_percentiles_tsv ${cohort_percentiles_tsv} \
     ${pipeline_version_cmd} \
     -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
     -ref_sample_flagstat_file ${ref_sample_flagstat_file} \
