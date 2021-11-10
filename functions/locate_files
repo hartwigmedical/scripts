@@ -312,6 +312,10 @@ locate_rna_analysis_bucket() {
 
 ################################## Resources ###################################
 
+locate_doid_json() {
+    echo "/data/resources/public/disease_ontology/201015_doid.json"
+}
+
 locate_driver_gene_panel_37_tsv_ds() {
     echo "${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv"
 }

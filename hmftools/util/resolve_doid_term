@@ -12,7 +12,7 @@ fi
 # Can use any jar since tool lives in hmf-common
 any_hmf_jar=$(locate_pilot_protect)
 
-doid_json=/data/common/dbs/disease_ontology/201015_doid.json
+doid_json=$(locate_doid_json)
 
 java -cp ${any_hmf_jar} com.hartwig.hmftools.common.doid.tools.DoidTermResolverApp \
     -doid_json ${doid_json} \

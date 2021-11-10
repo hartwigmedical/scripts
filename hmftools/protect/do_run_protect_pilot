@@ -30,7 +30,7 @@ if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
-doid_json=/data/resources/public/disease_ontology/201015_doid.json
+doid_json=$(locate_doid_json)
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
