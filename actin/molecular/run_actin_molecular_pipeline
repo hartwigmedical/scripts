@@ -53,8 +53,8 @@ cp "${run_dir}/cuppa_orig/${sample}.cuppa.conclusion.txt" "${run_dir}/cuppa/"
 # Check if RNA data is present and if yes -> post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
 
-# Run standard ORANGE in production - see also DEV-2027
+# Run standard ORANGE in production
 run_orange_prod ${run_dir} -max_evidence_level C
 
 # Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
-do_run_orange_prod ${run_dir} ${run_dir}/orange_no_germline -max_evidence_level C -disable_germline
+run_orange_prod_no_germline ${run_dir} -max_evidence_level C
