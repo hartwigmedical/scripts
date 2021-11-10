@@ -14,7 +14,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "hmfpatients")
 
-java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCohortGeneratorApplication \
+java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCohortGenerator \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -output_directory ${output_directory} \
