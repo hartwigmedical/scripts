@@ -4,7 +4,7 @@ source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
