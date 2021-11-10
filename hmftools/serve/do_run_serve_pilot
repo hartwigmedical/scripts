@@ -4,7 +4,7 @@ source locate_files || exit 1
 
 serve_jar=$(locate_pilot_serve)
 
-missing_doids_mapping_tsv=/data/resources/serve/missing_doids_mapping.tsv
+missing_doids_mapping_tsv=/data/resources/custom/serve/missing_doids_mapping.tsv
 
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
