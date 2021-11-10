@@ -8,6 +8,8 @@ LAMA_JSON="/data/ops/lims/pilot/lims.json"
 search_strings=("$@")
 compare_mode="true"
 
+# We ignore some fields for reasons
+# lab_status = too different in LAMA
 check_fields=(
   patient
   sample_name
@@ -18,7 +20,6 @@ check_fields=(
   cohort
   shallowseq
   analysis_type
-  lab_status
   ref_sample_id
   report_viral
   report_pgx
@@ -72,9 +73,9 @@ compare_by_sample_barcode () {
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
 
   if [[ "$lims_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Absent_in_LIMS" "Absent_in_LIMS"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:Absent" "LAMA:unknown"
   elif [[ "$lama_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "Absent_in_LAMA" "Absent_in_LAMA"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:Present" "LAMA:Absent"
   else
     sample_name=$(jq -r '.sample_name' <<< "$lims_result")
     for field_name in "${check_fields[@]}"; do
@@ -93,7 +94,7 @@ compare_by_sample_barcode () {
         result="FAIL"
       fi
       #echo "$result: $barcode $sample_name $field_name ($lims_val vs $lama_val)"
-      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "$lims_val" "$lama_val"
+      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "LIMS:$lims_val" "LAMA:$lama_val"
     done
   fi
 }
