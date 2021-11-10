@@ -217,7 +217,7 @@ sub addLamaSamplesToSamples{
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
-            die "Should not happen: encountered unknown isolation type '$isolation_type' ($isolate_barcode)"
+            die "[ERROR] Should not happen: encountered unknown isolation type '$isolation_type' ($isolate_barcode)"
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
@@ -381,10 +381,10 @@ sub processSampleOfPatient {
     }
     else{
         my $sample_barcode = $sample->{sampleBarcode};
-        die "Unknown sample origin provided to processSampleOfPatient ($sample_origin for $sample_barcode)\n";
+        die "[ERROR] Unknown sample origin provided to processSampleOfPatient ($sample_origin for $sample_barcode)\n";
     }
 
-    my $info_tag = "patients->" . join("|", @sampleBarcodes);
+    my $info_tag = "patients->barcodes=" . join("|", @sampleBarcodes);
 
     my %info = ();
     copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
@@ -432,23 +432,30 @@ sub parseLamaIsolation{
         foreach my $isolate (@{$experiment->{isolates}}) {
 
             # Once a isolation experiment is no longer Processing there should be a frBarcode
-            if ( not exists $isolate->{frBarcode} ) {
+            unless ( exists $isolate->{frBarcode} ) {
                 print Dumper $isolate;
-                die "Isolate store key not defined for above object";
+                die "[ERROR] No frBarcode present for above isolate object";
             }
 
             my $barcode = $isolate->{frBarcode};
             my $new_status = $isolate->{status};
 
             if ( exists $store{$barcode} ) {
-                my $existing_status = $store{$barcode}{'isolation_status'};
-                if ( $existing_status eq 'Finished' ){
-                    if ($new_status eq 'Finished' ){
-                        die "Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
-                    }
-                    else {
-                        next;
-                    }
+                my $old_status = $store{$barcode}{'isolation_status'};
+                my $old_is_finished = $old_status eq 'Finished';
+                my $new_is_finished = $new_status eq 'Finished';
+                if ( $old_is_finished and $new_is_finished ){
+                    die "[ERROR] Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
+                    #sayWarn("SKIPPING: encountered duplicate Finished isolate for $barcode");
+                    #sayWarn("Existing record:");
+                    #print Dumper $store{$barcode};
+                    #next;
+                }
+                elsif ( $old_is_finished and not $new_is_finished ){
+                    next;
+                }
+                else{
+                    # We simply encountered a new status to use so fine to overwrite in store
                 }
             }
             my %info = ();
@@ -470,8 +477,8 @@ sub parseLamaSampleStatus{
         # No frBarcode means sample has not been prepped so skip
         my $sampleBarcodeDNA = $object->{frBarcodeDNA};
         my $sampleBarcodeRNA = $object->{frBarcodeRNA};
-        if ( not defined $sampleBarcodeDNA ){
-            next unless defined $sampleBarcodeDNA;
+        if ( not defined $sampleBarcodeDNA or $sampleBarcodeDNA eq "" ){
+            next;
         }
 
         # Collect all info into one object
@@ -481,9 +488,12 @@ sub parseLamaSampleStatus{
         copyFieldsFromObject($object->{cohort}, $info_tag, $name_dict->{lama_status_cohort_dict}, \%status);
 
         # Store
-        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "patient->samples($sampleBarcodeDNA)") if defined $sampleBarcodeDNA;
-        storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "patient->samples($sampleBarcodeRNA)") if defined $sampleBarcodeRNA;
-
+        $status{'sample_id'} = $object->{frBarcodeDNA};
+        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "samplestatus($sampleBarcodeDNA)");
+        if ( defined $sampleBarcodeRNA and $sampleBarcodeRNA ne "" ){
+            $status{'sample_id'} = $object->{frBarcodeRNA};
+            storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "samplestatus($sampleBarcodeRNA)");
+        }
     }
     return \%store;
 }
@@ -503,7 +513,7 @@ sub parseTsvCsv{
     my %store = %$objects;
 
     sayInfo("  Parsing input file $file");
-    open IN, "<", $file or die "Unable to open file ($file): $!\n";
+    open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
     my @header_fields = $csv->fields();
@@ -590,7 +600,7 @@ sub printLimsToJson{
     my $lims_txt = $coder->encode(\%lims);
 
     sayInfo("  Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)");
-    open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
+    open my $lims_json_fh, '>', $lims_file or die "[ERROR] Unable to open output file ($lims_file): $!\n";
     print $lims_json_fh $lims_txt;
     close $lims_json_fh;
 }
@@ -746,7 +756,7 @@ sub addExcelSamplesToSamples{
     ## open file and check header before reading data lines
     while ( my($sample_id, $row_info) = each %$objects ){
 
-        my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
+        my $sample_name = $row_info->{ 'sample_name' } or die "[ERROR] No sample_name in row_info";
         next if isSkipValue( $sample_name );
 
         my $sample_id = $row_info->{ 'sample_id' } or sayWarn("SKIPPING sample ($sample_name): No sample_id found") and next;
@@ -899,7 +909,10 @@ sub fixDateFields{
         next if isSkipValue( $old_date );
 
         ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
-        if( $old_date =~ /^\d{13}$/ ) {
+        if( $old_date eq '1' ) {
+            $new_date = NACHAR;
+        }
+        elsif( $old_date =~ /^\d{13}$/ ) {
             ## eg 1516575600000
             $new_date = epochToDate($old_date)
         }
@@ -1195,7 +1208,6 @@ sub getFieldNameTranslations{
 
     my %lama_patient_tumor_sample_dict = (
         'refFrBarcode'          => 'ref_sample_id',
-        'sampleId'              => 'sample_name',
         'hospitalPaSampleId'    => 'hospital_pa_sample_id',
         'patientGermlineChoice' => 'report_germline_level',
         'primaryTumorType'      => 'ptum',
@@ -1212,7 +1224,6 @@ sub getFieldNameTranslations{
         'collectionDate'  => 'sampling_date',
         'arrivalHmf'      => 'arrival_date',
         'sampleBarcode'   => 'sample_barcode',
-        'sampleId'        => 'sample_name',
         'submissionNr'    => 'submission',
         'originalBarcode' => 'original_barcode'
     );
@@ -1221,14 +1232,12 @@ sub getFieldNameTranslations{
         '_id'           => 'original_container_id',
         'isolationNr'   => 'isolation_id',
         'coupeBarcode'  => 'coupes_barcode',
-        'frBarcode'     => 'sample_id',
         'status'        => 'isolation_status',
         'type'          => 'isolation_type', # currently Blood|RNA|Tissue
         'concentration' => 'conc'
     );
 
     my %lama_libraryprep_library_dict = (
-        '_id'          => 'sample_id',
         'isShallowSeq' => 'shallowseq',
         'prepType'     => 'prep_type',
         'prepNr'       => 'prep_id',
@@ -1240,7 +1249,8 @@ sub getFieldNameTranslations{
         'prepStatus'           => 'lab_status',
         'registrationDateTime' => 'registration_date_epoch',
         'sampleId'             => 'sample_name',
-        'frBarcodeDNA'         => 'sample_id',
+        'frBarcodeDNA'         => 'sample_id_dna',
+        'frBarcodeRNA'         => 'sample_id_rna',
         'isTissue'             => 'is_tissue',
         'shallowPurity'        => 'shallow_purity',
         'finalPurity'          => 'purity',
