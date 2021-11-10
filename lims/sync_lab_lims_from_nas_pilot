@@ -62,10 +62,10 @@ main() {
     echo "${LAMA_FILES[@]}" | tr " " "\n" | gsutil -m cp -I "${DAY_DIR}"
 
     info "Converting input files to text formats"
-    excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt}" "${for001_source}" "1" "5"
-    excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt}" "${for001_source}" "2" "2"
-    excel_sheet_to_tsv "${DAY_DIR}" "${for001_cont_txt}" "${for001_source}" "3" "1"
-    excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt}" "${for002_source}" "1" "5"
+    excel_sheet_to_tsv "${for001_source}" "${for001_subm_txt}" "1" "5"
+    excel_sheet_to_tsv "${for001_source}" "${for001_samp_txt}" "2" "2"
+    excel_sheet_to_tsv "${for001_source}" "${for001_cont_txt}" "3" "1"
+    excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
@@ -76,16 +76,15 @@ main() {
 }
 
 excel_sheet_to_tsv() {
-    local output_dir=$1 && shift
+    local input_excel_file=$1 && shift
     local output_tsv=$1 && shift
-    local excel_file=$1 && shift
     local sheet_index=$1 && shift
     local skip_rows=$1 && shift
     local excel_name=""
-    excel_name=$(basename "${excel_file}")
+    excel_name=$(basename "${input_excel_file}")
 
     info "  Converting '${excel_name}' sheet ${sheet_index} with ${skip_rows} header rows"
-    xlsx2csv -d "\t" "${excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > "${output_tsv}"
+    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > "${output_tsv}"
     [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
 
