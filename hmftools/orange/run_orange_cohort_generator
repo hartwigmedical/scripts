@@ -19,4 +19,5 @@ java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCoho
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -output_directory ${output_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -log_debug \
     "$@"
