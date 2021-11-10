@@ -5,11 +5,9 @@ source message_functions || exit 1
 LIMS_JSON="/data/ops/lims/prod/lims.json"
 LAMA_JSON="/data/ops/lims/pilot/lims.json"
 
-search_strings=("$@")
+barcodes=("$@")
 compare_mode="true"
 
-# We ignore some fields for reasons
-# lab_status = too different in LAMA
 check_fields=(
   patient
   sample_name
@@ -34,32 +32,22 @@ check_fields=(
   hospital_patient_id
   lab_sop_versions
   yield
+  lab_status
 )
 
-rna_barcodes=(FR10244761)
-dna_barcodes=(FR17437143)
-
 main () {
-  if [[ "${#search_strings[@]}" -gt 0 ]]; then
-    for search_string in "${search_strings[@]}"; do
-      check_sample "$search_string"
+  if [[ "${#barcodes[@]}" -gt 0 ]]; then
+    for barcode in "${barcodes[@]}"; do
+      check_sample "$barcode"
     done
   else
-    info "## RNA samples ##"
-    for search_string in "${rna_barcodes[@]}"; do
-      check_sample "$search_string"
-    done
-    echo ""
-    info "## DNA samples ##"
-    for search_string in "${dna_barcodes[@]}"; do
-      check_sample "$search_string"
-    done
+    warn "No barcodes provided"
   fi
 }
 
 check_sample () {
   local barcode=$1 && shift
-  echo "-- Checking sample $search_string --"
+  echo "-- Checking sample $barcode --"
     if [[ "$compare_mode" == "true" ]]; then
       compare_by_sample_barcode "$barcode"
     else
@@ -71,6 +59,7 @@ compare_by_sample_barcode () {
   local barcode=$1 && shift
   lims_result=$(query_lims "$LIMS_JSON" "$barcode" "json")
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
+  sample_name=$(jq -r '.sample_name' <<< "$lims_result")
 
   if [[ "$lims_result" == 'null' ]]; then
     printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:Absent" "LAMA:unknown"
@@ -82,13 +71,18 @@ compare_by_sample_barcode () {
       lims_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lims_result")
       lama_val=$(jq -r --arg key "$field_name" '.[$key]' <<< "$lama_result")
       result="FAIL"
-      if [[ "$lims_val" == "" && "$lama_val" == "null" ]]; then
+
+      if [[ "$lims_val" == "$lama_val" ]]; then
+        result="OK"
+      elif [[ "$lims_val" == "" && "$lama_val" == "null" ]]; then
         result="OK"
       elif [[ "$lims_val" == "" && "$lama_val" == "NA" ]]; then
         result="OK"
-      elif [[ "$lims_val" == "$lama_val" ]]; then
-        result="OK"
       elif [[ "${lims_val^^}" == "${lama_val^^}" ]]; then
+        # downgrade a case insensitive match to warning
+        result="WARN"
+      elif [[ "${field_name}" == "lab_status" ]]; then
+        # downgrade a mismatch for lab_status to warning because these are simply different in LAMA
         result="WARN"
       else
         result="FAIL"

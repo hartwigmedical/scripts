@@ -512,7 +512,7 @@ sub parseTsvCsv{
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
 
-    sayInfo("  Parsing input file $file");
+    sayInfo("  Parsing input CSV/TSV file $file");
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -1194,6 +1194,7 @@ sub getFieldNameTranslations{
         'reportPGX'            => 'report_pgx',
         'reportViral'          => 'report_viral',
         'reportGermline'       => 'report_germline',
+        'flagGermlineOnReport' => 'flag_germline_on_report',
         'reportConclusion'     => 'report_conclusion',
         'isShallowStandard'    => 'shallowseq',
         'addToDatabase'        => 'add_to_database',
