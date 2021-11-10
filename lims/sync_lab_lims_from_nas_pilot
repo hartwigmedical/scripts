@@ -24,7 +24,17 @@ NAS_FILES=(
   "${NAS_DIR}/${FOR_002_FILE}"
 )
 
-LAMA_BUCKET="lama-export"
+# TODO: change to prod bucket once testing phase is over
+LAMA_BUCKET="lama-export-pilot"
+LAMA_FILES=(
+  "gs://${LAMA_BUCKET}/Cohorts.json"
+  "gs://${LAMA_BUCKET}/Hospitals.json"
+  "gs://${LAMA_BUCKET}/Isolations.json"
+  "gs://${LAMA_BUCKET}/LibraryPreps.json"
+  "gs://${LAMA_BUCKET}/Patients.json"
+  "gs://${LAMA_BUCKET}/SampleStatus.json"
+  "gs://${LAMA_BUCKET}/SnpChecks.json"
+)
 
 main() {
     info "Starting with $(basename $0)"
@@ -49,7 +59,7 @@ main() {
     done
 
     info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
-    gsutil -m cp "gs://${LAMA_BUCKET}/*.json" "${DAY_DIR}"
+    echo "${LAMA_FILES[@]}" | tr " " "\n" | gsutil -m cp -I "${DAY_DIR}"
 
     info "Converting input files to text formats"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt}" "${for001_source}" "1" "5"
