@@ -45,9 +45,10 @@ run_cuppa_dna_prod ${run_dir}
 # To generate the CUPPA report as a picture (png)
 generate_cup_report_pipeline ${run_dir}
 
-# Check if RNA data is present and if yes -> post-process all RNA and integrate with DNA.
+# Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
 
+# Create a backup of original breakend before we rerun virus interpreter
 if [[ -d "${run_dir}/virusbreakend" ]]; then
     cp -r "${run_dir}/virusbreakend" "${run_dir}/virusbreakend_orig"
 fi

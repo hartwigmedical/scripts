@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-output_dir="${run_dir}/virusbreakend_v1_1"
+output_dir="${run_dir}/virusbreakend"
 
 if [[ ! -d ${output_dir} ]]; then
     error "Output dir does not exist: ${output_dir}"

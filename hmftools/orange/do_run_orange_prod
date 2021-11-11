@@ -13,10 +13,13 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
     error "Inputs missing. Exiting";
 fi
 
-orange_jar=$(locate_prod_orange)
-doid_json=$(locate_doid_json)
-
 create_or_cleanup_dir ${output_dir}
+
+orange_jar=$(locate_prod_orange)
+
+doid_json=$(locate_doid_json)
+cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
+cohort_percentiles_tsv=$(locate_cohort_percentiles_tsv)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -57,7 +60,6 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-cuppa_conclusion_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
 cuppa_summary_plot=$(locate_cuppa_summary_plot ${run_dir})
 cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
@@ -76,6 +78,8 @@ java -jar ${orange_jar} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
+    -cohort_mapping_tsv ${cohort_mapping_tsv} \
+    -cohort_percentiles_tsv ${cohort_percentiles_tsv} \
     ${pipeline_version_cmd} \
     -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
     -ref_sample_flagstat_file ${ref_sample_flagstat_file} \
@@ -98,7 +102,6 @@ java -jar ${orange_jar} \
     -linx_driver_tsv ${linx_driver_tsv} \
     -linx_plot_directory ${linx_plot_directory} \
     -chord_prediction_txt ${chord_prediction_txt} \
-    -cuppa_conclusion_txt ${cuppa_conclusion_txt} \
     -cuppa_result_csv ${cuppa_result_csv} \
     -cuppa_summary_plot ${cuppa_summary_plot} \
     ${cuppa_feature_plot_cmd} \

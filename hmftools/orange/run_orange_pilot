@@ -12,10 +12,10 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
-orange_jar=$(locate_pilot_orange)
 output_dir=${run_dir}/orange_pilot
-
 create_or_cleanup_dir ${output_dir}
+
+orange_jar=$(locate_pilot_orange)
 
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
