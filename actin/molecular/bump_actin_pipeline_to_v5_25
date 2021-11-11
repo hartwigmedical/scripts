@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+# Force pipeline manually to v5.24 in case file does not exist
+pipeline_version_file="${run_dir}/pipeline.bump.version"
+if [[ -f "${pipeline_version_file}" ]]; then
+    rm ${pipeline_version_file}
+fi
+
+version="5.25"
+info "Setting pipeline bump version to ${version} in ${run_dir}"
+echo ${version} >> ${pipeline_version_file}
+
+if [[ -d "${run_dir}/virusbreakend_v1_1" ]]; then
+    rm -r "${run_dir}/virusbreakend_v1_1"
+fi
+
+cp -r "${run_dir}/virusbreakend" "${run_dir}/virusbreakend_v1_1"
+
+run_virus_interpreter_v1_1 ${run_dir}
+
+run_actin_orange_pilot ${run_dir}
