@@ -27,4 +27,4 @@ cp -r "${run_dir}/virusbreakend" "${run_dir}/virusbreakend_v1_1"
 
 run_virus_interpreter_v1_1 ${run_dir}
 
-run_actin_orange_pilot ${run_dir}
+run_actin_orange_pilot ${run_dir} -max_evidence_level C
