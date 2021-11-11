@@ -334,24 +334,36 @@ sub processSample{
             }
         }
 
-        ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
         if ( $other_ref eq "Yes" ){
+            ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
             my $new_name_ref = $patient . 'R';
-            my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
-            my $new_barcode_ref;
-            if ( $ready_new_ref_sample_count eq "1" ){
-                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
-                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Reusing existing REF barcode ($new_barcode_ref)" );
-            } elsif ( $ready_new_ref_sample_count eq "" ) {
-                $new_barcode_ref = $barcode_ref . "_c2f" . $date;
-                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Adding suffix to create new REF barcode ($new_barcode_ref)" );
-            } else {
-                $new_barcode_ref = `hmf_api_get 'samples?name=$new_name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
-                push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS. Out of multiple choices, randomly chose existing REF barcode ($new_barcode_ref)" );
-            }
+            my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
+                $new_name_ref,
+                $barcode_ref,
+                $name,
+                $barcode,
+                \@warn_msg,
+                $date,
+                "OtherRef flag is set in LIMS.",
+            );
             $name_ref = $new_name_ref;
             $barcode_ref = $new_barcode_ref;
             $submission_ref = $submission;
+        } else {
+            ## add suffix to ref barcode in case ref fastq has already been deleted
+            my $ref_status = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[0].status' | tr -d '"\n'`;
+            if ( $ref_status eq "Deleted" ){
+                my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
+                    $name_ref,
+                    $barcode_ref,
+                    $name,
+                    $barcode,
+                    \@warn_msg,
+                    $date,
+                    "REF sample is 'Deleted'.",
+                );
+                $barcode_ref = $new_barcode_ref;
+            }
         }
  
         ## check if barcode already exists in HMF API
@@ -417,6 +429,31 @@ sub processSample{
     printSetJson( \%json_data, $json_path );
     sayInfo("  RESULT for $sample_id: OK");
     return "OK_JSON_MADE";
+}
+
+sub getCorrectBarcodeWithSuffixForRefSampleName{
+    my ($name_ref, $barcode_ref, $name, $barcode, $warn_msg, $date, $change_reason) = @_;
+    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
+    my $new_barcode_ref;
+    my $new_warn_msg;
+    if ( $ready_new_ref_sample_count eq "1" ){
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
+            "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
+    } elsif ( $ready_new_ref_sample_count eq "" ) {
+        $new_barcode_ref = $barcode_ref . "_c2f" . $date;
+        $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
+            "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
+    } else {
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
+            "$change_reason Out of multiple choices, randomly chose existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
+    }
+    push( @$warn_msg, $new_warn_msg );
+    if ( $new_barcode_ref !~ /^$barcode.*$/ ) {
+        push( @$warn_msg, "Replacement barcode ($new_barcode_ref) does not start with ($barcode)");
+    }
+    return $new_barcode_ref;
 }
 
 sub printSetJson{
