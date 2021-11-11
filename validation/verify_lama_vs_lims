@@ -106,9 +106,9 @@ query_lims () {
   local barcode=$1 && shift
   local output=$1 && shift
   if [[ "$output" == 'json' ]]; then
-    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -json | jq -r '.[-1]')
+    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -exact -json | jq -r '.[-1]')
   elif [[ "$output" == 'tsv' ]]; then
-    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode")
+    result=$(query_lims.pl -rna -lims "$json" -type samples -filter "sample_id=$barcode" -exact)
   else
     die "Unknown output type given to query_lims ($output)"
   fi
