@@ -445,11 +445,10 @@ sub parseLamaIsolation{
                 my $old_is_finished = $old_status eq 'Finished';
                 my $new_is_finished = $new_status eq 'Finished';
                 if ( $old_is_finished and $new_is_finished ){
-                    die "[ERROR] Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
-                    #sayWarn("SKIPPING: encountered duplicate Finished isolate for $barcode");
-                    #sayWarn("Existing record:");
-                    #print Dumper $store{$barcode};
-                    #next;
+                    #die "[ERROR] Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
+                    sayWarn("SKIPPING isolate: encountered duplicate Finished isolate for $barcode (pls fix in LAMA)");
+                    print Dumper $store{$barcode};
+                    next;
                 }
                 elsif ( $old_is_finished and not $new_is_finished ){
                     next;
