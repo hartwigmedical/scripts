@@ -25,33 +25,35 @@ fi
 info "Copying ${orig_run_dir} to ${run_dir}"
 cp -r "${orig_run_dir}" "${run_dir}"
 
-if [[ ! -d "${run_dir}/linx/plot" ]]; then
-    # LINX plot dir does not get propagated through GS in case of no drivers - see also DEV-2201
-    warn "No linx plot dir found. Assume no drivers were found."
-    mkdir -p "${run_dir}/linx/plot"
-fi
-
-# Set the pipeline manually to v5.24 in case file does not exist
+# Set the pipeline manually to v5.25
 pipeline_version_file="${run_dir}/pipeline.version"
-if [[ ! -f "${pipeline_version_file}" ]]; then
-    version="5.24"
-    info "Setting pipeline version to ${version} in ${run_dir}"
-    echo ${version} >> ${pipeline_version_file}
+if [[ -f "${pipeline_version_file}" ]]; then
+    rm "${pipeline_version_file}"
+fi
+version="5.25"
+info "Setting pipeline version to ${version} in ${run_dir}"
+echo ${version} >> ${pipeline_version_file}
+
+# Retain original cuppa and clean up in preparation of rerun.
+if [[ -d "${run_dir}/cuppa" ]]; then
+    cp -r "${run_dir}/cuppa" "${run_dir}/cuppa_orig"
+    rm -r "${run_dir}/cuppa/*"
 fi
 
-# Retain original cuppa for cuppa_conclusion. TODO Should be fixed in ORANGE
-cp -r "${run_dir}/cuppa" "${run_dir}/cuppa_orig"
-
-# To correct for the missing SIG data - see also DEV-2196
+# To correct for the missing SIG data in earlier runs.
 run_cuppa_dna_prod ${run_dir}
-# To generate the CUPPA report as a picture (png) - see also DEV-2195
+# To generate the CUPPA report as a picture (png)
 generate_cup_report_pipeline ${run_dir}
-
-info "Copying original Cuppa conclusion back into new cuppa dir"
-cp "${run_dir}/cuppa_orig/${sample}.cuppa.conclusion.txt" "${run_dir}/cuppa/"
 
 # Check if RNA data is present and if yes -> post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
+
+if [[ -d "${run_dir}/virusbreakend" ]]; then
+    cp -r "${run_dir}/virusbreakend" "${run_dir}/virusbreakend_orig"
+fi
+
+# Rerun virus interpreter since older runs will have v1.0
+run_virus_interpreter_v1_1 ${run_dir}
 
 # Run standard ORANGE in production
 run_orange_prod ${run_dir} -max_evidence_level C
