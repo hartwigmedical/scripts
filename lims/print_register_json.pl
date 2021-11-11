@@ -450,8 +450,8 @@ sub getCorrectBarcodeWithSuffixForRefSampleName{
             "$change_reason Out of multiple choices, randomly chose existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     }
     push( @$warn_msg, $new_warn_msg );
-    if ( $new_barcode_ref !~ /^$barcode.*$/ ) {
-        push( @$warn_msg, "Replacement barcode ($new_barcode_ref) does not start with ($barcode)");
+    if ( $new_barcode_ref !~ /^$barcode_ref.*$/ ) {
+        push( @$warn_msg, "Replacement barcode ($new_barcode_ref) does not start with ($barcode_ref)");
     }
     return $new_barcode_ref;
 }
