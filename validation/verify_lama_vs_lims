@@ -61,10 +61,14 @@ compare_by_sample_barcode () {
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
   sample_name=$(jq -r '.sample_name' <<< "$lims_result")
 
-  if [[ "$lims_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:Absent" "LAMA:unknown"
-  elif [[ "$lama_result" == 'null' ]]; then
-    printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:Present" "LAMA:Absent"
+  lims_presence="Absent"
+  lama_presence="Absent"
+
+  if [[ "$lims_result" != 'null' ]]; then lims_presence="Present"; fi
+  if [[ "$lama_result" != 'null' ]]; then lama_presence="Present"; fi
+
+  if [[ "$lims_presence" == "Absent" || "$lama_presence" == "Absent" ]]; then
+      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:$lims_presence" "LAMA:$lama_presence"
   else
     sample_name=$(jq -r '.sample_name' <<< "$lims_result")
     for field_name in "${check_fields[@]}"; do
