@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 sample=$1 && shift
 
@@ -35,9 +36,10 @@ info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
 # Retain original cuppa and clean up in preparation of rerun.
-if [[ -d "${run_dir}/cuppa" ]]; then
-    cp -r "${run_dir}/cuppa" "${run_dir}/cuppa_orig"
-    rm -r "${run_dir}/cuppa/*"
+cuppa_dir="${run_dir}/cuppa"
+if [[ -d "${cuppa_dir}" ]]; then
+    cp -r "${cuppa_dir}" "${run_dir}/cuppa_orig"
+    create_or_cleanup_dir "${cuppa_dir}"
 fi
 
 # To correct for the missing SIG data in earlier runs.
@@ -49,8 +51,9 @@ generate_cup_report_pipeline ${run_dir}
 run_actin_rna_post_process ${run_dir}
 
 # Create a backup of original breakend before we rerun virus interpreter
-if [[ -d "${run_dir}/virusbreakend" ]]; then
-    cp -r "${run_dir}/virusbreakend" "${run_dir}/virusbreakend_orig"
+virusbreakend_dir="${run_dir}/virusbreakend"
+if [[ -d "${virusbreakend_dir}" ]]; then
+    cp -r "${virusbreakend_dir}" "${run_dir}/virusbreakend_orig"
 fi
 
 # Rerun virus interpreter since older runs will have v1.0
