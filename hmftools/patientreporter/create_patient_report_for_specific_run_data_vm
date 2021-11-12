@@ -66,7 +66,6 @@ output_dir_report=${HOME}/reports
 
 patient_reporter_jar=/home/lieke/tmp/patient-reporter.jar
 
-reporting_db_tsv=$(locate_reporting_db_generate_tsv)
 primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
@@ -84,11 +83,11 @@ fi
 
 java -jar ${patient_reporter_jar} \
     -output_dir_report ${output_dir_report} \
-            -output_dir_data ${output_dir_data_report} \
+            -output_dir_data ${output_dir_data} \
             -ref_sample_id ${ref_sample} \
             -ref_sample_barcode ${ref_sample_barcode} \
-            -tumor_sample_id ${sample} \
-            -tumor_sample_barcode ${barcode} \
+            -tumor_sample_id ${tumor_sample} \
+            -tumor_sample_barcode ${tumor_sample} \
             -pipeline_version_file ${pipeline_version_file} \
             -purple_purity_tsv ${purple_purity_tsv} \
             -purple_qc_file ${purple_qc_file} \
