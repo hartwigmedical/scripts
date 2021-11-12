@@ -10,7 +10,6 @@ run_dir=$1 && shift
 purple_output_dir=${run_dir}/purple
 
 purple_jar=$(locate_prod_purple)
-database="hmfpatients"
 somatic_vcf=$(locate_sage_somatic_variants ${run_dir})
 structural_vcf=$(locate_gripss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gripss_recovery_candidates ${run_dir})
@@ -51,15 +50,6 @@ germline_hotspot_vcf=/data/resources/public/sage/37/KnownHotspots.germline.37.vc
 driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 
 db_args=""
-if [[ ! -z "${database}" ]]; then
-    credentials=$(prod_writer_sql_credentials)
-
-    db_user=$(extract_database_user "${credentials}")
-    db_pass=$(extract_database_password "${credentials}")
-    db_url=$(construct_database_url "${credentials}" ${database})
-
-    db_args="-db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
-fi
 
 info "Running purple for ${tumor_sample}"
 
