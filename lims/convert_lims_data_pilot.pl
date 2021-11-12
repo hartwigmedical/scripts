@@ -171,6 +171,10 @@ sub addLamaSamplesToSamples{
         # adding sample info to statuses
         if (exists $samples->{$sample_barcode}) {
             addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
+            # little hacky way of retaining the roman naming for time being (can be removed once anonymization project is finished)
+            if (exists $samples->{$sample_barcode}{legacy_sample_name}){
+                $sample_to_store{sample_name} = $samples->{$sample_barcode}{legacy_sample_name};
+            }
         }
 
         # adding isolate info to statuses
@@ -1212,6 +1216,7 @@ sub getFieldNameTranslations{
     );
 
     my %lama_patient_tumor_sample_dict = (
+        'legacySampleId'        => 'legacy_sample_name',
         'refFrBarcode'          => 'ref_sample_id',
         'hospitalPaSampleId'    => 'hospital_pa_sample_id',
         'patientGermlineChoice' => 'report_germline_level',
@@ -1225,6 +1230,7 @@ sub getFieldNameTranslations{
     );
 
     my %lama_patient_blood_sample_dict = (
+        'legacySampleId'  => 'legacy_sample_name',
         'sopVersion'      => 'blood_registration_sop',
         'collectionDate'  => 'sampling_date',
         'arrivalHmf'      => 'arrival_date',
