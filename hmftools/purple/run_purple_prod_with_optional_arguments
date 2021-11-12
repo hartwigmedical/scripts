@@ -81,6 +81,6 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -germline_hotspots ${germline_hotspot_vcf} \
     -driver_gene_panel ${driver_gene_panel} \
     -min_ploidy 3 \
-    -max_poidy 3.3 \
+    -max_ploidy 3.3 \
     ${db_args} \
     "$@"
