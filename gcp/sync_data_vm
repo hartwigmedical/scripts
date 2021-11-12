@@ -16,7 +16,7 @@ cd /data/repos/scripts && git pull
 info "Done"
 
 info "Syncing ops data from ops-vm used in development"
-gsutil -mq cp -rn gs://data-vm-resources-prod-1/* /data
+gsutil -mq cp -r gs://data-vm-resources-prod-1/* /data
 info "Done"
 
 info "Syncing datasets with dsync"
