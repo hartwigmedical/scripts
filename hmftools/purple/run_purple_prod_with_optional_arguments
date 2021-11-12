@@ -6,12 +6,14 @@ source message_functions || exit 1
 source database_functions || exit 1
 
 run_dir=$1 && shift
-purple_jar=$1 && shift
-somatic_vcf=$1 && shift
-structural_vcf=$1 && shift
-sv_recovery_vcf=$1 && shift
-purple_output_dir=$1 && shift
-database=$1 && shift
+
+purple_output_dir=${run_dir}/purple
+
+purple_jar=$(locate_prod_purple)
+database="hmfpatients"
+somatic_vcf=$(locate_sage_somatic_variants ${run_dir})
+structural_vcf=$(locate_gripss_structural_variants ${run_dir})
+sv_recovery_vcf=$(locate_gripss_recovery_candidates ${run_dir})
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -42,12 +44,6 @@ else
     fi
 fi
 
-base_path="/data/common"
-if [[ -z "$(hostname | grep datastore)" ]]; then
-    # Common folder does not exist on crunches...
-    base_path="/data"
-fi
-
 gc_profile=/data/resources/public/gc_profiles/37/GC_profile.1000bp.37.cnp
 ref_genome=$(locate_ref_genome_37_fasta_file)
 somatic_hotspot_vcf=/data/resources/public/sage/37/KnownHotspots.somatic.37.vcf.gz
@@ -71,7 +67,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
-    -circos ${base_path}/tools/circos/0.69.6/bin/circos \
+    -circos /data/tools/circos/0.69.6/bin/circos \
     -reference ${reference_sample} \
     -tumor ${tumor_sample} \
     -amber ${amber_dir} \
@@ -84,5 +80,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -somatic_hotspots ${somatic_hotspot_vcf} \
     -germline_hotspots ${germline_hotspot_vcf} \
     -driver_gene_panel ${driver_gene_panel} \
+    -min_ploidy 3 \
+    -max_poidy 3.3 \
     ${db_args} \
     "$@"
