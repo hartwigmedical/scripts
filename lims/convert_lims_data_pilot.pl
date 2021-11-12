@@ -200,7 +200,11 @@ sub addLamaSamplesToSamples{
         my $analysis_type = $sample_to_store{isolation_type};
         my $final_target_yield = NACHAR;
 
-        if ($isolation_type eq 'Tissue') {
+        if (not defined $isolation_type) {
+            sayWarn("SKIPPING: no isolation type defined for $isolate_barcode (pls fix in LAMA)");
+            next;
+        }
+        elsif ($isolation_type eq 'Tissue') {
             $analysis_type = 'Somatic_T'; # DNA from tumor tissue
             $final_target_yield = 300;
         }
@@ -217,7 +221,8 @@ sub addLamaSamplesToSamples{
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
-            die "[ERROR] Should not happen: encountered unknown isolation type '$isolation_type' ($isolate_barcode)"
+            sayWarn("SKIPPING: unknown isolation type '$isolation_type' for $isolate_barcode (pls fix in LAMA)");
+            next
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {

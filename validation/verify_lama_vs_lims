@@ -68,7 +68,7 @@ compare_by_sample_barcode () {
   if [[ "$lama_result" != 'null' ]]; then lama_presence="Present"; fi
 
   if [[ "$lims_presence" == "Absent" || "$lama_presence" == "Absent" ]]; then
-      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS:$lims_presence" "LAMA:$lama_presence"
+      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS=$lims_presence" "LAMA=$lama_presence"
   else
     sample_name=$(jq -r '.sample_name' <<< "$lims_result")
     for field_name in "${check_fields[@]}"; do
@@ -92,7 +92,7 @@ compare_by_sample_barcode () {
         result="FAIL"
       fi
       #echo "$result: $barcode $sample_name $field_name ($lims_val vs $lama_val)"
-      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "LIMS:$lims_val" "LAMA:$lama_val"
+      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "LIMS=$lims_val" "LAMA=$lama_val"
     done
   fi
 }
