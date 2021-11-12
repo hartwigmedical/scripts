@@ -87,7 +87,7 @@ java -jar ${patient_reporter_jar} \
             -ref_sample_id ${ref_sample} \
             -ref_sample_barcode ${ref_sample_barcode} \
             -tumor_sample_id ${tumor_sample} \
-            -tumor_sample_barcode ${tumor_sample} \
+            -tumor_sample_barcode ${tumor_sample_barcode} \
             -pipeline_version_file ${pipeline_version_file} \
             -purple_purity_tsv ${purple_purity_tsv} \
             -purple_qc_file ${purple_qc_file} \
