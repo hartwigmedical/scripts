@@ -24,8 +24,7 @@ NAS_FILES=(
   "${NAS_DIR}/${FOR_002_FILE}"
 )
 
-# TODO: change to prod bucket once testing phase is over
-LAMA_BUCKET="lama-export-pilot"
+LAMA_BUCKET="lama-export"
 LAMA_FILES=(
   "gs://${LAMA_BUCKET}/Cohorts.json"
   "gs://${LAMA_BUCKET}/Hospitals.json"
