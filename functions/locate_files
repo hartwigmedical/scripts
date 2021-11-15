@@ -257,8 +257,24 @@ locate_actin_molecular_directory_for_sample() {
     echo "${molecular_sample_dir}"
 }
 
-locate_actin_algo_directory() {
-    echo "/data/actin/algo"
+locate_actin_treatment_match_directory() {
+    echo "/data/actin/treatment_matches"
+}
+
+locate_actin_treatment_match_json() {
+    local sample=$1 && shift
+    local treatment_match_dir=$(locate_actin_treatment_match_directory)
+
+    if [[ ! -d "${treatment_match_dir}" ]]; then
+        error "Unable to locate ACTIN treatment match directory '${treatment_match_dir}'"
+    fi
+
+    local treatment_match_json="${clinical_dir}/${sample}.treatment_match.json"
+    if [[ ! -f ${treatment_match_json} ]]; then
+        error "Could not locate treatment match json for sample '${sample}'"
+    fi
+
+    echo "${treatment_match_json}"
 }
 
 locate_actin_reports_directory() {
