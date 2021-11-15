@@ -72,7 +72,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -driver_gene_panel ${driver_gene_panel} \
     -min_ploidy 3.1 \
     -max_ploidy 3.1 \
-    -minPurity 0.35 \
-    -maxPurity 0.35 \
+    -min_purity 0.35 \
+    -max_purity 0.35 \
     ${db_args} \
     "$@"
