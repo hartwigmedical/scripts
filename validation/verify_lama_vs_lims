@@ -59,16 +59,18 @@ compare_by_sample_barcode () {
   local barcode=$1 && shift
   lims_result=$(query_lims "$LIMS_JSON" "$barcode" "json")
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
-  sample_name=$(jq -r '.sample_name' <<< "$lims_result")
+  sample_name=$(jq -r '.sample_name//"NA"' <<< "$lims_result")
+  analysis_type=$(jq -r '.analysis_type//"NA"' <<< "$lims_result")
 
-  lims_presence="Absent"
-  lama_presence="Absent"
+  present_in_lims="false"
+  present_in_lama="false"
 
-  if [[ "$lims_result" != 'null' ]]; then lims_presence="Present"; fi
-  if [[ "$lama_result" != 'null' ]]; then lama_presence="Present"; fi
+  if [[ "$lims_result" != 'null' ]]; then present_in_lims="true"; fi
+  if [[ "$lama_result" != 'null' ]]; then present_in_lama="true"; fi
 
-  if [[ "$lims_presence" == "Absent" || "$lama_presence" == "Absent" ]]; then
-      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "FAIL" "$barcode" "$sample_name" "NA" "LIMS=$lims_presence" "LAMA=$lama_presence"
+  if [[ "$present_in_lims" == "false" || "$present_in_lama" == "false" ]]; then
+      printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "FAIL" "$barcode" "$sample_name" "$analysis_type" "$field_name" "LIMS=$present_in_lims" "LAMA=$present_in_lama"
   else
     sample_name=$(jq -r '.sample_name' <<< "$lims_result")
     for field_name in "${check_fields[@]}"; do
@@ -88,21 +90,19 @@ compare_by_sample_barcode () {
       elif [[ "${field_name}" == "lab_status" ]]; then
         # downgrade a mismatch for lab_status to warning because these are simply different in LAMA
         result="WARN"
+      elif [[ "${field_name}" == "yield" ]]; then
+        # downgrade a mismatch for yield to warning because those are handled differently since LAMA
+        result="WARN"
+      elif [[ "${field_name}" =~ report_ ]]; then
+        # downgrade all report fields as they have been reset to defaults in LAMA
+        result="WARN"
       else
         result="FAIL"
       fi
-      #echo "$result: $barcode $sample_name $field_name ($lims_val vs $lama_val)"
-      printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$result" "$barcode" "$sample_name" "$field_name" "LIMS=$lims_val" "LAMA=$lama_val"
+      printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "$result" "$barcode" "$sample_name" "$analysis_type" "$field_name" "LIMS=$lims_val" "LAMA=$lama_val"
     done
   fi
-}
-
-print_tsv_by_sample_barcode () {
-  local barcode=$1 && shift
-  lims_result=$(query_lims "$LIMS_JSON" "$barcode" "tsv")
-  lama_result=$(query_lims "$LAMA_JSON" "$barcode" "tsv")
-  printf "%s: %s\n" "LIMS" "$lims_result"
-  printf "%s: %s\n" "LAMA" "$lama_result"
 }
 
 query_lims () {
@@ -117,6 +117,14 @@ query_lims () {
     die "Unknown output type given to query_lims ($output)"
   fi
   echo "$result"
+}
+
+print_tsv_by_sample_barcode () {
+  local barcode=$1 && shift
+  lims_result=$(query_lims "$LIMS_JSON" "$barcode" "tsv")
+  lama_result=$(query_lims "$LAMA_JSON" "$barcode" "tsv")
+  printf "%s: %s\n" "LIMS" "$lims_result"
+  printf "%s: %s\n" "LAMA" "$lama_result"
 }
 
 main
