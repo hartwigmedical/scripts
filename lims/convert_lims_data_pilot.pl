@@ -171,7 +171,7 @@ sub addLamaSamplesToSamples{
         # adding sample info to statuses
         if (exists $samples->{$sample_barcode}) {
             addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
-            # little hacky way of retaining the roman naming for time being (can be removed once anonymization project is finished)
+            # retaining the roman naming for older samples for the time being (can be removed once anonymization project is finished)
             if (exists $samples->{$sample_barcode}{legacy_sample_name}){
                 $sample_to_store{sample_name} = $samples->{$sample_barcode}{legacy_sample_name};
             }
