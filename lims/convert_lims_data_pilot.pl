@@ -289,20 +289,20 @@ sub addLamaSamplesToSamples{
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
     }
 
-    # Need another loop over all samples to complete information
+    # Need another loop over all tumor samples to complete ref_sample_id for older samples
     while ( my($barcode, $sample) = each %store ){
-        my $analysis_type = $sample->{analysis_type};
-        next unless $analysis_type eq 'Somatic_T';
 
-        # If ref_sample_id unknown: find blood counterpart by sample_name
-        if ( $sample->{analysis_type} eq 'Somatic_T' and $sample->{'ref_sample_id'} eq '' ){
-            my $patient_string = $sample->{ 'patient' };
-            $patient_string =~ s/\-//g; # string this point still with dashes
-            my $ref_sample_name = $patient_string . 'R';
-            if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
-                my $ref_sample_id = $dna_blood_samples_by_name{ $ref_sample_name }{ 'sample_id' };
-                $sample->{'ref_sample_id'} = $ref_sample_id;
-            }
+        # We can skip non tumor samples and tumor samples where ref_sample_id info is already present
+        next unless $sample->{analysis_type} eq 'Somatic_T';
+        next if (defined $sample->{'ref_sample_id'} and $sample->{'ref_sample_id'} ne "");
+
+        # Otherwise try to complete info by searching for R sample
+        my $patient_string = $sample->{ 'patient' };
+        $patient_string =~ s/\-//g; # string this point still with dashes
+        my $ref_sample_name = $patient_string . 'R';
+        if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
+            my $ref_sample_id = $dna_blood_samples_by_name{ $ref_sample_name }{ 'sample_id' };
+            $sample->{'ref_sample_id'} = $ref_sample_id;
         }
     }
     return \%store;
