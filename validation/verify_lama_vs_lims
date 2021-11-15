@@ -57,18 +57,21 @@ check_sample () {
 
 compare_by_sample_barcode () {
   local barcode=$1 && shift
+
   lims_result=$(query_lims "$LIMS_JSON" "$barcode" "json")
   lama_result=$(query_lims "$LAMA_JSON" "$barcode" "json")
+
   sample_name=$(jq -r '.sample_name//"NA"' <<< "$lims_result")
   analysis_type=$(jq -r '.analysis_type//"NA"' <<< "$lims_result")
+  field_name="NA"
 
-  present_in_lims="false"
-  present_in_lama="false"
+  present_in_lims="Absent"
+  present_in_lama="Absent"
 
-  if [[ "$lims_result" != 'null' ]]; then present_in_lims="true"; fi
-  if [[ "$lama_result" != 'null' ]]; then present_in_lama="true"; fi
+  if [[ "$lims_result" != 'null' ]]; then present_in_lims="Present"; fi
+  if [[ "$lama_result" != 'null' ]]; then present_in_lama="Present"; fi
 
-  if [[ "$present_in_lims" == "false" || "$present_in_lama" == "false" ]]; then
+  if [[ "$present_in_lims" == "Absent" || "$present_in_lama" == "Absent" ]]; then
       printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
         "FAIL" "$barcode" "$sample_name" "$analysis_type" "$field_name" "LIMS=$present_in_lims" "LAMA=$present_in_lama"
   else
