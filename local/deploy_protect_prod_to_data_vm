@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-version=1.4
+version=1.5
 protect_jar=${HOME}/hmf/repos/hmftools/protect/target/protect-${version}-jar-with-dependencies.jar
 
 if [ ! -f ${protect_jar} ]; then
