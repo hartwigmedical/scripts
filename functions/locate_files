@@ -269,7 +269,7 @@ locate_actin_treatment_match_json() {
         error "Unable to locate ACTIN treatment match directory '${treatment_match_dir}'"
     fi
 
-    local treatment_match_json="${clinical_dir}/${sample}.treatment_match.json"
+    local treatment_match_json="${treatment_match_dir}/${sample}.treatment_match.json"
     if [[ ! -f ${treatment_match_json} ]]; then
         error "Could not locate treatment match json for sample '${sample}'"
     fi
