@@ -2,8 +2,10 @@
 
 source message_functions || exit 1
 
-LIMS_JSON="/data/ops/lims/prod/lims.json"
-LAMA_JSON="/data/ops/lims/pilot/lims.json"
+LIMS_JSON="./lims_prod.json"
+LAMA_JSON="./lims_pilot.json"
+
+[[ -f "${LIMS_JSON}" && -f "${LAMA_JSON}" ]] || die "Unable to find input lims json files ($LIMS_JSON and $LAMA_JSON)"
 
 barcodes=("$@")
 compare_mode="true"
