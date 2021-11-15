@@ -11,21 +11,21 @@ fi
 
 # copying data from bucket
 info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"
-gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} /data/resources/ckb/
+gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} /data/resources/custom/ckb/
 
 # unzip file
 info "Unziping file ${zip_file}"
-unzip /data/resources/ckb/${zip_file}
+unzip /data/resources/custom/ckb/${zip_file}
 
 #rename dir
 info "Renaming dir"
 date=$(echo ${zip_file} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}' | cut -c 3-)
-mv /data/resources/ckb/api-export ${date}_ckb_flex_dump
+mv /data/resources/custom/ckb/api-export /data/resources/custom/ckb/${date}_ckb_flex_dump
 rm ${zip_file}
 
 # create new symlink
 info "Creating new symlink"
-unlink /data/resources/ckb/ckb_flex_dump
-ln -s /data/resources/ckb/${date}_ckb_flex_dump /data/resources/ckb/ckb_flex_dump
+unlink /data/resources/custom/ckb/ckb_flex_dump
+ln -s /data/resources/custom/ckb/${date}_ckb_flex_dump /data/resources/custom/ckb/ckb_flex_dump
 
 info "CKB dump is updated!"
