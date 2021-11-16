@@ -283,9 +283,12 @@ sub addLamaSamplesToSamples{
         $sample_to_store{patient} =~ s/\-//g;
         $sample_to_store{cohort} =~ s/\-//g;
 
-        # Add non-existing fields that are required downstream
-        if ( not exists $sample_to_store{ptum} ){
-            $sample_to_store{ptum} = "";
+        # Add non-existing fields that might be required for downstream tools to work
+        my @fields_that_must_be_present = qw(arrival_date biopsy_site lab_sop_versions ptum report_germline_level);
+        foreach my $field (@fields_that_must_be_present){
+            if ( not exists $sample_to_store{$field} ){
+                $sample_to_store{$field} = "";
+            }
         }
 
         # And store the final result
