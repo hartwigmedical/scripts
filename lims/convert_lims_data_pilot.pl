@@ -497,10 +497,10 @@ sub parseLamaSampleStatus{
 
         # Store
         $status{'sample_id'} = $object->{frBarcodeDNA};
-        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "samplestatus($sampleBarcodeDNA)");
+        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "samplestatus->$sampleBarcodeDNA");
         if ( defined $sampleBarcodeRNA and $sampleBarcodeRNA ne "" ){
             $status{'sample_id'} = $object->{frBarcodeRNA};
-            storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "samplestatus($sampleBarcodeRNA)");
+            storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "samplestatus->$sampleBarcodeRNA");
         }
     }
     return \%store;
