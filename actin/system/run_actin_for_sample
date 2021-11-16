@@ -10,4 +10,6 @@ fi
 
 actin_trial_matcher_pilot ${sample}
 
+info ""
+
 actin_reporter_pilot ${sample}
