@@ -163,6 +163,7 @@ sub addLamaSamplesToSamples{
     my ($lims, $statuses, $samples, $isolations, $preps, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
     my %dna_blood_samples_by_name = ();
+    sayInfo("  Adding LAMA samples to LIMS");
 
     while (my ($isolate_barcode, $object) = each %$statuses) {
         my %sample_to_store = %{$object};
@@ -230,10 +231,12 @@ sub addLamaSamplesToSamples{
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            ## specifically check for non-ref samples if submission is defined
             if ($original_submission eq '') {
-                if ($analysis_type ne 'Somatic_R') {
-                    sayWarn("SKIPPING CORE sample because of incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
+                if ($analysis_type eq 'Somatic_R') {
+                    sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
+                }
+                else{
+                    sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
                 }
                 next;
             }
@@ -250,7 +253,7 @@ sub addLamaSamplesToSamples{
                 $submission_object->{analysis_type} = "OncoAct";
             }
             else {
-                #sayWarn("Unable to update submission \"$original_submission\" because not found in submissions (id:$barcode name:$name)");
+                sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
             }
         }
         elsif (exists $centers_dict->{ $center }) {
