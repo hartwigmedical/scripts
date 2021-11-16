@@ -10,6 +10,6 @@ fi
 
 actin_trial_matcher_pilot ${sample}
 
-info ""
+echo ""
 
 actin_reporter_pilot ${sample}
