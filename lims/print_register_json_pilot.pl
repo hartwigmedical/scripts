@@ -331,13 +331,12 @@ sub processSample{
                 sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
             else{
-                sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string: no idea what to do");
-                return "NoJsonMade_DeleteShallowSeqRun";
+                sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string");
+                return "NoJsonMade_DeletedShallowSeqRunFound";
             }
         }
 
         if ( $patient ne $patient_ref ){
-        #if ( $other_ref eq "Yes" ){
             ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
             my $new_name_ref = $patient . 'R';
             my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
