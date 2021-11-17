@@ -331,7 +331,8 @@ sub processSample{
                 sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
             else{
-                die "[ERROR]   ShallowSeq with status $run_status found for $match_string: no idea what to do";
+                sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string: no idea what to do");
+                return "NoJsonMade_ShallowSeqStillProcessing";
             }
         }
 
