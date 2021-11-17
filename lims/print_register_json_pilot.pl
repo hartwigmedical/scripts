@@ -24,7 +24,6 @@ my $BCL_INI = "BCL.ini";
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
 
-## could make these more fine grained (lower number is higher prio)
 my $NO_PIPELINE_PRIO = 100;
 my $YES_PIPELINE_PRIO = 99;
 
@@ -34,9 +33,6 @@ my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
 my $FORCE_OUTPUT = 0;
 
-## -----
-## Gather input
-## -----
 my %opt = ();
 GetOptions (
     "samplesheet=s"  => \$opt{ samplesheet },
