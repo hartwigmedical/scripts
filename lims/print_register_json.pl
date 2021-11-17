@@ -24,7 +24,6 @@ my $BCL_INI = "BCL.ini";
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
 
-## could make these more fine grained (lower number is higher prio)
 my $NO_PIPELINE_PRIO = 100;
 my $YES_PIPELINE_PRIO = 99;
 
@@ -34,9 +33,6 @@ my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
 my $FORCE_OUTPUT = 0;
 
-## -----
-## Gather input
-## -----
 my %opt = ();
 GetOptions (
     "samplesheet=s"  => \$opt{ samplesheet },
@@ -268,7 +264,7 @@ sub processSample{
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
-        my $other_ref = getValueByKey( $sample, 'other_ref' ); # Yes | No
+        #my $other_ref = getValueByKey( $sample, 'other_ref' ); # Yes | No
         
         ## need to find the ref sample of somatic pair
         if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
@@ -289,6 +285,7 @@ sub processSample{
         
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
+        my $patient_ref = getValueByKey( $ref_obj, 'patient' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
         my $submission_ref = getValueByKey( $ref_obj, 'submission' );
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
@@ -330,11 +327,12 @@ sub processSample{
                 sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
             else{
-                die "[ERROR]   ShallowSeq with status $run_status found for $match_string: no idea what to do";
+                sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string");
+                return "NoJsonMade_DeletedShallowSeqRunFound";
             }
         }
 
-        if ( $other_ref eq "Yes" ){
+        if ( $patient ne $patient_ref ){
             ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
             my $new_name_ref = $patient . 'R';
             my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
