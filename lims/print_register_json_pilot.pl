@@ -332,7 +332,7 @@ sub processSample{
             }
             else{
                 sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string: no idea what to do");
-                return "NoJsonMade_ShallowSeqStillProcessing";
+                return "NoJsonMade_DeleteShallowSeqRun";
             }
         }
 
