@@ -13,21 +13,18 @@ use File::Copy;
 use Email::Valid;
 use POSIX qw(strftime);
 use 5.01000;
+$| = 1; # Disable stdout buffering
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
 
-## These fields will be actively set to boolean for json output
+# Fields that will actively be set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx add_to_database add_to_datarequest);
-## These fields will be actively set to integer for json output
+# Fields that will actively be set to integer for json output
 use constant INTEGER_FIELDS => qw(yield q30);
-
+# Fields that will be required to exist in input if checked
 my %WARN_IF_ABSENT_IN_LAMA_FIELDS = (_id=>1, status=>1);
 
-## Disable stdout buffering
-$| = 1;
-
-## Setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP_TEXT = <<"HELP";
 
@@ -44,7 +41,7 @@ my $HELP_TEXT = <<"HELP";
 
 HELP
 
-## Get input and setup all paths
+# Get input and setup all paths
 my %opt = ();
 GetOptions (
     "lims_dir=s" => \$opt{ lims_dir },
@@ -62,19 +59,19 @@ my $LIMS_DIR = $opt{lims_dir};
 my $JSON_OUT = $opt{out_json};
 my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
 
-## Current LIMS files
+# Current LIMS files
 my $FOR_001_SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
 my $FOR_001_CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
 my $FOR_001_SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
 my $FOR_002_PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 
-## Current LAMA files
+# Current LAMA files
 my $LAMA_ISOLATION_JSON = $LATEST_DIR . '/Isolations.json';
 my $LAMA_PATIENT_JSON = $LATEST_DIR . '/Patients.json';
 my $LAMA_LIBRARYPREP_JSON = $LATEST_DIR . '/LibraryPreps.json';
 my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/SampleStatus.json';
 
-## Files from previous years
+# Files from previous years
 my $SUBM_TSV_2020 = $LATEST_DIR . '/2020_for001_submissions.tsv';
 my $SAMP_TSV_2020 = $LATEST_DIR . '/2020_for001_samples.tsv';
 my $PROC_TSV_2020 = $LATEST_DIR . '/2020_for002_processing.tsv';
@@ -97,8 +94,6 @@ my @ALL_INPUT_FILES = (
     $CNTR_TSV
 );
 
-## Some final checks
-
 foreach ( $LIMS_DIR ){
     die "[ERROR] Input dir does not exist ($_)\n" unless -e $_;
     die "[ERROR] Input dir is not a directory ($_)\n" unless -d $_;
@@ -110,7 +105,6 @@ foreach ( $JSON_OUT ){
     die "[ERROR] Output file exists and is not writable ($_)\n" if ( -f $_ and not -w $_ );
 }
 
-## MAIN
 sayInfo("Starting with $SCRIPT");
 
 my $name_dict = getFieldNameTranslations();
@@ -154,9 +148,7 @@ $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
 
 fixAddedDateFields( $lims_objs );
 checkDrupStage3Info( $subm_objs, $lims_objs );
-
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
-
 sayInfo("Finished with $SCRIPT");
 
 sub addLamaSamplesToSamples{
@@ -171,7 +163,7 @@ sub addLamaSamplesToSamples{
 
         # adding sample info to statuses
         if (exists $samples->{$sample_barcode}) {
-            addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merging in sample info for $isolate_barcode");
+            addRecordFieldsToTargetRecord($samples->{$sample_barcode}, \%sample_to_store, "merge of sample info for $isolate_barcode");
             # retaining the roman naming for older samples for the time being (can be removed once anonymization project is finished)
             if (exists $samples->{$sample_barcode}{legacy_sample_name}){
                 $sample_to_store{sample_name} = $samples->{$sample_barcode}{legacy_sample_name};
@@ -180,12 +172,12 @@ sub addLamaSamplesToSamples{
 
         # adding isolate info to statuses
         if (exists $isolations->{$isolate_barcode}) {
-            addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merging in isolate info for $isolate_barcode");
+            addRecordFieldsToTargetRecord($isolations->{$isolate_barcode}, \%sample_to_store, "merge of isolate info for $isolate_barcode");
         }
 
         # adding prep info to statuses
         if (exists $preps->{$isolate_barcode}) {
-            addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merging in prep info for $isolate_barcode");
+            addRecordFieldsToTargetRecord($preps->{$isolate_barcode}, \%sample_to_store, "merge of prep info for $isolate_barcode");
         }
 
         my $sample_name = $sample_to_store{sample_name};
@@ -243,21 +235,19 @@ sub addLamaSamplesToSamples{
             $sample_to_store{ 'entity' } = $original_submission;
             $sample_to_store{ 'project_name' } = $original_submission;
 
-            ## Set the analysis type for CORE submissions to align with Excel LIMS samples
+            # Set the analysis type for CORE submissions to align with Excel LIMS samples
             if (exists $submissions->{ $original_submission }) {
                 my $submission_object = $submissions->{ $original_submission };
                 my $project_name = $submission_object->{ 'project_name' };
-                ## Reset project name for sample (from submission)
-                $sample_to_store{project_name} = $project_name;
-                ## Add an analysis type to submission
-                $submission_object->{analysis_type} = "OncoAct";
+                $sample_to_store{project_name} = $project_name; # Reset project name for sample (from submission)
+                $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
             }
             else {
                 sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
             }
         }
         elsif (exists $centers_dict->{ $center }) {
-            ## All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
+            # All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
             my $centername = $centers_dict->{ $center };
             my $register_submission = 'HMFreg' . $study;
             $sample_to_store{original_submission} = $original_submission;
@@ -352,15 +342,11 @@ sub copyFieldsFromObject{
         elsif(exists $WARN_IF_ABSENT_IN_LAMA_FIELDS{$src_key}){
             sayWarn("No '$src_key' field in object ($info_tag)");
         }
-        else{
-            # do not warn about missing fields by default
-        }
     }
 }
 
 sub epochToDate{
-    # epoch time in milliseconds
-    my ($epoch) = @_;
+    my ($epoch) = @_; # epoch time in milliseconds
     my $registrationDate = strftime "%Y-%m-%d", localtime $epoch/1000;
     return $registrationDate;
 }
@@ -372,16 +358,16 @@ sub parseLamaPatients {
 
     foreach my $patient (@$objects) {
         foreach my $sample (@{$patient->{tumorSamples}}) {
-            processSampleOfPatient($patient, $sample, 'tumor', \%store);
+            processSampleOfLamaPatient($patient, $sample, 'tumor', \%store);
         }
         foreach my $sample (@{$patient->{bloodSamples}}) {
-            processSampleOfPatient($patient, $sample, 'blood', \%store);
+            processSampleOfLamaPatient($patient, $sample, 'blood', \%store);
         }
     }
     return \%store;
 }
 
-sub processSampleOfPatient {
+sub processSampleOfLamaPatient {
     my ($patient, $sample, $sample_origin, $store) = @_;
     my $sample_field_translations;
     my @sampleBarcodes;
@@ -399,9 +385,9 @@ sub processSampleOfPatient {
         die "[ERROR] Unknown sample origin provided to processSampleOfPatient ($sample_origin for $sample_barcode)\n";
     }
 
+    my %info = ();
     my $info_tag = "patients->barcodes=" . join("|", @sampleBarcodes);
 
-    my %info = ();
     copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
     copyFieldsFromObject($patient, $info_tag, $name_dict->{lama_patient_dict}, \%info);
 
@@ -422,7 +408,6 @@ sub parseLamaLibraryPreps{
             my $status = $object->{status};
 
             # Only store prep info when OK
-            # TODO: Sometimes status stays "Failed" but lab still continues with sequencing!!
             next if $status =~ m/failed/i;
 
             my %info = ();
@@ -460,7 +445,6 @@ sub parseLamaIsolation{
                 my $old_is_finished = $old_status eq 'Finished';
                 my $new_is_finished = $new_status eq 'Finished';
                 if ( $old_is_finished and $new_is_finished ){
-                    #die "[ERROR] Should not happen: encountered duplicate Finished isolate $barcode ($new_status)";
                     sayWarn("SKIPPING isolate: encountered duplicate Finished isolate for $barcode (pls fix in LAMA)");
                     print Dumper $store{$barcode};
                     next;
@@ -469,7 +453,7 @@ sub parseLamaIsolation{
                     next;
                 }
                 else{
-                    # We simply encountered a new status to use so fine to overwrite in store
+                    # In this case we simply overwrite a non-Finished status with a Finished one
                 }
             }
             my %info = ();
@@ -488,9 +472,11 @@ sub parseLamaSampleStatus{
 
     foreach my $object (@$objects){
 
-        # No frBarcode means sample has not been prepped so skip
         my $sampleBarcodeDNA = $object->{frBarcodeDNA};
         my $sampleBarcodeRNA = $object->{frBarcodeRNA};
+        my $sampleId = $object->{sampleId};
+
+        # No DNA frBarcode means sample has not been isolated so skip
         if ( not defined $sampleBarcodeDNA or $sampleBarcodeDNA eq "" ){
             next;
         }
@@ -512,15 +498,6 @@ sub parseLamaSampleStatus{
     return \%store;
 }
 
-## ----------
-## /MAIN
-## ----------
-
-
-
-## ----------
-## SUBs
-## ----------
 sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
@@ -533,7 +510,7 @@ sub parseTsvCsv{
     my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
 
-    ## Checking header content
+    # Checking header content
     my $header_misses_field = 0;
     foreach my $field (keys %$fields) {
         if ( not exists $fields_map{ $field } ){
@@ -545,7 +522,7 @@ sub parseTsvCsv{
         print Dumper \%fields_map and die "[ERROR] Header incomplete ($file)\n";
     }
 
-    ## Header OK: continue reading in all data lines
+    # Header OK: continue reading in all data lines
     while ( <IN> ){
         chomp;
         die "[ERROR] Cannot parse line ($_)\n" unless $csv->parse($_);
@@ -573,7 +550,7 @@ sub parseTsvCsv{
             sayWarn("SKIPPING object (name: $name) from $file for reason: $reason_not_to_store") and next;
         }
 
-        ## Checks OK: fix some fields and store object
+        # Checks OK: fix some fields and store object
         fixDateFields( $obj );
         fixIntegerFields( $obj );
         fixBooleanFields( $obj );
@@ -626,14 +603,14 @@ sub addLabSopStringToSamples{
     my $sop_field_name = 'lab_sop_versions';
     foreach my $id ( keys %store ){
         if ( exists $inprocess->{ $id } ){
-            ## format: PREP(\d+)V(\d+)-QC(\d+)V(\d+)-SEQ(\d+)V(\d+)
+            # format: PREP(\d+)V(\d+)-QC(\d+)V(\d+)-SEQ(\d+)V(\d+)
             $store{ $id }{ $sop_field_name } = $inprocess->{ $id }{ $sop_field_name };
         }
         elsif ( defined $samples->{ $id }{ $sop_field_name } ){
-            ## keep whatever is present
+            # keep whatever is present
         }
         else{
-            ## fallback to NA default
+            # fallback to NA default
             $store{ $id }{ $sop_field_name } = NACHAR;
         }
     }
@@ -672,7 +649,7 @@ sub addContactInfoToSubmissions{
         my $submission = $store{$submission_id};
 
         if( exists $submission->{ 'report_contact_email' } ){
-            ## skip records from the time when contact info was entered in shipments tab
+            # Skip records from the time when contact info was entered in shipments tab
             next;
         }
         elsif( defined $submission->{ 'group_id' } ){
@@ -737,24 +714,22 @@ sub checkContactInfo{
     sayInfo("  Checking contact group information for completeness");
     foreach my $id (sort keys %$contact_groups){
         my $info = $contact_groups->{$id};
-        my $name = $info->{client_contact_name};
-        my $mail = $info->{client_contact_email};
 
-        ## These fields should at the very least have content
+        # These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
                 sayWarn("No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)");
             }
         }
-        ## These fields should contain only (valid) email addresses
+        # These fields should contain only (valid) email addresses
         foreach my $field (@mail_fields){
-            my @addressess = split( ";", $info->{$field});
-            foreach my $address (@addressess){
+            my @addresses = split( ";", $info->{$field});
+            foreach my $address (@addresses){
                 if( $address eq NACHAR ){
                     next;
                 }
                 elsif( not Email::Valid->address($address) ){
-                    sayWarn("No valid email address ($address) in field \"$field\"for contact group ID \"$id\" (see FOR-001 Contacts tab)");
+                    sayWarn("No valid email address ($address) in field '$field' for contact group ID '$id' (see FOR-001 Contacts tab)");
                 }
             }
         }
@@ -765,10 +740,9 @@ sub addExcelSamplesToSamples{
 
     my ($lims, $objects, $shipments) = @_;
     my %store = %{$lims};
-    my %name2id = ();
 
-    ## open file and check header before reading data lines
-    while ( my($sample_id, $row_info) = each %$objects ){
+    # Open file and check header before reading data lines
+    while ( my($row_key, $row_info) = each %$objects ){
 
         my $sample_name = $row_info->{ 'sample_name' } or die "[ERROR] No sample_name in row_info";
         next if isSkipValue( $sample_name );
@@ -781,9 +755,9 @@ sub addExcelSamplesToSamples{
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
         $row_info->{ 'entity' } = $row_info->{ 'submission' };
 
-        ## check data analysis type and set accordingly
+        # Check data analysis type and set accordingly
         if ( $analysis_type =~ /^(Somatic_R|Somatic_T|SingleAnalysis|FASTQ|BCL|LabOnly)$/ ){
-            ## Already final status so no further action
+            # Already final status so no further action
         }
         elsif ( $sample_name =~ /^(CORE\d{2}\d{6})(T|R){1}/ms ){
             my ($patient, $tum_or_ref) = ($1, $2);
@@ -793,7 +767,7 @@ sub addExcelSamplesToSamples{
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $analysis_type eq 'SomaticAnalysis' or $analysis_type eq 'SomaticsBFX' ){
-            ## SomaticsBFX is the old term, SomaticAnalysis the new
+            # SomaticsBFX is the old term, SomaticAnalysis the new
             my $partner = $row_info->{ 'ref_sample_id' };
             if ( $partner ne '' and $partner ne NACHAR ){
                 $row_info->{ 'analysis_type' } = 'Somatic_T';
@@ -802,22 +776,22 @@ sub addExcelSamplesToSamples{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
 
-            ## Hardcode Somatic_T samples to not use existing ref data for FOR-001 samples
+            # Hardcode Somatic_T samples to not use existing ref data for FOR-001 samples
             $row_info->{ 'other_ref' } = "";
 
-            ## Hardcode old Somatic_T samples to not run in shallow mode (config was added only in FOR-001 v5.10)
+            # Hardcode old Somatic_T samples to not run in shallow mode (config was added only in FOR-001 v5.10)
             if ( not exists $row_info->{ 'shallowseq' }) {
                 $row_info->{ 'shallowseq' } = JSON::XS::false;
             }
 
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
-            ## GermlineBFX is the old term, SingleAnalysis the new
+            # GermlineBFX is the old term, SingleAnalysis the new
             $analysis_type = 'SingleAnalysis';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
         elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq 'NoAnalysis' or $analysis_type eq '' or $analysis_type eq 'NA' ){
-            ## NoBFX is the old term, FASTQ the new
+            # NoBFX is the old term, FASTQ the new
             $analysis_type = 'FASTQ';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
@@ -834,7 +808,7 @@ sub addExcelSamplesToSamples{
             next;
         }
 
-        ## add submission info and parse KG
+        # Add submission info and parse KG
         if ( exists $shipments->{ $submission } ){
             my $sub = $shipments->{ $submission };
             my $project_name = $sub->{ 'project_name' };
@@ -847,15 +821,14 @@ sub addExcelSamplesToSamples{
                 $row_info->{ 'entity' } = 'KG_' . $center;
                 $row_info->{ 'label' } = 'KG';
             }
-            ## assume that all samples of submission need same analysis
-            ## so will just overwrite analysis_type of submission
+            # Assumes that all samples of submission need same analysis
             $sub->{ 'analysis_type' } = $analysis_type;
         }
 
         my $unique = $row_info->{ 'sample_id' };
         next if isSkipValue( $unique );
 
-        ## checks before storing
+        # Checks before storing
         my $regex = '^[0-9a-zA-Z\-]*$';
         sayWarn("SKIPPING sample ($sample_name): sample_name contains unacceptable chars") and next if $sample_name !~ /$regex/;
         sayWarn("SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars") and next if $sample_id !~ /$regex/;
@@ -863,7 +836,7 @@ sub addExcelSamplesToSamples{
         sayWarn("SKIPPING sample ($sample_name): no analysis type defined for sample") and next unless $row_info->{ 'analysis_type' };
         sayWarn("SKIPPING sample ($sample_name): no project name defined for sample") and next unless $row_info->{ 'project_name' };
 
-        ## store at uniqe id
+        # Store at unique id
         my $reason_not_to_store = checkKeyToStore( \%store, $unique );
         if ( $reason_not_to_store ){
             sayWarn("SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store") and next;
@@ -878,7 +851,7 @@ sub addExcelSamplesToSamples{
 sub fixIntegerFields{
     my ($obj) = @_;
     foreach my $key ( INTEGER_FIELDS ){
-        ## make sure all integer values are stored as such for json export
+        # Make sure all integer values are stored as such for json export
         if ( exists $obj->{$key} and $obj->{$key} =~ /^\d+$/ ){
             $obj->{$key} = $obj->{$key} + 0;
         }
@@ -919,19 +892,19 @@ sub fixDateFields{
         my $new_date = $old_date;
         my $identifier = $obj->{ 'sample_name' };
 
-        ## date is not always filled in so skip NA fields
+        # Date is not always filled in so skip NA fields
         next if isSkipValue( $old_date );
 
-        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
+        # Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
         if( $old_date eq '1' ) {
             $new_date = NACHAR;
         }
         elsif( $old_date =~ /^\d{13}$/ ) {
-            ## eg 1516575600000
+            # eg 1516575600000
             $new_date = epochToDate($old_date)
         }
         elsif( $old_date =~ /^\w+ (\w{3}) (\d{2}) \d+:\d+:\d+ \w+ (\d{4})$/ ){
-            ## eg Tue Apr 23 00:00:00 CEST 2019
+            # eg Tue Apr 23 00:00:00 CEST 2019
             my $month_name = $1;
             my $day = $2;
             my $year = $3;
@@ -939,29 +912,29 @@ sub fixDateFields{
             $new_date = join( "-", $year, $month, $day );
         }
         elsif ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
-            ## format unclear so need for checks
+            # Format unclear so need for checks
             sayWarn("Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check") if ($1 < 8) or ($1 > 20);
             sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
             $new_date = join( "-", "20" . $1, $2, $3 );
         }
         elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
-            ## dd-mm-yyyy
+            # case dd-mm-yyyy
             sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
             $new_date = join( "-", $3, $2, $1 );
         }
         elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
-            ## case yyyy-mm-dd already ok
+            # case yyyy-mm-dd already ok
             sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
         }
         elsif ( exists $old_date->{'$numberLong'}){
-            ## older versions of mongo-export use canonical mode and return a hash with numberLong
+            # Older versions of mongo-export use canonical mode and return a hash with numberLong key
             $new_date = epochToDate($old_date->{'$numberLong'})
         }
         else{
             sayWarn("Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix");
         }
 
-        ## store new format using reference to original location
+        # Store new format using reference to original location
         $obj->{ $date_field } = $new_date;
     }
 }
@@ -1000,13 +973,13 @@ sub parseExcelSheet{
     my $max_row = $sheet_obj->{'MaxRow'};
     my $max_col = $sheet_obj->{'MaxCol'};
 
-    ## check if header exist where it should be
+    # Check if header exist where it should be
     my $first_val = EMPTY;
     my $first_cel = $sheet_obj->get_cell( $h_row, $h_col );
     $first_val = $first_cel->unformatted() if defined $first_cel;
     die "[ERROR] Header value ($h_val) cannot be found at set location ($excel)\n" unless $first_val eq $h_val;
 
-    ## now read header values for later storage
+    # Now read header values for later storage
     foreach my $col ( $h_col .. $max_col ){
         my $cell = $sheet_obj->get_cell( $h_row, $col );
         my $cell_val = NACHAR;
@@ -1071,7 +1044,7 @@ sub sayWarn{
 }
 
 sub getFieldNameTranslations{
-    ## columns contact sheet in current FOR-001
+    # Columns contact sheet in current FOR-001
     my %CONT_DICT = (
         "Group_ID"               => 'group_id',
         "Client_contact_name"    => 'client_contact_name',
@@ -1086,7 +1059,7 @@ sub getFieldNameTranslations{
         "Lab_contact_email"      => 'lab_contact_email',
     );
 
-    ## columns shipments sheet in 2018 rest lims (FOR-001)
+    # Columns shipments sheet in 2018 rest lims (FOR-001)
     my %SUBM_DICT_2018 = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
@@ -1102,7 +1075,7 @@ sub getFieldNameTranslations{
         "Storage_status"    => 'lab_storage_status',
     );
 
-    ## columns shipments sheet in 2019 rest lims (FOR-001)
+    # Columns shipments sheet in 2019 rest lims (FOR-001)
     my %SUBM_DICT_2019 = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
@@ -1121,7 +1094,7 @@ sub getFieldNameTranslations{
         "Storage_status"    => 'lab_storage_status',
     );
 
-    ## columns shipments sheet in rest lims (FOR-001)
+    # Columns shipments sheet in rest lims (FOR-001)
     my %SUBM_DICT_2020 = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
@@ -1134,7 +1107,7 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    ## columns shipments sheet in rest lims (FOR-001)
+    # Columns shipments sheet in rest lims (FOR-001)
     my %SUBM_DICT = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
@@ -1148,7 +1121,7 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    ## columns samples sheet in 2018 FOR-001
+    # Columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
         "Sample_ID"         => 'sample_id',
         "Sample_name"       => 'sample_name',
@@ -1168,7 +1141,7 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    ## columns samples sheet in 2019 FOR-001
+    # Columns samples sheet in 2019 FOR-001
     my %SAMP_DICT_2019 = (
         "Sample_ID"           => 'sample_id',
         "Sample_name"         => 'sample_name',
@@ -1187,14 +1160,14 @@ sub getFieldNameTranslations{
         "Remarks"             => 'remarks',
     );
 
-    ## columns samples sheet 2020 FOR-001 is identical to 2019
+    # Columns samples sheet 2020 FOR-001 is identical to 2019
     my %SAMP_DICT_2020 = %SAMP_DICT_2019;
 
-    ## columns samples sheet CURRENT FOR-001 has extra ShallowSeq field
+    # Columns samples sheet CURRENT FOR-001 has extra ShallowSeq field
     my %SAMP_DICT = %SAMP_DICT_2020;
     $SAMP_DICT{"ShallowSeq_required"} = 'shallowseq';
 
-    ## columns In Process sheet (HMF-FOR-002)
+    # Columns In Process sheet (HMF-FOR-002)
     my %PROC_DICT = (
         'Sample_ID'         => 'sample_id', # eg FR12345678
         'Sample_name'       => 'sample_name', # eg CPCT1234567R
