@@ -403,10 +403,10 @@ sub processSample{
     ## check if set was already registered earlier
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
-    my $existing_runs = decode_json(`hmf_api_get 'runs?set_name_contains=$setname_wo_date'`);
-    my $existing_count = scalar @$existing_runs;
+    # If no such runs exit, $existing_count is empty string
+    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'select(.[].status != "Invalidated") | length' | tr -d '"\n'`;
 
-    if ( $existing_count > 0 ){
+    if ( $existing_count ne "" ){
         if ( $FORCE_OUTPUT ){
             push( @warn_msg, "Existing run(s) found in API for $setname_wo_date ($existing_count) but output was enforced" );
         }
