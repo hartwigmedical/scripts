@@ -43,7 +43,7 @@ if [[ -d "${cuppa_dir}" ]]; then
 fi
 
 # To correct for the missing SIG data in earlier runs.
-run_cuppa_dna_prod ${run_dir}
+run_cuppa_dna_prod_against_ref_v5_24 ${run_dir}
 # To generate the CUPPA report as a picture (png)
 generate_cup_report_pipeline ${run_dir}
 
