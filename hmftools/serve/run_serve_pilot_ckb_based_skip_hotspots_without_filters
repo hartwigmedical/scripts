@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-source locate_files || exit 1
-
-ckb_filter_tsv=$(locate_ckb_filter_tsv_empty)
-
-run_serve_pilot_ckb_based -skip_hotspot_resolving -ckb_filter_tsv ${ckb_filter_tsv} -log_debug
