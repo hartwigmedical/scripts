@@ -9,7 +9,7 @@ if [[ ! -f "${cram}" ]]; then
     error "Cram is not a file: ${cram}. Exiting"
 fi
 
-samtools=/data/common/tools/samtools_v1.10/samtools
+samtools=/data/tools/samtools/1.10/samtools
 ref_genome=$(locate_ref_genome_37_fasta_file_ds)
 
 echo "-----"

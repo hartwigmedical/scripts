@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-script_dir="/data/common/repos/scripts/gcp"
+script_dir="/data/repos/scripts/gcp"
 script_name="sync_shallow_report_from_gcp"
 script_path="$script_dir/$script_name"
 

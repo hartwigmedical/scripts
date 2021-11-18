@@ -64,13 +64,13 @@ main() {
     cd "${out_dir}" || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"
-    jobs_source_path="/data/common/repos/scripts/validation"
+    jobs_source_path="/data/repos/scripts/validation"
     script_jobs=(
         "${jobs_source_path}/compare_v5_runs"
         "${jobs_source_path}/diff_v5_COLO829v003_runs"
-        "/data/common/repos/scripts/hmftools/patientreporter/create_patient_report_for_run"
-        "/data/common/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
-        "/data/common/repos/scripts/functions/test/locate_files_test"
+        "/data/repos/scripts/hmftools/patientreporter/create_patient_report_for_run"
+        "/data/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
+        "/data/repos/scripts/functions/test/locate_files_test"
         "${jobs_source_path}/run_all_sql_verification_jobs"
     )
     sql_jobs=(

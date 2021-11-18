@@ -12,7 +12,7 @@ if [[ -z "${cram_url}" || -z "${cram_index_url}" || -z "${slicing_bed}" || -z "$
     error "Not all input params provided. Exiting"
 fi
 
-samtools=/data/common/tools/samtools_v1.10/samtools
+samtools=/data/tools/samtools/1.10/samtools
 ref_genome=$(locate_ref_genome_37_fasta_file_ds)
 
 info "Creating slice using ${slicing_bed}"

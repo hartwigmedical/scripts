@@ -37,5 +37,5 @@ java -jar ${cuppa_jar} \
     -ref_data_dir ${cup_ref_dir} \
     -output_dir ${output_dir} 
 
-# Rscript /data/common/repos/analysis/cup/CupGenerateReport.R <sampleId> ./sample_data/ ./reports/
+# Rscript /data/repos/analysis/cup/CupGenerateReport.R <sampleId> ./sample_data/ ./reports/
 Rscript ${report_script} ${sampleId} ${output_dir} ${report_dir} true

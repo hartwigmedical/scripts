@@ -71,5 +71,5 @@ java -jar ${cuppa_jar} \
 
 # We write output PDF to the same directory containing the CUPPA output data
 info "Writing CUP PDF Report"
-report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
+report_script=/data/repos/analysis/cup/CupGenerateReport.R
 Rscript ${report_script} ${sample_id} ${output_dir}/ ${output_dir}/

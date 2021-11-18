@@ -144,8 +144,8 @@ create_bedpe_file(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene
                   paste0(outputDir,'known_fusions.38_',fileVersion,'.bedpe'))
 
 
-# scp known_fusion_data* datastore:/data/common/dbs/fusions/
-# scp known_fusions*bedpe datastore:/data/common/dbs/fusions/
+# scp known_fusion_data* datastore:/data/dbs/fusions/
+# scp known_fusions*bedpe datastore:/data/dbs/fusions/
 
 # copy to GCP
 # gsutil -m cp known_fusion_data.37_v3.csv gs://common-resources/knowledgebases/37/known_fusion_data.csv

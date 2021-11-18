@@ -19,8 +19,8 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${database_name}")
 
-siga_jar=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
-cuppa_jar=/data/common/tools/cuppa_pilot/cuppa.jar
+siga_jar=/data/tools/sig-analyser_pilot/sig-analyser.jar
+cuppa_jar=/data/tools/cuppa_pilot/cuppa.jar
 
 # Produce SNV counts and genomic position counts
 

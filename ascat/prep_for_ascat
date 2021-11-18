@@ -44,7 +44,7 @@ if [[ ! -f "${normal_bam}" ]]; then
     ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${sample} ${bed} ${normal_bam}
 fi
 
-java -Xmx32G -cp /data/common/tools/amber_v2.0/amber.jar com.hartwig.hmftools.amber.AmberApplication \
+java -Xmx32G -cp /data/tools/amber/2.0/amber.jar com.hartwig.hmftools.amber.AmberApplication \
    -threads 4 \
    -tumor ${sample} \
    -tumor_bam ${sample_bam} \

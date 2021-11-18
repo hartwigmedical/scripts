@@ -25,7 +25,7 @@ if [[ -z "${ind}" ]]; then
 fi
 
 api_url=$"https://api.bizzmine.cloud/collection/RiskAnalyses/"
-api_token=$( cat /data/common/dbs/api_credentials/bizzmine/api_token )
+api_token=$( cat /data/dbs/api_credentials/bizzmine/api_token )
 
 ## start with script
 echo ""

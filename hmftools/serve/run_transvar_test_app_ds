@@ -34,10 +34,10 @@ if [[ -z ${transcript_38} ]]; then
     error "No transcript of gene V38 is provided!"
 fi
 
-serve_jar=/data/common/tools/serve_pilot/serve.jar
+serve_jar=/data/tools/serve_pilot/serve.jar
 
-ref_genome_37_fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-ref_genome_38_fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+ref_genome_37_fasta_file=/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+ref_genome_38_fasta_file=/data/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
 
 java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
      -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \

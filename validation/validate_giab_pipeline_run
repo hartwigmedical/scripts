@@ -2,10 +2,10 @@
 
 source message_functions || exit 1
 
-gatk_path='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
-rtg="/data/common/tools/rtg-tools_v3.6.2/installation/rtg-tools-3.6.2-bc71ee0/rtg"
-ref_genome_fasta='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
-rtg_sdf_path='/data/common/dbs/RTGSDF_GRCh37/'
+gatk_path='/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar'
+rtg="/data/tools/rtg-tools/3.6.2/installation/rtg-tools-3.6.2-bc71ee0/rtg"
+ref_genome_fasta='/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
+rtg_sdf_path='/data/dbs/RTGSDF_GRCh37/'
 
 truth_version='NIST_v3.2.2';
 truth_dir_path="/data/giab/truth/${truth_version}"

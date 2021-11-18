@@ -3,9 +3,9 @@ working_dir=$2
 target_37_hotspots=$3
 
 info "Running Picard LiftOver on ${tmp_38_hotspots}"
-java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
+java -jar /data/tools/picard-tools/2.18.27/picard.jar LiftoverVcf \
     I=${tmp_38_hotspots} \
     O=${target_37_hotspots} \
-    CHAIN=/data/common/refgenomes/liftover/hg38ToHg19.over.chain \
+    CHAIN=/data/refgenomes/liftover/hg38ToHg19.over.chain \
     REJECT=${working_dir}/rejected_variants.vcf \
-    R=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    R=/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta

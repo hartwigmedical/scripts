@@ -421,11 +421,11 @@ locate_sample_registration_logs_dir() {
 }
 
 locate_snpcheck_dir() {
-    echo "/data/common/snpcheck"
+    echo "/data/snpcheck"
 }
 
 locate_snpcheck_vcf_upload_dir() {
-    echo "/data/common/snpcheck/gcp-sync"
+    echo "/data/snpcheck/gcp-sync"
 }
 
 #################################### Repos #####################################

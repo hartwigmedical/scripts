@@ -20,7 +20,7 @@ info " - Reference data: ${cup_ref_dir}"
 info "Generating SNV and signature data for ${sampleId}"
 
 # Run signatures to produce SNV counts, genomic position counts and signature allocations
-snv_cosmic_sigs=/data/common/dbs/sigs/snv_cosmic_sigs.csv
+snv_cosmic_sigs=/data/dbs/sigs/snv_cosmic_sigs.csv
 snv_vcf_file=${sample_data_dir}/${sampleId}.purple.somatic.vcf.gz
 
 java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
@@ -48,7 +48,7 @@ java -jar ${cuppa_jar} \
 # Rscript ~/scripts/CupGenerateReport.R SAMPLE_001 ~/samples/SAMPLE_001/ ~/samples/SAMPLE_001/
 
 #report_dir=${output_dir}
-#report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
+#report_script=/data/repos/analysis/cup/CupGenerateReport.R
 #cup_input_data=${output_dir}${sampleId}.cup.data.csv
 
 # Rscript ${report_script} ${sampleId} ${cup_input_data} ${report_dir}

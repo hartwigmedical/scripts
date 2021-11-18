@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 gcp_url=$1
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-ops"
+gcp_key_file="/data/dbs/gcp_credentials/hmf-ops"
 
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     error "Usage: $(basename $0) gs://bucket/path/to_file"

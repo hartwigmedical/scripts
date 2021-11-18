@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-api_cred_dir="/data/common/dbs/api_credentials"
+api_cred_dir="/data/dbs/api_credentials"
 
 latest_gridss_run_details () {
     local set=$1

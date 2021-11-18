@@ -23,12 +23,12 @@ sed -i 's/^/chr/g' ${tmp_37_hotspots}
 sed -i 's/^chr#/#/g' ${tmp_37_hotspots}
 
 info "Running Picard LiftOver on ${tmp_37_hotspots}"
-java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
+java -jar /data/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
     I=${tmp_37_hotspots} \
     O=${target_38_hotspots} \
-    CHAIN=/data/common/refgenomes/liftover/hg19ToHg38.over.chain \
+    CHAIN=/data/refgenomes/liftover/hg19ToHg38.over.chain \
     REJECT=${working_dir}/rejected_variants.vcf \
-    R=/data/common/refgenomes/Homo_sapiens.GRCh38/Homo_sapiens_assembly38.fasta
+    R=/data/refgenomes/Homo_sapiens.GRCh38/Homo_sapiens_assembly38.fasta
 
 info "Cleaning up temporary files"
 rm ${tmp_37_hotspots}

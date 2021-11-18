@@ -4,12 +4,12 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 1. Prepare genome
 
     Make sure genome has a dictionary:
-    /data/common/tools/samtools_v1.10/samtools dict GCA_000001405.15_GRCh38_no_alt_analysis_set.fna > GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
+    /data/tools/samtools_v1.10/samtools dict GCA_000001405.15_GRCh38_no_alt_analysis_set.fna > GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
 
     Split reference genome into its chromosomes:
     extract_ref_genome_chromosomes \
-        /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
-        /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
+        /data/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
+        /data/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
 
     Create a len file:
     head -n 24 GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.fai | cut -f 1,2 | nl -w1 > GCA_000001405.15_GRCh38_no_alt_analysis_set.len
@@ -18,7 +18,7 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 2. Prepare mappability file
 
     Run GEM commands:
-    export PATH=/data/common/tools/gem/GEM-binaries-Linux-x86_64-core_i3-20130406-045632/bin:$PATH
+    export PATH=/data/tools/gem/GEM-binaries-Linux-x86_64-core_i3-20130406-045632/bin:$PATH
     nohup gem-indexer -T 4 -c dna -i GCA_000001405.15_GRCh38_no_alt_analysis_set.fna -o ./gem/GRCh38_no_alt_analysis_set/my_index &
     nohup gem-mappability -T 8 -m 0.02 -I ./gem/GRCh38_no_alt_analysis_set/my_index.gem -l 150 -o ./gem/GRCh38_no_alt_analysis_set &
     nohup gem-2-wig -I ./gem/my_index.gem -i ./gem/GRCh38_no_alt_analysis_set.mappability -o ./gem/GRCh38_no_alt_analysis_set &
@@ -33,10 +33,10 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 
     [general]
     window=1000
-    outputDir=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/gccount/
-    chrFiles=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
-    chrLenFile=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.len
-    gemMappabilityFile=/data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/gem/GRCh38_no_alt_analysis_set.gem
+    outputDir=/data/refgenomes/Homo_sapiens.GRCh38.no.alt/gccount/
+    chrFiles=/data/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
+    chrLenFile=/data/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.len
+    gemMappabilityFile=/data/refgenomes/Homo_sapiens.GRCh38.no.alt/gem/GRCh38_no_alt_analysis_set.gem
 
     Execute:
     ./gccount -conf gcp.conf
@@ -49,5 +49,5 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 
     http://bedops.readthedocs.io/en/latest/content/reference/file-management/conversion/wig2bed.html
 
-    export PATH=/data/common/tools/bedops_v2.4.30:$PATH 
+    export PATH=/data/tools/bedops_v2.4.30:$PATH 
     wig2bed < GRCh38_no_alt_analysis_set.wig > GRCh38_no_alt_analysis_set.mappability.bed

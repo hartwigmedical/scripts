@@ -8,4 +8,4 @@ if [[ ! -f "${bam}" ]]; then
     error "Bam is not a file: ${bam}. Exiting"
 fi
 
-java -cp /data/common/tools/gridss_v2.9.3/gridss.jar gridss.analysis.CollectGridssMetrics I=${bam} O=${bam} THRESHOLD_COVERAGE=50000
+java -cp /data/tools/gridss/2.9.3/gridss.jar gridss.analysis.CollectGridssMetrics I=${bam} O=${bam} THRESHOLD_COVERAGE=50000

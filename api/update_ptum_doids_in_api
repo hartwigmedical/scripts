@@ -12,8 +12,8 @@ print_usage(){
 }
 [[ $# -gt 0 ]] || print_usage
 
-doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
-status_file="/data/common/dbs/clinical_data/patient_tumor_curation_status.tsv"
+doid_file="/data/dbs/clinical_data/curated_primary_tumor.tsv"
+status_file="/data/dbs/clinical_data/patient_tumor_curation_status.tsv"
 field_idx='7'
 
 mode='undefined'

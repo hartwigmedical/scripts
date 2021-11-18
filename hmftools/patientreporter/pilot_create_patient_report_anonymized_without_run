@@ -13,12 +13,12 @@ patient_reporter_jar=$1 && shift
 # patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.24-jar-with-dependencies.jar
 
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
-primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
-rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
-company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
-signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
+rva_logo=/data/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
+company_logo=/data/dbs/patient_reporter_images/hartwig_logo.jpg
+signature=/data/dbs/patient_reporter_images/signature_edwin_transparant.png
 
 if [[ -z "${tumor_sample}" ]]; then
     error "No run dir provided. Exiting";

@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 JSON_DIR="/data/ops/api/acc/database"
-CRED_DIR="/data/common/dbs/api_credentials/acc"
+CRED_DIR="/data/dbs/api_credentials/acc"
 CRT_FILE="${CRED_DIR}/api.crt"
 KEY_FILE="${CRED_DIR}/api.key"
 BASE_URL="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"

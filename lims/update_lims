@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 lims_dir="/data/ops/lims/prod"
-code_dir="/data/common/repos/scripts/lims"
+code_dir="/data/repos/scripts/lims"
 
 back_dir="${lims_dir}/backup"
 out_json="${lims_dir}/lims.json"

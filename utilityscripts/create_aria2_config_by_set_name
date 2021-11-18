@@ -19,7 +19,7 @@ if [[ -z "${set_name}" ]]; then
     exit 1
 fi
 
-credentials_dir="/data/common/dbs/gcp_credentials"
+credentials_dir="/data/dbs/gcp_credentials"
 key_file="${credentials_dir}/hmf-share"
 billing_project="hmf-share"
 service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"

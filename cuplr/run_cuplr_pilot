@@ -15,7 +15,7 @@ info "Extracting run metadata information"
 tum_sample=$(load_tumor_sample_from_metadata ${run_dir})
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-tool_dir=/data/common/tools/cuplr_pilot
+tool_dir=/data/tools/cuplr_pilot
 working_dir="${run_dir}/cuplr_pilot"
 run_log="${working_dir}/run.log"
 mkdir -p ${working_dir}

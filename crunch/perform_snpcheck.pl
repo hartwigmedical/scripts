@@ -18,7 +18,7 @@ my $MIN_USABLE = 18;
 my $MIN_IDENTICAL = 18;
 my $MAX_DISTANCE = 4;
 
-my $snpcheck_db = "/data/common/snpcheck/output/";
+my $snpcheck_db = "/data/snpcheck/output/";
 my $delim_char = ' ';
 my $input_vcf_dir = "";
 my $output_file = "";
