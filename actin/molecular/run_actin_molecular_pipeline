@@ -58,6 +58,8 @@ fi
 
 # Rerun virus interpreter since older runs will have v1.0
 run_virus_interpreter_v1_1 ${run_dir}
+# Reloading prod not supported yet.
+# load_virusinterpreter_data_prod ${run_dir}
 
 # Create a backup of original protect output
 protect_dir="${run_dir}/protect"
@@ -65,8 +67,9 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v1.5
+# Rerun protect to bump to v1.5 and reload database
 run_protect_prod ${run_dir}
+load_protect_data_prod ${run_dir}
 
 # Run standard ORANGE in production
 run_orange_prod ${run_dir} -max_evidence_level C
