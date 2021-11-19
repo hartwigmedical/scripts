@@ -184,6 +184,9 @@ if (separateFeaturePlot)
 
 # Generate PDF report
 
+outputFile = paste(outputDir,sampleId,'_cup_report.pdf', sep='')
+print(paste("writing output to file: ", outputFile, sep=''))
+
 titleHeight <- 10
 disclaimer1Height <- 12
 disclaimer2Height <- 14
