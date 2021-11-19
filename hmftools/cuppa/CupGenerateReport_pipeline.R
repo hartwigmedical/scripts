@@ -168,12 +168,12 @@ outputFileSummary <- paste0(cuppaDir, sampleId, '.cup.report.summary.png')
 if (separateFeaturePlot)
   {
   outputFileFeatures <- paste0(cuppaDir, sampleId, '.cup.report.features.png')
-  print(paste0("Writing output to file: ", outputFileSummary))
+  print(paste0("Writing output to png file: ", outputFileSummary))
   png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
   grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
-  print(paste0("Writing output to file: ", outputFileFeatures))
+  print(paste0("Writing output to png file: ", outputFileFeatures))
   png(file = outputFileFeatures, res = 140, height = 2200, width = 4000)
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -181,7 +181,7 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 } else
   {
-  print(paste0("Writing output to file: ", outputFileSummary))
+  print(paste0("Writing output to png file: ", outputFileSummary))
   png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
   plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
             ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
@@ -192,7 +192,7 @@ dev.off()
 # Generate PDF report with disclaimer
 
 outputFile <- paste(cuppaDir,sampleId,'_cup_report.pdf', sep='')
-print(paste("writing output to file: ", outputFile, sep=''))
+print(paste("writing output to pdf file: ", outputFile, sep=''))
 
 pdf(file=outputFile,height=14,width=20)
 par(mar=c(1,1,1,1))
