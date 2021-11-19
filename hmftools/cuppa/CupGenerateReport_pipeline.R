@@ -204,10 +204,6 @@ if(separateFeaturePlot)
   grid.arrange(plot_grid(title,disclaimer1,disclaimer2,summaryPlot,genderPlot,sigPlot,svTraitsPlot,
                          ncol=1,nrow=7,rel_heights=plotHeightsDisclaimer,align='v',axis='l'))
 
-  featurePlot <- featurePlot +
-    scale_x_discrete(position = "top") +
-    theme(axis.text.x.top=element_text(angle=90,hjust=0,size=10,face='bold',family=font))
-
   grid.arrange(plot_grid(featurePlot,ncol=1,nrow=1),newpage=T)
 } else
 {
