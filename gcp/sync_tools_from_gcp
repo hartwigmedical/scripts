@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
+
+set -e
+
+info "Syncing tools from GCP"
+gsutil -m rsync -r gs://common-tools /data/tools
+info "Tools synced from GCP"
+
