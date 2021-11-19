@@ -187,7 +187,7 @@ if (separateFeaturePlot)
             ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
 }
 
-# Generate PDF report
+# Generate PDF report with disclaimer
 
 outputFile <- paste(cuppaDir,sampleId,'_cup_report.pdf', sep='')
 print(paste("writing output to file: ", outputFile, sep=''))
