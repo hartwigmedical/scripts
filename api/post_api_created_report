@@ -24,8 +24,8 @@ else
 fi
 
 if [[ ${has_reliable_purity} == '"N/A"' && ${has_reliable_quality} == '"N/A"' ]]; then
-  has_reliable_purity=null
-  has_reliable_quality=null
+  has_reliable_purity=false
+  has_reliable_quality=false
   purity=null
 fi
 
