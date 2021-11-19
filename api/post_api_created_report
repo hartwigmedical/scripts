@@ -26,7 +26,7 @@ fi
 if [[ ${has_reliable_purity} == '"N/A"' && ${has_reliable_quality} == '"N/A"' ]]; then
   has_reliable_purity=false
   has_reliable_quality=false
-  purity=null
+  purity="N/A"
 fi
 
 ## check report is manual or automatically generated
