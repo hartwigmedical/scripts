@@ -145,17 +145,22 @@ summaryHeight <- 205
 genderHeight <- 45
 sigHeight <- 110
 percHeight <- 90
+titleHeight <- 10
+disclaimer1Height <- 12
+disclaimer2Height <- 14
 
 if (featureCount > featureLimit)
   {
   separateFeaturePlot <- T
   print(sprintf('Features(%d) print separately', featureCount))
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight)
-} else
+  plotHeightsDisclaimer <- c(titleHeight,disclaimer1Height,disclaimer2Height,summaryHeight,genderHeight,sigHeight,percHeight)
+  } else
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
+  plotHeightsDisclaimer <- c(titleHeight,disclaimer1Height,disclaimer2Height,summaryHeight,genderHeight,sigHeight,percHeight,featureHeight)
 }
 
 # Generating PNG files
@@ -187,23 +192,6 @@ if (separateFeaturePlot)
 outputFile <- paste(cuppaDir,sampleId,'_cup_report.pdf', sep='')
 print(paste("writing output to file: ", outputFile, sep=''))
 
-titleHeight <- 10
-disclaimer1Height <- 12
-disclaimer2Height <- 14
-
-if(featureCount > featureLimit)
-{
-  separateFeaturePlot <- T
-  print(sprintf('features(%d) print separately',featureCount))
-  plotHeights <- c(titleHeight,disclaimer1Height,disclaimer2Height,summaryHeight,genderHeight,sigHeight,percHeight)
-} else
-{
-  separateFeaturePlot <-F
-  featureHeight <- 45 + (featureCount - 1) * 10
-  print(sprintf('features(%d) featureHeight(%d)',featureCount,featureHeight))
-  plotHeights <- c(titleHeight,disclaimer1Height,disclaimer2Height,summaryHeight,genderHeight,sigHeight,percHeight,featureHeight)
-}
-
 pdf(file=outputFile,height=14,width=20)
 par(mar=c(1,1,1,1))
 
@@ -214,7 +202,7 @@ disclaimer2 <- textGrob(paste('These results should not be used for clinical dec
 if(separateFeaturePlot)
 {
   grid.arrange(plot_grid(title,disclaimer1,disclaimer2,summaryPlot,genderPlot,sigPlot,svTraitsPlot,
-                         ncol=1,nrow=7,rel_heights=plotHeights,align='v',axis='l'))
+                         ncol=1,nrow=7,rel_heights=plotHeightsDisclaimer,align='v',axis='l'))
 
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -224,7 +212,7 @@ if(separateFeaturePlot)
 } else
 {
   plot_grid(title,disclaimer1,disclaimer2,summaryPlot,genderPlot,sigPlot,svTraitsPlot,featurePlot,
-            ncol=1,nrow=8,rel_heights=plotHeights,align='v',axis='l')
+            ncol=1,nrow=8,rel_heights=plotHeightsDisclaimer,align='v',axis='l')
 }
 
 dev.off()
