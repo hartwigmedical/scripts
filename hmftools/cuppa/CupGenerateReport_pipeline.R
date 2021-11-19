@@ -184,7 +184,7 @@ if (separateFeaturePlot)
 
 # Generate PDF report
 
-outputFile = paste(outputDir,sampleId,'_cup_report.pdf', sep='')
+outputFile <- paste(cuppaDir,sampleId,'_cup_report.pdf', sep='')
 print(paste("writing output to file: ", outputFile, sep=''))
 
 titleHeight <- 10
