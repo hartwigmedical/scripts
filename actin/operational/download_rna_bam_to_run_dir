@@ -22,5 +22,5 @@ if [[ ! -z "${rna_analysis_bucket}" ]]; then
     gsutil -m cp -r "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam" "${rna_bam_directory}/"
     gsutil -m cp -r "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam.bai" "${rna_bam_directory}/"
 else
-    warn "Could not locate RNA analysis bucket for ${tumor_sample}. Skipping downloaing of RNA BAM."
+    warn "Could not locate RNA analysis bucket for ${tumor_sample}. Skipping downloading of RNA BAM."
 fi

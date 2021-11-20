@@ -21,6 +21,6 @@ if [[ ! -z "${rna_analysis_bucket}" ]]; then
         cp "/data/experiments/rna/samples/ACTN/${tumor_sample}.isf.pass_fusions.csv" "${run_dir}/isofox/"
     fi
 else
-    warn "Could not locate RNA analysis bucket for ${tumor_sample}. Skipping downloaing of isofox results"
+    warn "Could not locate RNA analysis bucket for ${tumor_sample}. Skipping downloading of isofox results"
 fi
 
