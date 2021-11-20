@@ -45,7 +45,7 @@ fi
 # To correct for the missing SIG data in earlier runs.
 run_cuppa_dna_prod_against_ref_v5_24 ${run_dir}
 # To generate the CUPPA report as a picture (png)
-generate_cup_report_pipeline ${run_dir}
+generate_cup_report ${run_dir}
 
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
