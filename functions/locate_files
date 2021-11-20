@@ -46,7 +46,7 @@ locate_pilot_virus_interpreter() {
 }
 
 locate_prod_cuppa() {
-    echo "/data/tools/cuppa/1.4/cuppa.jar"
+    echo "/data/tools/cuppa/1.5/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
@@ -326,7 +326,15 @@ locate_rna_analysis_bucket() {
     echo ${rna_analysis_bucket}
 }
 
-################################## Resources ###################################
+############################# Pipeline Resources ###############################
+
+locate_cuppa_ref_dir_dna() {
+    echo "/data/resources/private/cuppa"
+}
+
+locate_cuppa_ref_dir_dna_rna() {
+    echo "/data/experiments/cup/ref/014"
+}
 
 locate_cohort_mapping_tsv() {
     echo "/data/resources/public/orange/cohort_mapping.tsv"
@@ -368,6 +376,35 @@ locate_peach_resource_dir() {
     echo "${base_path}/dbs/peach"
 }
 
+
+############################### Ops Resources #################################
+
+locate_samplesheets_dir() {
+    echo "/data/samplesheets"
+}
+
+locate_sample_registration_unregistered_jsons_dir() {
+    echo "/data/ops/api/prod/jsons"
+}
+
+locate_sample_registration_registered_jsons_dir() {
+    echo "/data/ops/api/prod/jsons/registered"
+}
+
+locate_sample_registration_logs_dir() {
+    echo "/data/ops/api/prod/logs"
+}
+
+locate_snpcheck_dir() {
+    echo "/data/common/snpcheck"
+}
+
+locate_snpcheck_vcf_upload_dir() {
+    echo "/data/common/snpcheck/gcp-sync"
+}
+
+############################### SERVE Resources ################################
+
 locate_pilot_iclusion_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
 }
@@ -402,30 +439,6 @@ locate_ckb_filter_tsv() {
 
 locate_ckb_filter_tsv_empty() {
     echo "/data/resources/custom/serve/ckb_filters_empty.tsv"
-}
-
-locate_samplesheets_dir() {
-    echo "/data/samplesheets"
-}
-
-locate_sample_registration_unregistered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons"
-}
-
-locate_sample_registration_registered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons/registered"
-}
-
-locate_sample_registration_logs_dir() {
-    echo "/data/ops/api/prod/logs"
-}
-
-locate_snpcheck_dir() {
-    echo "/data/common/snpcheck"
-}
-
-locate_snpcheck_vcf_upload_dir() {
-    echo "/data/common/snpcheck/gcp-sync"
 }
 
 #################################### Repos #####################################

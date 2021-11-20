@@ -9,8 +9,8 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-ref_dir=/data/experiments/cup/ref/015
+ref_dir=$(locate_cuppa_ref_dir_dna_rna)
+cuppa_jar=$(locate_pilot_cuppa)
 cuppa_dir=${run_dir}/cuppa_dna_rna_pilot
-cuppa_jar=/data/experiments/tools/cuppa.jar
 
-do_run_cuppa_dna_rna ${run_dir} ${ref_dir} ${cuppa_dir} ${cuppa_jar}
+do_run_cuppa_dna_rna ${run_dir} ${ref_dir} ${cuppa_jar} ${cuppa_dir}
