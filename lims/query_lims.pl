@@ -10,19 +10,15 @@ use JSON::XS;
 use File::Find::Rule;
 use 5.010.000;
 
-## -----
-## Global variables
-## -----
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $LIMS_JSON = '/data/ops/lims/prod/lims.json';
 my $NONREPORTABLE_TSV = '/data/ops/lims/prod/samples_without_pdf_report.tsv';
-my @PDF_DIRS = ( '/data/cpct/final_reports', '/data/core/final_reports', '/data/cpct/old_cpct_reports' );
-my $pdfdirs_string = join( ", ", sort @PDF_DIRS );
+my @PDF_BUCKETS = ( 'gs://patient-reporter-final-prod-1', 'gs://patient-reporter-final-prod-1/old_cpct_reports' );
+my $PDF_BUCKETS_STRING = join( ", ", sort @PDF_BUCKETS );
 
 my $DELIM = "\t";
 my $NA_CHAR = "NA";
-my $MIN_TUM_PERC = 30;
 my $TYPE;
 my $MUST_MATCH_EXACT;
 
@@ -30,7 +26,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw(submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status)],
   'submissions' => [qw(submission project_name project_type analysis_type sample_count has_lab_finished)],
   'contact_groups' => [qw(group_id report_contact_email data_contact_email lab_contact_email client_contact_email)],
-  'unreported'  => [qw(sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date api_info)],
+  'unreported'  => [qw(sample_name lab_status lab_ref_status sample_id ref_sample_id sampling_date arrival_date api_info)],
   'dateTable'   => [qw(sample_name sampling_date arrival_date)],
 );
 my $available_types = join(", ", sort keys %OUT_FIELDS_PER_TYPE);
@@ -70,18 +66,13 @@ my $HELP_TEXT =<<HELP;
     -json       (output objects in json format)
     
   Files/locations that are used
-    LIMS input FILE: $LIMS_JSON
-    Patient reports: $pdfdirs_string
+    LIMS input json file: $LIMS_JSON
+    Patient report sources: $PDF_BUCKETS_STRING
 HELP
 
 die $HELP_TEXT . "\n" if scalar @ARGV == 0;
 
-## -----
-## Gather input
-## -----
-
-my %opt = (); # general options
-my %inc = (); # include filters
+my %opt = ();
 GetOptions (
     "type=s"    => \$TYPE,
     "exact"     => \$MUST_MATCH_EXACT,
@@ -97,10 +88,6 @@ GetOptions (
 die $HELP_TEXT . "\n" if $opt{'help'};
 die $HELP_TEXT . "\n[ERROR] Please provide type with -type\n" unless $TYPE;
 die $HELP_TEXT . "\n[ERROR] Type ($TYPE) is not supported\n" unless exists $OUT_FIELDS_PER_TYPE{ $TYPE };
-
-## -----
-## MAIN
-## -----
 
 my $nonreportable = readNonReportableSamples( $NONREPORTABLE_TSV );
 my $lims = readJson( $opt{ lims_input } or $LIMS_JSON );
@@ -127,9 +114,6 @@ elsif( $TYPE eq 'contact_groups' ){
     printObjectInfo( $contact_groups, $out_fields, 'group_id', \%opt );
 }
 
-## -----
-## /MAIN
-## -----
 sub filterByCategory{
     my ($lims, $opt, $category) = @_;
     my $objects = $lims->{ $category };
@@ -321,8 +305,9 @@ sub getUnreportedBiopsies{
     
     my %pdfs = ();
     my @pdf_paths = ();
-    foreach my $pdf_dir ( @PDF_DIRS ){
-        push( @pdf_paths, glob( $pdf_dir . '/*.pdf' ) );
+
+    foreach my $pdf_bucket ( @PDF_BUCKETS ){
+        push( @pdf_paths, glob(`gsutil ls "$pdf_bucket/*.pdf"`) );
     }
     foreach my $pdf_path ( @pdf_paths ){
         my ($pdf_sample) = split( /[\.\_]/, basename( $pdf_path ) );
@@ -360,10 +345,10 @@ sub getUnreportedBiopsies{
         next unless defined $sample->{'lab_status'};
         if ( $submission eq 'HMFregDRUP' ){
             ## DRUP will only be sequenced and reported when cohort is full
-            next unless $sample->{'lab_status'} =~ /^finished|failed$/i;
+            next unless $sample->{'lab_status'} =~ /finished|failed/i;
         }
         else{
-            next unless $sample->{'lab_status'} =~ /^finished|failed|storage$/i;
+            next unless $sample->{'lab_status'} =~ /finished|failed|storage/i;
         }
         
         ## find and add R status
@@ -373,13 +358,8 @@ sub getUnreportedBiopsies{
             if ( exists $samples->{ $ref_sample_id } ){
                 my $ref_sample = $samples->{ $ref_sample_id };
                 my $ref_status = getValueByKey( $ref_sample, 'lab_status' );
-                $sample->{ ref_status } = $ref_status;
+                $sample->{ lab_ref_status } = $ref_status;
             }
-        }
-       
-        ## skip CPCT biopsies without finished ref sample
-        if ( $submission eq 'HMFregCPCT' ){
-            next if $sample->{'ref_status'} !~ /^finished|failed|storage$/i;
         }
         
         ## ok: ready to report with API info added
