@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-do_recreate_ckb_database ckb_db

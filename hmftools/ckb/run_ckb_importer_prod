@@ -3,6 +3,6 @@
 source locate_files || exit 1
 
 ckb_jar=$(locate_prod_ckb_importer)
-ckb_dir=$(locate_ckb_flex_data_dir)
+ckb_dir=$(locate_ckb_flex_data_production_dir)
 
-do_run_ckb_importer ${ckb_jar} "ckb_db" ${ckb_dir}
+do_run_ckb_importer ${ckb_jar} "ckb_production" ${ckb_dir}

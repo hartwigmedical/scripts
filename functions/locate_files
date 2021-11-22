@@ -429,8 +429,12 @@ locate_hartwig_curated_tsv() {
     echo "/data/resources/custom/hartwig/hartwig_curated.tsv"
 }
 
-locate_ckb_flex_data_dir() {
-    echo "/data/resources/custom/ckb/ckb_flex_dump"
+locate_ckb_flex_data_production_dir() {
+    echo "/data/resources/custom/ckb/production/ckb_flex_dump"
+}
+
+locate_ckb_flex_data_latest_dir() {
+    echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
