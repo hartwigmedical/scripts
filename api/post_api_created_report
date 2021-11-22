@@ -23,9 +23,7 @@ else
     warn "Cohort of sample isn't assigned"
 fi
 
-if [[ ${has_reliable_purity} == '"N/A"' && ${has_reliable_quality} == '"N/A"' ]]; then
-  has_reliable_purity=false
-  has_reliable_quality=false
+if [[ ${purity} == '"N/A"' ]]; then
   purity="N/A"
 fi
 
@@ -53,8 +51,13 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
+if [[ ${purity} != "N/A" ]];then
+    purityData=$(printf ',"%s": %s, "%s": %s }' "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
+    data=$(echo ${data} ${purityData})
+fi
+
 if [[ -z ${run_id} ]];then
   data=$(echo ${data} "}")
 else
