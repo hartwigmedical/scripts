@@ -62,7 +62,7 @@ else
 fi
 
 if [[ ${purity} != "N/A" ]];then
-    purityQuality=$(printf ',"%s": %s, "%s": %s,' "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
+    purityQuality=$(printf ',"%s": %s, "%s": %s' "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
     data=$(echo ${data} ${purityQuality})
 fi
 
