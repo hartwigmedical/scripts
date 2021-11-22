@@ -54,7 +54,7 @@ fi
 data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
 if [[ ${purity} != "N/A" ]];then
-    purityData=$(printf ',"%s": %s, ' "purity" "${purity}" )
+    purityData=$(printf ',"%s": %s' "purity" "${purity}" )
     data=$(echo ${data} ${purityData})
 else
   purityData=$(printf ',"%s": %s' "purity" "0.00" )
