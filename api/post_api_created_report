@@ -57,7 +57,7 @@ if [[ ${purity} != "N/A" ]];then
     purityData=$(printf ',"%s": %s, ' "purity" "${purity}" )
     data=$(echo ${data} ${purityData})
 else
-  purityData=$(printf ',"%s": %s}' "purity" "0.00" )
+  purityData=$(printf ',"%s": %s' "purity" "0.00" )
   data=$(echo ${data} ${purityData})
 fi
 
