@@ -20,11 +20,11 @@ if [[ -z "${plate_id}" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-info "Searching for \"${plate_id}*${file_suffix}\" file in \"nas:${nas_dir}\""
+info "Searching for \"${plate_id}*${file_suffix}\" file in \"nas.prod-1:${nas_dir}\""
 result_files=()
 while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
-done < <(ssh nas find "${nas_dir}" -name "${plate_id}*${file_suffix}" -print0)
+done < <(ssh nas.prod-1 find "${nas_dir}" -name "${plate_id}*${file_suffix}" -print0)
 
 if [[ ${#result_files[@]} -eq 0 ]]; then
     die "No file found for '${plate_id}'!"

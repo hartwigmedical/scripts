@@ -32,14 +32,14 @@ sshpass -p "$password" rsync -ah \
   --include *README \
   --exclude "*" \
   ${dirs_to_sync} \
-  "rsyncuser@nas:${nas_tgt_dir}"
+  "rsyncuser@nas.prod-1:${nas_tgt_dir}"
 
 info " Syncing pdfs from NAS share to Datastore (to ${ds_reports_target})"
 sshpass -p "$password" rsync -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
-  "rsyncuser@nas:${nas_reports_source}/" \
+  "rsyncuser@nas.prod-1:${nas_reports_source}/" \
   "${ds_reports_target}/"
 
 info " Syncing back pdfs from Datastore to NAS (to ${nas_reports_target})"
@@ -48,6 +48,6 @@ sshpass -p "$password" rsync -trh \
   --include '*.pdf' \
   --exclude '*' \
   "${ds_reports_target}/" \
-  "rsyncuser@nas:${nas_reports_target}/"
+  "rsyncuser@nas.prod-1:${nas_reports_target}/"
 
 info "Finished with task ${task_id}"
