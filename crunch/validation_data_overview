@@ -42,7 +42,7 @@ print_usage(){
     echo ""
     echo "Usage: $(basename "$0") [-rsync] [-s <server>]"
     echo "  -r        print rsync commands to screen"
-    echo "  -s <str>  servername in rsync command (eg c1 or crunch001)"
+    echo "  -s <str>  servername in rsync command (eg c1 or crunch1.prod-1)"
     echo ""
     exit 1
 }
