@@ -7,6 +7,6 @@ source locate_gcp_files || exit 1
 set -e
 
 info "Syncing tools from GCP"
-gsutil -m rsync -r gs://common-tools /data/tools
+gsutil -m rsync -Pr gs://common-tools /data/tools
 info "Tools synced from GCP"
 
