@@ -333,7 +333,7 @@ locate_cuppa_ref_dir_dna() {
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/experiments/cup/ref/014"
+    echo "/data/resources/custom/actin/cuppa_ref"
 }
 
 locate_cohort_mapping_tsv() {
