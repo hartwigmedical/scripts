@@ -17,7 +17,7 @@ SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 
 FOR_001_FILE="HMF-FOR-001 Received Samples 2021 v5.11.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2021 v4.3.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process v4.4_test.xlsx"
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
@@ -82,7 +82,7 @@ excel_sheet_to_tsv() {
     local excel_name=""
     excel_name=$(basename "${input_excel_file}")
 
-    info "  Converting '${excel_name}' sheet ${sheet_index} with ${skip_rows} header rows"
+    info "  Converting '${excel_name}' sheet ${sheet_index} with ${skip_rows} header rows (${output_tsv})"
     xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > "${output_tsv}"
     [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
