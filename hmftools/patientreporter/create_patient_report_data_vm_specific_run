@@ -37,7 +37,7 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=${HOME}/reports/prod/
+output_dir_report=${HOME}/reports/prod
 
 do_patient_report_for_run_data_vm ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
       -output_dir_report ${output_dir_report} \

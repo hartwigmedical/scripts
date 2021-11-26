@@ -54,8 +54,6 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=${HOME}/reports/pilot/
-
 ## running patient reporter
 ref_sample_mandatory=1
 
