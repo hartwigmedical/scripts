@@ -6,26 +6,7 @@ source lims_functions || exit 1
 source message_functions || exit 1
 source api_functions || exit 1
 
-sample=$1 && shift
-
-if [[ -z "${sample}" ]]; then
-    error "Parameters missing. Exiting.";
-fi
-
-orig_run_dir=/data/datasets/${sample}
-
-if [[ ! -d ${orig_run_dir} ]]; then
-    error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
-fi
-
-run_dir=${HOME}/dataset_copy/${sample}
-if [[ -d ${run_dir} ]]; then
-    info "Cleaning up ${run_dir}"
-    rm -r ${run_dir}
-fi
-
-info "Copying ${orig_run_dir} to ${run_dir}"
-cp -r ${orig_run_dir} ${run_dir}
+run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
@@ -60,5 +41,4 @@ output_dir_report=${HOME}/reports/prod
 
 do_patient_report_for_run_data_vm ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
       -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_report} \
-      -only_create_pdf "$@"
+      -output_dir_data ${output_dir_report} "$@"

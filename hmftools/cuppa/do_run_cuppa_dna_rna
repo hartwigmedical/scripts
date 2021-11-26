@@ -7,20 +7,20 @@ source io_functions || exit 1
 
 run_dir=$1 && shift
 ref_data_dir=$1 && shift
-cuppa_dir=$1 && shift
 cuppa_jar=$1 && shift
+cuppa_dir=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${ref_data_dir}" || -z "${cuppa_dir}" || -z ${cuppa_jar} ]]; then
+if [[ -z "${run_dir}" || -z "${ref_data_dir}" || -z ${cuppa_jar} || -z "${cuppa_dir}" ]]; then
     error "Missing params. Exiting"
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-if [[ ! -d ${cuppa_dir} ]]; then
-    mkdir -p ${cuppa_dir}
+if [[ ! -d "${cuppa_dir}" ]]; then
+    mkdir -p "${cuppa_dir}"
 fi
 
-tmp_sample_data_dir=${run_dir}/cuppa_sample_data_dna_rna
+tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna_rna"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}

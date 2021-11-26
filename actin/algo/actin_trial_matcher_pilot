@@ -19,6 +19,8 @@ if [[ -z "${molecular_json}" ]]; then
 fi
 
 treatment_database_directory="$(locate_actin_treatment_database_directory)"
+doid_json="$(locate_doid_json)"
+
 output_directory="$(locate_actin_treatment_match_directory)"
 
 actin_jar="$(locate_pilot_actin)"
@@ -27,5 +29,6 @@ java11 -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
     -treatment_database_directory ${treatment_database_directory} \
+    -doid_json ${doid_json} \
     -output_directory ${output_directory} \
     "$@"

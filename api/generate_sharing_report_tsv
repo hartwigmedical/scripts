@@ -10,7 +10,7 @@ cd $wd
 ${CURL}/reports/shared > shared.json
 ${CURL}/reports/created > created.json
 
-printf "tumorBarcode\tsampleId\tcohort\treportDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\n"
+printf "tumorBarcode\tsampleId\tcohort\tshareDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\n"
 jq '.[].id' shared.json | while read shared_id; do
     shared_record="$(jq --arg id "$shared_id" '.[] | select(.id == ($id|tonumber))' shared.json)"
     created_id=$(echo "$shared_record" | jq '.report_created_id')

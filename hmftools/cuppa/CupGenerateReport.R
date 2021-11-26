@@ -45,15 +45,15 @@ cupClassData <- cupPlotData %>%
   mutate(DataLabel = DataType)
 
 ## Ensure logical order in summary plot when including RNA data
-  if ('RNA COMBINED' %in% cupClassData$DataType)
+if ('RNA COMBINED' %in% cupClassData$DataType)
   {
-    orderPlot = c("COMBINED","RNA COMBINED","ALT SJ COHORT","EXPRESSION PAIRWISE","DNA COMBINED","FEATURE","GENOMIC POSITION SIMILARITY","SNV 96 PAIRWISE SIMILARITY")
+  orderPlot <- c("COMBINED", "RNA COMBINED", "ALT SJ COHORT", "EXPRESSION PAIRWISE", "DNA COMBINED", "FEATURE", "GENOMIC POSITION SIMILARITY", "SNV 96 PAIRWISE SIMILARITY")
 
-    cupClassData$DataType <- factor(cupClassData$DataType, orderPlot)
-    cupClassData$DataLabel <- factor(cupClassData$DataLabel, orderPlot)
+  cupClassData$DataType <- factor(cupClassData$DataType, orderPlot)
+  cupClassData$DataLabel <- factor(cupClassData$DataLabel, orderPlot)
 
-    cupClassData <- cupClassData[order(cupClassData$DataType), ]
-  }
+  cupClassData <- cupClassData[order(cupClassData$DataType),]
+}
 
 ## Make sure data in SEX is not overwritten with GENDER CLASSIFIER data
 cupGender <- cupPlotData %>%
@@ -145,17 +145,22 @@ summaryHeight <- 205
 genderHeight <- 45
 sigHeight <- 110
 percHeight <- 90
+titleHeight <- 10
+disclaimer1Height <- 12
+disclaimer2Height <- 14
 
 if (featureCount > featureLimit)
   {
   separateFeaturePlot <- T
   print(sprintf('Features(%d) print separately', featureCount))
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight)
+  plotHeightsDisclaimer <- c(titleHeight, disclaimer1Height, disclaimer2Height, summaryHeight, genderHeight, sigHeight, percHeight)
 } else
   {
   separateFeaturePlot <- F
   featureHeight <- 45 + (featureCount - 1) * 10
   plotHeights <- c(summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
+  plotHeightsDisclaimer <- c(titleHeight, disclaimer1Height, disclaimer2Height, summaryHeight, genderHeight, sigHeight, percHeight, featureHeight)
 }
 
 # Generating PNG files
@@ -163,12 +168,12 @@ outputFileSummary <- paste0(cuppaDir, sampleId, '.cup.report.summary.png')
 if (separateFeaturePlot)
   {
   outputFileFeatures <- paste0(cuppaDir, sampleId, '.cup.report.features.png')
-  print(paste0("Writing output to file: ", outputFileSummary))
+  print(paste0("Writing output to png file: ", outputFileSummary))
   png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
   grid.arrange(plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot,
                          ncol = 1, nrow = 4, rel_heights = plotHeights, align = 'v', axis = 'l'))
 
-  print(paste0("Writing output to file: ", outputFileFeatures))
+  print(paste0("Writing output to png file: ", outputFileFeatures))
   png(file = outputFileFeatures, res = 140, height = 2200, width = 4000)
   featurePlot <- featurePlot +
     scale_x_discrete(position = "top") +
@@ -176,10 +181,36 @@ if (separateFeaturePlot)
   grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
 } else
   {
-  print(paste0("Writing output to file: ", outputFileSummary))
+  print(paste0("Writing output to png file: ", outputFileSummary))
   png(file = outputFileSummary, res = 140, height = 2200, width = 4000)
   plot_grid(summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
             ncol = 1, nrow = 5, rel_heights = plotHeights, align = 'v', axis = 'l')
+}
+
+dev.off()
+
+# Generate PDF report with disclaimer
+
+outputFile <- paste0(cuppaDir, sampleId, '_cup_report.pdf')
+print(paste0("writing output to pdf file: ", outputFile))
+
+pdf(file = outputFile, height = 14, width = 20)
+par(mar = c(1, 1, 1, 1))
+
+title <- textGrob(paste0(sampleId, ' CUP Report'), gp = gpar(fontface = "bold", fontsize = 16))
+disclaimer1 <- textGrob(paste('All results and data described in this report are for research-use-only and have not been generated using a clinically validated and controlled procedure.'), gp = gpar(fontface = "bold", fontsize = 13))
+disclaimer2 <- textGrob(paste('These results should not be used for clinical decision making.'), gp = gpar(fontface = "bold", fontsize = 13))
+
+if (separateFeaturePlot)
+  {
+  grid.arrange(plot_grid(title, disclaimer1, disclaimer2, summaryPlot, genderPlot, sigPlot, svTraitsPlot,
+                         ncol = 1, nrow = 7, rel_heights = plotHeightsDisclaimer, align = 'v', axis = 'l'))
+
+  grid.arrange(plot_grid(featurePlot, ncol = 1, nrow = 1), newpage = T)
+} else
+  {
+  plot_grid(title, disclaimer1, disclaimer2, summaryPlot, genderPlot, sigPlot, svTraitsPlot, featurePlot,
+            ncol = 1, nrow = 8, rel_heights = plotHeightsDisclaimer, align = 'v', axis = 'l')
 }
 
 dev.off()

@@ -57,7 +57,7 @@ main() {
     for barcode in ${barcodes[*]}; do
 
         sample=$(hmf_api_get "samples?barcode=${barcode}" | jq '.[-1]')
-        most_recent_run=$(hmf_api_get "runs?barcode=${barcode}" | jq '.[-1]')
+        most_recent_run=$(hmf_api_get "runs?barcode=${barcode}" | jq '[.[] | select(.ini != "Rerun.ini")] | .[-1]')
         run_info=$(jq -r '[.ini, .status, .id] | @tsv' <<< "${most_recent_run}" | tr "\t" "|")
 
         submission=$(jq -r '.submission' <<< "${sample}")

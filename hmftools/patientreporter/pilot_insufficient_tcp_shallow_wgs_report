@@ -5,12 +5,8 @@ source message_functions || exit 1
 tumor_sample=$1 && shift
 
 if [[ -z "${tumor_sample}" ]]; then
-    error "No tumor sample provided. Exiting";
+    error "No tumor sample provided. Exiting"
 fi
 
 ref_sample_mandatory=1
-output_dir_data_report=/data/cpct/qc_fail_reports_data/pilot
-
-pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_shallow_wgs" ${ref_sample_mandatory} "" \
-    -output_dir_data ${output_dir_data_report} \
-    "$@"
+pilot_create_patient_report_pre_pipeline_fail ${tumor_sample} "insufficient_tcp_shallow_wgs" ${ref_sample_mandatory}

@@ -26,7 +26,6 @@ barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=
 ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
 ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
 
-
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
 if [[ ${run_count} == 0 ]]; then
@@ -76,6 +75,7 @@ if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0
 fi
 # create folder for report
 mkdir ${temp_folder_path}/new_report
+echo ${temp_folder_path}/protect/
 output_dir_report=${temp_folder_path}/new_report
 output_dir_data_report=${temp_folder_path}/new_report
 
@@ -134,7 +134,7 @@ virus_blacklist_tsv=/data/dbs/virus_interpreter/virus_blacklist.tsv
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
-    pilot_do_run_base_patient_reporter \
+    do_run_base_patient_reporter \
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_data_report} \
         -ref_sample_id ${ref_sample} \
@@ -168,7 +168,7 @@ if [[ ${correction_comments} != "" ]]; then
         -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     #Normal report
-    pilot_do_run_base_patient_reporter \
+    do_run_base_patient_reporter \
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_data_report} \
         -ref_sample_id ${ref_sample} \
@@ -202,9 +202,11 @@ fi
 
 
 #check whether a report has been made
+cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+    api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -234,9 +236,17 @@ gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
-if [[ "${sample:0:6}" == "COREDB" ]]; then
+if [[ "${sample:0:8}" == "COREDB01" ]]; then
     upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
     info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+fi
+
+### Patch reporting created endpoint
+api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
+echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+read answer
+if [[ $answer == 'Y' ]]; then
+  post_api_created_report ${api_update_json} ${sample}
 fi
 
 echo ""

@@ -46,34 +46,36 @@ output_dir_data_report=${temp_folder_path}/new_report
 
 
 ## running patient reporter
+
 ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+fi
+
 barcode=$(find_barcode_for_sample_name ${sample})
+
+if [[ ${fail_reason} == "insufficient_tcp_shallow_wgs" ]]; then
+    ref_sample_mandatory=1
+elif [[ ${fail_reason} == "insufficient_dna" || ${fail_reason} == "technical_failure" ]];then
+  ref_sample_mandatory=0
+fi
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
-    do_run_base_patient_reporter \
+    do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} \
-            -qc_fail \
-            -qc_fail_reason ${fail_reason} \
-            -ref_sample_id ${ref_sample} \
-            -ref_sample_barcode ${ref_sample_barcode} \
-            -tumor_sample_id ${sample} \
-            -tumor_sample_barcode ${barcode} \
             -comments "${correction_comments}" \
             -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     #Normal report
-    do_run_base_patient_reporter \
+    do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
             -output_dir_report ${output_dir_report} \
-            -output_dir_data ${output_dir_data_report} \
-            -qc_fail \
-            -qc_fail_reason ${fail_reason} \
-            -ref_sample_id ${ref_sample} \
-            -ref_sample_barcode ${ref_sample_barcode} \
-            -tumor_sample_id ${sample} \
-            -tumor_sample_barcode ${barcode} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+            -output_dir_data ${output_dir_data_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
 #check whether a report has been made

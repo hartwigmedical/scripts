@@ -23,10 +23,8 @@ else
     warn "Cohort of sample isn't assigned"
 fi
 
-if [[ ${has_reliable_purity} == '"N/A"' && ${has_reliable_quality} == '"N/A"' ]]; then
-  has_reliable_purity=null
-  has_reliable_quality=null
-  purity=null
+if [[ ${purity} == '"N/A"' ]]; then
+  purity="N/A"
 fi
 
 ## check report is manual or automatically generated
@@ -53,14 +51,21 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"' "has_reliable_purity" "${has_reliable_purity}" "barcode" "${sample_barcode}" "purity" "${purity}" "report_type" "${report_type}" "cohort" "${cohort}" "has_reliable_quality" "${has_reliable_quality}" "source" "${source_report}" "sample_name" "${sample_name}")
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
+if [[ ${purity} != "N/A" ]];then
+    purityQualityData=$(printf ',"%s": %s,"%s": %s, "%s": %s' "purity" "${purity}" "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
+    data=$(echo ${data} ${purityQualityData})
+fi
+
 if [[ -z ${run_id} ]];then
   data=$(echo ${data} "}")
 else
   run_id_format=$(printf ',"%s": %s}' "run_id" "${run_id}")
   data=$(echo ${data} ${run_id_format})
 fi
+
+echo $data
 
 ### Execute patch reporting created endpoint
 info "Adding entry to created API"

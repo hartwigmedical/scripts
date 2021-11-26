@@ -6,7 +6,8 @@ source message_functions || exit 1
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
-output_dir_report=/data/cpct/pilot_reports
+
+output_dir_report=${HOME}/reports/pilot
 
 if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
     error "No tumor sample and/or QC fail reason provided. Exiting";
@@ -36,6 +37,7 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
 
         pilot_do_run_base_patient_reporter \
             -output_dir_report ${output_dir_report} \
+            -output_dir_data ${output_dir_report} \
             -qc_fail \
             -qc_fail_reason ${qc_fail_reason} \
             -tumor_sample_id ${tumor_sample} \
@@ -46,6 +48,7 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
 else
     pilot_do_run_base_patient_reporter \
         -output_dir_report ${output_dir_report} \
+        -output_dir_data ${output_dir_report} \
         -qc_fail \
         -qc_fail_reason ${qc_fail_reason} \
         -ref_sample_id ${ref_sample} \

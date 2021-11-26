@@ -46,7 +46,7 @@ locate_pilot_virus_interpreter() {
 }
 
 locate_prod_cuppa() {
-    echo "/data/tools/cuppa/1.4/cuppa.jar"
+    echo "/data/tools/cuppa/1.5/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
@@ -78,7 +78,7 @@ locate_pilot_sigs() {
 }
 
 locate_prod_orange() {
-    echo "/data/tools/orange/1.2/orange.jar"
+    echo "/data/tools/orange/1.4/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -101,8 +101,12 @@ locate_prod_patient_reporter_ds() {
     echo "${base_path}/tools/patientreporter/7.23/patient-reporter.jar"
 }
 
+locate_prod_patient_reporter_gcp() {
+    echo "${base_path}/tools/patientreporter/7.23/patient-reporter.jar"
+}
+
 locate_pilot_patient_reporter_ds() {
-    echo "${base_path}/tools/patientreporter_pilot/patient-reporter.jar"
+    echo "${base_path}/tools/patientreporter/pilot/patient-reporter.jar"
 }
 
 locate_prod_vicc_importer() {
@@ -138,7 +142,7 @@ locate_pilot_serve() {
 }
 
 locate_prod_protect() {
-    echo "/data/tools/protect/1.4/protect.jar"
+    echo "/data/tools/protect/1.6/protect.jar"
 }
 
 locate_pilot_protect() {
@@ -177,6 +181,10 @@ locate_run_contexts_writer() {
 
 extract_expected_pipeline_version() {
     echo "5.22"
+}
+
+extract_expected_pipeline_version_research() {
+    echo "5.24"
 }
 
 ############################### NON JAVA TOOLS #################################
@@ -326,7 +334,15 @@ locate_rna_analysis_bucket() {
     echo ${rna_analysis_bucket}
 }
 
-################################## Resources ###################################
+############################# Pipeline Resources ###############################
+
+locate_cuppa_ref_dir_dna() {
+    echo "/data/resources/private/cuppa"
+}
+
+locate_cuppa_ref_dir_dna_rna() {
+    echo "/data/resources/custom/actin/cuppa_ref"
+}
 
 locate_cohort_mapping_tsv() {
     echo "/data/resources/public/orange/cohort_mapping.tsv"
@@ -368,6 +384,35 @@ locate_peach_resource_dir() {
     echo "${base_path}/dbs/peach"
 }
 
+
+############################### Ops Resources #################################
+
+locate_samplesheets_dir() {
+    echo "/data/samplesheets"
+}
+
+locate_sample_registration_unregistered_jsons_dir() {
+    echo "/data/ops/api/prod/jsons"
+}
+
+locate_sample_registration_registered_jsons_dir() {
+    echo "/data/ops/api/prod/jsons/registered"
+}
+
+locate_sample_registration_logs_dir() {
+    echo "/data/ops/api/prod/logs"
+}
+
+locate_snpcheck_dir() {
+    echo "/data/common/snpcheck"
+}
+
+locate_snpcheck_vcf_upload_dir() {
+    echo "/data/common/snpcheck/gcp-sync"
+}
+
+############################### SERVE Resources ################################
+
 locate_pilot_iclusion_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
 }
@@ -392,8 +437,12 @@ locate_hartwig_curated_tsv() {
     echo "/data/resources/custom/hartwig/hartwig_curated.tsv"
 }
 
-locate_ckb_flex_data_dir() {
-    echo "/data/resources/custom/ckb/ckb_flex_dump"
+locate_ckb_flex_data_production_dir() {
+    echo "/data/resources/custom/ckb/production/ckb_flex_dump"
+}
+
+locate_ckb_flex_data_latest_dir() {
+    echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
@@ -402,30 +451,6 @@ locate_ckb_filter_tsv() {
 
 locate_ckb_filter_tsv_empty() {
     echo "/data/resources/custom/serve/ckb_filters_empty.tsv"
-}
-
-locate_samplesheets_dir() {
-    echo "/data/samplesheets"
-}
-
-locate_sample_registration_unregistered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons"
-}
-
-locate_sample_registration_registered_jsons_dir() {
-    echo "/data/ops/api/prod/jsons/registered"
-}
-
-locate_sample_registration_logs_dir() {
-    echo "/data/ops/api/prod/logs"
-}
-
-locate_snpcheck_dir() {
-    echo "/data/snpcheck"
-}
-
-locate_snpcheck_vcf_upload_dir() {
-    echo "/data/snpcheck/gcp-sync"
 }
 
 #################################### Repos #####################################

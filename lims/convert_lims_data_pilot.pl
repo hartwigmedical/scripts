@@ -642,13 +642,13 @@ sub parseDictFile{
 
 sub addContactInfoToSubmissions{
     my ($submissions, $contact_groups) = @_;
-    my @fields = qw( report_contact_name report_contact_email data_contact_name data_contact_email );
+    my @fields = qw( requester_report_contact_name requester_report_contact_email data_contact_name data_contact_email );
     sayInfo("  Adding contact group information to submissions");
     my %store = %{$submissions};
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
 
-        if( exists $submission->{ 'report_contact_email' } ){
+        if( exists $submission->{ 'requester_report_contact_email' } ){
             # Skip records from the time when contact info was entered in shipments tab
             next;
         }
@@ -709,8 +709,8 @@ sub checkDrupStage3Info{
 
 sub checkContactInfo{
     my ($contact_groups) = @_;
-    my @name_fields = qw(client_contact_name report_contact_name data_contact_name);
-    my @mail_fields = qw(report_contact_email data_contact_email);
+    my @name_fields = qw(client_contact_name requester_report_contact_name data_contact_name);
+    my @mail_fields = qw(requester_report_contact_email data_contact_email);
     sayInfo("  Checking contact group information for completeness");
     foreach my $id (sort keys %$contact_groups){
         my $info = $contact_groups->{$id};
@@ -1051,8 +1051,8 @@ sub getFieldNameTranslations{
         "Client_contact_email"   => 'client_contact_email',
         "On_behalf_of_client_name"  => 'on_behalf_of_client_contact_name',
         "On_behalf_of_client_email" => 'on_behalf_of_client_contact_email',
-        "Report_contact_name"    => 'report_contact_name',
-        "Report_contact_email"   => 'report_contact_email',
+        "Report_contact_name"    => 'requester_report_contact_name',
+        "Report_contact_email"   => 'requester_report_contact_email',
         "Data_contact_name"      => 'data_contact_name',
         "Data_contact_email"     => 'data_contact_email',
         "Lab_contact_name"       => 'lab_contact_name',
@@ -1069,8 +1069,8 @@ sub getFieldNameTranslations{
         "Sample_count"      => 'sample_count',
         "Lab_is_finished"   => 'has_lab_finished',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'report_contact_name',
-        "Contact_email"     => 'report_contact_email',
+        "Contact_name"      => 'requester_report_contact_name',
+        "Contact_email"     => 'requester_report_contact_email',
         "Remarks"           => 'remarks',
         "Storage_status"    => 'lab_storage_status',
     );
@@ -1086,8 +1086,8 @@ sub getFieldNameTranslations{
         "Lab_is_finished"   => 'has_lab_finished',
         "Group_ID"          => 'group_id',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'report_contact_name',
-        "Contact_email"     => 'report_contact_email',
+        "Contact_name"      => 'requester_report_contact_name',
+        "Contact_email"     => 'requester_report_contact_email',
         "Portal_contact_name" => 'data_contact_name',
         "Portal_contact_email" => 'data_contact_email',
         "Remarks"           => 'remarks',

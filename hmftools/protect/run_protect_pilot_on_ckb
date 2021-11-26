@@ -9,8 +9,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-# Temp until a better location has been found.
-serve_actionability_dir=$HOME/serve_ckb
+serve_actionability_dir=/data/resources/private/serve/37
 
 output_dir=${run_dir}/protect_pilot_ckb
 protect_jar=$(locate_pilot_protect)
