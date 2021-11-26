@@ -11,6 +11,7 @@ correction_comments=$1 && shift
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+echo "1"
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
 runs_json=$(
@@ -26,6 +27,7 @@ barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=
 ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
 ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
 
+echo ${run_count}
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
