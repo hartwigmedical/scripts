@@ -98,6 +98,10 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_patient_reporter_ds() {
+    echo "${base_path}/data/tools/patientreporter/7.23/patient-reporter.jar"
+}
+
+locate_prod_patient_reporter_gcp() {
     echo "${base_path}/tools/patientreporter_v7.23/patient-reporter.jar"
 }
 
