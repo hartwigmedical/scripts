@@ -7,40 +7,26 @@ source message_functions || exit 1
 source api_functions || exit 1
 
 run_dir=$1 && shift
+sample=$1 && shift
+barcode=$1 && shift
+ref_sample=$1 && shift
+ref_sample_barcode=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
-
-if [[ -z "${tumor_sample_barcode}" ]]; then
-    info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${sample}" || -z "${barcode}" ]]; then
+    error "No tumor/reference information provided. Exiting"
 fi
 
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
-
-if [[ -z "${ref_sample_barcode}" ]]; then
-    info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
-    ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
-fi
-
-if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_barcode}" ]]; then
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${barcode}" ]]; then
     warn "Incomplete information for reporter. Exiting"
     warn "  ref_sample name: ${ref_sample}"
     warn "  ref sample barcode: ${ref_sample_barcode}"
-    warn "  tumor_sample name: ${tumor_sample}"
-    warn "  tum sample barcode: ${tumor_sample_barcode}"
+    warn "  tumor_sample name: ${sample}"
+    warn "  tum sample barcode: ${barcode}"
     exit 1;
-fi
-
-output_dir_data=${run_dir}/patient_report_prod_data
-if [[ ! -d "${output_dir_data}" ]]; then
-    info "${output_dir_data} does not exist yet, creating..."
-    mkdir ${output_dir_data}
 fi
 
 pipeline_version_file=${run_dir}/pipeline.version
@@ -71,8 +57,8 @@ virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
 do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
-    -tumor_sample_id ${tumor_sample} \
-    -tumor_sample_barcode ${tumor_sample_barcode} \
+    -tumor_sample_id ${sample} \
+    -tumor_sample_barcode ${barcode} \
     -pipeline_version_file ${pipeline_version_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
@@ -96,5 +82,4 @@ do_run_base_patient_reporter \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
     -virus_interpretation_tsv ${virus_interpretation_tsv} \
     -virus_blacklist_tsv ${virus_blacklist_tsv} \
-    -output_dir_data ${output_dir_data} \
     "$@"

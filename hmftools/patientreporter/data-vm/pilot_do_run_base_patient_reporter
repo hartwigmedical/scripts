@@ -4,12 +4,12 @@ source locate_files || exit 1
 
 patient_reporter_jar=$(locate_pilot_patient_reporter_ds)
 
-primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
-rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
-company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
-signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
+rva_logo=/data/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
+company_logo=/data/dbs/patient_reporter_images/hartwig_logo.jpg
+signature=/data/dbs/patient_reporter_images/signature_edwin_transparant.png
 
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -17,7 +17,5 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -expected_pipeline_version "5.22" \
-    -udi_di "(01)8720299486003(8012)v5.22" \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"
