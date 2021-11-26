@@ -202,7 +202,7 @@ fi
 
 
 #check whether a report has been made
-ls ${temp_folder_path}/new_report/ | grep ${sample}
+cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     json=$( ls ${temp_folder_path}/new_report | grep ".json" )
