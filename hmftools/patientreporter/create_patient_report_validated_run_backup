@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source lims_functions || exit 1
+
+
+set=$1 && shift
+correction_comments=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
+ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
+
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+set_url="gs://${bucket}/${set}"
+
+echo ""
+echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"
+if [[ ${correction_comments} != "" ]]; then
+    echo "[IMPORTANT] this will be an correction report!"
+    echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
+fi
+
+if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    warn 'There already exists a patient report for this sample:'
+    gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+    echo '[INPUT] Are you sure you want to continue with making a new report? (all data will be overwritten, except for the report when making a corrected report) Please answer Y or N.'
+    read answer
+    if [[ $answer != 'Y' ]]; then
+        warn "Report will not be created. exiting"
+        exit 1
+    fi
+fi
+
+
+### Copy run data from bucket to local in vm
+temp_folder_path=$( pwd )"/temp_cp_${set}"
+mkdir $temp_folder_path
+gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path/copy.log
+gsutil -m cp ${set_url}/metadata.json $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/linx/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/chord/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/cuppa/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/virusbreakend/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/peach/ $temp_folder_path/  &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/protect/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+
+if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
+    warn "Making the copy gave errors (see below). Exiting."
+    cat $temp_folder_path/copy.log
+    rm -r $temp_folder_path/
+    exit 1
+fi
+# create folder for report
+mkdir ${temp_folder_path}/new_report
+output_dir_report=${temp_folder_path}/new_report
+output_dir_data_report=${temp_folder_path}/new_report
+
+### rerun of protect (if applicable)
+echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
+read answer_protect
+if [[ $answer_protect == 'Y' ]]; then
+    run_protect_prod_on_vicc ${set} ${barcode} ${sample} ${pipeline_version} ${temp_folder_path}
+fi
+echo '[INPUT] Do you want to manually edit the PROTECT file? Please answer Y or N.'
+read answer_edit_protect
+if [[ $answer_edit_protect == 'Y' ]]; then
+    vi $temp_folder_path/protect/${sample}.protect.tsv
+fi
+
+
+### doid check (specifally important when rerun of protect)
+report_doid=$( get_doids_for_biopsy ${sample} | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
+protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
+info "Checking primary tumor doid from protect vs that used in the report: " &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+if [[ ${protect_doid} == "" ]]; then
+    warn "Checking primary tumor doid - the doid of protect ${protect_doid} is not known" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+elif [[ ${protect_doid} == ${report_doid} ]]; then
+    info "Checking primary tumor doid - the doid is equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+else
+    warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+fi
+
+#### run patient reporter
+
+pipeline_version_file=${temp_folder_path}/pipeline.version
+purple_purity_tsv=$(locate_purple_purity ${temp_folder_path})
+purple_qc_file=$(locate_purple_qc ${temp_folder_path})
+purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${temp_folder_path})
+purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${temp_folder_path})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${temp_folder_path})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${temp_folder_path})
+purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${temp_folder_path})
+purple_circos_plot=$(locate_purple_circos_plot ${temp_folder_path})
+linx_fusion_tsv=$(locate_linx_fusions ${temp_folder_path})
+linx_breakend_tsv=$(locate_linx_breakends ${temp_folder_path})
+linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${temp_folder_path})
+chord_prediction_txt=$(locate_chord_prediction ${temp_folder_path})
+molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${temp_folder_path})
+molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${temp_folder_path})
+virus_breakend_tsv=$(locate_virus_breakend_tsv ${temp_folder_path})
+peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${temp_folder_path})
+protect_evidence_tsv=$(locate_protect_evidence ${temp_folder_path})
+
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
+sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
+taxonomy_db_tsv=/data/common/dbs/virus_interpreter/taxonomy_db.tsv
+virus_interpretation_tsv=/data/common/dbs/virus_interpreter/virus_interpretation.tsv
+virus_blacklist_tsv=/data/common/dbs/virus_interpreter/virus_blacklist.tsv
+
+
+if [[ ${correction_comments} != "" ]]; then
+    #corrected report
+    do_run_base_patient_reporter \
+        -output_dir_report ${output_dir_report} \
+        -output_dir_data ${output_dir_data_report} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${sample} \
+        -tumor_sample_barcode ${barcode} \
+        -pipeline_version_file ${pipeline_version_file} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} \
+        -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+        -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
+        -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+        -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+        -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+        -purple_circos_plot ${purple_circos_plot} \
+        -linx_fusion_tsv ${linx_fusion_tsv} \
+        -linx_breakend_tsv ${linx_breakend_tsv} \
+        -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+        -chord_prediction_txt ${chord_prediction_txt} \
+        -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
+        -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
+        -virus_breakend_tsv ${virus_breakend_tsv} \
+        -peach_genotype_tsv ${peach_genotype_tsv} \
+        -protect_evidence_tsv ${protect_evidence_tsv} \
+        -germline_reporting_tsv ${germline_reporting_tsv} \
+        -sample_summary_tsv ${sample_summary_tsv} \
+        -taxonomy_db_tsv ${taxonomy_db_tsv} \
+        -virus_interpretation_tsv ${virus_interpretation_tsv} \
+        -virus_blacklist_tsv ${virus_blacklist_tsv} \
+        -comments "${correction_comments}" \
+        -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+else
+    #Normal report
+    do_run_base_patient_reporter \
+        -output_dir_report ${output_dir_report} \
+        -output_dir_data ${output_dir_data_report} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${sample} \
+        -tumor_sample_barcode ${barcode} \
+        -pipeline_version_file ${pipeline_version_file} \
+        -purple_purity_tsv ${purple_purity_tsv} \
+        -purple_qc_file ${purple_qc_file} \
+        -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+        -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
+        -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+        -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+        -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+        -purple_circos_plot ${purple_circos_plot} \
+        -linx_fusion_tsv ${linx_fusion_tsv} \
+        -linx_breakend_tsv ${linx_breakend_tsv} \
+        -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+        -chord_prediction_txt ${chord_prediction_txt} \
+        -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
+        -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
+        -virus_breakend_tsv ${virus_breakend_tsv} \
+        -peach_genotype_tsv ${peach_genotype_tsv} \
+        -protect_evidence_tsv ${protect_evidence_tsv} \
+        -germline_reporting_tsv ${germline_reporting_tsv} \
+        -sample_summary_tsv ${sample_summary_tsv} \
+        -taxonomy_db_tsv ${taxonomy_db_tsv} \
+        -virus_interpretation_tsv ${virus_interpretation_tsv} \
+        -virus_blacklist_tsv ${virus_blacklist_tsv} "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+fi
+
+
+#check whether a report has been made
+if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+    api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
+    info "The report $report has been created"
+else
+    warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
+    rm -r ${temp_folder_path}/ 2>&1
+    warn "The script will end here. Exiting"
+    exit 1
+fi
+
+#### check log file of making the report
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+    #cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
+else
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep 'WARN ' | grep "has already been reported"
+    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_patientreporter.log"
+fi
+
+#### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
+gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
+rm -r ${temp_folder_path}/ 2>&1
+info "The report and the related log + json file can be found in gs://patient-reporter-manual-prod-1/:"
+gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+
+
+### upload report to NC
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
+info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+
+if [[ "${sample:0:8}" -eq "COREDB01" ]]; then
+    upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
+    info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+fi
+
+### Patch reporting created endpoint
+api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
+echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+read answer
+if [[ $answer == 'Y' ]]; then
+  post_api_created_report ${api_update_json} ${sample}
+fi
+
+echo ""
