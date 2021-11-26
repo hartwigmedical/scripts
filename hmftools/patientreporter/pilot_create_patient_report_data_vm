@@ -60,5 +60,4 @@ output_dir_report=${HOME}/reports/pilot
 
 pilot_do_patient_report_for_run ${run_dir} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
       -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_report} \
-      -only_create_pdf "$@"
+      -output_dir_data ${output_dir_report}  "$@"
