@@ -183,6 +183,10 @@ extract_expected_pipeline_version() {
     echo "5.22"
 }
 
+extract_expected_pipeline_version_research() {
+    echo "5.24"
+}
+
 ############################### NON JAVA TOOLS #################################
 
 locate_peach_main() {

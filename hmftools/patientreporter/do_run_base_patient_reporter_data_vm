@@ -11,7 +11,7 @@ rva_logo=/data/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.j
 company_logo=/data/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/dbs/patient_reporter_images/signature_edwin_transparant.png
 
-expected_pipeline_version=$(extract_expected_pipeline_version)
+expected_pipeline_version=$(extract_expected_pipeline_version_research)
 
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
