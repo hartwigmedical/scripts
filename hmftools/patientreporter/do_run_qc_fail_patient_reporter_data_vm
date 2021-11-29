@@ -5,13 +5,13 @@ source metadata_functions || exit 1
 source message_functions || exit 1
 
 tumor_sample=$1 && shift
-barcode=$1 && shift
+tumor_sample_barcode=$1 && shift
 ref_sample=$1 && shift
 ref_sample_barcode=$1 && shift
 qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
 
-if [[ -z "${tumor_sample}" || -z "${barcode}" || -z "${ref_sample}" || -z "${ref_sample_barcode}" ||-z "${qc_fail_reason}" ]]; then
+if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" || -z "${ref_sample}" || -z "${ref_sample_barcode}" ||-z "${qc_fail_reason}" ]]; then
     error "No tumor infromation and/or QC fail reason provided. Exiting"
 fi
 
