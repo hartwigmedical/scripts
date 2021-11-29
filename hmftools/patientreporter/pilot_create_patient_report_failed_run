@@ -4,26 +4,7 @@ source message_functions || exit 1
 source locate_files || exit 1
 source lims_functions || exit 1
 
-sample=$1 && shift
-
-if [[ -z "${sample}" ]]; then
-    error "Parameters missing. Exiting.";
-fi
-
-orig_run_dir=/data/datasets/${sample}
-
-if [[ ! -d ${orig_run_dir} ]]; then
-    error "Run dir ${orig_run_dir} not present. Probably not downloaded yet?"
-fi
-
-run_dir=${HOME}/dataset_copy/${sample}
-if [[ -d ${run_dir} ]]; then
-    info "Cleaning up ${run_dir}"
-    rm -r ${run_dir}
-fi
-
-info "Copying ${orig_run_dir} to ${run_dir}"
-cp -r ${orig_run_dir} ${run_dir}
+run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
@@ -60,12 +41,12 @@ ref_sample_mandatory=1
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 
-if [[ $( cat output_dir_data_report/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
+if [[ $( cat ${run_dir}/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
      fail_reason="insufficient_tcp_deep_wgs"
 else
     fail_reason="sufficient_tcp_qc_failure"
 fi
 
-pilot_do_run_qc_fail_patient_reporter  ${sample} ${fail_reason} ${ref_sample_mandatory} \
+pilot_do_run_qc_fail_patient_reporter  ${tumor_sample} ${fail_reason} ${ref_sample_mandatory} \
    -purple_purity_tsv ${purple_purity_tsv} \
    -purple_qc_file ${purple_qc_file} "$@"
