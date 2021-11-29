@@ -25,7 +25,7 @@ rm ${zip_file}
 
 # create new symlink
 info "Creating new symlink"
-#unlink /data/resources/custom/ckb/production/ckb_flex_dump
+unlink /data/resources/custom/ckb/production/ckb_flex_dump
 ln -s /data/resources/custom/ckb/production/${date}_ckb_flex_dump /data/resources/custom/ckb/production/ckb_flex_dump
 
 info "CKB dump is updated!"
