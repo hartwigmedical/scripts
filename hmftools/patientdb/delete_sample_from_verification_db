@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+set -e
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "No sample is provided to $(basename $0). Exiting."
+fi
+
+patient_db_jar=$(locate_prod_patient_db)
+secret_name="mysql-verification-db-writer"
+credentials=$(get_secret_from_secret_manager "${secret_name}")
+database="hmfpatients"
+
+info "Deleting sample from verification db ($sample)"
+do_delete_sample_from_database "${sample}" "${database}" "${credentials}" "${patient_db_jar}"
