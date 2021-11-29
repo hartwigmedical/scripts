@@ -12,6 +12,7 @@ patient_db_jar=$1 && shift
 
 snp_vcf=$(find ${amber_dir} -name *.amber.snp.vcf.gz)
 reference_sample=$(basename ${snp_vcf} .amber.snp.vcf.gz)
+amber_snpcheck_vcf=$(locate_amber_snpcheck_37_vcf)
 
 # Database details
 db_user=$(extract_database_user "${credentials}")
@@ -23,6 +24,6 @@ info "Loading amber data for ${sample}"
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
     -sample ${sample} \
     -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
-    -snpcheck_vcf /data/tmp/Amber.snpcheck.37.vcf \
+    -snpcheck_vcf $amber_snpcheck_vcf \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
