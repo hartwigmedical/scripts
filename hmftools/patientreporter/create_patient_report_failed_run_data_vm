@@ -42,7 +42,7 @@ ref_sample_mandatory=1
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 
-if [[ $( cat set/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
+if [[ $( cat ${run_dir}/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
      fail_reason="insufficient_tcp_deep_wgs"
 else
     fail_reason="sufficient_tcp_qc_failure"
