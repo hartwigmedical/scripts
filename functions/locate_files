@@ -2,11 +2,7 @@
 
 source message_functions || exit 1
 
-base_path="/data/common"
-if [[ ! -d ${base_path} ]]; then
-    # Backup if that path doesn't exist
-    base_path="/data"
-fi
+base_path="/data"
 
 ############################# Nextcloud Credentials ############################
 
@@ -408,11 +404,11 @@ locate_sample_registration_logs_dir() {
 }
 
 locate_snpcheck_dir() {
-    echo "/data/common/snpcheck"
+    echo "/data/snpcheck"
 }
 
 locate_snpcheck_vcf_upload_dir() {
-    echo "/data/common/snpcheck/gcp-sync"
+    echo "/data/snpcheck/gcp-sync"
 }
 
 ############################### SERVE Resources ################################

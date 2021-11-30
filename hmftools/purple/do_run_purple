@@ -42,11 +42,7 @@ else
     fi
 fi
 
-base_path="/data/common"
-if [[ -z "$(hostname | grep datastore)" ]]; then
-    # Common folder does not exist on crunches...
-    base_path="/data"
-fi
+base_path="/data"
 
 gc_profile=/data/resources/public/gc_profiles/37/GC_profile.1000bp.37.cnp
 ref_genome=$(locate_ref_genome_37_fasta_file)
