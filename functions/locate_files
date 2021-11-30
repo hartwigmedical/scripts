@@ -98,7 +98,7 @@ locate_prod_patient_reporter_ds() {
 }
 
 locate_prod_patient_reporter_gcp() {
-    echo "${base_path}/tools/patientreporter/7.23/patient-reporter.jar"
+    echo "${base_path}/tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar"
 }
 
 locate_pilot_patient_reporter_ds() {
