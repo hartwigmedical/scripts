@@ -169,6 +169,7 @@ def assert_created_ref_genome_matches_expectations(
         has_semi_ambiguous_iub_codes=True,
         has_softmasked_nucleotides=False,
         alts_are_padded=None,
+        has_ki270752=False,
     )
     if feature_analysis != expected_feature_analysis:
         error_msg = f"Not all features as expected: expected={expected_feature_analysis}, actual={feature_analysis}"

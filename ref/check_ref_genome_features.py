@@ -82,6 +82,7 @@ def main(config: Config) -> None:
     logging.info(f"Semi ambiguous IUB codes: {analysis.has_semi_ambiguous_iub_codes}")
     logging.info(f"Has softmasked nucleotides: {analysis.has_softmasked_nucleotides}")
     logging.info(f"Alts are padded with N: {analysis.alts_are_padded}")
+    logging.info(f"Has KI270752 (see DEV-2403): {analysis.has_ki270752}")
     logging.info(f"PhiX: False?")
     logging.info(f"")
     logging.info(f"For easy copy-paste:")
@@ -98,6 +99,7 @@ def main(config: Config) -> None:
         analysis.has_semi_ambiguous_iub_codes,
         analysis.has_softmasked_nucleotides,
         analysis.alts_are_padded,
+        analysis.has_ki270752
     ]
     value_to_answer = {True: "Yes", False: "No", None: "?"}
     print("\n".join([value_to_answer[answer] for answer in answers]))

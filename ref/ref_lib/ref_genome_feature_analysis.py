@@ -25,10 +25,12 @@ class ReferenceGenomeFeatureAnalysis(NamedTuple):
     has_semi_ambiguous_iub_codes: bool
     has_softmasked_nucleotides: bool
     alts_are_padded: Optional[bool]
+    has_ki270752: bool
 
 
 class ReferenceGenomeFeatureAnalyzer(object):
     Y_PAR1_TEST_REGION = (20000, 2640000)  # this region lies within the Y PAR1 for both GRCh37 and GRCh38
+    CANONICAL_KI270752_NAME = "chrUn_KI270752v1"
 
     @classmethod
     def do_analysis(
@@ -128,6 +130,12 @@ class ReferenceGenomeFeatureAnalyzer(object):
         else:
             logging.warning(f"There are no alts that could be padded with N's (or n's)")
             alts_are_padded = None
+
+        standardized_contig_names = {
+            contig_name_translator.standardize(contig_name) for contig_name in categorized_contig_names.unplaced_contigs
+        }
+        has_ki270752 = cls.CANONICAL_KI270752_NAME in standardized_contig_names
+
         analysis = ReferenceGenomeFeatureAnalysis(
             has_unplaced_contigs,
             has_unlocalized_contigs,
@@ -141,6 +149,7 @@ class ReferenceGenomeFeatureAnalyzer(object):
             has_semi_ambiguous_iub_codes,
             has_softmasked_nucleotides,
             alts_are_padded,
+            has_ki270752,
         )
         return analysis
 
