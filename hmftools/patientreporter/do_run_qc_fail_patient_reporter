@@ -11,14 +11,6 @@ ref_sample_barcode=$1 && shift
 qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
 
-
-echo ${tumor_sample}
-echo ${tumor_sample_barcode}
-echo $ref_sample
-echo $ref_sample_barcode
-echo qc_fail_reason
-echo $ref_sample_mandatory
-
 if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" || -z "${ref_sample}" || -z "${ref_sample_barcode}" ||-z "${qc_fail_reason}" ]]; then
     error "No tumor infromation and/or QC fail reason provided. Exiting"
 fi
