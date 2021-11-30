@@ -356,20 +356,12 @@ locate_doid_json() {
     echo "/data/resources/public/disease_ontology/201015_doid.json"
 }
 
-locate_driver_gene_panel_37_tsv_ds() {
-    echo "${base_path}/dbs/has_been_moved_to_gcp/driver_gene_panel/DriverGenePanel.37.tsv"
-}
-
 locate_driver_gene_panel_37_tsv() {
     echo "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv"
 }
 
 locate_driver_gene_panel_38_tsv() {
     echo "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
-}
-
-locate_known_fusion_data_37_csv_ds() {
-    echo "${base_path}/dbs/has_been_moved_to_gcp/fusions/known_fusion_data.37_v3.csv"
 }
 
 locate_known_fusion_data_37_csv() {
