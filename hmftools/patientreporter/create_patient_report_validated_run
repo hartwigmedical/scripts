@@ -122,7 +122,7 @@ fi
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep ".json" )
     api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
     info "The report $report has been created"
 else
