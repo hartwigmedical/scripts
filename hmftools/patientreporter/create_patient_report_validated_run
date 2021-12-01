@@ -123,7 +123,6 @@ fi
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep ".json" )
-    api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -153,6 +152,7 @@ upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $repo
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 if [[ "${sample:0:8}" == "COREDB01" ]]; then
+  echo $json
     upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
     info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 fi
