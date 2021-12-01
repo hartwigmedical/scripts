@@ -61,7 +61,7 @@ main() {
 
     info "Start zipping fastq files to fastq.gz for fraction ${fraction}"
     # use 80 percent of cpus for zipping of fastq to fastq.gz
-    cpu_count=$( expr "$(grep -c processor /proc/cpuinfo)" / 10 \* 8)
+    cpu_count=$(( $(grep -c processor /proc/cpuinfo) * 8 / 10 ))
     pigz -p "${cpu_count}" "${downsampled_output_dir}"/*.fastq
 
     rm -rf "${tmp_dir}"
