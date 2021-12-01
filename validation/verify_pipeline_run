@@ -5,62 +5,64 @@ source message_functions || exit 1
 print_usage(){
     echo "-----"
     echo " Descr: Verifies a new COLO829T Somatic pipeline run"
-    echo " Usage: $(basename $0) -u <gcp_url> -o <out_dir> -t <truth_dir>"
+    echo " Usage: $(basename $0) -o <out_dir> -t <truth_dir> -n <truth_dir>"
     echo " Options:"
-    echo "   -u  gcp_url    URL to run at GCP"
-    echo "   -o  out_dir    Path to directory for verification"
+    echo "   -o  out_dir    Path to output directory"
     echo "   -t  truth_run  Path to directory of truth run"
+    echo "   -n  truth_run  Path to directory of new run to be verified"
     echo "   -f  force      Continue if output directory already exists"
     echo " Example:"
-    echo "   $(basename $0) -u gs://path/to/rundir -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
-    echo " Notes:"
-    echo "   - Run with nohup since this includes downloading from GCP"
+    echo "   $(basename $0) -o /path/to/p5_verification_v5.25 -t /path/to/211029_COLO829v003_v5.24 /path/to/YYMMDD_COLO829v003_v5.25"
     echo "-----"
     exit 1
 }
 
 sanity_checks="TRUE"
-while getopts ':fu:o:t:' flag; do
+while getopts ':fo:t:n:' flag; do
     case "${flag}" in
         f) sanity_checks="FALSE" ;;
-        u) gcp_url=${OPTARG} ;;
         o) out_dir=${OPTARG} ;;
         t) truth_run=${OPTARG} ;;
+        n) new_run=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
 done
 
-if [[ -z "${gcp_url}" || -z "${out_dir}" || -z "${truth_run}" ]]; then
+if [[ -z "${out_dir}" || -z "${truth_run}" || -z "${new_run}" ]]; then
     print_usage
 fi
 
 main() {
     info "Starting with script $(basename $0)"
+
+    truth_run=$(realpath "$truth_run")
+    new_run=$(realpath "$new_run")
     
     ## some input sanity checks
     [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir format (${out_dir})?"
-    [[ -n "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url format (${gcp_url})"
+    [[ -f "${new_run}/pipeline.version" ]] || die "Pipeline version file missing (in new run: ${new_run})"
+    [[ -d "${new_run}" ]] || die "New run dir not found (${new_run})"
+    [[ -d "${truth_run}" ]] || die "Truth run dir not found (${truth_run})"
     if [[ "${sanity_checks}" == "TRUE" ]]; then
-        [[ ! -d "${out_dir}" ]] || die "Dir exists (${out_dir})"
+        [[ ! -d "${out_dir}" ]] || die "Output dir exists (${out_dir})"
     fi
 
     info "Constructing variables"
-    run_name=$(basename "${gcp_url}")
-    runs_dir="${out_dir}/runs"
+    truth_run_name=$(basename "${new_run}")
+    new_run_name=$(basename "${new_run}")
     jobs_dir="${out_dir}/jobs"
     logs_dir="${out_dir}/logs"
-    run_dir="${runs_dir}/${run_name}"
-    download_log="${logs_dir}/download.log"
-    
+
+    info "Config:"
+    info "  Out path: ${out_dir}"
+    info "  Jobs directory: ${jobs_dir}"
+    info "  Logs directory: ${logs_dir}"
+    info "  Truth run name: ${truth_run_name}"
+    info "  New run name: ${new_run_name}"
+
     info "Creating directory structure"
-    info "Run name: ${run_name}" 
-    info "Out path: ${out_dir}"
-    info "Runs directory: ${runs_dir}"
-    info "Jobs directory: ${jobs_dir}"
-    info "Logs directory: ${logs_dir}"
-    
-    mkdir -p "${out_dir}" "${runs_dir}" "${run_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
+    mkdir -p "${out_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
     cd "${out_dir}" || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"
@@ -68,7 +70,6 @@ main() {
     script_jobs=(
         "${jobs_source_path}/compare_v5_runs"
         "${jobs_source_path}/diff_v5_COLO829v003_runs"
-        "/data/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
         "/data/repos/scripts/functions/test/locate_files_test"
         "${jobs_source_path}/run_all_sql_verification_jobs"
     )
@@ -86,29 +87,13 @@ main() {
         copy_file "${job_file_path}" "${jobs_dir}"
     done
 
-    ## early fail in case pipeline.version does not exist
-    file_to_check="pipeline.version"
-    url_to_check="${gcp_url}/${file_to_check}"
-    msg=$(gsutil ls "${url_to_check}" 2>&1)
-    if [[ $? -eq 1 ]]; then
-        warn "Cannot access file (${url_to_check})"
-        warn "ErrCode=${?} ErrMsg=\"${msg}\""
-        warn "Check run contents with: gsutil ls ${gcp_url}"
-        exit 1
-    else
-        info "File ${file_to_check} found in bucket so assuming run is complete."
-    fi
-
-    download_run_from_gcp "${gcp_url}" "${run_dir}" "${download_log}"
-
-    new_run="${run_dir}"
-
     metadata_file="${new_run}/metadata.json"
     info "Checking format of ${metadata_file}"
     check_metadata_json "${metadata_file}"
 
-    info "Looking for anomalies in run.log files"
-    find "${new_run}" -name "run.log" -exec grep -Pi "err|warn|exit|excep" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
+    grep_for="err|warn|exit|excep"
+    info "Looking for anomalies in run.log files (${grep_for})"
+    find "${new_run}" -name "run.log" -exec grep -Pi "${grep_for}" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
 
     info "Executing locate_files test"
     "${jobs_dir}/locate_files_test" "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
@@ -124,35 +109,12 @@ main() {
     db_load_script="load_run_into_pipeline_v5_validation_db"
     sql_query_script="run_all_sql_verification_jobs"
     info "TODO manual steps:"
-    info " 1) Inspect all log files in ${logs_dir}"
-    info " 2) Execute sql queries (nohup ${sql_query_script} ${jobs_dir} ${logs_dir} before_load > ${logs_dir}/run_all_sql_verification_jobs_before_load.log &)"
-    info " 3) Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
-    info " 4) Execute sql queries again after load (nohup ${sql_query_script}  ${jobs_dir} ${logs_dir} after_load > ${logs_dir}/run_all_sql_verification_jobs_after_load.log &)"
-    info " 5) Inspect all SQL log files in logs dir (ls ${logs_dir})"
+    info "  1. Inspect all log files in ${logs_dir}"
+    info "  2. If not already loaded: Execute sql queries (nohup ${sql_query_script} ${jobs_dir} ${logs_dir} before_load > ${logs_dir}/run_all_sql_verification_jobs_before_load.log &)"
+    info "  3. If not already loaded: Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
+    info "  4. Execute sql queries again after load (nohup ${sql_query_script}  ${jobs_dir} ${logs_dir} after_load > ${logs_dir}/run_all_sql_verification_jobs_after_load.log &)"
+    info "  5. Inspect all SQL log files in logs dir (ls ${logs_dir})"
     info "Finished with $(basename $0)"
-}
-
-download_run_from_gcp() {
-    local gcp_url=$1 && shift
-    local target_dir=$1 && shift
-    local log_file=$1 && shift
-    local check_log="${log_file}.check"
-    
-    touch "${log_file}"
-    touch "${check_log}"
-    
-    info "Starting download from GCP (you can track progress in log ${log_file})"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync \
-        -r -x ".*\.bam$|.*\.cram$" "${gcp_url}/" "${run_dir}/" \
-        > "${log_file}" 2>&1 || die "Something went wrong with download"
-
-    info "Starting re-download from GCP (to check sync completeness)"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync \
-        -r -x ".*\.bam$|.*\.cram$" "${gcp_url}/" "${run_dir}/" \
-        > "${log_file}.check" 2>&1 || die "Something went wrong with re-download"
-
-    line_count=$(grep -cvP "Building sync|Starting sync" "${check_log}")
-    [[ "${line_count}" -eq 0 ]] || die "Download check log seems to contain downloaded files (pls check ${check_log})"
 }
 
 copy_file() {
@@ -176,14 +138,27 @@ check_metadata_json() {
         '.reference.barcode'
         '.tumor.sampleName'
         '.tumor.barcode'
+        '.tumor.primaryTumorDoids'
     )
     for field in ${fields_to_check[*]}; do
         if [[ $(jq "select(${field} == null)" "${metadata_json}") ]]; then
-            warn "Field ${field} absent metadata (${metadata_json})"
+            warn "  Field ${field} absent metadata (${metadata_json})"
         else
-            info "OK field found in metadata (${field})"
+            info "  OK field found in metadata (${field})"
         fi
     done
+
+    # specific check on COLO doid
+    tumor_name=$(jq '.tumor.sampleName' "${metadata_json}")
+    expected_doid="8923"
+    if [[ "$tumor_name" =~ COLO829 ]]; then
+        doid=$(jq -r '.tumor.primaryTumorDoids | join(",")' "${metadata_json}")
+        if [[ "${doid}" == "${expected_doid}" ]]; then
+            info "  OK found expected tumor DOIDs '${expected_doid}' in metadata json"
+        else
+            warn "  Expected tumor DOIDs '${expected_doid}' but found '${doid}' instead"
+        fi
+    fi
 }
 
 main
