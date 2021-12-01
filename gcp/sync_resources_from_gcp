@@ -8,5 +8,7 @@ set -e
 
 info "Syncing resources from GCP"
 gsutil -m rsync -Pr gs://common-resources /data/resources/bucket
+cd /data/resources/public && git pull
+cd /data/resources/private && git pull
 info "Resources synced from GCP"
 
