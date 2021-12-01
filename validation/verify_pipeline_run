@@ -68,7 +68,6 @@ main() {
     script_jobs=(
         "${jobs_source_path}/compare_v5_runs"
         "${jobs_source_path}/diff_v5_COLO829v003_runs"
-        "/data/repos/scripts/hmftools/patientreporter/create_patient_report_for_run"
         "/data/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
         "/data/repos/scripts/functions/test/locate_files_test"
         "${jobs_source_path}/run_all_sql_verification_jobs"
