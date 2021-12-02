@@ -1,4 +1,4 @@
-SELECT 
+SELECT
     'Truth' AS pipeline,
     version,
     sampleId,
@@ -20,9 +20,9 @@ SELECT
     msIndelsPerMb,
     msStatus
 FROM
-    reference_validation_sets.purity
+    VARIABLE_TRUTH_DB_SCHEMA.purity
 WHERE
-    sampleId = 'COLO829v003T' 
+    sampleId = 'VARIABLE_TRUTH_SAMPLE_ID'
 UNION SELECT 
     'New' AS pipeline,
     version,
@@ -45,6 +45,6 @@ UNION SELECT
     msIndelsPerMb,
     msStatus
 FROM
-    pipeline_v5_validation.purity
+    VARIABLE_NEW_DB_SCHEMA.purity
 WHERE
-    sampleId = 'COLO829v003T';
+    sampleId = 'VARIABLE_NEW_SAMPLE_ID';

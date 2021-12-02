@@ -12,7 +12,7 @@ SELECT
 FROM
     (SELECT 
         id,
-            'Truth' AS pipeline,
+            'OnlyInTruth' AS pipeline,
             startChromosome,
             startPosition,
             endChromosome,
@@ -21,11 +21,11 @@ FROM
             junctionCopyNumber,
             qualScore
     FROM
-        reference_validation_sets.structuralVariant
+        VARIABLE_TRUTH_DB_SCHEMA.structuralVariant
     WHERE
-        sampleId = 'COLO829v003T' AND filter <> 'PON' UNION SELECT 
+        sampleId = 'VARIABLE_TRUTH_SAMPLE_ID' AND filter <> 'PON' UNION SELECT
         id,
-            'New' AS pipeline,
+            'OnlyInNew' AS pipeline,
             startChromosome,
             startPosition,
             endChromosome,
@@ -34,8 +34,8 @@ FROM
             junctionCopyNumber,
             qualScore
     FROM
-        pipeline_v5_validation.structuralVariant
+        VARIABLE_NEW_DB_SCHEMA.structuralVariant
     WHERE
-        sampleId = 'COLO829v003T' AND filter <> 'PON') AS a
+        sampleId = 'VARIABLE_NEW_SAMPLE_ID' AND filter <> 'PON') AS a
 GROUP BY 2 , 3 , 4 , 5 , 6 , 7
 HAVING COUNT(*) = 1;

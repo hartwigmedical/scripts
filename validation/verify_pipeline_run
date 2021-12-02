@@ -49,17 +49,27 @@ main() {
     fi
 
     info "Constructing variables"
-    truth_run_name=$(basename "${new_run}")
+    truth_run_name=$(basename "${truth_run}")
     new_run_name=$(basename "${new_run}")
     jobs_dir="${out_dir}/jobs"
     logs_dir="${out_dir}/logs"
 
+    truth_metadata_file="${truth_run}/metadata.json"
+    new_metadata_file="${new_run}/metadata.json"
+    info "Checking format of ${truth_metadata_file}"
+    check_metadata_json "${truth_metadata_file}"
+    info "Checking format of ${new_metadata_file}"
+    check_metadata_json "${new_metadata_file}"
+
+    truth_sample=$(jq -r '.tumor.sampleName' "${truth_metadata_file}")
+    new_sample=$(jq -r '.tumor.sampleName' "${new_metadata_file}")
+
     info "Config:"
-    info "  Out path: ${out_dir}"
+    info "  Output path: ${out_dir}"
     info "  Jobs directory: ${jobs_dir}"
     info "  Logs directory: ${logs_dir}"
-    info "  Truth run name: ${truth_run_name}"
-    info "  New run name: ${new_run_name}"
+    info "  Truth run: ${truth_run_name} (sample=${truth_sample})"
+    info "  New run: ${new_run_name} (sample=${new_sample})"
 
     info "Creating directory structure"
     mkdir -p "${out_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
@@ -68,31 +78,38 @@ main() {
     info "Gathering script and sql job files"
     jobs_source_path="/data/repos/scripts/validation"
     script_jobs=(
-        "${jobs_source_path}/compare_v5_runs"
-        "${jobs_source_path}/diff_v5_COLO829v003_runs"
-        "/data/repos/scripts/functions/test/locate_files_test"
-        "${jobs_source_path}/run_all_sql_verification_jobs"
+        "compare_v5_runs"
+        "diff_v5_COLO829v003_runs"
+        "run_all_sql_verification_jobs"
     )
     sql_jobs=(
-        "${jobs_source_path}/check_update_time.sql"
-        "${jobs_source_path}/compare_metrics.sql"
-        "${jobs_source_path}/compare_purity.sql"
-        "${jobs_source_path}/counts_variants.sql"
-        "${jobs_source_path}/diff_somatic_variants.sql"
-        "${jobs_source_path}/diff_germline_variants.sql"
-        "${jobs_source_path}/diff_sv.sql"
-        "${jobs_source_path}/diff_sv_test.sql"
+        "check_update_time.sql"
+        "compare_metrics.sql"
+        "compare_purity.sql"
+        "counts_variants.sql"
+        "diff_somatic_variants.sql"
+        "diff_germline_variants.sql"
+        "diff_sv.sql"
+        "diff_sv_test.sql"
     )
-    for job_file_path in "${script_jobs[@]}" "${sql_jobs[@]}"; do
-        copy_file "${job_file_path}" "${jobs_dir}"
+    for job_file_name in "${script_jobs[@]}" "${sql_jobs[@]}"; do
+        copy_file "${jobs_source_path}/${job_file_name}" "${jobs_dir}"
+    done
+    copy_file "/data/repos/scripts/functions/test/locate_files_test" "${jobs_dir}"
+
+    # Somewhat hacky way of replacing the variables of template SQL
+    info "Replacing variables in SQL job files"
+    truth_db_schema="hmfpatients"
+    new_db_schema="hmfpatients"
+    for sql_file_name in "${sql_jobs[@]}"; do
+        sed -i "s/VARIABLE_TRUTH_SAMPLE_ID/${truth_sample}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_NEW_SAMPLE_ID/${new_sample}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_TRUTH_DB_SCHEMA/${truth_db_schema}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_NEW_DB_SCHEMA/${new_db_schema}/g" "${jobs_dir}/${sql_file_name}"
     done
 
-    metadata_file="${new_run}/metadata.json"
-    info "Checking format of ${metadata_file}"
-    check_metadata_json "${metadata_file}"
-
     grep_for="err|warn|exit|excep"
-    info "Looking for anomalies in run.log files (${grep_for})"
+    info "Looking for anomalies in run.log files (searching for ${grep_for})"
     find "${new_run}" -name "run.log" -exec grep -Pi "${grep_for}" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
 
     info "Executing locate_files test"
@@ -106,13 +123,21 @@ main() {
     info "Executing diff_v5_COLO829v003_runs"
     "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
 
-    db_load_script="load_run_into_pipeline_v5_validation_db"
-    sql_query_script="run_all_sql_verification_jobs"
+    db_load_script="load_run_into_pipeline_verification_db"
+    sql_query_script="${jobs_dir}/run_all_sql_verification_jobs"
+
+    before_db_load_job="${jobs_dir}/run_sql_jobs_before_db_load"
+    after_db_load_job="${jobs_dir}/run_sql_jobs_after_db_load"
+
+    echo "${sql_query_script} ${jobs_dir} ${logs_dir} before_load" > "${before_db_load_job}"
+    echo "${sql_query_script} ${jobs_dir} ${logs_dir} after_load" > "${after_db_load_job}"
+    chmod +x "${before_db_load_job}" "${after_db_load_job}"
+
     info "TODO manual steps:"
     info "  1. Inspect all log files in ${logs_dir}"
-    info "  2. If not already loaded: Execute sql queries (nohup ${sql_query_script} ${jobs_dir} ${logs_dir} before_load > ${logs_dir}/run_all_sql_verification_jobs_before_load.log &)"
+    info "  2. If not already loaded: Execute sql queries (nohup ${before_db_load_job} > ${logs_dir}/run_all_sql_verification_jobs_before_load.log &)"
     info "  3. If not already loaded: Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
-    info "  4. Execute sql queries again after load (nohup ${sql_query_script}  ${jobs_dir} ${logs_dir} after_load > ${logs_dir}/run_all_sql_verification_jobs_after_load.log &)"
+    info "  4. Execute sql queries again after load (nohup ${after_db_load_job} > ${logs_dir}/run_all_sql_verification_jobs_after_load.log &)"
     info "  5. Inspect all SQL log files in logs dir (ls ${logs_dir})"
     info "Finished with $(basename $0)"
 }
@@ -124,9 +149,8 @@ copy_file() {
     if [[ ! -f "${file_path}" ]]; then
         die "File not found (${file_path})"
     else
-        info "Copying file ($file_path)"
-        cp "${file_path}" "${jobs_dir}"
-        [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
+        info "  OK copied file ($file_path)"
+        cp "${file_path}" "${jobs_dir}" || die "Unable to copy file (${file_path}) to dir (${target_dir})"
     fi
 }
 
