@@ -170,7 +170,7 @@ locate_dsync() {
 }
 
 locate_run_contexts_writer() {
-    echo "/data/tools/run_contexts_writer/clinical-db-loader.jar"
+    echo "/data/tools/clinical-db-loader/1.0/clinical-db-loader.jar"
 }
 
 ############################# PIPELINE VERSION #################################
