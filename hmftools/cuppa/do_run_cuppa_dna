@@ -38,7 +38,8 @@ java -Xmx4G -jar ${cuppa_jar} \
     -sample_data_dir ${tmp_sample_data_dir} \
     -sample_sv_file ${purple_structural_variant_vcf} \
     -sample_somatic_vcf ${purple_somatic_variant_vcf} \
-    -output_dir ${cuppa_dir}
+    -output_dir ${cuppa_dir} \
+    "$@"
 
 info "Removing temporary data dir '${tmp_sample_data_dir}'"
 rm -r ${tmp_sample_data_dir}
