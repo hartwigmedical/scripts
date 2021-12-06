@@ -18,7 +18,7 @@ reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 hla_bam_dir="$(locate_actin_lilac_hla_bam_dir)/${tumor_sample}"
 create_or_cleanup_dir ${hla_bam_dir}
 
-info "Downloading CRAM files for ${tumor_sample} and ${reference_sample}"
+info "Downloading CRAM files for ${tumor_sample} and ${reference_sample} to ${hla_bam_dir}"
 ref_cram=$(locate_reference_cram ${tumor_sample})
 gsutil -u hmf-crunch cp ${ref_cram}* ${hla_bam_dir}/
 
