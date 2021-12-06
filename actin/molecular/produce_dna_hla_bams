@@ -19,31 +19,18 @@ work_dir="$(locate_actin_lilac_work_dir)/${tumor_sample}"
 create_or_cleanup_dir ${work_dir}
 
 info "Downloading CRAM files for ${tumor_sample} and ${reference_sample}"
-tumor_cram=$(locate_tumor_cram ${tumor_sample})
 ref_cram=$(locate_reference_cram ${tumor_sample})
-
-gsutil -u hmf-crunch cp ${tumor_cram}* ${work_dir}/
 gsutil -u hmf-crunch cp ${ref_cram}* ${work_dir}/
 
+tumor_cram=$(locate_tumor_cram ${tumor_sample})
+gsutil -u hmf-crunch cp ${tumor_cram}* ${work_dir}/
+
 info "Slicing CRAM files to HLA BAMs for ${tumor_sample} and ${reference_sample}"
-ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
-samtools="/data/tools/samtools/1.10/samtools"
-hla_bed="/data/experiments/lilac/resources/hla_v37.bed"
 
+reference_cram="${work_dir}/${reference_sample}.cram"
 reference_hla_bam="${work_dir}/${reference_sample}.hla.bam"
-${samtools} view \
-    -T ${ref_genome_fasta} \
-    -L ${hla_bed} -u -@ 5 \
-    -M ${work_dir}/${reference_sample}.cram \
-    -o ${reference_hla_bam}
+produce_hla_sliced_bam ${reference_cram} ${reference_hla_bam}
 
-${samtools} index ${reference_hla_bam}
-
+tumor_cram="${work_dir}/${tumor_sample}.cram"
 tumor_hla_bam="${work_dir}/${tumor_sample}.hla.bam"
-${samtools} view \
-    -T ${ref_genome_fasta} \
-    -L ${hla_bed} -u -@ 5 \
-    -M ${work_dir}/${tumor_sample}.cram \
-    -o ${tumor_hla_bam}
-
-${samtools} index ${tumor_hla_bam}
+produce_hla_sliced_bam ${tumor_cram} ${tumor_hla_bam}
