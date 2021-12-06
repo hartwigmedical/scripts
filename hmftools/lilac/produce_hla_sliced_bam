@@ -10,15 +10,15 @@ if [[ -z "${input_file}" || -z "${output_hla_bam}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
 samtools="/data/tools/samtools/1.10/samtools"
+ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
 hla_bed="/data/experiments/lilac/resources/hla_v37.bed"
 
 ${samtools} view \
     -T ${ref_genome_fasta} \
     -L ${hla_bed} -u -@ 5 -M \
     -o ${output_hla_bam} \
-    ${input_file} \
+    ${input_file}
 
 ${samtools} index ${output_hla_bam}
 
