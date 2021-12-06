@@ -15,24 +15,24 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-work_dir="$(locate_actin_lilac_work_dir)/${tumor_sample}"
-create_or_cleanup_dir ${work_dir}
+hla_bam_dir="$(locate_actin_lilac_hla_bam_dir)/${tumor_sample}"
+create_or_cleanup_dir ${hla_bam_dir}
 
 info "Downloading CRAM files for ${tumor_sample} and ${reference_sample}"
 ref_cram=$(locate_reference_cram ${tumor_sample})
-gsutil -u hmf-crunch cp ${ref_cram}* ${work_dir}/
+gsutil -u hmf-crunch cp ${ref_cram}* ${hla_bam_dir}/
 
 tumor_cram=$(locate_tumor_cram ${tumor_sample})
-gsutil -u hmf-crunch cp ${tumor_cram}* ${work_dir}/
+gsutil -u hmf-crunch cp ${tumor_cram}* ${hla_bam_dir}/
 
 info "Slicing CRAM files to HLA BAMs for ${tumor_sample} and ${reference_sample}"
 
-reference_cram="${work_dir}/${reference_sample}.cram"
-reference_hla_bam="${work_dir}/${reference_sample}.hla.bam"
+reference_cram="${hla_bam_dir}/${reference_sample}.cram"
+reference_hla_bam="${hla_bam_dir}/${reference_sample}.hla.bam"
 produce_hla_sliced_bam ${reference_cram} ${reference_hla_bam}
 
-tumor_cram="${work_dir}/${tumor_sample}.cram"
-tumor_hla_bam="${work_dir}/${tumor_sample}.hla.bam"
+tumor_cram="${hla_bam_dir}/${tumor_sample}.cram"
+tumor_hla_bam="${hla_bam_dir}/${tumor_sample}.hla.bam"
 produce_hla_sliced_bam ${tumor_cram} ${tumor_hla_bam}
 
 info "Cleaning up CRAM and CRAI files"
