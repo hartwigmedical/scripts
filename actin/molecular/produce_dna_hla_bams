@@ -20,7 +20,7 @@ create_or_cleanup_dir ${work_dir}
 
 info "Downloading CRAM files for ${tumor_sample} and ${reference_sample}"
 tumor_cram=$(locate_tumor_cram ${tumor_sample})
-ref_cram=$(locate_ref_cram ${tumor_sample})
+ref_cram=$(locate_reference_cram ${tumor_sample})
 
 gsutil -u hmf-crunch cp ${tumor_cram}* ${work_dir}/
 gsutil -u hmf-crunch cp ${ref_cram}* ${work_dir}/
