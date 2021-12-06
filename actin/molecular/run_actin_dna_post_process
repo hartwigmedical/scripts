@@ -42,6 +42,9 @@ run_cuppa_dna_prod ${run_dir}
 # To generate the CUPPA report as a picture (png)
 generate_cup_report ${run_dir}
 
+# Produce LILAC output
+run_lilac_for_actin_run ${run_dir}
+
 # Create a backup of original protect output prior to rerun
 protect_dir="${run_dir}/protect"
 if [[ -d "${protect_dir}" ]]; then
