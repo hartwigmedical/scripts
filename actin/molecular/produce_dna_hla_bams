@@ -34,3 +34,7 @@ produce_hla_sliced_bam ${reference_cram} ${reference_hla_bam}
 tumor_cram="${work_dir}/${tumor_sample}.cram"
 tumor_hla_bam="${work_dir}/${tumor_sample}.hla.bam"
 produce_hla_sliced_bam ${tumor_cram} ${tumor_hla_bam}
+
+info "Cleaning up CRAM and CRAI files"
+rm ${reference_cram}*
+rm ${tumor_cram}*

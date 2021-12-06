@@ -7,29 +7,31 @@ source io_functions || exit 1
 source api_functions || exit
 
 run_dir=$1 && shift
+reference_hla_bam=$1 && shift
+tumor_hla_bam=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
+if [[ -z "${run_dir}" || -z "${reference_hla_bam}" || -z "${tumor_hla_bam}" ]]; then
     error "Missing input parameters. Exiting";
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-work_dir="$(locate_actin_lilac_work_dir)/${tumor_sample}"
+lilac_jar=$(locate_pilot_lilac)
 
+ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
 output_dir="${run_dir}/lilac_pilot"
 create_or_cleanup_dir ${output_dir}
 
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 
-java -jar /data/tools/lilac/pilot/lilac.jar \
+java -jar /${lilac_jar} \
     -sample ${tumor_sample} \
-    -resource_dir /data/experiments/lilac/resources \
-    -ref_genome /data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta \
-    -reference_bam ${work_dir}/${ref_sample}.hla.bam \
-    -tumor_bam ${work_dir}/${tumor_sample}.hla.bam \
-    -output_dir ${output_dir} \
+    -resource_dir "/data/experiments/lilac/resources" \
+    -ref_genome $(ref_genome_fasta) \
+    -reference_bam ${reference_hla_bam} \
+    -tumor_bam ${tumor_hla_bam} \
     -gene_copy_number_file ${purple_gene_copy_number_tsv} \
     -somatic_variants_file ${purple_somatic_variant_vcf} \
+    -output_dir ${output_dir} \
     "$@"

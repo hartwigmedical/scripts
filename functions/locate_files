@@ -12,6 +12,10 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
+locate_pilot_lilac() {
+    echo "/data/tools/lilac/pilot/lilac.jar"
+}
+
 locate_pilot_actin() {
     echo "/data/tools/actin/pilot/actin.jar"
 }

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+rna_bam=$(locate_rna_bam ${run_dir})
+
+if [[ -f "${rna_bam}" ]]; then
+    tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+    rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
+
+    rna_hla_bam="${rna_bam_directory}/${tumor_sample}.hla.bam"
+    produce_hla_slicerd_bam ${rna_bam} ${rna_hla_bam}
+fi

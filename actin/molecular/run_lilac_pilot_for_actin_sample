@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+
+reference_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${reference_sample}.hla.bam"
+tumor_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${tumor_sample}.hla.bam"
+
+run_lilac_pilot ${run_dir} ${reference_hla_bam} ${tumor_hla_bam}
