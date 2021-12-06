@@ -15,7 +15,7 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-work_dir="/data/experiments/lilac/actin/${tumor_sample}"
+work_dir="$(locate_actin_lilac_work_dir)/${tumor_sample}"
 
 output_dir="${run_dir}/lilac_pilot"
 create_or_cleanup_dir ${output_dir}

@@ -48,8 +48,8 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v1.6 and reload database
-run_protect_prod ${run_dir}
+# Rerun protect to bump to v1.7 and reload database
+run_protect_research ${run_dir}
 load_protect_data_prod ${run_dir}
 
 # Run standard ORANGE in production

@@ -7,7 +7,7 @@ base_path="/data"
 ############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
-    echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
+    echo "/data/dbs/nextcloud_credentials/nextcloud_credentials"
 }
 
 ##################################### JARS #####################################
@@ -63,10 +63,6 @@ locate_pilot_linx() {
 
 locate_prod_sigs() {
     echo "/data/tools/sigs/1.0/sigs.jar"
-}
-
-locate_prod_sigs_ds() {
-    echo ${base_path}/tools/sigs_v1.0/sigs.jar
 }
 
 locate_pilot_sigs() {
@@ -221,6 +217,10 @@ locate_actin_minimal_molecular_json() {
 
 locate_actin_rna_sample_metadata_file() {
     echo "/data/experiments/rna/samples/actn_sample_ids.csv"
+}
+
+locate_actin_lilac_work_dir() {
+    echo "/data/experiments/lilac/actin"
 }
 
 ################################# ACTIN Data ###################################
