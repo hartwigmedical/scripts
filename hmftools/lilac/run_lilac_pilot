@@ -11,7 +11,7 @@ reference_dna_hla_bam=$1 && shift
 tumor_dna_hla_bam=$1 && shift
 tumor_rna_hla_bam=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${reference_dna_hla_bam}" || -z "${tumor_dna_hla_bam}" || -z "${tumor_rna_hla_bam}" ]]; then
+if [[ -z "${run_dir}" || -z "${reference_dna_hla_bam}" || -z "${tumor_dna_hla_bam}" ]]; then
     error "Missing input parameters. Exiting";
 fi
 
