@@ -17,5 +17,5 @@ if [[ -f "${rna_bam}" ]]; then
     rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
 
     rna_hla_bam="${rna_bam_directory}/${tumor_sample}.hla.bam"
-    produce_hla_slicerd_bam ${rna_bam} ${rna_hla_bam}
+    produce_hla_sliced_bam ${rna_bam} ${rna_hla_bam}
 fi
