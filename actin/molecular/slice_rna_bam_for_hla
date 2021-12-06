@@ -13,6 +13,7 @@ fi
 rna_bam=$(locate_rna_bam ${run_dir})
 
 if [[ -f "${rna_bam}" ]]; then
+    info "Slicing RNA bam ${rna_bam} for HLA regions"
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
 

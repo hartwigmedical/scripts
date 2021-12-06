@@ -13,7 +13,8 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-reference_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${reference_sample}.hla.bam"
-tumor_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${tumor_sample}.hla.bam"
+reference_dna_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${reference_sample}.hla.bam"
+tumor_dna_hla_bam="$(locate_actin_lilac_work_dir)/${tumor_sample}/${tumor_sample}.hla.bam"
+rna_hla_bam=$(locate_rna_hla_bam ${run_dir})
 
-run_lilac_pilot ${run_dir} ${reference_hla_bam} ${tumor_hla_bam}
+run_lilac_pilot ${run_dir} ${reference_dna_hla_bam} ${tumor_dna_hla_bam} ${rna_hla_bam}

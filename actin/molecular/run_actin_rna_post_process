@@ -23,5 +23,7 @@ if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     annotate_somatic_variants_with_rna ${run_dir}
     load_rna_annotated_somatic_variants_to_prod ${run_dir}
 
+    slice_rna_bam_for_hla ${run_dir}
+
     # TODO Also annotate germline VCF but that one is waiting on a purple upgrade.
 fi

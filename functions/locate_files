@@ -310,6 +310,15 @@ locate_rna_bam() {
     echo ${bam}
 }
 
+locate_rna_hla_bam() {
+    local run_dir=$1 && shift
+
+    local bam_directory=$(locate_rna_bam_directory ${run_dir})
+    local bam=$(find -L "${bam_directory}/" -type f -name "*.hla.bam")
+
+    echo ${bam}
+}
+
 locate_rna_sage_directory() {
     local run_dir=$1 && shift
 
