@@ -10,7 +10,6 @@ info "Syncing tools from GCP"
 gsutil -m rsync -r gs://common-tools /data/tools
 chmod +x /data/tools/kraken2/2.1.0/kraken2
 chmod +x /data/tools/kraken2/2.1.0/classify
-chmod +x /data/tools/repeatmasker/4.1.1/RepeatMasker
 chmod +x /data/tools/bcftools/1.3.1/bcftools
 chmod +x /data/tools/bcftools/1.9/bcftools
 chmod +x /data/tools/snpEff/4.3s/snpEff.sh
@@ -19,15 +18,6 @@ chmod +x /data/tools/sambamba/0.6.5/sambamba
 chmod +x /data/tools/sambamba/0.6.8/sambamba
 chmod +x /data/tools/chord/60.02_1.03/extractSigPredictHRD.R
 chmod +x /data/tools/chord/2.00_1.14/extractSigPredictHRD.R
-chmod +x /data/tools/gridss/2.7.2/gridss.sh
-chmod +x /data/tools/gridss/2.8.3/gridss.sh
-chmod +x /data/tools/gridss/2.9.3/gridss.sh
-chmod +x /data/tools/gridss/2.9.4/gridss.sh
-chmod +x /data/tools/gridss/2.11.1/gridss.sh
-chmod +x /data/tools/gridss/2.11.1/gridsstools
-chmod +x /data/tools/gridss/2.11.1/virusbreakend.sh
-chmod +x /data/tools/gridss/2.11.1/gridss_annotate_vcf_kraken2.sh
-chmod +x /data/tools/gridss/2.11.1/gridss_annotate_vcf_repeatmasker.sh
 chmod +x /data/tools/samtools/1.9/samtools
 chmod +x /data/tools/samtools/1.10/samtools
 chmod +x /data/tools/bcl2fastq/2.20.0.422/bcl2fastq
