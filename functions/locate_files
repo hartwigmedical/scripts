@@ -72,7 +72,7 @@ locate_pilot_sigs() {
 }
 
 locate_prod_orange() {
-    echo "/data/tools/orange/1.4/orange.jar"
+    echo "/data/tools/orange/1.5/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -140,7 +140,7 @@ locate_prod_protect() {
 }
 
 locate_research_protect() {
-    echo "/data/tools/protect/1.7/protect.jar"
+    echo "/data/tools/protect/1.8/protect.jar"
 }
 
 locate_pilot_protect() {
