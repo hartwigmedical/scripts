@@ -11,7 +11,7 @@ main() {
     fraction=$1 && shift
     seed=$1 && shift
 
-    script_name=$(basename $"0")
+    script_name=$(basename "$0")
 
     if [[ -z ${seqtk_path} ]] || [[ -z "${source_dir}" ]] || [[ -z "${output_dir}" ]] || [[ -z "${fraction}" ]] || [[ -z "${seed}" ]]; then
         die "Not all input parameters to ${script_name}. Should include seqtk_path, source_dir, output_dir, fraction and seed. Exiting"
