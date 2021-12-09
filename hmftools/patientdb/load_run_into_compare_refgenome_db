@@ -5,12 +5,15 @@ source message_functions || exit 1
 source database_functions || exit 1
 
 run_dir=$1 && shift
+patient_db_jar=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-patient_db_jar=$(locate_prod_patient_db)
+if [[ -n ${patient_db_jar} ]]; then
+  patient_db_jar=$(locate_prod_patient_db)
+fi
 database="compare_refgenome"
 credentials=$(prod_writer_sql_credentials)
 
