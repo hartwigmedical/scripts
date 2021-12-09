@@ -12,7 +12,7 @@ print_usage(){
     echo "   -n  truth_run  Path to directory of new run to be verified"
     echo "   -f  force      Continue if output directory already exists"
     echo " Example:"
-    echo "   $(basename $0) -o /path/to/p5_verification_v5.25 -t /path/to/211029_COLO829v003_v5.24 /path/to/YYMMDD_COLO829v003_v5.25"
+    echo "   $(basename $0) -o /path/to/p5_verification_v5.25 -t /path/to/211029_COLO829v003_v5.24 -n /path/to/YYMMDD_COLO829v003_v5.25"
     echo "-----"
     exit 1
 }
