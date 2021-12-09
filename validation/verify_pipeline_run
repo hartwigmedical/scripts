@@ -135,9 +135,9 @@ main() {
 
     info "TODO:"
     info "  1. Inspect all log files in ${logs_dir}"
-    info "  3. Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
-    info "  4. Execute sql queries (nohup ${after_db_load_job} > ${logs_dir}/sql_verification_after_load.log &)"
-    info "  5. Inspect all SQL log files in logs dir (ls ${logs_dir})"
+    info "  2. Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
+    info "  3. Execute sql queries (nohup ${after_db_load_job} > ${logs_dir}/sql_verification_after_load.log &)"
+    info "  4. Inspect all SQL log files in logs dir (ls ${logs_dir})"
     info "Finished with $(basename $0)"
 }
 
