@@ -11,7 +11,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-if [[ -n ${patient_db_jar} ]]; then
+if [[ -z ${patient_db_jar} ]]; then
   patient_db_jar=$(locate_prod_patient_db)
 fi
 database="compare_refgenome"
