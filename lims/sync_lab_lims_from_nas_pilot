@@ -59,7 +59,9 @@ main() {
     done
 
     info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
-    echo "${LAMA_FILES[@]}" | tr " " "\n" | gsutil -m cp -I "${DAY_DIR}"
+    for lama_json_file in "${LAMA_FILES[@]}"; do
+      gsutil cp "$lama_json_file" "${DAY_DIR}" || die "Unable to copy file ($lama_json_file)"
+    done
 
     info "Converting input files to text formats"
     excel_sheet_to_tsv "${for001_source}" "${for001_subm_txt}" "1" "5"
