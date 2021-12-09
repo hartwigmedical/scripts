@@ -15,6 +15,9 @@ if [[ -n ${patient_db_jar} ]]; then
   patient_db_jar=$(locate_prod_patient_db)
 fi
 database="compare_refgenome"
+
+info "Loading in '${run_dir}' into ${database} db with jar '${patient_db_jar}'"
+
 credentials=$(prod_writer_sql_credentials)
 
 do_load_run_into_db "${run_dir}" "${patient_db_jar}" "${database}" "${credentials}"
