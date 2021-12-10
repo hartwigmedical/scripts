@@ -37,7 +37,7 @@ main() {
 
       # retrieve run info from API
       if [[ "${first_arg}" == "${ID_ARG}" ]]; then
-          run_json=$(hmf_api_get "runs/${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API by id (${set_name})"
+          run_json=$(hmf_api_get "runs/${set_name}") || die "Unable to retrieve run info from API by id (${set_name})"
       else
           run_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
       fi
