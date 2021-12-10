@@ -91,6 +91,7 @@ main() {
         "diff_somatic_variants.sql"
         "diff_germline_variants.sql"
         "diff_sv.sql"
+        "diff_protect.sql"
     )
     for job_file_name in "${script_jobs[@]}" "${sql_jobs[@]}"; do
         copy_file "${jobs_source_path}/${job_file_name}" "${jobs_dir}"
