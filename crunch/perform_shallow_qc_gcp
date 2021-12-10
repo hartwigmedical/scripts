@@ -46,7 +46,7 @@ get_add_yield() {
     # 1-exc=1-0.217=0.783=783/1000=(1000-217)/1000=(exc_decimals_factor-exc_decimals)/exc_decimals_factor
     #
     # We can then write
-    # current_yield=(((exc_decimals_factor - exc_decimals) / exc_decimals_factor to write) * reads * BASES_PER_READ / BASES_PER_GBASE)
+    # current_yield=(((exc_decimals_factor - exc_decimals) / exc_decimals_factor) * reads * BASES_PER_READ / BASES_PER_GBASE)
     # To avoid the multiple roundings (from the divisions), the final formula is as follows:
     # current_yield=((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE)
     # Note that the result is rounded down to an integer.
