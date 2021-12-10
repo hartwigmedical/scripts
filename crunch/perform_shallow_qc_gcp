@@ -9,17 +9,123 @@ BASES_PER_READ=150
 BASES_PER_GBASE=1000000000
 
 ADD_YIELD_NOT_APPLICABLE="NA"
+NA="na"
 REF_COV_MINIMUM_REQUIREMENT=26
 
-set_names=("$@")
+main() {
+  set_names=("$@")
 
-if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
-    echo "---"
-    echo " Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
-    echo "    Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
-    echo "---"
-    exit 1
-fi
+  if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+      echo "---"
+      echo " Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
+      echo "    Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
+      echo "---"
+      exit 1
+  fi
+
+  echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+  \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
+
+  for set_name in "${set_names[@]}"; do
+      # retrieve run info from API
+      run_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
+
+      print_shallow_qc_for_run "${run_json}" || die "Could not print shallow qc for run for set '${set_name}'"
+  done
+}
+
+print_shallow_qc_for_run() {
+    local run_json=$1 && shift
+
+    if [[ -z ${run_json} ]]; then
+        die "Not enough arguments for ${FUNCNAME[0]}: ${run_json}"
+    fi
+
+    local ref_sample=${NA}; local ref_cov=${NA}; local ref_rds=${NA}; local ref_map=${NA}; local ref_exc=${NA}
+    local ref_dup=${NA}; local tum_sample=${NA}; local tum_cov=${NA}; local tum_rds=${NA}; local tum_map=${NA}
+    local tum_exc=${NA}; local tum_dup=${NA}; local purity=${NA}; local status=${NA}; local qc_stat=${NA}
+    local amb_qc=${NA}; local pur_vsn=${NA}; local pip_vsn=${NA}; local set_name="${NA}"
+
+    pip_vsn=$(jq -r '.version' <<< "${run_json}")
+    bucket=$(jq -r '.bucket' <<< "${run_json}")
+    ref_sample=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    tum_sample=$(jq -r '.set.tumor_sample' <<< "${run_json}")
+    set_name=$(jq -r '.set.name' <<< "${run_json}")
+    run_url="gs://${bucket}/${set_name}"
+
+    amb_dir="${run_url}/amber"
+    pur_dir="${run_url}/purple"
+    ref_dir="${run_url}/${ref_sample}"
+    tum_dir="${run_url}/${tum_sample}"
+
+    aqc_file="${amb_dir}/${tum_sample}.amber.qc"
+    vsn_file="${pur_dir}/purple.version"
+    pqc_file="${pur_dir}/${tum_sample}.purple.qc"
+    ppu_file="${pur_dir}/${tum_sample}.purple.purity.tsv"
+
+    wgs_file_r="${ref_dir}/bam_metrics/${ref_sample}.wgsmetrics"
+    wgs_file_t="${tum_dir}/bam_metrics/${tum_sample}.wgsmetrics"
+    flg_file_r="${ref_dir}/flagstat/${ref_sample}.flagstat"
+    flg_file_t="${tum_dir}/flagstat/${tum_sample}.flagstat"
+
+    ## gather file contents
+    wgs_file_r_content=$(gsutil cat "${wgs_file_r}" | grep -A1 GENOME_T)
+    wgs_file_t_content=$(gsutil cat "${wgs_file_t}" | grep -A1 GENOME_T)
+    flg_file_r_content=$(gsutil cat "${flg_file_r}")
+    flg_file_t_content=$(gsutil cat "${flg_file_t}")
+
+    aqc_file_content=$(gsutil cat "${aqc_file}")
+    vsn_file_content=$(gsutil cat "${vsn_file}")
+    ppu_file_content=$(gsutil cat "${ppu_file}")
+    pqc_file_content=$(gsutil cat "${pqc_file}")
+
+    ## gather all metrics
+    head=$(echo "${wgs_file_r_content}" | grep GENOME_T)
+    ref_val=$(echo "${wgs_file_r_content}" | tail -1)
+    tum_val=$(echo "${wgs_file_t_content}" | tail -1)
+    ref_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${ref_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
+    tum_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${tum_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
+
+    ref_cov=$(echo "${ref_jsn}" | jq -r '.MEAN_COVERAGE')
+    ref_exc=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_TOTAL')
+    ref_dup=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_DUPE')
+    tum_cov=$(echo "${tum_jsn}" | jq -r '.MEAN_COVERAGE')
+    tum_exc=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_TOTAL')
+    tum_dup=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_DUPE')
+
+    ## gather Flagstat info
+    ref_rds=$(echo "${flg_file_r_content}" | grep 'total ('  | cut -d ' ' -f1)
+    tum_rds=$(echo "${flg_file_t_content}" | grep 'total ('  | cut -d ' ' -f1)
+    ref_map=$(echo "${flg_file_r_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
+    tum_map=$(echo "${flg_file_t_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
+
+    ## gather Amber info
+    amb_qc=$(echo "${aqc_file_content}" | grep QCStatus | cut -f2)
+
+    ## gather Purple info
+    pur_vsn=$(echo "${vsn_file_content}" | grep version | cut -d"=" -f2)
+    purity=$(echo "${ppu_file_content}" | tail -1 | cut -f1)
+    status=$(echo "${ppu_file_content}" | tail -1 | cut -f7)
+    qc_stat=$(echo "${pqc_file_content}" | grep QCStatus | cut -f2)
+
+    ## calculate yield to add in GBase
+    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}") \
+            || die "Could not determine REF yield to add for run for set ${set_name}"
+    if [[ ${ref_cov%%.*} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
+        # Already has enough yield
+        ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
+    fi
+    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}") \
+            || die "Could not determine TUM yield to add for run for set ${set_name}"
+
+    ## output
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "${ref_add_yield}" "${tum_add_yield}" \
+        "${set_name}" "${tum_sample}" "${qc_stat}" "${purity}" \
+        "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
+        "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
+        "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}"
+}
 
 get_add_yield() {
     local target_yield=$1 && shift
@@ -62,94 +168,4 @@ get_add_yield() {
     echo "${add_yield}"
 }
 
-na="na"
-
-echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
-\tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
-
-for set_name in "${set_names[@]}"; do
-    ## init variables
-    ref_sample=${na}; ref_cov=${na}; ref_rds=${na}; ref_map=${na}; ref_exc=${na}; ref_dup=${na}
-    tum_sample=${na}; tum_cov=${na}; tum_rds=${na}; tum_map=${na}; tum_exc=${na}; tum_dup=${na}
-    purity=${na}; status=${na}; qc_stat=${na}; amb_qc=${na}; pur_vsn=${na}; pip_vsn=${na}
-
-    # retrieve run info from API
-    run=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
-
-    pip_vsn=$(jq -r '.version' <<< "${run}")
-    bucket=$(jq -r '.bucket' <<< "${run}")
-    ref_sample=$(jq -r '.set.ref_sample' <<< "${run}")
-    tum_sample=$(jq -r '.set.tumor_sample' <<< "${run}")
-    run_url="gs://${bucket}/${set_name}"
-
-    amb_dir="${run_url}/amber"
-    pur_dir="${run_url}/purple"
-    ref_dir="${run_url}/${ref_sample}"
-    tum_dir="${run_url}/${tum_sample}"
-
-    aqc_file="${amb_dir}/${tum_sample}.amber.qc"
-    vsn_file="${pur_dir}/purple.version"
-    pqc_file="${pur_dir}/${tum_sample}.purple.qc"
-    ppu_file="${pur_dir}/${tum_sample}.purple.purity.tsv"
-
-    wgs_file_r="${ref_dir}/bam_metrics/${ref_sample}.wgsmetrics"
-    wgs_file_t="${tum_dir}/bam_metrics/${tum_sample}.wgsmetrics"
-    flg_file_r="${ref_dir}/flagstat/${ref_sample}.flagstat"
-    flg_file_t="${tum_dir}/flagstat/${tum_sample}.flagstat"
-
-    ## gather file contents
-    wgs_file_r_content=$(gsutil cat "${wgs_file_r}" | grep -A1 GENOME_T)
-    wgs_file_t_content=$(gsutil cat "${wgs_file_t}" | grep -A1 GENOME_T)
-    flg_file_r_content=$(gsutil cat "${flg_file_r}")
-    flg_file_t_content=$(gsutil cat "${flg_file_t}")
-
-    aqc_file_content=$(gsutil cat "${aqc_file}")
-    vsn_file_content=$(gsutil cat "${vsn_file}")
-    ppu_file_content=$(gsutil cat "${ppu_file}")
-    pqc_file_content=$(gsutil cat "${pqc_file}")
-
-    ## gather all metrics
-    head=$(echo "${wgs_file_r_content}" | grep GENOME_T)
-    ref_val=$(echo "${wgs_file_r_content}" | tail -1)
-    tum_val=$(echo "${wgs_file_t_content}" | tail -1)
-    ref_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${ref_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
-    tum_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${tum_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
-  
-    ref_cov=$(echo "${ref_jsn}" | jq -r '.MEAN_COVERAGE')
-    ref_exc=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_TOTAL')
-    ref_dup=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_DUPE')
-    tum_cov=$(echo "${tum_jsn}" | jq -r '.MEAN_COVERAGE')
-    tum_exc=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_TOTAL')
-    tum_dup=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_DUPE')
-  
-    ## gather Flagstat info
-    ref_rds=$(echo "${flg_file_r_content}" | grep 'total ('  | cut -d ' ' -f1)
-    tum_rds=$(echo "${flg_file_t_content}" | grep 'total ('  | cut -d ' ' -f1)
-    ref_map=$(echo "${flg_file_r_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
-    tum_map=$(echo "${flg_file_t_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
- 
-    ## gather Amber info
-    amb_qc=$(echo "${aqc_file_content}" | grep QCStatus | cut -f2)
-  
-    ## gather Purple info
-    pur_vsn=$(echo "${vsn_file_content}" | grep version | cut -d"=" -f2)
-    purity=$(echo "${ppu_file_content}" | tail -1 | cut -f1)
-    status=$(echo "${ppu_file_content}" | tail -1 | cut -f7)
-    qc_stat=$(echo "${pqc_file_content}" | grep QCStatus | cut -f2)
-
-    ## calculate yield to add in GBase
-    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}")
-    if [[ ${ref_cov%%.*} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
-        # Already has enough yield
-        ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
-    fi
-    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}")
-
-    ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-        "${ref_add_yield}" "${tum_add_yield}" \
-        "${set_name}" "${tum_sample}" "${qc_stat}" "${purity}" \
-        "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
-        "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
-        "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}"
-done
+main "$@"
