@@ -2,18 +2,20 @@
 
 source message_functions || exit 1
 
-base_path="/data"
-
 ############################# Nextcloud Credentials ############################
 
 locate_nextcloud_upload_credentials() {
-    echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
+    echo "/data/dbs/nextcloud_credentials/nextcloud_credentials"
 }
 
 ##################################### JARS #####################################
 
+locate_pilot_lilac() {
+    echo "/data/tools/lilac/pilot/lilac.jar"
+}
+
 locate_pilot_actin() {
-    echo "/data/tools/actin/pilot/actin.jar"
+    echo "/data/actin/pilot_jar/actin.jar"
 }
 
 locate_pilot_isofox() {
@@ -65,16 +67,12 @@ locate_prod_sigs() {
     echo "/data/tools/sigs/1.0/sigs.jar"
 }
 
-locate_prod_sigs_ds() {
-    echo ${base_path}/tools/sigs_v1.0/sigs.jar
-}
-
 locate_pilot_sigs() {
     echo "/data/tools/sigs/pilot/sigs.jar"
 }
 
 locate_prod_orange() {
-    echo "/data/tools/orange/1.4/orange.jar"
+    echo "/data/tools/orange/1.5/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -94,15 +92,15 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_patient_reporter_ds() {
-    echo "${base_path}/tools/patientreporter/7.23/patient-reporter.jar"
+    echo "/data/tools/patientreporter/7.23/patient-reporter.jar"
 }
 
 locate_prod_patient_reporter_gcp() {
-    echo "${base_path}/tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar"
+    echo "/data/tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar"
 }
 
 locate_pilot_patient_reporter_ds() {
-    echo "${base_path}/tools/patientreporter/pilot/patient-reporter.jar"
+    echo "/data/tools/patientreporter/pilot/patient-reporter.jar"
 }
 
 locate_prod_vicc_importer() {
@@ -141,6 +139,10 @@ locate_prod_protect() {
     echo "/data/tools/protect/1.6/protect.jar"
 }
 
+locate_research_protect() {
+    echo "/data/tools/protect/1.8/protect.jar"
+}
+
 locate_pilot_protect() {
     echo "/data/tools/protect/pilot/protect.jar"
 }
@@ -170,7 +172,7 @@ locate_dsync() {
 }
 
 locate_run_contexts_writer() {
-    echo "/data/tools/run_contexts_writer/clinical-db-loader.jar"
+    echo "/data/tools/clinical-db-loader/1.0/clinical-db-loader.jar"
 }
 
 ############################# PIPELINE VERSION #################################
@@ -215,8 +217,16 @@ locate_actin_minimal_molecular_json() {
     echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
 }
 
+locate_cuppa_ref_dir_dna_rna() {
+    echo "/data/resources/custom/actin/cuppa_ref"
+}
+
 locate_actin_rna_sample_metadata_file() {
     echo "/data/experiments/rna/samples/actn_sample_ids.csv"
+}
+
+locate_actin_lilac_hla_bam_dir() {
+    echo "/data/experiments/lilac/actin"
 }
 
 ################################# ACTIN Data ###################################
@@ -302,6 +312,15 @@ locate_rna_bam() {
     echo ${bam}
 }
 
+locate_rna_hla_bam() {
+    local run_dir=$1 && shift
+
+    local bam_directory=$(locate_rna_bam_directory ${run_dir})
+    local bam=$(find -L "${bam_directory}/" -type f -name "*.hla.bam")
+
+    echo ${bam}
+}
+
 locate_rna_sage_directory() {
     local run_dir=$1 && shift
 
@@ -336,12 +355,12 @@ locate_amber_snpcheck_37_vcf() {
     echo "/data/resources/public/amber/37/Amber.snpcheck.37.vcf"
 }
 
-locate_cuppa_ref_dir_dna() {
-    echo "/data/resources/private/cuppa"
+locate_amber_snpcheck_38_vcf() {
+    echo "/data/resources/public/amber/38/Amber.snpcheck.38.vcf"
 }
 
-locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/custom/actin/cuppa_ref"
+locate_cuppa_ref_dir_dna() {
+    echo "/data/resources/private/cuppa"
 }
 
 locate_cohort_mapping_tsv() {
@@ -373,7 +392,7 @@ locate_known_fusion_data_38_csv() {
 }
 
 locate_peach_resource_dir() {
-    echo "${base_path}/dbs/peach"
+    echo "/data/dbs/peach"
 }
 
 
@@ -449,21 +468,13 @@ locate_ckb_filter_tsv_empty() {
 
 locate_repo_dir() {
     local repo_name=$1 && shift
-    echo "${base_path}/repos/${repo_name}"
+    echo "/data/repos/${repo_name}"
 }
 
 ################################# REF GENOME ###################################
 
-locate_ref_genome_37_fasta_file_ds() {
-    echo "${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
-}
-
 locate_ref_genome_37_fasta_file() {
     echo "/data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
-}
-
-locate_ref_genome_38_fasta_file_ds() {
-    echo "${base_path}/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 }
 
 locate_ref_genome_38_fasta_file() {
@@ -1077,7 +1088,7 @@ locate_virus_annotation_tsv_pilot() {
     local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
     if [[ -z "${virus_annotation_tsv}" ]]; then
         warn "Unable to locate pilot virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="${base_path}/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        virus_annotation_tsv="/data/dbs/virus_interpreter/empty.virus.annotated.tsv"
     fi
     echo ${virus_annotation_tsv}
 }
@@ -1087,7 +1098,7 @@ locate_virus_annotation_tsv() {
     local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
     if [[ -z "${virus_annotation_tsv}" ]]; then
         warn "Unable to locate virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="${base_path}/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        virus_annotation_tsv="/data/dbs/virus_interpreter/empty.virus.annotated.tsv"
     fi
     echo ${virus_annotation_tsv}
 }
@@ -1209,8 +1220,6 @@ locate_reporting_db_tsv_pilot() {
     fi
     echo ${reporting_db_tsv}
 }
-
-##################################### LIMS #####################################
 
 locate_reporting_db_tsv() {
     local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv

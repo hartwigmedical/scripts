@@ -11,5 +11,5 @@ fi
 info "Copying ${patient_reporter_jar} to gs://common-tools/"
 gsutil cp ${patient_reporter_jar} gs://common-tools/patientreporter/pilot/patient-reporter.jar
 
-info "Copying ${patient_reporter_jar} to data-vm-prod-1"
-gcloud compute scp ${patient_reporter_jar} data-vm-prod-1:/home/lieke/tmp/patient-reporter.jar
+info "Copying ${patient_reporter_jar} to data-vm-prod-2"
+gcloud compute scp ${patient_reporter_jar} data-vm-prod-2:/home/lieke/tmp/patient-reporter.jar

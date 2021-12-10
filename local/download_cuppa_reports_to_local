@@ -5,4 +5,4 @@ source message_functions || exit 1
 location=$1 && shift
 
 info "Copying file to local "
-gcloud compute scp data-vm-prod-1:${location}/*_cup_report.pdf ${HOME}/hmf/tmp
+gcloud compute scp data-vm-prod-2:${location}/*_cup_report.pdf ${HOME}/hmf/tmp

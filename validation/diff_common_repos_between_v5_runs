@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2126
+
+source message_functions || exit 1
+
+base_run_path=$1
+test_run_path=$2
+
+if [[ "$#" -ne 2 ]]; then
+    {
+    echo "-----"
+    echo " Descr: Compares the common-resources-public and common-resources-private tags of two pipeline runs"
+    echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run"
+    echo " Examp: $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9"
+    echo "        $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 >out.log 2>out.err"
+    echo "-----"
+    } > /dev/stderr
+    exit 1
+fi
+
+PUBLIC_RESOURCES_REPO_PATH="/data/resources/public"
+PRIVATE_RESOURCES_REPO_PATH="/data/resources/private"
+
+base_run_path=$(readlink -f "${base_run_path}")
+test_run_path=$(readlink -f "${test_run_path}")
+
+base_pip_vsn_file="${base_run_path}/pipeline.version"
+test_pip_vsn_file="${test_run_path}/pipeline.version"
+
+base_log_file="${base_run_path}/run.log"
+test_log_file="${test_run_path}/run.log"
+
+main () {
+    die_unless_dir_exists "${base_run_path}"
+    die_unless_dir_exists "${test_run_path}"
+
+    die_unless_file_exists "${base_pip_vsn_file}"
+    die_unless_file_exists "${test_pip_vsn_file}"
+    die_unless_file_exists "${base_log_file}"
+    die_unless_file_exists "${test_log_file}"
+
+    base_pip_vsn=$(cat "${base_pip_vsn_file}")
+    test_pip_vsn=$(cat "${test_pip_vsn_file}")
+
+    base_img_tag_string=$( grep imageName "${base_log_file}" | grep -Po "pipeline5-.+-private")
+    test_img_tag_string=$( grep imageName "${test_log_file}" | grep -Po "pipeline5-.+-private")
+
+    [[ -n "${base_img_tag_string}" ]] || die "Unable to parse out the imageName from file $base_log_file"
+    [[ -n "${test_img_tag_string}" ]] || die "Unable to parse out the imageName from file $test_log_file"
+
+    print_header "Extracting repo tags from image strings"
+    base_public_tag=$(extract_tag "${base_img_tag_string}" "public")
+    base_private_tag=$(extract_tag "${base_img_tag_string}" "private")
+    test_public_tag=$(extract_tag "${test_img_tag_string}" "public")
+    test_private_tag=$(extract_tag "${test_img_tag_string}" "private")
+
+    [[ -n "${base_public_tag}" ]] || die "Somehow unable to extract base public tag (from $base_log_file)"
+    [[ -n "${base_private_tag}" ]] || die "Somehow unable to extract base private tag (from $base_log_file)"
+    [[ -n "${test_public_tag}" ]] || die "Somehow unable to extract test public tag (from $base_log_file)"
+    [[ -n "${test_private_tag}" ]] || die "Somehow unable to extract test private tag (from $base_log_file)"
+
+    print_header "Settings"
+    info "  BASE DIR: ${base_run_path}"
+    info "  TEST DIR: ${test_run_path}"
+    info "  BASE pipeline version: ${base_pip_vsn}"
+    info "  TEST pipeline version: ${test_pip_vsn}"
+    info "  BASE image tag: ${base_img_tag_string}"
+    info "  TEST image tag: ${test_img_tag_string}"
+    info "  BASE public tag: ${base_public_tag}"
+    info "  TEST public tag: ${test_public_tag}"
+    info "  BASE private tag: ${base_private_tag}"
+    info "  TEST private tag: ${test_private_tag}"
+
+    print_header "PUBLIC REPO check"
+    diff_repo_by_tags "$PUBLIC_RESOURCES_REPO_PATH" "${base_public_tag}" "${test_public_tag}"
+
+    print_header "PRIVATE REPO check"
+    diff_repo_by_tags "$PRIVATE_RESOURCES_REPO_PATH" "${base_private_tag}" "${test_private_tag}"
+
+    info "Finished with $(basename "$0")"
+}
+
+diff_repo_by_tags () {
+    local repo_path=$1 && shift
+    local tag1=$1 && shift
+    local tag2=$1 && shift
+
+    tag1_count=$(git -C "${repo_path}" tag | grep "$tag1" | wc -l)
+    tag2_count=$(git -C "${repo_path}" tag | grep "$tag2" | wc -l)
+
+    [[ $tag2_count -eq 1 ]] || die "  Tag ($tag2) not found ($repo_path): unable to diff"
+    [[ $tag1_count -eq 1 ]] || die "  Tag ($tag1) not found ($repo_path): unable to diff"
+
+    info "Running diff for ${repo_path}..."
+    git -C "${repo_path}" diff --stat "$tag1" "$tag2"
+
+}
+
+extract_tag () {
+    local string=$1 && shift
+    local type=$1 && shift
+    local img_tag_regex="^(pipeline5-[0-9]+-[0-9]+)-([0-9]+)-([0-9]+)-private$"
+
+    if [[ "${string}" =~ ${img_tag_regex} ]]; then
+        pipeline_vsn="${BASH_REMATCH[1]}"
+        public_date="${BASH_REMATCH[2]}"
+        if [[ $type == "public" ]]; then
+            echo "${pipeline_vsn}-${public_date}"
+        elif [[ $type == "private" ]]; then
+            # complete string is the private tag
+            echo "${string}"
+        else
+            die "Unknown type provided: should not happen (${type})"
+            return 1
+        fi
+    else
+        warn "Unable to parse out $type tag from string (${string})"
+        return 1
+    fi
+}
+
+die_unless_dir_exists () {
+    dir_path=$1 && shift
+    [[ -d "${dir_path}" ]] || die "Directory not found (${dir_path})"
+}
+
+die_unless_file_exists () {
+    file_path=$1 && shift
+    [[ -f "${file_path}" ]] || die "File not found (${file_path})"
+}
+
+print_header () {
+    info "===== $1 ====="
+}
+
+main

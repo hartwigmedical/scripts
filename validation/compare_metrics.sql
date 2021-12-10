@@ -1,5 +1,4 @@
-## compare metrics
-SELECT 
+SELECT
     'Truth' AS pipeline,
     sampleId,
     refMeanCoverage,
@@ -9,9 +8,9 @@ SELECT
     tumorCoverage30xPercentage,
     tumorCoverage60xPercentage
 FROM
-    reference_validation_sets.metric
+    VARIABLE_TRUTH_DB_SCHEMA.metric
 WHERE
-    sampleId = 'COLO829v003T' 
+    sampleId = 'VARIABLE_TRUTH_SAMPLE_ID'
 UNION SELECT 
     'New' AS pipeline,
     sampleId,
@@ -22,6 +21,6 @@ UNION SELECT
     tumorCoverage30xPercentage,
     tumorCoverage60xPercentage
 FROM
-    pipeline_v5_validation.metric
+    VARIABLE_NEW_DB_SCHEMA.metric
 WHERE
-    sampleId = 'COLO829v003T';
+    sampleId = 'VARIABLE_NEW_SAMPLE_ID';

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+sample=$1 && shift
+amber_dir=$1 && shift
+database_name=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+
+snp_vcf=$(find "${amber_dir}" -name "*.amber.snp.vcf.gz")
+reference_sample=$(basename "${snp_vcf}" .amber.snp.vcf.gz)
+amber_snpcheck_vcf=$(locate_amber_snpcheck_38_vcf)
+
+# Database details
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" "${database_name}")
+
+info "Loading amber data for ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp "${patient_db_jar}" com.hartwig.hmftools.patientdb.LoadAmberData \
+    -sample "${sample}" \
+    -amber_snp_vcf "${amber_dir}/${reference_sample}.amber.snp.vcf.gz" \
+    -snpcheck_vcf "${amber_snpcheck_vcf}" \
+    -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}" \
+    "$@"

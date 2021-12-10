@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+db_name=$1 && shift
+
+# Resources
+database_sql=/data/resources/custom/patientdb/generate_database.sql
+
+# Database details
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
+
+info "Rebuilding CKB db '${db_name}' on '${db_host} using ${database_sql}"
+
+mysql ${db_name} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${database_sql}
