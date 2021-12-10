@@ -10,11 +10,11 @@ print_usage(){
     echo " Descr: Creates dir structure for verify_pipeline_run"
     echo " Usage: $script -t <truth_run_url> -n <new_run_url> [options]"
     echo "   -t  truth_run  Path to directory of truth run"
-    echo "   -n  truth_run  Path to directory of new run to be verified"
+    echo "   -n  new_run    Path to directory of new run to be verified"
     echo " Options:"
     echo "   -o  output_dir [$out_dir]"
     echo " Example:"
-    echo "   $script gs://hmf-ops-archive/path/to/COLO829v003T_524 gs://ver-bucket/path/to/COLO829v003T_525"
+    echo "   $script gs://hmf-ops-archive/path/to/COLO829v003T_524 gs://{verification-bucket}/COLO829v003T_525"
     echo "-----"
     exit 1
 }
@@ -50,12 +50,14 @@ main() {
     out_logs_dir="${out_dir}/logs"
     truth_run_name=$(basename "${truth_run_url}")
     new_run_name=$(basename "${new_run_url}")
+    truth_dir_path="${out_runs_dir}/${truth_run_name}"
+    new_dir_path="${out_runs_dir}/${new_run_name}"
     truth_metadata_file="${truth_run_url}/metadata.json"
     new_metadata_file="${new_run_url}/metadata.json"
     truth_sample=$(gsutil cat "$truth_metadata_file" | jq -r '.tumor.sampleName')
     new_sample=$(gsutil cat "$new_metadata_file" | jq -r '.tumor.sampleName')
 
-    info "Initial checks OK. Config:"
+    info "Creating setup and downloading runs:"
     info "  Out path: ${out_dir}"
     info "  Truth run: ${truth_run_name} (sample=${truth_sample})"
     info "  New run: ${new_run_name} (sample=${new_sample})"
@@ -63,12 +65,12 @@ main() {
     info "Creating directory structure and downloading runs"
     mkdir -p "${out_dir}" "${out_runs_dir}" "${out_logs_dir}" || die "Unable to create output dirs (${out_dir})"
 
-    info "Starting downloads (excluding CRAM/BAM)"
-    download_run_from_gcp "${truth_run_url}" "${out_runs_dir}" "${out_logs_dir}"
-    download_run_from_gcp "${new_run_url}" "${out_runs_dir}" "${out_logs_dir}"
+    download_run_from_gcp "${truth_run_url}" "${truth_dir_path}" "${out_logs_dir}"
+    download_run_from_gcp "${new_run_url}" "${new_dir_path}" "${out_logs_dir}"
 
-    info "Finished with downloads"
-    info "Finished with $script (next step usually: verify_pipeline_run)"
+    info "Finished with $script"
+    info "Next step: $(printf "nohup verify_pipeline_run -o %s/verification -t %s -n %s > %s/verification.log &" \
+      "${out_dir}" "${truth_dir_path}" "${new_dir_path}" "${out_dir}")"
 }
 
 check_pipeline_version_file () {
@@ -93,20 +95,19 @@ download_run_from_gcp() {
     local logs_dir=$1 && shift
 
     run_basename=$(basename "${url}")
-    local target_run_dir="${target_dir}/${run_basename}"
     local download_log="${logs_dir}/download_${run_basename}.log"
     local download_check_log="${download_log}.check"
 
-    mkdir -p "${target_run_dir}"
+    mkdir -p "${target_dir}"
 
-    info "Starting download (${url})"
+    info "Starting download excluding CRAMs/BAMs (${url})"
     gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*\.bam$|.*\.cram$" \
-        "${url}/" "${target_run_dir}/" > "${download_log}" 2>&1 \
+        "${url}/" "${target_dir}/" > "${download_log}" 2>&1 \
         || die "Something went wrong with download (pls check ${download_log})"
 
     info "Starting re-download to double check (${url})"
     gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*\.bam$|.*\.cram$" \
-        "${url}/" "${target_run_dir}/" > "${download_check_log}" 2>&1 \
+        "${url}/" "${target_dir}/" > "${download_check_log}" 2>&1 \
         || die "Something went wrong with re-download (pls check ${download_check_log})"
 
     line_count=$(grep -cvP "Building sync|Starting sync" "${download_check_log}")
