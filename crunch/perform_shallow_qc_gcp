@@ -12,13 +12,17 @@ ADD_YIELD_NOT_APPLICABLE="NA"
 NA="na"
 REF_COV_MINIMUM_REQUIREMENT=26
 
+ID_ARG="id"
+
 main() {
+  first_arg=$1
   set_names=("$@")
 
   if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
       echo "---"
-      echo " Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
-      echo "    Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
+      echo "           Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
+      echo "              Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
+      echo " Alternate usage: $(basename "$0") id <run-id> [<run-id-2> <run-id-N>]"
       echo "---"
       exit 1
   fi
@@ -27,8 +31,16 @@ main() {
   \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
   for set_name in "${set_names[@]}"; do
+      if [[ "${set_name}" == "${ID_ARG}" ]]; then
+          continue
+      fi
+
       # retrieve run info from API
-      run_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
+      if [[ "${first_arg}" == "${ID_ARG}" ]]; then
+          run_json=$(hmf_api_get "runs/${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API by id (${set_name})"
+      else
+          run_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
+      fi
 
       print_shallow_qc_for_run "${run_json}" || die "Could not print shallow qc for run for set '${set_name}'"
   done
