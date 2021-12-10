@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+BASE=/data/resources
+
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
@@ -7,6 +9,13 @@ source locate_gcp_files || exit 1
 set -e
 
 info "Syncing resources from GCP"
-gsutil -m rsync -Pr gs://common-resources /data/resources/bucket
-info "Resources synced from GCP"
+gsutil -m rsync -Pr gs://common-resources ${BASE}/bucket
+cd ${BASE}/public && git pull
+cd ${BASE}/private && git pull
 
+if [[ $(whoami) == "root" ]]; then
+    chgrp -R users ${DIR}
+    chmod -R g+w ${DIR}
+fi
+
+info "Resources synced from GCP"
