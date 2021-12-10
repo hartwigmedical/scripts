@@ -355,6 +355,10 @@ locate_amber_snpcheck_37_vcf() {
     echo "/data/resources/public/amber/37/Amber.snpcheck.37.vcf"
 }
 
+locate_amber_snpcheck_38_vcf() {
+    echo "/data/resources/public/amber/38/Amber.snpcheck.38.vcf"
+}
+
 locate_cuppa_ref_dir_dna() {
     echo "/data/resources/private/cuppa"
 }
