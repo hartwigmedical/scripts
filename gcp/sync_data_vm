@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
