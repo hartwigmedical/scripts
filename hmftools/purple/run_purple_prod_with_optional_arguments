@@ -57,7 +57,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
-    -circos /data/tools/circos/0.69.6/ \
+    -circos /data/tools/circos/0.69.6/bin/circos\
     -reference ${reference_sample} \
     -tumor ${tumor_sample} \
     -amber ${amber_dir} \
