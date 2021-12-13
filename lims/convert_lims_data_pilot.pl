@@ -223,9 +223,12 @@ sub addLamaSamplesToSamples{
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            if ($original_submission eq '') {
+            if (not defined $original_submission or $original_submission eq '') {
                 if ($analysis_type eq 'Somatic_R') {
                     sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
+                }
+                elsif (not defined $original_submission) {
+                    sayWarn("SKIPPING CORE for missing submission id (id:$isolate_barcode name:$sample_name)");
                 }
                 else{
                     sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
