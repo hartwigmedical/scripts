@@ -9,7 +9,7 @@ source locate_files || exit 1
 #  3. Connect to VPN prior to running this script
 #  4. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
 #  5. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
-#  6. Manually clean up the pods + buckets after successful running
+#  6. Manually clean up the workloads + configmaps + buckets after successful running
 
 date=$1
 
