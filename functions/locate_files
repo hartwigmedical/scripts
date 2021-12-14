@@ -10,10 +10,6 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
-locate_pilot_lilac() {
-    echo "/data/tools/lilac/pilot/lilac.jar"
-}
-
 locate_pilot_actin() {
     echo "/data/tools/actin/pilot/actin.jar"
 }
@@ -41,6 +37,14 @@ locate_prod_virus_interpreter() {
 
 locate_pilot_virus_interpreter() {
     echo "/data/tools/virus-interpreter/pilot/virus-interpreter.jar"
+}
+
+locate_prod_lilac() {
+    echo "/data/tools/lilac/1.0/lilac.jar"
+}
+
+locate_pilot_lilac() {
+    echo "/data/tools/lilac/pilot/lilac.jar"
 }
 
 locate_prod_cuppa() {
@@ -226,7 +230,7 @@ locate_actin_rna_sample_metadata_file() {
 }
 
 locate_actin_lilac_hla_bam_dir() {
-    echo "/data/experiments/lilac/actin"
+    echo "/data/actin/dna_hla_bams"
 }
 
 ################################# ACTIN Data ###################################
