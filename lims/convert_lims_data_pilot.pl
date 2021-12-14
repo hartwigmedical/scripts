@@ -658,7 +658,7 @@ sub addContactInfoToSubmissions{
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
 
-        if( exists $submission->{ 'report_contact_email' } ){
+        if( exists $submission->{ 'requester_report_contact_email' } ){
             # Skip records from the time when contact info was entered in shipments tab
             next;
         }
@@ -1081,8 +1081,8 @@ sub getFieldNameTranslations{
         "Sample_count"      => 'sample_count',
         "Lab_is_finished"   => 'has_lab_finished',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'report_contact_name',
-        "Contact_email"     => 'report_contact_email',
+        "Contact_name"      => 'requester_report_contact_name',
+        "Contact_email"     => 'requester_report_contact_email',
         "Remarks"           => 'remarks',
         "Storage_status"    => 'lab_storage_status',
     );
@@ -1098,8 +1098,8 @@ sub getFieldNameTranslations{
         "Lab_is_finished"   => 'has_lab_finished',
         "Group_ID"          => 'group_id',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'report_contact_name',
-        "Contact_email"     => 'report_contact_email',
+        "Contact_name"      => 'requester_report_contact_name',
+        "Contact_email"     => 'requester_report_contact_email',
         "Portal_contact_name" => 'data_contact_name',
         "Portal_contact_email" => 'data_contact_email',
         "Remarks"           => 'remarks',
