@@ -244,6 +244,8 @@ sub addLamaSamplesToSamples{
                 my $project_name = $submission_object->{ 'project_name' };
                 $sample_to_store{project_name} = $project_name; # Reset project name for sample (from submission)
                 $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
+                $submission_object->{requester_report_contact_name} = "NA"; # Add an analysis type to submission
+                $submission_object->{requester_report_contact_email} = "NA"; # Add an analysis type to submission
             }
             else {
                 sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
