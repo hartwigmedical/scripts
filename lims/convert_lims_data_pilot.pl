@@ -244,8 +244,6 @@ sub addLamaSamplesToSamples{
                 my $project_name = $submission_object->{ 'project_name' };
                 $sample_to_store{project_name} = $project_name; # Reset project name for sample (from submission)
                 $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
-                $sample_to_store{requester_report_contact_name} = "NA"; # Add an analysis type to submission
-                $sample_to_store{requester_report_contact_email} = "NA"; # Add an analysis type to submission
             }
             else {
                 sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
@@ -1085,6 +1083,8 @@ sub getFieldNameTranslations{
         "TAT_lab"           => 'turn_around_time',
         "Contact_name"      => 'report_contact_name',
         "Contact_email"     => 'report_contact_email',
+        "Requester_report_contact_name" => 'requester_report_contact_name',
+        "Requester_report_contact_email" => 'requester_report_contact_email',
         "Remarks"           => 'remarks',
         "Storage_status"    => 'lab_storage_status',
     );
@@ -1102,6 +1102,8 @@ sub getFieldNameTranslations{
         "TAT_lab"           => 'turn_around_time',
         "Contact_name"      => 'report_contact_name',
         "Contact_email"     => 'report_contact_email',
+        "Requester_report_contact_name" => 'requester_report_contact_name',
+        "Requester_report_contact_email" => 'requester_report_contact_email',
         "Portal_contact_name" => 'data_contact_name',
         "Portal_contact_email" => 'data_contact_email',
         "Remarks"           => 'remarks',
