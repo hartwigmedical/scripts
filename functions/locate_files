@@ -95,12 +95,8 @@ locate_pilot_patient_db() {
     echo "/data/tools/patientdb/pilot/patient-db.jar"
 }
 
-locate_prod_patient_reporter_ds() {
-    echo "/data/tools/patientreporter/7.23/patient-reporter.jar"
-}
-
-locate_prod_patient_reporter_gcp() {
-    echo "/data/tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar"
+locate_prod_patient_reporter() {
+    echo "/data/tools/patientreporter/7.24/patient-reporter.jar"
 }
 
 locate_pilot_patient_reporter_ds() {
@@ -182,11 +178,11 @@ locate_run_contexts_writer() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.22"
+    echo "5.25"
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.24"
+    echo "5.25"
 }
 
 ############################### NON JAVA TOOLS #################################
