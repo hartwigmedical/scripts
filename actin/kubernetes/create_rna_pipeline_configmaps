@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+# NOTES:
+#  1. Manually prepare the configs in the config_dir
+#  2. Manually build the pipeline5 repo (mvn clean package -DskipDocker)
+#  3. Connect to VPN prior to running this script
+#  4. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
+#  5. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
+#  6. Manually clean up the pods + buckets after successful running
+
+date=$1
+
+if [[ -z "${date}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+config_dir="${HOME}/hmf/actin_batch_jobs/rna/${date}"
+
+if [[ ! -d ${config_dir} ]]; then
+    error "Could not locate config dir: ${config_dir}"
+fi
+
+pipeline_jar="${HOME}/hmf/repos/pipeline5/batch-operations/target/batch-operations-local-SNAPSHOT.jar"
+
+if [[ ! -f ${pipeline_jar} ]]; then
+    error "Could not locate pipeline jar: ${pipeline_jar}"
+fi
+
+make_bucket -p hmf-crunch -n actin-rna-star-batch-${date}
+make_bucket -p hmf-crunch -n actin-rna-isofox-batch-${date}
+
+kubectl create configmap actin-rna-batch-inputs-${date} \
+    --from-file=star.csv=${config_dir}/actin_rna_star_input.csv \
+    --from-file=isofox.csv=${config_dir}/actin_rna_isofox_input.csv
+
+kubectl create configmap actin-rna-batch-operations-${date} \
+    --from-file=batch-operations.jar=${pipeline_jar}
