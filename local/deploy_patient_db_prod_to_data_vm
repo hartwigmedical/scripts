@@ -13,4 +13,4 @@ info "Copying ${patient_db_jar} to gs://common-tools/"
 gsutil cp ${patient_db_jar} gs://common-tools/patient-db/${version}/patient-db.jar
 
 info "Copying ${patient_db_jar} to data-vm-prod-2"
-gcloud compute scp ${patient_db_jar} data-vm-prod-2:/data/tools/patientdb/${version}/patient-db.jar
+gcloud compute scp ${patient_db_jar} data-vm-prod-2:/data/tools/patient-db/${version}/patient-db.jar
