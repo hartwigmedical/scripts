@@ -5,20 +5,20 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
-FALSE="FALSE"
 TRUE="TRUE"
+FALSE="FALSE"
 
 print_usage() {
   echo ""
   echo "Descr: Run PEACH tests"
-  echo "Usage: $(basename "$0") --repodir /some/peach/repo --venv /directory/containing/peach/venv"
+  echo "Usage: $(basename "$0")"
   echo "Exmpl: $(basename "$0")"
   echo "       $(basename "$0") --repodir /some/peach/repo --venv /directory/containing/peach/venv"
   echo "       $(basename "$0") -r /some/peach/repo/dir -v /directory/containing/peach/venv"
   echo "Options:"
-  echo "  -r/--repodir   [OPTIONAL]   Local directory containing the PEACH git repo."
+  echo "  -r/--repodir   [OPTIONAL]   Directory containing the PEACH git repo."
   echo "                              The default value is taken from the locate_files script."
-  echo "  -v/--venv      [OPTIONAL]   Local directory containing a Python virtual environment with PEACH's dependencies"
+  echo "  -v/--venv      [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
   echo "                              The default value is taken from the locate_files script."
   echo ""
   exit 1

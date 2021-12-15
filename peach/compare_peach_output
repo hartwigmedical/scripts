@@ -7,8 +7,32 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
+TRUE="TRUE"
+FALSE="FALSE"
+
 MAX_THREADS=10
 FULL_DPYD_PANEL_NAME="DPYD.json"
+
+print_usage() {
+  echo ""
+  echo "Descr: Compare PEACH output with control outputs."
+  echo "       See gs://hmf-crunch-experiments/david_peach_experiments/test_runs for some runs to try"
+  echo "Usage: $(basename "$0")"
+  echo "Exmpl: $(basename "$0")"
+  echo "       $(basename "$0") --main /peach/repo/peach --venv /some/peach/venv/"
+  echo ""
+  echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
+  echo "Options:"
+  echo "  -d/--basedir                        [OPTIONAL]   Directory containing pipeline run directories to test."
+  echo "                                                   Default value is '/data/experiments/peach/test_runs'"
+  echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
+  echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
+  echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
+  echo "  -a/--vcf_reference_assembly_version [OPTIONAL]   37 or 38, to designate the version of the reference genome used in the run."
+  echo "                                                   Default=37."
+  echo ""
+  exit 1
+}
 
 main() {
   info "Started ${SCRIPT_NAME}"
@@ -60,8 +84,18 @@ main() {
   fi
   
   # Sanity checks
-  [[ "${#unrecognized_options[@]}" -eq 0 ]] || die "Unrecognized options! : ${unrecognized_options[*]}"
-  [[ -d ${base_dir} ]] || die "base_dir should be a dir: ${base_dir}."
+  sanity_check_fail="${FALSE}"
+  if [[ ! "${#unrecognized_options[@]}" -eq 0 ]]; then
+    warn "Unrecognized options! : ${unrecognized_options[*]}"
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${base_dir} ]]; then
+    warn "base_dir should be a dir: ${base_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
+    print_usage
+  fi
   
   info "Run PEACH pilot"
   run_peach_pilot_on_subdirs "${base_dir}" "${optional_peach_args[@]}" \
