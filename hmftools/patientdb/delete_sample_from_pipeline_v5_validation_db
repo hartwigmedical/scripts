@@ -11,7 +11,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_research_patient_db)
 database="pipeline_v5_validation"
 
 do_delete_sample_from_database ${sample} ${database} "${credentials}" ${patient_db_jar}
