@@ -6,7 +6,6 @@ ecrf_files_cpct_xml=${HOME}/Downloads/*_cpct_ecrf.xml
 ecrf_files_cpct_csv=${HOME}/Downloads/*_cpct_form_status.csv
 ecrf_files_drup_xml=${HOME}/Downloads/*_drup_ecrf.xml
 
-
 if [ ! -f ${ecrf_files_cpct_xml} ]; then
     error "Could not locate cpct xml file!"
 fi
@@ -28,4 +27,4 @@ gsutil cp ${ecrf_files_cpct_csv} gs://hmf-ops-data/ecrf/
 info "Uploading ${ecrf_files_drup_xml} to gs://hmf-ops-data/ecrf/"
 gsutil cp ${ecrf_files_drup_xml} gs://hmf-ops-data/ecrf/
 
-info "clinical eCRF files are uploaded from CPCT and DRUP!"
+info "Clinical eCRF files are uploaded from CPCT and DRUP!"
