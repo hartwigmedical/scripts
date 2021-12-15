@@ -65,11 +65,11 @@ main() {
     warn "peach_repo_base_dir should be a dir: ${peach_repo_base_dir}."
     sanity_check_fail="${TRUE}"
   fi
-  if [[ !-d ${venv_dir} ]]; then
+  if [[ ! -d ${venv_dir} ]]; then
     warn "venv_dir should be a dir: ${venv_dir}."
     sanity_check_fail="${TRUE}"
   fi
-  if [[ "${sanity_check_fail}"=="${TRUE}" ]]; then
+  if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
     print_usage
   fi
 
