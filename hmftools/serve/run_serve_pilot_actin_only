@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source io_functions || exit 1
+
+output_dir="/data/output/pilot_output_actin_only"
+create_or_cleanup_dir ${output_dir}
+
+actin_trial_tsv=$(locate_actin_trial_tsv)
+
+do_run_serve_pilot \
+    -use_actin -actin_trial_tsv ${actin_trial_tsv} \
+    -output_dir ${output_dir} \
+    "$@"

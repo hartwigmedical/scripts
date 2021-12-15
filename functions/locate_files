@@ -432,6 +432,10 @@ locate_prod_iclusion_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
 }
 
+locate_actin_trial_tsv() {
+    echo "/data/resources/custom/actin/actin_knowledgebase.tsv"
+}
+
 locate_vicc_json() {
     echo "/data/resources/custom/vicc/all.json"
 }
