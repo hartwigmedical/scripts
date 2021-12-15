@@ -26,7 +26,7 @@ if [[ -d "${virusbreakend_dir}" ]]; then
 fi
 
 # Rerun virus interpreter since older runs will have v1.0
-run_virus_interpreter_v1_1 ${run_dir}
+run_virus_interpreter_prod ${run_dir}
 # Reloading prod not supported yet.
 # load_virusinterpreter_data_prod ${run_dir}
 
