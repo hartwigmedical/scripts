@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-serve_dir1=/data/output/pilot_output_ckb_based
-serve_dir2=/data/output/prod_output_ckb_based
+serve_dir1="/data/output/pilot_output_ckb_based"
+serve_dir2="/data/output/prod_output_ckb_based"
 
 do_compare_serve_versions ${serve_dir1} ${serve_dir2}

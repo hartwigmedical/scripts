@@ -4,11 +4,11 @@ serve_dir1=$1 && shift
 serve_dir2=$1 && shift
 
 if [[ ! -d "${serve_dir1}" ]]; then
-        error "Unable to locate serve dir1 '${serve_dir1}'"
+    error "Unable to locate serve dir1 '${serve_dir1}'"
 fi
 
 if [[ ! -d "${serve_dir2}" ]]; then
-        error "Unable to locate serve dir2 '${serve_dir2}'"
+    error "Unable to locate serve dir2 '${serve_dir2}'"
 fi
 
 do_compare_serve_versions ${serve_dir1} ${serve_dir2}

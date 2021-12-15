@@ -464,6 +464,15 @@ locate_ckb_filter_tsv_empty() {
     echo "/data/resources/custom/serve/ckb_filters_empty.tsv"
 }
 
+locate_public_missing_doids_mapping_tsv() {
+    echo "/data/resources/custom/serve/public_doids_mapping.tsv"
+}
+
+locate_private_missing_doids_mapping_tsv() {
+    echo "/data/resources/custom/serve/private_doids_mapping.tsv"
+}
+
+
 #################################### Repos #####################################
 
 locate_repo_dir() {
