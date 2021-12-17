@@ -22,14 +22,14 @@ ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 #info "Diff germline caller"
 #zdiff ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz
 
-info "Diff virusbreakend"
-diff ${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virus.annotated.tsv ${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virus.annotated.tsv
-diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf
-diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf.summary.tsv	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf.summary.tsv
+#info "Diff virusbreakend"
+#diff ${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virus.annotated.tsv ${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virus.annotated.tsv
+#diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf
+#diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf.summary.tsv	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf.summary.tsv
 
-#info "Diff sigs"
-#diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.allocation.tsv
-#diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv
+info "Diff sigs"
+diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.allocation.tsv
+diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv
 #
 #info "Diff sage somatic"
 #zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
