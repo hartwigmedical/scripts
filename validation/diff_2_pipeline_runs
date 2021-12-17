@@ -102,7 +102,7 @@ diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.pcf	${pipeline_dir2}
 diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.chr.len	${pipeline_dir2}/cobalt/${sampleIdDir2}.chr.len
 diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.gc.median.tsv
 diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.pcf
-diff	${pipeline_dir1}/cobalt/${sampleIdDir1}cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}cobalt.ratio.tsv
+diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.tsv
 diff	${pipeline_dir1}/cobalt/cobalt.version	${pipeline_dir2}/cobalt/cobalt.version
 #
 #info "Diff chord"
