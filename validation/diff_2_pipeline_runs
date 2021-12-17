@@ -57,32 +57,32 @@ ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 #zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
 #diff	${pipeline_dir1}/purple/purple.version	${pipeline_dir2}/purple/purple.version
 #
-info "Diff protect"
-diff	${pipeline_dir1}/protect/${sampleIdDir1}.protect.tsv	${pipeline_dir2}/protect/${sampleIdDir2}.protect.tsv
+#info "Diff protect"
+#diff	${pipeline_dir1}/protect/${sampleIdDir1}.protect.tsv	${pipeline_dir2}/protect/${sampleIdDir2}.protect.tsv
+##
+#info "Diff peach"
+#diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.calls.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.calls.tsv
+#diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.genotype.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.genotype.tsv
 #
-info "Diff peach"
-diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.calls.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.calls.tsv
-diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.genotype.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.genotype.tsv
-
-info "Diff orange"
-diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
+#info "Diff orange"
+#diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
 #
-#info "Diff linx"
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
-#diff	${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
+info "Diff linx"
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
+diff	${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
 #
 #info "Diff gripss"
 #zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
