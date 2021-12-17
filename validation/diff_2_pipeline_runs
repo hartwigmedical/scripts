@@ -91,31 +91,31 @@ ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 #info "Diff gridss"
 #zdiff	${pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz	${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
 #
-info "Diff cuppa"
-diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv
-diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cuppa.conclusion.txt	${pipeline_dir2}/cuppa/${sampleIdDir2}.cuppa.conclusion.txt
+#info "Diff cuppa"
+#diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv
+#diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cuppa.conclusion.txt	${pipeline_dir2}/cuppa/${sampleIdDir2}.cuppa.conclusion.txt
+#
+#info "Diff cobalt"
+#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.gc.median.tsv
+#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.median.tsv
+#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.pcf
+#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.chr.len	${pipeline_dir2}/cobalt/${sampleIdDir2}.chr.len
+#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.gc.median.tsv
+#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.pcf
+#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.tsv
+#diff	${pipeline_dir1}/cobalt/cobalt.version	${pipeline_dir2}/cobalt/cobalt.version
+#
+info "Diff chord"
+diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_prediction.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_prediction.txt
+diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_signatures.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_signatures.txt
 
-info "Diff cobalt"
-diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.gc.median.tsv
-diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.median.tsv
-diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.pcf
-diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.chr.len	${pipeline_dir2}/cobalt/${sampleIdDir2}.chr.len
-diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.gc.median.tsv
-diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.pcf
-diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.tsv
-diff	${pipeline_dir1}/cobalt/cobalt.version	${pipeline_dir2}/cobalt/cobalt.version
-#
-#info "Diff chord"
-#diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_prediction.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_prediction.txt
-#diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_signatures.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_signatures.txt
-#
-#info "Diff amber"
-#zdiff	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz	${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.pcf
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv
-#zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv
-#zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc
-#diff	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf
-#diff	${pipeline_dir1}/amber/amber.version	${pipeline_dir2}/amber/amber.version
+info "Diff amber"
+zdiff	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz	${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.pcf
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc
+diff	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf
+diff	${pipeline_dir1}/amber/amber.version	${pipeline_dir2}/amber/amber.version
