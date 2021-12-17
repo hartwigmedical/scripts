@@ -21,8 +21,8 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
 viral_hosts_csv=/data/dbs/has_been_moved_to_gcp/linx/viral_host_ref.csv
-known_fusion_data=$(locate_known_fusion_data_37_csv_ds)
-driver_gene_panel=$(locate_driver_gene_panel_37_tsv_ds)
+known_fusion_data=$(locate_known_fusion_data_37_csv)
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 gene_transcripts_dir=/data/dbs/has_been_moved_to_gcp/ensembl_data_cache/37
 fragile_sites=/data/dbs/has_been_moved_to_gcp/linx/37/fragile_sites_hmf.37.csv
 line_elements=/data/dbs/has_been_moved_to_gcp/linx/37/line_elements.37.csv

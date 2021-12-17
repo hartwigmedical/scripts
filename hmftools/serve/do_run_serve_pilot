@@ -4,6 +4,8 @@ source locate_files || exit 1
 
 serve_jar=$(locate_pilot_serve)
 
+ensembl_data_dir=$(locate_ensembl_data_dir)
+
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
 ref_genome_37_to_38_chain=$(locate_ref_genome_37_to_38_chain)
@@ -15,6 +17,7 @@ known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
+    -ensembl_data_dir ${ensembl_data_dir} \
     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
     -ref_genome_37_to_38_chain ${ref_genome_37_to_38_chain} \

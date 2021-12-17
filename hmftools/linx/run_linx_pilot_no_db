@@ -16,13 +16,13 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
 viral_hosts_csv=/data/dbs/has_been_moved_to_gcp/linx/viral_host_ref.csv
-known_fusion_data=$(locate_known_fusion_data_37_csv_ds)
-driver_gene_panel=$(locate_driver_gene_panel_37_tsv_ds)
-ensembl_data_dir=/data/dbs/has_been_moved_to_gcp/ensembl_data_cache/37
+known_fusion_data=$(locate_known_fusion_data_37_csv)
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+ensembl_data_dir=$(locate_ensembl_data_dir)
 fragile_sites=/data/dbs/has_been_moved_to_gcp/linx/37/fragile_sites_hmf.37.csv
 line_elements=/data/dbs/has_been_moved_to_gcp/linx/37/line_elements.37.csv
 replication_origins=/data/dbs/has_been_moved_to_gcp/linx/37/heli_rep_origins.37.bed
-ref_genome=$(locate_ref_genome_37_fasta_file_ds)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 if [[ -d "${output_dir}" ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")

@@ -10,7 +10,7 @@ if [[ ! -f "${cram}" ]]; then
 fi
 
 samtools=/data/tools/samtools/1.10/samtools
-ref_genome=$(locate_ref_genome_37_fasta_file_ds)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 echo "-----"
 echo "## Printing header part"
