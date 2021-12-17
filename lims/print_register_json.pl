@@ -365,8 +365,8 @@ sub processSample{
         }
  
         ## check if barcode already exists in HMF API
-        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'select(.[].status != "Unregistered") | length'`;
-        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'select(.[].status != "Unregistered") | length'`;
+        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq '.[] | select(.status != "Unregistered") | length'`;
+        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[] | select(.status != "Unregistered") | length'`;
         chomp($tum_exists);
         chomp($ref_exists);
         
@@ -404,7 +404,7 @@ sub processSample{
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
     # If no such runs exit, $existing_count is empty string
-    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'select(.[].status != "Invalidated") | length' | tr -d '"\n'`;
+    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq '.[] | select(.status != "Invalidated") | length' | tr -d '"\n'`;
 
     if ( $existing_count ne "" ){
         if ( $FORCE_OUTPUT ){
@@ -431,11 +431,11 @@ sub processSample{
 
 sub getCorrectBarcodeWithSuffixForRefSampleName{
     my ($name_ref, $barcode_ref, $name, $barcode, $warn_msg, $date, $change_reason) = @_;
-    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
+    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq '.[] | select(.status == "Ready") | length' | tr -d '"\n'`;
     my $new_barcode_ref;
     my $new_warn_msg;
     if ( $ready_new_ref_sample_count eq "1" ){
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq '.[] | select(.status == "Ready")[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     } elsif ( $ready_new_ref_sample_count eq "" ) {
@@ -443,7 +443,7 @@ sub getCorrectBarcodeWithSuffixForRefSampleName{
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
     } else {
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq '.[] | select(.status == "Ready")[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Out of multiple choices, randomly chose existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     }
