@@ -32,7 +32,7 @@ diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv	${pipeline_dir2}/s
 diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv
 
 info "Diff sage somatic"
-zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
+#zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
 zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.filtered.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.filtered.vcf.gz
 
 info "Diff sage germline"
