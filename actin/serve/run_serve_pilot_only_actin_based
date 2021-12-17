@@ -15,7 +15,7 @@ missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_actin -ckb_dir -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
+    -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -use_docm -docm_tsv ${docm_tsv} \
     -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
     -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
