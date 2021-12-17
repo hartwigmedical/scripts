@@ -8,8 +8,10 @@ create_or_cleanup_dir ${output_dir}
 
 actin_trial_tsv=$(locate_actin_trial_tsv)
 actin_filter_tsv=$(ocate_actin_filter_tsv)
+missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -output_dir ${output_dir} \
     "$@"
