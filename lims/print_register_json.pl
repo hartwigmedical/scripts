@@ -369,12 +369,12 @@ sub processSample{
         my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'map(select(.status != "Unregistered")) | length'`;
         chomp($tum_exists);
         chomp($ref_exists);
-        
-        if ( $tum_exists ){
+
+        if ( $tum_exists ne "0" ){
             sayInfo("  TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
             $use_existing_tum = 1;
-        }        
-        if ( $ref_exists ){
+        }
+        if ( $ref_exists ne "0" ){
             sayInfo("  REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)");
             $use_existing_ref = 1;
         }
@@ -403,10 +403,9 @@ sub processSample{
     ## check if set was already registered earlier
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
-    # If no such runs exit, $existing_count is empty string
     my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'map(select(.status != "Invalidated")) | length' | tr -d '"\n'`;
 
-    if ( $existing_count ne "" ){
+    if ( $existing_count ne "0" ){
         if ( $FORCE_OUTPUT ){
             push( @warn_msg, "Existing run(s) found in API for $setname_wo_date ($existing_count) but output was enforced" );
         }
@@ -438,7 +437,7 @@ sub getCorrectBarcodeWithSuffixForRefSampleName{
         $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready"))[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
-    } elsif ( $ready_new_ref_sample_count eq "" ) {
+    } elsif ( $ready_new_ref_sample_count eq "0" ) {
         $new_barcode_ref = $barcode_ref . "_c2f" . $date;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
