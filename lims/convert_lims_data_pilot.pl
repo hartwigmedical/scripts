@@ -1004,7 +1004,7 @@ sub parseExcelSheet{
 sub isSkipValue{
     my ($value) = @_;
     die "[ERROR] Value to check for skipping is not defined\n" if not defined $value;
-    my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x' , '#N/A' );
+    my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x', '#N/A' );
     foreach my $skip_string ( @to_skip ){
         return 1 if $value =~ /^$skip_string$/i;
     }
