@@ -67,26 +67,26 @@ ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 #info "Diff orange"
 #diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
 #
-info "Diff linx"
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
-diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
-diff	-y ${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
+#info "Diff linx"
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
+#diff	-y ${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
+#diff	-y ${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
 #
-#info "Diff gripss"
-#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
-#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
+info "Diff gripss"
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
 #
 #info "Diff gridss"
 #zdiff	${pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz	${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
