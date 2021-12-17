@@ -19,8 +19,10 @@ sampleIdDir2=$(load_tumor_sample_from_metadata ${pipeline_dir2})
 ref_sampleDir1=$(load_ref_sample_from_metadata ${pipeline_dir1})
 ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 
+#info "Diff germline caller"
+#zdiff ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz
+
 info "Diff virusbreakend"
-zdiff ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz
 diff ${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virus.annotated.tsv ${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virus.annotated.tsv
 diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf
 diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf.summary.tsv	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf.summary.tsv
