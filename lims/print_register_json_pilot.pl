@@ -107,14 +107,14 @@ foreach my $reason ( keys %stats ){
 ## -----
 ## /MAIN
 ## -----
-    
+
 sub addSamplesFromSamplesheet{
     my ($file) = @_;
-    
+
     my %head = ();
     my %data = ();
     my $currblock = '';
-    
+
     ## first read file to obtain header fields
     my @header;
     open my $header_fh, '<', $file or die "Unable to open file ($file): $!\n";
@@ -128,7 +128,7 @@ sub addSamplesFromSamplesheet{
     }
     close $header_fh;
     die "[ERROR] No header line was parsed?\n" unless scalar @header;
-    
+
     ## re-read file to get all information
     open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$samplesheet_fh> ){
@@ -165,7 +165,7 @@ sub addSamplesFromSamplesheet{
         }
     }
     close $samplesheet_fh;
-    
+
     my $hmfRunName = $head{ 'ExperimentName' } || $NA_CHAR;
     sayInfo("Found run $hmfRunName in SampleSheet");
     my @out = sort keys %data;
@@ -180,7 +180,7 @@ sub processSample{
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims_samples->{ $sample_id };
-    
+
     my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
     my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
     my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
@@ -189,7 +189,7 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $priority   = getPriorityForSample( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
-    
+
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
@@ -202,7 +202,7 @@ sub processSample{
         $submission = 'HMFregVAL';
         $entity = 'HMF_EXPERIMENT';
     }
-    
+
     my $use_existing_ref = $USE_EXISTING_REF;
     my $use_existing_tum = $USE_EXISTING_TUM;
 
@@ -214,7 +214,7 @@ sub processSample{
     if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
         die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
-    
+
     ## init the json info
     my %json_data = ();
 
@@ -260,12 +260,12 @@ sub processSample{
         addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor-rna', $q30, $yield, $use_existing_ref );
     }
     elsif ( $analysis eq 'Somatic_T' ){
-        
+
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
         #my $other_ref = getValueByKey( $sample, 'other_ref' ); # Yes | No
-        
+
         ## need to find the ref sample of somatic pair
         if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
             ## for somatic samples (biopsy) a ref sample needs to be defined
@@ -282,7 +282,7 @@ sub processSample{
             sayWarn("  RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)");
             return "NoJsonMade_RnotFoundForSomaticT";
         }
-        
+
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
         my $patient_ref = getValueByKey( $ref_obj, 'patient' );
@@ -363,18 +363,18 @@ sub processSample{
                 $barcode_ref = $new_barcode_ref;
             }
         }
- 
+
         ## check if barcode already exists in HMF API
-        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'select(.[].status != "Unregistered") | length'`;
-        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'select(.[].status != "Unregistered") | length'`;
+        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'map(select(.status != "Unregistered")) | length'`;
+        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'map(select(.status != "Unregistered")) | length'`;
         chomp($tum_exists);
         chomp($ref_exists);
-        
-        if ( $tum_exists ){
+
+        if ( $tum_exists ne "0" ){
             sayInfo("  TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
             $use_existing_tum = 1;
-        }        
-        if ( $ref_exists ){
+        }
+        if ( $ref_exists ne "0" ){
             sayInfo("  REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)");
             $use_existing_ref = 1;
         }
@@ -399,14 +399,13 @@ sub processSample{
     ## output json
     my $json_file = $json_data{ 'set_name' }.'.json';
     my $json_path = $OUTPUT_DIR.'/'.$json_file;
-    
+
     ## check if set was already registered earlier
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
-    my $existing_runs = decode_json(`hmf_api_get 'runs?set_name_contains=$setname_wo_date'`);
-    my $existing_count = scalar @$existing_runs;
+    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'map(select(.status != "Invalidated")) | length' | tr -d '"\n'`;
 
-    if ( $existing_count > 0 ){
+    if ( $existing_count ne "0" ){
         if ( $FORCE_OUTPUT ){
             push( @warn_msg, "Existing run(s) found in API for $setname_wo_date ($existing_count) but output was enforced" );
         }
@@ -415,14 +414,14 @@ sub processSample{
             return "NoJsonMade_setJsonAlreadyExists";
         }
     }
-    
+
     ## print any stored warnings now
     if ( scalar @warn_msg ){
         foreach my $msg ( @warn_msg ){
             sayWarn("  $msg");
         }
     }
-    
+
     ## all checks were OK: print config file
     printSetJson( \%json_data, $json_path );
     sayInfo("  RESULT for $sample_id: OK");
@@ -431,19 +430,19 @@ sub processSample{
 
 sub getCorrectBarcodeWithSuffixForRefSampleName{
     my ($name_ref, $barcode_ref, $name, $barcode, $warn_msg, $date, $change_reason) = @_;
-    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
+    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready")) | length' | tr -d '"\n'`;
     my $new_barcode_ref;
     my $new_warn_msg;
     if ( $ready_new_ref_sample_count eq "1" ){
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready"))[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
-    } elsif ( $ready_new_ref_sample_count eq "" ) {
+    } elsif ( $ready_new_ref_sample_count eq "0" ) {
         $new_barcode_ref = $barcode_ref . "_c2f" . $date;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
     } else {
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready"))[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Out of multiple choices, randomly chose existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     }
@@ -460,7 +459,7 @@ sub printSetJson{
     my $json_txt = $json_obj->pretty->encode( $data );
     sayInfo("  Writing json ($out_path)");
     open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
-        print OUT $json_txt;
+    print OUT $json_txt;
     close OUT;
 }
 
@@ -473,7 +472,7 @@ sub readJson{
 
 sub getSomaticRSampleByStringForField{
     my ($info, $search_string, $search_field) = @_;
-    
+
     foreach my $sample_id ( keys %$info ){
         my $field_value = $info->{ $sample_id }{ $search_field };
         if (( $field_value eq $search_string ) and ( $info->{ $sample_id }{ 'analysis_type' } eq 'Somatic_R')){
