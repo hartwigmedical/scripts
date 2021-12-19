@@ -364,8 +364,12 @@ locate_rna_analysis_bucket() {
 
 ############################# Pipeline Resources ###############################
 
-locate_ensembl_data_dir() {
+locate_ensembl_data_dir_37() {
     echo "/data/resources/public/ensembl_data_cache/37"
+}
+
+locate_ensembl_data_dir_38() {
+    echo "/data/resources/public/ensembl_data_cache/38"
 }
 
 locate_amber_snpcheck_37_vcf() {

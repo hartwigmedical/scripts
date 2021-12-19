@@ -12,7 +12,8 @@ missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 serve_jar="${HOME}/serve_jar/serve.jar"
 
-ensembl_data_dir=$(locate_ensembl_data_dir)
+ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
+ensembl_data_dir_38=$(locate_ensembl_data_dir_38)
 
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
@@ -25,10 +26,11 @@ known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
-    -ensembl_data_dir ${ensembl_data_dir} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
     -output_dir ${output_dir} \
+    -ensembl_data_dir_37 ${ensembl_data_dir_37} \
+    -ensembl_data_dir_38 ${ensembl_data_dir_38} \
     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
     -ref_genome_37_to_38_chain ${ref_genome_37_to_38_chain} \
