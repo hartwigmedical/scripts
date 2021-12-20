@@ -65,7 +65,7 @@ diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.calls.tsv	${pipeline_dir2}/pea
 diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.genotype.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.genotype.tsv
 
 info "Diff orange"
-diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
+#diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
 
 info "Diff linx"
 diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
