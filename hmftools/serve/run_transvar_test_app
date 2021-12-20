@@ -15,16 +15,16 @@ if [[ -z ${gene_37} ]]; then
     error "No gene name of V37 is provided!"
 fi
 
-if [[ -z ${gene_38} ]]; then
-    error "No gene name of V38 is provided!"
-fi
-
 if [[ -z ${protein_37} ]]; then
     error "No protein of V37 is provided!"
 fi
 
+if [[ -z ${gene_38} ]]; then
+    gene_38=${gene_37}
+fi
+
 if [[ -z ${protein_38} ]]; then
-    error "No protein of V38 is provided!"
+    protein_38=${protein_37}
 fi
 
 transcript_37_cmd=""
