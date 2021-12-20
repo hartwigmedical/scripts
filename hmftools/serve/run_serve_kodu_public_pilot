@@ -3,12 +3,14 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir=/data/output/pilot_output_kodu_ckb_based
+output_dir="/data/output/pilot_output_kodu_public_sources"
 create_or_cleanup_dir ${output_dir}
 
-ckb_dir=$(locate_ckb_flex_data_latest_dir)
-ckb_filter_tsv=$(locate_ckb_filter_tsv)
-missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
+vicc_json=$(locate_vicc_json)
+docm_tsv=$(locate_docm_tsv)
+hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
+hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
+missing_doids_mapping_tsv=$(locate_public_missing_doids_mapping_tsv)
 
 serve_jar="${HOME}/serve_jar/serve.jar"
 
@@ -27,7 +29,10 @@ known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
+    -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
+    -use_docm -docm_tsv ${docm_tsv} \
+    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+    -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
     -output_dir ${output_dir} \
     -ensembl_data_dir_37 ${ensembl_data_dir_37} \
     -ensembl_data_dir_38 ${ensembl_data_dir_38} \
