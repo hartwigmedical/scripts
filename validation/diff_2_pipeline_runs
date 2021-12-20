@@ -107,7 +107,7 @@ diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv) <(sort	${
 info "11"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv)
 info "12"
-diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv)
+diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_protein_domain.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_protein_domain.tsv)
 info "13"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv)
 info "14"
