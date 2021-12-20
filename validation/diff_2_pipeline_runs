@@ -19,103 +19,103 @@ sampleIdDir2=$(load_tumor_sample_from_metadata ${pipeline_dir2})
 ref_sampleDir1=$(load_ref_sample_from_metadata ${pipeline_dir1})
 ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 
-#info "Diff germline caller"
-#zdiff ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz
+info "Diff germline caller"
+zdiff ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz
 
-#info "Diff virusbreakend"
-#diff ${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virus.annotated.tsv ${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virus.annotated.tsv
-#diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf
-#diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf.summary.tsv	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf.summary.tsv
+info "Diff virusbreakend"
+diff ${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virus.annotated.tsv ${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virus.annotated.tsv
+diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf
+diff	${pipeline_dir1}/virusbreakend/${sampleIdDir1}.virusbreakend.vcf.summary.tsv	${pipeline_dir2}/virusbreakend/${sampleIdDir2}.virusbreakend.vcf.summary.tsv
 
-#info "Diff sigs"
-#diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.allocation.tsv
-#diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv
-#
-#info "Diff sage somatic"
-#zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
-#zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.filtered.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.filtered.vcf.gz
-#
-#info "Diff sage germline"
-#zdiff	${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.filtered.vcf.gz	${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.filtered.vcf.gz
-#zdiff	${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.vcf.gz	${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.vcf.gz
-#
-#info "Diff purple"
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.cnv.chromosomearm.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.cnv.chromosomearm.somatic.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.germline.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.germline.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.somatic.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.gene.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.gene.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.germline.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.germline.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.somatic.tsv
-#zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.germline.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.germline.vcf.gz
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.range.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.range.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.qc	${pipeline_dir2}/purple/${sampleIdDir2}.purple.qc
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.segment.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.segment.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.clonality.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.clonality.tsv
-#diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.hist.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.hist.tsv
-#zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz
-#zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
-#diff	${pipeline_dir1}/purple/purple.version	${pipeline_dir2}/purple/purple.version
-#
-#info "Diff protect"
-#diff	${pipeline_dir1}/protect/${sampleIdDir1}.protect.tsv	${pipeline_dir2}/protect/${sampleIdDir2}.protect.tsv
-##
-#info "Diff peach"
-#diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.calls.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.calls.tsv
-#diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.genotype.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.genotype.tsv
-#
-#info "Diff orange"
-#diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
-#
-#info "Diff linx"
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
-#diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
-#diff	${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
-#
-#info "Diff gripss"
-#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
-#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
-#
-#info "Diff gridss"
-#zdiff	${pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz	${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
-#
-#info "Diff cuppa"
-#diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv
-#diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cuppa.conclusion.txt	${pipeline_dir2}/cuppa/${sampleIdDir2}.cuppa.conclusion.txt
-#
-#info "Diff cobalt"
-#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.gc.median.tsv
-#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.median.tsv
-#diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.pcf
-#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.chr.len	${pipeline_dir2}/cobalt/${sampleIdDir2}.chr.len
-#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.gc.median.tsv
-#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.pcf
-#diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.tsv
-#diff	${pipeline_dir1}/cobalt/cobalt.version	${pipeline_dir2}/cobalt/cobalt.version
-#
-#info "Diff chord"
-#diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_prediction.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_prediction.txt
-#diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_signatures.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_signatures.txt
-#
-#info "Diff amber"
-#zdiff	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz	${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.pcf
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv
-#zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv
-#zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
-#diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc
-#diff	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf
-#diff	${pipeline_dir1}/amber/amber.version	${pipeline_dir2}/amber/amber.version
+info "Diff sigs"
+diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.allocation.tsv
+diff	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv
+
+info "Diff sage somatic"
+zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
+zdiff	${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.filtered.vcf.gz	${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.filtered.vcf.gz
+
+info "Diff sage germline"
+zdiff	${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.filtered.vcf.gz	${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.filtered.vcf.gz
+zdiff	${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.vcf.gz	${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.vcf.gz
+
+info "Diff purple"
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.cnv.chromosomearm.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.cnv.chromosomearm.somatic.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.germline.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.germline.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.somatic.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.gene.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.gene.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.germline.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.germline.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.somatic.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.somatic.tsv
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.germline.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.germline.vcf.gz
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.range.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.range.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.qc	${pipeline_dir2}/purple/${sampleIdDir2}.purple.qc
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.segment.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.segment.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.clonality.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.clonality.tsv
+diff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.hist.tsv	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.hist.tsv
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz	${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
+diff	${pipeline_dir1}/purple/purple.version	${pipeline_dir2}/purple/purple.version
+
+info "Diff protect"
+diff	${pipeline_dir1}/protect/${sampleIdDir1}.protect.tsv	${pipeline_dir2}/protect/${sampleIdDir2}.protect.tsv
+
+info "Diff peach"
+diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.calls.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.calls.tsv
+diff	${pipeline_dir1}/peach/${sampleIdDir1}.peach.genotype.tsv	${pipeline_dir2}/peach/${sampleIdDir2}.peach.genotype.tsv
+
+info "Diff orange"
+diff	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json
+
+info "Diff linx"
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv
+diff	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv
+diff	${pipeline_dir1}/linx/linx.version	${pipeline_dir2}/linx/linx.version
+
+info "Diff gripss"
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
+
+info "Diff gridss"
+zdiff	${pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz	${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
+
+info "Diff cuppa"
+diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv
+diff	${pipeline_dir1}/cuppa/${sampleIdDir1}.cuppa.conclusion.txt	${pipeline_dir2}/cuppa/${sampleIdDir2}.cuppa.conclusion.txt
+
+info "Diff cobalt"
+diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.gc.median.tsv
+diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.median.tsv	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.median.tsv
+diff	${pipeline_dir1}/cobalt/${ref_sampleDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${ref_sampleDir2}.cobalt.ratio.pcf
+diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.chr.len	${pipeline_dir2}/cobalt/${sampleIdDir2}.chr.len
+diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.gc.median.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.gc.median.tsv
+diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.pcf	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.pcf
+diff	${pipeline_dir1}/cobalt/${sampleIdDir1}.cobalt.ratio.tsv	${pipeline_dir2}/cobalt/${sampleIdDir2}.cobalt.ratio.tsv
+diff	${pipeline_dir1}/cobalt/cobalt.version	${pipeline_dir2}/cobalt/cobalt.version
+
+info "Diff chord"
+diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_prediction.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_prediction.txt
+diff	${pipeline_dir1}/chord/${sampleIdDir1}_chord_signatures.txt	${pipeline_dir2}/chord/${sampleIdDir2}_chord_signatures.txt
+
+info "Diff amber"
+zdiff	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz	${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.pcf
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
+diff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc
+diff	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf
+diff	${pipeline_dir1}/amber/amber.version	${pipeline_dir2}/amber/amber.version
