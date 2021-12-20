@@ -46,15 +46,15 @@ diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.somatic.tsv) 
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.gene.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.gene.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.germline.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.germline.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.somatic.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.somatic.tsv)
-#zdiff	<(sort ${pipeline_dir1}/purple/${sampleIdDir1}.purple.germline.vcf.gz) <(sort${pipeline_dir2}/purple/${sampleIdDir2}.purple.germline.vcf.gz)
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.germline.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.germline.vcf.gz
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.range.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.range.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.qc) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.qc)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.segment.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.segment.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.clonality.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.clonality.tsv)
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.hist.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.hist.tsv)
-#zdiff	<(sort ${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz)
-#zdiff	<(sort ${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz)
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
 diff <(sort	${pipeline_dir1}/purple/purple.version) <(sort	${pipeline_dir2}/purple/purple.version)
 
 info "Diff protect"
@@ -85,11 +85,11 @@ diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv) <(sort	$
 diff <(sort	${pipeline_dir1}/linx/linx.version) <(sort	${pipeline_dir2}/linx/linx.version)
 
 info "Diff gripss"
-#zdiff	<(sort	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz) <(sort	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz)
-#zdiff	<(sort	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz) <(sort	${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz)
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
+zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
 
 info "Diff gridss"
-#zdiff	<(sort	${pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz) <(sort	${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz)
+zdiff	{pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz ${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
 
 info "Diff cuppa"
 diff <(sort	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv) <(sort	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv)
