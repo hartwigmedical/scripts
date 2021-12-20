@@ -19,7 +19,7 @@ sampleIdDir2=$(load_tumor_sample_from_metadata ${pipeline_dir2})
 ref_sampleDir1=$(load_ref_sample_from_metadata ${pipeline_dir1})
 ref_sampleDir2=$(load_ref_sample_from_metadata ${pipeline_dir2})
 
-info "Diff germline caller"
+#info "Diff germline caller"
 #diff <(sort ${pipeline_dir1}/${ref_sampleDir1}/germline_caller/${ref_sampleDir1}.germline.vcf.gz) <(sort ${pipeline_dir2}/${ref_sampleDir2}/germline_caller/${ref_sampleDir2}.germline.vcf.gz)
 
 info "Diff virusbreakend"
@@ -84,20 +84,35 @@ info "Diff orange"
 #diff <(sort	${pipeline_dir1}/orange/${sampleIdDir1}.orange.json) <(sort	${pipeline_dir2}/orange/${sampleIdDir2}.orange.json)
 
 info "Diff linx"
+info "1"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.breakend.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.breakend.tsv)
+info "2"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.clusters.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.clusters.tsv)
+info "3"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.driver.catalog.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.driver.catalog.tsv)
+info "4"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.drivers.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.drivers.tsv)
+info "5"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.fusion.tsv)
+info "6"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv)
+info "7"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv)
+info "8"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv)
+info "9"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_copy_number.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_copy_number.tsv)
+info "10"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_fusion.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_fusion.tsv)
+info "11"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_gene_exon.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_gene_exon.tsv)
+info "12"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}linx.vis_protein_domain.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}linx.vis_protein_domain.tsv)
+info "13"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_segments.tsv)
+info "14"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv)
+info "15"
 diff <(sort	${pipeline_dir1}/linx/linx.version) <(sort	${pipeline_dir2}/linx/linx.version)
 
 #info "Diff gripss"
