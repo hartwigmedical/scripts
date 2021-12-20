@@ -69,7 +69,7 @@ diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.hist.tsv) <(s
 info "14"
 zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz
 info "15"
-zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
+#zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
 info "16"
 diff <(sort	${pipeline_dir1}/purple/purple.version) <(sort	${pipeline_dir2}/purple/purple.version)
 
