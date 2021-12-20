@@ -12,6 +12,6 @@ fi
 serve_actionability_dir="/data/experiments/kodu_serve_testing"
 
 output_dir="${run_dir}/protect_new_serve"
-protect_jar=$(locate_research_protect)
+protect_jar=$(locate_pilot_protect)
 
 do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar}
