@@ -40,21 +40,37 @@ zdiff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.filtered.vcf.
 zdiff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.vcf.gz ${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.vcf.gz
 
 info "Diff purple"
+info "1"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.cnv.chromosomearm.somatic.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.cnv.chromosomearm.somatic.tsv)
+info "2"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.germline.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.germline.tsv)
+info "3"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.driver.catalog.somatic.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.driver.catalog.somatic.tsv)
+info "4"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.gene.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.gene.tsv)
+info "5"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.germline.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.germline.tsv)
+info "6"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.cnv.somatic.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.cnv.somatic.tsv)
+info "7"
 zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.germline.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.germline.vcf.gz
+info "8"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.range.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.range.tsv)
+info "9"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.purity.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.purity.tsv)
+info "10"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.qc) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.qc)
+info "11"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.segment.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.segment.tsv)
+info "12"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.clonality.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.clonality.tsv)
+info "13"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.hist.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.hist.tsv)
+info "14"
 zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.somatic.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.somatic.vcf.gz
-#zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
+info "15"
+zdiff	${pipeline_dir1}/purple/${sampleIdDir1}.purple.sv.vcf.gz ${pipeline_dir2}/purple/${sampleIdDir2}.purple.sv.vcf.gz
+info "16"
 diff <(sort	${pipeline_dir1}/purple/purple.version) <(sort	${pipeline_dir2}/purple/purple.version)
 
 info "Diff protect"
@@ -115,7 +131,7 @@ diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf) <(sort	${pipel
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv)
 zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv)
-zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz ${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc)
 diff <(sort	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf) <(sort	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf)
 diff <(sort	${pipeline_dir1}/amber/amber.version) <(sort	${pipeline_dir2}/amber/amber.version)
