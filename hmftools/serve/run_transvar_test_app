@@ -4,10 +4,11 @@ source locate_files || exit 1
 
 gene_37=$1 && shift
 protein_37=$1 && shift
-transcript_37=$1 && shift
 
 gene_38=$1 && shift
 protein_38=$1 && shift
+
+transcript_37=$1 && shift
 transcript_38=$1 && shift
 
 if [[ -z ${gene_37} ]]; then
@@ -26,12 +27,14 @@ if [[ -z ${protein_38} ]]; then
     error "No protein of V38 is provided!"
 fi
 
-if [[ -z ${transcript_37} ]]; then
-    error "No transcript of gene V37 is provided!"
+transcript_37_cmd=""
+if [[ ! -z ${transcript_37} ]]; then
+    transcript_37_cmd="-transcript_37 ${transcript_37}"
 fi
 
-if [[ -z ${transcript_38} ]]; then
-    error "No transcript of gene V38 is provided!"
+transcript_38_cmd=""
+if [[ ! -z ${transcript_38} ]]; then
+    transcript_38_cmd="-transcript_38 ${transcript_38}"
 fi
 
 serve_jar=$(locate_pilot_serve)
@@ -51,6 +54,6 @@ java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarT
     -gene_38 ${gene_38} \
     -protein_37 ${protein_37} \
     -protein_38 ${protein_38} \
-    -transcript_37 ${transcript_37} \
-    -transcript_38 ${transcript_38} \
+    ${transcript_37_cmd} \
+    ${transcript_38_cmd} \
     "$@"
