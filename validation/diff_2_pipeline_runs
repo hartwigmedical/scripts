@@ -32,12 +32,12 @@ diff <(sort	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.allocation.tsv) <(sort	${p
 diff <(sort	${pipeline_dir1}/sigs/${sampleIdDir1}.sig.snv_counts.csv) <(sort	${pipeline_dir2}/sigs/${sampleIdDir2}.sig.snv_counts.csv)
 
 info "Diff sage somatic"
-diff ${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz) ${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz)
-diff ${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.filtered.vcf.gz) ${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.filtered.vcf.gz)
+diff ${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.vcf.gz) ${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.vcf.gz
+diff ${pipeline_dir1}/sage_somatic/${sampleIdDir1}.sage.somatic.filtered.vcf.gz) ${pipeline_dir2}/sage_somatic/${sampleIdDir2}.sage.somatic.filtered.vcf.gz
 
 info "Diff sage germline"
-diff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.filtered.vcf.gz) ${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.filtered.vcf.gz)
-diff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.vcf.gz) ${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.vcf.gz)
+diff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.filtered.vcf.gz) ${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.filtered.vcf.gz
+diff ${pipeline_dir1}/sage_germline/${sampleIdDir1}.sage.germline.vcf.gz) ${pipeline_dir2}/sage_germline/${sampleIdDir2}.sage.germline.vcf.gz
 
 info "Diff purple"
 diff <(sort	${pipeline_dir1}/purple/${sampleIdDir1}.cnv.chromosomearm.somatic.tsv) <(sort	${pipeline_dir2}/purple/${sampleIdDir2}.cnv.chromosomearm.somatic.tsv)
