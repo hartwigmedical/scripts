@@ -84,12 +84,12 @@ diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_segments.tsv) <(sort	
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.vis_sv_data.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.vis_sv_data.tsv)
 diff <(sort	${pipeline_dir1}/linx/linx.version) <(sort	${pipeline_dir2}/linx/linx.version)
 
-info "Diff gripss"
-zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
-zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
-
-info "Diff gridss"
-zdiff	{pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz ${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
+#info "Diff gripss"
+#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.filtered.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.filtered.vcf.gz
+#zdiff	${pipeline_dir1}/gripss/${sampleIdDir1}.gripss.somatic.vcf.gz ${pipeline_dir2}/gripss/${sampleIdDir2}.gripss.somatic.vcf.gz
+#
+#info "Diff gridss"
+#zdiff	{pipeline_dir1}/gridss/${sampleIdDir1}.gridss.unfiltered.vcf.gz ${pipeline_dir2}/gridss/${sampleIdDir2}.gridss.unfiltered.vcf.gz
 
 info "Diff cuppa"
 diff <(sort	${pipeline_dir1}/cuppa/${sampleIdDir1}.cup.data.csv) <(sort	${pipeline_dir2}/cuppa/${sampleIdDir2}.cup.data.csv)
@@ -110,12 +110,12 @@ diff <(sort	${pipeline_dir1}/chord/${sampleIdDir1}_chord_prediction.txt) <(sort	
 diff <(sort	${pipeline_dir1}/chord/${sampleIdDir1}_chord_signatures.txt) <(sort	${pipeline_dir2}/chord/${sampleIdDir2}_chord_signatures.txt)
 
 info "Diff amber"
-#zdiff	<(sort	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz) <(sort	${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz)
+zdiff	${pipeline_dir1}/amber/${ref_sampleDir1}.amber.snp.vcf.gz ${pipeline_dir2}/amber/${ref_sampleDir2}.amber.snp.vcf.gz
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.pcf) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.pcf)
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.tsv) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.tsv)
-#zdiff	<(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz)
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.baf.vcf.gz	${pipeline_dir2}/amber/${sampleIdDir2}.amber.baf.vcf.gz
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.tsv) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.tsv)
-#zdiff	<(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz)
+zdiff	${pipeline_dir1}/amber/${sampleIdDir1}.amber.contamination.vcf.gz${pipeline_dir2}/amber/${sampleIdDir2}.amber.contamination.vcf.gz
 diff <(sort	${pipeline_dir1}/amber/${sampleIdDir1}.amber.qc) <(sort	${pipeline_dir2}/amber/${sampleIdDir2}.amber.qc)
 diff <(sort	${pipeline_dir1}/amber/Amber.snpcheck.37.vcf) <(sort	${pipeline_dir2}/amber/Amber.snpcheck.37.vcf)
 diff <(sort	${pipeline_dir1}/amber/amber.version) <(sort	${pipeline_dir2}/amber/amber.version)
