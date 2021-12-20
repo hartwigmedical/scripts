@@ -97,7 +97,7 @@ diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.fusion.tsv) <(sort	${pipe
 info "6"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.links.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.links.tsv)
 info "7"
-diff <(cut -f1 ${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv | sort ) <(cut -f 1 ${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv | sort)
+diff <(cut -f1 -d$'\t' ${pipeline_dir1}/linx/${sampleIdDir1}.linx.svs.tsv | sort ) <(cut -f 1 -d$'\t' ${pipeline_dir2}/linx/${sampleIdDir2}.linx.svs.tsv | sort)
 info "8"
 diff <(sort	${pipeline_dir1}/linx/${sampleIdDir1}.linx.viral_inserts.tsv) <(sort	${pipeline_dir2}/linx/${sampleIdDir2}.linx.viral_inserts.tsv)
 info "9"
