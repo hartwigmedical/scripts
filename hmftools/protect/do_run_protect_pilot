@@ -11,8 +11,6 @@ output_dir=$1 && shift
 serve_actionability_dir=$1 && shift
 protect_jar=$1 && shift
 
-# TODO Will be prod once v1.4 is upgraded.
-
 if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${serve_actionability_dir}" || -z "${protect_jar}" ]]; then
     error "Missing input parameters. Exiting";
 fi
