@@ -11,8 +11,6 @@ host=$(hostname)
 if [[ -z "${SLACK_DEFAULT_URL}" || -z "${SLACK_TESTING_URL}" ]]; then
     if [[ -f "/data/dbs/slack/slack_webhook_urls" ]]; then
         source "/data/dbs/slack/slack_webhook_urls"
-    elif [[ -f "/data/dbs/slack/slack_webhook_urls" ]]; then
-        source "/data/dbs/slack/slack_webhook_urls"
     fi
 fi
 [[ -n "${SLACK_DEFAULT_URL}" ]] || warn "Missing required ENV variable SLACK_DEFAULT_URL"
