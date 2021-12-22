@@ -27,11 +27,12 @@ driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
 known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
+#-use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
+#    -use_docm -docm_tsv ${docm_tsv} \
+#    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
-    -use_docm -docm_tsv ${docm_tsv} \
-    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
     -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
     -output_dir ${output_dir} \
     -ensembl_data_dir_37 ${ensembl_data_dir_37} \
