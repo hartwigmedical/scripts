@@ -9,9 +9,9 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-serve_actionability_dir="/data/experiments/kodu_serve_testing"
+serve_actionability_dir="/data/experiments/verification_serve_v1_8/pilot_output_kodu_private_sources"
 
-output_dir="${run_dir}/protect_new_serve"
+output_dir="${run_dir}/protect_on_serve_v1.8"
 protect_jar=$(locate_pilot_protect)
 
 do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar}
