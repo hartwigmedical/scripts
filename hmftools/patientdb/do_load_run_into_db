@@ -32,21 +32,21 @@ is_pass=true #value needed from GCP
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
-do_load_amber_data ${tumor_sample} ${amber_dir} ${database} "${credentials}" ${patient_db_jar}
+#do_load_amber_data ${tumor_sample} ${amber_dir} ${database} "${credentials}" ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}
-do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_germline_variants ${tumor_sample} ${ref_sample} ${germline_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_structural_variants ${tumor_sample} ${structural_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_linx_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
-do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${database} "${credentials}" ${patient_db_jar}
-do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${database} "${credentials}" ${patient_db_jar}
-do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${database} "${credentials}" ${patient_db_jar}
-do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
-do_load_peach_data ${tumor_sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${database} "${credentials}" ${patient_db_jar}
-do_load_sigs_data ${tumor_sample} ${sigs_dir} ${database} "${credentials}" ${patient_db_jar}
-do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${database} "${credentials}" ${patient_db_jar}
-do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${database} "${credentials}" ${patient_db_jar}
-do_load_virusinterpreter_data ${tumor_sample} ${virus_annotation_tsv} ${database} "${credentials}" ${patient_db_jar}
+#do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${database} "${credentials}" ${patient_db_jar}
+#do_load_germline_variants ${tumor_sample} ${ref_sample} ${germline_vcf} ${database} "${credentials}" ${patient_db_jar}
+#do_load_structural_variants ${tumor_sample} ${structural_vcf} ${database} "${credentials}" ${patient_db_jar}
+#do_load_linx_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
+#do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${database} "${credentials}" ${patient_db_jar}
+#do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${database} "${credentials}" ${patient_db_jar}
+#do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${database} "${credentials}" ${patient_db_jar}
+#do_load_protect_data ${tumor_sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
+#do_load_peach_data ${tumor_sample} ${peach_prod_calls_tsv} ${peach_prod_genotype_tsv} ${database} "${credentials}" ${patient_db_jar}
+#do_load_sigs_data ${tumor_sample} ${sigs_dir} ${database} "${credentials}" ${patient_db_jar}
+#do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${database} "${credentials}" ${patient_db_jar}
+#do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${database} "${credentials}" ${patient_db_jar}
+#do_load_virusinterpreter_data ${tumor_sample} ${virus_annotation_tsv} ${database} "${credentials}" ${patient_db_jar}
 
 # first fix at GCP
 #do_update_snpcheck_status ${tumor_sample} ${is_pass} ${database} "${credentials}" ${patient_db_jar}
