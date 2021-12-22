@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-version=1.7
+version=1.8
 serve_jar=${HOME}/hmf/repos/hmftools/serve/target/serve-${version}-jar-with-dependencies.jar
 
 if [ ! -f ${serve_jar} ]; then
