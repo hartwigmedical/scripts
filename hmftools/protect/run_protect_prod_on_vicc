@@ -6,7 +6,6 @@ source message_functions || exit 1
 set=$1 && shift
 barcode=$1 && shift
 sample=$1 && shift
-pipeline_version=$1 && shift
 temp_folder_path=$1 && shift
 
 if [[ -z "${set}" ]]; then
@@ -19,10 +18,6 @@ fi
 
 if [[ -z "${sample}" ]]; then
     error "No sample name provided. Exiting"
-fi
-
-if [[ -z "${pipeline_version}" ]]; then
-    error "No pipeline version. Exiting"
 fi
 
 if [[ -z "${temp_folder_path}" ]]; then
