@@ -61,8 +61,8 @@ for seq_dir in "${seq_dirs[@]}"; do
     fi
     
     ## store further cmds so we can print all together at the end
-    cmds_to_execute+=("rsync -ah ${report_path}/Reports nas.prod-1:/volume1/web/qc/conversion/${nasrun_name}/")
-    cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas.prod-1:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
+    cmds_to_execute+=("rsync -ah ${report_path}/Reports nas:/volume1/web/qc/conversion/${nasrun_name}/")
+    cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
 done
 
 printHeader "SAMPLE info"
