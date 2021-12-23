@@ -84,7 +84,9 @@ if [[ $( cat $temp_folder_path/purple/${sample}.purple.qc | grep QCStatus | cut 
 else
     fail_reason="sufficient_tcp_qc_failure"
 fi
+
 pipeline_version_file=${temp_folder_path}/pipeline.version
+peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${temp_folder_path})
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
@@ -92,6 +94,7 @@ if [[ ${correction_comments} != "" ]]; then
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_data_report} \
         -pipeline_version_file ${pipeline_version_file} \
+        -peach_genotype_tsv ${peach_genotype_tsv} \
         -purple_purity_tsv ${purple_purity_tsv} \
         -purple_qc_file ${purple_qc_file} \
         -comments "${correction_comments}" \
@@ -102,6 +105,7 @@ else
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_data_report} \
         -pipeline_version_file ${pipeline_version_file} \
+        -peach_genotype_tsv ${peach_genotype_tsv} \
         -purple_purity_tsv ${purple_purity_tsv} \
         -purple_qc_file ${purple_qc_file} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
