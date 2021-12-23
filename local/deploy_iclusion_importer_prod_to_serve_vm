@@ -12,5 +12,5 @@ fi
 info "Copying ${iclusion_importer_jar} to gs://common-tools/"
 gsutil cp ${iclusion_importer_jar} gs://common-tools/iclusion-importer/${version}/iclusion-importer.jar
 
-info "Copying ${iclusion_importer_jar} to serve-vm"
-gcloud compute scp ${iclusion_importer_jar} serve-vm:/data/tools/iclusion-importer/${version}/iclusion-importer.jar
+info "Copying ${iclusion_importer_jar} to serve-vm-prod-1"
+gcloud compute scp ${iclusion_importer_jar} serve-vm-prod-1:/data/tools/iclusion-importer/${version}/iclusion-importer.jar

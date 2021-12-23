@@ -8,5 +8,5 @@ if [ ! -f ${serve_jar} ]; then
     error "Could not locate serve jar!"
 fi
 
-info "Copying ${serve_jar} to serve-vm"
-gcloud compute scp ${serve_jar} serve-vm:/data/tools/serve/pilot/serve.jar
+info "Copying ${serve_jar} to serve-vm-prod-1"
+gcloud compute scp ${serve_jar} serve-vm-prod-1:/data/tools/serve/pilot/serve.jar

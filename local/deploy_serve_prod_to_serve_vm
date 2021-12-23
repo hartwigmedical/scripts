@@ -12,5 +12,5 @@ fi
 info "Copying ${serve_jar} to gs://common-tools/"
 gsutil cp ${serve_jar} gs://common-tools/serve/${version}/serve.jar
 
-info "Copying ${serve_jar} to serve-vm"
-gcloud compute scp ${serve_jar} serve-vm:/data/tools/serve/${version}/serve.jar
+info "Copying ${serve_jar} to serve-vm-prod-1"
+gcloud compute scp ${serve_jar} serve-vm-prod-1:/data/tools/serve/${version}/serve.jar
