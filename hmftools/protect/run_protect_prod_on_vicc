@@ -37,7 +37,7 @@ info "Rerunning protect for $set (only in VM; pipeline data will not be overwrit
 gcloud --project hmf-pipeline-prod-e45b00f2 source repos clone common-resources-private &> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 cd common-resources-private/
 #git tag
-git checkout v${pipeline_version} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
+git checkout "pipeline5-5-25-202111221321-202111231329-private" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 cd ..
 serve_actionability_dir=$( pwd )"/common-resources-private/serve/37"
 info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
@@ -45,7 +45,7 @@ info "Resources used for running protect from: ${serve_actionability_dir}"  &>> 
 do_run_protect ${temp_folder_path} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 
 #### check log file of rerunning protect
-if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread\|Error:" | wc -l ) > 0 ]]; then
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread\|Error:" | wc -l ) -lt 0 ]]; then
     warn "Rerunning protect gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
     #cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|ERROR\|Exception in thread"
 else
