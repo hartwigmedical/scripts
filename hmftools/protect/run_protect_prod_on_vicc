@@ -28,13 +28,7 @@ output_dir=${temp_folder_path}/protect
 protect_jar=$(locate_prod_protect)
 
 info "Rerunning protect for $set (only in VM; pipeline data will not be overwritten)"
-### Download the privite resource having the SERVE actionability data for the diagnostic pipeline
-gcloud --project hmf-pipeline-prod-e45b00f2 source repos clone common-resources-private &> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
-cd common-resources-private/
-#git tag
-git checkout "pipeline5-5-25-202111221321-202111231329-private" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
-cd ..
-serve_actionability_dir=$( pwd )"/common-resources-private/serve/37"
+serve_actionability_dir="/data/resources/custum/common-resources-private/serve/37"
 info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
 
 do_run_protect ${temp_folder_path} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
@@ -46,6 +40,3 @@ if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.l
 else
     info "No warnings/errors in rerunning protect. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
 fi
-
-### remove serve resource again
-sudo rm -r common-resources-private/
