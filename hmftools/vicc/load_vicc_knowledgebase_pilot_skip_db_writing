@@ -5,4 +5,4 @@ source locate_files || exit 1
 vicc_json=$(locate_vicc_json)
 vicc_jar=$(locate_pilot_vicc_importer)
 
-do_load_vicc_knowledgebase ${vicc_json} "vicc_db_pilot" ${vicc_jar} -skip_database_writing
+do_load_vicc_knowledgebase_pilot ${vicc_json} "vicc_db_pilot" ${vicc_jar} -skip_database_writing
