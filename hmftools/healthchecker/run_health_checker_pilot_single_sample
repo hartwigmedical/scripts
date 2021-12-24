@@ -14,7 +14,7 @@ sample=$(basename "${run_dir}" | cut -d"_" -f4)
 flagstat=$(locate_flagstats "${run_dir}" "${sample}")
 wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${sample}")
 
-java -Xmx4G -jar /data/tools/healthchecker/pilot/health-checker.jar \
+java11 -Xmx4G -jar /data/tools/health-checker/pilot/health-checker.jar \
     -reference ${sample} \
     -ref_wgs_metrics_file ${wgs_metrics} \
     -ref_flagstat_file ${flagstat} \
