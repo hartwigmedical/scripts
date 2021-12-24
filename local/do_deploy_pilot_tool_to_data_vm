@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+tool=$1 && shift
+
+if [ -z ${tool} ]; then
+    error "No tool provided. Exiting"
+fi
+
+do_deploy_pilot_tool_to_vm ${tool} "data-vm-prod-2"

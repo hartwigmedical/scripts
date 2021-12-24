@@ -1,15 +1,3 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-
-ckb_importer_jar=${HOME}/hmf/repos/hmftools/ckb-importer/target/ckb-importer-*-jar-with-dependencies.jar
-
-if [ ! -f ${ckb_importer_jar} ]; then
-    error "Could not locate CKB importer jar!"
-fi
-
-info "Copying ${ckb_importer_jar} to gs://common-tools/"
-gsutil cp ${ckb_importer_jar} gs://common-tools/ckb-importer/pilot/ckb-importer.jar
-
-info "Copying ${ckb_importer_jar} to serve-vm-prod-1"
-gcloud compute scp ${ckb_importer_jar} serve-vm-prod-1:/data/tools/ckb-importer/pilot/ckb-importer.jar
+do_deploy_pilot_tool_to_serve_vm "ckb-importer"

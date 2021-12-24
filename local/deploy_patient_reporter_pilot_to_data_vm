@@ -1,15 +1,3 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-
-patient_reporter_jar=${HOME}/hmf/repos/hmftools/patient-reporter/target/patient-reporter-*-jar-with-dependencies.jar
-
-if [ ! -f ${patient_reporter_jar} ]; then
-    error "Could not locate patient reporter jar!"
-fi
-
-#info "Copying ${patient_reporter_jar} to gs://common-tools/"
-#gsutil cp ${patient_reporter_jar} gs://common-tools/patientreporter/pilot/patient-reporter.jar
-
-info "Copying ${patient_reporter_jar} to data-vm-prod-2"
-gcloud compute scp ${patient_reporter_jar} data-vm-prod-2:/home/lschoenmaker/tmp/patient-reporter.jar
+do_deploy_pilot_tool_to_data_vm "patient-reporter"

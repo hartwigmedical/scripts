@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+version=1.5
+orange_jar=$HOME/hmf/repos/hmftools/orange/target/orange-${version}-jar-with-dependencies.jar
+
+if [ ! -f ${orange_jar} ]; then
+    error "Could not locate orange jar!"
+fi
+
+echo "[INFO] Copying ${orange_jar} to gs://common-tools/"
+gsutil cp ${orange_jar} gs://common-tools/orange/${version}/orange.jar
+
+echo "[INFO] Copying ${orange_jar} to data-vm-prod-2"
+gcloud compute scp ${orange_jar} data-vm-prod-2:/data/tools/orange/${version}/orange.jar
