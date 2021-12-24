@@ -18,16 +18,16 @@ info "Comparing ${serve_dir2} with ${serve_dir1}"
 #info "Diff known fusion pairs v37"
 #diff <(sort ${serve_dir2}/KnownFusionPairs.SERVE.37.tsv) <(sort ${serve_dir1}/KnownFusionPairs.SERVE.37.tsv)
 
-info "Diff actionable hotspots v37"
-diff <(sort ${serve_dir2}/ActionableHotspots.37.tsv) <(sort ${serve_dir1}/ActionableHotspots.37.tsv)
-info "Diff actionable ranges v37"
-diff <(sort ${serve_dir2}/ActionableRanges.37.tsv) <(sort ${serve_dir1}/ActionableRanges.37.tsv)
-info "Diff actionable genes v37"
-diff <(sort ${serve_dir2}/ActionableGenes.37.tsv) <(sort ${serve_dir1}/ActionableGenes.37.tsv)
-info "Diff actionable fusions v37"
-diff <(sort ${serve_dir2}/ActionableFusions.37.tsv) <(sort ${serve_dir1}/ActionableFusions.37.tsv)
-info "Diff actionable charateristics v37"
-diff <(sort ${serve_dir2}/ActionableCharacteristics.37.tsv) <(sort ${serve_dir1}/ActionableCharacteristics.37.tsv)
+#info "Diff actionable hotspots v37"
+#diff <(sort ${serve_dir2}/ActionableHotspots.37.tsv) <(sort ${serve_dir1}/ActionableHotspots.37.tsv)
+#info "Diff actionable ranges v37"
+#diff <(sort ${serve_dir2}/ActionableRanges.37.tsv) <(sort ${serve_dir1}/ActionableRanges.37.tsv)
+#info "Diff actionable genes v37"
+#diff <(sort ${serve_dir2}/ActionableGenes.37.tsv) <(sort ${serve_dir1}/ActionableGenes.37.tsv)
+#info "Diff actionable fusions v37"
+#diff <(sort ${serve_dir2}/ActionableFusions.37.tsv) <(sort ${serve_dir1}/ActionableFusions.37.tsv)
+#info "Diff actionable charateristics v37"
+#diff <(sort ${serve_dir2}/ActionableCharacteristics.37.tsv) <(sort ${serve_dir1}/ActionableCharacteristics.37.tsv)
 
 #info "Diff known hotspots v38"
 #zdiff <(sort ${serve_dir2}/KnownHotspots.SERVE.38.vcf.gz) <(sort ${serve_dir1}/KnownHotspots.SERVE.38.vcf.gz)
@@ -39,14 +39,14 @@ diff <(sort ${serve_dir2}/ActionableCharacteristics.37.tsv) <(sort ${serve_dir1}
 #diff <(sort ${serve_dir2}/KnownCopyNumbers.SERVE.38.tsv) <(sort ${serve_dir1}/KnownCopyNumbers.SERVE.38.tsv)
 #info "Diff known fusion pairs v38"
 #diff <(sort ${serve_dir2}/KnownFusionPairs.SERVE.38.tsv) <(sort ${serve_dir1}/KnownFusionPairs.SERVE.38.tsv)
-#
-#info "Diff actionable hotspots v38"
-#diff <(sort ${serve_dir2}/ActionableHotspots.38.tsv) <(sort ${serve_dir1}/ActionableHotspots.38.tsv)
-#info "Diff actionable ranges v38"
-#diff <(sort ${serve_dir2}/ActionableRanges.38.tsv) <(sort ${serve_dir1}/ActionableRanges.38.tsv)
-#info "Diff actionable genes v38"
-#diff <(sort ${serve_dir2}/ActionableGenes.38.tsv) <(sort ${serve_dir1}/ActionableGenes.38.tsv)
-#info "Diff actionable fusions v38"
-#diff <(sort ${serve_dir2}/ActionableFusions.38.tsv) <(sort ${serve_dir1}/ActionableFusions.38.tsv)
-#info "Diff actionable charateristics v38"
-#diff <(sort ${serve_dir2}/ActionableCharacteristics.38.tsv) <(sort ${serve_dir1}/ActionableCharacteristics.38.tsv)
+
+info "Diff actionable hotspots v38"
+diff <(sort ${serve_dir2}/ActionableHotspots.38.tsv) <(sort ${serve_dir1}/ActionableHotspots.38.tsv)
+info "Diff actionable ranges v38"
+diff <(sort ${serve_dir2}/ActionableRanges.38.tsv) <(sort ${serve_dir1}/ActionableRanges.38.tsv)
+info "Diff actionable genes v38"
+diff <(sort ${serve_dir2}/ActionableGenes.38.tsv) <(sort ${serve_dir1}/ActionableGenes.38.tsv)
+info "Diff actionable fusions v38"
+diff <(sort ${serve_dir2}/ActionableFusions.38.tsv) <(sort ${serve_dir1}/ActionableFusions.38.tsv)
+info "Diff actionable charateristics v38"
+diff <(sort ${serve_dir2}/ActionableCharacteristics.38.tsv) <(sort ${serve_dir1}/ActionableCharacteristics.38.tsv)
