@@ -14,4 +14,4 @@ mkdir ${output_dir}
 
 virus_interpreter_jar=$(locate_pilot_virus_interpreter)
 
-do_run_virus_interpreter ${run_dir} ${virus_interpreter_jar} ${output_dir} -log_debug
+do_run_virus_interpreter_pilot ${run_dir} ${virus_interpreter_jar} ${output_dir} -log_debug
