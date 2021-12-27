@@ -6,7 +6,7 @@ source locate_gcp_files || exit 1
 
 set -e
 
-info "Syncing ops data from ops-vm used in development"
+info "Syncing data from ops-vm used in development"
 gsutil -mq cp -r gs://data-vm-resources-prod-1/* /data
 info "Done"
 
@@ -23,6 +23,6 @@ java11 -jar ${dsync_jar} \
     --patient_db_url ${db_url} \
     --patient_db_credentials ${credentials} \
     --local_path ${local_path} \
-    --threads 100 > /tmp/dsync-$(date +%Y%m%d%H%M).out
+    --threads 100
 rm ${credentials}
 info "Done"
