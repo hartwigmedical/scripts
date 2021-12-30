@@ -2,7 +2,8 @@
 
 source message_functions || exit 1
 
-classes=(accounts biopsies datasets entities fastq flowcells groups inis platforms runs samples sets sequencers)
+classes=(accounts biopsies datasets entities fastq flowcells groups inis platforms runs samples sets sequencers
+reports/created reports/shared)
 
 print_usage(){
     script=$(basename "$0")
@@ -81,6 +82,12 @@ main(){
     # Printing
     if [[ "${output_json}" == "TRUE" ]]; then
         echo "${json_result}"
+    elif [[ "${class}" == "reports/created" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" barcode sample_name cohort report_type source create_time run_id id
+        jq -r '.[] | [.barcode, .sample_name, .cohort, .report_type, .source, .create_time, .run_id, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "reports/shared" ]]; then
+        printf "#%s\t%s\t%s\n" share_time report_created_id id
+        jq -r '.[] | [.share_time, .report_created_id, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "fastq" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
         jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
