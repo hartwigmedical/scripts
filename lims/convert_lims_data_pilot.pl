@@ -645,7 +645,7 @@ sub parseDictFile{
 
 sub addContactInfoToSubmissions{
     my ($submissions, $contact_groups) = @_;
-    my @fields = qw(
+    my @required_fields = qw(
         requester_report_contact_name
         requester_report_contact_email
         report_contact_name
@@ -658,16 +658,22 @@ sub addContactInfoToSubmissions{
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
 
-        if( exists $submission->{ 'requester_report_contact_email' } ){
-            # Skip records from the time when contact info was entered in shipments tab
+        if( exists $submission->{ 'report_contact_email' } ){
+            # Submission is from the time when contact info was entered in shipments tab
+            foreach my $field ( @required_fields ){
+                unless ( exists $submission->{$field} ){
+                    $submission->{$field} = NACHAR;
+                }
+            }
             next;
         }
         elsif( defined $submission->{ 'group_id' } ){
+            # Retrieve contact info from the contact group table
             my $group_id = $submission->{ 'group_id' };
             next if $group_id eq 'na';
             if ( exists $contact_groups->{ $group_id } ){
                 my $group = $contact_groups->{ $group_id };
-                foreach my $field ( @fields ){
+                foreach my $field ( @required_fields ){
                     $submission->{$field} = $group->{ $field };
                 }
             }
@@ -677,7 +683,7 @@ sub addContactInfoToSubmissions{
             }
         }
         else{
-            sayWarn("No Group ID field in place for submission $submission_id");
+            sayWarn("No Group ID defined for submission $submission_id");
             next;
         }
     }
@@ -1081,8 +1087,8 @@ sub getFieldNameTranslations{
         "Sample_count"      => 'sample_count',
         "Lab_is_finished"   => 'has_lab_finished',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'requester_report_contact_name',
-        "Contact_email"     => 'requester_report_contact_email',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
         "Remarks"           => 'remarks',
         "Storage_status"    => 'lab_storage_status',
     );
@@ -1098,8 +1104,8 @@ sub getFieldNameTranslations{
         "Lab_is_finished"   => 'has_lab_finished',
         "Group_ID"          => 'group_id',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'requester_report_contact_name',
-        "Contact_email"     => 'requester_report_contact_email',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
         "Portal_contact_name" => 'data_contact_name',
         "Portal_contact_email" => 'data_contact_email',
         "Remarks"           => 'remarks',
