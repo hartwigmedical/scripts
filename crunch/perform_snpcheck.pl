@@ -208,7 +208,7 @@ sub performQualityCheck{
     foreach my $vcfName ( @$vcfNames ){
         
         ## skip negative control sample
-        next if $vcfName =~ /^NTC\d+(-NTC)?_MVN\d+_OpenArrayCalls\.vcf$/;
+        next if $vcfName =~ /^NTC\d+(-NTC)?_[A-Z]{3}\d{2}_OpenArrayCalls\.vcf$/;
         
         my ($sampleName,$plateName) = (split( "_", $vcfName ))[0,1];
         my $usable = 0;
