@@ -82,11 +82,13 @@ main () {
     print_header "REQUIRED FILES EXISTENCE check"
     all_crams_present="TRUE"
     for file in "${all_base_files[@]}"; do
-        [[ -f "${file}" ]] || die "  Base file does not exist ($file)"
+        [[ -f "${file}" ]] || info_and_warn "  File does not exist in base run ($file)"
     done
     for file in "${all_test_files[@]}"; do
-        [[ -f "${file}" ]] || die "  Test file does not exist ($file)"
+        [[ -f "${file}" ]] || info_and_warn "  File does not exist in test run ($file)"
     done
+
+    print_header "BAM/CRAM header check"
     for file in "${all_cram_files[@]}"; do
         if [[ -f "${file}" ]]; then
             info "  OK file found (${file})"
@@ -95,8 +97,6 @@ main () {
             all_crams_present="FALSE"
         fi
     done
-
-    print_header "BAM/CRAM header check"
     if [[ "${all_crams_present}" == "FALSE" ]]; then
         info "  NOTE: not all CRAMs were present so skipping CRAM specific checks"
     else
