@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+script="$(basename "$0")"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Verifies a new COLO829T Somatic pipeline run"
+    echo " Usage: $script -o <out_dir> -t <truth_dir> -n <truth_dir>"
+    echo " Options:"
+    echo "   -o  out_dir    Path to output directory"
+    echo "   -t  truth_run  Path to directory of truth run"
+    echo "   -n  truth_run  Path to directory of new run to be verified"
+    echo "   -f  force      Continue if output directory already exists"
+    echo " Example:"
+    echo "   $script -o /path/to/outdir -t /path/to/COLO829v003T_524 -n /path/to/COLO829v003T_525"
+    echo "-----"
+    exit 1
+}
+
+sanity_checks="TRUE"
+while getopts ':fo:t:n:' flag; do
+    case "${flag}" in
+        f) sanity_checks="FALSE" ;;
+        o) out_dir=${OPTARG} ;;
+        t) truth_run=${OPTARG} ;;
+        n) new_run=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${out_dir}" || -z "${truth_run}" || -z "${new_run}" ]]; then
+    print_usage
+fi
+
+main() {
+    info "Starting with script $script"
+
+    truth_run=$(realpath "$truth_run")
+    new_run=$(realpath "$new_run")
+
+    ## some input sanity checks
+    [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir format (${out_dir})?"
+    [[ -f "${new_run}/pipeline.version" ]] || die "Pipeline version file missing (in new run: ${new_run})"
+    [[ -d "${new_run}" ]] || die "New run dir not found (${new_run})"
+    [[ -d "${truth_run}" ]] || die "Truth run dir not found (${truth_run})"
+    if [[ "${sanity_checks}" == "TRUE" ]]; then
+        [[ ! -d "${out_dir}" ]] || die "Output dir exists (${out_dir})"
+    fi
+
+    info "Constructing variables"
+    truth_run_name=$(basename "${truth_run}")
+    new_run_name=$(basename "${new_run}")
+    jobs_dir="${out_dir}/jobs"
+    logs_dir="${out_dir}/logs"
+
+    truth_metadata_file="${truth_run}/metadata.json"
+    new_metadata_file="${new_run}/metadata.json"
+    info "Checking format of ${truth_metadata_file}"
+    check_metadata_json "${truth_metadata_file}"
+    info "Checking format of ${new_metadata_file}"
+    check_metadata_json "${new_metadata_file}"
+
+    truth_sample=$(jq -r '.tumor.sampleName' "${truth_metadata_file}")
+    new_sample=$(jq -r '.tumor.sampleName' "${new_metadata_file}")
+
+    info "Config:"
+    info "  Output path: ${out_dir}"
+    info "  Jobs directory: ${jobs_dir}"
+    info "  Logs directory: ${logs_dir}"
+    info "  Truth run: ${truth_run_name} (sample=${truth_sample})"
+    info "  New run: ${new_run_name} (sample=${new_sample})"
+
+    info "Creating directory structure"
+    mkdir -p "${out_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
+    cd "${out_dir}" || die "Unable to move to output directory"
+
+    info "Gathering script and sql job files"
+    jobs_source_path="/data/repos/scripts/validation"
+    script_jobs=(
+        "compare_v5_runs"
+        "run_all_sql_verification_jobs"
+    )
+    sql_jobs=(
+        "check_update_time.sql"
+        "compare_metrics.sql"
+        "compare_purity.sql"
+        "count_variants.sql"
+        "diff_somatic_variants.sql"
+        "diff_germline_variants.sql"
+        "diff_sv.sql"
+        "diff_protect.sql"
+    )
+    for job_file_name in "${script_jobs[@]}" "${sql_jobs[@]}"; do
+        copy_file "${jobs_source_path}/${job_file_name}" "${jobs_dir}"
+    done
+    copy_file "/data/repos/scripts/functions/test/locate_files_test" "${jobs_dir}"
+
+    # Somewhat hacky way of replacing the variables of template SQL
+    info "Replacing variables in SQL job files"
+    truth_db_schema="reference_validation_sets"
+    new_db_schema="pipeline_v5_validation"
+    for sql_file_name in "${sql_jobs[@]}"; do
+        sed -i "s/VARIABLE_TRUTH_SAMPLE_ID/${truth_sample}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_NEW_SAMPLE_ID/${new_sample}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_TRUTH_DB_SCHEMA/${truth_db_schema}/g" "${jobs_dir}/${sql_file_name}"
+        sed -i "s/VARIABLE_NEW_DB_SCHEMA/${new_db_schema}/g" "${jobs_dir}/${sql_file_name}"
+    done
+
+    grep_for="err|warn|exit|excep"
+    info "Looking for anomalies in run.log files (searching for ${grep_for})"
+    find "${new_run}" -name "run.log" -exec grep -Pi "${grep_for}" {} + \
+      | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
+
+    info "Executing locate_files test"
+    "${jobs_dir}/locate_files_test" "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
+
+    info "Executing compare_v5_runs"
+    out_log="${logs_dir}/compare_v5_runs.log"
+    err_log="${logs_dir}/compare_v5_runs.err"
+    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${out_log}" 2>"${err_log}"
+
+    db_load_script="load_run_into_pipeline_verification_db"
+    sql_query_script="${jobs_dir}/run_all_sql_verification_jobs"
+
+    #before_db_load_job="${jobs_dir}/run_sql_jobs_before_db_load"
+    #echo "${sql_query_script} ${jobs_dir} ${logs_dir} before_load" > "${before_db_load_job}"
+    #chmod +x "${before_db_load_job}"
+
+    after_db_load_job="${jobs_dir}/run_sql_jobs_after_db_load"
+    echo "${sql_query_script} ${jobs_dir} ${logs_dir} after_load" > "${after_db_load_job}"
+    chmod +x "${after_db_load_job}"
+
+    info "TODO:"
+    info "  1. Inspect all log files in ${logs_dir}"
+    info "  2. Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
+    info "  3. Execute sql queries (nohup ${after_db_load_job} > ${logs_dir}/sql_verification_after_load.log &)"
+    info "  4. Inspect all SQL log files in logs dir (ls ${logs_dir})"
+    info "Finished with $script"
+}
+
+copy_file() {
+    local file_path=$1 && shift
+    local target_dir=$1 && shift
+
+    if [[ ! -f "${file_path}" ]]; then
+        die "File not found (${file_path})"
+    else
+        info "  OK copied file ($file_path)"
+        cp "${file_path}" "${jobs_dir}" || die "Unable to copy file (${file_path}) to dir (${target_dir})"
+    fi
+}
+
+check_metadata_json() {
+    local metadata_json=$1 && shift
+    fields_to_check=(
+        '.set'
+        '.reference.sampleName'
+        '.reference.barcode'
+        '.tumor.sampleName'
+        '.tumor.barcode'
+        '.tumor.primaryTumorDoids'
+    )
+    for field in ${fields_to_check[*]}; do
+        if [[ $(jq "select(${field} == null)" "${metadata_json}") ]]; then
+            warn "  Field ${field} absent metadata (${metadata_json})"
+        else
+            info "  OK field found in metadata (${field})"
+        fi
+    done
+
+    # specific check on COLO doid
+    tumor_name=$(jq '.tumor.sampleName' "${metadata_json}")
+    expected_doid="8923"
+    if [[ "$tumor_name" =~ COLO829 ]]; then
+        doid=$(jq -r '.tumor.primaryTumorDoids | join(",")' "${metadata_json}")
+        if [[ "${doid}" == "${expected_doid}" ]]; then
+            info "  OK found expected tumor DOIDs '${expected_doid}' in metadata json"
+        else
+            warn "  Expected tumor DOIDs '${expected_doid}' but found '${doid}' instead"
+        fi
+    fi
+}
+
+main
