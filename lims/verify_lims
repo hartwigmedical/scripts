@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+JSON1=${1:-"/data/ops/lims/prod/lims.json"}
+JSON2=${2:-"/data/ops/lims/pilot/lims.json"}
+
+SUBMISSIONS=(HMFreg0481 HMFreg1511 HMFreg1527)
+CONTACT_GROUPS=(PT-003-102 EMC-003-103-PTO UMCU-003-101-PTO)
+
+main (){
+    info "Verifying a selection of object between two JSONs"
+    info "  LIMS json 1: $JSON1"
+    info "  LIMS json 2: $JSON2"
+
+    info "Verifying submissions"
+    for submission_id in "${SUBMISSIONS[@]}"; do
+        diff_submission "$submission_id"
+    done
+
+    info "Verifying contact groups"
+    for contact_id in "${CONTACT_GROUPS[@]}"; do
+        diff_contact "$contact_id"
+    done
+}
+
+diff_submission() {
+    local submission_id=$1 && shift
+    diff_object submissions submission "$submission_id"
+}
+
+diff_contact() {
+    local group_id=$1 && shift
+    diff_object contact_groups group_id "$group_id"
+}
+
+diff_object() {
+    local type=$1 && shift
+    local id_field=$1 && shift
+    local id=$1 && shift
+
+    info_string="type=$type, field=$id_field, id=$id"
+
+    one=$(query_lims.pl -lims "$JSON1" -type "$type" -filter "${id_field}=${id}" -exact -json) \
+      || die "Querying LIMS JSON 1 failed ($info_string)"
+
+    two=$(query_lims.pl -lims "$JSON2" -type "$type" -filter "${id_field}=${id}" -exact -json) \
+      || die "Querying LIMS JSON 2 failed ($info_string)"
+
+    diff_count=$(diff <(jq -S <<< "$one") <(jq -S <<< "$two") | wc -l)
+    if [[ "$diff_count" -eq 0 ]]; then
+        info "  OK ($info_string)"
+    else
+        warn "  FAIL ($info_string)"
+    fi
+}
+
+main
