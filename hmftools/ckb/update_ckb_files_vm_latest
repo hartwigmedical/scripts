@@ -15,7 +15,7 @@ gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} /data/resources/custom
 
 # unzip file
 info "Unziping file ${zip_file}"
-unzip /data/resources/custom/ckb/latest/${zip_file}
+unzip /data/resources/custom/ckb/latest/${zip_file} -d /data/resources/custom/ckb/latest/api-export
 
 #rename dir
 info "Renaming dir"
