@@ -9,23 +9,25 @@ if [[ -z "${zip_file}" ]]; then
     error "No zip file provided. Exiting"
 fi
 
+local_dir="/data/resources/custom/ckb/latest"
+
 # copying data from bucket
 info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"
-gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} /data/resources/custom/ckb/latest/
+gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} ${local_dir}/
 
 # unzip file
 info "Unziping file ${zip_file}"
-unzip /data/resources/custom/ckb/latest/${zip_file} -d /data/resources/custom/ckb/latest/api-export
+unzip "${local_dir}/${zip_file}" -d "${local_dir}"
+rm "${local_dir}/${zip_file}"
 
 #rename dir
 info "Renaming dir"
 date=$(echo ${zip_file} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}' | cut -c 3-)
-mv /data/resources/custom/ckb/latest/api-export /data/resources/custom/ckb/latest/${date}_ckb_flex_dump
-rm /data/resources/custom/ckb/latest/${zip_file}
+mv "${local_dir}/api-export" "${local_dir}/${date}_ckb_flex_dump"
 
 # create new symlink
 info "Creating new symlink"
-unlink /data/resources/custom/ckb/latest/ckb_flex_dump
-ln -s /data/resources/custom/ckb/latest/${date}_ckb_flex_dump /data/resources/custom/ckb/latest/ckb_flex_dump
+unlink "${local_dir}/ckb_flex_dump"
+ln -s "${local_dir}/${date}_ckb_flex_dump" "${local_dir}/ckb_flex_dump"
 
 info "CKB dump is updated!"
