@@ -11,7 +11,7 @@ print_usage(){
     echo " Options:"
     echo "   -o  out_dir    Path to output directory"
     echo "   -t  truth_run  Path to directory of truth run"
-    echo "   -n  truth_run  Path to directory of new run to be verified"
+    echo "   -n  new_run  Path to directory of new run to be verified"
     echo "   -f  force      Continue if output directory already exists"
     echo " Example:"
     echo "   $script -o /path/to/outdir -t /path/to/COLO829v003T_524 -n /path/to/COLO829v003T_525"
