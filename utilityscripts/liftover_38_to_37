@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 tmp_38_hotspots=$1
 working_dir=$2
 target_37_hotspots=$3
