@@ -72,7 +72,6 @@ if [[ ! "${current_project}" == "${vm_project}" ]]; then
     exit 1
 fi
 
-# if no image name provided then try to get newest default image
 if [[ -z "${image_name}" ]]; then
     info "Searching for latest ${family} image"
     image_name=$(gcloud --project="${image_project}" compute images describe-from-family "${family}" | grep name | cut -d" " -f2) \
