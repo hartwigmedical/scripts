@@ -16,12 +16,17 @@ DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 
-FOR_001_FILE="HMF-FOR-001 Received Samples 2021 v5.12.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2021 v4.4.xlsx"
+FOR_001_FILE="HMF-FOR-001 Received Samples 2022 v5.12.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process 2022 v4.4.xlsx"
+
+FOR_001_FILE_2021="HMF-FOR-001 Received Samples 2021 v5.12.xlsx"
+FOR_002_FILE_2021="HMF-FOR-002 Sample in process 2021 v4.4.xlsx"
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
   "${NAS_DIR}/${FOR_002_FILE}"
+  "${NAS_DIR}/${FOR_001_FILE_2021}"
+  "${NAS_DIR}/${FOR_002_FILE_2021}"
 )
 
 LAMA_BUCKET="lama-export"
@@ -42,17 +47,10 @@ main() {
     dir_exists_and_is_writable "${LAB_DIR}"
     dir_exists_and_is_writable "${SYM_DIR}"
 
+    info "Working dir set to ${DAY_DIR}"
     mkdir -p "${DAY_DIR}"
 
-    for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
-    for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
-
-    for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
-    for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
-    for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
-    for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
-
-    info "Retrieving input files from NAS (${DAY_DIR})"
+    info "Retrieving input files from NAS"
     for nas_file_path in "${NAS_FILES[@]}"; do
       retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
     done
@@ -62,11 +60,30 @@ main() {
       gsutil cp "$lama_json_file" "${DAY_DIR}" || die "Unable to copy file ($lama_json_file)"
     done
 
+    for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
+    for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
+
+    for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
+    for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
+    for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
+    for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
+
     info "Converting input files to text formats"
     excel_sheet_to_tsv "${for001_source}" "${for001_subm_txt}" "1" "5"
     excel_sheet_to_tsv "${for001_source}" "${for001_samp_txt}" "2" "2"
-    excel_sheet_to_tsv "${for001_source}" "${for001_cont_txt}" "3" "1"
+    excel_sheet_to_tsv "${for001_source}" "${for001_cont_txt}" "3" "2"
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
+
+    # We need to support the files from previous year until lab team has finished with updates
+    for001_source_2021="${DAY_DIR}/${FOR_001_FILE_2021}" # Excel FOR-001
+    for002_source_2021="${DAY_DIR}/${FOR_002_FILE_2021}" # Excel FOR-002
+    for001_samp_txt_2021="${DAY_DIR}/2021_for001_samples.tsv"
+    for001_subm_txt_2021="${DAY_DIR}/2021_for001_submissions.tsv"
+    for002_proc_txt_2021="${DAY_DIR}/2021_for002_processing.tsv"
+    info "Converting input files to text formats (2021)"
+    excel_sheet_to_tsv "${for001_source_2021}" "${for001_subm_txt_2021}" "1" "5"
+    excel_sheet_to_tsv "${for001_source_2021}" "${for001_samp_txt_2021}" "2" "2"
+    excel_sheet_to_tsv "${for002_source_2021}" "${for002_proc_txt_2021}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
@@ -80,12 +97,12 @@ excel_sheet_to_tsv() {
     local input_excel_file=$1 && shift
     local output_tsv=$1 && shift
     local sheet_index=$1 && shift
-    local skip_rows=$1 && shift
+    local first_row_index=$1 && shift
     local excel_name=""
     excel_name=$(basename "${input_excel_file}")
 
-    info "  Converting '${excel_name}' sheet ${sheet_index} with ${skip_rows} header rows (${output_tsv})"
-    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > "${output_tsv}"
+    info "  Converting '${excel_name}' sheet ${sheet_index} with ${first_row_index} row as header (${output_tsv})"
+    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}"
     [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
 
