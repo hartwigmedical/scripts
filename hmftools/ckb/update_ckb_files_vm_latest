@@ -21,7 +21,7 @@ unzip /data/resources/custom/ckb/latest/${zip_file}
 info "Renaming dir"
 date=$(echo ${zip_file} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}' | cut -c 3-)
 mv /data/resources/custom/ckb/latest/api-export /data/resources/custom/ckb/latest/${date}_ckb_flex_dump
-rm ${zip_file}
+rm /data/resources/custom/ckb/latest/${zip_file}
 
 # create new symlink
 info "Creating new symlink"
