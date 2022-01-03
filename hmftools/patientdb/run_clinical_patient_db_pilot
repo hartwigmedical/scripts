@@ -12,6 +12,9 @@ lims_dir=/data/ops/lims/pilot
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 # Note that we should only "do_process_wide_clinical_data" in case of pilot.
+
+    #-consent_config_tsv /data/dbs/informed_consents/informed_consents_config.tsv \
+
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
     -runs_json ${runs_json} \
@@ -26,7 +29,6 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -wide_response_csv /data/ecrf/wide_responses.csv \
     -wide_five_days_csv /data/ecrf/wide_five_days.csv \
     -lims_dir ${lims_dir} \
-    -consent_config_tsv /data/dbs/informed_consents/informed_consents_config.tsv \
     -curated_primary_tumor_tsv /data/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
     -patient_tumor_curation_status_tsv /data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
     -doid_json /data/dbs/disease_ontology/201015_doid.json \
