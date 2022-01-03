@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+patient_db_jar=$(locate_prod_patient_db)
+create_run_contexts_json
+runs_json=./run_contexts.json
+pipeline_version_file="pipeline.version"
+reporting_db_tsv=$(locate_reporting_db_generate_tsv)
+lims_dir=/data/ops/lims/pilot
+
+
+# Force UTF-8 to deal with non-standard characters, see DEV-275
+# Note that we should only "do_process_wide_clinical_data" in case of pilot.
+
+    #-consent_config_tsv /data/dbs/informed_consents/informed_consents_config.tsv \
+
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
+    -jar ${patient_db_jar} \
+    -runs_json ${runs_json} \
+    -pipeline_version_file ${pipeline_version_file} \
+    -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
+    -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
+    -drup_ecrf /data/ecrf/drup_ecrf.xml \
+    -lims_dir ${lims_dir} \
+    -curated_primary_tumor_tsv /data/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
+    -patient_tumor_curation_status_tsv /data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
+    -doid_json /data/dbs/disease_ontology/201015_doid.json \
+    -tumor_location_mapping_tsv /data/dbs/clinical_curation/pilot_tumor_location_mapping.tsv \
+    -tumor_location_overrides_tsv /data/dbs/clinical_curation/pilot_tumor_location_overrides.tsv \
+    -treatment_mapping_tsv /data/dbs/clinical_curation/pilot_treatment_mapping.tsv \
+    -biopsy_mapping_tsv /data/dbs/clinical_curation/biopsy_site_mapping.tsv \
+    -reporting_db_tsv ${reporting_db_tsv} \
+    "$@"
+
+rm ./run_contexts.json
+rm ./run.log
