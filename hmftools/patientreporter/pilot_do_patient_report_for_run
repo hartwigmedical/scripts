@@ -56,7 +56,6 @@ pilot_do_run_base_patient_reporter \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${sample} \
     -tumor_sample_barcode ${barcode} \
-    -pipeline_version_file ${pipeline_version_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
