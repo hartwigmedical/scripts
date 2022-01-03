@@ -51,7 +51,7 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 h
-# Rerun protect to bump to v1.8 and reload database
+# Rerun protect to bump to v1.9 and reload database
 run_protect_research ${run_dir}
 load_protect_data_prod ${run_dir}
 
