@@ -851,6 +851,10 @@ locate_gripss_structural_variants() {
     local structural_vcf=""
     if [[ -d "${gripss_dir}" ]]; then
         structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.filtered.vcf.gz")
+        # With GRIPSS 2.0 the name has changed from "somatic filtered" to "filtered somatic"
+        if [[ -z ${structural_vcf} ]]; then
+            structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.filtered.somatic.vcf.gz")
+        fi
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
