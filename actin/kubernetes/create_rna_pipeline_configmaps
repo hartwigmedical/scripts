@@ -4,9 +4,10 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 # NOTES:
-#  1. Manually prepare the configs in the config_dir
+#  1. Manually prepare the configs in the config_dir (update dates + pipeline images)
 #  2. Manually build the pipeline5 repo (mvn clean package -DskipDocker)
-#  3. Connect to VPN prior to running this script
+#  3. Connect to VPN
+#  4. Run this script
 #  4. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
 #  5. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
 #  6. Manually clean up the workloads + configmaps + buckets after successful running
