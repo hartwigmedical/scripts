@@ -123,7 +123,7 @@ main() {
     "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${out_log}" 2>"${err_log}"
 
     db_load_script="load_run_into_pipeline_verification_db"
-    sql_query_script="${jobs_dir}/run_all_sql_verification_jobs"
+    sql_query_script="${jobs_dir}/run_all_sql_verification_jobs_on_prod"
 
     #before_db_load_job="${jobs_dir}/run_sql_jobs_before_db_load"
     #echo "${sql_query_script} ${jobs_dir} ${logs_dir} before_load" > "${before_db_load_job}"
