@@ -27,8 +27,7 @@ fi
 
 # Rerun virus interpreter since older runs will have v1.0
 run_virus_interpreter_prod ${run_dir}
-# Reloading prod not supported yet by prod patient db.
-# load_virusinterpreter_data_prod ${run_dir}
+load_virusinterpreter_data_prod ${run_dir}
 
 # Retain original cuppa and clean up in preparation of rerun.
 cuppa_dir="${run_dir}/cuppa"
