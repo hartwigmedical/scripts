@@ -16,17 +16,17 @@ info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"
 gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} ${resource_dir}/
 
 # unzip file
-info "Unziping file ${zip_file}"
+info "Unzipping file ${zip_file}"
 unzip "${resource_dir}/${zip_file}" -d "${resource_dir}"
 rm "${resource_dir}/${zip_file}"
 
 #rename dir
-info "Renaming dir"
+info "Renaming api-export dir"
 date=$(echo ${zip_file} | awk -F '-' '{print $NF}' | awk -F '.' '{print $1}' | cut -c 3-)
 mv "${resource_dir}/api-export" "${resource_dir}/${date}_ckb_flex_dump"
 
 # create new symlink
-info "Creating new symlink"
+info "Creating new symlink to CKB-latest"
 unlink "${resource_dir}/ckb_flex_dump"
 ln -s "${resource_dir}/${date}_ckb_flex_dump" "${resource_dir}/ckb_flex_dump"
 
