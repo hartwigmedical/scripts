@@ -12,9 +12,9 @@ credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_url=$(construct_database_url "${credentials}" ${database})
+db_url=$(construct_database_url "${credentials}" ${vicc_db})
 
-info "Loading vicc into SQL into ${db_url}"
+info "Loading VICC database into ${db_url}"
 
 # To recreate the database
 # mysql ${vicc_db} --host="${db_host} --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
