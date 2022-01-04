@@ -28,7 +28,7 @@ db_url=$(construct_database_url "${credentials}" ${database_name})
 
 info "Loading flagstats data for ${tumor_sample}"
 
-java11 -Dorg.jooq.no-logo=true -Dorg.jooq.no-tips=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
+java11 -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
     -sample ${tumor_sample} \
     -ref_flagstat_file ${ref_flagstat_file} \
     -tumor_flagstat_file ${tumor_flagstat_file} \
