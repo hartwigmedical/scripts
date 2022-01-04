@@ -8,4 +8,4 @@ if [ -z ${tool} ]; then
     error "No tool provided. Exiting"
 fi
 
-do_deploy_pilot_tool_to_vm ${tool} "data-vm-prod-2"
+do_deploy_pilot_tool ${tool} "data-vm-prod-2"
