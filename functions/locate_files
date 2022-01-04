@@ -102,8 +102,8 @@ locate_prod_patient_reporter() {
     echo "/data/tools/patientreporter/7.24.1/patient-reporter.jar"
 }
 
-locate_pilot_patient_reporter_ds() {
-    echo "/data/tools/patientreporter/pilot/patient-reporter.jar"
+locate_pilot_patient_reporter() {
+    echo "/data/tools/patient-reporter/pilot/patient-reporter.jar"
 }
 
 locate_prod_vicc_importer() {
