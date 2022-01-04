@@ -81,7 +81,7 @@ main() {
     jobs_source_path="/data/repos/scripts/validation"
     script_jobs=(
         "compare_v5_runs"
-        "run_all_sql_verification_jobs"
+        "run_all_sql_verification_jobs_on_prod"
     )
     sql_jobs=(
         "check_update_time.sql"
