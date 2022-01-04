@@ -16,6 +16,8 @@ if [[ ! -d "${orig_run_dir}" ]]; then
     error "Run dir '${orig_run_dir}' not present. Probably not downloaded yet?"
 fi
 
+info "Running ACTIN molecular pipeline on ${sample}"
+
 # Cannot use "locate_actin_molecular_directory_for_sample" since that only works once the dir exists
 run_dir="$(locate_actin_molecular_directory)/${sample}"
 if [[ -d "${run_dir}" ]]; then
@@ -31,6 +33,8 @@ tumor_hla_bam="$(locate_actin_lilac_hla_bam_dir)/${sample}/${sample}.hla.bam"
 if [[ ! -f "${tumor_hla_bam}" ]]; then
     info "Producing DNA HLA BAMs for ${sample}"
     produce_dna_hla_bams ${run_dir}
+else
+    info "Skipping production of DNA HLA BAMs as they already exist for ${sample}"
 fi
 
 # Post-process all DNA
