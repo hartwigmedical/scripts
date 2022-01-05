@@ -10,7 +10,7 @@ output_dir=${run_dir}/pave
 create_or_cleanup_dir ${output_dir}
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-purple_somatic_variant_vcf=$(locate_sage_somatic_variants ${run_dir})
+purple_somatic_variant_vcf=$(find -L ${run_dir}/sage_somatic/ -type f -name "*.sage.somatic.vcf.gz")
 ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 pave_jar=$(locate_prod_pave)
