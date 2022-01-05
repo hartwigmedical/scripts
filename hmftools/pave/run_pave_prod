@@ -6,7 +6,11 @@ source io_functions || exit 1
 
 run_dir=$1 && shift
 
-output_dir=${run_dir}/pave
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+output_dir="${run_dir}/pave_somatic"
 create_or_cleanup_dir ${output_dir}
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
