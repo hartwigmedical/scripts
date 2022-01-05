@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+output_dir=${run_dir}/pave
+create_or_cleanup_dir ${output_dir}
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+purple_somatic_variant_vcf=$(locate_sage_somatic_variants ${run_dir})
+ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
+pave_jar=$(locate_prod_orange)
+
+java -jar ${pave_jar} \
+  -sample ${tumor_sample} \
+  -vcf_file ${purple_somatic_variant_vcf} \
+  -ensembl_data_dir ${ensembl_data_dir_37} \
+  -ref_genome ${ref_genome_37_fasta_file} \
+  -ref_genome_version 37 \
+  -output_dir ${output_dir}

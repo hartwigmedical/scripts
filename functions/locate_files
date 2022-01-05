@@ -150,6 +150,10 @@ locate_pilot_protect() {
     echo "/data/tools/protect/pilot/protect.jar"
 }
 
+locate_prod_pave() {
+    echo "/data/tools/pave/1.0/pave.jar"
+}
+
 locate_pilot_sig_analyser() {
     echo "/data/tools/sig-analyser/pilot/sig-analyser.jar"
 }
