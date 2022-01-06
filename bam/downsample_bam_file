@@ -5,19 +5,22 @@ source message_functions || exit 1
 in_bam=$1 && shift
 out_bam=$1 && shift
 ratio_to_keep=$1 && shift
+picard_jar=$1 && shift
 
 if [[ ! -f "${in_bam}" || -z "${out_bam}" || -z "${ratio_to_keep}" ]]; then
     error "Missing input files for downslicing"
 fi
-
-picard_dir=/data/tools/picard-tools_v1.141
+if [[ -z ${picard_jar} ]]; then
+  picard_jar="/data/tools/picard-tools_v1.141/picard.jar"
+fi
 mem_use=50
 
 info "Input bam file: ${in_bam}"
 info "Output bam file: ${out_bam}"
 info "Ratio to keep between 0 and 1: ${ratio_to_keep}"
+info "Picard jar: ${picard_jar}"
 
-java -Xmx${mem_use}G -jar ${picard_dir}/picard.jar DownsampleSam \
+java -Xmx${mem_use}G -jar ${picard_jar} DownsampleSam \
     I=${in_bam} \
     O=${out_bam} \
     P=${ratio_to_keep}
