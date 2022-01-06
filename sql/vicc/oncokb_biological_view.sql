@@ -5,7 +5,7 @@ SELECT
     oncokbVariantBiological.name AS variantName, alteration, proteinStart, proteinEnd, refResidues, variantResidues,
     term, description, isGenerallyTruncating,
     oncogenic, mutationEffect, mutationEffectPmids, mutationEffectAbstracts,
-    hugoSymbol, GROUP_CONCAT(geneAlias SEPARATOR ","),
+    hugoSymbol, GROUP_CONCAT(geneAlias SEPARATOR ",") as geneAlias,
     oncokbGeneBiological.name AS geneName, oncokbGeneBiological.entrezGeneId AS geneEntrezGeneId,
     oncokbBiological.entrezGeneId AS variantEntrezGeneId, isoform, refseq,
     curatedIsoform, curatedRefSeq, oncogene, tsg
