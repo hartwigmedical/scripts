@@ -72,10 +72,10 @@ main () {
     base_som_var=$(locate_purple_somatic_variants "${base_run_path}")
      test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
      base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
-    base_vir_ins="${base_run_path}/linx/${base_tum_sample}.linx.viral_inserts.tsv"
-    test_vir_ins="${test_run_path}/linx/${test_tum_sample}.linx.viral_inserts.tsv"
+    base_vir_ins="${base_run_path}/virusbreakend/${base_tum_sample}.virus.annotated.tsv"
+    test_vir_ins="${test_run_path}/virusbreakend/${test_tum_sample}.virus.annotated.tsv"
 
-    all_cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
+    all_cram_files=("${base_ref_cram}" "${test_ref_cram}" "${base_tum_cram}" "${test_tum_cram}")
     all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}")
     all_test_files=("${test_grm_vcf}" "${test_chord}" "${test_vir_ins}" "${test_som_var}" "${test_sv_var}")
 
@@ -115,11 +115,12 @@ main () {
 
     print_header "PER TOOL DIRECTORY check"
     for tool_name in ${tool_dirs_to_check[*]}; do
-        check_tool_directory "${tool_name}" "${base_run_path}" "${test_run_path}" "${base_ref_sample}" "${test_ref_sample}" "${base_tum_sample}" "${test_tum_sample}"
+        check_tool_directory "${tool_name}" "${base_run_path}" "${test_run_path}" "${base_ref_sample}" \
+            "${test_ref_sample}" "${base_tum_sample}" "${test_tum_sample}"
     done
 
     print_header "FILE DIFF check (only for subset of files)"
-    diff_file ".protect.tsv"
+    # Nothing remaining to check on individual file level.
 
     print_header "TOOL VERSIONS check"
     check_tool_versions_from_run_log "${base_run_path}" "${test_run_path}"
@@ -135,7 +136,7 @@ main () {
     info "CHORD file content"
     awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
     awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
-    info "LINX file content"
+    info "VirusInterpreter file content"
     awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
     awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
 
@@ -207,7 +208,7 @@ check_tool_directory () {
     local base_tum_sample=$1 && shift
     local test_tum_sample=$1 && shift
 
-    info "Checking directory $tool_name"
+    info "Checking directory ${tool_name}"
 
     base_tool_path="${base_run_path}/${tool_name}"
     test_tool_path="${test_run_path}/${tool_name}"
