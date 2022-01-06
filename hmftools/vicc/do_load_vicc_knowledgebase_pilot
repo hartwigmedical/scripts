@@ -19,7 +19,7 @@ info "Loading VICC database into ${db_url}"
 # To recreate the database
 # mysql ${vicc_db} --host="${db_host} --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
 
-java11 -Xmx8G -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonSQLImporter \
+java -Xmx8G -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonSQLImporter \
     -vicc_json ${vicc_json} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

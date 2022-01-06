@@ -72,7 +72,7 @@ if [[ ! -z ${cuppa_feature_plot} ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
 
-java11 -jar ${orange_jar} \
+java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \

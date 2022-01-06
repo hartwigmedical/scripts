@@ -21,7 +21,7 @@ tum_flagstat=$(locate_flagstats "${run_dir}" "${tumor_sample}")
 ref_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${ref_sample}")
 tum_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}")
 
-java11 -Xmx4G -jar /data/tools/health-checker/pilot/health-checker.jar \
+java -Xmx4G -jar /data/tools/health-checker/pilot/health-checker.jar \
     -reference ${ref_sample} \
     -tumor ${tumor_sample} \
     -ref_wgs_metrics_file ${ref_wgs_metrics} \

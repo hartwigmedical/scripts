@@ -24,7 +24,7 @@ output_directory="$(locate_actin_reports_directory)"
 
 actin_jar="$(locate_pilot_actin)"
 
-java11 -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
+java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
     -treatment_match_json ${treatment_match_json} \

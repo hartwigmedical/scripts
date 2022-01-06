@@ -17,7 +17,7 @@ purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 tumor_sample_wgs_metrics_file=$(locate_wgs_metrics ${run_dir} ${sample_id})
 
-java11 -jar ${virus_interpreter_jar} \
+java -jar ${virus_interpreter_jar} \
     -sample_id ${sample_id} \
     -virus_breakend_tsv ${virus_breakend_tsv} \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \

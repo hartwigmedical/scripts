@@ -7,7 +7,7 @@ output_serve_knowledgebase_tsv="/data/resources/custom/actin/serve_bridge/actin_
 
 actin_jar="$(locate_pilot_actin)"
 
-java11 -cp ${actin_jar} com.hartwig.actin.serve.ServeBridgeApplication \
+java -cp ${actin_jar} com.hartwig.actin.serve.ServeBridgeApplication \
     -treatment_database_directory ${treatment_database_directory} \
     -output_serve_knowledgebase_tsv ${output_serve_knowledgebase_tsv} \
     "$@"

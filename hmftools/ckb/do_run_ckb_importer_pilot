@@ -15,7 +15,7 @@ db_url=$(construct_database_url "${credentials}" "${ckb_db}")
 
 info "Loading CKB database into ${db_url}"
 
-java11 -Xms2G -Xmx10G -jar ${ckb_jar} \
+java -Xms2G -Xmx10G -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \

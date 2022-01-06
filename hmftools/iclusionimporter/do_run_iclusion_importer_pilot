@@ -14,7 +14,7 @@ iclusion_client_secret=$(extract_iclusion_client_secret "${iclusion_api_credenti
 iclusion_user=$(extract_iclusion_username "${iclusion_api_credentials}")
 iclusion_password=$(extract_iclusion_password "${iclusion_api_credentials}")
 
-java11 -jar ${iclusion_importer_jar} \
+java -jar ${iclusion_importer_jar} \
     -iclusion_endpoint ${iclusion_endpoint} \
     -iclusion_client_id ${iclusion_client_id} \
     -iclusion_client_secret ${iclusion_client_secret} \
