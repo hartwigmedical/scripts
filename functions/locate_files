@@ -205,7 +205,7 @@ locate_actin_database_sql_script() {
 }
 
 locate_actin_clinical_feed_directory() {
-    echo "/data/resources/custom/actin/ehr_data_dump/actin_ehr_dump"
+    echo "/data/resources/custom/actin/ehr_data_dump/latest"
 }
 
 locate_actin_clinical_curation_directory() {
