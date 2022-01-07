@@ -15,7 +15,7 @@ fi
 
 create_or_cleanup_dir ${output_dir}
 
-orange_jar=$(locate_prod_orange)
+orange_jar=$(locate_pilot_orange)
 
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
@@ -60,9 +60,15 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
-cuppa_summary_plot=$(locate_cuppa_summary_plot ${run_dir})
-cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
+if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
+    cuppa_result_csv=$(locate_cuppa_dna_rna_result_csv ${run_dir})
+    cuppa_summary_plot=$(locate_cuppa_dna_rna_summary_plot ${run_dir})
+    cuppa_feature_plot=$(locate_cuppa_dna_rna_feature_plot ${run_dir})
+else
+    cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+    cuppa_summary_plot=$(locate_cuppa_summary_plot ${run_dir})
+    cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
+fi
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
@@ -108,4 +114,5 @@ java -jar ${orange_jar} \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
+    -log_debug \
     "$@"

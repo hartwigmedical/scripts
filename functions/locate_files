@@ -1156,6 +1156,15 @@ locate_cuppa_result_csv() {
     echo ${result_csv}
 }
 
+locate_cuppa_dna_rna_result_csv() {
+    local run_dir=$1
+    local result_csv=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.data.csv")
+    if [[ -z "${result_csv}" ]]; then
+        error "Unable to locate cuppa dna-rna result csv in ${run_dir}."
+    fi
+    echo ${result_csv}
+}
+
 locate_cuppa_summary_plot() {
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.summary.png")
@@ -1165,10 +1174,27 @@ locate_cuppa_summary_plot() {
     echo ${plot}
 }
 
+
+locate_cuppa_dna_rna_summary_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.summary.png")
+    if [[ -z "${plot}" ]]; then
+        error "Unable to locate cuppa dna-rna summary plot in ${run_dir}."
+    fi
+    echo ${plot}
+}
+
 locate_cuppa_feature_plot() {
     # Feature plot is optional so no warn if it cannot be found.
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.features.png")
+    echo ${plot}
+}
+
+locate_cuppa_dna_rna_feature_plot() {
+    # Feature plot is optional so no warn if it cannot be found.
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.features.png")
     echo ${plot}
 }
 
