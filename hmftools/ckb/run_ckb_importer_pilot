@@ -5,4 +5,4 @@ source locate_files || exit 1
 ckb_jar=$(locate_pilot_ckb_importer)
 ckb_dir=$(locate_ckb_flex_data_latest_dir)
 
-do_run_ckb_importer_pilot ${ckb_jar} "ckb_db_pilot" ${ckb_dir} "$@"
+do_run_ckb_importer ${ckb_jar} "ckb_db_pilot" ${ckb_dir} "$@"

@@ -107,7 +107,7 @@ locate_pilot_patient_reporter() {
 }
 
 locate_prod_vicc_importer() {
-    echo "/data/tools/vicc-importer/1.1/vicc-importer.jar"
+    echo "/data/tools/vicc-importer/1.2/vicc-importer.jar"
 }
 
 locate_pilot_vicc_importer() {
@@ -115,7 +115,7 @@ locate_pilot_vicc_importer() {
 }
 
 locate_prod_iclusion_importer() {
-    echo "/data/tools/iclusion-importer/1.4/iclusion-importer.jar"
+    echo "/data/tools/iclusion-importer/1.5/iclusion-importer.jar"
 }
 
 locate_pilot_iclusion_importer() {
@@ -123,7 +123,7 @@ locate_pilot_iclusion_importer() {
 }
 
 locate_prod_ckb_importer() {
-    echo "/data/tools/ckb-importer/1.1/ckb-importer.jar"
+    echo "/data/tools/ckb-importer/1.2/ckb-importer.jar"
 }
 
 locate_pilot_ckb_importer() {
