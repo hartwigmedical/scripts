@@ -216,10 +216,6 @@ locate_actin_trial_config_directory() {
     echo "/data/resources/custom/actin/trial_config"
 }
 
-locate_actin_treatment_database_directory() {
-    echo "/data/resources/custom/actin/treatment_database"
-}
-
 locate_actin_minimal_molecular_json() {
     echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
 }
@@ -231,11 +227,6 @@ locate_cuppa_ref_dir_dna_rna() {
 locate_actin_rna_sample_metadata_file() {
     echo "/data/experiments/rna/samples/actn_sample_ids.csv"
 }
-
-locate_actin_lilac_hla_bam_dir() {
-    echo "/data/actin/dna_hla_bams"
-}
-
 
 locate_actin_trial_tsv() {
     echo "/data/resources/custom/actin/serve_bridge/actin_knowledgebase.tsv"
@@ -268,6 +259,10 @@ locate_actin_clinical_json() {
     echo "${clinical_json}"
 }
 
+locate_actin_lilac_hla_bam_dir() {
+    echo "/data/actin/dna_hla_bams"
+}
+
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
 }
@@ -286,6 +281,10 @@ locate_actin_molecular_directory_for_sample() {
     fi
 
     echo "${molecular_sample_dir}"
+}
+
+locate_actin_treatment_database_directory() {
+    echo "/data/actin/treatment_database"
 }
 
 locate_actin_treatment_match_directory() {
