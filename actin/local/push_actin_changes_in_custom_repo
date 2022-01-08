@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-source locate_files || exit 1
-
-repo_path="$HOME/hmf/repos/custom-resources-private"
 current_path=$(pwd)
 
-cd "${repo_path}"
+cd "${HOME}/hmf/repos/custom-resources-private"
 
 git commit -m "Updated ACTIN files" actin
 git push
