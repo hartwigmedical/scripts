@@ -8,3 +8,5 @@ do_update_actin_trial_config_file "${dir}/${prefix} - Trial Definition.tsv" "${d
 do_update_actin_trial_config_file "${dir}/${prefix} - Cohort Definition.tsv" "${dir}/cohort_definition.tsv"
 do_update_actin_trial_config_file "${dir}/${prefix} - Inclusion Criteria.tsv" "${dir}/inclusion_criteria.tsv"
 do_update_actin_trial_config_file "${dir}/${prefix} - Inclusion Criteria Reference.tsv" "${dir}/inclusion_criteria_reference.tsv"
+
+push_actin_changes_in_custom_repo

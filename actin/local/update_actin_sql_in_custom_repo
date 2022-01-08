@@ -10,3 +10,5 @@ if [[ ! -f "${database_sql}" ]]; then
 fi
 
 cp "${database_sql}" "$(locate_actin_local_custom_repo)/sql_database"
+
+push_actin_changes_in_custom_repo

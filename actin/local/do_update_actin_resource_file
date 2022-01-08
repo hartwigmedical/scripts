@@ -18,4 +18,8 @@ fi
 if [[ -f "${target_file}" ]]; then
     info "Copying ${target_file} to ${target_dir}/"
     cp ${target_file} ${target_dir}/
+
+    info "Cleaning up ${target_file}"
+    rm ${target_file}
 fi
+
