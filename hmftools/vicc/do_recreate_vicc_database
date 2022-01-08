@@ -4,10 +4,10 @@ source message_functions || exit 1
 source locate_files || exit 1
 source database_functions || exit 1
 
-ckb_db=$1 && shift
+vicc_db=$1 && shift
 
 # Resources
-ckb_database_sql="/data/resources/custom/serve/ckb/generate_ckb_db.sql"
+vicc_database_sql="/data/resources/custom/serve/vicc/create_vicc_db.sql"
 
 # Database details
 credentials=$(prod_writer_sql_credentials)
@@ -16,6 +16,6 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_host=$(extract_database_host "${credentials}")
 
-info "Rebuilding CKB db '${ckb_db}' on '${db_host} using ${ckb_database_sql}"
+info "Rebuilding VICC db '${vicc_db}' on '${db_host} using ${vicc_database_sql}"
 
-mysql ${ckb_db} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${ckb_database_sql}
+mysql ${vicc_db} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${vicc_database_sql}
