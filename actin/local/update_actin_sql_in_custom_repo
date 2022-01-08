@@ -9,4 +9,4 @@ if [[ ! -f "${database_sql}" ]]; then
     error "Could not locate ACTIN sql. Exiting"
 fi
 
-gcloud compute scp ${database_sql} data-vm-prod-2:$(locate_actin_database_sql_script)
+cp "${database_sql}" "$(locate_actin_local_custom_repo)/sql_database"

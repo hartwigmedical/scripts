@@ -16,6 +16,6 @@ if [[ -f "${source_file}" ]]; then
 fi
 
 if [[ -f "${target_file}" ]]; then
-    info "Uploading ${target_file} to ${target_dir}/"
-    gcloud compute scp ${target_file} data-vm-prod-2:${target_dir}/
+    info "Copying ${target_file} to ${target_dir}/"
+    cp ${target_file} ${target_dir}/
 fi

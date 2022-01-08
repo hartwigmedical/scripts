@@ -200,12 +200,12 @@ locate_peach_main() {
 
 ############################## ACTIN Resources #################################
 
-locate_actin_database_sql_script() {
-    echo "/data/resources/custom/actin/sql_database/generate_database.sql"
+locate_actin_local_custom_repo() {
+    echo "$HOME/hmf/repos/custom-resources-private/actin"
 }
 
-locate_actin_clinical_feed_directory() {
-    echo "/data/resources/custom/actin/ehr_data_dump/latest"
+locate_actin_database_sql_script() {
+    echo "/data/resources/custom/actin/sql_database/generate_database.sql"
 }
 
 locate_actin_clinical_curation_directory() {
@@ -232,20 +232,24 @@ locate_actin_trial_tsv() {
     echo "/data/resources/custom/actin/serve_bridge/actin_knowledgebase.tsv"
 }
 
-ocate_actin_filter_tsv() {
-    echo "/data/resources/custom/serve/actin_filters.tsv"
+locate_actin_filter_tsv() {
+    echo "/data/resources/custom/serve/curation/actin_filters.tsv"
 }
 
 
 ################################# ACTIN Data ###################################
 
-locate_actin_clinical_directory() {
-    echo "/data/actin/clinical"
+locate_actin_clinical_input_feed_directory() {
+    echo "/data/actin/clinical/input_feed/latest"
+}
+
+locate_actin_curated_clinical_directory() {
+    echo "/data/actin/clinical/curated"
 }
 
 locate_actin_clinical_json() {
     local sample=$1 && shift
-    local clinical_dir=$(locate_actin_clinical_directory)
+    local clinical_dir=$(locate_actin_curated_clinical_directory)
 
     if [[ ! -d "${clinical_dir}" ]]; then
         error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
@@ -449,55 +453,53 @@ locate_snpcheck_vcf_upload_dir() {
 ############################### SERVE Resources ################################
 
 locate_pilot_iclusion_trial_tsv() {
-    echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
+    echo "/data/resources/custom/serve/iclusion/iclusion_trials_pilot.tsv"
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
+    echo "/data/resources/custom/serve/iclusion/iclusion_trials_prod.tsv"
 }
 
 locate_actin_trial_tsv() {
-    echo "/data/resources/custom/actin/actin_knowledgebase.tsv"
+    echo "/data/resources/custom/serve/actin/actin_knowledgebase.tsv"
 }
 
 locate_vicc_json() {
-    echo "/data/resources/custom/vicc/all.json"
+    echo "/data/resources/custom/serve/vicc/all.json"
 }
 
 locate_docm_tsv() {
-    echo "/data/resources/custom/docm/docm_v3.2.tsv"
+    echo "/data/resources/custom/serve/docm/docm_v3.2.tsv"
 }
 
 locate_hartwig_cohort_tsv() {
-    echo "/data/resources/custom/hartwig/hartwig_cohort.tsv"
+    echo "/data/resources/custom/serve/hartwig/hartwig_cohort.tsv"
 }
 
 locate_hartwig_curated_tsv() {
-    echo "/data/resources/custom/hartwig/hartwig_curated.tsv"
+    echo "/data/resources/custom/serve/hartwig/hartwig_curated.tsv"
 }
 
 locate_ckb_flex_data_production_dir() {
+    # TODO @Lieke
     echo "/data/resources/custom/ckb/production/ckb_flex_dump"
 }
 
 locate_ckb_flex_data_latest_dir() {
+    # TODO @Lieke
     echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
-    echo "/data/resources/custom/serve/ckb_filters.tsv"
-}
-
-locate_ckb_filter_tsv_empty() {
-    echo "/data/resources/custom/serve/ckb_filters_empty.tsv"
+    echo "/data/resources/custom/serve/curation/ckb_filters.tsv"
 }
 
 locate_public_missing_doids_mapping_tsv() {
-    echo "/data/resources/custom/serve/public_doids_mapping.tsv"
+    echo "/data/resources/custom/serve/curation/public_doids_mapping.tsv"
 }
 
 locate_private_missing_doids_mapping_tsv() {
-    echo "/data/resources/custom/serve/private_doids_mapping.tsv"
+    echo "/data/resources/custom/serve/curation/private_doids_mapping.tsv"
 }
 
 

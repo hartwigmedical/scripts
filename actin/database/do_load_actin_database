@@ -11,7 +11,7 @@ if [[ -z "${actin_jar}" || -z "${actin_database_name}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-clinical_directory="$(locate_actin_clinical_directory)"
+clinical_directory="$(locate_actin_curated_clinical_directory)"
 
 credentials=$(prod_writer_sql_credentials)
 

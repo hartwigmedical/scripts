@@ -10,7 +10,7 @@ if [[ -z "${actin_jar}" || -z "${output_directory}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-feed_directory="$(locate_actin_clinical_feed_directory)"
+feed_directory="$(locate_actin_clinical_input_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
 
 java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \

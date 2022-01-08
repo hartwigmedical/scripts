@@ -10,7 +10,7 @@ ckb_dir=$(locate_ckb_flex_data_latest_dir)
 ckb_filter_tsv=$(locate_ckb_filter_tsv)
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
 actin_trial_tsv=$(locate_actin_trial_tsv)
-actin_filter_tsv=$(ocate_actin_filter_tsv)
+actin_filter_tsv=$(locate_actin_filter_tsv)
 
 do_run_serve_pilot \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
