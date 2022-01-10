@@ -31,11 +31,11 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir ${lims_dir} \
     -curated_primary_tumor_tsv /data/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
     -patient_tumor_curation_status_tsv /data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
-    -doid_json /data/dbs/disease_ontology/201015_doid.json \
-    -tumor_location_mapping_tsv /data/dbs/clinical_curation/pilot_tumor_location_mapping.tsv \
-    -tumor_location_overrides_tsv /data/dbs/clinical_curation/pilot_tumor_location_overrides.tsv \
-    -treatment_mapping_tsv /data/dbs/clinical_curation/pilot_treatment_mapping.tsv \
-    -biopsy_mapping_tsv /data/dbs/clinical_curation/biopsy_site_mapping.tsv \
+    -doid_json /data/resources/custom/operation/disease_ontology/201015_doid.json \
+    -tumor_location_mapping_tsv /data/resources/custom/operation/clinical_curation/pilot_tumor_location_mapping.tsv \
+    -tumor_location_overrides_tsv /data/resources/custom/operation/clinical_curation/pilot_tumor_location_overrides.tsv \
+    -treatment_mapping_tsv /data/resources/custom/operation/clinical_curation/pilot_treatment_mapping.tsv \
+    -biopsy_mapping_tsv /data/resources/custom/operation/clinical_curation/biopsy_site_mapping.tsv \
     -reporting_db_tsv ${reporting_db_tsv} \
     "$@"
 

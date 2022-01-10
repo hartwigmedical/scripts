@@ -44,15 +44,12 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${run_dir})
-virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
+annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
-germline_reporting_tsv=/data/dbs/germline_reporting/germline_reporting.tsv
-sample_summary_tsv=/data/dbs/summary_patient_report/summary_samples.tsv
-taxonomy_db_tsv=/data/dbs/virus_interpreter/taxonomy_db.tsv
-virus_interpretation_tsv=/data/dbs/virus_interpreter/virus_interpretation.tsv
-virus_blacklist_tsv=/data/dbs/virus_interpreter/virus_blacklist.tsv
+germline_reporting_tsv=/data/resources/custom/operation/germline_reporting/germline_reporting.tsv
+sample_summary_tsv=/data/resources/custom/operation/summary_patient_report/summary_samples.tsv
 
 do_run_base_patient_reporter_data_vm \
     -ref_sample_id ${ref_sample} \
@@ -74,12 +71,11 @@ do_run_base_patient_reporter_data_vm \
     -chord_prediction_txt ${chord_prediction_txt} \
     -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
     -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
-    -virus_breakend_tsv ${virus_breakend_tsv} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -taxonomy_db_tsv ${taxonomy_db_tsv} \
-    -virus_interpretation_tsv ${virus_interpretation_tsv} \
-    -virus_blacklist_tsv ${virus_blacklist_tsv} \
+    -ref_genome_version 37 \
+
     "$@"
