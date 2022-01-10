@@ -9,8 +9,8 @@ credentials=$(prod_writer_sql_credentials)
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 
-db_new_run_url=$(construct_database_url "${credentials}" "pipeline_v5_validation")
-db_ref_run_url=$(construct_database_url "${credentials}" "reference_validation_sets")
+db_new_run_url=$(construct_database_url_no_dependencies "${credentials}" "pipeline_v5_validation")
+db_ref_run_url=$(construct_database_url_no_dependencies "${credentials}" "reference_validation_sets")
 
 output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
 
