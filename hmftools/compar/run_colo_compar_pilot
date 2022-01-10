@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source database_functions || exit 1
+source io_functions || exit 1
 
 compar_jar="/data/tools/compar/pilot/compar.jar"
 
@@ -13,6 +14,7 @@ db_new_run_url=$(construct_database_url_no_dependencies "${credentials}" "pipeli
 db_ref_run_url=$(construct_database_url_no_dependencies "${credentials}" "reference_validation_sets")
 
 output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
+create_or_cleanup_dir ${output_dir}
 
 info "Running compar on COLO829 v5.25 versus v5.26"
 
