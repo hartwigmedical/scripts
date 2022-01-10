@@ -17,6 +17,7 @@ rna_analysis_bucket=$(locate_rna_analysis_bucket ${tumor_sample})
 if [[ ! -z "${rna_analysis_bucket}" ]]; then
     rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
     create_or_cleanup_dir ${rna_bam_directory}
+
     info "Downloading RNA bam to ${rna_bam_directory}"
     # First download BAM, then BAI to avoid BAI being newer than BAM.
     gsutil -m cp -r "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam" "${rna_bam_directory}/"
