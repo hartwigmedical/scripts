@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+do_deploy_pilot_tool_to_data_vm "compar"

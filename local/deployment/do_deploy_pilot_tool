@@ -9,9 +9,9 @@ if [[ -z ${tool} || -z ${vm} ]]; then
     error "Not enough parameters provided. Exiting"
 fi
 
-tool_jar="${HOME}/hmf/repos/hmftools/${tool}/target/${tool}-*-jar-with-dependencies.jar"
+tool_jar=$(find -L "${HOME}/hmf/repos/hmftools/${tool}/target" -type f -name "*-jar-with-dependencies.jar")
 
-if [ ! -f "${tool_jar}" ]; then
+if [[ ! -f "${tool_jar}" ]]; then
     error "Could not locate ${tool} jar!"
 fi
 
