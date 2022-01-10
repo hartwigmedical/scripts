@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+compar_jar="/data/tools/compar/pilot/compar.jar"
+
+credentials=$(prod_writer_sql_credentials)
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+
+db_new_run_url=$(construct_database_url "${credentials}" "pipeline_v5_validation")
+db_ref_run_url=$(construct_database_url "${credentials}" "reference_validation_sets")
+
+output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
+
+info "Running compar on COLO829 v5.25 versus v5.26"
+
+java -jar ${compar_jar} \
+    -sample COLO829v003T-526 \
+    -categories ALL \
+    -match_level REPORTABLE \
+    -db_sources="v526;${db_new_run_url};${db_user};${db_pass},v525;${db_ref_run_url};${db_user};${db_pass}" \
+    -output_dir ${output_dir}
