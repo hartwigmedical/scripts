@@ -22,6 +22,6 @@ java -jar ${compar_jar} \
     -sample COLO829v003T \
     -categories ALL \
     -match_level REPORTABLE \
-    -source_sample_mappings "v526=-526;v525=-525" \
+    -source_sample_mappings "v526=-526,v525=-525" \
     -db_sources "v526;${db_new_run_url};${db_user};${db_pass},v525;${db_ref_run_url};${db_user};${db_pass}" \
     -output_dir ${output_dir}
