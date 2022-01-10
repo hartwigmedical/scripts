@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+compar_jar="/data/tools/compar/pilot/compar.jar"
+
+new_run_path="/data/experiments/verification_pipeline_v5_26/runs_v5_26/COLO829v003T-526"
+ref_run_path="/data/experiments/verification_pipeline_v5_26/runs_v5_25/COLO829v003T-525"
+
+output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
+
+info "Running compar on COLO829 v5.25 versus v5.26"
+
+java -jar ${compar_jar} \
+    -sample COLO829v003T-526 \
+    -categories ALL \
+    -match_level REPORTABLE \
+    -file_sources "RUN_NEW;sample_dir=${new_run_path},RUN_REF;sample_dir=${ref_run_path}" \
+    -output_dir ${output_dir}
