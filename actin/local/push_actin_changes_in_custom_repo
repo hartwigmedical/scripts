@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 current_path=$(pwd)
+
+info "Committing and pushing changes in actin custom resources"
 
 cd "${HOME}/hmf/repos/custom-resources-private"
 
-git commit -m "Updated ACTIN files" actin
+git commit -m "Updated ACTIN resource files" actin
 git push
 
 cd "${work_path}"
