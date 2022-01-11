@@ -829,6 +829,10 @@ sub addExcelSamplesToSamples{
             $analysis_type = 'SnpGenotyping';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
+        elsif ( $analysis_type eq 'SOMATIC PANEL' ){
+            $analysis_type = 'SomaticPanel';
+            $row_info->{ 'analysis_type' } = $analysis_type;
+        }
         else {
             sayWarn("SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)");
             next;
