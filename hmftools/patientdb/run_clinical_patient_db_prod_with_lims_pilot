@@ -9,6 +9,11 @@ pipeline_version_file="pipeline.version"
 reporting_db_tsv=$(locate_reporting_db_generate_tsv)
 lims_dir=/data/ops/lims/pilot
 
+tumor_location_mapping_tsv=$(locate_tumor_location_mapping_pilot)
+tumor_location_overrides_tsv=$(locate_tumor_location_overrides_pilot)
+treatment_mapping_tsv=$(locate_treatment_mapping_pilot)
+biopsy_mapping_tsv=$(locate_biopsy_site_mapping_prod)
+doid_file=$(locate_doid_json)
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 # Note that we should only "do_process_wide_clinical_data" in case of pilot.
@@ -25,11 +30,11 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir ${lims_dir} \
     -curated_primary_tumor_tsv /data/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
     -patient_tumor_curation_status_tsv /data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
-    -doid_json /data/resources/custom/operation/disease_ontology/201015_doid.json \
-    -tumor_location_mapping_tsv /data/resources/custom/operation/clinical_curation/pilot_tumor_location_mapping.tsv \
-    -tumor_location_overrides_tsv /data/resources/custom/operation/clinical_curation/pilot_tumor_location_overrides.tsv \
-    -treatment_mapping_tsv /data/resources/custom/operation/clinical_curation/pilot_treatment_mapping.tsv \
-    -biopsy_mapping_tsv /data/resources/custom/operation/clinical_curation/biopsy_site_mapping.tsv \
+    -doid_json ${doid_file} \
+    -tumor_location_mapping_tsv ${tumor_location_mapping_tsv} \
+    -tumor_location_overrides_tsv ${tumor_location_overrides_tsv} \
+    -treatment_mapping_tsv ${treatment_mapping_tsv} \
+    -biopsy_mapping_tsv ${biopsy_mapping_tsv} \
     -reporting_db_tsv ${reporting_db_tsv} \
     "$@"
 

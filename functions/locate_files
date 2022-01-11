@@ -182,6 +182,58 @@ locate_run_contexts_writer() {
     echo "/data/tools/clinical-db-loader/1.0/clinical-db-loader.jar"
 }
 
+############################# Clinical patient data ############################
+
+locate_tumor_location_mapping_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_tumor_location_mapping.tsv"
+}
+
+locate_tumor_location_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/tumor_location_mapping.tsv"
+}
+
+locate_tumor_location_overrides_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_tumor_location_overrides.tsv"
+}
+
+locate_tumor_location_overrides_prod() {
+    echo "/data/resources/ops/clinical_curation/tumor_location_overrides.tsv"
+}
+
+locate_treatment_mapping_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_treatment_mapping.tsv"
+}
+
+locate_treatment_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/treatment_mapping.tsv"
+}
+
+locate_biopsy_site_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/biopsy_site_mapping.tsv"
+}
+
+############################# Patient report data ############################
+
+locate_germline_reporting_prod() {
+    echo "/data/resources/ops/germline_reporting/germline_reporting.tsv"
+}
+
+locate_summary_patient_report_prod() {
+    echo "/data/resources/ops/summary_patient_report/summary_samples.tsv"
+}
+
+locate_rva_logo_prod() {
+    echo "/data/resources/ops/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg"
+}
+
+locate_company_logo_prod() {
+    echo "/data/resources/ops/patient_reporter_images/hartwig_logo.jpg"
+}
+
+locate_signature_prod() {
+    echo "data/resources/ops/patient_reporter_images/signature_edwin_transparant.png"
+}
+
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {

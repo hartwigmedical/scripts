@@ -7,9 +7,9 @@ patient_reporter_jar=$(locate_prod_patient_reporter)
 primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
-rva_logo=/data/resources/custom/operation/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
-company_logo=/data/resources/custom/operation/patient_reporter_images/hartwig_logo.jpg
-signature=/data/resources/custom/operation/patient_reporter_images/signature_edwin_transparant.png
+rva_logo=$(locate_rva_logo_prod)
+company_logo=$(locate_company_logo_prod)
+signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
