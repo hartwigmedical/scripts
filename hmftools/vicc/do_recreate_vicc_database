@@ -7,7 +7,7 @@ source database_functions || exit 1
 vicc_db=$1 && shift
 
 # Resources
-vicc_database_sql="/data/resources/custom/serve/vicc/create_vicc_database.sql"
+vicc_database_sql="/data/resources/crunch/serve/vicc/create_vicc_database.sql"
 
 # Database details
 credentials=$(prod_writer_sql_credentials)
