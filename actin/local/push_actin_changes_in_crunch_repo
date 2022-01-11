@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 current_path=$(pwd)
 
-info "Committing and pushing changes in actin custom resources"
+info "Committing and pushing changes in actin crunch resources"
 
-cd "${HOME}/hmf/repos/custom-resources-private"
+cd "$HOME/hmf/repos/crunch-resources-private"
 
 git commit -m "Updated ACTIN resource files" actin
 git push

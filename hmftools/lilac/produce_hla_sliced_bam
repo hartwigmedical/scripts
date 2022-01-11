@@ -12,7 +12,7 @@ fi
 
 samtools="/data/tools/samtools/1.10/samtools"
 ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
-hla_bed="/data/resources/custom/lilac/hla_v37.bed"
+hla_bed="/data/resources/crunch/lilac/hla_v37.bed"
 
 ${samtools} view \
     -T ${ref_genome_fasta} \

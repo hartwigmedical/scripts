@@ -200,28 +200,28 @@ locate_peach_main() {
 
 ############################## ACTIN Resources #################################
 
-locate_actin_local_custom_repo() {
-    echo "$HOME/hmf/repos/custom-resources-private/actin"
+locate_actin_local_crunch_repo() {
+    echo "$HOME/hmf/repos/crunch-resources-private/actin"
 }
 
 locate_actin_database_sql_script() {
-    echo "/data/resources/custom/actin/sql_database/generate_database.sql"
+    echo "/data/resources/crunch/actin/sql_database/generate_database.sql"
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/custom/actin/clinical_curation"
+    echo "/data/resources/crunch/actin/clinical_curation"
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/custom/actin/trial_config"
+    echo "/data/resources/crunch/actin/trial_config"
 }
 
 locate_actin_minimal_molecular_json() {
-    echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
+    echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/custom/actin/cuppa_ref"
+    echo "/data/resources/crunch/actin/cuppa_ref"
 }
 
 locate_actin_rna_sample_metadata_file() {
@@ -229,11 +229,11 @@ locate_actin_rna_sample_metadata_file() {
 }
 
 locate_actin_trial_tsv() {
-    echo "/data/resources/custom/actin/serve_bridge/actin_knowledgebase.tsv"
+    echo "/data/resources/crunch/actin/serve_bridge/actin_knowledgebase.tsv"
 }
 
 locate_actin_filter_tsv() {
-    echo "/data/resources/custom/serve/curation/actin_filters.tsv"
+    echo "/data/resources/crunch/serve/curation/actin_filters.tsv"
 }
 
 
@@ -453,53 +453,53 @@ locate_snpcheck_vcf_upload_dir() {
 ############################### SERVE Resources ################################
 
 locate_pilot_iclusion_trial_tsv() {
-    echo "/data/resources/custom/serve/iclusion/iclusion_trials_pilot.tsv"
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo "/data/resources/custom/serve/iclusion/iclusion_trials_prod.tsv"
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_prod.tsv"
 }
 
 locate_actin_trial_tsv() {
-    echo "/data/resources/custom/serve/actin/actin_knowledgebase.tsv"
+    echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
 }
 
 locate_vicc_json() {
-    echo "/data/resources/custom/serve/vicc/all.json"
+    echo "/data/resources/crunch/serve/vicc/all.json"
 }
 
 locate_docm_tsv() {
-    echo "/data/resources/custom/serve/docm/docm_v3.2.tsv"
+    echo "/data/resources/crunch/serve/docm/docm_v3.2.tsv"
 }
 
 locate_hartwig_cohort_tsv() {
-    echo "/data/resources/custom/serve/hartwig/hartwig_cohort.tsv"
+    echo "/data/resources/crunch/serve/hartwig/hartwig_cohort.tsv"
 }
 
 locate_hartwig_curated_tsv() {
-    echo "/data/resources/custom/serve/hartwig/hartwig_curated.tsv"
+    echo "/data/resources/crunch/serve/hartwig/hartwig_curated.tsv"
 }
 
 locate_ckb_flex_data_production_dir() {
     # TODO @Lieke
-    echo "/data/resources/custom/ckb/production/ckb_flex_dump"
+    echo "/data/resources/crunch/ckb/production/ckb_flex_dump"
 }
 
 locate_ckb_flex_data_latest_dir() {
     # TODO @Lieke
-    echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
+    echo "/data/resources/crunch/ckb/latest/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
-    echo "/data/resources/custom/serve/curation/ckb_filters.tsv"
+    echo "/data/resources/crunch/serve/curation/ckb_filters.tsv"
 }
 
 locate_public_missing_doids_mapping_tsv() {
-    echo "/data/resources/custom/serve/curation/public_doids_mapping.tsv"
+    echo "/data/resources/crunch/serve/curation/public_doids_mapping.tsv"
 }
 
 locate_private_missing_doids_mapping_tsv() {
-    echo "/data/resources/custom/serve/curation/private_doids_mapping.tsv"
+    echo "/data/resources/crunch/serve/curation/private_doids_mapping.tsv"
 }
 
 
@@ -521,11 +521,11 @@ locate_ref_genome_38_fasta_file() {
 }
 
 locate_ref_genome_37_to_38_chain() {
-    echo "/data/resources/custom/reference_genome_liftover/hg19ToHg38.over.chain"
+    echo "/data/resources/crunch/reference_genome_liftover/hg19ToHg38.over.chain"
 }
 
 locate_ref_genome_38_to_37_chain() {
-    echo "/data/resources/custom/reference_genome_liftover/hg38ToHg19.over.chain"
+    echo "/data/resources/crunch/reference_genome_liftover/hg38ToHg19.over.chain"
 }
 
 ##################################  METRICS ####################################

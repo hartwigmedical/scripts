@@ -32,7 +32,7 @@ if [[ -f ${tumor_rna_hla_bam} ]]; then
 fi
 java -jar ${lilac_jar} \
     -sample ${tumor_sample} \
-    -resource_dir "/data/resources/custom/lilac" \
+    -resource_dir "/data/resources/crunch/lilac" \
     -ref_genome ${ref_genome_fasta} \
     -reference_bam ${reference_dna_hla_bam} \
     -tumor_bam ${tumor_dna_hla_bam} \

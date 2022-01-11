@@ -7,7 +7,7 @@ source database_functions || exit 1
 ckb_db=$1 && shift
 
 # Resources
-ckb_database_sql="/data/resources/custom/serve/ckb/generate_ckb_db.sql"
+ckb_database_sql="/data/resources/crunch/serve/ckb/generate_ckb_db.sql"
 
 # Database details
 credentials=$(prod_writer_sql_credentials)

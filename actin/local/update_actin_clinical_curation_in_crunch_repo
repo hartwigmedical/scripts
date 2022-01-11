@@ -19,4 +19,4 @@ do_update_actin_clinical_curation_file "${dir}/${prefix} - Laboratory Translatio
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Allergy Translation.tsv" "${dir}/allergy_translation.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Blood Transfusion Translation.tsv" "${dir}/blood_transfusion_translation.tsv"
 
-push_actin_changes_in_custom_repo
+push_actin_changes_in_crunch_repo

@@ -3,7 +3,7 @@
 source locate_files || exit 1
 
 treatment_database_directory="$(locate_actin_treatment_database_directory)"
-output_serve_knowledgebase_tsv="/data/resources/custom/actin/serve_bridge/actin_knowledgebase.tsv"
+output_serve_knowledgebase_tsv="/data/resources/crunch/actin/serve_bridge/actin_knowledgebase.tsv"
 
 actin_jar="$(locate_pilot_actin)"
 

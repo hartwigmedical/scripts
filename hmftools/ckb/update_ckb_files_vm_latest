@@ -9,7 +9,7 @@ if [[ -z "${zip_file}" ]]; then
     error "No zip file provided. Exiting"
 fi
 
-resource_dir="/data/resources/custom/ckb/latest"
+resource_dir="/data/resources/crunch/ckb/latest"
 
 # copying data from bucket
 info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"

@@ -4,7 +4,7 @@ snpeff_database=$1 && shift
 vcf=$1 && shift
 
 java -jar /data/tools/snpEff/4.3s/snpEff.jar \
-    -c /data/resources/custom/snpeff/snpEff.config "${snpeff_database}" \
+    -c /data/resources/crunch/snpeff/snpEff.config "${snpeff_database}" \
     -v ${vcf} \
     -hgvs \
     -lof \
