@@ -22,5 +22,5 @@ java -jar ${compar_jar} \
     -file_sources "v525;linx_dir=${base_dir_525}/linx/;purple_dir=${base_dir_525}/purple/,v526;linx_dir=${base_dir_526}/linx/;purple_dir=${base_dir_526}/purple/" \
     -output_dir ${output_dir} \
     -output_id pipe_525_526 \
-    --driver_gene_panel /data/experiments/purple/ref/DriverGenePanel.02.tsv \
+    -driver_gene_panel /data/experiments/purple/ref/DriverGenePanel.02.tsv \
     -log_debug
