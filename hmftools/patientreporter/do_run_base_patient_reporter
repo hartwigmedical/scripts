@@ -13,6 +13,7 @@ signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
+echo ${rva_logo}
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
