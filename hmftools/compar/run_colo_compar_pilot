@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 source io_functions || exit 1
 
 compar_jar="/data/tools/compar/pilot/compar.jar"
 
 output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
 create_or_cleanup_dir ${output_dir}
+
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 
 base_dir="/data/experiments/verification_pipeline_v5_26"
 base_dir_525="${base_dir}/runs_v5_25/COLO829v003T-525"
@@ -24,6 +27,6 @@ java -jar ${compar_jar} \
     -source_sample_mappings "v526=-526,v525=-525" \
     -file_sources "v525;${file_sources_v525},v526;${file_sources_v526}" \
     -output_dir ${output_dir} \
-    -output_id pipe_525_526 \
-    -driver_gene_panel /data/experiments/purple/ref/DriverGenePanel.02.tsv \
+    -output_id v525_vs_v526 \
+    -driver_gene_panel ${driver_gene_panel} \
     -log_debug
