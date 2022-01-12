@@ -1,27 +1,26 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source database_functions || exit 1
 source io_functions || exit 1
 
 compar_jar="/data/tools/compar/pilot/compar.jar"
 
-credentials=$(prod_writer_sql_credentials)
-db_user=$(extract_database_user "${credentials}")
-db_pass=$(extract_database_password "${credentials}")
-
-db_new_run_url=$(construct_database_url_no_dependencies "${credentials}" "pipeline_v5_validation")
-db_ref_run_url=$(construct_database_url_no_dependencies "${credentials}" "reference_validation_sets")
-
 output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
 create_or_cleanup_dir ${output_dir}
+
+base_dir="/data/experiments/verification_pipeline_v5_26"
+base_dir_525="${base_dir}/runs_v5_25/COLO829v003T-525"
+base_dir_526="${base_dir}/runs_v5_26/COLO829v003T-526"
 
 info "Running compar on COLO829 v5.25 versus v5.26"
 
 java -jar ${compar_jar} \
     -sample COLO829v003T \
-    -categories ALL \
+    -categories "DRIVER,FUSION,DISRUPTION" \
     -match_level REPORTABLE \
     -source_sample_mappings "v526=-526,v525=-525" \
-    -db_sources "v526;${db_new_run_url};${db_user};${db_pass},v525;${db_ref_run_url};${db_user};${db_pass}" \
-    -output_dir ${output_dir}
+    -file_sources "v525;linx_dir=${base_dir_525}/linx/;purple_dir=${base_dir_525}/purple/,v526;linx_dir=${base_dir_526}/linx/;purple_dir=${base_dir_526}/purple/" \
+    -output_dir ${output_dir} \
+    -output_id pipe_525_526 \
+    --driver_gene_panel /data/experiments/purple/ref/DriverGenePanel.02.tsv \
+    -log_debug
