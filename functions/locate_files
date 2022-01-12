@@ -231,7 +231,7 @@ locate_company_logo_prod() {
 }
 
 locate_signature_prod() {
-    echo "data/resources/ops/patient_report_images/signature_edwin_transparant.png"
+    echo "/data/resources/ops/patient_report_images/signature_edwin_transparant.png"
 }
 
 ############################# PIPELINE VERSION #################################
