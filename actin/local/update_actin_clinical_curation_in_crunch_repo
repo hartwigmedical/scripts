@@ -4,6 +4,8 @@ dir="${HOME}/Downloads"
 
 prefix="EMC EHR Data Curation"
 
+pull_actin_changes_in_crunch_repo
+
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Primary Tumor.tsv" "${dir}/primary_tumor.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Lesion Location.tsv" "${dir}/lesion_location.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Oncological History.tsv" "${dir}/oncological_history.tsv"

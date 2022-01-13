@@ -4,6 +4,8 @@ dir="${HOME}/Downloads"
 
 prefix="EMC Trial Database"
 
+pull_actin_changes_in_crunch_repo
+
 do_update_actin_trial_config_file "${dir}/${prefix} - Trial Definition.tsv" "${dir}/trial_definition.tsv"
 do_update_actin_trial_config_file "${dir}/${prefix} - Cohort Definition.tsv" "${dir}/cohort_definition.tsv"
 do_update_actin_trial_config_file "${dir}/${prefix} - Inclusion Criteria.tsv" "${dir}/inclusion_criteria.tsv"

@@ -9,6 +9,8 @@ if [[ ! -f "${database_sql}" ]]; then
     error "Could not locate ACTIN sql. Exiting"
 fi
 
+pull_actin_changes_in_crunch_repo
+
 cp "${database_sql}" "$(locate_actin_local_crunch_repo)/sql_database"
 
 push_actin_changes_in_crunch_repo

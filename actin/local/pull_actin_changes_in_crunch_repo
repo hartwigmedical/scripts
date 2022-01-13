@@ -4,12 +4,8 @@ source message_functions || exit 1
 
 current_path=$(pwd)
 
-info "Committing and pushing changes in actin crunch resources"
-
 cd "$HOME/hmf/repos/crunch-resources-private"
 
 git pull
-git commit -m "Updated ACTIN resource files" actin
-git push
 
 cd "${work_path}"
