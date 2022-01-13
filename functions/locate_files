@@ -90,6 +90,10 @@ locate_prod_patient_db() {
     echo "/data/tools/patient-db/3.62/patient-db.jar"
 }
 
+locate_prod_clinical_patient_db() {
+    echo "/data/tools/patient-db/3.66/patient-db.jar"
+}
+
 locate_diagnostic_patient_db() {
     echo "/data/tools/patient-db/3.61/patient-db.jar"
 }

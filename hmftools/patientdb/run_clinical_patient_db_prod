@@ -2,7 +2,7 @@
 
 source locate_files || exit 1
 
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_prod_clinical_patient_db)
 create_run_contexts_json
 runs_json=./run_contexts.json
 pipeline_version_file="pipeline.version"
