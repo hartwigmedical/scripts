@@ -562,6 +562,11 @@ locate_repo_dir() {
     echo "/data/repos/${repo_name}"
 }
 
+locate_resources_repo_dir() {
+    local repo_name=$1 && shift
+    echo "/data/resources/${repo_name}"
+}
+
 ################################# REF GENOME ###################################
 
 locate_ref_genome_37_fasta_file() {
