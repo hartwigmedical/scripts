@@ -10,7 +10,7 @@ fi
 
 mv "${dir}/Actin_Data_Extractie-Questionnaire.tsv" "${dir}/questionnaire.tsv"
 mv "${dir}/Actin_Data_Extractie-Patient.tsv" "${dir}/patient.tsv"
-mv "${dir}/Actin_Data_Extractie-Metingen.tsv" "${dir}/bloodpressure.tsv"
+mv "${dir}/Actin_Data_Extractie-Metingen.tsv" "${dir}/vital_function.tsv"
 mv "${dir}/Actin_Data_Extractie-Medicatie.tsv" "${dir}/medication.tsv"
 mv "${dir}/Actin_Data_Extractie-Labwaarden.tsv" "${dir}/lab.tsv"
 mv "${dir}/Actin_Data_Extractie-Encounters.tsv" "${dir}/encounter.tsv"
