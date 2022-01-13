@@ -17,4 +17,5 @@ gsutil cp /data/dbs/clinical_curation/tumor_location_mapping.tsv ${BUCKET}/tumor
 gsutil cp /data/dbs/clinical_curation/treatment_mapping.tsv ${BUCKET}/treatment_mapping.tsv 
 gsutil cp /data/dbs/clinical_curation/biopsy_site_mapping.tsv ${BUCKET}/biopsy_site_mapping.tsv 
 gsutil cp /data/dbs/clinical_curation/tumor_location_overrides.tsv ${BUCKET}/tumor_location_overrides.tsv
+gsutil cp /data/resources/ops/informed_consent/informed_consents_config.tsv ${BUCKET}/informed_consents_config.tsv
 info "Clinicaldb resources synced"
