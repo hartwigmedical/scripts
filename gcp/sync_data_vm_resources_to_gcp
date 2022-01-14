@@ -8,18 +8,9 @@ FASTCP="gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_c
 
 info "Syncing data-vm resources to GCP"
 gsutil cp /data/dbs/clinical_data/curated_primary_tumor.tsv ${BUCKET}/dbs/clinical_data/curated_primary_tumor.tsv
-gsutil cp /data/resources/ops/germline_reporting/germline_reporting.tsv ${BUCKET}/dbs/germline_reporting/germline_reporting.tsv
-gsutil cp /data/resources/ops/summary_patient_report/summary_samples.tsv ${BUCKET}/dbs/summary_patient_report/summary_samples.tsv
-gsutil cp /data/resources/public/virus_interpreter/taxonomy_db.tsv ${BUCKET}/dbs/virus_interpreter/taxonomy_db.tsv
-gsutil cp /data/resources/public/virus_interpreter/virus_interpretation.tsv ${BUCKET}/dbs/virus_interpreter/virus_interpretation.tsv
-gsutil cp /data/resources/public/virus_interpreter/virus_blacklist.tsv ${BUCKET}/dbs/virus_interpreter/virus_blacklist.tsv
 $FASTCP /data/ops/lims/prod/*.tsv ${BUCKET}/ops/lims/prod/
 gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/ops/lims/prod/
-$FASTCP /data/resources/ops/clinical_curation/* ${BUCKET}/ops/clinical_curation/
 $FASTCP /data/ecrf/* ${BUCKET}/ecrf/
-gsutil cp /data/resources/ops/patient_report_images/* ${BUCKET}/dbs/patient_reporter_images/
-gsutil cp /data/resources/public/disease_ontology/201015_doid.json ${BUCKET}/dbs/disease_ontology/201015_doid.json
-gsutil cp /data/resources/ops/summary_patient_report/summary_samples.tsv ${BUCKET}/dbs/summary_patient_report/summary_samples.tsv
 gsutil cp /data/ecrf/* ${BUCKET}/ecrf/
 
 info "Done syncing data-vm resources"
