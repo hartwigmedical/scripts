@@ -5,4 +5,4 @@ source locate_files || exit 1
 actin_jar="$(locate_pilot_actin)"
 output_directory="$(locate_actin_curated_clinical_directory)"
 
-do_ingest_actin_clinical ${actin_jar} ${output_directory}
+do_ingest_actin_clinical ${actin_jar} ${output_directory} "$@"
