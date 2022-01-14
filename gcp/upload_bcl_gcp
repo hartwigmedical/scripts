@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
+set -e
 
 flowcells_dir="/data1/illumina_data"
 bucket="bcl-input-prod-1"
 gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
+
+function exit_handler() {
+    echo "ERROR: Failure while uploading flowcells"
+}
+
+function rsync_bcls() {
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r \
+        -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*|RTAComplete.txt" "$1" "$2"
+}
+
+trap exit_handler EXIT
 
 find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read -r flowcell_path; do
     rtacomplete_path="${flowcell_path}/RTAComplete.txt"
@@ -12,19 +23,10 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
       date --date="@$(stat -c '%Y' "${rtacomplete_path}")" "+%Y-%m-%d %H:%M:%S %z" > ${flowcell_path}/RTAComplete.timestamp
     fi
 
-    info "Flowcell is ready for uploading BCL (${flowcell_info})"
-    find "${flowcell_path}" -name '*.bcl.gz' -or -name '*.cbcl' -or -name '*.bcl.bgzf' | grep bcl > /dev/null
-    if [[ $? -ne 0 ]]; then
-        warn "Flowcell is ready but has no BCL files, this probably means that the sequencer has failed (${flowcell_info})"
-        continue
-    fi
-
-    info "Starting BCL upload (${flowcell_info})"
+    echo "Starting BCL upload of ${flowcell_path}"
     gs_path="gs://${bucket}/${flowcell_name}"
     gcloud auth activate-service-account --key-file "${gcp_cred}"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
-    if [[ $? -ne 0 ]]; then
-        error "Something wrong with gsutil rsync BCL upload of '${flowcell_path}' (${flowcell_info})"
-        continue
-    fi
+    rsync_bcls $flowcell_path $gs_path
+    [[ -f $flowcell_path/RTAComplete.txt ]] && rsync_bcls $flowcell_path $gs_path && gsutil cp $flowcell_path/RTAComplete.txt $gs_path
+    echo "${flowcell_path} upload succeeded"
 done
