@@ -537,13 +537,11 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_production_dir() {
-    # TODO @Lieke
-    echo "/data/resources/crunch/ckb/production/ckb_flex_dump"
+    echo "/data/resources/custom/ckb/production/ckb_flex_dump"
 }
 
 locate_ckb_flex_data_latest_dir() {
-    # TODO @Lieke
-    echo "/data/resources/crunch/ckb/latest/ckb_flex_dump"
+    echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
 locate_ckb_filter_tsv() {
