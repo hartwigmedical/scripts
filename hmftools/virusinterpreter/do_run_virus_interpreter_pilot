@@ -10,8 +10,8 @@ output_dir=$1 && shift
 sample_id=$(load_tumor_sample_from_metadata ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
-taxonomy_db_tsv=/data/resources/public/virus_interpreter/taxonomy_db.tsv
-virus_reporting_db_tsv=/data/resources/public/virus_interpreter/virus_reporting_db.tsv
+taxonomy_db_tsv="/data/resources/public/virus_interpreter/taxonomy_db.tsv"
+virus_reporting_db_tsv="/data/resources/public/virus_interpreter/virus_reporting_db.tsv"
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
