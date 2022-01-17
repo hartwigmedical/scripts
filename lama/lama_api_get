@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+command -v hmf_api_get > /dev/null || die "Utility 'hmf_api_get' not found"
+
+print_usage(){
+    self=$(basename "$0")
+    echo ""
+    echo "Descr: Runs a GET query against LAMA API"
+    echo "Usage: $self [-t] <query>"
+    echo "Exmpl: $self 'cohorts'"
+    echo "       $self 'hospitals'"
+    echo "       $self 'patients/tumorsamples/COREDBxxxxxx'"
+    echo "       $self 'patients/samples/barcodes/FBxxxxx'"
+    echo "       $self 'statuses/frbarcodes/FRxxxxxx'"
+    echo "Options:"
+    echo "   -t  Use testing/pilot environment instead of production"
+    echo ""
+    exit 1
+}
+
+[[ $# -ne 0 && $1 != "-v" ]] || print_usage
+
+hmf_api_get -l "$@"

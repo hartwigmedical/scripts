@@ -11,32 +11,42 @@ print_usage(){
     echo "       $self 'samples?barcode=FR17758478-200806'"
     echo "       $self 'samples?name=name&type=tumor'"
     echo "       $self 'runs/63961'"
-    echo "       $self -t 'samples'"
     echo "       $self 'runs?ini=ShallowSeq.ini'"
+    echo "       $self -t 'samples'"
+    echo "       $self -l 'cohorts'"
+    echo "       $self -l 'patients/tumorsamples/COREDBxxxxxx'"
+    echo "       $self -l 'statuses/frbarcodes/FRxxxxxx'"
     echo "Options:"
     echo "   -t  Use testing/pilot environment instead of production"
+    echo "   -l  Use lama as source instead of hmfapi"
     echo ""
     exit 1
 }
 
-environment='prod'
+environment='prod' # or pilot
+source='hmfapi' # or lama
 
-while getopts ':t' flag; do
+while getopts ':tl' flag; do
     case "${flag}" in
         t) environment='pilot' && shift ;;
+        l) source='lama' && shift ;;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
 query=$1 && shift
 
-# no default for api credentials and url to avoid using wrong env as much as possible
-if [[ "${environment}" == "prod" ]]; then
+if [[ "${source}" == "hmfapi" && "${environment}" == "prod" ]]; then
     api_url="http://api.prod-1/hmf/v1"
-elif [[ "${environment}" == "pilot" ]]; then
+elif [[ "${source}" == "hmfapi" && "${environment}" == "pilot" ]]; then
     api_url="http://api.pilot-1/hmf/v1"
+elif [[ "${source}" == "lama" && "${environment}" == "prod" ]]; then
+    api_url="http://lama.prod-1/api"
+elif [[ "${source}" == "lama" && "${environment}" == "pilot" ]]; then
+    #api_url="http://lama.pilot-1/api"
+    die "LAMA API has no pilot environment yet. Exiting."
 else
-    die "Environment should be either prod or pilot"
+    die "Unknown combination of source (${source}) environment (${environment}). Exiting."
 fi
 
 main () {
