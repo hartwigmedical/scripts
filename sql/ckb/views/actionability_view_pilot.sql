@@ -2,7 +2,7 @@ CREATE OR REPLACE VIEW actionability AS (
 
 SELECT
     ckbEntry.id as ckbEntryId, therapy.createDate as therapyCreateDate, therapy.updateDate as therapyUpdateDate,
-    profileName AS tumorProfile, therapyName AS treatment, group_concat(treatmentApproachDrugClass.drugClass) as drugClass,
+    profileName AS tumorProfile, therapyName AS treatment, treatmentApproachDrugClass.drugClass as drugClass,
     name AS cancerType, termId AS cancerTypeId,evidenceType, responseType, ampCapAscoEvidenceLevel, approvalStatus,
     efficacyEvidence, description,group_concat(DISTINCT pubmedId) as pubmeds
 FROM ckbEntry
