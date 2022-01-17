@@ -15,7 +15,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference=$(load_ref_sample_from_metadata ${run_dir})
 rna="${sample}_RNA"
 
-somatic_vcf=""$(locate_rna_annotated_somatic_variants ${run_dir})""
+somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
 
 patient_db_jar="$(locate_prod_patient_db)"
 
