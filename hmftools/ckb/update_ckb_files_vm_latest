@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 zip_file=$1 && shift
 
-# first add file to gs://hmf-crunch-resources/serve/ckb/ bucket
+# first add file to gs://hmf-crunch-resources/ckb/ bucket
 if [[ -z "${zip_file}" ]]; then
     error "No zip file provided. Exiting"
 fi
@@ -12,8 +12,8 @@ fi
 resource_dir="/data/resources/crunch/ckb/latest"
 
 # copying data from bucket
-info "Copy zip file from gs://hmf-crunch-resources/serve/ckb/${zip_file}"
-gsutil cp gs://hmf-crunch-resources/serve/ckb/${zip_file} ${resource_dir}/
+info "Copy zip file from gs://hmf-crunch-resources/ckb/${zip_file}"
+gsutil cp gs://hmf-crunch-resources/ckb/${zip_file} ${resource_dir}/
 
 # unzip file
 info "Unzipping file ${zip_file}"
