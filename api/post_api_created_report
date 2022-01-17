@@ -65,8 +65,6 @@ else
   data=$(echo ${data} ${run_id_format})
 fi
 
-echo $data
-
 ### Execute patch reporting created endpoint
 info "Adding entry to created API"
 api_curl_post "reports/created" "${data}" "prod"
