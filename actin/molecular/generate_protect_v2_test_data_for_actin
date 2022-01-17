@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+run_dir="$(locate_actin_molecular_directory)/${sample}"
+
+# Rerun initial protect just to be sure we are comparing apples with apples.
+run_protect_research ${run_dir}
+load_protect_data_prod ${run_dir}
+
+# Run virus interpreter pilot required for PROTECT pilot.
+run_virus_interpreter_pilot ${run_dir}
+
+run_protect_protect_on_ckb ${run_dir}
+
+load_protect_data_pilot_ckb ${run_dir}
+
+

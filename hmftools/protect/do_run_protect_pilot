@@ -40,7 +40,9 @@ purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
-annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
+
+# TODO Switch back to PROD once virus interpreter v1.2 is released.
+annotated_virus_tsv=$(locate_virus_annotation_tsv_pilot ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 
 java -Xms2G -Xmx8G -jar ${protect_jar} \

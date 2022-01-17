@@ -9,9 +9,9 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-serve_actionability_dir=/data/resources/private/serve/37
+serve_actionability_dir="/data/resources/private/serve/37"
 
-output_dir=${run_dir}/protect_pilot_ckb
+output_dir="${run_dir}/protect_pilot_ckb"
 protect_jar=$(locate_pilot_protect)
 
 do_run_protect_pilot ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} -log_debug

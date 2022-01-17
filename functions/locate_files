@@ -1184,8 +1184,7 @@ locate_virus_annotation_tsv_pilot() {
     local run_dir=$1
     local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
     if [[ -z "${virus_annotation_tsv}" ]]; then
-        warn "Unable to locate pilot virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="/data/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        error "Unable to locate pilot virus annotation TSV in ${run_dir}."
     fi
     echo ${virus_annotation_tsv}
 }
@@ -1194,8 +1193,7 @@ locate_virus_annotation_tsv() {
     local run_dir=$1
     local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
     if [[ -z "${virus_annotation_tsv}" ]]; then
-        warn "Unable to locate virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="/data/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        error "Unable to locate virus annotation TSV in ${run_dir}."
     fi
     echo ${virus_annotation_tsv}
 }
