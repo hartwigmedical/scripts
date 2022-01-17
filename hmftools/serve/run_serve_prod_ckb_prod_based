@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir=/data/output/prod_output_ckb_prod_based
+output_dir="/data/output/prod_output_ckb_prod_based"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir=$(locate_ckb_flex_data_production_dir)

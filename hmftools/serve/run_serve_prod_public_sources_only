@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir=/data/output/prod_output_public_only
+output_dir="/data/output/prod_output_public_only"
 create_or_cleanup_dir ${output_dir}
 
 vicc_json=$(locate_vicc_json)
