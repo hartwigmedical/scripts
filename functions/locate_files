@@ -1182,7 +1182,7 @@ locate_virus_breakend_tsv() {
 
 locate_virus_annotation_tsv_pilot() {
     local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
+    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot_take3/ -type f -name "*.virus.annotated.tsv")
     if [[ -z "${virus_annotation_tsv}" ]]; then
         error "Unable to locate pilot virus annotation TSV in ${run_dir}."
     fi
