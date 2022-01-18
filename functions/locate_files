@@ -281,7 +281,7 @@ locate_cuppa_ref_dir_dna_rna() {
 }
 
 locate_actin_rna_sample_metadata_file() {
-    echo "/data/resources/crunch/actin/rna_cohort/actinn_sample_cohort_mapping.csv"
+    echo "/data/resources/crunch/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
 
 ################################# ACTIN Data ###################################
