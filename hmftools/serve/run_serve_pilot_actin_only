@@ -24,6 +24,8 @@ driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
 known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
+missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
+
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -ensembl_data_dir_37 ${ensembl_data_dir_37} \
     -ensembl_data_dir_38 ${ensembl_data_dir_38} \
@@ -35,6 +37,7 @@ java -Xms2G -Xmx16G -jar ${serve_jar} \
     -driver_gene_38_tsv ${driver_gene_38_tsv} \
     -known_fusion_37_file ${known_fusion_37_file} \
     -known_fusion_38_file ${known_fusion_38_file} \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -output_dir ${output_dir} \
     -log_debug \
