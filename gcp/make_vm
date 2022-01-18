@@ -121,7 +121,7 @@ gcloud compute instances create "${vm_name}" \
 ${preemptible_arg} \
 ${startup_script_arg} || die "Something wrong with VM creation. Check the gcloud response."
 
-gcloud compute instances add-labels example-instance --labels=user=$USER,cost_center=${cost_center}
+gcloud compute instances add-labels ${vm_name} --zone=${zone} --labels=user=$USER,cost_center=${cost_center}
 
 info "VM usage:"
 info "  Access: gcloud compute ssh ${vm_name}"
