@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 vm_name=""
 image_name=""
 image_project="hmf-build"
