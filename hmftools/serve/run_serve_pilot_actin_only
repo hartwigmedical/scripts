@@ -40,5 +40,4 @@ java -Xms2G -Xmx16G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -output_dir ${output_dir} \
-    -log_debug \
     "$@"
