@@ -13,7 +13,7 @@ run_dir="$(locate_actin_molecular_directory)/${sample}"
 
 # Rerun initial protect just to be sure we are comparing apples with apples.
 info "Running PROTECT research on ${run_dir}"
-run_protect_research ${run_dir} -log_debug
+run_protect_research ${run_dir}
 load_protect_data_prod ${run_dir}
 
 # Run virus interpreter pilot required for PROTECT pilot.
