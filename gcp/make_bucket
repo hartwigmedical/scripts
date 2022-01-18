@@ -6,13 +6,17 @@ print_usage() {
     echo "Usage: $(basename $0) -n bucket_name -p project_name"
     echo "  -n bucket_name      Name of the bucket to be created"
     echo "  -p project_name     Name of the project in which to create bucket"
+    echo "  -c cost_center      Assign a cost center to this bucket"
     exit 1
 }
 
-while getopts ':n:p:' flag; do
+cost_center="experiments"
+
+while getopts ':n:p:c:' flag; do
     case "${flag}" in
         n) bucket_name=${OPTARG} ;;
         p) project_name=${OPTARG} ;;
+        c) cost_center=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -25,3 +29,5 @@ fi
 info "Creating bucket in GCP. Disregard warnings about KMS permissions, our storage accounts are authorized."
 gsutil mb -c standard -b on -l europe-west4 -p ${project_name} gs://${bucket_name}
 gsutil kms encryption -w -k projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001 gs://${bucket_name}
+gsutil label ch -l user:$USER gs://${bucket_name}
+gsutil label ch -l cost_center:${cost_center} gs://${bucket_name}
