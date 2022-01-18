@@ -19,6 +19,3 @@ fi
 
 info "Copying ${tool_jar} to gs://common-tools/"
 gsutil cp ${tool_jar} gs://common-tools/${tool}/${version}/${tool}.jar
-
-info "Copying ${tool_jar} to ${vm}"
-gcloud compute scp ${tool_jar} ${vm}:/data/tools/${tool}/${version}/${tool}.jar
