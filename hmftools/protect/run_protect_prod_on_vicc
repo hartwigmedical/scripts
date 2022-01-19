@@ -3,40 +3,15 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-set=$1 && shift
-barcode=$1 && shift
-sample=$1 && shift
-temp_folder_path=$1 && shift
+run_dir=$1 && shift
 
-if [[ -z "${set}" ]]; then
-    error "No run provided. Exiting"
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
 fi
 
-if [[ -z "${barcode}" ]]; then
-    error "No barcode provided. Exiting"
-fi
+serve_actionability_dir="/data/resources/public/serve/37"
 
-if [[ -z "${sample}" ]]; then
-    error "No sample name provided. Exiting"
-fi
-
-if [[ -z "${temp_folder_path}" ]]; then
-    error "No dir provided where run is temporarily stored. Exiting"
-fi
-
-output_dir=${temp_folder_path}/protect
+output_dir="${run_dir}/protect"
 protect_jar=$(locate_prod_protect)
 
-info "Rerunning protect for $set (only in VM; pipeline data will not be overwritten)"
-serve_actionability_dir="/data/resources/custum/common-resources-private/serve/37"
-info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
-
-do_run_protect ${temp_folder_path} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log
-
-#### check log file of rerunning protect
-if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread\|Error:" | wc -l ) -lt 0 ]]; then
-    warn "Rerunning protect gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
-    #cat ${temp_folder_path}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|ERROR\|Exception in thread"
-else
-    info "No warnings/errors in rerunning protect. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_protect_rerun.log"
-fi
+do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar}
