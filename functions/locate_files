@@ -34,6 +34,10 @@ locate_prod_virus_interpreter() {
     echo "/data/tools/virus-interpreter/1.1/virus-interpreter.jar"
 }
 
+locate_research_virus_interpreter() {
+    echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
+}
+
 locate_pilot_virus_interpreter() {
     echo "/data/tools/virus-interpreter/pilot/virus-interpreter.jar"
 }
