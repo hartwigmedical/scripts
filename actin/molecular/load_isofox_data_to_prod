@@ -34,8 +34,8 @@ info "Loading isofox data for ${sample}"
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample "${sample_with_cancertype}" \
     -sample_data_dir ${isofox_data_dir} \
-    -alt_sj_cohort_file /data/experiments/rna/cohort/isofox.hmf_2737.alt_sj_cohort.csv \
-    -gene_distribution_file /data/experiments/rna/cohort/isofox.gene_distribution.csv \
+    -alt_sj_cohort_file "/data/experiments/rna/cohort/isofox.hmf_2766.alt_sj_cohort.csv" \
+    -gene_distribution_file "/data/experiments/rna/cohort/isofox.all_2766.gene_distribution.csv" \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"
