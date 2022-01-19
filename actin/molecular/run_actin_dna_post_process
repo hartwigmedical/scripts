@@ -27,7 +27,8 @@ fi
 
 # Rerun virus interpreter since older runs will have v1.0 or v1.1
 run_virus_interpreter_prod ${run_dir}
-load_virusinterpreter_data_prod ${run_dir}
+# TODO: Reload when patient-db is upgraded to v1.2
+#load_virusinterpreter_data_prod ${run_dir}
 
 # Retain original cuppa and clean up in preparation of rerun.
 cuppa_dir="${run_dir}/cuppa"
@@ -50,9 +51,9 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v1.9 and reload database
-run_protect_research ${run_dir}
-load_protect_data_prod ${run_dir}
+# Rerun protect to bump to v2.0 and use ACTIN + load to pilot database
+run_protect_research_on_actin ${run_dir}
+load_protect_data_prod_to_pilot_db ${run_dir}
 
 # Run standard ORANGE in production
 run_orange_prod ${run_dir} -max_evidence_level C

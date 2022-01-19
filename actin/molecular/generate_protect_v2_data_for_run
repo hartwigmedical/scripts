@@ -15,5 +15,5 @@ run_virus_interpreter_prod ${run_dir}
 
 # Rerun PROTECT v2.0
 info "Running PROTECT research on ${run_dir}"
-run_protect_research ${run_dir}
+run_protect_research_on_actin ${run_dir}
 load_protect_data_prod_to_pilot_db ${run_dir}
