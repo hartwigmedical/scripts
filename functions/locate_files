@@ -151,7 +151,7 @@ locate_prod_protect() {
 }
 
 locate_research_protect() {
-    echo "/data/tools/protect/1.9/protect.jar"
+    echo "/data/tools/protect/2.0/protect.jar"
 }
 
 locate_pilot_protect() {
