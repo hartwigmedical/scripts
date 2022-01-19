@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 source message_functions || exit 1
 
 set=$1 && shift
@@ -35,8 +34,8 @@ if [[ "$error" == *"CommandException"* ]]; then
     exit 1
 fi
 
-healthchecker_success=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckSucceeded" | wc -l );
-healthchecker_fail=$( gsutil ls ${healthchecker_url} | grep ".HealthCheckFailed" | wc -l )
+healthchecker_success=$( gsutil ls ${healthchecker_url} | grep -c ".HealthCheckSucceeded")
+healthchecker_fail=$( gsutil ls ${healthchecker_url} | grep -c ".HealthCheckFailed")
 
 if [[ ${healthchecker_success} == 0 && ${healthchecker_fail} == 0 ]]; then
    warn "HealthChecker has not been run for ${set}"
