@@ -31,7 +31,7 @@ locate_pilot_purple() {
 }
 
 locate_prod_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/1.1/virus-interpreter.jar"
+    echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
 }
 
 locate_research_virus_interpreter() {
@@ -1183,15 +1183,6 @@ locate_virus_breakend_tsv() {
 }
 
 ################################ VIRUS Interpreter #################################
-
-locate_virus_annotation_tsv_research() {
-    local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_research/ -type f -name "*.virus.annotated.tsv")
-    if [[ -z "${virus_annotation_tsv}" ]]; then
-        error "Unable to locate pilot virus annotation TSV in ${run_dir}."
-    fi
-    echo ${virus_annotation_tsv}
-}
 
 locate_virus_annotation_tsv_pilot() {
     local run_dir=$1
