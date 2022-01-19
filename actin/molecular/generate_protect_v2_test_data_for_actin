@@ -16,9 +16,9 @@ info "Running PROTECT research on ${run_dir}"
 run_protect_research ${run_dir}
 load_protect_data_prod ${run_dir}
 
-# Run virus interpreter pilot required for PROTECT pilot.
-info "Running virus interpreter pilot on ${run_dir}"
-run_virus_interpreter_pilot ${run_dir}
+# Run virus interpreter research required for PROTECT pilot.
+info "Running virus interpreter research on ${run_dir}"
+run_virus_interpreter_research ${run_dir}
 
 info "Running PROTECT pilot on ${run_dir}"
 run_protect_pilot_on_actin ${run_dir}
