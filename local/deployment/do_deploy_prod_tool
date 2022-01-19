@@ -4,13 +4,11 @@ source message_functions || exit 1
 
 tool=$1 && shift
 version=$1 && shift
-vm=$1 && shift
 
-if [[ -z ${tool} || -z ${version} || -z ${vm} ]]; then
+if [[ -z ${tool} || -z ${version} ]]; then
     error "Not enough parameters provided. Exiting"
 fi
 
-# TODO Test this (and then remove this TODO)
 tool_jar=$(find -L "${HOME}/hmf/repos/hmftools/${tool}/target" -type f -name "${tool}-${version}-jar-with-dependencies.jar")
 
 if [[ ! -f "${tool_jar}" ]]; then

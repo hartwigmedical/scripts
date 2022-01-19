@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-version="1.5"
-
-do_deploy_prod_tool_to_serve_vm "iclusion-importer" ${version}

@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-version="1.9"
-
-do_deploy_prod_tool_to_data_vm "protect" ${version}
