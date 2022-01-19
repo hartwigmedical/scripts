@@ -3,12 +3,13 @@
 source message_functions || exit 1
 
 gatk_path='/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar'
-rtg="/data/tools/rtg-tools/3.6.2/installation/rtg-tools-3.6.2-bc71ee0/rtg"
-ref_genome_fasta='/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
-rtg_sdf_path='/data/dbs/RTGSDF_GRCh37/'
+java_path='/usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java'
+rtg="/data/tools/rtg/3.12.1/rtg"
+ref_genome_fasta='/data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta'
+rtg_sdf_path='/data/dbs/RTGSDF_GRCh37'
 
 truth_version='NIST_v3.2.2';
-truth_dir_path="/data/giab/truth/${truth_version}"
+truth_dir_path="/data/resources/bucket/giab/truth/${truth_version}"
 truth_bed_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed'
 truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 truth_vcf_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.vcf.gz'
@@ -87,7 +88,7 @@ if [[ -f "${snp_vcf_path}" ]]; then
     info "SNP vcf already exist, skipping (${snp_vcf_path})"
 else
     info "Running GATK to create SNP vcf (${snp_vcf_name})"
-    java -Djava.io.tmp_dir="${tmp_dir}" -jar "${gatk_path}" \
+    $java_path -Djava.io.tmp_dir="${tmp_dir}" -jar "${gatk_path}" \
         -T SelectVariants \
         -R "${ref_genome_fasta}" \
         -L "${truth_bed_path}" \
@@ -104,7 +105,7 @@ fi
 #    info "INDEL vcf already exist, skipping (${indVcfPath})"
 #else
 #    info "Running GATK to create INDEL vcf (${indVcfName})"
-#    java -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType INDEL -o ${indVcfPath}
+#    $java_path -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType INDEL -o ${indVcfPath}
 #fi
 
 
