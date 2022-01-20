@@ -1,10 +1,12 @@
 CREATE OR REPLACE VIEW actionability AS (
 
 SELECT
-    ckbEntry.id as ckbEntryId, therapy.createDate as therapyCreateDate, therapy.updateDate as therapyUpdateDate,
-    profileName AS tumorProfile, therapyName AS treatment, drugClass, name AS cancerType, termId AS cancerTypeId,
-    evidenceType, responseType, ampCapAscoEvidenceLevel, approvalStatus, efficacyEvidence, description,
-    group_concat(DISTINCT pubmedId) as pubmeds
+    ckbEntry.id as ckbEntryId, ckbEntry.ckbProfileId, profileName AS tumorProfile,
+    therapyEvidence.therapyId, therapy.ckbTherapyId, therapy.createDate as therapyCreateDate, therapy.updateDate as therapyUpdateDate, therapyName AS treatment, description,
+    indicationEvidence.indicationId, indication.ckbIndicationId, termId AS cancerTypeId, name AS cancerType,
+    treatmentApproachEvidence.treatmentApproachEvidenceId, treatmentApproachDrugClass.treatmentApproachId, group_concat(drugClass) as drugClasses,
+    evidence.ckbEvidenceId, evidenceType, responseType, ampCapAscoEvidenceLevel as level, approvalStatus, efficacyEvidence,
+    evidenceReference.ckbReferenceId, group_concat(DISTINCT pubmedId) as pubmeds
 FROM ckbEntry
 INNER JOIN evidence ON evidence.ckbEntryId = ckbEntry.id
 LEFT JOIN evidenceReference on evidenceReference.evidenceId = evidence.id
@@ -14,4 +16,5 @@ INNER JOIN indicationEvidence ON indicationEvidence.evidenceId = evidence.id
 INNER JOIN indication ON indicationEvidence.indicationId = indication.id
 LEFT JOIN treatmentApproachEvidence ON treatmentApproachEvidence.evidenceId = evidence.id
 LEFT JOIN treatmentApproachDrugClass ON treatmentApproachDrugClass.treatmentApproachId=treatmentApproachEvidence.treatmentApproachEvidenceId
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13, 14);
+group by ckbEntry.id, ckbEntry.ckbProfileId, therapyEvidence.therapyId, therapy.ckbTherapyId, indicationEvidence.indicationId, indication.ckbIndicationId, treatmentApproachEvidence.treatmentApproachEvidenceId,
+treatmentApproachDrugClass.treatmentApproachId, evidence.ckbEvidenceId, evidenceReference.ckbReferenceId);
