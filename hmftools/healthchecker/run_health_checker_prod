@@ -22,7 +22,7 @@ ref_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${ref_sample}")
 tum_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}")
 
 output_dir="/data/custom/health_check_logs"
-if [[ -d ${output_dir} ]]; then
+if [[ ! -d ${output_dir} ]]; then
     mkdir ${output_dir}
 fi
 
