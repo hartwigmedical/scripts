@@ -26,7 +26,7 @@ if [[ -d ${output_dir} ]]; then
     mkdir ${output_dir}
 fi
 
-java -Xmx4G -jar "/data/tools/health-checker/3.2/health-checker.jar" \
+java -Xmx4G -jar "/data/tools/health-checker/3.3/health-checker.jar" \
     -reference ${ref_sample} \
     -tumor ${tumor_sample} \
     -ref_wgs_metrics_file ${ref_wgs_metrics} \
