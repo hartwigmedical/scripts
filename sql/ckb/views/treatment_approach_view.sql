@@ -1,7 +1,8 @@
-CREATE OR REPLACE VIEW treatmentApproach AS (
+CREATE OR REPLACE VIEW relevantDrugClass AS (
 
-select evidenceId, treatmentApproachEvidenceId, drugClassId, group_concat(distinct(drugClass)) as drugClasses,
+SELECT evidenceId, treatmentApproachEvidenceId, drugClassId, group_concat(distinct(drugClass)) as drugClasses,
 treatmentApproach.createDate, treatmentApproach.updateDate
-from treatmentApproachEvidence
-inner join treatmentApproachDrugClass on treatmentApproachDrugClass.treatmentApproachId=treatmentApproachEvidence.treatmentApproachEvidenceId
-inner join treatmentApproach on treatmentApproach.treatmentApproachId = treatmentApproachEvidence.treatmentApproachEvidenceId group by evidenceId);
+FROM treatmentApproachEvidence
+INNER JOIN treatmentApproachDrugClass ON treatmentApproachDrugClass.treatmentApproachId=treatmentApproachEvidence.treatmentApproachEvidenceId
+INNER JOIN treatmentApproach ON treatmentApproach.treatmentApproachId = treatmentApproachEvidence.treatmentApproachEvidenceId
+GROUP BY evidenceId);

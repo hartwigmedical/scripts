@@ -16,5 +16,5 @@ INNER JOIN indicationEvidence ON indicationEvidence.evidenceId = evidence.id
 INNER JOIN indication ON indicationEvidence.indicationId = indication.id
 LEFT JOIN treatmentApproachEvidence ON treatmentApproachEvidence.evidenceId = evidence.id
 LEFT JOIN treatmentApproachDrugClass ON treatmentApproachDrugClass.treatmentApproachId=treatmentApproachEvidence.treatmentApproachEvidenceId
-group by ckbEntry.id, ckbEntry.ckbProfileId, therapyEvidence.therapyId, therapy.ckbTherapyId, indicationEvidence.indicationId, indication.ckbIndicationId, treatmentApproachEvidence.treatmentApproachEvidenceId,
-treatmentApproachDrugClass.treatmentApproachId, evidence.ckbEvidenceId, evidenceReference.ckbReferenceId);
+group by ckbEntry.id, ckbEntry.ckbProfileId, therapyEvidence.therapyId, therapy.ckbTherapyId, indicationEvidence.indicationId,
+indication.ckbIndicationId, evidence.ckbEvidenceId);
