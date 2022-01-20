@@ -11,7 +11,7 @@ output_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
 
-cosmic_signatures=/data/dbs/sigs/snv_cosmic_sigs.csv
+cosmic_signatures="/data/resources/public/sigs/snv_cosmic_signatures.csv"
 
 create_or_cleanup_dir ${output_dir}
 
