@@ -7,10 +7,11 @@ output_dir="/data/output/pilot_output_iclusion_only"
 create_or_cleanup_dir ${output_dir}
 
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
+iclusion_filter_tsv=$(locate_iclusion_filter_tsv)
 missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
-    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} \
+    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -ckb_filter_tsv ${iclusion_filter_tsv} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -output_dir ${output_dir} \
     "$@"
