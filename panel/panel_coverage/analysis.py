@@ -61,23 +61,23 @@ def analyze_bam(
     local_bam_path = sample_working_dir / bam_file_name
     sample_working_dir.mkdir(parents=True, exist_ok=True)
 
-    logging.info(f"Downloading bam file")
+    logging.info(f"Downloading bam file for sample: {sample_name}")
     gcp_client.download_file(bam_path, local_bam_path)
     gcp_client.download_file(bam_path.append_suffix(".bai"), local_bam_path.with_suffix(".bai"))
 
-    logging.info("Getting samtools depth file")
+    logging.info(f"Getting samtools depth file for sample: {sample_name}")
     depth_file = get_depth_file(local_bam_path, sample_working_dir, program_config.samtools)
 
-    logging.info("Getting panel from file")
+    logging.info(f"Getting panel from file for sample: {sample_name}")
     panel = PanelReader.get_panel(panel_file_config)
 
-    logging.info("Getting interesting coverage intervals")
+    logging.info(f"Getting interesting coverage intervals for sample: {sample_name}")
     coverage_intervals = get_coverage_intervals(analysis_type_config, panel)
 
-    logging.info("Getting coverages")
+    logging.info(f"Getting coverages for sample: {sample_name}")
     coverage_info = get_coverage_info(depth_file, coverage_intervals, program_config.min_coverages)
 
-    logging.info("Writing output files")
+    logging.info(f"Writing output files for sample: {sample_name}")
     local_output_dir = sample_working_dir / "output"
     local_output_dir.mkdir(parents=True, exist_ok=True)
     write_analyses(
@@ -88,7 +88,7 @@ def analyze_bam(
         local_output_dir,
     )
 
-    logging.info("Uploading output files")
+    logging.info(f"Uploading output files for sample: {sample_name}")
     for local_output_file in local_output_dir.iterdir():
         gcp_client.upload_file(
             local_output_file,
