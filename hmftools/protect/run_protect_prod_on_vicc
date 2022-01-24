@@ -10,14 +10,9 @@ set=$1 && shift
 barcode=$1 && shift
 sample=$1 && shift
 temp_folder_path=$1 && shift
-run_dir=$1 && shift
 
 if [[ -z "${set}" ]]; then
     error "No run provided. Exiting"
-fi
-
-if [[ -z "${run_dir}" ]]; then
-    error "No run dir provided. Exiting"
 fi
 
 if [[ -z "${barcode}" ]]; then
