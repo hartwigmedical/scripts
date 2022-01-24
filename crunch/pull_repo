@@ -3,23 +3,9 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-SCRIPT_NAME="$(basename "$0")"
-
-repo_name=$1 && shift
-
-if [[ -z ${repo_name} ]]; then
-    die "No repo name provided. ${SCRIPT_NAME} requires a repo name as an argument"
-fi
-
-if [[ ${repo_name} != "scripts" ]] && [[ ${repo_name} != "peach" ]]; then
-    die "Only allowed to be used on scripts and peach repos. Other repos are set to a fixed version on purpose."
-fi
-
-repo_path=$(locate_repo_dir "${repo_name}")
-work_path=$(pwd)
-
-if [[ "${USER}" == "root" ]]; then
-    die "This script should not be executed as user root"
+repo_path=$1
+if [[ -z ${repo_path} ]]; then
+    die "No repo path provided. $(basename $0) requires a repo name as an argument"
 fi
 
 if [[ ! -d "${repo_path}" ]]; then
@@ -30,7 +16,5 @@ info "Change dir (to ${repo_path})"
 cd "${repo_path}" || die "Could not switch dir to repo ${repo_path}"
 
 info "Performing pull (in ${repo_path})"
-git pull
+sudo -u ops git pull || die "Pull to ${repo_path} failed"
 
-info "Change dir (to ${work_path})"
-cd "${work_path}" || die "Could not switch dir back to work path ${work_path}"

@@ -3,34 +3,11 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-SCRIPT_NAME="$(basename "$0")"
+repo=$1
+[[ -z ${repo} ]] && die "$(basename $0) requires a repo resources name as an argument"
 
-repo_resources_name=$1 && shift
-
-if [[ -z ${repo_resources_name} ]]; then
-    die "No repo resources name provided. ${SCRIPT_NAME} requires a repo resources name as an argument"
-fi
-
-if [[ ${repo_resources_name} != "ops" ]] && [[ ${repo_resources_name} != "crunch" ]] && [[ ${repo_resources_name} != "private" ]] && [[ ${repo_resources_name} != "public" ]] ; then
+if [ ${repo} != "ops" -a ${repo} != "crunch" -a ${repo} != "private" -a ${repo} != "public" ] ; then
     die "Only allowed to be used on ops ,crunch, private and public resources repos. Other repos are set to a fixed version on purpose."
 fi
 
-repo_resources_path=$(locate_resources_repo_dir "${repo_resources_name}")
-work_path=$(pwd)
-
-if [[ "${USER}" == "root" ]]; then
-    die "This script should not be executed as user root"
-fi
-
-if [[ ! -d "${repo_resources_path}" ]]; then
-    die "Dir does not exist (${repo_resources_path})"
-fi
-
-info "Change dir (to ${repo_resources_path})"
-cd "${repo_resources_path}" || die "Could not switch dir to repo ${repo_resources_path}"
-
-info "Performing pull (in ${repo_resources_path})"
-git pull
-
-info "Change dir (to ${work_path})"
-cd "${work_path}" || die "Could not switch dir back to work path ${work_path}"
+pull_repo $(locate_resources_repo_dir "${repo}")
