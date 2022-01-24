@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+## Script will be used in ops, so do not remove this script
+## Also do not change actionability dir (as is a clone of the pipeline) and don't remove the log check
+
 source locate_files || exit 1
 source message_functions || exit 1
 
@@ -20,7 +23,6 @@ fi
 if [[ -z "${barcode}" ]]; then
     error "No barcode provided. Exiting"
 fi
-serve_actionability_dir="/data/resources/public/serve/37"
 
 if [[ -z "${sample}" ]]; then
     error "No sample name provided. Exiting"
