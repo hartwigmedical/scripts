@@ -11,6 +11,8 @@ run_dir=$1 && shift
 
 if [[ -z "${set}" ]]; then
     error "No run provided. Exiting"
+fi
+
 if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
