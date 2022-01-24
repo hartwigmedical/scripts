@@ -49,11 +49,19 @@ def analyze_bam(
 
     bam_file_name = bam_path.relative_path.split("/")[-1]
     sample_name = bam_file_name.replace(".bam", "")
-    sample_working_dir = program_config.working_dir / sample_name
-    sample_working_dir.mkdir(parents=True, exist_ok=True)
-    local_bam_path = sample_working_dir / bam_file_name
 
-    logging.info(f"Downloading bam file for sample: {sample_name}")
+    sample_bucket_dir = program_config.output_dir.append_suffix(f"/{sample_name}")
+
+    logging.info(f"Start handling sample {sample_name}")
+    if gcp_client.file_exists(sample_bucket_dir.append_suffix(f"/hotspot_coverage.tsv")):
+        logging.info(f"BAM {bam_path} has already been handled, so SKIP now.")
+        return
+
+    sample_working_dir = program_config.working_dir / sample_name
+    local_bam_path = sample_working_dir / bam_file_name
+    sample_working_dir.mkdir(parents=True, exist_ok=True)
+
+    logging.info(f"Downloading bam file")
     gcp_client.download_file(bam_path, local_bam_path)
     gcp_client.download_file(bam_path.append_suffix(".bai"), local_bam_path.with_suffix(".bai"))
 
@@ -84,7 +92,7 @@ def analyze_bam(
     for local_output_file in local_output_dir.iterdir():
         gcp_client.upload_file(
             local_output_file,
-            program_config.output_dir.append_suffix(f"/{sample_name}/{local_output_file.name}"),
+            sample_bucket_dir.append_suffix(f"/{local_output_file.name}"),
         )
 
     logging.info(f"Cleaning up data for sample: {sample_name}")
