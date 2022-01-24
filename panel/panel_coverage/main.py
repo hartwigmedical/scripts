@@ -6,6 +6,7 @@ from typing import List
 
 from config import PanelFileConfig, AnalysisTypeConfig, ProgramConfig
 from analysis import do_analysis
+from gcp.base import GCPPath
 from util import assert_file_exists
 
 
@@ -27,8 +28,6 @@ def main(program_config: ProgramConfig) -> None:
     )
     panel_file_config.validate()
     assert_file_exists(program_config.samtools)
-    for bam in program_config.bams:
-        assert_file_exists(bam)
 
     analysis_type_config = AnalysisTypeConfig(
         baf=True,
@@ -57,7 +56,7 @@ def parse_args(sys_args: List[str]) -> ProgramConfig:
         ),
     )
     parser.add_argument("--panel_config_dir", "-p", type=Path, required=True, help="Dir with panel config files.")
-    parser.add_argument("--output_dir", "-o", type=Path, required=True, help="Output dir.")
+    parser.add_argument("--output_dir", "-o", type=GCPPath.from_string, required=True, help="Output GCP dir.")
     parser.add_argument("--samtools", "-s", type=Path, required=True, help="Samtools version 1.13 or greater.")
     parser.add_argument(
         "--working_dir", "-w", type=Path, required=True, help="Working dir to store intermediate files."
@@ -66,12 +65,12 @@ def parse_args(sys_args: List[str]) -> ProgramConfig:
         "--min_coverage", "-c", type=int, required=True, action="append", help="Min coverage. Can be specified multiple times."
     )
     parser.add_argument(
-        "--bam", "-b", type=Path, required=True, action="append", help="Path to bam. Can be specified multiple times."
+        "--bam", "-b", type=GCPPath.from_string, required=True, action="append", help="GCP path to bam. Can be specified multiple times."
     )
     args = parser.parse_args(sys_args)
 
     sorted_min_coverages: List[int] = sorted(args.min_coverage)
-    sorted_bams: List[Path] = sorted(args.bam)
+    sorted_bams: List[GCPPath] = sorted(args.bam)
     config = ProgramConfig(
         args.panel_config_dir,
         args.output_dir,
