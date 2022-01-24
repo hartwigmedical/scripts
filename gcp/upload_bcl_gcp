@@ -24,7 +24,7 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     fi
 
     echo "Starting BCL upload of ${flowcell_path}"
-    gs_path="gs://${bucket}/${flowcell_name}"
+    gs_path="gs://${bucket}/$(basename $flowcell_path)"
     gcloud auth activate-service-account --key-file "${gcp_cred}"
     rsync_bcls $flowcell_path $gs_path
     [[ -f $flowcell_path/RTAComplete.txt ]] && rsync_bcls $flowcell_path $gs_path && gsutil cp $flowcell_path/RTAComplete.txt $gs_path
