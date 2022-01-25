@@ -6,8 +6,5 @@ source locate_files || exit 1
 version="0.1"
 actin_jar="${HOME}/hmf/repos/actin/system/target/system-${version}-jar-with-dependencies.jar"
 
-info "Copying ${actin_jar} to gs://common-tools/"
-gsutil cp ${actin_jar} gs://common-tools/actin/pilot/actin.jar
-
 info "Copying ${actin_jar} to data-vm-prod-2"
 gcloud compute scp ${actin_jar} data-vm-prod-2:$(locate_pilot_actin)

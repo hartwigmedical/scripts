@@ -11,7 +11,7 @@ locate_nextcloud_upload_credentials() {
 ##################################### JARS #####################################
 
 locate_pilot_actin() {
-    echo "/data/tools/actin/pilot/actin.jar"
+    echo "/data/actin/system/actin.jar"
 }
 
 locate_pilot_isofox() {
