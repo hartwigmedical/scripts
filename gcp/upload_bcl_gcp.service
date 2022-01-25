@@ -9,7 +9,7 @@ Description=BCL-to-GCP Uploader
 [Service]
 WorkingDirectory=/data1/illumina_data
 ExecStart=/data/repos/scripts/gcp/upload_bcl_gcp 
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]
