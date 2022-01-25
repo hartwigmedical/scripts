@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+# Run standard ORANGE in production
+run_orange_prod ${run_dir} -max_evidence_level C
+
+# Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
+run_orange_prod_no_germline ${run_dir} -max_evidence_level C

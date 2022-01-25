@@ -55,8 +55,5 @@ fi
 run_protect_research_on_actin ${run_dir}
 load_protect_data_prod_to_pilot_db ${run_dir}
 
-# Run standard ORANGE in production
-run_orange_prod ${run_dir} -max_evidence_level C
-
-# Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
-run_orange_prod_no_germline ${run_dir} -max_evidence_level C
+# Run ORANGE in ACTIN mode to produce final molecular output.
+run_orange_in_actin_mode ${run_dir}
