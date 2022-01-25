@@ -70,14 +70,13 @@ def parse_args(sys_args: List[str]) -> ProgramConfig:
     args = parser.parse_args(sys_args)
 
     sorted_min_coverages: List[int] = sorted(args.min_coverage)
-    sorted_bams: List[GCPPath] = sorted(args.bam)
     config = ProgramConfig(
         args.panel_config_dir,
         args.output_dir,
         args.samtools,
         args.working_dir,
         tuple(sorted_min_coverages),
-        tuple(sorted_bams),
+        tuple(args.bam),
     )
     return config
 
