@@ -21,7 +21,7 @@ fi
 
 credentials_dir="/data/dbs/gcp_credentials"
 key_file="${credentials_dir}/hmf-share"
-billing_project="hmf-share"
+billing_project="hmf-ops"
 service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
 
 info "Start of ${script_name}"
