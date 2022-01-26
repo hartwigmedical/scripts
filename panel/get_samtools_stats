@@ -12,7 +12,6 @@ main() {
 
   # sanity checks
   [[ -n ${samtools} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
-  [[ -f ${bam} ]] || die "Bam argument does not point to file: ${bam}"
   [[ "${bam}" == *.bam ]] || die "Bam argument does have format *.bam: ${bam}"
 
   "${samtools}" stats --most-inserts 0.99 --sparse "${bam}" || die "Could not get samtool stats for ${bam}"
