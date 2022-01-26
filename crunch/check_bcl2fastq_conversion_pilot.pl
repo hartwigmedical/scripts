@@ -12,9 +12,6 @@ use XML::Simple;
 use List::Util qw/sum/;
 use 5.010.000;
 
-## -----
-## Global variables
-## -----
 my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
@@ -26,7 +23,7 @@ my $ROUND_DECIMALS = 1;
 my $RUN_PATH;
 my $OUT_JSON_PATH;
 
-my $MCSV_PATH = 'Fastq/Reports/Quality_Metrics.csv';
+my $MCSV_PATH = 'Fastq/Reports/Quality_Metrics.csv2';
 my $JSON_PATH = 'Fastq/Stats/Stats.json';
 my $RXML_PATH = 'RunInfo.xml';
 my $SSHT_PATH = 'SampleSheet.csv';
@@ -45,21 +42,22 @@ my $HELP =<<HELP;
     Parses conversion output json and prints table with flowcell/lane/sample/read metrics
     
   Usage
-    $SCRIPT -run_dir \${run-path}
-    $SCRIPT -run_dir \${run-path} -samplesheet \${samplesheet-path}
-    $SCRIPT -json_path \${json-path}
+    $SCRIPT -runDir \${run-path}
+    - OR -
+    $SCRIPT -sampleSheet /path/to/SampleSheet.csv -statsJson /path/to/Stats.json -metricsCsv /path/to/Quality_Metrics.csv
     
   Options
-    -sep <s>               Output sep (default = <TAB>)
-    -yield_factor <i>      Factor to divide all yields with (default present per platform)
-    -round_decimals <i>    Decimals to keep for q30 (default: $ROUND_DECIMALS)
-    -samplesheet <s>       Path to SampleSheet.csv file
-    -run_info_xml <s>      Path to RunInfo.xml file
-    -metrics_csv_file <s>  Path to Quality_Metrics.csv file
-    -json_out <s>          Path to output json file (only written if provided)
-    -no_qc                 Skip QC checks
-    -summary               Prints extra sample summary table
-    -debug                 Prints complete datastructure
+    -sep <s>           Output sep (default = <TAB>)
+    -yieldFactor <i>   Factor to divide all yields with (default present per platform)
+    -decimals    <i>   Decimals to keep for q30 (default: $ROUND_DECIMALS)
+    -sampleSheet <s>   Path to SampleSheet.csv file
+    -statsJson   <s>   Path to Stats.json file
+    -runInfoXml  <s>   Path to RunInfo.xml file
+    -metricsCsv  <s>   Path to Quality_Metrics.csv file
+    -outputJson  <s>   Path to output json file to create (in addition to stdout output)
+    -noQc              Skip QC checks and just print table
+    -summary           Prints extra sample summary table
+    -debug             Prints complete datastructure
     
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0;
@@ -88,79 +86,140 @@ print $HELP and exit(0) if $opt{ help };
 my $seq_run = "FileModeSoNoRunDir";
 if (defined $RUN_PATH){
     die "[ERROR] Provided run dir does not exist ($RUN_PATH)\n" if not -d $RUN_PATH;
-    say "## INFO: Input mode = rundir";
     $RXML_PATH = "$RUN_PATH/$RXML_PATH";
     $SSHT_PATH = "$RUN_PATH/$SSHT_PATH";
     $JSON_PATH = "$RUN_PATH/$JSON_PATH";
     $MCSV_PATH = "$RUN_PATH/$MCSV_PATH";
     $seq_run = basename $RUN_PATH;
-}else{
-    say "## INFO: Input mode = files";
 }
-
-die "[ERROR] Provided json does not exist ($JSON_PATH)\n" if not -f $JSON_PATH;
 die "[ERROR] Provided xml does not exist ($RXML_PATH)\n" if not -f $RXML_PATH;
+die "[ERROR] Provided sample sheet does not exist ($SSHT_PATH)\n" if not -f $SSHT_PATH;
 
 my $ssht_info = readSampleSheet( $SSHT_PATH );
-
-## Need to make sure we know the exact platform
 my $platform = determinePlatformByString($ssht_info->{'platform'}, \@KNOWN_PLATFORMS);
 my $SETTINGS = $SETTINGS_PER_PLATFORM{$platform};
 $SETTINGS->{yield_factor} = $opt{yield_factor} if defined $opt{yield_factor};
 my $YIELD_FACTOR = $SETTINGS->{yield_factor};
 
-my $json_info = readJson( $JSON_PATH );
-my $rxml_info = readXml( $RXML_PATH );
-my $parsed_info = parseJsonInfo( $json_info, $rxml_info );
-$parsed_info->{stats}{platform} = $platform;
+my %store = ();
 
-addSamplesheetInfo( $parsed_info, $ssht_info, $seq_run );
-performQC( $parsed_info, $SETTINGS) unless $opt{ no_qc };
+say "## Input File: $RXML_PATH";
+my $runinfo = parseRunInfoXml($RXML_PATH);
 
-if ( $opt{ print_summary } ){
-    printSummaryTable( $parsed_info, \@SUM_FIELDS );
+if( -f $MCSV_PATH ){
+    say "## Input File: $MCSV_PATH";
+    my $metrics_info = readQualityMetricsCsv($MCSV_PATH);
+    parseMetricsInfo(\%store, $metrics_info, $runinfo);
+}
+elsif ( -f $JSON_PATH ){
+    say "## Input file: $JSON_PATH";
+    my $json_info = readJson( $JSON_PATH );
+    parseJsonInfo(\%store, $json_info, $runinfo);
 }
 else{
-    printTable( $parsed_info, \@OUT_FIELDS );
-    printJson( $parsed_info, $OUT_JSON_PATH ) if defined $OUT_JSON_PATH;
+    die "[ERROR] Both Stats JSON and Metrics CSV not found. Need one of both!\n"
+}
+
+$store{stats}{platform} = $platform;
+
+printJson(\%store, "test.json");
+
+addSamplesheetInfo(\%store, $ssht_info, $seq_run);
+performQC(\%store, $SETTINGS) unless $opt{no_qc};
+
+if ( $opt{print_summary} ){
+    printSummaryTable(\%store, \@SUM_FIELDS );
+}
+else{
+    printTable(\%store, \@OUT_FIELDS);
+    printJson(\%store, $OUT_JSON_PATH) if defined $OUT_JSON_PATH;
 }
 
 if ( $opt{ debug } ){
     say "[DEBUG] Samplesheet data structure";
     print Dumper $ssht_info;
     say "[DEBUG] Complete final data structure";
-    print Dumper $parsed_info;
+    print Dumper \%store;
 }
 
 ## -----
 ## /MAIN
 ## -----
 
+sub parseMetricsInfo{
+    my ($store, $metrics, $runinfo) = @_;
+
+    my $total_non_index_cycle_count = $runinfo->{total_non_index_cycle_count};
+    my $cycle_string = $runinfo->{cycle_string};
+    my $fid = $runinfo->{flowcell_id};
+
+    $store->{ 'flow' }{ $fid }{ 'id' } = $fid;
+    $store->{ 'flow' }{ $fid }{ 'name' } = "TODO";
+
+    while (my ($lid, $lane) = each %$metrics) {
+        $store->{lane}{ $lid }{name} = $lid;
+        $store->{flow}{ $fid }{clust_raw} += 0;
+        $store->{flow}{ $fid }{clust_pf} += 0;
+        $store->{lane}{ $lid }{clust_raw} += 0;
+        $store->{lane}{ $lid }{clust_pf} += 0;
+
+        while (my ($sid, $sample) = each %$lane) {
+            $store->{samp}{ $sid }{name} = "NoName";
+            $store->{samp}{ $sid }{index1}  = "NoIndexSeq1";
+            $store->{samp}{ $sid }{index2}  = "NoIndexSeq2";
+
+            while (my ($rid, $read) = each %$sample) {
+                my $yield = $read->{Yield};
+                my $yield_q30 = $read->{YieldQ30};
+                my $index_seq1 = $read->{index};
+                my $index_seq2 = $read->{index2};
+                my $seq = $indexseq1 . '+' . $$indexseq2;
+                $store->{samp}{$sid}{index1} = $index_seq1;
+                $store->{samp}{$sid}{index2} = $index_seq2;
+                $store->{flow}{$fid}{yield} += $yield;
+                $store->{lane}{$lid}{yield} += $yield;
+                $store->{samp}{$sid}{yield} += $yield;
+                $store->{read}{$rid}{yield} += $yield;
+                $store->{indx}{$seq}{yield} += $yield;
+                $store->{flow}{$fid}{yield_q30} += $yield_q30;
+                $store->{lane}{$lid}{yield_q30} += $yield_q30;
+                $store->{samp}{$sid}{yield_q30} += $yield_q30;
+                $store->{read}{$rid}{yield_q30} += $yield_q30;
+                $store->{indx}{$seq}{yield_q30} += $yield_q30;
+            }
+        }
+    }
+    addPrintFields(\%store, $fid);
+    addGeneralStats(\%store, $fid, $cycle_string);
+
+}
+
 sub addSamplesheetInfo{
-    my ($json_info, $ssht_info, $seq_run) = @_;
+    my ($data, $ssht_info, $seq_run) = @_;
 
     ## add info to stats (eg hmf_runname could be X17-0001)
     my $hmf_runname = $ssht_info->{'runname'};
-    $json_info->{ 'stats' }{ 'seq_runname' } = $seq_run;
-    $json_info->{ 'stats' }{ 'hmf_runname' } = $hmf_runname;
-    $json_info->{ 'stats' }{ 'submissions' } = {};
+    $data->{ 'stats' }{ 'seq_runname' } = $seq_run;
+    $data->{ 'stats' }{ 'hmf_runname' } = $hmf_runname;
+    $data->{ 'stats' }{ 'submissions' } = {};
     
     ## override flowcell name with ExperimentName from SampleSheet
-    my @fcids = keys %{$json_info->{'flow'}};
-    die "[ERROR] There should only be one flowcell in json_info" unless scalar @fcids == 1;
+    my @fcids = keys %{$data->{'flow'}};
+    my $flowcell_count = scalar @fcids;
+    die "[ERROR] There should be exactly one flowcell in data but found $flowcell_count\n" unless $flowcell_count == 1;
     my $fcid = $fcids[0];
-    $json_info->{ 'flow' }{ $fcid }{ 'name' } = $hmf_runname;
-    $json_info->{ 'flow' }{ $fcid }{ 'name_print' } = $hmf_runname;
+    $data->{ 'flow' }{ $fcid }{ 'name' } = $hmf_runname;
+    $data->{ 'flow' }{ $fcid }{ 'name_print' } = $hmf_runname;
     
     ## add sample metadata
-    my $samples = $json_info->{ 'samp' };
+    my $samples = $data->{ 'samp' };
     foreach my $sample_id ( keys %$samples ){
         my $sample = $samples->{ $sample_id };
         
         my $submission = $NA_CHAR;
         $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
         $sample->{ 'submission_print' } = $submission;
-        $json_info->{ 'stats' }{ 'submissions' }{ $submission } = 1;
+        $data->{ 'stats' }{ 'submissions' }{ $submission } = 1;
         
         my $description = $NA_CHAR;
         $description = $ssht_info->{'samples'}{$sample_id}{ 'Description' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Description' };
@@ -168,9 +227,25 @@ sub addSamplesheetInfo{
     }
 }
 
+sub parseRunInfoXml{
+    my ($run_info_xml) = @_;
+    my $content = readXml( $run_info_xml );
+    my $flowcell_id = $content->{Run}{Flowcell};
+    my @cycle_counts = map( $_->{NumCycles}, @{$content->{Run}{Reads}{Read}});
+    my $cycle_string = join( "|", @cycle_counts);
+    my @read_cycle_counts = map( $_->{IsIndexedRead} eq "N" ? $_->{NumCycles} : (), @{$content->{Run}{Reads}{Read}});
+    my $total_non_index_cycle_count = sum(@read_cycle_counts);
+    my %info = (
+        "cycle_string" => $cycle_string,
+        "total_non_index_cycle_count" => $total_non_index_cycle_count,
+        "flowcell_id" => $flowcell_id
+    );
+    return \%info;
+}
+
 sub readXml{
     my ($file) = @_;
-    my $obj = XMLin( $file );
+    my $obj = XMLin($file);
     return($obj);
 }
 
@@ -253,63 +328,59 @@ sub checkObjectField{
 }
 
 sub parseJsonInfo{
-    my ($raw_json_info, $run_xml_info) = @_;
-    my %info = ();
+    my ($store, $stats, $runinfo) = @_;
 
-    ## Reading phase
-    my @cycle_counts = map( $_->{NumCycles}, @{$run_xml_info->{Run}{Reads}{Read}});
-    my @read_cycle_counts = map( $_->{IsIndexedRead} eq "N" ? $_->{NumCycles} : (), @{$run_xml_info->{Run}{Reads}{Read}});
-    my $total_non_index_cycle_count = sum(@read_cycle_counts);
+    my $total_non_index_cycle_count = $runinfo->{total_non_index_cycle_count};
+    my $cycle_string = $runinfo->{cycle_string};
 
-    my $cycle_string = join( "|", @cycle_counts);
-    my $fid = $raw_json_info->{ 'Flowcell' };
-    $info{ 'flow' }{ $fid }{ 'id' } = $fid;
-    $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
+    my $fid = $stats->{ 'Flowcell' };
+    $store->{ 'flow' }{ $fid }{ 'id' } = $fid;
+    $store->{ 'flow' }{ $fid }{ 'name' } = $stats->{ 'RunId' };
 
     ## First reading the "unknown barcodes" and add them to "index sequences"
-    my $unknowns = $raw_json_info->{'UnknownBarcodes'};
+    my $unknowns = $stats->{'UnknownBarcodes'};
     foreach my $lane ( @$unknowns ){
         my $lid = join( "", "lane", $lane->{ Lane } );
         my $unknown_barcodes = $lane->{'Barcodes'};
         foreach my $bc ( keys %$unknown_barcodes ){
-            $info{ indx }{ $bc }{ name } = 'IndexFromUnknown';
+            $store->{ indx }{ $bc }{ name } = 'IndexFromUnknown';
             my $seq1 = (split(/\+/, $bc))[0] || $NA_CHAR;
             my $seq2 = (split(/\+/, $bc))[1] || $NA_CHAR;
-            $info{ indx }{ $bc }{ index1 } = $seq1;
-            $info{ indx }{ $bc }{ index2 } = $seq2;
+            $store->{ indx }{ $bc }{ index1 } = $seq1;
+            $store->{ indx }{ $bc }{ index2 } = $seq2;
             # Unlike actual samples, the unknowns are reported as cluster counts instead of yield
             # So need to calculate the yield using non-index cycle counts from RunInfo.xml
-            $info{ indx }{ $bc }{ yield } += $unknown_barcodes->{ $bc } * $total_non_index_cycle_count;
+            $store->{ indx }{ $bc }{ yield } += $unknown_barcodes->{ $bc } * $total_non_index_cycle_count;
         }
     }
 
     ## Then read samples
-    my $lanes = $raw_json_info->{'ConversionResults'};
+    my $lanes = $stats->{'ConversionResults'};
     foreach my $lane ( @$lanes ){
         my $lid = join( "", "lane", $lane->{LaneNumber} );
-        $info{lane}{ $lid }{name} = $lid;
-        
-        $info{flow}{ $fid }{clust_raw} += $lane->{TotalClustersRaw};
-        $info{flow}{ $fid }{clust_pf} += $lane->{TotalClustersPF};
-        $info{lane}{ $lid }{clust_raw} += $lane->{TotalClustersRaw};
-        $info{lane}{ $lid }{clust_pf} += $lane->{TotalClustersPF};
+        $store->{lane}{ $lid }{name} = $lid;
+
+        $store->{flow}{ $fid }{clust_raw} += $lane->{TotalClustersRaw};
+        $store->{flow}{ $fid }{clust_pf} += $lane->{TotalClustersPF};
+        $store->{lane}{ $lid }{clust_raw} += $lane->{TotalClustersRaw};
+        $store->{lane}{ $lid }{clust_pf} += $lane->{TotalClustersPF};
         
         ## Undetermined info is stored separate from samples in json
         my $undet_id = 'UNDETERMINED';
         my $undet_obj = $lane->{Undetermined};
         my $undet_reads = $undet_obj->{ReadMetrics};
-        my $undet_info = \%{$info{undt}{ $undet_id }};
+        my $undet_info = \%{$store->{undt}{ $undet_id }};
         $undet_info->{name} = $undet_id;
         foreach my $read ( @$undet_reads ){
             my $rid = join( "", "read", $read->{ReadNumber} );
             $undet_info->{yield} += $read->{Yield};
             $undet_info->{yield_q30} += $read->{YieldQ30};
-            $info{flow}{ $fid }{yield} += $read->{Yield};
-            $info{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
-            $info{lane}{ $lid }{yield} += $read->{Yield};
-            $info{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
-            $info{read}{ $rid }{yield} += $read->{Yield};
-            $info{read}{ $rid }{yield_q30} += $read->{YieldQ30};
+            $store->{flow}{ $fid }{yield} += $read->{Yield};
+            $store->{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
+            $store->{lane}{ $lid }{yield} += $read->{Yield};
+            $store->{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
+            $store->{read}{ $rid }{yield} += $read->{Yield};
+            $store->{read}{ $rid }{yield_q30} += $read->{YieldQ30};
         }
 
         my $samples = $lane->{DemuxResults};
@@ -327,29 +398,29 @@ sub parseJsonInfo{
             my $seq2 = (split(/\+/, $seq))[1] || $NA_CHAR; # in case of single index there is no second index
 
             ## Reset info for all real samples
-            $info{samp}{ $sid }{name} = $snm;
-            $info{samp}{ $sid }{index1}  = $seq1;
-            $info{samp}{ $sid }{index2}  = $seq2;
+            $store->{samp}{ $sid }{name} = $snm;
+            $store->{samp}{ $sid }{index1}  = $seq1;
+            $store->{samp}{ $sid }{index2}  = $seq2;
             
             my $reads = $sample->{ReadMetrics};
             foreach my $read ( @$reads ){
                 my $rid = join( "", "read", $read->{ReadNumber} );
-                $info{read}{ $rid }{name} = $rid;
-                $info{indx}{ $seq }{name} = 'IndexFromSample';
-                $info{indx}{ $seq }{index1}  = $seq1;
-                $info{indx}{ $seq }{index2}  = $seq2;
-                
-                $info{flow}{ $fid }{yield} += $read->{Yield};
-                $info{lane}{ $lid }{yield} += $read->{Yield};
-                $info{samp}{ $sid }{yield} += $read->{Yield};
-                $info{read}{ $rid }{yield} += $read->{Yield};
-                $info{indx}{ $seq }{yield} += $read->{Yield};
-                
-                $info{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
-                $info{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
-                $info{samp}{ $sid }{yield_q30} += $read->{YieldQ30};
-                $info{read}{ $rid }{yield_q30} += $read->{YieldQ30};
-                $info{indx}{ $seq }{yield_q30} += $read->{YieldQ30};
+                $store->{read}{ $rid }{name} = $rid;
+                $store->{indx}{ $seq }{name} = 'IndexFromSample';
+                $store->{indx}{ $seq }{index1}  = $seq1;
+                $store->{indx}{ $seq }{index2}  = $seq2;
+
+                $store->{flow}{ $fid }{yield} += $read->{Yield};
+                $store->{lane}{ $lid }{yield} += $read->{Yield};
+                $store->{samp}{ $sid }{yield} += $read->{Yield};
+                $store->{read}{ $rid }{yield} += $read->{Yield};
+                $store->{indx}{ $seq }{yield} += $read->{Yield};
+
+                $store->{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
+                $store->{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
+                $store->{samp}{ $sid }{yield_q30} += $read->{YieldQ30};
+                $store->{read}{ $rid }{yield_q30} += $read->{YieldQ30};
+                $store->{indx}{ $seq }{yield_q30} += $read->{YieldQ30};
             }
             
             my %bc_mismatch_counts = (
@@ -361,22 +432,48 @@ sub parseJsonInfo{
             foreach my $mm ( @types ){
                 my $count = 0;
                 $count = $bc_mismatch_counts{ $mm } if defined $bc_mismatch_counts{ $mm };
-                $info{flow}{ $fid }{ $mm } += $count;
-                $info{lane}{ $lid }{ $mm } += $count;
-                $info{samp}{ $sid }{ $mm } += $count;
-                $info{indx}{ $seq }{ $mm } += $count;
+                $store->{flow}{ $fid }{ $mm } += $count;
+                $store->{lane}{ $lid }{ $mm } += $count;
+                $store->{samp}{ $sid }{ $mm } += $count;
+                $store->{indx}{ $seq }{ $mm } += $count;
             }
         }
     }
+    addPrintFields(\%store, $fid);
+    addGeneralStats(\%store, $fid, $cycle_string);
+}
 
-    ## Create the info to print later
-    foreach my $type ( keys %info ){
-        foreach my $id ( keys %{$info{ $type }} ){
-            my $obj = $info{ $type }{ $id };
+sub addGeneralStats{
+    my ($store, $fid, $cycle_string) = @_;
+
+    my $undet_perc = getPerc( $store->{'undt'}{'UNDETERMINED'}{'yield'}, $store->{'flow'}{$fid}{'yield'});
+    my $run_overview_yield_factor = 1e6; # always report the run info in MBase
+    $store->{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s",
+        round( $store->{'flow'}{$fid}{'yield'}, 0, $run_overview_yield_factor ),
+        round( $store->{'undt'}{'UNDETERMINED'}{'yield'}, 0, $run_overview_yield_factor ),
+        $store->{'flow'}{$fid}{'q30_print'},
+        $store->{'flow'}{$fid}{'pf_print'},
+        $cycle_string,
+        round($undet_perc,1) . '%';
+
+    $store->{'stats'}{'undet_perc'} = $undet_perc;
+    $store->{'stats'}{'lane_count'} = scalar( keys %{$store->{'lane'}} );
+    $store->{'stats'}{'samp_count'} = scalar( keys %{$store->{'samp'}} );
+    $store->{'stats'}{'indx_count'} = scalar( keys %{$store->{'indx'}} );
+    $store->{'stats'}{'identifier'} = join( "_", keys %{$store->{'flow'}} );
+    $store->{'stats'}{'cycle_string'} = $cycle_string;
+}
+
+sub addPrintFields{
+    my ($store, $fid) = @_;
+
+    foreach my $type ( keys %$store ){
+        foreach my $id ( keys %{$store->{ $type }} ){
+            my $obj = $store->{ $type }{ $id };
             my $name = $obj->{ 'name' };
-            
+
             $obj->{q30} = getPerc( $obj->{yield_q30}, $obj->{yield} );
-            $obj->{yld_p} = getPerc( $obj->{yield}, $info{flow}{ $fid }{yield} );
+            $obj->{yld_p} = getPerc( $obj->{yield}, $store->{flow}{ $fid }{yield} );
             $obj->{flowcell_print} = $fid;
 
             $obj->{ 'q30_print' } = round( $obj->{ 'q30' }, $ROUND_DECIMALS, 1 );
@@ -386,7 +483,7 @@ sub parseJsonInfo{
             $obj->{ 'index1_print' } = $obj->{ 'index1' };
             $obj->{ 'index2_print' } = $obj->{ 'index2' };
             $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }, $ROUND_DECIMALS, 1 );
-            
+
             ## percentage filtered does not exist for samples
             if ( exists $obj->{ 'clust_pf' } ){
                 $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ), $ROUND_DECIMALS );
@@ -403,29 +500,9 @@ sub parseJsonInfo{
                 $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
                 $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
             }
-            
+
         }
     }
-    
-    ## Collect some general stats/info
-    my $undet_perc = getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'});
-    my $run_overview_yield_factor = 1e6; # always report the run info in MBase
-    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'}, 0, $run_overview_yield_factor ),
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, $run_overview_yield_factor ),
-      $info{'flow'}{$fid}{'q30_print'},
-      $info{'flow'}{$fid}{'pf_print'},
-      $cycle_string,
-      round($undet_perc,1) . '%';
-      
-    $info{'stats'}{'undet_perc'} = $undet_perc;
-    $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
-    $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
-    $info{'stats'}{'indx_count'} = scalar( keys %{$info{'indx'}} );
-    $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
-    $info{'stats'}{'cycle_string'} = $cycle_string;
-
-    return \%info;
 }
 
 sub getPerc {
@@ -451,7 +528,7 @@ sub getPerc {
 sub printJson {
     my ($info, $output_file) = @_;
     
-    my $coder = JSON->new->utf8->canonical;
+    my $coder = JSON->new->utf8->canonical->pretty;
     my $json_txt = $coder->encode($info);
     
     open my $fh, '>', $output_file or die "Unable to open output file ($output_file): $!\n";
@@ -587,6 +664,33 @@ sub readSampleSheet{
     $/ = $return_str;
     
     return( \%output );
+}
+
+sub readQualityMetricsCsv{
+    my ($file) = @_;
+
+    my %qualityMetricsStore = ();
+    my @header;
+
+    open FILE, "<", $file or die "Couldn't open file ($file): $!";
+    my $header_line = <FILE>;
+    die "Header line has unexpected format" unless $header_line =~ m/^Lane,SampleID/;
+    @header = split(",", $header_line);
+    while ( <FILE> ) {
+        chomp($_);
+        next if $_ eq "";
+        my @fields = split(",", $_);
+        my %tmp = ();
+        $tmp{$_} = shift @fields foreach @header;
+        my $lane = $tmp{'Lane'};
+        my $barcode = $tmp{'SampleID'};
+        my $read = $tmp{'ReadNumber'};
+        foreach my $field (@header){
+            $qualityMetricsStore{$lane}{$barcode}{$read}{$field} = $tmp{$field};
+        }
+    }
+    close FILE;
+    return(\%qualityMetricsStore);
 }
 
 sub round{
