@@ -12,7 +12,6 @@ fi
 
 output_dir="/data/experiments/hotspot_checker"
 
-tumor_sample="empty"
 ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 pave_jar=$(locate_prod_pave)
