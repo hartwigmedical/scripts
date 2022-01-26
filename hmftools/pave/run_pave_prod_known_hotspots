@@ -18,7 +18,6 @@ ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 pave_jar=$(locate_prod_pave)
 
 java -jar ${pave_jar} \
-  -sample ${tumor_sample} \
   -vcf_file ${knownHotspots} \
   -ensembl_data_dir ${ensembl_data_dir_37} \
   -ref_genome ${ref_genome_37_fasta_file} \
