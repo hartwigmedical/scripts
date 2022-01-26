@@ -16,6 +16,7 @@ family="base"
 preemptible="FALSE"
 vm_project="hmf-crunch"
 startup_script="NONE"
+cost_center="experiments"
 
 print_usage() {
     script=$(basename "$0")
@@ -45,7 +46,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:p:i:m:s:t:ed:' flag; do
+while getopts ':n:p:i:m:s:t:ed:c:' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         i) image_name=${OPTARG} ;;
@@ -55,6 +56,7 @@ while getopts ':n:p:i:m:s:t:ed:' flag; do
         t) disk_type=${OPTARG} ;;
         e) preemptible="TRUE" ;;
         d) startup_script=${OPTARG} ;;
+        c) cost_center=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -118,6 +120,10 @@ gcloud compute instances create "${vm_name}" \
 --metadata enable-oslogin=TRUE \
 ${preemptible_arg} \
 ${startup_script_arg} || die "Something wrong with VM creation. Check the gcloud response."
+
+labels="user=$USER,cost_center=${cost_center}"
+gcloud compute instances add-labels ${vm_name} --zone=${zone} --labels=${labels}
+gcloud compute disks add-labels ${vm_name} --zone=${zone} --labels=${labels}
 
 info "VM usage:"
 info "  Access: gcloud compute ssh ${vm_name}"
