@@ -14,6 +14,7 @@ main() {
   vm_type="n1-standard"  # default argument
   pre_emptible_arg=""  # default argument
   startup_script_arg=""  # default argument
+  costcenter_arg=""  # default argument
 
   UNRECOGNIZED=()
   while [[ $# -gt 0 ]]
@@ -33,6 +34,8 @@ main() {
         pre_emptible_arg="-e";;
       -s|--startupscript)  # optional
         startup_script_arg="-d $1" && shift;;
+      -u|--costcenter)  # optional
+        costcenter_arg="-c $1" && shift;;
       *)
         UNRECOGNIZED+=("${key}");;
     esac
@@ -46,7 +49,7 @@ main() {
         || die "Unable to describe-from-family from project ${IMAGE_PROJECT}"
 
   make_vm -n "${name}" -m "${vm_type}-${corecount}" -i "${latest_image}" -p "${IMAGE_PROJECT}" \
-        -s "${disksize}" ${pre_emptible_arg} ${startup_script_arg}
+        -s "${disksize}" ${pre_emptible_arg} ${startup_script_arg} ${costcenter_arg}
 }
 
 main "$@"
