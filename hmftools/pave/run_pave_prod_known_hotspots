@@ -6,7 +6,7 @@ source io_functions || exit 1
 
 knownHotspots=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
+if [[ -z "${knownHotspots}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
