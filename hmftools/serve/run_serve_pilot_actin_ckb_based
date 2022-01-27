@@ -11,8 +11,10 @@ ckb_filter_tsv=$(locate_ckb_filter_tsv)
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
 actin_trial_tsv=$(locate_actin_trial_tsv)
 actin_filter_tsv=$(locate_actin_filter_tsv)
+missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
