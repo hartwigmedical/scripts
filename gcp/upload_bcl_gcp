@@ -7,7 +7,7 @@ bucket="bcl-input-prod-1"
 gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
 
 function exit_handler() {
-    echo "ERROR: Failure while uploading flowcells"
+    gcloud logging write on_premises "Failure while uploading flowcells" --severity=ERROR --project=hmf-pipeline-prod-e45b00f2
 }
 
 function rsync_bcls() {
