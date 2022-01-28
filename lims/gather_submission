@@ -8,7 +8,7 @@ submission=$1
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]] ; then echo " Usage: $0 HMFreg0000"; exit 1; fi
 [[ -n "${submission}" ]] || die "Missing submission id as input"
-[[ "${submission}" =~ ^HMFreg ]] || die "Submission is expected to start with 'HMFreg'"
+[[ "${submission}" =~ ^HMFreg[0-9]{4} ]] || die "Submission is expected to match HMFreg[0-9]{4}"
 
 # Setting up variables
 out_path="${SUBMISSIONS_DIR}/${submission}"
