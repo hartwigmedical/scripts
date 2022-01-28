@@ -3,6 +3,9 @@ set -e
 
 source message_functions || exit 1
 
+CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CALC_YIELD_SCRIPT="${CODEDIR}/../utilityscripts/get_yield_from_read_count_and_excluded_base_percentage.py"
+
 REF_TARGET_YIELD=100
 TUM_TARGET_YIELD=300
 BASES_PER_READ=150
@@ -153,22 +156,8 @@ get_add_yield() {
     fi
 
     # Calculation of current yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
-    # However, bash doesn't do floating point math and exc is a fraction.
-    # Since exc is between 0 and 1 we can avoid the floating point math as follows:
-    exc_decimals="${exc#*.}"
-    exc_decimals_length="${#exc_decimals}"
-    exc_decimals_factor=$(( 10**exc_decimals_length ))
-    # We know that exc == exc_decimals/exc_decimals_factor.
-    # This implies that 1-exc == (exc_decimals_factor - exc_decimals) / exc_decimals_factor
-    # As an example, if exc=0.217 then exc_decimals=217, exc_decimals_factor=1000. In this case
-    # 1-exc=1-0.217=0.783=783/1000=(1000-217)/1000=(exc_decimals_factor-exc_decimals)/exc_decimals_factor
-    #
-    # We can then write
-    # current_yield=(((exc_decimals_factor - exc_decimals) / exc_decimals_factor) * reads * BASES_PER_READ / BASES_PER_GBASE)
-    # To avoid the multiple roundings (from the divisions), the final formula is as follows:
-    # current_yield=((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE)
-    # Note that the result is rounded down to an integer.
-    current_yield=$(( ((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE) ))
+    current_yield=$(python3 "${CALC_YIELD_SCRIPT}" --read_count "${reads}" --excluded_base_percentage "${exc}") || \
+          die "Could not calculate current yield from read count ${reads} and exc ${exc}"
 
     add_yield=$(( target_yield-current_yield ))
 
