@@ -28,7 +28,7 @@ def main(config: Config) -> None:
     normalized_gbases = gbases.normalize()
 
     # If we stripped so many zeroes that scientific notation is necessary to represent the number (e.g. 1200 -> 1.2e3),
-    # increase the precision to get the result back to an integer (so  back to 1200).
+    # increase the precision to get the result back to an integer (so back to 1200).
     pretty_gbases = add_significant_digits_if_less_precise_than_integer(normalized_gbases)
 
     print(pretty_gbases)
@@ -36,7 +36,7 @@ def main(config: Config) -> None:
 
 def add_significant_digits_if_less_precise_than_integer(number: Decimal) -> Decimal:
     """
-    If input does not have enough significant to be cleanly represented as an integer,
+    If input does not have enough significant digits to be cleanly represented as an integer,
     add significant zeroes until it does.
 
     In other words, if the exponent of the input Decimal object is greater than 0,
