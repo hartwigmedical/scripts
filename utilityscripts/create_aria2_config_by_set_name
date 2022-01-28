@@ -10,14 +10,19 @@ command -v xxd > /dev/null || die "Dependency xxd not found"
 script_name=$(basename "$0")
 
 set_name=$1
+out_dir=${2:-.}
 
 if [[ -z "${set_name}" ]]; then
     echo "-----"
-    echo " Usage: $script_name \${name-of-set}"
-    echo " Exmpl: $script_name 210319_HMFregCORE_FR30729774_FR23588534_COREDB010063"
+    echo " Usage: $script_name {name-of-set}"
+    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1"
+    echo "        $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 /path/to/out_dir"
     echo "-----"
     exit 1
 fi
+
+[[ -d "${out_dir}" ]] || die "Output dir does not exist (${out_dir})"
+[[ -w "${out_dir}" ]] || die "Output dir is not writable (${out_dir})"
 
 credentials_dir="/data/dbs/gcp_credentials"
 key_file="${credentials_dir}/hmf-share"
@@ -31,7 +36,7 @@ msg=$(gcloud config set account "${service_account}" 2>&1) || die "Unable to swi
 info "${msg}"
 
 function main() {
-    ## make sure only one run exists for the set
+    # Make sure only one run exists for the set
     runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
     if [[ "${runs_count}" -ne 1 ]]; then
@@ -39,7 +44,7 @@ function main() {
     fi
     run_json=$(echo "${runs_json}" | jq -r '.[-1]')
 
-    ## setup all variables
+    # Setup all variables
     bucket=$(jq -r '.bucket' <<< "${run_json}")
     entity_id=$(jq -r '.set.entity_id' <<< "${run_json}")
     status=$(jq -r '.status' <<< "${run_json}")
@@ -49,14 +54,14 @@ function main() {
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id
 
-    out_jsn_all="${set_name}_runfiles.json"
-    out_md5_all="${set_name}_runfiles.md5"
-    out_aria="${set_name}.aria.txt"
-    out_md5="${set_name}.md5"
-    out_url_int="${set_name}_internal_urls.txt"
-    out_url_ext="${set_name}_external_urls.txt"
+    out_jsn_all="${out_dir}/${set_name}_runfiles.json"
+    out_md5_all="${out_dir}/${set_name}_runfiles.md5"
+    out_aria="${out_dir}/${set_name}.aria.txt"
+    out_md5="${out_dir}/${set_name}.md5"
+    out_url_int="${out_dir}/${set_name}_internal_urls.txt"
+    out_url_ext="${out_dir}/${set_name}_external_urls.txt"
 
-    ## create re-usable list of all output files
+    # Create re-usable list of all output files
     output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
 
     info "Details:"
@@ -69,19 +74,19 @@ function main() {
     info "  Bucket:  ${bucket}"
     info "  Entity:  ${entity_id}"
 
-    ## cleanup existing files
+    # Cleanup existing files
     for output_file in "${output_files[@]}"; do
         if [[ -f "${output_file}" ]]; then
             info "Deleting existing file (${output_file})" && rm "${output_file}";
         fi
     done
 
-    ## get the file objects for one run by id
+    # Get the file objects for one run by id
     info "Collecting required information"
     files_json=$(hmf_api_get "files?run_id=${oid}")
     file_count=$(jq 'length' <<< "${files_json}")
 
-    ## Virtual samples potentially have no yield and therefore no files attached but other runs are expected to always have files
+    # Virtual samples potentially have no yield and therefore no files attached but other runs are expected to always have files
     if [[ "${file_count}" -eq 0 && "${ini}" == "FastQ.ini" ]]; then
         if [[ "${set_name}" =~ VirtualSample[0-9]+ ]]; then
             info "Found 0 files in API for run ${set_name} but is a virtual sample so possible"
@@ -91,7 +96,7 @@ function main() {
         fi
     fi
 
-    ## create run type agnostic info files
+    # Create run type agnostic info files
     create_json_file "${files_json}" "${out_jsn_all}"
     create_md5sums_file "${files_json}" "${out_md5_all}"
 
@@ -108,12 +113,12 @@ function main() {
         die "Unknown ini (${ini})"
     fi
 
-    ## create the run type specific subset files
+    # Create the run type specific subset files
     create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${set_name}" "${bucket}" "${ref}" "${tum}" "${pip}" "${output_type}" \
         || die "Something wrong with creating run specific files. Exiting."
 
-    ## at this point all output should exist so check
+    # At this point all output should exist so check
     info "Output files:"
     for output_file in "${output_files[@]}"; do
         if [[ ! -f "${output_file}" ]]; then
@@ -152,9 +157,9 @@ create_run_specific_files () {
         exit 1
     fi
  
-    ## from pipeline v5.10 onwards CRAM replaced BAM
+    # From pipeline v5.10 onwards CRAM replaced BAM
     if [[ "${pip}" == "Fastq" ]]; then
-        ## for fastq type runs no pipeline output is available
+        # For fastq type runs no pipeline output is available
         ref_bam="undef"
         ref_bam_bai="undef"
         tumor_bam="undef"
@@ -231,7 +236,7 @@ create_run_specific_files () {
         "${driver_cat_paths[@]}"
     )
 
-    ## select file collection
+    # Select file collection
     if [[ ${run_type} == "Somatic" ]]; then
         file_selection=("${somatic_files[@]}")
     elif [[ ${run_type} == "ShallowSeq" ]]; then
@@ -244,20 +249,20 @@ create_run_specific_files () {
         die "Unknown run type (${run_type})"
     fi
 
-    ## output aria2 config file
+    # Output
     info "Creating ${out_aria} (and selection tmp files)"
     for file_path in "${file_selection[@]}"; do
         file_name=$(basename "${file_path}")
         file_in_bucket="${bucket}/${set_name}/${file_path}"
         gs_url="gs://${file_in_bucket}"
 
-        ## adjust for Fastq files (those already are complete internal gs path)
+        # Adjust for Fastq files (those already are complete internal gs path)
         if [[ ${run_type} == "Fastq" ]]; then
             file_in_bucket=${file_path/gs\:\/\//}
             gs_url="${file_path}"
         fi
 
-        ## sanity check on existence of file in bucket
+        # Sanity check on existence of file in bucket
         gsutil -q stat "${gs_url}"
         if [[ $? -eq 1 ]]; then
             err=$?
@@ -266,21 +271,21 @@ create_run_specific_files () {
             die "Not all files are present at expected location in bucket. Exiting."
         fi
 
-        ## get file specific md5 hash
+        # Get file specific md5 hash
         info "  Getting md5 and signing URL for file ${file_name}"
         md5sum=$(get_md5_for_gs_url "${gs_url}")
         [[ -n "${md5sum}" ]] || die "Unable to retrieve md5 hash for file at url (${gs_url})"
         printf '%s  %s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
-        ## get pre-signed URL (prints a header and multiple fields)
+        # Get pre-signed URL (prints a header and multiple fields)
         url=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
 
-        ## final sanity checks
+        # Final checks
         [[ "${url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${url})"
         [[ -n "${set_name}" ]] || die "Dir not defined for aria config (${set_name})"
         [[ -n "${md5sum}" ]] || die "Md5sum not defined for aria config (${set_name})"
 
-        ## print aria2 config for one file (for options see https://aria2.github.io/manual/en/html/aria2c.html#input-file)
+        # Print aria2 config for one file (for options see https://aria2.github.io/manual/en/html/aria2c.html#input-file)
         {
           echo "${url}"
           echo "  dir=${set_name}"
@@ -288,7 +293,7 @@ create_run_specific_files () {
           echo ""
         } >> "${out_aria}"
 
-        ## write urls to separate log files
+        # Write urls
         echo "${gs_url}" >> "${out_url_int}"
         echo "${url}" >> "${out_url_ext}"
     done
