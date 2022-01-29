@@ -15,7 +15,7 @@ pipeline_version_file="${run_dir}/pipeline.version"
 if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
 fi
-version="5.25"
+version="5.26"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
