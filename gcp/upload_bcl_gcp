@@ -12,7 +12,7 @@ function exit_handler() {
 
 function rsync_bcls() {
     gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 -o GSUtil:parallel_composite_upload_threshold=350M \
-        rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*|RTAComplete.txt" "$1" "$2"
+        rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*|.*\.tmp\..*|RTAComplete.txt" "$1" "$2"
 }
 
 trap exit_handler EXIT
