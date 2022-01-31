@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 sample=$1 && shift
 
@@ -13,6 +14,7 @@ molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
 
 orange_json=$(locate_orange_json ${molecular_dir})
 output_directory="${molecular_dir}/actin"
+create_or_cleanup_dir ${output_directory}
 
 actin_jar="$(locate_pilot_actin)"
 
