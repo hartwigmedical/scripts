@@ -322,31 +322,21 @@ locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
 }
 
-locate_actin_molecular_directory_for_sample() {
+locate_actin_platinum_directory_for_sample() {
     local sample=$1 && shift
-    local molecular_dir=$(locate_actin_molecular_directory)
 
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
-    fi
-
-    local molecular_sample_dir="${molecular_dir}/${sample}"
-    if [[ ! -d ${molecular_sample_dir} ]]; then
-        error "Could not locate molecular dir for sample '${sample}'"
-    fi
-
-    echo "${molecular_sample_dir}"
+    echo "$(locate_actin_molecular_directory)/${sample}"
 }
 
 locate_actin_molecular_json() {
     local sample=$1
-    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+    local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
 
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
+    if [[ ! -d "${platinum_dir}" ]]; then
+        error "Unable to locate ACTIN platinum directory '${platinum_dir}'"
     fi
 
-    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
+    local molecular_json="${platinum_dir}/actin/${sample}.molecular.json"
     if [[ ! -f ${molecular_json} ]]; then
         error "Could not locate molecular json for sample '${sample}'"
     fi
@@ -396,7 +386,7 @@ locate_rna_bam() {
     local bam_directory=$(locate_rna_bam_directory ${run_dir})
     local bam=$(find -L "${bam_directory}/" -type f -name "*.sorted.dups.bam")
 
-    echo ${bam}
+    echo "${bam}"
 }
 
 locate_rna_hla_bam() {
@@ -405,7 +395,7 @@ locate_rna_hla_bam() {
     local bam_directory=$(locate_rna_bam_directory ${run_dir})
     local bam=$(find -L "${bam_directory}/" -type f -name "*.hla.bam")
 
-    echo ${bam}
+    echo "${bam}"
 }
 
 locate_rna_sage_directory() {
@@ -420,7 +410,7 @@ locate_rna_annotated_somatic_variants() {
     local rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
     local rna_annotated_vcf=$(find -L "${rna_sage_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
 
-    echo ${rna_annotated_vcf}
+    echo "${rna_annotated_vcf}"
 }
 
 locate_rna_analysis_bucket() {
@@ -433,7 +423,7 @@ locate_rna_analysis_bucket() {
         rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
     fi
 
-    echo ${rna_analysis_bucket}
+    echo "${rna_analysis_bucket}"
 }
 
 ############################# Pipeline Resources ###############################

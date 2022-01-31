@@ -10,10 +10,10 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 
-orange_json=$(locate_orange_json ${molecular_dir})
-output_directory="${molecular_dir}/actin"
+orange_json="$(locate_orange_json ${platinum_dir})"
+output_directory="${platinum_dir}/actin"
 create_or_cleanup_dir ${output_directory}
 
 actin_jar="$(locate_pilot_actin)"

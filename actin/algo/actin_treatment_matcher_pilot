@@ -13,7 +13,7 @@ clinical_json="$(locate_actin_clinical_json ${sample})"
 
 molecular_json="$(locate_actin_molecular_json ${sample})"
 if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found. Reverting to minimal molecular json"
+    warn "No molecular json found for ${sample}. Falling back on minimal molecular json"
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 
