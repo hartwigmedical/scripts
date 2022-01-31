@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+serve_jar=$(locate_pilot_serve)
+
+java -cp ${serve_jar} com.hartwig.hmftools.serve.sources.actin.tools.ActinExtractorTestApp
