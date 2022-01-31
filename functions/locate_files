@@ -143,7 +143,7 @@ locate_prod_serve() {
 }
 
 locate_pilot_serve() {
-    echo "/data/tools/serve/pilot/serve.jar"
+    echo "/data/serve_pilot_jar/serve.jar"
 }
 
 locate_prod_protect() {
