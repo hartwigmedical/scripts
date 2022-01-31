@@ -3,27 +3,49 @@
 source message_functions || exit 1
 
 flowcells_dir=/data1/illumina_data
-uploadlog_dir=/data/bcl_upload_logs
 min_days_converted=1
 
-info "Checking upload status of flowcells (${uploadlog_dir})"
+info "Checking upload status of flowcells"
 
 cleanup=()
 while read -r flowcell_path; do
     flowcell_name=$(basename "${flowcell_path}")
-    upload_log="${uploadlog_dir}/${flowcell_name}_GCP_Uploaded.done"
     conversion_log="${flowcell_path}/conversionDone.txt"
 
-    if [[ ! -f "${upload_log}" ]]; then
-        warn "  ${flowcell_name} not uploaded to GCP yet!!"
-    elif [[ ! -f "${conversion_log}" ]]; then
-        warn "  ${flowcell_name} not converted yet!!"
-    else
-        days=$(( ($(date +%s) - $(date -r "${conversion_log}" +%s) )/(60*60*24) ))
-        info "  OK ${flowcell_name} uploaded to GCP (converted ${days} days ago)"
-        if [[ "${days}" -ge "${min_days_converted}" ]]; then
-            cleanup+=("${flowcell_path}")
-        fi
+    if [[ ! -f "${conversion_log}" ]]; then
+        warn "  ${flowcell_name} not converted locally yet!!"
+        continue
+    fi
+
+    flowcell_id_with_a_or_b="${flowcell_name##*_}"
+    flowcell_id="${flowcell_id_with_a_or_b:1}"
+
+    flowcell_id_count_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq length | tr -d '"\n"') \
+        || die "Could not get number of flowcells in the API with flowcell ID '${flowcell_id}'"
+    if [[ "${flowcell_id_count_in_api}" != "1" ]]; then
+        warn "  ${flowcell_name} exists in API ${flowcell_id_count_in_api} times instead of 1 time!!"
+        continue
+    fi
+
+    flowcell_status_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq '.[0].status' | tr -d '"\n"') \
+        || die "Could not get flowcell status in API for ID '${flowcell_id}'"
+    if [[ "${flowcell_status_in_api}" != "Converted" ]]; then
+        warn "  ${flowcell_name} status in API is '${flowcell_status_in_api}' instead of 'Converted'!!"
+        continue
+    fi
+
+    flowcell_qc_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq '.[0].undet_rds_p_pass' | tr -d '"\n"')\
+        || die "Could not get flowcell QC status in API for ID '${flowcell_id}'"
+    if [[ "${flowcell_qc_in_api}" != "true" ]]; then
+        warn "  ${flowcell_name} qc status in API is '${flowcell_qc_in_api}' instead of 'true'!!"
+        continue
+    fi
+
+    # Flowcell fully uploaded and converted!
+    days=$(( ($(date +%s) - $(date -r "${conversion_log}" +%s) )/(60*60*24) ))
+    info "  OK ${flowcell_name} uploaded to GCP (converted ${days} days ago)"
+    if [[ "${days}" -ge "${min_days_converted}" ]]; then
+        cleanup+=("${flowcell_path}")
     fi
 done < <(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -exec ls -d {} +)
 
