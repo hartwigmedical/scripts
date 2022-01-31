@@ -5,7 +5,7 @@ source io_functions || exit 1
 
 output_dir="/data/output/pilot_output_actin_only"
 create_or_cleanup_dir ${output_dir}
-pull_crunch_resources_repo
+
 actin_trial_tsv=$(locate_actin_trial_tsv)
 actin_filter_tsv=$(locate_actin_filter_tsv)
 missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
