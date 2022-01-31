@@ -16,5 +16,5 @@ info "Change dir (to ${repo_path})"
 cd "${repo_path}" || die "Could not switch dir to repo ${repo_path}"
 
 info "Performing pull (in ${repo_path})"
-sudo -u ops git pull || die "Pull to ${repo_path} failed"
+git pull || die "Pull to ${repo_path} failed"
 
