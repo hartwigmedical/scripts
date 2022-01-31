@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+
+orange_json=$(locate_orange_json ${molecular_dir})
+output_directory="${molecular_dir}/actin"
+
+actin_jar="$(locate_pilot_actin)"
+
+java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
+    -orange_json ${orange_json} \
+    -output_directory ${output_directory} \
+    "$@"
+

@@ -8,7 +8,7 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-actin_trial_matcher_pilot ${sample}
+actin_treatment_matcher_pilot ${sample}
 
 echo ""
 

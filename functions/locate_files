@@ -338,6 +338,22 @@ locate_actin_molecular_directory_for_sample() {
     echo "${molecular_sample_dir}"
 }
 
+locate_actin_molecular_json() {
+    local sample=$1
+    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+
+    if [[ ! -d "${molecular_dir}" ]]; then
+        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
+    fi
+
+    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
+    if [[ ! -f ${molecular_json} ]]; then
+        error "Could not locate molecular json for sample '${sample}'"
+    fi
+
+    echo "${molecular_json}"
+}
+
 locate_actin_treatment_database_directory() {
     echo "/data/actin/treatment_database"
 }
