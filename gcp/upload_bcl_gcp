@@ -8,7 +8,7 @@ gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
 
 function exit_handler() {
     if [[ $? -ne 0 ]]; then
-        gcloud logging write on_premises "ERROR while uploading flowcells" --severity=ERROR --project=hmf-pipeline-prod-e45b00f2
+        gcloud logging write on_premises "ERROR while uploading flowcells from $(hostname)" --severity=ERROR --project=hmf-pipeline-prod-e45b00f2
     fi
 }
 
