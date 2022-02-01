@@ -24,7 +24,9 @@ fi
 download_rna_bam_to_run_dir ${run_dir}
 if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     annotate_somatic_variants_with_rna ${run_dir}
-    load_rna_annotated_somatic_variants_to_prod ${run_dir}
+
+    # TODO Load RNA annotated variants once every run is on purple v3.2+
+    #load_rna_annotated_somatic_variants_to_prod ${run_dir}
 
     slice_rna_bam_for_hla ${run_dir}
 
