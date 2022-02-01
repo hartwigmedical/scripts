@@ -325,6 +325,10 @@ locate_actin_molecular_directory() {
 locate_actin_platinum_directory_for_sample() {
     local sample=$1 && shift
 
+    if [[ -z "${sample}" ]]; then
+        error "No sample provided. Exiting"
+    fi
+
     echo "$(locate_actin_molecular_directory)/${sample}"
 }
 
