@@ -13,3 +13,6 @@ run_orange_prod ${run_dir} -max_evidence_level C
 
 # Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
 run_orange_prod_no_germline ${run_dir} -max_evidence_level C
+
+# Intepret ORANGE results for ACTIN ingestion
+actin_orange_interpreter_pilot ${sample}
