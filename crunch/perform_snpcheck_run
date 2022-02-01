@@ -57,6 +57,10 @@ if [[ "$snpcheck_vcf_tumor" == "" ]]; then
     warn "No Tumor snpcheckvcf is found in ${set_url}${sample_name_tumor}/snp_genotype/ for ${barcode_tumor} (${sample_name_tumor})"
 fi
 
+info "SNPcheck files used"
+echo "SNPcheck of snpcheck_vcf_ref_array: ${snpcheck_vcf_ref_array}"
+echo "SNPcheck of snpcheck_vcf_ref: ${snpcheck_vcf_ref}"
+echo "SNPcheck of snpcheck_vcf_tumor" ${snpcheck_vcf_tumor}""
 
 if [[ "$snpcheck_vcf_ref" == "" || "$snpcheck_vcf_ref_array" == "" || "$snpcheck_vcf_ref_array" == ""  ]]; then
     warn "One (or both) of the vcf files for the snpcheck could not be found (see warnings above). The snpcheck will not be performed."
