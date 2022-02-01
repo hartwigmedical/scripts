@@ -18,7 +18,7 @@ fi
 
 info "Running ACTIN molecular pipeline on ${sample}"
 
-run_dir="$(locate_actin_platinum_directory_for_sample)"
+run_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
     rm -r "${run_dir}"
