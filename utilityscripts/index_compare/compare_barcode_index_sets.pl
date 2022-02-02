@@ -20,22 +20,23 @@ my $help = undef;
 
 my $HELP =<<HELP;
 
-  Description
+  Description:
     Checks all index combinations of any number of barcode index collections and determines the i7 and i5
     distance for every possible combination. Result for each is '$fail_str' in case total distance is
     lower than the allowed mismatches during conversion * 2 + 1 and otherwise '$success_str'.
-  Usage
+
+  Usage:
     $script_name -out_name <output-name> <index-tsv-1> [<index-tsv-2> <index-tsv-n>]
-  Example TSV input dual
-    #i7name<tab>i7seq<tab>i5name<tab>i5seq
-    BC1_i7<tab>CTGATCGT<tab>BC1_i5<tab>GCGCATAT
-  Example TSV input single
-    #i7name<tab>i7seq
-    BC1_i7<tab>CTGATC
-  Example output (written to <output-name>_$out_suffix)
+
+  Example TSV input dual:
+    #i7name i7seq    i5name i5seq
+    BC1_i7  CTGATCGT BC1_i5 GCGCATAT
+
+  Example output (written to <output-name>_$out_suffix):
     #result dist1 dist2 idx1_tag1 idx1_seq1 idx1_tag2 idx1_seq2 idx2_tag1 idx2_seq1 idx2_tag2 idx2_seq2
     OK 5 3 F498_LCH588 CTGCGGAT CZ-0379-LL_A AGATAACC IDT8_i7_384 CGACCATT IDT8_I5_384 TGATAGGC
-  Notes
+
+  Notes:
     The type (single or dual) and length of all indexes should be identical.
 
 HELP
