@@ -24,8 +24,9 @@ tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna_rna"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
-cp -r ${run_dir}/linx/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/purple/* ${tmp_sample_data_dir}/
+cp -r ${run_dir}/linx/* ${tmp_sample_data_dir}/
+cp -r ${run_dir}/virusbreakend/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
