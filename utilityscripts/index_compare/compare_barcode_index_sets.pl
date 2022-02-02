@@ -46,7 +46,7 @@ GetOptions (
     "help|h" => \$help,
 ) or die "[ERROR] Issue in command line arguments\n";
 my @index_input_files = @ARGV;
-print $HELP and exit(0) if defined $help;
+print $HELP and exit(0) if defined $help or scalar @ARGV == 0;
 
 my $MIN_EDIT_DISTANCE = ($max_conversion_mismatches * 2) + 1;
 
