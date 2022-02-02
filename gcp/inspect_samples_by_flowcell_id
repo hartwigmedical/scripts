@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+flowcell_id=$1
+bucket="bcl-input-prod-1"
+
+[[ "$flowcell_id" == "" ]] && die "No flowcell id provided (eg H7V33DSX3)"
+
+info "Searching for flowcell ($flowcell_id) dir in bucket ($bucket)"
+flowcell_dir=$(gsutil ls "gs://$bucket" | grep "$flowcell_id" | cut -d"/" -f4)
+
+[[ $(echo "$flowcell_dir" | wc -l) -eq 1  ]] || die "Expected exactly one flowcell directory for id [$flowcell_id] in bucket [$bucket]"
+
+sheet="gs://$bucket/$flowcell_dir/SampleSheet.csv"
+info "Printing contents of SampleSheet ($sheet)"
+gsutil cat "$sheet" | grep -A10000 Sample_ID | grep -P "\w+"
