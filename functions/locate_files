@@ -51,7 +51,7 @@ locate_pilot_lilac() {
 }
 
 locate_prod_cuppa() {
-    echo "/data/tools/cuppa/1.5/cuppa.jar"
+    echo "/data/tools/cuppa/1.6/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
