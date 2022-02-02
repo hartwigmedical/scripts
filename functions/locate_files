@@ -23,7 +23,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo "/data/tools/purple/3.1/purple.jar"
+    echo "/data/tools/purple/3.2/purple.jar"
 }
 
 locate_pilot_purple() {
@@ -63,7 +63,7 @@ locate_prod_paddle() {
 }
 
 locate_prod_linx() {
-    echo "/data/tools/linx/1.16/linx.jar"
+    echo "/data/tools/linx/1.17/linx.jar"
 }
 
 locate_pilot_linx() {
