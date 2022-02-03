@@ -10,23 +10,27 @@ use File::Slurp;
 use JSON;
 use XML::Simple;
 use List::Util qw/sum/;
+use Text::CSV qw/csv/;
+use POSIX qw(strftime);
 use 5.010.000;
 
 my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
-my $NA_CHAR = "NA";
 
-my @OUT_FIELDS = qw(flowcell yld q30 pf yld_p mm0 mm1 id name submission index1 index2);
+use constant NA => 'NA';
+use constant UNDETERMINED => 'Undetermined';
+
+my @OUT_FIELDS = qw(flowcell yld q30 yld_p mm0 mm1 mm2 id name submission index1 index2);
 my @SUM_FIELDS = qw(submission id name yld q30 index1 index2);
 my $ROUND_DECIMALS = 1;
 
 my $RUN_PATH;
 my $OUT_JSON_PATH;
 
-my $MCSV_PATH = 'Fastq/Reports/Quality_Metrics.csv2';
-my $JSON_PATH = 'Fastq/Stats/Stats.json';
-my $RXML_PATH = 'RunInfo.xml';
-my $SSHT_PATH = 'SampleSheet.csv';
+my $QCSV_PATH = 'Fastq/Reports/Quality_Metrics.csv';
+my $DCSV_PATH = 'Fastq/Reports/Demultiplex_Stats.csv';
+my $RXML_PATH = 'Fastq/Reports/RunInfo.xml';
+my $SSHT_PATH = 'Fastq/Reports/SampleSheet.csv';
 
 my %SETTINGS_PER_PLATFORM = (
     'NovaSeq' => {'min_flowcell_q30' => 85, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
@@ -38,48 +42,44 @@ my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
 
 my $HELP =<<HELP;
 
-  Description
-    Parses conversion output json and prints table with flowcell/lane/sample/read metrics
+  Description:
+    Parses conversion metrics from bclconvert output files and performs QC
     
-  Usage
+  Usage:
     $SCRIPT -runDir \${run-path}
     - OR -
-    $SCRIPT -sampleSheet /path/to/SampleSheet.csv -statsJson /path/to/Stats.json -metricsCsv /path/to/Quality_Metrics.csv
+    $SCRIPT -sampleSheetCsv SampleSheet.csv -runInfoXml RunInfo.xml -qualityCsv Quality_Metrics.csv -demuxCsv Demultiplex_Stats.csv
     
-  Options
-    -sep <s>           Output sep (default = <TAB>)
-    -yieldFactor <i>   Factor to divide all yields with (default present per platform)
-    -decimals    <i>   Decimals to keep for q30 (default: $ROUND_DECIMALS)
-    -sampleSheet <s>   Path to SampleSheet.csv file
-    -statsJson   <s>   Path to Stats.json file
-    -runInfoXml  <s>   Path to RunInfo.xml file
-    -metricsCsv  <s>   Path to Quality_Metrics.csv file
-    -outputJson  <s>   Path to output json file to create (in addition to stdout output)
-    -noQc              Skip QC checks and just print table
-    -summary           Prints extra sample summary table
-    -debug             Prints complete datastructure
-    
+  Options:
+    -sampleSheetCsv <s>   Path to SampleSheet.csv file
+    -runInfoXml     <s>   Path to RunInfo.xml file
+    -qualityCsv     <s>   Path to Quality_Metrics.csv file
+    -demuxCsv       <s>   Path to Demultiplex_Stats.csv file
+    -outputJson     <s>   Path to output json file to create
+    -sep            <s>   Output sep [default = <TAB>]
+    -yieldFactor    <i>   Factor to divide all yields with [default differs per platform]
+    -decimals       <i>   Decimals to keep for q30 [$ROUND_DECIMALS]
+    -noQc                 Skip QC checks and just print table
+    -summary              Prints extra sample summary table
+
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0;
 
-## -----
-## Gather input
-## -----
 my %opt = ();
 GetOptions (
-  "runDir=s"      => \$RUN_PATH,
-  "statsJson=s"   => \$JSON_PATH,
-  "metricsCsv=s"  => \$MCSV_PATH,
-  "sampleSheet=s" => \$SSHT_PATH,
-  "runInfoXml=s"  => \$RXML_PATH,
-  "outputJson=s"  => \$OUT_JSON_PATH,
-  "sep=s"         => \$OUT_SEP,
-  "decimals=i"    => \$ROUND_DECIMALS,
-  "yieldFactor=i" => \$opt{ yield_factor },
-  "noQc"          => \$opt{ no_qc },
-  "summary"       => \$opt{ print_summary },
-  "debug"         => \$opt{ debug },
-  "help|h"        => \$opt{ help },
+    "runDir=s"      => \$RUN_PATH,
+    "qualityCsv=s"  => \$QCSV_PATH,
+    "demuxCsv=s"    => \$DCSV_PATH,
+    "sampleSheet=s" => \$SSHT_PATH,
+    "runInfoXml=s"  => \$RXML_PATH,
+    "outputJson=s"  => \$OUT_JSON_PATH,
+    "sep=s"         => \$OUT_SEP,
+    "decimals=i"    => \$ROUND_DECIMALS,
+    "yieldFactor=i" => \$opt{ yield_factor },
+    "noQc"          => \$opt{ no_qc },
+    "summary"       => \$opt{ print_summary },
+    "debug"         => \$opt{ debug },
+    "help|h"        => \$opt{ help },
 ) or die "[ERROR] Issue in command line arguments\n";
 print $HELP and exit(0) if $opt{ help };
 
@@ -88,8 +88,8 @@ if (defined $RUN_PATH){
     die "[ERROR] Provided run dir does not exist ($RUN_PATH)\n" if not -d $RUN_PATH;
     $RXML_PATH = "$RUN_PATH/$RXML_PATH";
     $SSHT_PATH = "$RUN_PATH/$SSHT_PATH";
-    $JSON_PATH = "$RUN_PATH/$JSON_PATH";
-    $MCSV_PATH = "$RUN_PATH/$MCSV_PATH";
+    $QCSV_PATH = "$RUN_PATH/$QCSV_PATH";
+    $DCSV_PATH = "$RUN_PATH/$DCSV_PATH";
     $seq_run = basename $RUN_PATH;
 }
 die "[ERROR] Provided xml does not exist ($RXML_PATH)\n" if not -f $RXML_PATH;
@@ -97,137 +97,103 @@ die "[ERROR] Provided sample sheet does not exist ($SSHT_PATH)\n" if not -f $SSH
 
 my $ssht_info = readSampleSheet( $SSHT_PATH );
 my $platform = determinePlatformByString($ssht_info->{'platform'}, \@KNOWN_PLATFORMS);
-my $SETTINGS = $SETTINGS_PER_PLATFORM{$platform};
-$SETTINGS->{yield_factor} = $opt{yield_factor} if defined $opt{yield_factor};
-my $YIELD_FACTOR = $SETTINGS->{yield_factor};
+my $settings = $SETTINGS_PER_PLATFORM{$platform};
+$settings->{yield_factor} = $opt{yield_factor} if defined $opt{yield_factor};
+my $YIELD_FACTOR = $settings->{yield_factor};
 
-my %store = ();
+my $run_info = readRunInfoXml($RXML_PATH);
+my $quality_info = readBclConvertQualityMetricsCsv($QCSV_PATH, $run_info);
+my $demux_info = readBclConvertDemuxCsv($DCSV_PATH, $run_info);
+my $store = aggregateBclconvertInfo($quality_info, $demux_info, $run_info);
 
-say "## Input File: $RXML_PATH";
-my $runinfo = parseRunInfoXml($RXML_PATH);
+$store->{stats}{platform} = $platform;
 
-if( -f $MCSV_PATH ){
-    say "## Input File: $MCSV_PATH";
-    my $metrics_info = readQualityMetricsCsv($MCSV_PATH);
-    parseMetricsInfo(\%store, $metrics_info, $runinfo);
-}
-elsif ( -f $JSON_PATH ){
-    say "## Input file: $JSON_PATH";
-    my $json_info = readJson( $JSON_PATH );
-    parseJsonInfo(\%store, $json_info, $runinfo);
-}
-else{
-    die "[ERROR] Both Stats JSON and Metrics CSV not found. Need one of both!\n"
-}
-
-$store{stats}{platform} = $platform;
-
-printJson(\%store, "test.json");
-
-addSamplesheetInfo(\%store, $ssht_info, $seq_run);
-performQC(\%store, $SETTINGS) unless $opt{no_qc};
+addSamplesheetInfo($store, $ssht_info, $seq_run);
+performQC($store, $settings) unless $opt{no_qc};
 
 if ( $opt{print_summary} ){
-    printSummaryTable(\%store, \@SUM_FIELDS );
+    printSummaryTable($store, \@SUM_FIELDS );
 }
 else{
-    printTable(\%store, \@OUT_FIELDS);
-    printJson(\%store, $OUT_JSON_PATH) if defined $OUT_JSON_PATH;
+    printTable($store, \@OUT_FIELDS);
+    printJson($store, $OUT_JSON_PATH) if defined $OUT_JSON_PATH;
 }
 
-if ( $opt{ debug } ){
-    say "[DEBUG] Samplesheet data structure";
-    print Dumper $ssht_info;
-    say "[DEBUG] Complete final data structure";
-    print Dumper \%store;
+if ( $opt{debug} ){
+    printJson($ssht_info, 'tmp_debug_ssheet.json');
+    printJson($quality_info, "tmp_debug_quality.json");
+    printJson($demux_info, "tmp_debug_demux.json");
+    printJson($store, 'tmp_debug_store.json');
 }
 
-## -----
-## /MAIN
-## -----
+sub aggregateBclconvertInfo{
+    my ($qual, $demux, $runinfo) = @_;
+    my %out = ();
 
-sub parseMetricsInfo{
-    my ($store, $metrics, $runinfo) = @_;
-
-    my $total_non_index_cycle_count = $runinfo->{total_non_index_cycle_count};
     my $cycle_string = $runinfo->{cycle_string};
     my $fid = $runinfo->{flowcell_id};
 
-    $store->{ 'flow' }{ $fid }{ 'id' } = $fid;
-    $store->{ 'flow' }{ $fid }{ 'name' } = "TODO";
+    $out{flowcell}{$fid}{id} = $fid;
+    $out{flowcell}{$fid}{name} = "FlowcellNameTODO";
 
-    while (my ($lid, $lane) = each %$metrics) {
-        $store->{lane}{ $lid }{name} = $lid;
-        $store->{flow}{ $fid }{clust_raw} += 0;
-        $store->{flow}{ $fid }{clust_pf} += 0;
-        $store->{lane}{ $lid }{clust_raw} += 0;
-        $store->{lane}{ $lid }{clust_pf} += 0;
-
-        while (my ($sid, $sample) = each %$lane) {
-            $store->{samp}{ $sid }{name} = "NoName";
-            $store->{samp}{ $sid }{index1}  = "NoIndexSeq1";
-            $store->{samp}{ $sid }{index2}  = "NoIndexSeq2";
-
-            while (my ($rid, $read) = each %$sample) {
-                my $yield = $read->{Yield};
-                my $yield_q30 = $read->{YieldQ30};
-                my $index_seq1 = $read->{index};
-                my $index_seq2 = $read->{index2};
-                my $seq = $indexseq1 . '+' . $$indexseq2;
-                $store->{samp}{$sid}{index1} = $index_seq1;
-                $store->{samp}{$sid}{index2} = $index_seq2;
-                $store->{flow}{$fid}{yield} += $yield;
-                $store->{lane}{$lid}{yield} += $yield;
-                $store->{samp}{$sid}{yield} += $yield;
-                $store->{read}{$rid}{yield} += $yield;
-                $store->{indx}{$seq}{yield} += $yield;
-                $store->{flow}{$fid}{yield_q30} += $yield_q30;
-                $store->{lane}{$lid}{yield_q30} += $yield_q30;
-                $store->{samp}{$sid}{yield_q30} += $yield_q30;
-                $store->{read}{$rid}{yield_q30} += $yield_q30;
-                $store->{indx}{$seq}{yield_q30} += $yield_q30;
+    while (my ($type, $objects) = each %$qual) {
+        while (my ($id, $object) = each %$objects) {
+            while (my ($qkey, $qval) = each %$object) {
+                $out{$type}{$id}{$qkey} = $qval;
+                if (exists $demux->{$type}{$id}) {
+                    while (my ($dkey, $dval) = each %{$demux->{$type}{$id}}) {
+                        $out{$type}{$id}{$dkey} = $dval;
+                    }
+                }
             }
         }
     }
-    addPrintFields(\%store, $fid);
-    addGeneralStats(\%store, $fid, $cycle_string);
-
+    addPrintFields(\%out, $fid);
+    addGeneralStats(\%out, $fid, $cycle_string);
+    return \%out;
 }
 
 sub addSamplesheetInfo{
     my ($data, $ssht_info, $seq_run) = @_;
 
-    ## add info to stats (eg hmf_runname could be X17-0001)
-    my $hmf_runname = $ssht_info->{'runname'};
-    $data->{ 'stats' }{ 'seq_runname' } = $seq_run;
-    $data->{ 'stats' }{ 'hmf_runname' } = $hmf_runname;
-    $data->{ 'stats' }{ 'submissions' } = {};
+    # Add info to stats (eg hmf_runname could be X17-0001)
+    my $hmf_runname = $ssht_info->{runname};
+    $data->{stats}{seq_runname} = $seq_run;
+    $data->{stats}{hmf_runname} = $hmf_runname;
+    $data->{stats}{submissions} = {};
     
-    ## override flowcell name with ExperimentName from SampleSheet
-    my @fcids = keys %{$data->{'flow'}};
-    my $flowcell_count = scalar @fcids;
-    die "[ERROR] There should be exactly one flowcell in data but found $flowcell_count\n" unless $flowcell_count == 1;
+    # Override flowcell name with ExperimentName from SampleSheet
+    my @fcids = keys %{$data->{flowcell}};
+    scalar @fcids == 1 || die "[ERROR] There should be exactly one flowcell in data\n";
     my $fcid = $fcids[0];
-    $data->{ 'flow' }{ $fcid }{ 'name' } = $hmf_runname;
-    $data->{ 'flow' }{ $fcid }{ 'name_print' } = $hmf_runname;
-    
-    ## add sample metadata
-    my $samples = $data->{ 'samp' };
-    foreach my $sample_id ( keys %$samples ){
-        my $sample = $samples->{ $sample_id };
-        
-        my $submission = $NA_CHAR;
-        $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
-        $sample->{ 'submission_print' } = $submission;
-        $data->{ 'stats' }{ 'submissions' }{ $submission } = 1;
-        
-        my $description = $NA_CHAR;
-        $description = $ssht_info->{'samples'}{$sample_id}{ 'Description' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Description' };
-        $sample->{ 'description_print' } = $description;
+    $data->{flowcell}{$fcid}{name} = $hmf_runname;
+    $data->{flowcell}{$fcid}{name_print} = $hmf_runname;
+
+    # Add sample metadata
+    my %submissions_encountered = ();
+    my $samples = $data->{samples};
+    foreach my $barcode (keys %$samples){
+        my $sample = $samples->{$barcode};
+
+        my $submission = $ssht_info->{samples}{$barcode}{Sample_Project} || NA;
+        $sample->{submission} = $submission;
+        $sample->{submission_print} = $submission;
+        $submissions_encountered{$submission} = 1 unless $barcode eq UNDETERMINED;
+
+        my $name = $ssht_info->{samples}{$barcode}{Sample_Name} || NA;
+        $sample->{name} = $name;
+        $sample->{name_print} = $name;
+
+        my $description = $ssht_info->{samples}{$barcode}{Description} || NA;
+        $sample->{description} = $description;
+        $sample->{description_print} = $description;
     }
+
+    my @submissions = sort keys %submissions_encountered;
+    $data->{stats}{submissions} = \@submissions;
 }
 
-sub parseRunInfoXml{
+sub readRunInfoXml{
     my ($run_info_xml) = @_;
     my $content = readXml( $run_info_xml );
     my $flowcell_id = $content->{Run}{Flowcell};
@@ -243,33 +209,15 @@ sub parseRunInfoXml{
     return \%info;
 }
 
-sub readXml{
-    my ($file) = @_;
-    my $obj = XMLin($file);
-    return($obj);
-}
-
-sub readJson{
-    my ($json_file) = @_;
-    my $json_txt = read_file( $json_file );
-    my $json_obj = decode_json( $json_txt );
-    return( $json_obj );
-}
-
 sub determinePlatformByString {
-    my ($platform, $known_platforms) = @_;
-    my $final_platform = "";
+    my ($platform_string, $platforms) = @_;
+    my $final_platform = 'UnknownPlatform';
 
-    ## exact platform string varies too much so try to match by regex
-    foreach my $known (@$known_platforms) {
-        if ($platform =~ m/^$known/i) {
+    # Exact platform string varies too much so try to match by regex
+    foreach my $known (@$platforms) {
+        if ($platform_string =~ m/^$known/i) {
             $final_platform = $known;
-            say "## INFO: platform configured to $known (based on input '$platform')";
         }
-    }
-
-    if ($final_platform eq "") {
-        die "[ERROR] Unable to determine platform from string ($platform)\n";
     }
     return $final_platform;
 }
@@ -277,25 +225,25 @@ sub determinePlatformByString {
 sub performQC{
     my ($info, $qc_limits) = @_;
    
-    my $stats = $info->{'stats'};
-    my $samps = $info->{'samp'};
-    my $lanes = $info->{'lane'};
+    my $stats = $info->{stats};
+    my $samples = $info->{samples};
+    my $lanes = $info->{lanes};
     my $fails = 0;
-    my $identifier = $stats->{'identifier'};
+    my $identifier = $stats->{identifier};
 
-    ## flowcell checks
-    my $undet = $stats->{'undet_perc'};
-    my $max_undet = $qc_limits->{ 'max_undetermined' };
+    # Flowcell checks
+    my $undet = $stats->{undet_perc};
+    my $max_undet = $qc_limits->{max_undetermined};
     if ( $undet > $max_undet ){
         warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)\n";
         $fails += 1;
     }
         
-    ## lane and sample checks
-    $fails += checkObjectField( $lanes, 'q30',   $qc_limits->{ 'min_flowcell_q30' } );
-    $fails += checkObjectField( $samps, 'yield', $qc_limits->{ 'min_sample_yield' } );
+    # Lane and sample checks
+    $fails += checkObjectField( $lanes, 'q30',   $qc_limits->{min_flowcell_q30} );
+    $fails += checkObjectField( $samples, 'yield', $qc_limits->{min_sample_yield} );
     
-    ## conclusion
+    # Conclusion
     my $final_result = "NoQcResult";
     if ( $fails == 0 ){
         $final_result = "PASS";
@@ -306,16 +254,16 @@ sub performQC{
         warn "## WARNING Some checks failed, inspect before proceeding (for $identifier)\n";
         say "## FINAL QC RESULT: FAIL ($fails failures for $identifier)";
     }
-    $stats->{'flowcell_qc'} = $final_result;
+    $stats->{flowcell_qc} = $final_result;
 }
 
 sub checkObjectField{
     my ($objects, $field, $min) = @_;
     my $fails = 0;
-    foreach my $obj_key ( sort { $objects->{$b}{'name'} cmp $objects->{$a}{'name'} } keys %$objects){
+    foreach my $obj_key ( sort { $objects->{$b}{name} cmp $objects->{$a}{name} } keys %$objects){
         my $obj = $objects->{$obj_key};
-        my $name = $obj->{'name'};
-        next if $name eq 'UNDETERMINED';
+        my $name = $obj->{name};
+        next if $name eq UNDETERMINED;
         next if $name =~ /^VirtualSample/;
         my $value = 0;
         $value = $obj->{$field} if exists $obj->{$field};
@@ -327,178 +275,57 @@ sub checkObjectField{
     return $fails;
 }
 
-sub parseJsonInfo{
-    my ($store, $stats, $runinfo) = @_;
-
-    my $total_non_index_cycle_count = $runinfo->{total_non_index_cycle_count};
-    my $cycle_string = $runinfo->{cycle_string};
-
-    my $fid = $stats->{ 'Flowcell' };
-    $store->{ 'flow' }{ $fid }{ 'id' } = $fid;
-    $store->{ 'flow' }{ $fid }{ 'name' } = $stats->{ 'RunId' };
-
-    ## First reading the "unknown barcodes" and add them to "index sequences"
-    my $unknowns = $stats->{'UnknownBarcodes'};
-    foreach my $lane ( @$unknowns ){
-        my $lid = join( "", "lane", $lane->{ Lane } );
-        my $unknown_barcodes = $lane->{'Barcodes'};
-        foreach my $bc ( keys %$unknown_barcodes ){
-            $store->{ indx }{ $bc }{ name } = 'IndexFromUnknown';
-            my $seq1 = (split(/\+/, $bc))[0] || $NA_CHAR;
-            my $seq2 = (split(/\+/, $bc))[1] || $NA_CHAR;
-            $store->{ indx }{ $bc }{ index1 } = $seq1;
-            $store->{ indx }{ $bc }{ index2 } = $seq2;
-            # Unlike actual samples, the unknowns are reported as cluster counts instead of yield
-            # So need to calculate the yield using non-index cycle counts from RunInfo.xml
-            $store->{ indx }{ $bc }{ yield } += $unknown_barcodes->{ $bc } * $total_non_index_cycle_count;
-        }
-    }
-
-    ## Then read samples
-    my $lanes = $stats->{'ConversionResults'};
-    foreach my $lane ( @$lanes ){
-        my $lid = join( "", "lane", $lane->{LaneNumber} );
-        $store->{lane}{ $lid }{name} = $lid;
-
-        $store->{flow}{ $fid }{clust_raw} += $lane->{TotalClustersRaw};
-        $store->{flow}{ $fid }{clust_pf} += $lane->{TotalClustersPF};
-        $store->{lane}{ $lid }{clust_raw} += $lane->{TotalClustersRaw};
-        $store->{lane}{ $lid }{clust_pf} += $lane->{TotalClustersPF};
-        
-        ## Undetermined info is stored separate from samples in json
-        my $undet_id = 'UNDETERMINED';
-        my $undet_obj = $lane->{Undetermined};
-        my $undet_reads = $undet_obj->{ReadMetrics};
-        my $undet_info = \%{$store->{undt}{ $undet_id }};
-        $undet_info->{name} = $undet_id;
-        foreach my $read ( @$undet_reads ){
-            my $rid = join( "", "read", $read->{ReadNumber} );
-            $undet_info->{yield} += $read->{Yield};
-            $undet_info->{yield_q30} += $read->{YieldQ30};
-            $store->{flow}{ $fid }{yield} += $read->{Yield};
-            $store->{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
-            $store->{lane}{ $lid }{yield} += $read->{Yield};
-            $store->{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
-            $store->{read}{ $rid }{yield} += $read->{Yield};
-            $store->{read}{ $rid }{yield_q30} += $read->{YieldQ30};
-        }
-
-        my $samples = $lane->{DemuxResults};
-        foreach my $sample ( @$samples ){
-            
-            ## Sanity checks
-            die "Field for sample id not found\n" unless defined $sample->{SampleId};
-            die "Field for sample name not found\n" unless defined $sample->{SampleName};
-
-            my $sid = $sample->{SampleId};
-            my $snm = $sample->{SampleName};
-            my $seq = $sample->{IndexMetrics}[0]{IndexSequence} || $NA_CHAR;
-
-            my $seq1 = (split(/\+/, $seq))[0] || $NA_CHAR; # in case of one sample there is no first index
-            my $seq2 = (split(/\+/, $seq))[1] || $NA_CHAR; # in case of single index there is no second index
-
-            ## Reset info for all real samples
-            $store->{samp}{ $sid }{name} = $snm;
-            $store->{samp}{ $sid }{index1}  = $seq1;
-            $store->{samp}{ $sid }{index2}  = $seq2;
-            
-            my $reads = $sample->{ReadMetrics};
-            foreach my $read ( @$reads ){
-                my $rid = join( "", "read", $read->{ReadNumber} );
-                $store->{read}{ $rid }{name} = $rid;
-                $store->{indx}{ $seq }{name} = 'IndexFromSample';
-                $store->{indx}{ $seq }{index1}  = $seq1;
-                $store->{indx}{ $seq }{index2}  = $seq2;
-
-                $store->{flow}{ $fid }{yield} += $read->{Yield};
-                $store->{lane}{ $lid }{yield} += $read->{Yield};
-                $store->{samp}{ $sid }{yield} += $read->{Yield};
-                $store->{read}{ $rid }{yield} += $read->{Yield};
-                $store->{indx}{ $seq }{yield} += $read->{Yield};
-
-                $store->{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
-                $store->{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
-                $store->{samp}{ $sid }{yield_q30} += $read->{YieldQ30};
-                $store->{read}{ $rid }{yield_q30} += $read->{YieldQ30};
-                $store->{indx}{ $seq }{yield_q30} += $read->{YieldQ30};
-            }
-            
-            my %bc_mismatch_counts = (
-                'mm0' => $sample->{IndexMetrics}[0]{MismatchCounts}{0},
-                'mm1' => $sample->{IndexMetrics}[0]{MismatchCounts}{1},
-            );
-            
-            my @types = keys %bc_mismatch_counts;
-            foreach my $mm ( @types ){
-                my $count = 0;
-                $count = $bc_mismatch_counts{ $mm } if defined $bc_mismatch_counts{ $mm };
-                $store->{flow}{ $fid }{ $mm } += $count;
-                $store->{lane}{ $lid }{ $mm } += $count;
-                $store->{samp}{ $sid }{ $mm } += $count;
-                $store->{indx}{ $seq }{ $mm } += $count;
-            }
-        }
-    }
-    addPrintFields(\%store, $fid);
-    addGeneralStats(\%store, $fid, $cycle_string);
-}
-
 sub addGeneralStats{
     my ($store, $fid, $cycle_string) = @_;
 
-    my $undet_perc = getPerc( $store->{'undt'}{'UNDETERMINED'}{'yield'}, $store->{'flow'}{$fid}{'yield'});
+    my $undet_perc = getPerc( $store->{samples}{Undetermined}{yield}, $store->{flowcell}{$fid}{yield});
     my $run_overview_yield_factor = 1e6; # always report the run info in MBase
-    $store->{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s",
-        round( $store->{'flow'}{$fid}{'yield'}, 0, $run_overview_yield_factor ),
-        round( $store->{'undt'}{'UNDETERMINED'}{'yield'}, 0, $run_overview_yield_factor ),
-        $store->{'flow'}{$fid}{'q30_print'},
-        $store->{'flow'}{$fid}{'pf_print'},
+    $store->{stats}{run_overview_string} = sprintf "%s\t%s\t%s\t%s\t%s\t%s",
+        round( $store->{flowcell}{$fid}{yield}, 0, $run_overview_yield_factor ),
+        round( $store->{samples}{Undetermined}{yield}, 0, $run_overview_yield_factor ),
+        $store->{flowcell}{$fid}{q30_print},
+        NA, # placeholder for "passing filter percentage" was available in bcl2fastq output but not in bclconvert output
         $cycle_string,
         round($undet_perc,1) . '%';
 
-    $store->{'stats'}{'undet_perc'} = $undet_perc;
-    $store->{'stats'}{'lane_count'} = scalar( keys %{$store->{'lane'}} );
-    $store->{'stats'}{'samp_count'} = scalar( keys %{$store->{'samp'}} );
-    $store->{'stats'}{'indx_count'} = scalar( keys %{$store->{'indx'}} );
-    $store->{'stats'}{'identifier'} = join( "_", keys %{$store->{'flow'}} );
-    $store->{'stats'}{'cycle_string'} = $cycle_string;
+    $store->{stats}{undet_perc} = $undet_perc;
+    $store->{stats}{lane_count} = scalar( keys %{$store->{'lanes'}} );
+    $store->{stats}{samp_count} = scalar( keys %{$store->{'samples'}} );
+    $store->{stats}{identifier} = join( "_", keys %{$store->{'flowcell'}} );
+    $store->{stats}{cycle_string} = $cycle_string;
 }
 
 sub addPrintFields{
     my ($store, $fid) = @_;
 
     foreach my $type ( keys %$store ){
-        foreach my $id ( keys %{$store->{ $type }} ){
-            my $obj = $store->{ $type }{ $id };
-            my $name = $obj->{ 'name' };
+        foreach my $id ( keys %{$store->{$type}} ){
+            my $obj = $store->{$type}{$id};
 
-            $obj->{q30} = getPerc( $obj->{yield_q30}, $obj->{yield} );
-            $obj->{yld_p} = getPerc( $obj->{yield}, $store->{flow}{ $fid }{yield} );
+            $obj->{q30} = getPerc($obj->{yield_q30}, $obj->{yield});
+            $obj->{yld_p} = getPerc($obj->{yield}, $store->{flowcell}{$fid}{yield});
+
+            $obj->{q30_print} = round($obj->{q30}, $ROUND_DECIMALS, 1);
+            $obj->{yld_print} = round($obj->{yield}, 0, $YIELD_FACTOR);
+            $obj->{yld_p_print} = round( $obj->{yld_p}, $ROUND_DECIMALS, 1 );
+
             $obj->{flowcell_print} = $fid;
+            $obj->{id_print} = $id;
+            $obj->{name_print} = $obj->{name};
+            $obj->{index1_print} = $obj->{index1};
+            $obj->{index2_print} = $obj->{index2};
 
-            $obj->{ 'q30_print' } = round( $obj->{ 'q30' }, $ROUND_DECIMALS, 1 );
-            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, 0, $YIELD_FACTOR );
-            $obj->{ 'id_print' } = $id;
-            $obj->{ 'name_print' } = $obj->{ 'name' };
-            $obj->{ 'index1_print' } = $obj->{ 'index1' };
-            $obj->{ 'index2_print' } = $obj->{ 'index2' };
-            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }, $ROUND_DECIMALS, 1 );
+            # Some types do not have mismatch stats so skipping those from here
+            next unless $type =~ /samples|lanes|flowcell/;
 
-            ## percentage filtered does not exist for samples
-            if ( exists $obj->{ 'clust_pf' } ){
-                $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ), $ROUND_DECIMALS );
-            }
-
-            ## some types do not have mismatch stats so skipping those from here
-            next if $name =~ /read|UNDETERMINED/;
-            next if $type eq "indx";
-
-            $obj->{ 'total_reads' } = $obj->{ 'mm0' } + $obj->{ 'mm1' };
-            $obj->{ 'mm0_print' } = 0;
-            $obj->{ 'mm1_print' } = 0;
-            if ( $obj->{ 'total_reads' } != 0 ){
-                $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
-                $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
+            $obj->{total_reads} = $obj->{mm0} + $obj->{mm1} + $obj->{mm2};
+            $obj->{mm0_print} = 0;
+            $obj->{mm1_print} = 0;
+            $obj->{mm2_print} = 0;
+            if ( $obj->{total_reads} != 0 ){
+                $obj->{mm0_print} = round(getPerc($obj->{mm0}, $obj->{total_reads}), $ROUND_DECIMALS);
+                $obj->{mm1_print} = round(getPerc($obj->{mm1}, $obj->{total_reads}), $ROUND_DECIMALS);
+                $obj->{mm2_print} = round(getPerc($obj->{mm2}, $obj->{total_reads}), $ROUND_DECIMALS);
             }
 
         }
@@ -534,64 +361,61 @@ sub printJson {
     open my $fh, '>', $output_file or die "Unable to open output file ($output_file): $!\n";
         print $fh $json_txt;
     close $fh;
+    say "[INFO] Written JSON file $output_file"
 }
 
 sub printTable {
     my ($info, $fields) = @_;
 
-    say sprintf '## Settings: YieldFactor=%s, RoundDecimals=%s', 
-      commify($YIELD_FACTOR),
-      commify($ROUND_DECIMALS);
-    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %d indexes, %s cycles)', 
-      $info->{'stats'}{'seq_runname'}, 
-      $info->{'stats'}{'hmf_runname'}, 
-      $info->{'stats'}{'lane_count'}, 
-      $info->{'stats'}{'samp_count'},
-      $info->{'stats'}{'indx_count'},
-      $info->{'stats'}{'cycle_string'};
+    printStandardHeaderLines($info);
     
     say "#".join( $OUT_SEP, "level", @$fields );
-    printTableForLevelSortedByName( $info->{'flow'}, $fields, 'RUN' );
-    printTableForLevelSortedByName( $info->{'lane'}, $fields, 'LANE' );
-    printTableForLevelSortedByYield( $info->{'indx'}, $fields, 'INDEX' );
-    printTableForLevelSortedByName( $info->{'samp'}, $fields, 'SAMPLE' );
-    printTableForLevelSortedByName( $info->{'read'}, $fields, 'READ' );
-    printTableForLevelSortedByName( $info->{'undt'}, $fields, 'UNDET' );
+    printTableForLevelSortedByName($info->{flowcell}, $fields, 'RUN');
+    printTableForLevelSortedByName($info->{lanes}, $fields, 'LANE');
+    printTableForLevelSortedByName($info->{samples}, $fields, 'SAMPLE');
+    printTableForLevelSortedByName($info->{reads}, $fields, 'READ');
+    printTableForLevelSortedByName($info->{undetermined}, $fields, 'UNDET');
 }
 
 sub printSummaryTable{
     my ($info, $fields) = @_;
     
-    my @submissions = sort keys %{$info->{'stats'}{'submissions'}};
+    my @submissions = sort @{$info->{stats}{submissions}};
     map( $_ =~ s/HMFreg//, @submissions );
     my $submissions_string = join( ',', @submissions );
-   
-    say sprintf '## Settings: YieldFactor=%s, RoundDecimals=%s', 
-      commify($YIELD_FACTOR),
-      commify($ROUND_DECIMALS);
-    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %d indexes, %s cycles)', 
-      $info->{'stats'}{'seq_runname'}, 
-      $info->{'stats'}{'hmf_runname'}, 
-      $info->{'stats'}{'lane_count'}, 
-      $info->{'stats'}{'samp_count'},
-      $info->{'stats'}{'indx_count'},
-      $info->{'stats'}{'cycle_string'};
+
+    printStandardHeaderLines($info);
         
-    say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s\t%s", 
-      $info->{'stats'}{'hmf_runname'},
-      $info->{'stats'}{'seq_runname'},
+    say sprintf "## RunOverview INFO: %s\t%s\t%s\t%s\t%s",
+      $info->{stats}{hmf_runname},
+      $info->{stats}{seq_runname},
       $submissions_string,
-      $info->{'stats'}{'run_overview_string'},
-      $info->{'stats'}{'flowcell_qc'};
+      $info->{stats}{run_overview_string},
+      $info->{stats}{flowcell_qc};
       
-    say "#".join( $OUT_SEP, @$fields );
-    printTableForLevelSortedByName( $info->{'samp'}, $fields );
+    say "#".join($OUT_SEP, @$fields);
+    printTableForLevelSortedByName($info->{samples}, $fields);
+}
+
+sub printStandardHeaderLines{
+    my ($data) = @_;
+    say sprintf '## Settings INFO: Platform=%s|YieldFactor=%s|RoundDecimals=%s',
+        $data->{stats}{platform},
+        commify($YIELD_FACTOR),
+        commify($ROUND_DECIMALS);
+
+    say sprintf '## Flowcell INFO: %s (%s, %d lanes, %d samples, %s cycles)',
+        $data->{stats}{seq_runname},
+        $data->{stats}{hmf_runname},
+        $data->{stats}{lane_count},
+        $data->{stats}{samp_count},
+        $data->{stats}{cycle_string};
 }
 
 sub printTableForLevelSortedByName{
     my ($info, $fields, $level) = @_;
-    foreach my $id ( sort { $info->{$b}{'name'} cmp $info->{$a}{'name'} } keys %$info){
-        my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
+    foreach my $id ( sort { $info->{$b}{name} cmp $info->{$a}{name} } keys %$info){
+        my @output = map( $info->{ $id }{ $_."_print" } || NA, @$fields );
         unshift @output, $level if defined $level;
         say join( $OUT_SEP, @output );
     }
@@ -599,8 +423,8 @@ sub printTableForLevelSortedByName{
 
 sub printTableForLevelSortedByYield{
     my ($info, $fields, $level) = @_;
-    foreach my $id ( sort { $info->{$b}{'yld_print'} <=> $info->{$a}{'yld_print'} } keys %$info){
-        my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
+    foreach my $id ( sort { $info->{$b}{yld_print} <=> $info->{$a}{yld_print} } keys %$info){
+        my @output = map( $info->{ $id }{ $_."_print" } || NA, @$fields );
         unshift @output, $level if defined $level;
         say join( $OUT_SEP, @output );
     }
@@ -609,14 +433,14 @@ sub printTableForLevelSortedByYield{
 sub readSampleSheet{
     my ($csv_file) = @_;
     
-    ## SampleSheet file has windows returns
+    # SampleSheet file has windows returns
     my $return_str = $/;
     $/ = "\r\n";
     
     my %output;
-    $output{ 'samples' } = {};
-    $output{ 'runname' } = 'NO_RUNNAME_FROM_SAMPLESHEET';
-    $output{ 'platform' } = 'NO_PLATFORM_FROM_SAMPLESHEET';
+    $output{samples} = {};
+    $output{runname} = 'NO_RUNNAME_FROM_SAMPLESHEET';
+    $output{platform} = 'NO_PLATFORM_FROM_SAMPLESHEET';
     my @header;
     
     if ( ! -e $csv_file ){
@@ -631,72 +455,120 @@ sub readSampleSheet{
         next if $_ eq "";
         my @fields = split( ",", $_);
 
-        ## get hmf run id from config line
+        # Get hmf run id from config line
         if ($fields[0] =~ /Experiment(.)*Name/ ){
             my $run_name = $fields[1] || 'NA';
-            $output{ 'runname' } = $run_name;
+            $output{runname} = $run_name;
         }
         elsif ($fields[0] =~ /InstrumentType/ ){
             my $platform = $fields[1] || 'NA';
-            $output{ 'platform' } = $platform;
+            $output{platform} = $platform;
         }
-
-        ## find header
         elsif ( $_ =~ m/Sample_ID/ ){
+            # Find header
             @header = @fields;
         }
-        ## read sample line if header seen before
         elsif ( @header ){
+            # Read sample line but only if header seen before
             my %tmp = ();
             $tmp{ $_ } = shift @fields foreach @header;
 
-            ## skip "empty" lines (where no sample was defined)
+            # Skip lines without sample info
             my $sample_id_column = 'Sample_ID';
             next unless defined $tmp{ $sample_id_column } and $tmp{ $sample_id_column } ne '';
 
             my $sample_id = $tmp{ $sample_id_column };
-            $output{ 'samples' }{ $sample_id } = \%tmp;
+            $output{samples}{ $sample_id } = \%tmp;
         }
     }
     close FILE;
     
-    ## reset return string
+    # Reset return string
     $/ = $return_str;
     
     return( \%output );
 }
 
-sub readQualityMetricsCsv{
-    my ($file) = @_;
+sub readBclConvertQualityMetricsCsv{
+    my ($csv, $run) = @_;
+    my $fcid = $run->{flowcell_id};
 
-    my %qualityMetricsStore = ();
-    my @header;
+    my $lines = csv(in => $csv, headers => 'auto');
+    my %value_keys = (
+        'Yield' => 'yield',
+        'YieldQ30' => 'yield_q30'
+    );
+    my %quality_store = ();
 
-    open FILE, "<", $file or die "Couldn't open file ($file): $!";
-    my $header_line = <FILE>;
-    die "Header line has unexpected format" unless $header_line =~ m/^Lane,SampleID/;
-    @header = split(",", $header_line);
-    while ( <FILE> ) {
-        chomp($_);
-        next if $_ eq "";
-        my @fields = split(",", $_);
-        my %tmp = ();
-        $tmp{$_} = shift @fields foreach @header;
-        my $lane = $tmp{'Lane'};
-        my $barcode = $tmp{'SampleID'};
-        my $read = $tmp{'ReadNumber'};
-        foreach my $field (@header){
-            $qualityMetricsStore{$lane}{$barcode}{$read}{$field} = $tmp{$field};
+    foreach my $line (@$lines){
+        my $barcode = $line->{SampleID};
+        my $lane = 'lane' . $line->{Lane};
+        my $read = 'read' . $line->{ReadNumber};
+
+        $quality_store{lanes}{$lane}{name} = $lane;
+        $quality_store{reads}{$read}{name} = $read;
+        $quality_store{samples}{$barcode}{name} = $barcode;
+
+        if ($barcode ne UNDETERMINED){
+            $quality_store{samples}{$barcode}{index1} = $line->{index};
+            $quality_store{samples}{$barcode}{index2} = $line->{index2};
+        }
+
+        foreach my $value_key (keys %value_keys){
+            my $store_key = $value_keys{$value_key};
+            $quality_store{flowcell}{$fcid}{$store_key} += $line->{$value_key};
+            $quality_store{lanes}{$lane}{$store_key} += $line->{$value_key};
+            $quality_store{reads}{$read}{$store_key} += $line->{$value_key};
+            $quality_store{samples}{$barcode}{$store_key} += $line->{$value_key};
         }
     }
-    close FILE;
-    return(\%qualityMetricsStore);
+    return(\%quality_store);
+}
+
+sub readBclConvertDemuxCsv{
+    my ($csv, $run) = @_;
+    my $fcid = $run->{flowcell_id};
+
+    my $lines = csv(in => $csv, headers => 'auto');
+    my %value_keys = (
+        '# Perfect Index Reads'      => 'mm0',
+        '# One Mismatch Index Reads' => 'mm1',
+        '# Two Mismatch Index Reads' => 'mm2',
+        '# Reads'                    => 'reads'
+    );
+    my %demux_store;
+
+    foreach my $line (@$lines){
+        my $lane = 'lane' . $line->{Lane};
+        my $barcode = $line->{SampleID};
+        foreach my $value_key (keys %value_keys){
+            my $store_key = $value_keys{$value_key};
+            $demux_store{flowcell}{$fcid}{$store_key} += $line->{$value_key};
+            $demux_store{lanes}{$lane}{$store_key} += $line->{$value_key};
+            $demux_store{samples}{$barcode}{$store_key} += $line->{$value_key};
+        }
+
+    }
+    return \%demux_store;
+}
+
+sub readXml{
+    my ($file) = @_;
+    my $obj = XMLin($file);
+    return($obj);
+}
+
+sub readJson{
+    my ($json_file) = @_;
+    my $json_txt = read_file( $json_file );
+    my $json_obj = decode_json( $json_txt );
+    return( $json_obj );
 }
 
 sub round{
     my ($number, $decimal, $factor) = @_;
     if ( not defined $number ){
-        return $NA_CHAR;
+        return NA;
     }
     $decimal = 0 unless defined $decimal;
     $factor = 1 unless defined $factor;
@@ -704,10 +576,20 @@ sub round{
     return( $rounded );
 }
 
-## input "1000" gives output "1,000"
 sub commify {
+    # Input "1000" produces output "1,000"
     local $_ = shift;
     $_ = int($_);
     1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
     return $_;
+}
+
+sub info{
+    my ($msg) = @_;
+    say "[INFO] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg;
+}
+
+sub warn{
+    my ($msg) = @_;
+    warn "[WARN] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg . "\n";
 }
