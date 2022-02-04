@@ -66,13 +66,15 @@ my @header = qw(result dist1 dist2 idx1_tag1 idx1_seq1 idx1_tag2 idx1_seq2 idx2_
 my @output_lines = ();
 
 say "[INFO] Checking all possible combinations.";
-check_all_index_combinations(\@all_indexes, \@output_lines);
+my $stats = check_all_index_combinations(\@all_indexes, \@output_lines);
 
 open(my $OUT_FH, '>', $out_file) or die $!;
 foreach my $file (@index_input_files) {
     say $OUT_FH '##' . " Input file: $file";
 }
 say $OUT_FH '##' . " Minimal distance for $success_str: $MIN_EDIT_DISTANCE";
+say $OUT_FH '##' . " Total amount of combinations checked: $stats->{combination_count}";
+say $OUT_FH '##' . " Total amount of failing combinations: $stats->{failure_count}";
 say $OUT_FH '#' . join("\t", @header);
 say $OUT_FH join("\n", @output_lines);
 close $OUT_FH;
@@ -84,6 +86,7 @@ sub check_all_index_combinations{
     my $index_count = scalar @$indexes;
     my $combination_count = 0;
     my $failure_count = 0;
+    my %stats = ();
 
     foreach my $x (1..$index_count){
         foreach my $y ($x..$index_count){
@@ -94,6 +97,8 @@ sub check_all_index_combinations{
             compare_two_indexes($index1, $index2, $output_lines, \$failure_count);
         }
     }
+    $stats{failure_count} = $failure_count;
+    $stats{combination_count} = $combination_count;
 
     if ($failure_count == 0) {
         say "[INFO] Total of $failure_count failing combinations encountered on a total of $combination_count combinations.";
@@ -101,6 +106,7 @@ sub check_all_index_combinations{
     else{
         warn "[WARN] Total of $failure_count failing combinations encountered on a total of $combination_count combinations.\n";
     }
+    return \%stats;
 }
 
 sub compare_two_indexes{
