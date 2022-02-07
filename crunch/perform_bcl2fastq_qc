@@ -87,7 +87,11 @@ for seq_dir in "${seq_dirs[@]}"; do
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
 
-            if [[ $req -eq 1 ]]; then
+            if [[ $req == "" ]]; then
+              # Unable to get yield from API
+              req_gbase="0"
+              warn "Unable to get yield from API for sample $sample_id"
+            elif [[ $req -eq 1 ]]; then
               # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
               req_gbase="0"
             else
