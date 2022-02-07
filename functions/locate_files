@@ -280,6 +280,10 @@ locate_actin_minimal_molecular_json() {
     echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
 
+locate_actin_serve_bridge_tsv() {
+    echo "/data/actin/serve_bridge/actin_knowledgebase.tsv"
+}
+
 locate_cuppa_ref_dir_dna_rna() {
     echo "/data/resources/crunch/actin/cuppa_ref"
 }

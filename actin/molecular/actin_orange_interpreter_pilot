@@ -13,7 +13,7 @@ fi
 platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 
 orange_json="$(locate_orange_json ${platinum_dir})"
-treatment_database_directory="$(locate_actin_treatment_database_directory)"
+serve_bridge_tsv="$(locate_actin_serve_bridge_tsv)"
 
 output_directory="${platinum_dir}/actin"
 create_or_cleanup_dir ${output_directory}
@@ -22,7 +22,7 @@ actin_jar="$(locate_pilot_actin)"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json ${orange_json} \
-    -treatment_database_directory ${treatment_database_directory} \
+    -serve_bridge_tsv ${serve_bridge_tsv} \
     -output_directory ${output_directory} \
     "$@"
 
