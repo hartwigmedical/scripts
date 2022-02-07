@@ -561,6 +561,10 @@ locate_ckb_filter_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_filters.tsv"
 }
 
+locate_ckb_filter_pilot_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_filters_pilot.tsv"
+}
+
 locate_public_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/curation/public_doids_mapping.tsv"
 }
