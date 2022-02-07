@@ -16,7 +16,7 @@ missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 serve_jar="/data/serve_actin_jar/serve.jar"
 do_run_serve \
-    ${serve_kar} \
+    ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
