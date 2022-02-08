@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+HOSTNAME=$(hostname)
+PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
+ERRLOG_FILE="conversionError.txt"
+SSHEET_FILE="SampleSheet.csv"
+REPORT_ROOT="Fastq"
+CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROUNDING_SCRIPT="${CODEDIR}/../utilityscripts/base_count_to_gbase.py"
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
+    script=$(basename "$0")
+    echo "-----"
+    echo " Usage: $script <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
+    echo "        $script /path/to/171117_ST-E00287_0115_AHCFL5CCXY"
+    echo "        $script 171117_ST-E00287_0115_AHCFL5CCXY 171117_ST-E00287_0116_BHCCVKCCXY"
+    echo "-----"
+    exit 1
+fi
+
+seq_runs=("$@")
+seq_dirs=()
+
+function printHeader() {
+    local field_title=$1 && shift
+    echo -e "\n## ----------\n## ${field_title}:\n## ----------"
+}
+
+## make sure all are absolute paths
+for seq_run in "${seq_runs[@]}"; do
+    ## remove potential trailing slash
+    seq_run=${seq_run%/}
+    if [[ ${seq_run} =~ ^\/ ]]; then
+        seq_dirs+=("${seq_run}")
+    else
+        seq_dirs+=("${PWD}/${seq_run}" )
+    fi
+done
+
+## some checking before we start
+cmds_to_execute=()
+for seq_dir in "${seq_dirs[@]}"; do
+    ssheet_path="${seq_dir}/${SSHEET_FILE}"
+    errlog_path="${seq_dir}/${ERRLOG_FILE}"
+    report_path="${seq_dir}/${REPORT_ROOT}"
+    seqdir_name="$(basename "${seq_dir}" | tr -d '\r')"
+    hmfrun_name="$(grep -P '^Experiment' "${ssheet_path}" | cut -d',' -f 2 | tr -d '\r')"
+    nasrun_name="${hmfrun_name}__${seqdir_name}"
+    
+    ## If anything not ok: exit
+    if [[ ! -d "${seq_dir}" ]]; then
+        error "dir does not exist (${seq_dir})"
+    elif [[ ! -f "${errlog_path}" ]]; then
+        error "Errlog does not exist (${errlog_path})"
+    elif [[ $(tail -1 "${errlog_path}" | grep -c "with 0 errors and") -eq 0 ]]; then
+        error "Errlog does not say 0 errors (${errlog_path})"
+    elif [[ -z "${hmfrun_name}" ]]; then
+        error "Have not been able to parse hmfrun_name from sheet (${ssheet_path})"
+    fi
+    
+    ## store further cmds so we can print all together at the end
+    cmds_to_execute+=("rsync -ah ${report_path}/Reports nas:/volume1/web/qc/conversion/${nasrun_name}/")
+    cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
+done
+
+printHeader "SAMPLE info"
+for seq_dir in "${seq_dirs[@]}"; do
+    ${PARSE_SCRIPT} -run_dir "${seq_dir}" | grep ^SAMPLE | while read -r line; do
+        yld_seq=$(echo "${line}" | cut -f3)
+        yld_seq_base_count=$((yld_seq*1000000))
+        q30_seq=$(echo "${line}" | cut -f4)
+        submission=$(echo "${line}" | cut -f11)
+        sample_id=$(echo "${line}" | cut -f9)
+        sample_nm=$(echo "${line}" | cut -f10)
+        api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            smp_status="Unregistered"
+            yld=""
+            req=""
+        else
+            sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
+            sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
+            # Note: last cut shortens "Insufficient Quality" to "Insufficient"
+            smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
+            yld=$(echo "${sample_tsv}" | cut -f2)
+            req=$(echo "${sample_tsv}" | cut -f3)
+        fi
+
+        if [[ "${req}" == "" ]]; then
+          # No required yield known
+          req_gbase="?"
+        elif [[ ${req} -eq 1 ]]; then
+          # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
+          req_gbase="0"
+        else
+          req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
+        fi
+
+        if [[ "${yld}" == "" ]]; then
+          yld_gbase="?"
+        elif [[ "${req_gbase}" == "?" ]]; then
+          yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}") || \
+                die "Could not convert yld for ${sample_id} to gbase: ${yld}"
+        else
+          yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
+                die "Could not convert yld for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+
+        if [[ "${req_gbase}" == "?" ]]; then
+          yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld}"
+        else
+          yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+        # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
+        # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+        api_run=$(
+          hmf_api_get "runs?barcode=${sample_id}" | \
+          jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
+          jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
+          jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
+          tail -1
+        )
+
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
+        elif [[ "${req_gbase}" == "?" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no yield requirement!)"
+        elif [[ "${api_run}" == "" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
+        else
+            run_status=$(cut -f1 <<< "${api_run}")
+            ini=$(cut -f2 <<< "${api_run}")
+            ini=${ini/.ini/}
+            set_name=$(cut -f3 <<< "${api_run}")
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t${set_name}"
+        fi
+        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
+   done | sort -k1,1 -k3,3
+done
+
+printHeader "RUN info"
+for seq_dir in "${seq_dirs[@]}"; do
+    ${PARSE_SCRIPT} -run_dir "${seq_dir}" -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+done | sort -r
+
+printHeader "Extra actions"
+for cmd in "${cmds_to_execute[@]}"; do
+    echo "${cmd}"
+done
+
+printHeader "Extra actions on ops VM"
+current_hostname=$(hostname) || die "Could not get hostname"
+if [[ "${current_hostname}" == "crunch001" ]]; then
+  crunch_name="crunch1.prod-1"
+elif [[ "${current_hostname}" == "crunch002" ]]; then
+  crunch_name="crunch2.prod-1"
+else
+  die "Unknown hostname: ${current_hostname}"
+fi
+for seq_dir in "${seq_dirs[@]}"; do
+    echo "archive_flowcell_to_bucket ${crunch_name} ${seq_dir}"
+done
+
+echo ""
