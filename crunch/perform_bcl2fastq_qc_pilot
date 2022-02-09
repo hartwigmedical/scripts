@@ -86,6 +86,10 @@ for seq_dir in "${seq_dirs[@]}"; do
             smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
+            if [[ "${yld}" == "" && "${req}" != ""  ]]; then
+                # This happens when no yield is registered yet, but sample is registered properly
+                yld="0"
+            fi
         fi
 
         if [[ "${req}" == "" ]]; then
