@@ -529,12 +529,20 @@ locate_iclusion_filter_tsv() {
     echo "/data/resources/crunch/serve/curation/iclusion_filters.tsv"
 }
 
+locate_iclusion_filter_pilot_tsv() {
+  echo "/data/resources/crunch/serve/curation/iclusion_filters_pilot.tsv"
+}
+
 locate_actin_trial_tsv() {
     echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
 }
 
 locate_actin_filter_tsv() {
     echo "/data/resources/crunch/serve/curation/actin_filters.tsv"
+}
+
+locate_actin_filter_pilot_tsv() {
+    echo "/data/resources/crunch/serve/curation/actin_filters_pilot.tsv"
 }
 
 locate_vicc_json() {
