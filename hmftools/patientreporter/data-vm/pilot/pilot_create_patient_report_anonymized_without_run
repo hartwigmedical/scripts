@@ -12,7 +12,6 @@ patient_reporter_jar=$1 && shift
 # output_dir_report=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/
 # patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.24-jar-with-dependencies.jar
 
-reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
@@ -42,7 +41,6 @@ expected_pipeline_version="5.22"
 
 mkdir --parents "${output_dir_report}/insufficient_dna/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -62,7 +60,6 @@ java -jar "${patient_reporter_jar}" \
 
 mkdir --parents "${output_dir_report}/insufficient_tcp_shallow_wgs/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -84,7 +81,6 @@ java -jar "${patient_reporter_jar}" \
 
 mkdir --parents "${output_dir_report}/technical_failure/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
