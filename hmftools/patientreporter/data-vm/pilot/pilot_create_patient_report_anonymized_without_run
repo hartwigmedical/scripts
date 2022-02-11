@@ -55,6 +55,7 @@ java -jar "${patient_reporter_jar}" \
     -tumor_sample_id "${tumor_sample}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
@@ -76,6 +77,7 @@ java -jar "${patient_reporter_jar}" \
     -tumor_sample_id "${tumor_sample}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
@@ -95,5 +97,6 @@ java -jar "${patient_reporter_jar}" \
     -tumor_sample_id "${tumor_sample}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
