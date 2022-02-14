@@ -29,8 +29,6 @@ fi
 
 ####
 
-
-
 report_tumorlocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $1 }' )
 report_tumorsublocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $2 }' )
 if [[ "${report_tumorlocation}" == "Unknown" ]]; then
