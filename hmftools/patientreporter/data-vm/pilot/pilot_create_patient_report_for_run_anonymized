@@ -12,7 +12,6 @@ patient_reporter_jar=$1 && shift
 # output_dir_report=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/
 # patient_reporter_jar=/data/tmp/210907_david_DEV-2140_anonymyzation-patientreporter/patient-reporter-7.24-jar-with-dependencies.jar
 
-reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
@@ -26,16 +25,14 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 tumor_sample_id_during_run=$(load_tumor_sample_from_metadata "${run_dir}")
-tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata "${run_dir}")
 
+tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata "${run_dir}")
 if [[ -z "${tumor_sample_barcode}" ]]; then
     info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name "${tumor_sample_id_during_run}")
 fi
 
-ref_sample_id_during_run=$(load_ref_sample_from_metadata "${run_dir}")
 ref_sample_barcode=$(load_ref_sample_barcode_from_metadata "${run_dir}")
-
 if [[ -z "${ref_sample_barcode}" ]]; then
     info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
     ref_sample_barcode=$(find_ref_barcode_for_sample_name "${tumor_sample_id_during_run}")
@@ -44,11 +41,9 @@ fi
 tumor_sample=$(load_sample_name_for_barcode "${tumor_sample_barcode}")
 ref_sample=$(load_sample_name_for_barcode "${ref_sample_barcode}")
 
-if [[ -z "${ref_sample}" || -z "${ref_sample_id_during_run}" || -z "${ref_sample_barcode}" \
-          || -z "${tumor_sample}" || -z "${tumor_sample_id_during_run}" || -z "${tumor_sample_barcode}" ]]; then
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample}" || -z "${tumor_sample_barcode}" ]]; then
     warn "Incomplete information for reporter. Exiting"
     warn "  ref sample name: ${ref_sample}"
-    warn "  ref sample id during run: ${ref_sample_id_during_run}"
     warn "  ref sample barcode: ${ref_sample_barcode}"
     warn "  tumor sample name: ${tumor_sample}"
     warn "  tumor sample id during run: ${tumor_sample_id_during_run}"
@@ -67,6 +62,7 @@ purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv "${run_dir}
 purple_circos_plot=$(locate_purple_circos_plot "${run_dir}")
 linx_fusion_tsv=$(locate_linx_fusions "${run_dir}")
 linx_breakend_tsv=$(locate_linx_breakends "${run_dir}")
+linx_svs_tsv=$(locate_linx_svs "${run_dir}")
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog "${run_dir}")
 chord_prediction_txt=$(locate_chord_prediction "${run_dir}")
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt "${run_dir}")
@@ -75,14 +71,13 @@ annotated_virus_tsv=$(locate_virus_annotation_tsv "${run_dir}")
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv "${run_dir}")
 protect_evidence_tsv=$(locate_protect_evidence "${run_dir}")
 
-germline_reporting_tsv=/data/dbs/germline_reporting/germline_reporting_pilot.tsv
+germline_reporting_tsv=/data/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/dbs/summary_patient_report/summary_samples.tsv
 
 expected_pipeline_version="5.22"
 
 mkdir --parents "${output_dir_report}/good/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv "${primary_tumor_tsv}" \
     -lims_dir "${lims_dir}" \
     -rva_logo "${rva_logo}" \
@@ -92,10 +87,8 @@ java -jar "${patient_reporter_jar}" \
     -override_pipeline_version \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     -ref_sample_id "${ref_sample}" \
-    -ref_sample_id_during_run "${ref_sample_id_during_run}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -pipeline_version_file "${pipeline_version_file}" \
     -purple_purity_tsv "${purple_purity_tsv}" \
@@ -109,6 +102,7 @@ java -jar "${patient_reporter_jar}" \
     -linx_fusion_tsv "${linx_fusion_tsv}" \
     -linx_breakend_tsv "${linx_breakend_tsv}" \
     -linx_driver_catalog_tsv "${linx_driver_catalog_tsv}" \
+    -linx_svs_tsv "${linx_svs_tsv}" \
     -chord_prediction_txt "${chord_prediction_txt}" \
     -molecular_tissue_origin_txt "${molecular_tissue_origin_txt}" \
     -molecular_tissue_origin_plot "${molecular_tissue_origin_plot}" \
@@ -120,12 +114,12 @@ java -jar "${patient_reporter_jar}" \
     -output_dir_data "${output_dir_report}/good/data/" \
     -output_dir_report "${output_dir_report}/good/" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
 mkdir --parents "${output_dir_report}/insufficient_dna/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -138,15 +132,15 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_dna" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
 mkdir --parents "${output_dir_report}/insufficient_tcp_deep_wgs/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -159,20 +153,19 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_tcp_deep_wgs" \
     -ref_sample_id "${ref_sample}" \
-    -ref_sample_id_during_run "${ref_sample_id_during_run}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -purple_purity_tsv "${purple_purity_tsv}" \
     -purple_qc_file "${purple_qc_file}" \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
 mkdir --parents "${output_dir_report}/insufficient_tcp_shallow_wgs/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -185,18 +178,17 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "insufficient_tcp_shallow_wgs" \
     -ref_sample_id "${ref_sample}" \
-    -ref_sample_id_during_run "${ref_sample_id_during_run}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
 mkdir --parents "${output_dir_report}/sufficient_tcp_qc_failure/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -209,20 +201,19 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "sufficient_tcp_qc_failure" \
     -ref_sample_id "${ref_sample}" \
-    -ref_sample_id_during_run "${ref_sample_id_during_run}" \
     -ref_sample_barcode "${ref_sample_barcode}" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
     -purple_purity_tsv "${purple_purity_tsv}" \
     -purple_qc_file "${purple_qc_file}" \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"
 
 mkdir --parents "${output_dir_report}/technical_failure/data/"
 java -jar "${patient_reporter_jar}" \
-    -reporting_db_tsv "${reporting_db_tsv}" \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
@@ -235,8 +226,9 @@ java -jar "${patient_reporter_jar}" \
     -qc_fail \
     -qc_fail_reason "technical_failure" \
     -tumor_sample_id "${tumor_sample}" \
-    -tumor_sample_id_during_run "${tumor_sample_id_during_run}" \
     -tumor_sample_barcode "${tumor_sample_barcode}" \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
     -ref_genome_version 37 \
+    -udi_di "(01) 8720299486010(8012)v5.25" \
     -log_debug \
     "$@"

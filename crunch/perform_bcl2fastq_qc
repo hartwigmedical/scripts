@@ -76,9 +76,9 @@ for seq_dir in "${seq_dirs[@]}"; do
         sample_nm=$(echo "${line}" | cut -f10)
         api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
         if [[ "${api_samples_json}" == "[]" ]]; then
-            yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "1") || \
-                  die "Could not convert yld_seq_base_count for ${sample_id} to gbase (not in API): ${yld_seq_base_count}"
-            status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
+            smp_status="Unregistered"
+            yld=""
+            req=""
         else
             sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
             sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
@@ -86,46 +86,61 @@ for seq_dir in "${seq_dirs[@]}"; do
             smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
+            if [[ "${yld}" == "" && "${req}" != ""  ]]; then
+                # This happens when no FASTQ files are registered yet, but the sample is registered properly
+                yld="0"
+            fi
+        fi
 
-            if [[ $req == "" ]]; then
-              # Unable to get yield from API
-              req_gbase="0"
-              warn "Unable to get yield from API for sample $sample_id"
-            elif [[ $req -eq 1 ]]; then
-              # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
-              req_gbase="0"
-            else
-              # The requirement in GBase is converted to gbase
-              req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
-            fi
-            if [[ "${yld}" == "" ]]; then
-              yld_gbase="0"
-            else
-              yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
-                    die "Could not convert yld for ${sample_id} to gbase: ${yld}"
-            fi
-            yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
-                  die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld_seq_base_count}"
-            # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
-            # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
-            api_run=$(
-              hmf_api_get "runs?barcode=${sample_id}" | \
-              jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
-              jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
-              jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
-              tail -1
-            )
-            api_run_tsv=$(cut -f1,2 <<< "${api_run}")
+        if [[ "${req}" == "" ]]; then
+          # No required yield known
+          req_gbase="?"
+        elif [[ ${req} -eq 1 ]]; then
+          # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
+          req_gbase="0"
+        else
+          req_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
+        fi
+
+        if [[ "${yld}" == "" ]]; then
+          yld_gbase="?"
+        elif [[ "${req_gbase}" == "?" ]]; then
+          yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}") || \
+                die "Could not convert yld for ${sample_id} to gbase: ${yld}"
+        else
+          yld_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
+                die "Could not convert yld for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+
+        if [[ "${req_gbase}" == "?" ]]; then
+          yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld}"
+        else
+          yld_seq_gbase=$(python3 "${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+        # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
+        # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+        api_run=$(
+          hmf_api_get "runs?barcode=${sample_id}" | \
+          jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
+          jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
+          jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
+          tail -1
+        )
+
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
+        elif [[ "${req_gbase}" == "?" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no yield requirement!)"
+        elif [[ "${api_run}" == "" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
+        else
+            run_status=$(cut -f1 <<< "${api_run}")
+            ini=$(cut -f2 <<< "${api_run}")
+            ini=${ini/.ini/}
             set_name=$(cut -f3 <<< "${api_run}")
-
-            if [[ "${api_run_tsv}" == "" ]]; then
-                status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
-            else
-                run_status=$(echo "${api_run_tsv}" | cut -f1)
-                ini=$(echo "${api_run_tsv}" | cut -f2)
-                ini=${ini/.ini/}
-                status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t$set_name"
-            fi
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t${set_name}"
         fi
         echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
    done | sort -k1,1 -k3,3

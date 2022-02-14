@@ -87,7 +87,7 @@ for seq_dir in "${seq_dirs[@]}"; do
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
             if [[ "${yld}" == "" && "${req}" != ""  ]]; then
-                # This happens when no yield is registered yet, but sample is registered properly
+                # This happens when no FASTQ files are registered yet, but the sample is registered properly
                 yld="0"
             fi
         fi

@@ -1015,6 +1015,15 @@ locate_linx_plot_directory() {
     echo ${linx_plot_dir}
 }
 
+locate_linx_svs() {
+    local run_dir=$1
+    local svs_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.svs.tsv")
+    if [[ -z "${svs_tsv}" ]]; then
+        error "Unable to locate linx svs tsv in ${run_dir}."
+    fi
+    echo ${svs_tsv}
+}
+
 ##################################### Sigs #####################################
 
 locate_sigs_dir() {
