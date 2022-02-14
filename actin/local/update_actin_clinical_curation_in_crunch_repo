@@ -14,6 +14,7 @@ do_update_actin_clinical_curation_file "${dir}/${prefix} - ECG.tsv" "${dir}/ecg.
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Infection.tsv" "${dir}/infection.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Cancer Related Complication.tsv" "${dir}/cancer_related_complication.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Toxicity.tsv" "${dir}/toxicity.tsv"
+do_update_actin_clinical_curation_file "${dir}/${prefix} - Molecular Test.tsv" "${dir}/molecular_test.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Medication Dosage.tsv" "${dir}/medication_dosage.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Medication Category.tsv" "${dir}/medication_category.tsv"
 
