@@ -16,9 +16,17 @@ cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
 if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"' ||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ]]; then
-  run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | tail -n 1)
+  if [[ ${cohort} == "dna_analysis_report"* ]]; then
+    run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | grep "Somatic" | tail -n 1)
+  else
+    run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | grep "Shallow" | tail -n 1)
+  fi
 elif [[ ${cohort} == '"CORE"' || ${cohort} == '"CORELR02"' || ${cohort} == '"CORERI02"' || ${cohort} == '"CORELR11"' || ${cohort} == '"CORESC11"' ]]; then
-    run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}'  | tail -n 1)
+  if [[ ${cohort} == "dna_analysis_report"* ]]; then
+      run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}' | grep "Somatic" | tail -n 1)
+    else
+      run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}' | grep "Shallow" | tail -n 1)
+    fi
 else
     warn "Cohort of sample isn't assigned"
 fi
