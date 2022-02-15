@@ -30,10 +30,8 @@ billing_project="hmf-ops"
 service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
 
 info "Start of ${script_name}"
-info "Switching to service account ${service_account}"
-# The "Updated property [core/account]." response is send to stderr: capture and print as info msg
-msg=$(gcloud config set account "${service_account}" 2>&1) || die "Unable to switch to service account"
-info "${msg}"
+current_gcp_account=$(gcloud config get-value account)
+[[ "${current_gcp_account}" == "${service_account}" ]] || die "Not logged in as ${service_account}. Exiting."
 
 function main() {
     # Make sure only one run exists for the set
