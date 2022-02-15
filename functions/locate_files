@@ -47,7 +47,7 @@ locate_prod_lilac() {
 }
 
 locate_pilot_lilac() {
-    echo "/data/tools/lilac/pilot/lilac.jar"
+    echo "/data/experiments/tools/lilac.jar"
 }
 
 locate_prod_cuppa() {

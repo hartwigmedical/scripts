@@ -30,6 +30,7 @@ rna_bam_command=""
 if [[ -f ${tumor_rna_hla_bam} ]]; then
     rna_bam_command="-rna_bam ${tumor_rna_hla_bam}"
 fi
+
 java -jar ${lilac_jar} \
     -sample ${tumor_sample} \
     -resource_dir "/data/resources/crunch/lilac" \
