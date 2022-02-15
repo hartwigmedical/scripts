@@ -43,7 +43,8 @@ done > "${create_job}"
 chmod +x "${create_job}"
 
 info "Executing job script (see ${create_log})"
-parallel --jobs 0 -I% --max-args 1 % < "${create_job}" > "${create_log}" 2>&1
+maximum_jobs=$(($(nproc) -1))
+parallel --jobs "${maximum_jobs}" -I% --max-args 1 % < "${create_job}" > "${create_log}" 2>&1
 
 info "Printing any potential non INFO lines from log here"
 grep -v '\[INFO\]' "${create_log}"
