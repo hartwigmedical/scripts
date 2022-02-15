@@ -43,6 +43,8 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 
+info "Running PROTECT on ${run_dir}"
+
 java -Xms2G -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \

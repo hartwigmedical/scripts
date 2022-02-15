@@ -20,6 +20,8 @@ create_or_cleanup_dir ${output_directory}
 
 actin_jar="$(locate_pilot_actin)"
 
+info "Running ACTIN ORANGE interpreter on ${sample}"
+
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json ${orange_json} \
     -serve_bridge_tsv ${serve_bridge_tsv} \

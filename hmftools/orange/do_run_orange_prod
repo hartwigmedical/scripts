@@ -78,6 +78,8 @@ if [[ ! -z ${cuppa_feature_plot} ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
 
+info "Running ORANGE on ${run_dir}"
+
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
