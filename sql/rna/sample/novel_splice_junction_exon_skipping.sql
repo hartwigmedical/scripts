@@ -9,6 +9,6 @@ LEFT JOIN clinical
 ON a.sampleId=clinical.sampleId
 LEFT JOIN canonicalTranscript
 ON a.gene=canonicalTranscript.gene
-WHERE a.sampleId in ('XXX')
+WHERE a.sampleId IN ('XXX')
 GROUP BY a.sampleId, a.gene
 ORDER BY a.gene, junctionStart;
