@@ -21,7 +21,6 @@ sage_jar=$(locate_prod_sage)
 rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
 create_or_cleanup_dir ${rna_sage_directory}
 
-
 germline_input_vcf=$(locate_purple_germline_variants ${run_dir})
 germline_out="${rna_sage_directory}/${sample}.purple.germline.with_rna.vcf.gz"
 

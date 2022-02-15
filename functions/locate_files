@@ -15,7 +15,7 @@ locate_pilot_actin() {
 }
 
 locate_pilot_isofox() {
-    echo "/data/tools/isofox/pilot/isofox.jar"
+    echo "/data/experiments/tools/isofox.jar"
 }
 
 locate_prod_sage() {
