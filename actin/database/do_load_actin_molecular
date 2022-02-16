@@ -18,7 +18,7 @@ db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
 info "Loading all molecular data into ACTIN database at ${actin_database_name}"
-for run_dir in $(locate_actin_molecular_directory); do
+for run_dir in $(locate_actin_molecular_directory)/*; do
     sample=$(basename ${run_dir})
     molecular_json=$(locate_actin_molecular_json ${sample})
     echo "${sample}: ${molecular_json}"
