@@ -21,18 +21,24 @@ trap exit_handler EXIT
 
 while true; do
     find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read -r flowcell_path; do
-        echo "Starting BCL upload of ${flowcell_path}"
-        gs_path="gs://${bucket}/$(basename $flowcell_path)"
-        gcloud auth activate-service-account --key-file "${gcp_cred}"
-        rsync_bcls $flowcell_path $gs_path
+        upload_complete="${flowcell_path}/.gcp_upload_complete"
+        if [[ ! -f $upload_complete ]]; then
+            echo "Starting BCL upload of ${flowcell_path}"
+            gs_path="gs://${bucket}/$(basename $flowcell_path)"
+            gcloud auth activate-service-account --key-file "${gcp_cred}"
+            rsync_bcls $flowcell_path $gs_path
     
-        rtacomplete_path="${flowcell_path}/RTAComplete.txt"
-        if [[ -f "${rtacomplete_path}" ]]; then
-          date --date="@$(stat -c '%Y' "${rtacomplete_path}")" "+%Y-%m-%d %H:%M:%S %z" > ${flowcell_path}/RTAComplete.timestamp
-          rsync_bcls $flowcell_path $gs_path
-          gsutil cp ${rtacomplete_path} $gs_path
+            rtacomplete_path="${flowcell_path}/RTAComplete.txt"
+            if [[ -f "${rtacomplete_path}" ]]; then
+              date --date="@$(stat -c '%Y' "${rtacomplete_path}")" "+%Y-%m-%d %H:%M:%S %z" > ${flowcell_path}/RTAComplete.timestamp
+              rsync_bcls $flowcell_path $gs_path
+              gsutil cp ${rtacomplete_path} $gs_path
+            fi
+            echo "${flowcell_path} upload succeeded"
+            touch $upload_complete
+        else
+            echo "${flowcell_path} already uploaded"
         fi
-        echo "${flowcell_path} upload succeeded"
     done
 done
 
