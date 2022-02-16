@@ -11,11 +11,9 @@ fi
 run_id=$( hmf_api_get "reports/created" | jq '.[] | select(.sample_name == "'${sample}'") | .run_id' | tail -1 )
 set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
 
-
 ### create temp folder in VM
 temp_folder_path=$( pwd )"/temp_cp_${sample}"
 mkdir $temp_folder_path
-
 
 input "Do you want to copy the final OncoAct report? y or n"
 read answer_report
@@ -26,8 +24,9 @@ fi
 input "Do you want to copy the ORANGE report? y or n"
 read answer_orange
 if [[ ${answer_orange} == "y" ]]; then
-    gsutil cp gs://patient-reporter-final-prod-1/${sample}*.pdf ~/hmf/tmp/
     gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ${temp_folder_path}/
 fi
 
-#rm -r ${temp_folder_path}/ 2>&1
+gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-1":${temp_folder_path}/ ./hmf_reports
+rm -r ${temp_folder_path}/ 2>&1
+
