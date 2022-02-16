@@ -11,22 +11,20 @@ fi
 run_id=$( hmf_api_get "reports/created" | jq '.[] | select(.sample_name == "'${sample}'") | .run_id' | tail -1 )
 set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
 
-### create temp folder in VM
-temp_folder_path=$( pwd )"/temp_cp_${sample}"
-mkdir $temp_folder_path
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp;  gsutil cp gs://patient-reporter-final-prod-1/${sample}*.pdf ~/temp; gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ~/temp"
 
 echo "Do you want to copy the final OncoAct report? y or n"
 read answer_report
 if [[ ${answer_report} == "y" ]]; then
-    gsutil cp gs://patient-reporter-final-prod-1/${sample}*.pdf ${temp_folder_path}/
+    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*report.pdf ~/hmf/tmp/
 fi
 
 echo "Do you want to copy the ORANGE report? y or n"
 read answer_orange
 if [[ ${answer_orange} == "y" ]]; then
-    gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ${temp_folder_path}/
+    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*orange.pdf ~/hmf/tmp/
 fi
 
-gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":${temp_folder_path}/ ./hmf_reports
-rm -r ${temp_folder_path}/ 2>&1
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "rm -r ~/temp/ 2>&1"
+
 
