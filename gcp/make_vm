@@ -3,36 +3,41 @@
 source message_functions || exit 1
 
 vm_name=""
+
 image_name=""
 image_project="hmf-build"
+image_family="hmf-vm"
+
 zone="europe-west4-a"
 machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
-service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
 network="projects/hmf-vpc-network/global/networks/vpc-network-prod-1"
 subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
-image_family="hmf-vm"
+
 preemptible="FALSE"
-vm_project="hmf-crunch"
 startup_script="NONE"
+umbrella_scope="crunch"
 cost_center="experiments"
 
 print_usage() {
     script=$(basename "$0")
     echo ""
-    echo "Descr: Creates a VM (using account ${service_account})"
-    echo "Usage: ${script} -n <NAME> [options]"
-    echo "Examp: ${script} -n ${USER}-test-vm"
+    echo "Descr: Creates a VM with appropriate defaults"
+    echo "Usage: ${script} -n <vm-name> [options]"
+    echo "Examp: ${script} -n ${USER}-make-vm-test"
     echo ""
     echo "Options:"
-    echo "  -i image_name          Image name [default is most recent ${image_family} image]"
+    echo "  -i image_name          Image name [default is most recent image of family]"
     echo "  -p image_project       Image project [${image_project}]"
+    echo "  -f image_family        Image family [${image_family}]"
     echo "  -m machine_type        VM machine type [${machine_type}]"
     echo "  -s disk_size           VM boot disk size [${disk_size}]"
     echo "  -t disk_type           VM boot disk type [${disk_type}]"
     echo "  -e                     Make VM pre-emptible"
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
+    echo "  -u umbrella_scope      Can be 'crunch' or 'ops' and configures service account and VM project [${umbrella_scope}]"
+    echo "  -c cost_center         Adjust if you want to track costs [${cost_center}]"
     echo ""
     echo "See also:"
     echo "  https://cloud.google.com/compute/docs/disks"
@@ -40,15 +45,18 @@ print_usage() {
     echo "  https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
     echo "  gcloud --project ${image_project} compute images list | grep ${image_family}"
     echo "  gcloud --project ${vm_project} compute compute instances list"
-    echo "  gcloud compute instances delete --zone ${zone} --quiet \$vm"
-    echo "  gcloud compute instances ssh \$vm"
+    echo ""
+    echo "Commands:"
+    echo "  gcloud compute instances delete --zone ${zone} --quiet {your-vm}"
+    echo "  gcloud compute instances ssh {your-vm}"
     echo ""
     exit 1
 }
 
-while getopts ':n:p:f:i:m:s:t:ed:c:' flag; do
+while getopts ':n:u:p:f:i:m:s:t:ed:c:' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
+        u) umbrella_scope=${OPTARG} ;;
         i) image_name=${OPTARG} ;;
         p) image_project=${OPTARG} ;;
         f) image_family=${OPTARG} ;;
@@ -67,7 +75,16 @@ if [[ -z "${vm_name}" || "$1" == "-h" || "$1" == "--help" ]]; then
     print_usage
 fi
 
-# if VM will be created with crunch service account then make sure that project is set
+if [[ "${umbrella_scope}" == "crunch" ]]; then
+    service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
+    vm_project="hmf-crunch"
+elif [[ "${umbrella_scope}" == "ops" ]]; then
+    service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
+    vm_project="hmf-ops"
+else
+    die "Unknown umbrella scope [${umbrella_scope}]"
+fi
+
 current_project=$(gcloud config get-value project) || die "Unable to get-value project"
 if [[ ! "${current_project}" == "${vm_project}" ]]; then
     info "Current config wants to create VM in ${vm_project} but current project is ${current_project}"
@@ -75,8 +92,8 @@ if [[ ! "${current_project}" == "${vm_project}" ]]; then
     exit 1
 fi
 
-info "Checking if name of VM is available (${vm_name})"
-gcloud compute instances describe "${vm_name}" > /dev/null 2>&1 && die "VM with name ${vm_name} already exists. Exiting."
+info "Checking availability of VM name (${vm_name})"
+gcloud compute instances describe "${vm_name}" > /dev/null 2>&1 && die "A VM with name ${vm_name} already exists. Exiting."
 
 if [[ -z "${image_name}" ]]; then
     info "Searching for latest ${image_family} image"
@@ -85,12 +102,11 @@ if [[ -z "${image_name}" ]]; then
 fi
 
 info "Details of VM to be created:"
-info "          Name: ${vm_name}"
-info "       Project: ${current_project}"
-info "         Image: ${image_name} in ${image_project}"
-info "        Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
-info "       Account: ${service_account}"
-info "Startup script: ${startup_script}"
+info "       VM: ${vm_name} @ ${current_project}"
+info "    Image: ${image_name} @ ${image_project}"
+info "   Config: ${machine_type}|${disk_size}|${disk_type}|${zone}|preemptible=${preemptible}"
+info "  Account: ${service_account}"
+info "   Script: ${startup_script}"
 
 info "Press [ENTER] to create VM..."
 read -r -s
