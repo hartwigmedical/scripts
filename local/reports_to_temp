@@ -27,6 +27,6 @@ if [[ ${answer_orange} == "y" ]]; then
     gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ${temp_folder_path}/
 fi
 
-gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-1":${temp_folder_path}/ ./hmf_reports
+gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":${temp_folder_path}/ ./hmf_reports
 rm -r ${temp_folder_path}/ 2>&1
 
