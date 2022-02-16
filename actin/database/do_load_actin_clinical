@@ -19,7 +19,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
-info "Loading all clinical data into ACTIN database at ${actin_database_name}"
+info "Loading all clinical data into ACTIN database '${actin_database_name}'"
 java -cp ${actin_jar} com.hartwig.actin.database.clinical.ClinicalLoaderApplication \
     -clinical_directory ${clinical_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \

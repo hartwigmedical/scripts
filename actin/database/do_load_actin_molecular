@@ -17,10 +17,11 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
-info "Loading all molecular data into ACTIN database at ${actin_database_name}"
+info "Loading all molecular data into ACTIN database '${actin_database_name}'"
 for run_dir in $(locate_actin_molecular_directory)/*; do
     sample=$(basename ${run_dir})
     molecular_json=$(locate_actin_molecular_json ${sample})
+
     java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplication \
         -molecular_json ${molecular_json} \
         -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
