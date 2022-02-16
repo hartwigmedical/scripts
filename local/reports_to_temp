@@ -15,13 +15,13 @@ set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
 temp_folder_path=$( pwd )"/temp_cp_${sample}"
 mkdir $temp_folder_path
 
-input "Do you want to copy the final OncoAct report? y or n"
+echo "Do you want to copy the final OncoAct report? y or n"
 read answer_report
 if [[ ${answer_report} == "y" ]]; then
     gsutil cp gs://patient-reporter-final-prod-1/${sample}*.pdf ${temp_folder_path}/
 fi
 
-input "Do you want to copy the ORANGE report? y or n"
+echo "Do you want to copy the ORANGE report? y or n"
 read answer_orange
 if [[ ${answer_orange} == "y" ]]; then
     gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ${temp_folder_path}/
