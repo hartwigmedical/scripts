@@ -21,9 +21,8 @@ info "Loading all molecular data into ACTIN database at ${actin_database_name}"
 for run_dir in $(locate_actin_molecular_directory)/*; do
     sample=$(basename ${run_dir})
     molecular_json=$(locate_actin_molecular_json ${sample})
-    echo "${sample}: ${molecular_json}"
-#    java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplication \
-#        -molecular_json ${molecular_json} \
-#        -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-#        "$@"
+    java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplication \
+        -molecular_json ${molecular_json} \
+        -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+        "$@"
 done
