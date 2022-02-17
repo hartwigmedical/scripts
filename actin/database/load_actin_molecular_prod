@@ -2,7 +2,13 @@
 
 source locate_files || exit 1
 
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
 actin_jar="$(locate_pilot_actin)"
 actin_database_name="actin"
 
-do_load_actin_molecular ${actin_jar} ${actin_database_name}
+do_load_actin_molecular ${sample} ${actin_jar} ${actin_database_name}

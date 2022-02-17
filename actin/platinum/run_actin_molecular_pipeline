@@ -44,3 +44,4 @@ run_actin_rna_post_process ${run_dir}
 
 # Intepret ORANGE results for ACTIN ingestion
 actin_orange_interpreter_pilot ${sample}
+load_actin_molecular_pilot ${sample}
