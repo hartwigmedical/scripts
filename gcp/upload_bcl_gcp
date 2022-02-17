@@ -31,6 +31,7 @@ while true; do
             rta_complete="${flowcell_path}/RTAComplete.txt"
             if [[ -f "$rta_complete" ]]; then
                 date --date="@$(stat -c '%Y' "$rta_complete")" "+%Y-%m-%d %H:%M:%S %z" > "${flowcell_path}/RTAComplete.timestamp"
+                echo "Starting final BCL upload of ${flowcell_path}"
                 rsync_bcls "$flowcell_path" "$gs_path"
                 gsutil cp "$rta_complete" "$gs_path"
                 echo "${flowcell_path} final upload succeeded"
