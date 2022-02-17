@@ -13,6 +13,7 @@ function exit_handler() {
 }
 
 function rsync_bcls() {
+    gcloud auth activate-service-account --key-file "${gcp_cred}"
     gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 -o GSUtil:parallel_composite_upload_threshold=350M \
         rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*|.*\.tmp\..*|RTAComplete.txt" "$1" "$2"
 }
@@ -25,23 +26,18 @@ while true; do
         if [[ ! -f $upload_complete ]]; then
             # Slightly more correct would be to use CopyComplete.txt instead of RTAComplete.txt
             # but BCL data seems always complete once RTAComplete.txt is present and means conversion can start an hour earlier
+            echo "Starting BCL upload of ${flowcell_path}"
+            gs_path="gs://${bucket}/$(basename "$flowcell_path")"
+            rsync_bcls "$flowcell_path" "$gs_path"
             rta_complete="${flowcell_path}/RTAComplete.txt"
             if [[ -f "$rta_complete" ]]; then
+                echo "Upload from sequencer is now complete, doing a final sync of ${flowcell_path}"
                 date --date="@$(stat -c '%Y' "$rta_complete")" "+%Y-%m-%d %H:%M:%S %z" > "${flowcell_path}/RTAComplete.timestamp"
-                echo "Starting final BCL upload of ${flowcell_path}"
-                gcloud auth activate-service-account --key-file "${gcp_cred}"
                 rsync_bcls "$flowcell_path" "$gs_path"
                 gsutil cp "$rta_complete" "$gs_path"
-                echo "${flowcell_path} final BCL upload succeeded"
+                echo "Upload of ${flowcell_path} succeeded"
                 date "+%Y-%m-%d %H:%M:%S %z" > "$upload_complete"
-            else
-                echo "Starting intermediate BCL upload of ${flowcell_path}"
-                gs_path="gs://${bucket}/$(basename "$flowcell_path")"
-                gcloud auth activate-service-account --key-file "${gcp_cred}"
-                rsync_bcls "$flowcell_path" "$gs_path"
             fi
-        else
-            echo "${flowcell_path} SKIPPING UPLOAD: final upload already taken place"
         fi
     done
 done
