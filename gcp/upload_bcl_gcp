@@ -24,20 +24,20 @@ while true; do
         upload_complete="${flowcell_path}/GCPUploadComplete.txt"
         if [[ ! -f $upload_complete ]]; then
             echo "Starting BCL upload of ${flowcell_path}"
-            gs_path="gs://${bucket}/$(basename $flowcell_path)"
+            gs_path="gs://${bucket}/$(basename "$flowcell_path")"
             gcloud auth activate-service-account --key-file "${gcp_cred}"
-            rsync_bcls $flowcell_path $gs_path
+            rsync_bcls "$flowcell_path" "$gs_path"
     
-            rtacomplete_path="${flowcell_path}/RTAComplete.txt"
-            if [[ -f "${rtacomplete_path}" ]]; then
-                date --date="@$(stat -c '%Y' "${rtacomplete_path}")" "+%Y-%m-%d %H:%M:%S %z" > ${flowcell_path}/RTAComplete.timestamp
-                rsync_bcls $flowcell_path $gs_path
-                gsutil cp ${rtacomplete_path} $gs_path
+            rta_complete="${flowcell_path}/RTAComplete.txt"
+            if [[ -f "$rta_complete" ]]; then
+                date --date="@$(stat -c '%Y' "$rta_complete")" "+%Y-%m-%d %H:%M:%S %z" > "${flowcell_path}/RTAComplete.timestamp"
+                rsync_bcls "$flowcell_path" "$gs_path"
+                gsutil cp "$rta_complete" "$gs_path"
+                echo "${flowcell_path} final upload succeeded"
+                date "+%Y-%m-%d %H:%M:%S %z" > "$upload_complete"
             fi
-            echo "${flowcell_path} upload succeeded"
-            date "+%Y-%m-%d %H:%M:%S %z" > $upload_complete
         else
-            echo "${flowcell_path} already uploaded"
+            echo "${flowcell_path} SKIPPING UPLOAD: final upload already taken place"
         fi
     done
 done
