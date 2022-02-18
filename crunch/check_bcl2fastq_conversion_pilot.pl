@@ -41,15 +41,15 @@ my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
 my $HELP =<<HELP;
 
   Description:
-    Parses conversion metrics from bclconvert output files and performs the flowcell QC.
+    Parses conversion metrics from bclconvert output and performs the flowcell QC.
     
   Usage:
     $SCRIPT -runDir \${run-path}
     - OR -
-    $SCRIPT -sampleSheetCsv SampleSheet.csv -runInfoXml RunInfo.xml -qualityCsv Quality_Metrics.csv -demuxCsv Demultiplex_Stats.csv
+    $SCRIPT -sampleSheet SampleSheet.csv -runInfoXml RunInfo.xml -qualityCsv Quality_Metrics.csv -demuxCsv Demultiplex_Stats.csv
     
   Options:
-    -sampleSheetCsv <s>   Path to SampleSheet.csv file
+    -sampleSheet    <s>   Path to SampleSheet.csv file
     -runInfoXml     <s>   Path to RunInfo.xml file
     -qualityCsv     <s>   Path to Quality_Metrics.csv file
     -demuxCsv       <s>   Path to Demultiplex_Stats.csv file
@@ -97,6 +97,8 @@ if (defined $run_path){
 }
 -f $run_info_xml_path || die "[ERROR] RunInfo xml does not exist ($run_info_xml_path)\n";
 -f $sample_sheet_csv_path || die "[ERROR] SampleSheet csv does not exist ($sample_sheet_csv_path)\n";
+-f $quality_metrics_csv_path || die "[ERROR] Quality Metrics csv does not exist ($quality_metrics_csv_path)\n";
+-f $demultiplex_stats_csv_path || die "[ERROR] Demultiplex csv does not exist ($demultiplex_stats_csv_path)\n";
 
 my $ssht_info = readSampleSheet($sample_sheet_csv_path);
 my $platform = determinePlatformByString($ssht_info->{platform}, \@KNOWN_PLATFORMS);
@@ -153,8 +155,6 @@ sub aggregateBclconvertInfo{
             }
         }
     }
-    # addPrintFields(\%out, $fid);
-    # addGeneralStats(\%out, $fid, $cycle_string);
     return \%out;
 }
 
