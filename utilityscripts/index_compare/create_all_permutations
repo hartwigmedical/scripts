@@ -1,21 +1,30 @@
 #!/usr/bin/env python
 
+import sys
+import os
+
+
 def printAllKLength(set, k):
- 
-    n  = len(set)
+    n = len(set)
     printAllKLengthRec(set, "", n, k)
- 
+
+
 def printAllKLengthRec(set, prefix, n, k):
-    if (k == 0) :
+    if k == 0:
         print(prefix)
         return
     for i in range(n):
-        newPrefix = prefix + set[i]
-        printAllKLengthRec(set, newPrefix, n, k - 1)
- 
+        new_prefix = prefix + set[i]
+        printAllKLengthRec(set, new_prefix, n, k - 1)
+
+
 if __name__ == "__main__":
-     
-    set2 = ['A', 'C', 'T', 'G']
-    k = 2
-    printAllKLength(set2, k)
+    script = os.path.basename(__file__)
+    if len(sys.argv) == 2:
+        k = int(sys.argv[1])
+    else:
+        sys.exit("Usage: %s <length-of-index-sequences>" % script)
+
+    set = ['A', 'C', 'T', 'G']
+    printAllKLength(set, k)
  
