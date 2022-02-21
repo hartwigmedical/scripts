@@ -58,10 +58,10 @@ defined $i7tsv || die "[ERROR] i7tsv not defined\n";
 defined $i5tsv || die "[ERROR] i7tsv not defined\n";
 
 say "[INFO] Starting with $outfile";
-#my $i7idx = readIndexesTsv($i7tsv, "#i7name", "i7seq");
-#my $i5idx = readIndexesTsv($i5tsv, "#i5name", "i5seq");
-my $i7idx = readIndexesTsv($i7tsv, "#name", "seq");
-my $i5idx = readIndexesTsv($i5tsv, "#name", "seq");
+my $i7idx = readIndexesTsv($i7tsv, "#i7name", "i7seq");
+my $i5idx = readIndexesTsv($i5tsv, "#i5name", "i5seq");
+#my $i7idx = readIndexesTsv($i7tsv, "#name", "seq");
+#my $i5idx = readIndexesTsv($i5tsv, "#name", "seq");
 combineAndPrint($i7idx, $i5idx, $outfile);
 
 sub combineAndPrint {
