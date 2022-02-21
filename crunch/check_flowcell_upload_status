@@ -11,9 +11,13 @@ cleanup=()
 while read -r flowcell_path; do
     flowcell_name=$(basename "${flowcell_path}")
     conversion_log="${flowcell_path}/conversionDone.txt"
+    upload_log="${flowcell_path}/GCPUploadComplete.txt"
 
     if [[ ! -f "${conversion_log}" ]]; then
         warn "  ${flowcell_name} not converted locally yet!!"
+        continue
+    elif [[ ! -f "${upload_log}" ]]; then
+        warn "  ${flowcell_name} not uploaded yet!!"
         continue
     fi
 
