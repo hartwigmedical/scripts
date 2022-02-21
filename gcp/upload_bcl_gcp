@@ -23,7 +23,7 @@ trap exit_handler EXIT
 while true; do
     find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read -r flowcell_path; do
         upload_complete="${flowcell_path}/GCPUploadComplete.txt"
-        if [[ ! -f $upload_complete ]]; then
+        if [[ ! -f $upload_complete && -d $flowcell_path ]]; then
             # Slightly more correct would be to use CopyComplete.txt instead of RTAComplete.txt
             # but BCL data seems always complete once RTAComplete.txt is present and means conversion can start an hour earlier
             echo "Starting BCL upload of ${flowcell_path}"
