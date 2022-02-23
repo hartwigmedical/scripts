@@ -24,17 +24,15 @@ while true; do
     find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read -r flowcell_path; do
         upload_complete="${flowcell_path}/GCPUploadComplete.txt"
         if [[ ! -f $upload_complete && -d $flowcell_path ]]; then
-            # Slightly more correct would be to use CopyComplete.txt instead of RTAComplete.txt
-            # but BCL data seems always complete once RTAComplete.txt is present and means conversion can start an hour earlier
             echo "Starting BCL upload of ${flowcell_path}"
             gs_path="gs://${bucket}/$(basename "$flowcell_path")"
             rsync_bcls "$flowcell_path" "$gs_path"
-            rta_complete="${flowcell_path}/RTAComplete.txt"
-            if [[ -f "$rta_complete" ]]; then
+            local_data_complete="${flowcell_path}/RTAComplete.txt"
+            if ( find ${flowcell_path} -maxdepth 1 -name "RTAComplete.txt" -mmin +20 | grep . ); then
                 echo "Upload from sequencer is now complete, doing a final sync of ${flowcell_path}"
-                date --date="@$(stat -c '%Y' "$rta_complete")" "+%Y-%m-%d %H:%M:%S %z" > "${flowcell_path}/RTAComplete.timestamp"
+                date --date="@$(stat -c '%Y' "$local_data_complete")" "+%Y-%m-%d %H:%M:%S %z" > "${flowcell_path}/RTAComplete.timestamp"
                 rsync_bcls "$flowcell_path" "$gs_path"
-                gsutil cp "$rta_complete" "$gs_path"
+                gsutil cp "$local_data_complete" "$gs_path"
                 echo "Upload of ${flowcell_path} succeeded"
                 date "+%Y-%m-%d %H:%M:%S %z" > "$upload_complete"
             fi
