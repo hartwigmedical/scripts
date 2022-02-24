@@ -43,7 +43,7 @@ main () {
     base_tum_sample=$(jq -r '.tumor.sampleName' "${base_meta_file}")
     test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-    tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss health_checker \
+    tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss_germline gripss_somatic health_checker \
       linx peach purple protect sage_germline sage_somatic sigs virusbreakend)
 
     print_header "Settings"
