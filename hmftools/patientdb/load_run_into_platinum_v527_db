@@ -11,7 +11,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 patient_db_jar=/data/experiments/korneel_experiment_v527_database_loader/patient-db-jar/patient-db.jar
-database="platinum_v27"
+database="platinum_v527"
 credentials=$(prod_writer_sql_credentials)
 
 do_load_run_into_db ${run_dir} ${patient_db_jar} ${database} "${credentials}"
