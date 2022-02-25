@@ -56,6 +56,8 @@ main() {
     new_metadata_file="${new_run_url}/metadata.json"
     truth_sample=$(gsutil cat "$truth_metadata_file" | jq -r '.tumor.sampleName')
     new_sample=$(gsutil cat "$new_metadata_file" | jq -r '.tumor.sampleName')
+    truth_version_tag="TODO"
+    new_version_tag="TODO"
 
     info "Creating setup and downloading runs:"
     info "  Out path: ${out_dir}"
@@ -69,8 +71,14 @@ main() {
     download_run_from_gcp "${new_run_url}" "${new_dir_path}" "${out_logs_dir}"
 
     info "Finished with $script"
-    info "Next step: $(printf "nohup verify_pipeline_run -o %s/verification -t %s -n %s > %s/verification.log &" \
-      "${out_dir}" "${truth_dir_path}" "${new_dir_path}" "${out_dir}")"
+    next_cmd="nohup verify_pipeline_run"
+    next_cmd+=" --out_dir ${out_dir}/verification"
+    next_cmd+=" --truth_run_dir ${truth_dir_path}"
+    next_cmd+=" --new_run_dir ${new_dir_path}"
+    next_cmd+=" --truth_version_tag ${truth_version_tag}"
+    next_cmd+=" --new_version_tag ${new_version_tag}"
+    next_cmd+=" > ${out_dir}/verification.log &"
+    info "Next step: $next_cmd"
 }
 
 check_pipeline_version_file () {
