@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-patient_db_jar=/data/experiments/korneel_experiment_v527_database_loader/patient-db-jar/patient-db.jar
+patient_db_jar=/data/tools/patient-db/3.67/patient-db.jar
 database="platinum_v527"
 credentials=$(prod_writer_sql_credentials)
 
