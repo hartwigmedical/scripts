@@ -13,11 +13,8 @@ print_usage(){
     echo "  $self 'hospitals'"
     echo "  $self 'patients/tumorsamples/COREDBxxxxxx'"
     echo "  $self 'statuses/frbarcodes/FRxxxxxx'"
-    echo "Options:"
-    echo "  -t  Use testing/pilot environment instead of production"
     echo "Remarks:"
     echo "  For more endpoints see https://github.com/hartwigmedical/LAMA."
-    echo "  Options need to be placed before any other parameters."
     echo ""
     exit 1
 }
