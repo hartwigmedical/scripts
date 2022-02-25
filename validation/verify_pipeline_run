@@ -20,17 +20,18 @@ cat <<EOM
  Optional arguments:
    --disable_sanity_checks    Disable extra checks
    --patientdb_jar [jar]      Use [jar] instead of default [${patientdb_jar}]
------"
+-----
 EOM
     exit 1
 }
 
-args=$(getopt --long disable_sanity_checks,out_dir:,truth_run_dir:,truth_run_version:,new_run_dir:,new_run_version:,patientdb_jar: -- "$@")
+sanity_checks="TRUE"
+args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_run_version:,new_run_dir:,new_run_version:,patientdb_jar: -- "$@")
+[[ $? != 0 ]] && echo "Bad arguments" && exit 1
 eval set -- "$args"
 
-sanity_checks="TRUE"
 while true; do
-    case "${1}" in
+    case "$1" in
         --out_dir) out_dir=${2} ; shift 2 ;;
         --truth_run_dir) truth_run_dir=${2} ; shift 2 ;;
         --truth_run_version) truth_run_version=${2} ; shift 2 ;;
@@ -39,11 +40,11 @@ while true; do
         --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
         --patientdb_jar) patientdb_jar=${2} ; shift 2 ;;
         -- ) shift; break ;;
-        *) print_usage ;;
     esac
 done
 
 if [[ -z "${out_dir}" || -z "${truth_run_dir}" || -z "${new_run_dir}" || -z "${truth_run_version}" || -z "${new_run_version}" ]]; then
+    echo "Missing arguments!"
     print_usage
 fi
 
