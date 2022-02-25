@@ -1,50 +1,62 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 script="$(basename "$0")"
+patientdb_jar="$(locate_prod_patient_db)"
 
-print_usage(){
-    echo "-----"
-    echo " Descr: Verifies a new COLO829T Somatic pipeline run"
-    echo " Usage: $script -o <out_dir> -t <truth_dir> -n <truth_dir>"
-    echo " Options:"
-    echo "   -o  out_dir    Path to output directory"
-    echo "   -t  truth_run  Path to directory of truth run"
-    echo "   -n  new_run    Path to directory of new run to be verified"
-    echo "   -f  force      Continue if output directory already exists"
-    echo " Example:"
-    echo "   $script -o /path/to/outdir -t /path/to/COLO829v003T_524 -n /path/to/COLO829v003T_525"
-    echo "-----"
+print_usage() {
+cat <<EOM
+-----
+ Descr: Verifies a new COLO829T Somatic pipeline run
+ Usage: $script [required arguments] [optional arguments]
+ Required arguments:
+   --out_dir [dir]            Output to directory [dir]
+   --truth_run_dir [dir]      Use [dir] as location containing truth run
+   --truth_run_version [ver]  Short version of truth run (eg "527")
+   --new_run_dir [dir]        Use [dir] as location containing run to be verified         
+   --new_run_version          Short version of run being verified (eg "528")
+ Optional arguments:
+   --disable_sanity_checks    Disable extra checks
+   --patientdb_jar [jar]      Use [jar] instead of default [${patientdb_jar}]
+-----"
+EOM
     exit 1
 }
 
+args=$(getopt --long disable_sanity_checks,out_dir:,truth_run_dir:,truth_run_version:,new_run_dir:,new_run_version:,patientdb_jar: -- "$@")
+eval set -- "$args"
+
 sanity_checks="TRUE"
-while getopts ':fo:t:n:' flag; do
-    case "${flag}" in
-        f) sanity_checks="FALSE" ;;
-        o) out_dir=${OPTARG} ;;
-        t) truth_run=${OPTARG} ;;
-        n) new_run=${OPTARG} ;;
-        *) print_usage
-        exit 1 ;;
+while true; do
+    case "${1}" in
+        --out_dir) out_dir=${2} ; shift 2 ;;
+        --truth_run_dir) truth_run_dir=${2} ; shift 2 ;;
+        --truth_run_version) truth_run_version=${2} ; shift 2 ;;
+        --new_run_dir) new_run_dir=${2} ; shift 2 ;;
+        --new_run_version) new_run_version=${2} ; shift 2 ;;
+        --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
+        --patientdb_jar) patientdb_jar=${2} ; shift 2 ;;
+        -- ) shift; break ;;
+        *) print_usage ;;
     esac
 done
 
-if [[ -z "${out_dir}" || -z "${truth_run}" || -z "${new_run}" ]]; then
+if [[ -z "${out_dir}" || -z "${truth_run_dir}" || -z "${new_run_dir}" || -z "${truth_run_version}" || -z "${new_run_version}" ]]; then
     print_usage
 fi
 
 main() {
     info "Starting with script $script"
 
-    truth_run=$(realpath "$truth_run")
-    new_run=$(realpath "$new_run")
+    truth_run=$(realpath "$truth_run_dir")
+    new_run=$(realpath "$new_run_dir")
     
     ## some input sanity checks
     [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir format (${out_dir})?"
-    [[ -f "${new_run}/pipeline.version" ]] || die "Pipeline version file missing (in new run: ${new_run})"
     [[ -d "${new_run}" ]] || die "New run dir not found (${new_run})"
+    [[ -f "${new_run}/pipeline.version" ]] || die "Pipeline version file missing (in new run: ${new_run})"
     [[ -d "${truth_run}" ]] || die "Truth run dir not found (${truth_run})"
     if [[ "${sanity_checks}" == "TRUE" ]]; then
         [[ ! -d "${out_dir}" ]] || die "Output dir exists (${out_dir})"
@@ -100,8 +112,8 @@ main() {
 
     # Somewhat hacky way of replacing the variables of template SQL
     info "Replacing variables in SQL job files"
-    truth_db_schema="hmfpatients"
-    new_db_schema="hmfpatients"
+    truth_db_schema="hmfpatients_${truth_run_version}"
+    new_db_schema="hmfpatients_${new_run_version}"
     for sql_file_name in "${sql_jobs[@]}"; do
         sed -i "s/VARIABLE_TRUTH_SAMPLE_ID/${truth_sample}/g" "${jobs_dir}/${sql_file_name}"
         sed -i "s/VARIABLE_NEW_SAMPLE_ID/${new_sample}/g" "${jobs_dir}/${sql_file_name}"
@@ -126,18 +138,19 @@ main() {
     sql_query_script="${jobs_dir}/run_all_sql_verification_jobs"
 
     #before_db_load_job="${jobs_dir}/run_sql_jobs_before_db_load"
-    #echo "${sql_query_script} ${jobs_dir} ${logs_dir} before_load" > "${before_db_load_job}"
+    #echo "${sql_query_script} ${jobs_dir} ${logs_dir} before_load ${new_db_schema}" > "${before_db_load_job}"
     #chmod +x "${before_db_load_job}"
 
     after_db_load_job="${jobs_dir}/run_sql_jobs_after_db_load"
-    echo "${sql_query_script} ${jobs_dir} ${logs_dir} after_load" > "${after_db_load_job}"
+    echo "${sql_query_script} ${jobs_dir} ${logs_dir} after_load ${new_db_schema}" > "${after_db_load_job}"
     chmod +x "${after_db_load_job}"
 
     info "TODO:"
     info "  1. Inspect all log files in ${logs_dir}"
-    info "  2. Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
-    info "  3. Execute sql queries (nohup ${after_db_load_job} > ${logs_dir}/sql_verification_after_load.log &)"
-    info "  4. Inspect all SQL log files in logs dir (ls ${logs_dir})"
+    info "  2. Ensure database \"${new_db_schema}\" exists in verification instance on GCP"
+    info "  3. Load into DB (nohup ${db_load_script} ${new_run} ${new_db_schema} ${patientdb_jar} > ${logs_dir}/${db_load_script}.log &)"
+    info "  4. Execute sql queries (nohup ${after_db_load_job} > ${logs_dir}/sql_verification_after_load.log &)"
+    info "  5. Inspect all SQL log files in logs dir (ls ${logs_dir})"
     info "Finished with $script"
 }
 

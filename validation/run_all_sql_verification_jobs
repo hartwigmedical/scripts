@@ -5,11 +5,12 @@ source message_functions || exit 1
 jobs_dir=$1
 logs_dir=$2
 tag=$3 # eg "before_load"
+db_schema=$4
 
 find "${jobs_dir}" -type f -name "*.sql" | while read -r sql_file ; do
     job_name="$(basename "${sql_file}")"
     log_file="${logs_dir}/${tag}_${job_name}.log"
     info "Executing ${job_name} (log: ${log_file})"
-    execute_sql_on_pipeline_verification_db "${sql_file}" > "${log_file}"
+    execute_sql_on_pipeline_verification_db "${db_schema}" "${sql_file}" > "${log_file}"
 done
 
