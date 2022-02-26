@@ -10,8 +10,8 @@ SECRET_NAME="mysql-patients-sql-verification-6-writer"
 set -e
 
 run_dir=$1 && shift
-database=$2 && shift
-patient_db_jar=$3
+database=$1 && shift
+patient_db_jar=$1
 
 if [[ -z "${run_dir}" || -z ${database} ]]; then
     echo "Missing arguments!"
