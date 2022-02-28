@@ -135,7 +135,7 @@ locate_prod_ckb_importer() {
 }
 
 locate_pilot_ckb_importer() {
-    echo "/data/tools/ckb-importer/pilot/ckb-importer.jar"
+    echo "/data/ckb_pilot_jar/ckb-importer.jar"
 }
 
 locate_prod_serve() {
