@@ -939,7 +939,9 @@ locate_purple_pilot_structural_variants() {
 
 locate_gripss_structural_variants() {
     local run_dir=$1
-    local gripss_dir=${run_dir}/gripss
+    local gripss_dir_pre527="${run_dir}/gripss"
+    local gripss_dir="${run_dir}/gripss_somatic"
+    [[ -d "${gripss_dir}" ]] || gripss_dir="$gripss_dir_pre527"
 
     local structural_vcf=""
     if [[ -d "${gripss_dir}" ]]; then

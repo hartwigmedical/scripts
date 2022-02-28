@@ -180,8 +180,6 @@ diff_vcf () {
 
 diff_file () {
     local file_suffix=$1 && shift
-    #local base_file_path=$1 && shift
-    #local test_file_path=$1 && shift
 
     # prefix name with * to allow match in case of run path is absolute
     base_file_path=$(find "${base_run_path}" -wholename "*${file_suffix}")
@@ -222,8 +220,8 @@ check_tool_directory () {
     fi
 
     # expect file/dir count to be equal excluding potential symlinks (-not -type l) and backup files (*.bak)
-    base_file_count=$(find "${base_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
-    test_file_count=$(find "${test_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
+    base_file_count=$(find -L "${base_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
+    test_file_count=$(find -L "${test_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
     if [[ ${base_file_count} -ne ${test_file_count} ]]; then
         info_and_warn "  DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool directory (${tool_name})"
     else
