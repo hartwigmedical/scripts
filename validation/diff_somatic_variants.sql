@@ -1,19 +1,19 @@
 SELECT 
-    MIN(pipeline) AS pipeline, chromosome, position, ref, alt, COUNT(*), MIN(adjustedVaf)
+    MIN(pipeline) AS pipeline, chromosome, position, ref, alt, reported, COUNT(*), MIN(adjustedVaf)
 FROM
         (SELECT
-            id, 'OnlyInTruth' AS pipeline, chromosome, position, ref, alt, adjustedVaf
+            id, 'OnlyInTruth' AS pipeline, chromosome, position, ref, alt, adjustedVaf, reported
         FROM
             VARIABLE_TRUTH_DB_SCHEMA.somaticVariant
         WHERE
             sampleId = 'VARIABLE_TRUTH_SAMPLE_ID' AND filter = 'PASS'
     UNION
         SELECT
-            id, 'OnlyInNew' AS pipeline, chromosome, position, ref, alt, adjustedVaf
+            id, 'OnlyInNew' AS pipeline, chromosome, position, ref, alt, adjustedVaf, reported
         FROM
             VARIABLE_NEW_DB_SCHEMA.somaticVariant
         WHERE
             sampleId = 'VARIABLE_NEW_SAMPLE_ID' AND filter = 'PASS')
     AS a
-GROUP BY 2 , 3 , 4 , 5
+GROUP BY 2 , 3 , 4 , 5, 6
 HAVING COUNT(*) != 2;
