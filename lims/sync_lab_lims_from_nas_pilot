@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 out_dir=$1 && shift # prod or pilot lims dir
+no_cleanup=$1 && shift # optional
 
 if [[ -z "${out_dir}" ]]; then
     echo "Usage: $(basename $0) /path/to/out/dir"
@@ -12,6 +13,7 @@ fi
 
 LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
+TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 
@@ -48,19 +50,20 @@ main() {
 
     info "Working dir set to ${DAY_DIR}"
     mkdir -p "${DAY_DIR}"
+    mkdir -p "${TMP_DIR}"
 
     info "Retrieving input files from NAS"
     for nas_file_path in "${NAS_FILES[@]}"; do
-      retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
+      retrieve_file_from_nas "$nas_file_path" "${TMP_DIR}"
     done
 
     info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
     for lama_json_file in "${LAMA_FILES[@]}"; do
-      gsutil cp "$lama_json_file" "${DAY_DIR}" || die "Unable to copy file ($lama_json_file)"
+      gsutil cp "$lama_json_file" "${TMP_DIR}" || die "Unable to copy file ($lama_json_file)"
     done
 
-    for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
-    for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
+    for001_source="${TMP_DIR}/${FOR_001_FILE}" # Excel FOR-001
+    for002_source="${TMP_DIR}/${FOR_002_FILE}" # Excel FOR-002
 
     for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
     for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
@@ -74,8 +77,8 @@ main() {
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
 
     # We need to support the files from previous year until lab team has finished with updates
-    for001_source_2021="${DAY_DIR}/${FOR_001_FILE_2021}" # Excel FOR-001
-    for002_source_2021="${DAY_DIR}/${FOR_002_FILE_2021}" # Excel FOR-002
+    for001_source_2021="${TMP_DIR}/${FOR_001_FILE_2021}" # Excel FOR-001
+    for002_source_2021="${TMP_DIR}/${FOR_002_FILE_2021}" # Excel FOR-002
     for001_samp_txt_2021="${DAY_DIR}/2021_for001_samples.tsv"
     for001_subm_txt_2021="${DAY_DIR}/2021_for001_submissions.tsv"
     for002_proc_txt_2021="${DAY_DIR}/2021_for002_processing.tsv"
@@ -88,6 +91,13 @@ main() {
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
       symlink_to_latest "${txt_file}" "$SYM_DIR"
     done
+
+    if [[ -z "$no_cleanup" ]]; then
+      info "Cleaning up raw files from day dir (${DAY_DIR})"
+      rm -r "$TMP_DIR"
+    else
+      info "Skipping cleanup of raw files from day dir (${DAY_DIR})"
+    fi
 
     info "Finished with $(basename $0)"
 }
