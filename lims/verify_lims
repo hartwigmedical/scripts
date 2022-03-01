@@ -6,7 +6,7 @@ JSON1=${1:-"/data/ops/lims/prod/lims.json"}
 JSON2=${2:-"/data/ops/lims/pilot/lims.json"}
 
 COUNT_TYPES=(contact_groups submissions samples)
-BARCODES=(FR16602097 FR16602093 FR30694896)
+BARCODES=(FR16602097 FR16602093 FR30694896 FR19432249-C)
 SUBMISSIONS=(HMFreg0481 HMFreg1511 HMFreg1527)
 CONTACT_GROUPS=(PT-003-102 EMC-003-103-PTO UMCU-003-101-PTO)
 
@@ -37,7 +37,7 @@ main (){
 }
 
 diff_barcode() {
-    diff_object samples barcode "$1"
+    diff_object samples sample_id "$1"
 }
 
 diff_submission() {
