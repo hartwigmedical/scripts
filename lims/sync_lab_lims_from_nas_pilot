@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 out_dir=$1 && shift # prod or pilot lims dir
-no_cleanup=$1 && shift # optional
+#no_cleanup=$1 && shift # optional
 
 if [[ -z "${out_dir}" ]]; then
     echo "Usage: $(basename $0) /path/to/out/dir"
@@ -92,12 +92,12 @@ main() {
       symlink_to_latest "${txt_file}" "$SYM_DIR"
     done
 
-    if [[ -z "$no_cleanup" ]]; then
-      info "Cleaning up raw files from day dir (${DAY_DIR})"
-      rm -r "$TMP_DIR"
-    else
-      info "Skipping cleanup of raw files from day dir (${DAY_DIR})"
-    fi
+#    if [[ -z "$no_cleanup" ]]; then
+#      info "Cleaning up raw files from day dir (${DAY_DIR})"
+#      rm -r "$TMP_DIR"
+#    else
+#      info "Skipping cleanup of raw files from day dir (${DAY_DIR})"
+#    fi
 
     info "Finished with $(basename $0)"
 }
