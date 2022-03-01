@@ -4,8 +4,8 @@ source message_functions || exit 1
 
 jobs_dir=$1
 logs_dir=$2
-tag=$3 # eg "before_load"
-db_schema=$4
+db_schema=$3
+tag=$4 # eg "before_load"
 
 find "${jobs_dir}" -type f -name "*.sql" | while read -r sql_file ; do
     job_name="$(basename "${sql_file}")"
