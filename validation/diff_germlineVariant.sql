@@ -1,0 +1,34 @@
+SELECT
+    MIN(pipeline) AS pipeline,
+    chromosome,
+    position,
+    ref,
+    alt,
+    reported,
+    COUNT(*)
+FROM
+    (SELECT
+        'OnlyInTruth' AS pipeline,
+            chromosome,
+            position,
+            ref,
+            alt,
+            reported
+    FROM
+        VARIABLE_TRUTH_DB_SCHEMA.germlineVariant
+    WHERE
+        sampleId = 'VARIABLE_TRUTH_SAMPLE_ID'
+            AND filter = 'PASS' UNION SELECT
+        'OnlyInNew' AS pipeline,
+            chromosome,
+            position,
+            ref,
+            alt,
+            reported
+    FROM
+        VARIABLE_NEW_DB_SCHEMA.germlineVariant
+    WHERE
+        sampleId = 'VARIABLE_NEW_SAMPLE_ID'
+            AND filter = 'PASS') AS a
+GROUP BY chromosome , position , ref , alt , reported
+HAVING COUNT(*) != 2;
