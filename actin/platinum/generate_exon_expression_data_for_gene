@@ -15,6 +15,10 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 rna_bam="$(locate_rna_bam ${run_dir})"
 
+if [[ ! -f ${rna_bam} ]]; then
+    error "RNA bam could not be located for ${sample}"
+fi
+
 ref_genome="$(locate_ref_genome_37_fasta_file)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
