@@ -82,6 +82,11 @@ SELECT "VARIABLE_NEW_SAMPLE_ID" AS Sample, "tmlStatus" AS Type,
   (SELECT tmlStatus FROM VARIABLE_NEW_DB_SCHEMA.purity WHERE sampleId = "VARIABLE_NEW_SAMPLE_ID") AS New,
   (SELECT STRCMP(New, Truth)) AS Delta
 UNION
+SELECT "VARIABLE_NEW_SAMPLE_ID" AS Sample, "cuppaTumorLocation" AS Type,
+  (SELECT cuppaTumorLocation FROM VARIABLE_TRUTH_DB_SCHEMA.cuppa WHERE sampleId = "VARIABLE_TRUTH_SAMPLE_ID") AS Truth,
+  (SELECT cuppaTumorLocation FROM VARIABLE_NEW_DB_SCHEMA.cuppa WHERE sampleId = "VARIABLE_NEW_SAMPLE_ID") AS New,
+  (SELECT STRCMP(New, Truth)) AS Delta
+UNION
 SELECT "VARIABLE_NEW_SAMPLE_ID" AS Sample, "sufficientCoverage" AS Type,
   (SELECT sufficientCoverage FROM VARIABLE_TRUTH_DB_SCHEMA.metric WHERE sampleId = "VARIABLE_TRUTH_SAMPLE_ID") AS Truth,
   (SELECT sufficientCoverage FROM VARIABLE_NEW_DB_SCHEMA.metric WHERE sampleId = "VARIABLE_NEW_SAMPLE_ID") AS New,
