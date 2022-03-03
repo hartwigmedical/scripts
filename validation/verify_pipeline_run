@@ -101,12 +101,14 @@ main() {
         "compare_metrics.sql"
         "compare_purity.sql"
         "diff_summary.sql"
+        "diff_chord.sql"
         "diff_germlineVariant.sql"
+        "diff_protect.sql"
         "diff_somaticVariant.sql"
         "diff_structuralVariant.sql"
-        "diff_chord.sql"
         "diff_svBreakend.sql"
-        "diff_protect.sql"
+        "diff_virusAnnotation.sql"
+        "diff_virusBreakend.sql"
     )
     for job_file_name in "${script_jobs[@]}" "${sql_jobs[@]}"; do
         copy_file "${jobs_source_path}/${job_file_name}" "${jobs_dir}"
