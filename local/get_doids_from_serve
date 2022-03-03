@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+serve_actionability_dir="/data/resources/custum/common-resources-private/serve/37"
+
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp;  touch ~/temp/tmp.csv;"
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "for file in ${serve_actionability_dir}/*; \
+do echo "'${file}'" ; \
+awk -F'\t' -v column_val="'doid'" '{ if (NR==1) {val=-1; for(i=1;i<=NF;i++) { if ("'$i'" == column_val) {val=i;}}} if(val != -1) print "'$val'"} ' "'${file}'" > ~/temp/tmp0.csv;  \
+paste -d',' ~/temp/tmp0.csv <( awk -F'\t' -v column_val="'treatment'" '{ if (NR==1) {val=-1; for(i=1;i<=NF;i++) { if ("'$i'" == column_val) {val=i;}}} if(val != -1) print "'$val'"} ' "'${file}'" ) > ~/temp/tmp1.csv ; \
+cat ~/temp/tmp1.csv >> ~/temp/tmp.csv; \
+done;"
+
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "sort ~/temp/tmp.csv | grep -v 'doid' | grep -v 'MESH: D009382'| grep -v 'UNKNOWN' > ~/temp/doid.csv;"
+
+gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/doid.csv ~/
+
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "rm -r ~/temp/ 2>&1"
+
+sed 's/ //g' doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+awk -F, '{t[$1]?t[$1]=t[$1]","$2:t[$1]=$2}END{for (i in t){print i,t[i]}}' doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+sed -r 's/[^ ]+/"&"/g' doid.csv  > tmp.csv && mv -f tmp.csv doid.csv
+sed 's/ /,/g' doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+sed ' 1 s/.*/"doids","count"/' doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+wc -l doid.csv
+
+# for now only doids needed (without heather) so count + header removed
+awk -F',' '{ print $1 }'  doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+sed '1d' doid.csv > tmp.csv && mv -f tmp.csv doid.csv
+wc -l doid.csv
