@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+gene=$1 && shift
+
+if [[ -z "${run_dir}" || -z "${gene}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+rna_bam="$(locate_rna_bam ${run_dir})"
+
+ref_genome="$(locate_ref_genome_37_fasta_file)"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+
+gene_line=$(grep ",${gene}," "${ensembl_data_dir}/ensembl_gene_data.csv")
+if [[ -z ${gene_line} ]]; then
+    error "Could not find gene ${gene} in ensembl data dir"
+fi
+
+gene_id=$(echo ${gene_line} | cut -d"," -f1)
+
+output_dir="${run_dir}\rna_exon_data"
+create_or_cleanup_dir ${output_dir}
+
+isofox_jar="$(locate_pilot_isofox)"
+
+info "Extracting exon expression data for ${sample} on gene ${gene} (${gene_id})"
+
+java -jar ${isofox_jar} \
+    -functions "TRANSCRIPT_COUNTS" \
+    -sample ${sample} \
+    -bam_file ${rna_bam} \
+    -ref_genome ${ref_genome} \
+    -ensembl_data_dir ${ensembl_data_dir} \
+    -write_exon_data \
+    -restricted_gene_ids ${gene_id} \
+    -output_dir ${output_dir}
