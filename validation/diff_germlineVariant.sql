@@ -4,6 +4,7 @@ SELECT
     position,
     ref,
     alt,
+    adjustedVaf,
     reported,
     COUNT(*)
 FROM
@@ -13,6 +14,7 @@ FROM
             position,
             ref,
             alt,
+            adjustedVaf,
             reported
     FROM
         VARIABLE_TRUTH_DB_SCHEMA.germlineVariant
@@ -24,11 +26,12 @@ FROM
             position,
             ref,
             alt,
+            adjustedVaf,
             reported
     FROM
         VARIABLE_NEW_DB_SCHEMA.germlineVariant
     WHERE
         sampleId = 'VARIABLE_NEW_SAMPLE_ID'
             AND filter = 'PASS') AS a
-GROUP BY chromosome , position , ref , alt , reported
+GROUP BY chromosome , position , ref , alt , adjustedVaf, reported
 HAVING COUNT(*) != 2;

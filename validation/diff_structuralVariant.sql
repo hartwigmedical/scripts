@@ -7,8 +7,8 @@ SELECT
     TYPE,
     endPosition - startPosition AS length,
     COUNT(*),
-    MAX(junctionCopyNumber),
-    MAX(qualScore)
+    MIN(junctionCopyNumber),
+    MIN(qualScore)
 FROM
     (SELECT
         'OnlyInTruth' AS pipeline,
