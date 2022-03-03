@@ -14,7 +14,7 @@ FROM
             position,
             ref,
             alt,
-            adjustedVaf,
+            ROUND(adjustedVaf,2) AS adjustedVaf,
             reported
     FROM
         VARIABLE_TRUTH_DB_SCHEMA.germlineVariant
@@ -26,7 +26,7 @@ FROM
             position,
             ref,
             alt,
-            adjustedVaf,
+            ROUND(adjustedVaf,2) AS adjustedVaf,
             reported
     FROM
         VARIABLE_NEW_DB_SCHEMA.germlineVariant
