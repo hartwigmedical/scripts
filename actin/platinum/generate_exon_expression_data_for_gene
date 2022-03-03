@@ -25,8 +25,8 @@ fi
 
 gene_id=$(echo ${gene_line} | cut -d"," -f1)
 
-output_dir="${run_dir}\rna_exon_data"
-create_or_cleanup_dir ${output_dir}
+output_dir="${run_dir}/rna_exon_data"
+create_or_cleanup_dir "${output_dir}"
 
 isofox_jar="$(locate_pilot_isofox)"
 
@@ -41,3 +41,5 @@ java -jar ${isofox_jar} \
     -write_exon_data \
     -restricted_gene_ids ${gene_id} \
     -output_dir ${output_dir}
+
+info "Done and output written to ${output_dir}"
