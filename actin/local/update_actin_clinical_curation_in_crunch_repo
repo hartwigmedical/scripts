@@ -12,7 +12,7 @@ do_update_actin_clinical_curation_file "${dir}/${prefix} - Oncological History.t
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Non-oncological History.tsv" "${dir}/non_oncological_history.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - ECG.tsv" "${dir}/ecg.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Infection.tsv" "${dir}/infection.tsv"
-do_update_actin_clinical_curation_file "${dir}/${prefix} - Cancer Related Complication.tsv" "${dir}/cancer_related_complication.tsv"
+do_update_actin_clinical_curation_file "${dir}/${prefix} - Complication.tsv" "${dir}/complication.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Toxicity.tsv" "${dir}/toxicity.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Molecular Test.tsv" "${dir}/molecular_test.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Medication Dosage.tsv" "${dir}/medication_dosage.tsv"
