@@ -229,11 +229,9 @@ check_tool_directory () {
     fi
 
     find "${base_tool_path}" -mindepth 1 -maxdepth 1 -type f \
-        -not -name "*.cram" -not -name "*.crai" \
-        -not -name "*.bam" -not -name "*.bai" \
-        -not -name "*.sh" -not -name "*.log" -not -name "*.bak" \
-        -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
-        -not -name "*.png" -not -name "*.jpg" -not -name "*.svg" \
+        -not -name "*.cram" -not -name "*.crai" -not -name "*.bam" -not -name "*.bai" \
+        -not -name "*.sh" -not -name "*.log" -not -name "*.bak" -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
+        -not -name "*.png" -not -name "*.jpg" -not -name "*.svg" -not -name "*.pdf" \
     | while read -r base_file_path; do
         file_name=$(basename "${base_file_path}");
 
