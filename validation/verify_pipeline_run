@@ -71,10 +71,12 @@ main() {
 
     truth_metadata_file="${truth_run}/metadata.json"
     new_metadata_file="${new_run}/metadata.json"
+    info "Diffing metadata jsons"
+    diff_metadata_jsons "${truth_metadata_file}" "${new_metadata_file}"
     info "Checking format of ${truth_metadata_file}"
-    check_metadata_json "${truth_metadata_file}"
+    check_metadata_json_content "${truth_metadata_file}"
     info "Checking format of ${new_metadata_file}"
-    check_metadata_json "${new_metadata_file}"
+    check_metadata_json_content "${new_metadata_file}"
 
     truth_sample=$(jq -r '.tumor.sampleName' "${truth_metadata_file}")
     new_sample=$(jq -r '.tumor.sampleName' "${new_metadata_file}")
@@ -174,7 +176,23 @@ copy_file() {
     fi
 }
 
-check_metadata_json() {
+diff_metadata_jsons() {
+    local json1=$1 && shift
+    local json2=$1 && shift
+
+    diff_count=$(diff \
+      <(jq 'del(.set, .bucket, .reference.set, .tumor.set, .reference.bucket, .tumor.bucket)' "${json1}") \
+      <(jq 'del(.set, .bucket, .reference.set, .tumor.set, .reference.bucket, .tumor.bucket)' "${json2}") \
+    | wc -l)
+
+    if [[ "${diff_count}" -eq 0 ]]; then
+        info "  OK metadata diff is 0"
+    else
+        warn "  Field ${field} absent metadata (${metadata_json})"
+    fi
+}
+
+check_metadata_json_content() {
     local metadata_json=$1 && shift
     fields_to_check=(
         '.set'
@@ -184,13 +202,16 @@ check_metadata_json() {
         '.tumor.barcode'
         '.tumor.primaryTumorDoids'
     )
+    all_fields_present=TRUE
     for field in ${fields_to_check[*]}; do
         if [[ $(jq "select(${field} == null)" "${metadata_json}") ]]; then
             warn "  Field ${field} absent metadata (${metadata_json})"
-        else
-            info "  OK field found in metadata (${field})"
+            all_fields_present=FALSE
         fi
     done
+    if [[ "${all_fields_present}" == "TRUE" ]]; then
+        info "  OK field found in metadata (${field})"
+    fi
 
     # specific check on COLO doid
     tumor_name=$(jq '.tumor.sampleName' "${metadata_json}")
