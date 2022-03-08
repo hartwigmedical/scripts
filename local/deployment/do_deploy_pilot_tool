@@ -16,4 +16,4 @@ if [[ ! -f "${tool_jar}" ]]; then
 fi
 
 info "Copying ${tool_jar} to ${vm}"
-gcloud compute scp ${tool_jar} ${vm}:/data/tools/${tool}/pilot/${tool}.jar
+gcloud compute scp ${tool_jar} ${vm}:/data/experiments/pilot_tools/${tool}/${tool}.jar
