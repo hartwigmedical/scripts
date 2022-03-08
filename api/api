@@ -18,7 +18,8 @@ print_usage(){
     echo " $script samples CPCT02460007T"
     echo " $script samples FR17455547 barcode"
     echo " $script fastq 37510 sample_id"
-    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna' id"
+    echo " $script datasets 'CPCT02010325T'"
+    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna'"
     echo " $script reports/created | tail"
     echo "Options:"
     echo " -j  Output raw api json content instead of TSV"
@@ -59,8 +60,9 @@ main(){
     if [[ -n "${filter_field}" ]]; then
         filter_field="${filter_field}"
     elif [[ "${class}" == "runs" ]]; then
-        # runs have no name field but do have a set_name filter
-        filter_field="set_name"
+        filter_field="set_name" # runs have no name field but do have a set_name filter
+    elif [[ "${class}" == "datasets" ]]; then
+        filter_field="id"
     else
         filter_field="name"
     fi
@@ -135,6 +137,9 @@ main(){
     elif [[ "${class}" == "groups" ]]; then
         printf "#%s\t%s\n" name id
         jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "datasets" ]]; then
+        printf "#%s\t%s\t%s\n" sample file_type file_url
+        jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
