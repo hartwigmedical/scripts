@@ -249,7 +249,7 @@ extract_expected_pipeline_version() {
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.25"
+    echo "5.27"
 }
 
 ############################### NON JAVA TOOLS #################################

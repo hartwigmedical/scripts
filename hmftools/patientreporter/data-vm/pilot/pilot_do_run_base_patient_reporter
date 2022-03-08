@@ -11,6 +11,8 @@ rva_logo=$(locate_rva_logo_prod)
 company_logo=$(locate_company_logo_prod)
 signature=$(locate_signature_prod)
 
+expected_pipeline_version=$(extract_expected_pipeline_version_research)
+
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
@@ -18,6 +20,7 @@ java -jar ${patient_reporter_jar} \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -udi_di "(01) 8720299486010(8012)v5.25" \
-    -expected_pipeline_version "5.25" \
+    -require_pipeline_version_file \
+    -expected_pipeline_version ${expected_pipeline_version} \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"

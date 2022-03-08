@@ -77,5 +77,4 @@ do_run_base_patient_reporter_data_vm \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -ref_genome_version 37 \
-
     "$@"
