@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
 LIMS_JSON="/data/ops/lims/prod/lims.json"
-count=${1:-10} # optional amount of submissions to print
+submission_count=20
+submission=$1 # optional HMFregXXXX id to print table for
 
-# select $count most recent submissions in reverse order
-submissions=$(jq "[.submissions[]] | sort_by(.submission) | .[-${count}:] | reverse[]" "${LIMS_JSON}")
+if [[ -n "$submission" ]]; then
+    submissions=$(jq --arg key "$submission" '.submissions[$key]' "${LIMS_JSON}")
+else
+    submissions=$(jq "[.submissions[]] | sort_by(.submission) | .[-${submission_count}:] | reverse[]" "${LIMS_JSON}")
+fi
 
 # header
 printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
