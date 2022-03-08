@@ -33,6 +33,7 @@ my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
 my $SKIP_RECALCULATING_YIELD_REF = 0;
 my $SKIP_RECALCULATING_YIELD_TUM = 0;
+my $IGNORE_SHALLOWSEQ = 0;
 my $FORCE_OUTPUT = 0;
 
 my %opt = ();
@@ -42,6 +43,7 @@ GetOptions (
     "limsjson=s"     => \$LIMS_IN_FILE,
     "useExistingRef" => \$USE_EXISTING_REF,
     "useExistingTum" => \$USE_EXISTING_TUM,
+    "noShallow"      => \$IGNORE_SHALLOWSEQ,
     "forceOutput"    => \$FORCE_OUTPUT,
     "experiment"     => \$opt{ as_experiment },
     "debug"          => \$opt{ debug },
@@ -70,6 +72,7 @@ my $HELP =<<HELP;
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
     -forceOutput       (write json even if sample already has a run in API)
+    -noShallow         (do not create ShallowSeq run even if set in LIMS)
     -experiment        (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
 
 HELP
@@ -336,7 +339,7 @@ sub processSample{
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
         ## adjust content in case of ShallowSeq
-        if ( $needs_shallow ){
+        if ( $needs_shallow and not $IGNORE_SHALLOWSEQ ){
             sayInfo("  ShallowSeq flag set in LIMS");
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
 
