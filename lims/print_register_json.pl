@@ -70,7 +70,7 @@ my $HELP =<<HELP;
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
     -forceOutput       (write json even if sample already has a run in API)
-    -experiment <s>    (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
+    -experiment        (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
 
 HELP
 
