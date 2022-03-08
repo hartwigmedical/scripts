@@ -38,6 +38,7 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
             -qc_fail_reason ${qc_fail_reason} \
             -tumor_sample_id ${tumor_sample} \
             -tumor_sample_barcode ${tumor_sample_barcode} \
+            -ref_genome_version 37 \
             "$@"
     fi
 else
@@ -48,5 +49,6 @@ else
         -ref_sample_barcode ${ref_sample_barcode} \
         -tumor_sample_id ${tumor_sample} \
         -tumor_sample_barcode ${tumor_sample_barcode} \
+        -ref_genome_version 37 \
         "$@"
 fi
