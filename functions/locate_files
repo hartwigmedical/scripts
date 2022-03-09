@@ -39,7 +39,7 @@ locate_research_virus_interpreter() {
 }
 
 locate_pilot_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/pilot/virus-interpreter.jar"
+    echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
 }
 
 locate_prod_lilac() {
@@ -103,7 +103,7 @@ locate_diagnostic_patient_db() {
 }
 
 locate_pilot_patient_db() {
-    echo "/data/tools/patient-db/pilot/patient-db.jar"
+    echo "/data/experiments/pilot_tools/patient-db/patient-db.jar"
 }
 
 locate_prod_patient_reporter() {
@@ -119,7 +119,7 @@ locate_prod_vicc_importer() {
 }
 
 locate_pilot_vicc_importer() {
-    echo "/data/tools/vicc-importer/pilot/vicc-importer.jar"
+    echo "/data/experiments/pilot_tools/vicc-importer/vicc-importer.jar"
 }
 
 locate_prod_iclusion_importer() {
@@ -127,7 +127,7 @@ locate_prod_iclusion_importer() {
 }
 
 locate_pilot_iclusion_importer() {
-    echo "/data/tools/iclusion-importer/pilot/iclusion-importer.jar"
+    echo "/data/experiments/pilot_tools/iclusion-importer/iclusion-importer.jar"
 }
 
 locate_prod_ckb_importer() {
@@ -135,7 +135,7 @@ locate_prod_ckb_importer() {
 }
 
 locate_pilot_ckb_importer() {
-    echo "/data/ckb_pilot_jar/ckb-importer.jar"
+    echo "/data/experiments/pilot_tools/ckb-importer/ckb-importer.jar"
 }
 
 locate_prod_serve() {
@@ -155,7 +155,7 @@ locate_research_protect() {
 }
 
 locate_pilot_protect() {
-    echo "/data/tools/protect/pilot/protect.jar"
+    echo "/data/experiments/pilot_tools/protect/protect.jar"
 }
 
 locate_prod_pave() {
