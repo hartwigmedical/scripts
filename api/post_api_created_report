@@ -15,7 +15,7 @@ report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
-if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"' ||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ]]; then
+if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"' ||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ||  ${cohort} == '"SHERPA"'  ||  ${cohort} == '"GENAYA"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
     run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | grep "Somatic" | tail -n 1)
   else
