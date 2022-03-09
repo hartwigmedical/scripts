@@ -35,7 +35,7 @@ get_doids_for_biopsy() {
     doid_file=$(get_doids_file)
     column_index=7
     expected_field="doids"
-    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX0-9]*$'
+    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX0-9]*$'
 
     # sanity check on header content
     header_field=$(cat ${doid_file} | head -1 | cut -f"${column_index}")
@@ -53,7 +53,7 @@ get_doids_for_biopsy() {
 get_tumorlocation_for_biopsy() {
     local biopsy=$1 && shift # eg CPCT02010001T
     doid_file=$(get_doids_file)
-    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX]*$'
+    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX0-9]*$'
     [[ "${biopsy}" =~ ${name_regex} ]] || die "Provided biopsy ${biopsy} does not match regex ($name_regex)"
     patient="${BASH_REMATCH[1]}"
     tumorLocation=$(cat "${doid_file}" | grep -P "^${patient}" | awk 'BEGIN {FS="\t"}; {print $2, $3, $4, $5, $6, $7}')
@@ -65,7 +65,7 @@ get_doids_for_biopsy_pilot() {
     doid_file=$(get_doids_file_pilot)
     column_index=7
     expected_field="doids"
-    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX]*$'
+    name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX0-9]*$'
 
     # sanity check on header content
     header_field=$(cat ${doid_file} | head -1 | cut -f"${column_index}")

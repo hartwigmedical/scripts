@@ -56,7 +56,7 @@ main () {
         fi
 
         # only consider samples meant for OncoAct
-        if [[ ! "${api_name}" =~ ^(CPCT|DRUP|WIDE|CORE|ACTN) ]]; then
+        if [[ ! "${api_name}" =~ ^(CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA) ]]; then
             #info "SKIPPING: sample is not an OncoAct sample (${api_name})"
             continue
         fi
