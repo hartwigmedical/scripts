@@ -61,3 +61,9 @@ if [[  $( echo "${splice_variants_MET_TP53}" | wc -l ) > 1 ]]; then
     echo ${splice_variants_MET_TP53}
 fi
 
+virus_check=$( execute_sql_on_diagnostic_prod "select * from virusBreakend where coverage<10 and sampleId = '${sample_name}';")
+if [[  $( echo "${virus_check}" | wc -l ) > 1 ]]; then
+    warn 'SQL query check showed unexpected virus. Please check:'
+    echo ${virus_check}
+fi
+
