@@ -2,12 +2,6 @@
 
 source message_functions || exit 1
 
-############################# Nextcloud Credentials ############################
-
-locate_nextcloud_upload_credentials() {
-    echo "/data/dbs/nextcloud_credentials/nextcloud_credentials"
-}
-
 ##################################### JARS #####################################
 
 locate_pilot_actin() {
