@@ -3,6 +3,6 @@
 source locate_files || exit 1
 
 iclusion_importer_jar=$(locate_pilot_iclusion_importer)
-iclusion_trial_tsv=$(locate_pilot_iclusion_trial_tsv)
+iclusion_trial_tsv=$(locate_pilot_iclusion_importer_trial_tsv)
 
 do_run_iclusion_importer_pilot ${iclusion_importer_jar} ${iclusion_trial_tsv}

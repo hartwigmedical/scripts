@@ -1243,6 +1243,15 @@ locate_virus_annotation_tsv() {
     echo ${virus_annotation_tsv}
 }
 
+################################ iClusion importer #################################
+
+locate_pilot_iclusion_importer_trial_tsv() {
+    echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
+}
+
+locate_prod_iclusion_importer_trial_tsv() {
+    echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
+}
 ################################## CUPPA #######################################
 
 locate_cuppa_result_csv() {
