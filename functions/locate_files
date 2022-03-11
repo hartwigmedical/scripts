@@ -459,7 +459,7 @@ locate_cohort_percentiles_tsv() {
 }
 
 locate_doid_json() {
-    echo "/data/resources/public/disease_ontology/201015_doid.json"
+    echo "/data/resources/public/disease_ontology/doid.json"
 }
 
 locate_driver_gene_panel_37_tsv() {
