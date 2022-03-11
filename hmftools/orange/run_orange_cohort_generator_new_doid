@@ -5,7 +5,7 @@ source database_functions || exit 1
 
 orange_jar=$(locate_pilot_orange)
 
-doid_json="/data/experiments/disease_ontology/220302_doid.json"
+doid_json="/data/resources/public/disease_ontology/doid.json"
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
 output_directory="/data/experiments/disease_ontology/orange_cohort"
 
