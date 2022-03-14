@@ -33,7 +33,7 @@ if [[ $? = 0 ]]; then info " AMBER directory: ${amber_dir}"; fi
 gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
 if [[ $? = 0 ]]; then info " GATK Germline Variants: ${gatk_germline_variants}"; fi
 
-sage_somatic_variants=$(locate_sage_somatic_variants ${run_dir})
+sage_somatic_variants=$(locate_sage_filtered_somatic_variants ${run_dir})
 if [[ $? = 0 ]]; then info " SAGE Somatic VCF: ${sage_somatic_variants}"; fi
 
 sage_tumor_bqr_plot=$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})

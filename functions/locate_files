@@ -677,7 +677,7 @@ locate_amber_directory() {
 
 ###################################### SAGE ####################################
 
-locate_sage_somatic_variants() {
+locate_sage_filtered_somatic_variants() {
     local run_dir=$1
     local sage_dir_old=${run_dir}/sage
     local sage_dir=${run_dir}/sage_somatic
@@ -691,7 +691,26 @@ locate_sage_somatic_variants() {
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
-        error "Unable to locate sage somatic variants in ${run_dir}."
+        error "Unable to locate sage filtered somatic variants in ${run_dir}."
+    fi
+    echo ${somatic_vcf}
+}
+
+locate_sage_full_somatic_variants() {
+    local run_dir=$1
+    local sage_dir_old=${run_dir}/sage
+    local sage_dir=${run_dir}/sage_somatic
+
+    local somatic_vcf=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.vcf.gz")
+    elif [[ -d "${sage_dir_old}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir_old}/ -type f -name "*.sage.somatic.vcf.gz")
+    fi
+
+    if [[ -z "${somatic_vcf}" ]]; then
+        error "Unable to locate sage full somatic variants in ${run_dir}."
     fi
     echo ${somatic_vcf}
 }
