@@ -11,15 +11,15 @@ else
 fi
 
 # header
-printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
+printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
     "submission" \
     "project" \
     "cohort" \
+    "retention" \
     "details" \
     "analysis" \
     "sample_count"
 
-# process submissions one by one
 echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample_count,.analysis_type] | @tsv' | while read -r line; do
     submission=$(echo "${line}" | cut -f1)
     project=$(echo "${line}" | cut -f2)
@@ -27,6 +27,11 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     sample_count=$(echo "${line}" | cut -f4)
     analysis=$(echo "${line}" | cut -f5)
     details=""
+    retention_days=90
+
+    if [[ "${project}" =~ ^PT\- ]]; then
+        retention_days=365
+    fi
 
     # reset some fields according to project type
     if [[ "${cohort}" == "Human research" ]]; then
@@ -60,10 +65,11 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     fi
 
     # output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
         "${submission}" \
         "${project}" \
         "${cohort}" \
+        "${retention_days}" \
         "${details}" \
         "${analysis}" \
         "${sample_count}"
