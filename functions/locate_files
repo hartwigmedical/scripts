@@ -153,7 +153,7 @@ locate_pilot_protect() {
 }
 
 locate_prod_pave() {
-    echo "/data/tools/pave/1.0/pave.jar"
+    echo "/data/tools/pave/1.1/pave.jar"
 }
 
 locate_pilot_sig_analyser() {
