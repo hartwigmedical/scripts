@@ -11,7 +11,7 @@ rva_logo=$(locate_rva_logo_prod)
 company_logo=$(locate_company_logo_prod)
 signature=$(locate_signature_prod)
 
-expected_pipeline_version=$(extract_expected_pipeline_version_research)
+expected_pipeline_version=$(extract_expected_pipeline_version)
 
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
