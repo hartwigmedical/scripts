@@ -13,19 +13,15 @@ locate_sample_registration_bucket_at_gcp() {
 }
 
 locate_samplesheets_at_gcp() {
-    echo "$(locate_sample_registration_bucket_at_gcp)/samplesheets/"
+    echo "$(locate_sample_registration_bucket_at_gcp)/samplesheets"
 }
 
 locate_sample_registration_jsons_at_gcp() {
-    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/jsons/registered/"
+    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/jsons/registered"
 }
 
 locate_sample_registration_logs_at_gcp() {
-    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/logs/"
-}
-
-locate_sample_registration_lims_at_gcp() {
-    echo "$(locate_sample_registration_bucket_at_gcp)/lims/"
+    echo "$(locate_sample_registration_bucket_at_gcp)/jsons_and_logs/logs"
 }
 
 locate_shallow_tsv_at_gcp() {
@@ -37,5 +33,5 @@ locate_shallow_processed_runs_log_at_gcp() {
 }
 
 locate_snpcheck_vcfs_at_gcp() {
-    echo "gs://hmf-snpcheck/snpcheckvcfs/"
+    echo "gs://hmf-snpcheck/snpcheckvcfs"
 }

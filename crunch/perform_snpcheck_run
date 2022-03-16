@@ -43,7 +43,7 @@ else
 fi
 
 # Skipping duplo VCF
-snpcheck_vcf_ref_array=$( gsutil ls -l  "${vcf_gcp_bucket}*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | grep -v "Duplo" | tail -1 | awk '{ print $3 }' )
+snpcheck_vcf_ref_array=$( gsutil ls -l  "${vcf_gcp_bucket}/*/*${barcode_ref}*"  | grep -v TOTAL | sort -k 2 | grep -v "Duplo" | tail -1 | awk '{ print $3 }' )
 if [[ "$snpcheck_vcf_ref_array" == "" ]]; then
     warn "No Ref-array snpcheckvcf is found in ${vcf_gcp_bucket} for ${barcode_ref} (${sample_name_ref})"
 fi

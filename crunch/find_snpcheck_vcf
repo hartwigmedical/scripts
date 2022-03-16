@@ -49,7 +49,7 @@ echo ""
 if [[ "${search_remote}" == "TRUE" ]]; then
 
     info "Checking remote location for VCFs (${vcf_gcp_bucket})"
-    gsutil ls "${vcf_gcp_bucket}*/*${search}*"
+    gsutil ls "${vcf_gcp_bucket}/*/*${search}*"
     echo ""
 
     info "Checking ops VM backup directory (${ops_vm_backup_bucket})"
