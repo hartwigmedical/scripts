@@ -12,21 +12,21 @@ cat <<EOM
  Descr: Verifies a new COLO829T Somatic pipeline run
  Usage: $script [required arguments] [optional arguments]
  Required arguments:
-   --out_dir [dir]            Output to directory [dir]
-   --truth_run_dir [dir]      Use [dir] as location containing truth run
-   --truth_run_version [ver]  Short version of truth run (eg "527")
-   --new_run_dir [dir]        Use [dir] as location containing run to be verified         
-   --new_run_version          Short version of run being verified (eg "528")
+   --out_dir [s]              Output directory
+   --truth_run_dir [s]        Input directory containing truth run
+   --truth_schema [s]         Name of schema in verification DB (eg "hmfpatients_527")
+   --new_run_dir [s]          Input directory containing new run
+   --new_schema [s]           Name of schema in verification DB (eg "hmfpatients_528")
  Optional arguments:
    --disable_sanity_checks    Disable extra checks
-   --patientdb_jar [jar]      Use [jar] instead of default [${patientdb_jar}]
+   --patientdb_jar [s]        Jar to use instead of default [${patientdb_jar}]
 -----
 EOM
     exit 1
 }
 
 sanity_checks="TRUE"
-args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_run_version:,new_run_dir:,new_run_version:,patientdb_jar: -- "$@")
+args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_db_schema:,new_run_dir:,new_db_schema:,patientdb_jar: -- "$@")
 [[ $? != 0 ]] && echo "Bad arguments" && exit 1
 eval set -- "$args"
 
@@ -34,16 +34,16 @@ while true; do
     case "$1" in
         --out_dir) out_dir=${2} ; shift 2 ;;
         --truth_run_dir) truth_run_dir=${2} ; shift 2 ;;
-        --truth_run_version) truth_run_version=${2} ; shift 2 ;;
+        --truth_schema) truth_db_schema=${2} ; shift 2 ;;
         --new_run_dir) new_run_dir=${2} ; shift 2 ;;
-        --new_run_version) new_run_version=${2} ; shift 2 ;;
+        --new_schema) new_db_schema=${2} ; shift 2 ;;
         --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
         --patientdb_jar) patientdb_jar=${2} ; shift 2 ;;
         -- ) shift; break ;;
     esac
 done
 
-if [[ -z "${out_dir}" || -z "${truth_run_dir}" || -z "${new_run_dir}" || -z "${truth_run_version}" || -z "${new_run_version}" ]]; then
+if [[ -z "${out_dir}" || -z "${truth_run_dir}" || -z "${new_run_dir}" || -z "${truth_db_schema}" || -z "${new_db_schema}" ]]; then
     echo "Missing arguments!"
     print_usage
 fi
@@ -123,8 +123,6 @@ main() {
 
     # Somewhat hacky way of replacing the variables of template SQL
     info "Replacing variables in SQL job files"
-    truth_db_schema="hmfpatients_${truth_run_version}"
-    new_db_schema="hmfpatients_${new_run_version}"
     for sql_file_name in "${sql_jobs[@]}"; do
         sed -i "s/VARIABLE_TRUTH_SAMPLE_ID/${truth_sample}/g" "${jobs_dir}/${sql_file_name}"
         sed -i "s/VARIABLE_NEW_SAMPLE_ID/${new_sample}/g" "${jobs_dir}/${sql_file_name}"
