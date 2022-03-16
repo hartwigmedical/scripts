@@ -34,9 +34,9 @@ while true; do
     case "$1" in
         --out_dir) out_dir=${2} ; shift 2 ;;
         --truth_run_dir) truth_run_dir=${2} ; shift 2 ;;
-        --truth_schema) truth_db_schema=${2} ; shift 2 ;;
+        --truth_db_schema) truth_db_schema=${2} ; shift 2 ;;
         --new_run_dir) new_run_dir=${2} ; shift 2 ;;
-        --new_schema) new_db_schema=${2} ; shift 2 ;;
+        --new_db_schema) new_db_schema=${2} ; shift 2 ;;
         --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
         --patientdb_jar) patientdb_jar=${2} ; shift 2 ;;
         -- ) shift; break ;;
