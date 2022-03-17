@@ -1279,9 +1279,9 @@ sub getFieldNameTranslations{
         'frBarcodeDNA'         => 'sample_id_dna',
         'frBarcodeRNA'         => 'sample_id_rna',
         'isTissue'             => 'is_tissue',
-        'shallowPurity'        => 'shallow_purity',
-        'finalPurity'          => 'purity',
-        'reportDate'           => 'report_date'
+        'shallowPurity'        => 'shallow_purity', # TODO: remove with LAMA v1.4
+        'finalPurity'          => 'purity', # TODO: remove with LAMA v1.4
+        'reportDate'           => 'report_date' # TODO: remove with LAMA v1.4
     );
 
     my %lama_content_translations_by_field_name = (
