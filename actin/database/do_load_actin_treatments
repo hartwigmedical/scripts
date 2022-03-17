@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+actin_jar=$1 && shift
+actin_database_name=$1 && shift
+
+if [[ -z "${actin_jar}" || -z "${actin_database_name}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+treatment_database_directory="$(locate_actin_treatment_database_directory)"
+
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
+
+info "Loading all treatment data into ACTIN database '${actin_database_name}'"
+java -cp ${actin_jar} com.hartwig.actin.database.treatment.TreatmentLoaderApplication \
+    -treatment_database_directory ${treatment_database_directory} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
