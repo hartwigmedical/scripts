@@ -18,10 +18,10 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
 
-molecular_json="$(locate_actin_molecular_json ${sample})"
+treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
 
-info "Loading molecular data into ACTIN database '${actin_database_name}' for ${sample}"
-java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplication \
-    -molecular_json ${molecular_json} \
+info "Loading treatment match data into ACTIN database '${actin_database_name}' for ${sample}"
+java -cp ${actin_jar} com.hartwig.actin.database.algo.TreatmentMatchLoaderApplication \
+    -treatment_match_json ${treatment_match_json} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
