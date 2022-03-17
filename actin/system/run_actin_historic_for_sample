@@ -14,8 +14,4 @@ actin_treatment_matcher_pilot ${sample} -run_historically
 
 echo ""
 
-actin_reporter_pilot ${sample}
-
-echo ""
-
 load_actin_treatment_match_pilot ${sample}
