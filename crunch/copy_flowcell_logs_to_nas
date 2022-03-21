@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -e
+
+source gcp_functions || exit 1
+source message_functions || exit 1
+
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    script="$(basename "$0")"
+    echo "-----"
+    echo " Usage: ${script} <flowcell-path> <name-of-dir-on-nas>"
+    echo "        ${script} /data1/illumina_data/220315_A00260_0431_BHCFVMDSX3 NO22-0063__220315_A00260_0431_BHCFVMDSX3"
+    echo " Descr: Syncs sequencing config files and conversion logs of a flowcell to the NAS"
+    echo "-----"
+    exit 1
+fi
+flowcell_path=${1%/} && shift  # remove trailing slash, if present
+nas_dir_name=$1 && shift
+
+[[ -n ${flowcell_path} ]] || die "No flowcell dir provided"
+[[ -n ${nas_dir_name} ]] || die "No nas dir name provided"
+
+reports_dir="${flowcell_path}/Fastq/Reports"
+tsv_table_file="${flowcell_path}/Fastq/Stats/conversion_metrics_table.txt"
+run_info_file="${flowcell_path}/RunInfo.xml"
+run_parameters_file="${flowcell_path}/RunParameters.xml"
+sample_sheet_file="${flowcell_path}/SampleSheet.csv"
+
+info "Starting copy of config and log files to NAS (for ${flowcell_path})"
+
+rsync -ah "${reports_dir}" "nas:/volume1/web/qc/conversion/${nas_dir_name}/"
+rsync -ah "${tsv_table_file}" "nas:/volume1/web/qc/conversion/${nas_dir_name}/hmf_report.txt"
+rsync -ah "${sample_sheet_file}" "nas:/volume1/web/qc/conversion/${nas_dir_name}/"
+rsync -ah "${run_info_file}" "nas:/volume1/web/qc/conversion/${nas_dir_name}/"
+rsync -ah "${run_parameters_file}" "nas:/volume1/web/qc/conversion/${nas_dir_name}/"
+
+info "Finished copy of config and log files to NAS (see https://hmf-nas.synology.me/qc/conversion/${nas_dir_name})"
