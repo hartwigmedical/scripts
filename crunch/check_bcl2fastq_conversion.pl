@@ -35,7 +35,7 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e9,
         'max_undetermined' => 8,
         'yield_factor'     => 1e6,
-        'run_name_regex'   => "^NO\d{2}-\d{4}$"
+        'run_name_regex'   => '^NO\d{2}-\d{4}$'
     },
     'NextSeq' => {
         'platform_name' => "NEXTSEQ",
@@ -43,7 +43,7 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e9,
         'max_undetermined' => 50,
         'yield_factor'     => 1e6,
-        'run_name_regex'   => "^NS\d{2}-\d{4}$"
+        'run_name_regex'   => '^NS\d{2}-\d{4}$'
     },
     'ISeq' => {
         'platform_name' => "ISEQ",
@@ -51,7 +51,7 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e6,
         'max_undetermined' => 50,
         'yield_factor'     => 1,
-        'run_name_regex'   => "^IS\d{2}-\d{4}$"
+        'run_name_regex'   => '^IS\d{2}-\d{4}$'
     },
     # 'HiSeq' => {
     #     'platform_name' => "HISEQ",
