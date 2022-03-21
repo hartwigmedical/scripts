@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
+set -e
+
 source message_functions || exit 1
+#source secrets_functions || exit 1
 
 command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
 command -v jq > /dev/null || die "Dependency jq not found"
@@ -26,6 +29,7 @@ fi
 
 credentials_dir="/data/dbs/gcp_credentials"
 key_file="${credentials_dir}/hmf-share"
+#secret=$(get_secret_from_secret_manager "gcp-hmf-ops-u-hmf-database") || die "Unable to retrieve secret"
 billing_project="hmf-ops"
 service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
 
@@ -143,6 +147,8 @@ create_run_specific_files () {
     local pip=$1 && shift
     local run_type=$1 && shift
     local minor_version=""
+    local sample_name=""
+    sample_name=$(echo "${set_name}" | rev | cut -d"_" -f1 | rev)
 
     if [[ "${run_type}" == "Fastq" ]]; then
         pip="Fastq"
@@ -252,12 +258,15 @@ create_run_specific_files () {
     for file_path in "${file_selection[@]}"; do
         file_name=$(basename "${file_path}")
         file_in_bucket="${bucket}/${set_name}/${file_path}"
+        target_file_name="${file_name}"
         gs_url="gs://${file_in_bucket}"
 
-        # Adjust for Fastq files (those already are complete internal gs path)
         if [[ ${run_type} == "Fastq" ]]; then
+            # Fastq files already have complete internal gs path
             file_in_bucket=${file_path/gs\:\/\//}
             gs_url="${file_path}"
+            # Replace sample barcode with sample name in FASTQ target
+            target_file_name="${sample_name}_${file_name#*_}"
         fi
 
         # Sanity check on existence of file in bucket
@@ -270,12 +279,13 @@ create_run_specific_files () {
         fi
 
         # Get file specific md5 hash
-        info "  Getting md5 and signing URL for file ${file_name}"
+        info "  Signing URL for ${file_name} (target: ${target_file_name})"
         md5sum=$(get_md5_for_gs_url "${gs_url}")
         [[ -n "${md5sum}" ]] || die "Unable to retrieve md5 hash for file at url (${gs_url})"
         printf '%s  %s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
         # Get pre-signed URL (prints a header and multiple fields)
+        #url=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "$secret") "${gs_url}" | grep -v 'Signed URL' | cut -f4)
         url=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d "${key_file}" "${gs_url}" | grep -v 'Signed URL' | cut -f4)
 
         # Final checks
@@ -287,6 +297,7 @@ create_run_specific_files () {
         {
           echo "${url}"
           echo "  dir=${set_name}"
+          echo "  out=${target_file_name}"
           echo "  checksum=md5=${md5sum}"
           echo ""
         } >> "${out_aria}"
