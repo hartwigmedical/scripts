@@ -147,8 +147,6 @@ create_run_specific_files () {
     local pip=$1 && shift
     local run_type=$1 && shift
     local minor_version=""
-    local sample_name=""
-    sample_name=$(echo "${set_name}" | rev | cut -d"_" -f1 | rev)
 
     if [[ "${run_type}" == "Fastq" ]]; then
         pip="Fastq"
@@ -266,6 +264,8 @@ create_run_specific_files () {
             file_in_bucket=${file_path/gs\:\/\//}
             gs_url="${file_path}"
             # Replace sample barcode with sample name in FASTQ target
+            [[ $(tr -d -c '_' <<< "${set_name}" | wc -m) -eq 3 ]] || die "Fastq set name does not contain 3 underscores (${set_name})"
+            sample_name=$(echo "${set_name}" | rev | cut -d"_" -f1 | rev)
             target_file_name="${sample_name}_${file_name#*_}"
         fi
 
