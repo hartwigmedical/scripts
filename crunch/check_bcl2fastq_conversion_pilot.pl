@@ -521,17 +521,15 @@ sub readBclConvertDemuxCsv{
     foreach my $line (@$lines){
         my $lane = 'lane' . $line->{Lane};
         my $barcode = $line->{SampleID};
-        my $store_location;
-        if ($barcode eq UNDETERMINED){
-            $store_location = \%{$demux_store{undetermined}{$barcode}};
-        }else{
-            $store_location = \%{$demux_store{samples}{$barcode}};
-        }
         foreach my $value_key (keys %value_keys){
             my $store_key = $value_keys{$value_key};
-            $demux_store{flowcell}{$fcid}{$store_key} += $line->{$value_key};
-            $demux_store{lanes}{$lane}{$store_key} += $line->{$value_key};
-            $store_location->{$store_key} += $line->{$value_key};
+            if ($barcode eq UNDETERMINED){
+                $demux_store{undetermined}{$barcode}{$store_key} += $line->{$value_key};
+            }else {
+                $demux_store{flowcell}{$fcid}{$store_key} += $line->{$value_key};
+                $demux_store{lanes}{$lane}{$store_key} += $line->{$value_key};
+                $demux_store{samples}{$barcode}{$store_key} += $line->{$value_key};
+            }
         }
 
     }
