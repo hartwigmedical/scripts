@@ -35,7 +35,7 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e9,
         'max_undetermined' => 8,
         'yield_factor'     => 1e6,
-        'run_name_regex'   => '^NO\d{2}-\d{4}$'
+        'run_name_regex'   => '^NO\d{2}-[\w]+$'
     },
     'NextSeq' => {
         'platform_name' => "NEXTSEQ",
@@ -43,7 +43,7 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e9,
         'max_undetermined' => 50,
         'yield_factor'     => 1e6,
-        'run_name_regex'   => '^NS\d{2}-\d{4}$'
+        'run_name_regex'   => '^NS\d{2}-[\w]+$'
     },
     'ISeq' => {
         'platform_name' => "ISEQ",
@@ -51,15 +51,8 @@ my %SETTINGS_PER_PLATFORM = (
         'min_sample_yield' => 1e6,
         'max_undetermined' => 50,
         'yield_factor'     => 1,
-        'run_name_regex'   => '^IS\d{2}-\d{4}$'
-    },
-    # 'HiSeq' => {
-    #     'platform_name' => "HISEQ",
-    #     'min_flowcell_q30' => 75,
-    #     'min_sample_yield' => 1e9,
-    #     'max_undetermined' => 8,
-    #     'yield_factor'     => 1e6
-    # },
+        'run_name_regex'   => '^IS\d{2}-[\w]+$'
+    }
 );
 my $RUN_PATH;
 my $JSON_PATH;
@@ -213,7 +206,7 @@ sub determinePlatformByRunName {
     my $final_platform = "";
 
     ## try to match by regex
-    while(my($platform_option, $settings) = each $settings_per_platform) {
+    while(my($platform_option, $settings) = each %$settings_per_platform) {
         if ($runname =~ m/$settings->{ 'run_name_regex' }/) {
             if ($final_platform ne "") {
                 die "Multiple platforms match run name regex ($final_platform and $platform_option)\n"
