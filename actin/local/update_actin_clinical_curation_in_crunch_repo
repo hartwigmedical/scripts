@@ -17,7 +17,7 @@ do_update_actin_clinical_curation_file "${dir}/${prefix} - Toxicity.tsv" "${dir}
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Molecular Test.tsv" "${dir}/molecular_test.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Medication Dosage.tsv" "${dir}/medication_dosage.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Medication Category.tsv" "${dir}/medication_category.tsv"
-do_update_actin_clinical_curation_file "${dir}/${prefix} - Allergy.tsv" "${dir}/allergy.tsv"
+do_update_actin_clinical_curation_file "${dir}/${prefix} - Intolerance.tsv" "${dir}/intolerance.tsv"
 
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Laboratory Translation.tsv" "${dir}/laboratory_translation.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Blood Transfusion Translation.tsv" "${dir}/blood_transfusion_translation.tsv"
