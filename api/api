@@ -138,8 +138,8 @@ main(){
         printf "#%s\t%s\n" name id
         jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "datasets" ]]; then
-        printf "#%s\t%s\t%s\n" sample file_type file_url
-        jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\n" sample_name version file_type file_url
+        jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\(.[$s].version)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
