@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 gatk_path='/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar'
 java_path='/usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java'
-rtg="/data/tools/rtg/3.12.1/rtg"
+rtg="/data/tools/rtg-tools/3.12.1/rtg"
 ref_genome_fasta='/data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta'
 rtg_sdf_path='/data/dbs/RTGSDF_GRCh37'
 
