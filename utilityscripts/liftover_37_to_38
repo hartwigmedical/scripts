@@ -10,7 +10,7 @@ vcf_38=$3
 ref_genome=$(locate_ref_genome_37_fasta_file)
 
 info "Running Picard LiftOver on ${vcf_37}"
-java -jar /data/tools/picard-tools/2.18.27/picard.jar LiftoverVcf \
+java -jar /data/tools/picard/2.18.27/picard.jar LiftoverVcf \
     I=${vcf_37} \
     O=${vcf_38} \
     CHAIN=/data/resources/crunch/reference_genome_liftover/hg19ToHg38.over.chain \
