@@ -29,6 +29,4 @@ fi
 
 info "Running LILAC for ${tumor_sample}"
 
-# TODO move back to prod once v1.1 is done
-run_lilac_pilot ${run_dir} ${reference_dna_hla_bam} ${tumor_dna_hla_bam} ${rna_hla_bam}
-cp -r "${run_dir}/lilac_pilot" "${run_dir}/lilac"
+run_lilac_prod ${run_dir} ${reference_dna_hla_bam} ${tumor_dna_hla_bam} ${rna_hla_bam}
