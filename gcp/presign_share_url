@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source secrets_functions || exit 1
 
 set -e
 
 gcp_url=$1
-
-credentials=$(get_secret_from_secret_manager "gcp-hmf-ops-u-hmf-database")
+gcp_key_file="/data/dbs/gcp_credentials/hmf-ops"
 
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     error "Usage: $(basename "$0") gs://bucket/path/to_file"
 fi
 
-signurl_response=$(gsutil signurl -d 7d <(echo "${credentials}") "${gcp_url}_nope") || die "Unable to sign url (${gcp_url})"
+## first check object existance
+gsutil -q stat "${gcp_url}"
+if [[ $? -ne 0 ]]; then
+    error "Unable to locate file (${gcp_url})"
+fi
+## retrieve presigned URL
+signurl_response=$( gsutil signurl -d 7d "${gcp_key_file}" "${gcp_url}")
+if [[ $? -ne 0 ]]; then
+    error "Unable to generate URL for file"
+fi
+
 signurl_data=$(echo "${signurl_response}" | grep -A1 ^URL | tail -1)
 int_url=$(echo "${signurl_data}" | cut -f1)
 expires=$(echo "${signurl_data}" | cut -f3)
