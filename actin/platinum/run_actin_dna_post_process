@@ -10,16 +10,16 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-# Set the pipeline manually to v5.25
+# Set the pipeline manually to v5.27
 pipeline_version_file="${run_dir}/pipeline.version"
 if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
 fi
-version="5.26"
+version="5.27"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
-# Create a backup of original breakend and then bumo to virus interpreter v1.1
+# Create a backup of original breakend and then bump to virus interpreter v1.2
 virusbreakend_dir="${run_dir}/virusbreakend"
 if [[ -d "${virusbreakend_dir}" ]]; then
     cp -r "${virusbreakend_dir}" "${run_dir}/virusbreakend_orig"
@@ -27,8 +27,7 @@ fi
 
 # Rerun virus interpreter since older runs will have v1.0 or v1.1
 run_virus_interpreter_prod ${run_dir}
-# TODO: Reload when patient-db is upgraded to v1.2
-#load_virusinterpreter_data_prod ${run_dir}
+load_virusinterpreter_data_prod ${run_dir}
 
 # Retain original cuppa and clean up in preparation of rerun.
 cuppa_dir="${run_dir}/cuppa"
@@ -53,7 +52,8 @@ fi
 
 # Rerun protect to bump to v2.0 and use ACTIN + load to pilot database
 run_protect_research_on_actin ${run_dir}
-load_protect_data_prod_to_pilot_db ${run_dir}
+# TODO Fix loading PROTECT data when PROTECT has been upgraded.
+#load_protect_data_prod_to_pilot_db ${run_dir}
 
 # Run ORANGE in ACTIN mode to produce final molecular output.
 run_orange_in_actin_mode ${run_dir}
