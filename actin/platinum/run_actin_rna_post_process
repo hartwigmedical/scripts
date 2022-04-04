@@ -23,9 +23,8 @@ fi
 
 download_rna_bam_to_run_dir ${run_dir}
 if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
-    annotate_somatic_variants_with_rna ${run_dir}
-
-    # TODO Load RNA annotated variants once every run is on purple v3.2+
+    # TODO Fix once PAVE has been upgraded to v1.1 and rerun (pipeline v5.28)
+    #annotate_somatic_variants_with_rna ${run_dir}
     #load_rna_annotated_somatic_variants_to_prod ${run_dir}
 
     slice_rna_bam_for_hla ${run_dir}
@@ -33,5 +32,5 @@ if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     # Rerun LILAC to produce data on DNA/RNA combined.
     run_lilac_for_actin_run ${run_dir}
 
-    # TODO Also annotate germline VCF but that one is waiting on a purple upgrade.
+    # TODO Try annotate germline VCF on pipeline v5.28
 fi
