@@ -50,10 +50,9 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v2.0 and use ACTIN + load to pilot database
+# Rerun protect to bump to v2.0 and use ACTIN + reload to prod database
 run_protect_research_on_actin ${run_dir}
-# TODO Fix loading PROTECT data when PROTECT has been upgraded in v5.28 pipeline (or early on research).
-#load_protect_data_prod_to_pilot_db ${run_dir}
+load_protect_data_prod ${run_dir}
 
 # Run ORANGE in ACTIN mode to produce final molecular output.
 run_orange_in_actin_mode ${run_dir}
