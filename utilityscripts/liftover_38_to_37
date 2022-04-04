@@ -7,7 +7,7 @@ vcf_38=$1
 working_dir=$2
 vcf_37=$3
 
-ref_genome=$(locate_ref_genome_38_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 info "Running Picard LiftOver on ${vcf_38}"
 java -jar /data/tools/picard/2.18.27/picard.jar LiftoverVcf \
