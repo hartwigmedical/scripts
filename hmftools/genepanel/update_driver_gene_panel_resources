@@ -2,14 +2,14 @@
 
 source message_functions || exit 1
 
-driver_gene_panel_37_tsv=$HOME/hmf/tmp/new_driver_gene_panel_37.tsv
+driver_gene_panel_37_tsv="$HOME/hmf/tmp/new_driver_gene_panel_37.tsv"
 
 if [[ ! -f "${driver_gene_panel_37_tsv}" ]]; then
     error "No driver gene panel found at ${driver_gene_panel_37_tsv}"
 fi
 
-gene_utils_jar=$HOME/hmf/repos/hmftools/gene-utils/target/gene-utils-1.0-jar-with-dependencies.jar
-resource_repo_dir=$HOME/hmf/repos/common-resources-public
+gene_utils_jar="$HOME/hmf/repos/hmftools/gene-utils/target/gene-utils-1.0-jar-with-dependencies.jar"
+resource_repo_dir="$HOME/hmf/repos/common-resources-public"
 
 java -cp ${gene_utils_jar} com.hartwig.hmftools.geneutils.drivers.GenerateDriverGeneFiles \
     -new_driver_gene_panel_37_tsv ${driver_gene_panel_37_tsv} \
