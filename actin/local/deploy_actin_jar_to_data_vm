@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-version="0.1"
+version="1.0"
 actin_jar="${HOME}/hmf/repos/actin/system/target/system-${version}-jar-with-dependencies.jar"
 
 info "Copying ${actin_jar} to data-vm-prod-2"
