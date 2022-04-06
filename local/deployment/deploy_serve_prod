@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="1.9"
+version="1.10"
 
 do_deploy_prod_tool "serve" ${version}
