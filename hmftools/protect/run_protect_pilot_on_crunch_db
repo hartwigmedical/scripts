@@ -9,9 +9,9 @@ source api_functions || exit
 
 run_dir=$1 && shift
 
-serve_actionability_dir="/data/resources/crunch/serve/pilot_db/private_v1_9"
+serve_actionability_dir="/data/resources/crunch/actin/serve_db_new/new_format"
 
-output_dir="${run_dir}/protect_1_9"
+output_dir="${run_dir}/protect_2_1"
 protect_jar=$(locate_pilot_protect)
 
 if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${serve_actionability_dir}" || -z "${protect_jar}" ]]; then
