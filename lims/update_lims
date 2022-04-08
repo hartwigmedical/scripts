@@ -26,7 +26,7 @@ if [[ -f "${out_json}" ]]; then
     cp "${out_json}" "${back_dir}"
 fi
 
-info "Syncing files from NAS to datastore"
+info "Retrieving LIMS files from NAS"
 ${code_dir}/sync_lab_lims_from_nas "${lims_dir}" 2>&1 | tee -a ${log_file}
 info "Converting LIMS files to ${out_json}"
 ${code_dir}/convert_lims_data.pl \

@@ -9,7 +9,7 @@ threads=$(($(nproc) * 9 / 10))
 samtools_dir="/opt/tools/samtools/1.10"
 picard_dir="/opt/tools/picard/2.18.27"
 
-## reset paths for use at datastore/crunch server
+## reset paths for use at long lived VMs
 if [[ ! -d "${samtools_dir}" ]]; then
     picard_dir="/data/tools/picard/2.18.27"
     samtools_dir="/data/tools/samtools/1.10"

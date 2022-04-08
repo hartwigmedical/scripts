@@ -29,7 +29,7 @@ else
     info "Number of entries ${local_entry_count} is equal or larger than minimum required of ${minimal_local_entries}"
 fi
 
-# -d = delete files on GS that no longer exist on datastore
+# -d = delete files on GS that no longer exist locally
 # -e = exclude symlinks to go to GS
 # -r = Recursive
 gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-backup-archive/${remote_archive_dir}
