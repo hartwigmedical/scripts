@@ -6,7 +6,7 @@ source locate_files || exit 1
 # NOTES:
 #  1. Manually prepare the configs in the config_dir (update dates + pipeline images)
 #     - All available images for batch framework can be found via "gcloud container images list-tags eu.gcr.io/hmf-build/batch5"
-#  2. Manually build the pipeline5 repo (mvn clean package -DskipDocker)
+#  2. Manually build the batch-operations repo (mvn clean package)
 #  3. Connect to VPN
 #  4. Run this script
 #  4. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
@@ -25,10 +25,10 @@ if [[ ! -d ${config_dir} ]]; then
     error "Could not locate config dir: ${config_dir}"
 fi
 
-pipeline_jar="${HOME}/hmf/repos/pipeline5/batch-operations/target/batch-operations-local-SNAPSHOT.jar"
+batch_jar="${HOME}/hmf/repos/batch-operations/target/batch-operations-local-SNAPSHOT.jar"
 
-if [[ ! -f ${pipeline_jar} ]]; then
-    error "Could not locate pipeline jar: ${pipeline_jar}"
+if [[ ! -f ${batch_jar} ]]; then
+    error "Could not locate batch jar: ${batch_jar}"
 fi
 
 make_bucket -p hmf-crunch -n actin-rna-star-batch-${date}
@@ -39,4 +39,4 @@ kubectl create configmap actin-rna-batch-inputs-${date} \
     --from-file=isofox.csv=${config_dir}/actin_rna_isofox_input.csv
 
 kubectl create configmap actin-rna-batch-operations-${date} \
-    --from-file=batch-operations.jar=${pipeline_jar}
+    --from-file=batch-operations.jar=${batch_jar}
