@@ -12,6 +12,8 @@ run_dir=$1 && shift
 serve_actionability_dir="/data/resources/crunch/actin/serve_db_new/new_format"
 
 output_dir="${run_dir}/protect_2_1"
+create_or_cleanup_dir ${output_dir}
+
 protect_jar=$(locate_pilot_protect)
 
 if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${serve_actionability_dir}" || -z "${protect_jar}" ]]; then
