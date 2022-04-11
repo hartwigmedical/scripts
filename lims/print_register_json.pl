@@ -505,7 +505,7 @@ sub getCorrectBarcodeWithSuffixForRefSampleName{
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     } elsif ( $ready_new_ref_sample_count eq "0" ) {
-        $new_barcode_ref = $barcode_ref . "_c2f" . $date;
+        $new_barcode_ref = $barcode_ref . "-c2f" . $date;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
     } else {
