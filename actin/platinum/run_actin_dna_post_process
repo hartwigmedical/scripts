@@ -52,7 +52,7 @@ fi
 
 # Rerun protect to bump to v2.0 and use ACTIN + reload to prod database
 run_protect_research_on_actin ${run_dir}
-load_protect_data_prod ${run_dir}
+load_protect_data_pilot ${run_dir}
 
 # Run ORANGE in ACTIN mode to produce final molecular output.
 run_orange_in_actin_mode ${run_dir}
