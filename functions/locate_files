@@ -1360,20 +1360,11 @@ locate_protect_evidence_pilot_actin() {
     echo ${protect_evidence_tsv}
 }
 
-locate_protect_evidence_pilot_ckb() {
+locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_2_1/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}."
-    fi
-    echo ${protect_evidence_tsv}
-}
-
-locate_protect_evidence_pilot_vicc() {
-    local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_vicc/ -type f -name "*.protect.tsv")
-    if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot VICC evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }
