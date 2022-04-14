@@ -7,11 +7,10 @@ source locate_gcp_files || exit 1
 
 info "Start moving new registration jsons and logs"
 
-ssheet_date=$1 && shift
+prefix=$1 && shift
 registration_date=$1 && shift
 
 ## Sanity checks
-if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then die "Wrong ssheet date: run with \"$(basename "$0") YYMMDD\""; fi
 if [[ ! ${registration_date} =~ ^[0-9]{6}$ ]]; then die "Wrong registration date: run with \"$(basename "$0") YYMMDD\""; fi
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
@@ -23,7 +22,7 @@ local_registration_jsons_dir=$(locate_sample_registration_registered_jsons_dir) 
 local_new_jsons_dir=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find local new jsons dir path"
 local_registration_logs_dir=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
 
-relevant_logs=$(find "${local_registration_logs_dir}" -name "${registration_date}*${ssheet_date}*") || die "Cannot find local logs"
+relevant_logs=$(find "${local_registration_logs_dir}" -name "${registration_date}*${prefix}*") || die "Cannot find local logs"
 for log in ${relevant_logs}; do
     log_file_name="${log##*/}"
     in_bucket_path="${logs_bucket}/${log_file_name}"
