@@ -22,7 +22,8 @@ if [[ -d "${run_dir}/isofox" ]]; then
 fi
 
 download_rna_bam_to_run_dir ${run_dir}
-if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
+rna_bam_dir="$(locate_rna_bam_directory ${run_dir})"
+if [[ -d "${rna_bam_dir}" ]]; then
     # TODO Fix once PAVE has been upgraded to v1.1 and rerun (pipeline v5.28)
     #annotate_somatic_variants_with_rna ${run_dir}
     #load_rna_annotated_somatic_variants_to_prod ${run_dir}
@@ -33,4 +34,7 @@ if [[ -d "$(locate_rna_bam_directory ${run_dir})" ]]; then
     run_lilac_for_actin_run ${run_dir}
 
     # TODO Try annotate germline VCF on pipeline v5.28
+
+    # Clean up RNA bam
+    rm -r ${rna_bam_dir}
 fi
