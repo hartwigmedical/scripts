@@ -4,29 +4,27 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 script="$(basename "$0")"
-patientdb_jar="$(locate_prod_patient_db)"
 
 print_usage() {
 cat <<EOM
 -----
- Descr: Verifies a new COLO829T Somatic pipeline run
+ Descr: Verifies a Somatic pipeline run
  Usage: $script [required arguments] [optional arguments]
  Required arguments:
    --out_dir [s]              Output directory
    --truth_run_dir [s]        Input directory containing truth run
-   --truth_db_schema [s]      Name of schema in verification DB (eg "hmfpatients_527")
+   --truth_db_schema [s]      Name of schema in verification DB (eg "hmfpatients_5_27")
    --new_run_dir [s]          Input directory containing new run
-   --new_db_schema [s]        Name of schema in verification DB (eg "hmfpatients_528")
+   --new_db_schema [s]        Name of schema in verification DB (eg "hmfpatients_5_28")
  Optional arguments:
    --disable_sanity_checks    Disable extra checks
-   --patientdb_jar [s]        Jar to use instead of default [${patientdb_jar}]
 -----
 EOM
     exit 1
 }
 
 sanity_checks="TRUE"
-args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_db_schema:,new_run_dir:,new_db_schema:,patientdb_jar: -- "$@")
+args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_db_schema:,new_run_dir:,new_db_schema: -- "$@")
 [[ $? != 0 ]] && echo "Bad arguments" && exit 1
 eval set -- "$args"
 
@@ -38,7 +36,6 @@ while true; do
         --new_run_dir) new_run_dir=${2} ; shift 2 ;;
         --new_db_schema) new_db_schema=${2} ; shift 2 ;;
         --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
-        --patientdb_jar) patientdb_jar=${2} ; shift 2 ;;
         -- ) shift; break ;;
     esac
 done
@@ -138,28 +135,48 @@ main() {
     info "Executing locate_files test"
     "${jobs_dir}/locate_files_test" "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
 
+    info "Setting up SQL check"
+    sql_query_script="run_all_sql_verification_jobs"
+    sql_query_job="${jobs_dir}/${sql_query_script}"
+    sql_checks_job="${jobs_dir}/run_sql_jobs_after_db_load"
+    echo "${sql_query_job} ${jobs_dir} ${logs_dir} ${new_db_schema}" > "${sql_checks_job}"
+    chmod +x "${sql_checks_job}"
+    out_log="${logs_dir}/${sql_query_script}.log"
+    err_log="${logs_dir}/${sql_query_script}.err"
+    if [[ ! $(db_schema_exists_and_sample_present "${truth_db_schema}" "${truth_sample}") ]]; then
+        warn "Failed checks for schema [${truth_db_schema}] so unable to perform SQL check"
+    elif [[ ! $(db_schema_exists_and_sample_present "${new_db_schema}" "${new_sample}") ]]; then
+        warn "Failed checks for schema [${new_db_schema}] so unable to perform SQL check"
+    else
+        info "Executing ${sql_query_script}"
+        "${sql_checks_job}" > "${out_log}" 2>"${err_log}"
+    fi
+
     info "Executing compare_v5_runs"
     out_log="${logs_dir}/compare_v5_runs.log"
     err_log="${logs_dir}/compare_v5_runs.err"
     "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${out_log}" 2>"${err_log}"
 
-    info "Executing run_all_sql_verification_jobs"
-    sql_query_script="${jobs_dir}/run_all_sql_verification_jobs"
-    sql_checks_job="${jobs_dir}/run_sql_jobs_after_db_load"
-    echo "${sql_query_script} ${jobs_dir} ${logs_dir} ${new_db_schema}" > "${sql_checks_job}"
-    chmod +x "${sql_checks_job}"
-    out_log="${logs_dir}/run_all_sql_verification_jobs.log"
-    err_log="${logs_dir}/run_all_sql_verification_jobs.err"
-    "${sql_checks_job}" > "${out_log}" 2>"${err_log}"
-
-    db_load_script="load_run_into_pipeline_verification_db"
-    info "TODO:"
-    info "  1. Inspect all log files in ${logs_dir}"
-    info "  2. Ensure database \"${new_db_schema}\" exists in verification instance on GCP"
-    info "  3. If not already done: load into DB (nohup ${db_load_script} ${new_run} ${new_db_schema} ${patientdb_jar} > ${logs_dir}/${db_load_script}.log &)"
-    info "  4. If not already done: execute sql (nohup ${sql_checks_job} > ${logs_dir}/sql_verification_after_load.log &)"
-    info "  5. Inspect all SQL log files in logs dir (ls ${logs_dir})"
+    info "TODO NEXT: Inspect all log files in ${logs_dir}"
     info "Finished with $script"
+}
+
+db_schema_exists_and_sample_present() {
+    local schema=$1 && shift
+    local sample=$1 && shift
+    exec_script="execute_sql_on_pipeline_verification_db"
+    schema_query="SELECT COUNT(SCHEMA_NAME) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '${schema}'"
+    sample_query="SELECT COUNT(*) FROM ${schema}.purity WHERE sampleId = '${sample}'"
+    if [[ ! $("$exec_script" "$schema" "$schema_query" | tail -1) -eq 1 ]]; then
+        warn "DB schema not found [$schema]"
+        return 1
+    fi
+    if [[ ! $("$exec_script" "$schema" "$sample_query" | tail -1) -eq 1 ]]; then
+        warn "Sample [$sample] not found in purity table of schema [$schema]"
+        return 1
+    fi
+    info "OK: DB schema [$schema] found with sample [$sample] present"
+    return 0
 }
 
 copy_file() {
