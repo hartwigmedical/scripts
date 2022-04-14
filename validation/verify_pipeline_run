@@ -14,9 +14,9 @@ cat <<EOM
  Required arguments:
    --out_dir [s]              Output directory
    --truth_run_dir [s]        Input directory containing truth run
-   --truth_schema [s]         Name of schema in verification DB (eg "hmfpatients_527")
+   --truth_db_schema [s]      Name of schema in verification DB (eg "hmfpatients_527")
    --new_run_dir [s]          Input directory containing new run
-   --new_schema [s]           Name of schema in verification DB (eg "hmfpatients_528")
+   --new_db_schema [s]        Name of schema in verification DB (eg "hmfpatients_528")
  Optional arguments:
    --disable_sanity_checks    Disable extra checks
    --patientdb_jar [s]        Jar to use instead of default [${patientdb_jar}]
