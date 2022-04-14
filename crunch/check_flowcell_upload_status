@@ -21,8 +21,11 @@ while read -r flowcell_path; do
         continue
     fi
 
-    flowcell_id_with_a_or_b="${flowcell_name##*_}"
-    flowcell_id="${flowcell_id_with_a_or_b:1}"
+    flowcell_id="${flowcell_name##*_}"
+    if [[ ${flowcell_id} =~ [AB]H[A-Z0-9]{8} ]]; then
+      # For NovaSeq and NextSeq strip the first letter, but not for Iseq.
+      flowcell_id="${flowcell_id:1}"
+    fi
 
     flowcell_id_count_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq length | tr -d '"\n"') \
         || die "Could not get number of flowcells in the API with flowcell ID '${flowcell_id}'"
