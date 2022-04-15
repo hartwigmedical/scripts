@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+PARSE_SCRIPT="check_bcl2fastq_conversion_pilot.pl"
+ROUNDING_SCRIPT="base_count_to_gbase.py"
+
+CONVERSION_REPORT="hmf_conversion_report.tsv"
+SAMPLES_REPORT="hmf_samples_report.tsv"
+RUN_REPORT="hmf_run_report.tsv"
+
+FORENSICS_BUCKET="bcl-forensics-prod-1"
+
+command -v "$PARSE_SCRIPT" >/dev/null || die "Dependency not found: $PARSE_SCRIPT"
+command -v "$ROUNDING_SCRIPT" >/dev/null || die "Dependency not found: $ROUNDING_SCRIPT"
+command -v "hmf_api_get" >/dev/null || die "Dependency not found: hmf_api_get"
+
+error_log="output/results/Logs/Errors.log"
+samplesheet_csv="input/SampleSheet.csv"
+runinfo_xml="input/RunInfo.xml"
+demux_csv="output/results/Reports/Demultiplex_Stats.csv"
+quality_csv="output/results/Reports/Quality_Metrics.csv"
+required_files=("$error_log" "$samplesheet_csv" "$runinfo_xml" "$demux_csv" "$quality_csv")
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
+    script=$(basename "$0")
+    echo ""
+    echo " Descr: downloads flowcell conversion forensic files and performs QC"
+    echo " Usage: $script <flowcell-id> [<flowcell-id-2> <flowcell-id-N>]"
+    echo "    Eg: $script AHCFL5CCXY BHCCVKCCXY"
+    echo ""
+    exit 1
+fi
+flowcells_ids=("$@")
+
+function main() {
+    cmds_to_execute=()
+
+    tmpdir="/tmp/$(basename "$0")/$(date '+%y%m%d%M%S')"
+    info "Creating tmp dir [${tmpdir}]"
+    mkdir -p "${tmpdir}" || die "Unable to create tmp dir [$info]"
+
+    for flowcell_id in "${flowcells_ids[@]}"; do
+
+        info="$flowcell_id"
+        info "Working on flowcell [${info}]"
+
+        flowcell_api_info=$(get_flowcell_from_api "${flowcell_id}") || die "Unable to find flowcell in API [$info]"
+        flowcell_forensics_url=$(get_forensics_url "${FORENSICS_BUCKET}" "${flowcell_id}") || die "Unable to find forensics [$info]"
+
+        seq_run=$(basename "${flowcell_forensics_url}")
+        outdir="${tmpdir}/${seq_run}"
+
+        conversion_report_tsv="${outdir}/${CONVERSION_REPORT}"
+        samples_report_tsv="${outdir}/${SAMPLES_REPORT}"
+        run_report_tsv="${outdir}/${RUN_REPORT}"
+        run_report_tsv="${outdir}/${RUN_REPORT}"
+
+        mkdir -p "${outdir}" || die "Unable to create output dir [$info]"
+
+        info "  Retrieving files from bucket [$info]"
+        for file in "${required_files[@]}"; do
+            file_url="${flowcell_forensics_url}/${file}"
+            gsutil -q cp -r "${file_url}" "${outdir}" || die "Unable to copy file [$file_url]"
+        done
+
+        hmf_name="$(grep '^Experiment' "${outdir}/SampleSheet.csv" | cut -d',' -f2 | tr -d '\r')"
+        nas_name="${hmf_name}__${seq_run}"
+        info="${info}|${hmf_name}"
+
+        [[ -s "${outdir}/Errors.log" ]] && warn "  Non-empty error log!!"
+
+        ${PARSE_SCRIPT} -sampleSheet "${outdir}/SampleSheet.csv" -runInfoXml "${outdir}/RunInfo.xml" \
+          -qualityCsv "${outdir}/Quality_Metrics.csv" -demuxCsv "${outdir}/Demultiplex_Stats.csv" \
+        > "${conversion_report_tsv}" || die "Script $PARSE_SCRIPT exited with non zero exit status"
+
+        info "  Processing conversion report [$info]"
+        grep "^## RunOverview" "${conversion_report_tsv}" | sed 's#\#\#\ RunOverview INFO:\ ##g' > "${run_report_tsv}"
+        process_samples "${conversion_report_tsv}" > "${samples_report_tsv}"
+
+        cmds_to_execute+=("rsync -ah ${outdir}/ nas:/volume1/web/qc/conversion/${nas_name}/")
+    done
+
+    info "SAMPLE info"
+    find "$tmpdir" -name "${SAMPLES_REPORT}" -exec cat {} \; | sort -r
+    echo ""
+
+    info "RUN info"
+    find "$tmpdir" -name "${RUN_REPORT}" -exec cat {} \; | sort -r
+    echo ""
+
+    info "Extra actions:"
+    for cmd in "${cmds_to_execute[@]}"; do
+        echo "${cmd}"
+    done
+    echo ""
+}
+
+function get_flowcell_from_api () {
+    local flowcell_id=$1 && shift
+    json=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")
+    count=$(jq 'length' <<< $json)
+    if [[ "$count" -eq 1 ]]; then
+        echo "$json" && return 0
+    else
+        return 1
+    fi
+}
+
+function get_forensics_url () {
+    local bucket=$1 && shift
+    local fcid=$1 && shift
+    url=$(gsutil ls -d "gs://${bucket}/*${fcid}")
+    url=${url%/}
+    echo "$url"
+}
+
+function process_samples () {
+    local tsv=$1 && shift
+    grep ^SAMPLE "$tsv" | while read -r line; do
+        yld_seq=$(echo "${line}" | cut -f3)
+        yld_seq_base_count=$((yld_seq*1000000))
+        q30_seq=$(echo "${line}" | cut -f4)
+        sample_id=$(echo "${line}" | cut -f8)
+        sample_nm=$(echo "${line}" | cut -f9)
+        submission=$(echo "${line}" | cut -f10)
+        api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            smp_status="Unregistered"
+            yld=""
+            req=""
+        else
+            sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
+            sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
+            # Note: last cut shortens "Insufficient Quality" to "Insufficient"
+            smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
+            yld=$(echo "${sample_tsv}" | cut -f2)
+            req=$(echo "${sample_tsv}" | cut -f3)
+            if [[ "${yld}" == "" && "${req}" != ""  ]]; then
+                # This happens when no FASTQ files are registered yet, but the sample is registered properly
+                yld="0"
+            fi
+        fi
+
+        if [[ "${req}" == "" ]]; then
+          # No required yield known
+          req_gbase="?"
+        elif [[ ${req} -eq 1 ]]; then
+          # A req of 1 base is used when there is no req, but 0 would cause the sample to incorrectly be 'Validated' before being sequenced
+          req_gbase="0"
+        else
+          req_gbase=$("${ROUNDING_SCRIPT}" --base_count "${req}") || die "Could not convert req for ${sample_id} to gbase: ${req}"
+        fi
+
+        if [[ "${yld}" == "" ]]; then
+          yld_gbase="?"
+        elif [[ "${req_gbase}" == "?" ]]; then
+          yld_gbase=$("${ROUNDING_SCRIPT}" --base_count "${yld}") || \
+                die "Could not convert yld for ${sample_id} to gbase: ${yld}"
+        else
+          yld_gbase=$("${ROUNDING_SCRIPT}" --base_count "${yld}" --round_like "${req_gbase}") || \
+                die "Could not convert yld for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+
+        if [[ "${req_gbase}" == "?" ]]; then
+          yld_seq_gbase=$("${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase: ${yld}"
+        else
+          yld_seq_gbase=$("${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
+        fi
+        # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
+        # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+        api_run=$(
+          hmf_api_get "runs?barcode=${sample_id}" | \
+          jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
+          jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51)]' | \
+          jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
+          tail -1
+        )
+
+        if [[ "${api_samples_json}" == "[]" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
+        elif [[ "${req_gbase}" == "?" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no yield requirement!)"
+        elif [[ "${api_run}" == "" ]]; then
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
+        else
+            run_status=$(cut -f1 <<< "${api_run}")
+            ini=$(cut -f2 <<< "${api_run}")
+            ini=${ini/.ini/}
+            set_name=$(cut -f3 <<< "${api_run}")
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t${set_name}"
+        fi
+        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
+   done | sort -k1,1 -k3,3
+}
+
+main
