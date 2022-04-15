@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import argparse
 import sys
 from decimal import Decimal, ROUND_DOWN
