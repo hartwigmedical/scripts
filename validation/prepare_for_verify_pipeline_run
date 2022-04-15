@@ -54,8 +54,8 @@ main() {
     new_dir_path="${out_runs_dir}/${new_run_name}"
     truth_metadata_file="${truth_run_url}/metadata.json"
     new_metadata_file="${new_run_url}/metadata.json"
-    truth_sample=$(gsutil cat "$truth_metadata_file" | jq -r '.tumor.sampleName')
-    new_sample=$(gsutil cat "$new_metadata_file" | jq -r '.tumor.sampleName')
+    truth_sample=$(parse_tumor_sample_name_from_metadata_json "$truth_metadata_file")
+    new_sample=$(parse_tumor_sample_name_from_metadata_json "$new_metadata_file")
     truth_version_tag="TODO"
     new_version_tag="TODO"
 
@@ -75,10 +75,19 @@ main() {
     next_cmd+=" --out_dir ${out_dir}/verification"
     next_cmd+=" --truth_run_dir ${truth_dir_path}"
     next_cmd+=" --new_run_dir ${new_dir_path}"
-    next_cmd+=" --truth_version_tag ${truth_version_tag}"
-    next_cmd+=" --new_version_tag ${new_version_tag}"
+    next_cmd+=" --truth_db_schema ${truth_version_tag}"
+    next_cmd+=" --new_db_schema ${new_version_tag}"
     next_cmd+=" > ${out_dir}/verification.log &"
     info "Next step: $next_cmd"
+}
+
+parse_tumor_sample_name_from_metadata_json () {
+    local json_url=$1 && shift
+    sample_name=$(gsutil cat "${json_url}" | jq -r '.tumor.sampleName')
+    if [[ "$sample_name" == "" || "$sample_name" == "null" ]]; then
+        warn "Unable to parse sample name from metadata json (${json_url})"
+    fi
+    echo "$sample_name"
 }
 
 check_pipeline_version_file () {
