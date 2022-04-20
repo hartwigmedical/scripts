@@ -282,6 +282,10 @@ locate_actin_minimal_molecular_json() {
     echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
 
+locate_actin_external_treatment_mapping_tsv() {
+    echo "/data/resources/crunch/orange_curation/external_treatment_mapping.tsv"
+}
+
 locate_actin_serve_bridge_tsv() {
     echo "/data/actin/serve_bridge/actin_knowledgebase.tsv"
 }
@@ -1351,15 +1355,6 @@ locate_protect_evidence() {
     local protect_evidence_tsv=$(find -L ${run_dir}/protect/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT evidence tsv in ${run_dir}."
-    fi
-    echo ${protect_evidence_tsv}
-}
-
-locate_protect_evidence_pilot_actin() {
-    local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_actin/ -type f -name "*.protect.tsv")
-    if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot ACTIN evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }
