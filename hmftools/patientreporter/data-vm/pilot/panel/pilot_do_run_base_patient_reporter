@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+patient_reporter_jar=$(locate_pilot_patient_reporter)
+
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
+company_logo=$(locate_company_logo_prod)
+signature=$(locate_signature_prod)
+
+expected_pipeline_version=$(extract_expected_pipeline_version_research)
+
+java -jar ${patient_reporter_jar} \
+    -panel \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -require_pipeline_version_file \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -comments "This is a pilot patient report and is not meant for production purpose" \
+    "$@"

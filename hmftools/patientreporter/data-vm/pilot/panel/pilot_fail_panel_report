@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+pilot_do_run_base_patient_reporter  \
+      -panel_qc_fail \
+      -panel_qc_fail_reason \ "$@"

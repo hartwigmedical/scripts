@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+panel_vcf_name=$(locate_purple_somatic_variants ${run_dir})
+pilot_do_run_base_patient_reporter  \
+      -panel_vcf_name ${panel_vcf_name}  "$@"
