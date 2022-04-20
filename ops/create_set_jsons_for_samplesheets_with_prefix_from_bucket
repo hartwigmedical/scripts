@@ -36,7 +36,7 @@ if [[ ${preexisting_json_count} -gt 0 ]]; then
   info " nohup create_set_jsons_for_samplesheets_with_prefix \"${prefix}\" > \"${json_creation_log}\" 2>&1 &"
 else
   info "Creating registration JSON's in ${unregistered_jsons_dir} . For log see ${json_creation_log} ."
-  nohup create_set_jsons_for_samplesheets_with_prefix "${prefix}" > "${json_creation_log}" 2>&1 &
+  create_set_jsons_for_samplesheets_with_prefix "${prefix}" > "${json_creation_log}" 2>&1
 fi
 
 info "See \"${json_creation_log}\" for next steps"
