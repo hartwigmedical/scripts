@@ -10,7 +10,7 @@ signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version_research)
 
-java -cp ${patient_reporter_jar} ccom.hartwig.hmftools.patientreporter.PanelReporterApplication \
+java -cp ${patient_reporter_jar} com.hartwig.hmftools.patientreporter.PanelReporterApplication \
     -panel \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -company_logo ${company_logo} \
