@@ -38,6 +38,8 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
 fi
 
 output_dir_report=${HOME}/reports/pilot
+output_dir_data=${HOME}/reports/pilot
 
 pilot_do_panel_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode}  \
-      -output_dir_report ${output_dir_report}  "$@"
+      -output_dir_report ${output_dir_report} \
+      -output_dir_data ${output_dir_data} "$@"
