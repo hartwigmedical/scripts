@@ -146,9 +146,9 @@ main() {
     chmod +x "${sql_checks_job}"
     out_log="${logs_dir}/${sql_query_script}.log"
     err_log="${logs_dir}/${sql_query_script}.err"
-    if [[ "${sanity_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${truth_db_schema}" "${truth_sample}") ]]; then
+    if [[ "${schema_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${truth_db_schema}" "${truth_sample}") ]]; then
         warn "Failed checks for schema [${truth_db_schema}] so unable to perform SQL check"
-    elif [[ "${sanity_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${new_db_schema}" "${new_sample}") ]]; then
+    elif [[ "${schema_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${new_db_schema}" "${new_sample}") ]]; then
         warn "Failed checks for schema [${new_db_schema}] so unable to perform SQL check"
     else
         info "Executing ${sql_query_script}"
