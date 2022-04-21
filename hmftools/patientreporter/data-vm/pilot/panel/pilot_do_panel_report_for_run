@@ -33,4 +33,5 @@ pilot_do_run_base_panel_reporter  \
       -ref_sample_id ${ref_sample} \
       -ref_sample_barcode ${ref_sample_barcode} \
       -tumor_sample_id ${sample} \
-      -tumor_sample_barcode ${barcode} "$@"
+      -tumor_sample_barcode ${barcode} \
+      -ref_genome_version 38 "$@"
