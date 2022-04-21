@@ -18,13 +18,15 @@ cat <<EOM
    --new_db_schema [s]        Name of schema in verification DB (eg "hmfpatients_5_28")
  Optional arguments:
    --disable_sanity_checks    Disable extra checks
+   --disable_schema_checks    Assume required schemas are in place and do not explicitly check for them
 -----
 EOM
     exit 1
 }
 
 sanity_checks="TRUE"
-args=$(getopt -o "" --longoptions disable_sanity_checks,out_dir:,truth_run_dir:,truth_db_schema:,new_run_dir:,new_db_schema: -- "$@")
+schema_checks="TRUE"
+args=$(getopt -o "" --longoptions disable_sanity_checks,disable_schema_checks,out_dir:,truth_run_dir:,truth_db_schema:,new_run_dir:,new_db_schema: -- "$@")
 [[ $? != 0 ]] && echo "Bad arguments" && exit 1
 eval set -- "$args"
 
@@ -36,6 +38,7 @@ while true; do
         --new_run_dir) new_run_dir=${2} ; shift 2 ;;
         --new_db_schema) new_db_schema=${2} ; shift 2 ;;
         --disable_sanity_checks) sanity_checks="FALSE"; shift ;;
+        --disable_schema_checks) schema_checks="FALSE"; shift ;;
         -- ) shift; break ;;
     esac
 done
@@ -143,9 +146,9 @@ main() {
     chmod +x "${sql_checks_job}"
     out_log="${logs_dir}/${sql_query_script}.log"
     err_log="${logs_dir}/${sql_query_script}.err"
-    if [[ ! $(db_schema_exists_and_sample_present "${truth_db_schema}" "${truth_sample}") ]]; then
+    if [[ "${sanity_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${truth_db_schema}" "${truth_sample}") ]]; then
         warn "Failed checks for schema [${truth_db_schema}] so unable to perform SQL check"
-    elif [[ ! $(db_schema_exists_and_sample_present "${new_db_schema}" "${new_sample}") ]]; then
+    elif [[ "${sanity_checks}" == "TRUE" && ! $(db_schema_exists_and_sample_present "${new_db_schema}" "${new_sample}") ]]; then
         warn "Failed checks for schema [${new_db_schema}] so unable to perform SQL check"
     else
         info "Executing ${sql_query_script}"
