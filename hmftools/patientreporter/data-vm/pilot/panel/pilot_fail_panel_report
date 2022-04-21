@@ -25,7 +25,7 @@ barcode=$(find_barcode_for_sample_name ${sample})
 output_dir_report=${HOME}/reports/pilot
 output_dir_data=${HOME}/reports/pilot
 
-pilot_do_run_qc_fail_panel_reporter {sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${ref_sample_mandatory} \
+pilot_do_run_qc_fail_panel_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${ref_sample_mandatory} \
       -panel_qc_fail \
       -panel_qc_fail_reason ${fail_reason} \
       -output_dir_data ${output_dir_data} \
