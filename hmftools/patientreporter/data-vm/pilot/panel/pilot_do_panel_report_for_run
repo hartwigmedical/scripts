@@ -9,5 +9,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 panel_vcf_name=$(locate_purple_somatic_variants ${run_dir})
+pipeline_version_file=${run_dir}/pipeline.version
 pilot_do_run_base_patient_reporter  \
-      -panel_vcf_name ${panel_vcf_name}  "$@"
+      -panel_vcf_name ${panel_vcf_name} \
+      -pipeline_version_file ${pipeline_version_file} "$@"
