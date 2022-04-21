@@ -17,7 +17,6 @@ java -cp ${patient_reporter_jar} com.hartwig.hmftools.patientreporter.PanelRepor
     -lims_dir ${lims_dir} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -require_pipeline_version_file \
     -expected_pipeline_version ${expected_pipeline_version} \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"

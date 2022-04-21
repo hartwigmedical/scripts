@@ -30,6 +30,7 @@ pipeline_version_file=${run_dir}/pipeline.version
 pilot_do_run_base_panel_reporter  \
       -panel_vcf_name ${panel_vcf_name} \
       -pipeline_version_file ${pipeline_version_file} \
+      -require_pipeline_version_file \
       -ref_sample_id ${ref_sample} \
       -ref_sample_barcode ${ref_sample_barcode} \
       -tumor_sample_id ${sample} \
