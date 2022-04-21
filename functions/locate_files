@@ -851,6 +851,15 @@ locate_purple_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_purple_somatic_variants_panel() {
+    local run_dir=$1
+    local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
+    if [[ -z "${somatic_vcf}" ]]; then
+        error "Unable to locate purple somatic variants in ${run_dir}."
+    fi
+    echo ${somatic_vcf} | tr "/" " " | awk '{print $NF}'
+}
+
 locate_purple_pilot_somatic_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot

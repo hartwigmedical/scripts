@@ -25,8 +25,9 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${barcode}" ]]; th
     exit 1;
 fi
 
-panel_vcf_name=$(locate_purple_somatic_variants ${run_dir})
+panel_vcf_name=$(locate_purple_somatic_variants_panel ${run_dir})
 pipeline_version_file=${run_dir}/pipeline.version
+
 pilot_do_run_base_panel_reporter  \
       -panel_vcf_name ${panel_vcf_name} \
       -pipeline_version_file ${pipeline_version_file} \
