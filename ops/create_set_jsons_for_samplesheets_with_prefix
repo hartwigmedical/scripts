@@ -20,7 +20,7 @@ if [[ -f "${register_log}" ]]; then error "Log already exists: ${register_log}";
 info "JsonCreation started for prefix: ${prefix}"
 
 ## Actual work
-for ssheet in "${SHEETS_LOC}"/"${prefix}"_*_SampleSheet*; do
+for ssheet in "${SHEETS_LOC}"/"${prefix}"*SampleSheet*; do
     echo "${ssheet}";
     print_register_json.pl -samplesheet "${ssheet}";
 done > "${create_log}"
