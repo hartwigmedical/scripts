@@ -1,5 +1,5 @@
 SELECT
-    MIN(pipeline),
+    MIN(pipeline) AS pipeline,
     chromosome,
     chromosomeBand,
     gene,
