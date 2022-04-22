@@ -1368,6 +1368,15 @@ locate_protect_evidence() {
     echo ${protect_evidence_tsv}
 }
 
+locate_protect_evidence_old() {
+    local run_dir=$1
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_old/ -type f -name "*.protect.tsv")
+    if [[ -z "${protect_evidence_tsv}" ]]; then
+        error "Unable to locate PROTECT evidence tsv in ${run_dir}."
+    fi
+    echo ${protect_evidence_tsv}
+}
+
 locate_protect_evidence_pilot() {
     local run_dir=$1
     local protect_evidence_tsv=$(find -L ${run_dir}/protect_2_1/ -type f -name "*.protect.tsv")
