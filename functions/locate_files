@@ -247,11 +247,11 @@ locate_signature_prod() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.25"
+    echo "5.28"
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.27"
+    echo "5.28"
 }
 
 ############################### NON JAVA TOOLS #################################
