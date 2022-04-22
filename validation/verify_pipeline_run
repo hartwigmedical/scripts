@@ -115,6 +115,7 @@ main() {
         "diff_svBreakend.sql"
         "diff_virusAnnotation.sql"
         "diff_virusBreakend.sql"
+        "diff_driverCatalog.sql"
     )
     for job_file_name in "${script_jobs[@]}" "${sql_jobs[@]}"; do
         copy_file "${jobs_source_path}/${job_file_name}" "${jobs_dir}"
