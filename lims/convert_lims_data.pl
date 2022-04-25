@@ -192,13 +192,14 @@ sub addLamaSamplesToSamples{
 
         my $sample_name = $sample_to_store{sample_name};
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
         }
         else {
             sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex");
+            #print Dumper(\%sample_to_store);
             next;
         }
 
@@ -210,6 +211,16 @@ sub addLamaSamplesToSamples{
         if (not defined $isolation_type) {
             sayWarn("SKIPPING: no isolation type defined for $isolate_barcode (pls fix in LAMA)");
             next;
+        }
+        elsif ($isolation_type eq 'Tumor FFPE') {
+            $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
+            # sanity check that we are indeed dealing with TO (tumor only)
+            my $expected_cohort = 'TARGTO';
+            if ($sample_to_store{cohort} ne $expected_cohort){
+                sayWarn("SKIPPING: Found 'Tumor FFPE' sample but cohort is not $expected_cohort for $isolate_barcode");
+                next;
+            }
+            $final_target_yield = 50;
         }
         elsif ($isolation_type eq 'Tissue') {
             $analysis_type = 'Somatic_T'; # DNA from tumor tissue
@@ -232,19 +243,21 @@ sub addLamaSamplesToSamples{
             next
         }
 
-        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            if (not defined $original_submission or $original_submission eq '') {
-                if ($analysis_type eq 'Somatic_R') {
-                    sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
-                }
-                elsif (not defined $original_submission) {
-                    sayWarn("SKIPPING CORE for missing submission id (id:$isolate_barcode name:$sample_name)");
-                }
-                else{
-                    sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
-                }
-                next;
+        if (not defined $original_submission or $original_submission eq '') {
+            if ($analysis_type eq 'Somatic_R') {
+                sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
             }
+            elsif (not defined $original_submission) {
+                sayWarn("SKIPPING CORE for missing submission id (id:$isolate_barcode name:$sample_name)");
+            }
+            else{
+                sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
+            }
+            next;
+        }
+
+        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
+
             $sample_to_store{ 'entity' } = $original_submission;
             $sample_to_store{ 'project_name' } = $original_submission;
 
@@ -260,12 +273,11 @@ sub addLamaSamplesToSamples{
             }
         }
         elsif (exists $centers_dict->{ $center }) {
-            # All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB/SHRP/GAYA)
+            # All other samples are meant-for-database
             my $centername = $centers_dict->{ $center };
-            my $register_submission = 'HMFreg' . $study;
             $sample_to_store{original_submission} = $original_submission;
-            $sample_to_store{submission} = $register_submission;
-            $sample_to_store{project_name} = $register_submission;
+            $sample_to_store{submission} = $original_submission;
+            $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
         }
         else {
@@ -1279,9 +1291,9 @@ sub getFieldNameTranslations{
         'frBarcodeDNA'         => 'sample_id_dna',
         'frBarcodeRNA'         => 'sample_id_rna',
         'isTissue'             => 'is_tissue',
-        'shallowPurity'        => 'shallow_purity',
-        'finalPurity'          => 'purity',
-        'reportDate'           => 'report_date'
+        'shallowPurity'        => 'shallow_purity', # TODO: remove with LAMA v1.4
+        'finalPurity'          => 'purity', # TODO: remove with LAMA v1.4
+        'reportDate'           => 'report_date' # TODO: remove with LAMA v1.4
     );
 
     my %lama_content_translations_by_field_name = (

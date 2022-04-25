@@ -20,6 +20,7 @@ my $SOM_INI = "Somatic.ini";
 my $SHA_INI = "ShallowSeq.ini";
 my $RNA_INI = "Rna.ini";
 my $BCL_INI = "BCL.ini";
+my $TAR_INI = "Targeted.ini";
 
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
@@ -453,6 +454,35 @@ sub processSample{
             $use_existing_tum,
             $skip_recalculating_yield_tum,
         );
+    }
+    elsif ( $analysis eq 'Targeted_Tumor_Only' ){
+        my $ini = $TAR_INI;
+        my $set = join( "_", $date, $submission, $barcode, $patient );
+        my $exists_in_api = `hmf_api_get 'samples?barcode=$barcode' | jq 'map(select(.status != "Unregistered")) | length'`;
+        chomp($exists_in_api);
+
+        if ( $exists_in_api ne "0" ){
+            sayInfo("  Sample barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
+            $use_existing_tum = 1;
+        }
+
+        sayInfo("  Set name constructed to $set");
+        $json_data{ 'ini' } = "$ini";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
+        $json_data{ 'priority' } = $priority;
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'tumor',
+            $q30,
+            $yield,
+            $use_existing_tum,
+            $skip_recalculating_yield_tum,
+        );
+
     }
     elsif ( $analysis eq 'Somatic_R' ){
         sayInfo("  RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)");
