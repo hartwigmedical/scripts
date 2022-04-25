@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
+source api_functions || exit 1
+
+sample=$1 && shift
+
+fail_reason="panel_failure"
+ref_sample_mandatory=0
+
+ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+fi
+
+barcode=$(find_barcode_for_sample_name ${sample})
+
+output_dir_report=${HOME}/reports/pilot
+output_dir_data=${HOME}/reports/pilot
+
+do_run_qc_fail_panel_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${ref_sample_mandatory} \
+      -panel_qc_fail \
+      -panel_qc_fail_reason ${fail_reason} \
+      -output_dir_data ${output_dir_data} \
+      -output_dir_report ${output_dir_report} "$@"
