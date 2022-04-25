@@ -247,7 +247,7 @@ locate_signature_prod() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.28"
+    echo "5.25"
 }
 
 extract_expected_pipeline_version_research() {
