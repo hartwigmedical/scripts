@@ -10,12 +10,12 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})"
-
-
-orange_json="$(locate_orange_json ${sample_cohort_dir})"
 serve_bridge_tsv="$(locate_actin_serve_bridge_tsv)"
 external_treatment_mapping_tsv="$(locate_actin_external_treatment_mapping_tsv)"
+
+
+sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})"
+orange_json="$(locate_orange_json ${sample_cohort_dir})"
 
 output_directory="${sample_cohort_dir}/actin"
 create_or_cleanup_dir ${output_directory}

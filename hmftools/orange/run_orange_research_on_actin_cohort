@@ -12,11 +12,12 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
+orange_jar=$(locate_research_orange)
+
 sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})"
+protect_evidence_tsv=$(locate_protect_evidence ${sample_cohort_dir})
 output_dir="${sample_cohort_dir}/orange"
 create_or_cleanup_dir ${output_dir}
-
-orange_jar=$(locate_research_orange)
 
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
@@ -72,7 +73,6 @@ else
 fi
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence ${sample_cohort_dir})
 
 cuppa_feature_plot_cmd=""
 if [[ ! -z ${cuppa_feature_plot} ]]; then
