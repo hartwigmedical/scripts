@@ -140,6 +140,8 @@ main(){
     elif [[ "${class}" == "datasets" ]]; then
         printf "#%s\t%s\t%s\t%s\n" sample_name version file_type file_url
         jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\(.[$s].version)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
+        # Need to grab RNA data separately because data structure differs
+        jq --arg t "rna_raw_reads" -r 'select(.[][$t]) | .[][$t] | keys[] as $s | .[$s][] | [$s, .version, $t, .path] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
