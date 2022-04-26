@@ -29,12 +29,17 @@ my $REL_DCSV_PATH = 'Fastq/Reports/Demultiplex_Stats.csv';
 my $REL_RXML_PATH = 'Fastq/Reports/RunInfo.xml';
 my $REL_SSHT_PATH = 'Fastq/Reports/SampleSheet.csv';
 
+my $NOVASEQ = "NovaSeq";
+my $NEXTSEQ = "NextSeq";
+my $ISEQ = "ISeq";
+my $HISEQ = "HiSeq";
+
 # The official QC settings are in the platforms endpoint of HMFAPI (the copy here is for convenience)
 my %SETTINGS_PER_PLATFORM = (
-    'NovaSeq' => {'min_flowcell_q30' => 85, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
-    'NextSeq' => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' => 50, 'yield_factor' => 1e6},
-    'ISeq'    => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e6, 'max_undetermined' => 50, 'yield_factor' => 1},
-    'HiSeq'   => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
+    $NOVASEQ => {'min_flowcell_q30' => 85, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
+    $NEXTSEQ => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' => 50, 'yield_factor' => 1e6},
+    $ISEQ    => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e6, 'max_undetermined' => 50, 'yield_factor' => 1},
+    $HISEQ   => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
 );
 my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
 
@@ -58,7 +63,6 @@ my $HELP =<<HELP;
     -yieldFactor    <i>   Factor to divide all yields with [default differs per platform]
     -decimals       <i>   Decimals to keep for q30 [$ROUND_DECIMALS]
     -noQc                 Skip QC checks and just print table
-    -summary              Prints extra sample summary table
 
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0;
@@ -82,7 +86,6 @@ GetOptions (
     "decimals=i"    => \$ROUND_DECIMALS,
     "yieldFactor=i" => \$opt{yield_factor},
     "noQc"          => \$opt{no_qc},
-    "summary"       => \$opt{print_summary},
     "debug"         => \$opt{debug},
     "help|h"        => \$opt{help},
 ) or die "[ERROR] Issue in command line arguments\n";
@@ -95,10 +98,11 @@ if (defined $run_path){
     $quality_metrics_csv_path = "$run_path/$REL_QCSV_PATH";
     $demultiplex_stats_csv_path = "$run_path/$REL_DCSV_PATH";
 }
--f $run_info_xml_path || die "[ERROR] RunInfo xml does not exist ($run_info_xml_path)\n";
--f $sample_sheet_csv_path || die "[ERROR] SampleSheet csv does not exist ($sample_sheet_csv_path)\n";
--f $quality_metrics_csv_path || die "[ERROR] Quality Metrics csv does not exist ($quality_metrics_csv_path)\n";
--f $demultiplex_stats_csv_path || die "[ERROR] Demultiplex csv does not exist ($demultiplex_stats_csv_path)\n";
+
+fileExistsOrDie($run_info_xml_path);
+fileExistsOrDie($sample_sheet_csv_path);
+fileExistsOrDie($quality_metrics_csv_path);
+fileExistsOrDie($demultiplex_stats_csv_path);
 
 my $ssht_info = readSampleSheet($sample_sheet_csv_path);
 my $platform = determinePlatformByString($ssht_info->{platform}, \@KNOWN_PLATFORMS);
@@ -118,13 +122,8 @@ addGeneralStats($store, $run_info);
 
 performQC($store, $settings) unless $opt{no_qc};
 
-if ($opt{print_summary}){
-    printSummaryTable($store, \@SUM_FIELDS);
-}
-else{
-    printTable($store, \@OUT_FIELDS);
-    printJson($store, $output_json_path) if defined $output_json_path;
-}
+printTable($store, \@OUT_FIELDS);
+printJson($store, $output_json_path) if defined $output_json_path;
 
 if ($opt{debug}){
     printJson($ssht_info, 'tmp_debug_ssheet.json');
@@ -136,8 +135,6 @@ if ($opt{debug}){
 sub aggregateBclconvertInfo{
     my ($qual, $demux, $runinfo) = @_;
     my %out = ();
-
-    my $cycle_string = $runinfo->{cycle_string};
     my $fid = $runinfo->{flowcell_id};
 
     $out{flowcell}{$fid}{id} = $fid;
@@ -156,6 +153,17 @@ sub aggregateBclconvertInfo{
         }
     }
     return \%out;
+}
+
+sub fileExistsOrDie{
+    my ($file) = @_;
+    my $result;
+    if ($file =~ "gs://"){
+        $result = not system("gsutil stat $file > /dev/null") ;
+    }else{
+        $result = -f $file;
+    }
+    $result || die "[ERROR] File does not exist ($file)\n";
 }
 
 sub addSamplesheetInfo{
@@ -349,8 +357,18 @@ sub printJson {
 
 sub printTable {
     my ($info, $fields) = @_;
+    my @submissions = sort @{$info->{stats}{submissions}};
+    map($_ =~ s/HMFreg//, @submissions);
+    my $submissions_string = join(',', @submissions);
 
     printStandardHeaderLines($info);
+
+    say sprintf "## RunOverview INFO: %s\t%s\t%s\t%s\t%s",
+        $info->{stats}{run_name},
+        $info->{stats}{run_id},
+        $submissions_string,
+        $info->{stats}{run_overview_string},
+        $info->{stats}{flowcell_qc};
     
     say "#".join($OUT_SEP, "level", @$fields);
     printTableForLevelSortedByName($info->{flowcell}, $fields, 'RUN');
@@ -358,26 +376,6 @@ sub printTable {
     printTableForLevelSortedByName($info->{samples}, $fields, 'SAMPLE');
     printTableForLevelSortedByName($info->{reads}, $fields, 'READ');
     printTableForLevelSortedByName($info->{undetermined}, $fields, 'UNDET');
-}
-
-sub printSummaryTable{
-    my ($info, $fields) = @_;
-    
-    my @submissions = sort @{$info->{stats}{submissions}};
-    map($_ =~ s/HMFreg//, @submissions);
-    my $submissions_string = join(',', @submissions);
-
-    printStandardHeaderLines($info);
-        
-    say sprintf "## RunOverview INFO: %s\t%s\t%s\t%s\t%s",
-      $info->{stats}{run_name},
-      $info->{stats}{run_id},
-      $submissions_string,
-      $info->{stats}{run_overview_string},
-      $info->{stats}{flowcell_qc};
-      
-    say "#".join($OUT_SEP, @$fields);
-    printTableForLevelSortedByName($info->{samples}, $fields);
 }
 
 sub printStandardHeaderLines{
@@ -424,8 +422,8 @@ sub readSampleSheet{
     my %output;
     $output{samples} = {};
     $output{run_name} = 'NO_RUNNAME_FROM_SAMPLESHEET';
-    $output{platform} = 'NO_PLATFORM_FROM_SAMPLESHEET';
     $output{override_cycles} = 'NO_OVERRIDECYCLES_FROM_SAMPLESHEET';
+    $output{platform} = 'NO_PLATFORM_FROM_SAMPLESHEET';
     my @header;
     
     if (! -e $csv_file){
@@ -440,12 +438,20 @@ sub readSampleSheet{
         next if $_ eq "";
         my @fields = split(",", $_);
 
-        # Get hmf run id from config line
         if ($fields[0] =~ /Experiment(.)*Name/){
-            $output{run_name} = $fields[1] || 'NA';
-        }
-        elsif ($fields[0] =~ /InstrumentType/){
-            $output{platform} = $fields[1] || 'NA';
+            my $run_name = $fields[1] || 'NA';
+            $output{run_name} = $run_name;
+            if ($run_name =~ m/^NO\d{2}-/){
+                $output{platform} = $NOVASEQ;
+            }elsif ($run_name =~ m/^NS\d{2}-/){
+                $output{platform} = $NEXTSEQ;
+            }elsif ($run_name =~ m/^IS\d{2}-/){
+                $output{platform} = $ISEQ;
+            }elsif ($run_name =~ m/^X\d{2}-/){
+                $output{platform} = $HISEQ;
+            }else{
+                warn "Unable to determine platform from experiment name field ($run_name)"
+            }
         }
         elsif ($fields[0] =~ /OverrideCycles/){
             $output{override_cycles} = $fields[1] || 'NA';
@@ -538,7 +544,13 @@ sub readBclConvertDemuxCsv{
 
 sub readXml{
     my ($file) = @_;
-    my $obj = XMLin($file);
+    my $entire_file = "";
+    if ($file =~ "gs://"){
+        $entire_file = `gsutil cat $file`;
+    }else{
+        $entire_file = `cat $file`;
+    }
+    my $obj = XMLin($entire_file);
     return($obj);
 }
 
