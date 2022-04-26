@@ -14,6 +14,6 @@ run_protect_research_on_actin_cohort ${run_dir}
 
 run_orange_research_on_actin_cohort ${run_dir}
 
-run_actin_orange_interpreter_cohort ${run_dir}
+actin_orange_interpreter_cohort ${run_dir}
 
 load_actin_molecular_cohort ${run_dir}
