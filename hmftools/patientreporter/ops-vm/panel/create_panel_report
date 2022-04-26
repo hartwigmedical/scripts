@@ -47,38 +47,39 @@ if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep 
     fi
 fi
 
-#### Copy run data from bucket to local in vm
-#temp_folder_path=$( pwd )"/temp_cp_${set}"
-#mkdir $temp_folder_path
-#gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path/copy.log
-#gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
-#
-#if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
-#    warn "Making the copy gave errors (see below). Exiting."
-#    cat $temp_folder_path/copy.log
-#    rm -r $temp_folder_path/
-#    exit 1
-#fi
-## create folder for report
-#mkdir ${temp_folder_path}/new_report
-#output_dir_report=${temp_folder_path}/new_report
-#output_dir_data_report=${temp_folder_path}/new_report
-#
-#
-#do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
-#      -output_dir_report ${output_dir_report} \
-#      -output_dir_data ${output_dir_data_report} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
-#
-#if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-#    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-#    info "The report $report has been created"
-#else
-#    warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
-#    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
-#    rm -r ${temp_folder_path}/ 2>&1
-#    warn "The script will end here. Exiting"
-#    exit 1
-#fi
+### Copy run data from bucket to local in vm
+temp_folder_path=$( pwd )"/temp_cp_${set}"
+mkdir $temp_folder_path
+gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+
+if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
+    warn "Making the copy gave errors (see below). Exiting."
+    cat $temp_folder_path/copy.log
+    rm -r $temp_folder_path/
+    exit 1
+fi
+
+# create folder for report
+mkdir ${temp_folder_path}/new_report
+output_dir_report=${temp_folder_path}/new_report
+output_dir_data_report=${temp_folder_path}/new_report
+
+do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+      -output_dir_report ${output_dir_report} \
+      -output_dir_data ${output_dir_data_report} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+
+if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+    info "The report $report has been created"
+else
+    warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
+    rm -r ${temp_folder_path}/ 2>&1
+    warn "The script will end here. Exiting"
+    exit 1
+fi
+
 #
 ##### check log file of making the report
 #if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then

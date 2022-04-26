@@ -76,7 +76,7 @@ main () {
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} : status = ${status}"
-            echo " ** Action - create a report and upload it to the sharing bucket for NKI/AVL using the script: create_result_report_panel ${set_name} "
+            echo " ** Action - create a report and upload it to the sharing bucket for NKI/AVL using the script: create_panel_report ${set_name} "
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.status] | @tsv')
 
