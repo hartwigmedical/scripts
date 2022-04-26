@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+actin_jar="$(locate_pilot_actin)"
+actin_database_name="actin_cohort"
+
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" "${actin_database_name}")
+
+sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})"
+sample=$(basename ${run_dir})
+
+molecular_json="${sample_cohort_dir}/actin/${sample}.molecular.json"
+
+info "Loading molecular data into ACTIN database '${actin_database_name}' for ${sample}"
+java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplication \
+    -molecular_json ${molecular_json} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+run_protect_research_on_actin_cohort ${run_dir}
+
+run_orange_research_on_actin_cohort ${run_dir}
+
+run_actin_orange_interpreter_cohort ${run_dir}
+
+load_actin_molecular_cohort ${run_dir}

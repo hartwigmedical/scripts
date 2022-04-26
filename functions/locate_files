@@ -298,6 +298,15 @@ locate_actin_rna_sample_metadata_file() {
     echo "/data/resources/crunch/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
 
+############################### ACTIN Cohort ###################################
+
+locate_actin_cohort_directory() {
+    run_dir=$1
+    sample=$(basename ${run_dir})
+
+    echo "/data/experiments/actin_cohort/${sample}"
+}
+
 ################################# ACTIN Data ###################################
 
 locate_actin_clinical_input_feed_directory() {

@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source io_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -11,8 +12,10 @@ fi
 
 serve_actionability_dir="/data/resources/crunch/actin/serve_db"
 
-output_dir="${run_dir}/protect"
+sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})/protect"
+create_or_cleanup_dir ${sample_cohort_dir}
+
 protect_jar=$(locate_research_protect)
 
-do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar}
+do_run_protect ${run_dir} ${sample_cohort_dir} ${serve_actionability_dir} ${protect_jar}
 
