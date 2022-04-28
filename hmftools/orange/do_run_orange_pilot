@@ -70,7 +70,7 @@ else
     cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
 fi
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
-peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 

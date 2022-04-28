@@ -28,10 +28,6 @@ locate_prod_virus_interpreter() {
     echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
 }
 
-locate_research_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
-}
-
 locate_pilot_virus_interpreter() {
     echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
 }
@@ -160,10 +156,6 @@ locate_prod_pave() {
     echo "/data/tools/pave/1.1/pave.jar"
 }
 
-locate_pilot_sig_analyser() {
-    echo "/data/tools/sig-analyser/pilot/sig-analyser.jar"
-}
-
 locate_prod_hmf_id_generator() {
     echo "/data/tools/hmf-id-generator/2.8/hmf-id-generator.jar"
 }
@@ -244,6 +236,12 @@ locate_signature_prod() {
     echo "/data/resources/ops/patient_report_images/signature_edwin_transparant.png"
 }
 
+############################### NON JAVA TOOLS #################################
+
+locate_peach_main() {
+    echo "$(locate_repo_dir "peach")/peach"
+}
+
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
@@ -252,12 +250,6 @@ extract_expected_pipeline_version() {
 
 extract_expected_pipeline_version_research() {
     echo "5.28"
-}
-
-############################### NON JAVA TOOLS #################################
-
-locate_peach_main() {
-    echo "$(locate_repo_dir "peach")/peach"
 }
 
 ############################## ACTIN Resources #################################
@@ -506,7 +498,6 @@ locate_known_fusion_data_38_csv() {
 locate_peach_resource_dir() {
     echo "/data/dbs/peach"
 }
-
 
 ############################### Ops Resources #################################
 
@@ -1098,19 +1089,14 @@ locate_gatk_germline_variants() {
     local ref_sample=$1 && shift
 
     local germline_vcf=""
-    local gatk_dir=${run_dir}/${ref_sample}/germline_caller
+    local gatk_dir="${run_dir}/${ref_sample}/gatk_germline"
 
-    if [[ -d ${gatk_dir} ]]; then
+    if [[ -d "${gatk_dir}" ]]; then
         germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.germline.vcf.gz")
         # Some runs have GATK calls in a new place but with old file name.
-        if [[ -z ${germline_vcf} ]]; then
+        if [[ -z "${germline_vcf}" ]]; then
             germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.annotated.vcf.gz")
         fi
-    fi
-
-    if [[ -z ${germline_vcf} ]]; then
-        # Probably no v5 pipeline done yet
-        germline_vcf=$(find -L ${run_dir}/germline_caller/*/ -type f -name "*.annotated.vcf.gz")
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
@@ -1137,8 +1123,7 @@ locate_peach_pilot_output_dir() {
 
 locate_peach_pilot_calls() {
     local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
     local peach_pilot_calls_tsv=""
 
@@ -1155,8 +1140,7 @@ locate_peach_pilot_calls() {
 
 locate_peach_pilot_genotype() {
     local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
     local peach_pilot_genotype_tsv=""
 
@@ -1178,8 +1162,7 @@ locate_peach_prod_output_dir() {
 
 locate_peach_prod_calls() {
     local run_dir=$1
-    local peach_prod_output_dir
-    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+    local peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
 
     local peach_prod_calls_tsv=""
 
@@ -1196,8 +1179,7 @@ locate_peach_prod_calls() {
 
 locate_peach_prod_genotype() {
     local run_dir=$1
-    local peach_prod_output_dir
-    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+    local peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
 
     local peach_prod_genotype_tsv=""
 
@@ -1210,33 +1192,6 @@ locate_peach_prod_genotype() {
     fi
 
     echo "${peach_prod_genotype_tsv}"
-}
-
-locate_peach_pilot_vcf() {
-    local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
-
-    local peach_pilot_vcf=""
-
-    if [[ -d "${peach_pilot_output_dir}" ]]; then
-        peach_pilot_vcf=$(find -L "${peach_pilot_output_dir}" -type f -name "*.peach.filtered.vcf")
-    fi
-
-    if [[ -z "${peach_pilot_vcf}" ]]; then
-        error "Unable to locate pilot PEACH VCF file in ${run_dir}."
-    fi
-
-    echo "${peach_pilot_vcf}"
-}
-
-locate_peach_genotype_prod_tsv() {
-    local run_dir=$1
-    local peach_genotype=$(find -L ${run_dir}/peach/ -type f -name "*.peach.genotype.tsv")
-    if [[ -z "${peach_genotype}" ]]; then
-        error "Unable to locate peach genotype tsv in ${run_dir}."
-    fi
-    echo ${peach_genotype}
 }
 
 #################################### CHORD #####################################
@@ -1327,7 +1282,6 @@ locate_cuppa_summary_plot() {
     fi
     echo ${plot}
 }
-
 
 locate_cuppa_dna_rna_summary_plot() {
     local run_dir=$1

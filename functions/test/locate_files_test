@@ -114,7 +114,7 @@ if [[ $? = 0 ]]; then info " VIRUSBreakend Output: ${virus_breakend_tsv}"; fi
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 if [[ $? = 0 ]]; then info " Annotated Virus File: ${annotated_virus_tsv}"; fi
 
-peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 if [[ $? = 0 ]]; then info " PEACH Genotypes: ${peach_genotype_tsv}"; fi
 
 protect_evidence=$(locate_protect_evidence ${run_dir})
