@@ -30,7 +30,7 @@ if [[ $? = 0 ]]; then info " Flagstats Tumor Sample: ${tumor_sample_flagstats}";
 amber_dir=$(locate_amber_directory ${run_dir})
 if [[ $? = 0 ]]; then info " AMBER directory: ${amber_dir}"; fi
 
-gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
+gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir})
 if [[ $? = 0 ]]; then info " GATK Germline Variants: ${gatk_germline_variants}"; fi
 
 sage_somatic_variants=$(locate_sage_filtered_somatic_variants ${run_dir})

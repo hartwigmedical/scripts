@@ -1086,10 +1086,9 @@ locate_sigs_pilot_dir() {
 
 locate_gatk_germline_variants() {
     local run_dir=$1 && shift
-    local ref_sample=$1 && shift
 
     local germline_vcf=""
-    local gatk_dir="${run_dir}/${ref_sample}/gatk_germline"
+    local gatk_dir="${run_dir}/gatk_germline"
 
     if [[ -d "${gatk_dir}" ]]; then
         germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.germline.vcf.gz")
@@ -1100,7 +1099,7 @@ locate_gatk_germline_variants() {
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
-        error "Unable to locate germline VCF in ${run_dir}."
+        error "Unable to locate GATK germline VCF in ${run_dir}."
     fi
 
     echo ${germline_vcf}
