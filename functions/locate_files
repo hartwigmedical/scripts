@@ -8,10 +8,6 @@ locate_pilot_actin() {
     echo "/data/actin/system/actin.jar"
 }
 
-locate_cohort_actin() {
-    echo "/data/experiments/actin_cohort/system/actin.jar"
-}
-
 locate_pilot_isofox() {
     echo "/data/experiments/tools/isofox.jar"
 }
@@ -303,6 +299,10 @@ locate_actin_rna_sample_metadata_file() {
 }
 
 ############################### ACTIN Cohort ###################################
+
+locate_cohort_actin() {
+    echo "/data/experiments/actin_cohort/system/actin.jar"
+}
 
 locate_actin_cohort_directory() {
     run_dir=$1
