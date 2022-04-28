@@ -8,7 +8,7 @@ source api_functions || exit 1
 
 sample=$1 && shift
 
-fail_reason="panel_failure"
+fail_reason="insufficient_dna_panel"
 
 tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
 
