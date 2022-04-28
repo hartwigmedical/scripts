@@ -6,12 +6,9 @@ source message_functions || exit 1
 
 tumor_sample=$1 && shift
 tumor_sample_barcode=$1 && shift
-ref_sample=$1 && shift
-ref_sample_barcode=$1 && shift
-ref_sample_mandatory=$1 && shift
 
-if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" || -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
-    error "No tumor infromation provided. Exiting"
+if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" ]]; then
+    error "No tumor information provided. Exiting"
 fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
@@ -21,29 +18,8 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
     exit 1;
 fi
 
-if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
-    if [[ ${ref_sample_mandatory} == "1" ]]; then
-        warn "Incomplete information for reporter. Exiting"
-        warn "  ref_sample name: ${ref_sample}"
-        warn "  ref_sample barcode: ${ref_sample_barcode}"
-        warn "  tumor_sample name: ${tumor_sample}"
-        warn "  tumor_sample barcode: ${tumor_sample_barcode}"
-        exit 1;
-    else
-        warn "Ref sample information is incomplete!"
-
-        pilot_do_run_base_panel_reporter \
-            -tumor_sample_id ${tumor_sample} \
-            -tumor_sample_barcode ${tumor_sample_barcode} \
-            -ref_genome_version 38 \
-            "$@"
-    fi
-else
-    pilot_do_run_base_panel_reporter \
-        -ref_sample_id ${ref_sample} \
-        -ref_sample_barcode ${ref_sample_barcode} \
-        -tumor_sample_id ${tumor_sample} \
-        -tumor_sample_barcode ${tumor_sample_barcode} \
-        -ref_genome_version 38 \
-        "$@"
-fi
+pilot_do_run_base_panel_reporter \
+  -tumor_sample_id ${tumor_sample} \
+  -tumor_sample_barcode ${tumor_sample_barcode} \
+  -ref_genome_version 38 \
+  "$@"
