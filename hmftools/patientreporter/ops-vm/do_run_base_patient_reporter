@@ -13,6 +13,7 @@ signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
+## UDI code will be in pipeline 5.28: (01)8720299486027(8012)v5.28
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
