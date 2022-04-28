@@ -40,7 +40,6 @@ url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 echo ""
 echo "--- Panel report and vcf for ${sample} has been shared - final processing will start: ---"
 
-
 report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
 report=$( echo ${report#"${url_bucket_report_manual}"} )
 json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json" | grep -v "api-update")
@@ -57,12 +56,22 @@ report_type=$( echo ${report_type:1:-1})
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} ${report_source} "prod")
 
 ## check wether report already exists in final bucket
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
-     warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-     warn "See also the record in sharing api:"
-     extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-     extract_object_shared ${reporting_id} "prod"
-     exit 1
+if [[ ${report} == *"corrected"* ]]; then
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+        warn "See also the record in sharing api:"
+        extract_object_created ${barcode}  ${report_type} ${report_source} "prod"
+        extract_object_shared ${reporting_id} "prod"
+        exit 1
+    fi
+else
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
+         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+         warn "See also the record in sharing api:"
+         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+         extract_object_shared ${reporting_id} "prod"
+         exit 1
+    fi
 fi
 
 gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
@@ -78,16 +87,31 @@ else
     exit 1
 fi
 
-#if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
-#     info "A record has been added for ${sample} to sharing api"
-#     #post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
-#     info "Reports shared registration for ${sample}:"
-#     extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-#     extract_object_shared ${reporting_id} "prod"
+
+#if [[ ${report} == *"corrected"* ]]; then
+#    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
+#      info "A record has been added for ${sample} to sharing api"
+#      post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
+#      info "Reports shared registration for ${sample}:"
+#      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#      extract_object_shared ${reporting_id} "prod"
+#    else
+#      warn "The report ${report} is already in the sharing api"
+#      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#      extract_object_shared ${reporting_id} "prod"
+#      warn "No new record added."
+#    fi
 #else
-#    warn "The report ${report} is already in the sharing api"
-#    extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-#    extract_object_shared ${reporting_id} "prod"
-#    warn "No new record added."
+#    if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
+#         info "A record has been added for ${sample} to sharing api"
+#         post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
+#         info "Reports shared registration for ${sample}:"
+#         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#         extract_object_shared ${reporting_id} "prod"
+#    else
+#        warn "The report ${report} is already in the sharing api"
+#        extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#        extract_object_shared ${reporting_id} "prod"
+#        warn "No new record added."
+#    fi
 #fi
-#echo ""
