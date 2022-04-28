@@ -164,3 +164,5 @@ read answer
 if [[ $answer == 'Y' ]]; then
     copy_panel_report_to_final_reports_gcp ${set}
 fi
+
+echo ""

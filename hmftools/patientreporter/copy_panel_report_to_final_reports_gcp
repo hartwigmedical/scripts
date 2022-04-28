@@ -40,13 +40,24 @@ url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 echo ""
 echo "--- Panel report and vcf for ${sample} has been shared - final processing will start: ---"
 
-report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
-report=$( echo ${report#"${url_bucket_report_manual}"} )
-json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json" | grep -v "api-update")
-json=$( echo ${json#"${url_bucket_report_manual}"} )
-api=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep "api-update.json")
-report_type=$(gsutil cat ${api} | jq '.report_type')
-api=$( echo ${api#"${url_bucket_report_manual}"} )
+
+if [[ $( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+    report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | grep corrected | head -1 )
+    report=$( echo ${report#"${url_bucket_report_manual}"} )
+    json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json" | grep -v "api-update")
+    json=$( echo ${json#"${url_bucket_report_manual}"} )
+    api=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep "api-update.json")
+    report_type=$(gsutil cat ${api} | jq '.report_type')
+    api=$( echo ${api#"${url_bucket_report_manual}"} )
+else
+    report=$( gsutil ls ${url_bucket_report_manual} | grep "${sample}" | grep .pdf | head -1 )
+    report=$( echo ${report#"${url_bucket_report_manual}"} )
+    json=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep ".json" | grep -v "api-update")
+    json=$( echo ${json#"${url_bucket_report_manual}"} )
+    api=$( gsutil ls ${url_bucket_report_manual} | grep ${sample} | grep ${barcode} | grep "api-update.json")
+    report_type=$(gsutil cat ${api} | jq '.report_type')
+    api=$( echo ${api#"${url_bucket_report_manual}"} )
+fi
 
 info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
 info "Conclusion: the manual report ${report} will be finalized."
