@@ -5,7 +5,7 @@ source locate_files || exit 1
 #patient_reporter_jar=$(locate_pilot_patient_reporter) #TODO: Move to prod version when 7.28 is released
 patient_reporter_jar=/data/tmp/patient-reporter_pilot.jar
 
-primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor_panel.tsv
 lims_dir=/data/ops/lims/prod
 company_logo=$(locate_company_logo_prod)
 signature=$(locate_signature_prod)
