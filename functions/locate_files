@@ -1071,7 +1071,7 @@ locate_sigs_dir() {
     if [[ ! -d ${run_dir} ]]; then
         error "Run dir is not a directory: ${run_dir}"
     fi
-    echo ${run_dir}/sigs
+    echo "${run_dir}/sigs"
 }
 
 locate_sigs_pilot_dir() {
@@ -1079,7 +1079,7 @@ locate_sigs_pilot_dir() {
     if [[ ! -d ${run_dir} ]]; then
         error "Run dir is not a directory: ${run_dir}"
     fi
-    echo ${run_dir}/sigs_pilot
+    echo "${run_dir}/sigs_pilot"
 }
 
 ##################################### GATK #####################################
@@ -1358,8 +1358,8 @@ locate_orange_json() {
     local run_dir=$1
     local orange_json=""
 
-    local orange_dir=${run_dir}/orange
-    if [[ -d ${orange_dir} ]]; then
+    local orange_dir="${run_dir}/orange"
+    if [[ -d "${orange_dir}" ]]; then
         orange_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
     fi
 
