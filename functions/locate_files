@@ -8,6 +8,10 @@ locate_pilot_actin() {
     echo "/data/actin/system/actin.jar"
 }
 
+locate_cohort_actin() {
+    echo "/data/experiments/actin_cohort/system/actin.jar"
+}
+
 locate_pilot_isofox() {
     echo "/data/experiments/tools/isofox.jar"
 }
@@ -304,7 +308,7 @@ locate_actin_cohort_directory() {
     run_dir=$1
     sample=$(basename ${run_dir})
 
-    echo "/data/experiments/actin_cohort/${sample}"
+    echo "/data/experiments/actin_cohort/samples/${sample}"
 }
 
 ################################# ACTIN Data ###################################

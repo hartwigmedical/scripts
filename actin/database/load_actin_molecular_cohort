@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-actin_jar="$(locate_pilot_actin)"
+actin_jar="$(locate_cohort_actin)"
 actin_database_name="actin_cohort"
 
 credentials=$(prod_writer_sql_credentials)
