@@ -50,7 +50,7 @@ report_type=$(gsutil cat ${api} | jq '.report_type')
 api=$( echo ${api#"${url_bucket_report_manual}"} )
 
 info "Report available for ${sample} in manual bucket ${url_bucket_report_manual}"
-info "Conclusion: the manual report ${report} will be finalized (goes over the auto report)."
+info "Conclusion: the manual report ${report} will be finalized."
 report_source="manual"
 
 report_type=$( echo ${report_type:1:-1})
@@ -66,27 +66,28 @@ if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | w
 fi
 
 gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
 gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
     info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
-    info "Final reports + api jsons stored for ${sample}:"
+    info "Final reports + report jsons + api jsons stored for ${sample}:"
     gsutil ls ${url_bucket_report_final} | grep "${sample}"
 else
     warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
     exit 1
 fi
 
-if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
-     info "A record has been added for ${sample} to sharing api"
-     #post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
-     info "Reports shared registration for ${sample}:"
-     extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-     extract_object_shared ${reporting_id} "prod"
-else
-    warn "The report ${report} is already in the sharing api"
-    extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-    extract_object_shared ${reporting_id} "prod"
-    warn "No new record added."
-fi
-echo ""
+#if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
+#     info "A record has been added for ${sample} to sharing api"
+#     #post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
+#     info "Reports shared registration for ${sample}:"
+#     extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#     extract_object_shared ${reporting_id} "prod"
+#else
+#    warn "The report ${report} is already in the sharing api"
+#    extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#    extract_object_shared ${reporting_id} "prod"
+#    warn "No new record added."
+#fi
+#echo ""
