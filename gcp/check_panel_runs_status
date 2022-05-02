@@ -40,7 +40,7 @@ main () {
       echo
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
-        barcode=$(echo "${set_name}" | awk -F '_' '{print $4}')
+        barcode=$(echo "${set_name}" | awk -F '_' '{print $3}')
         status=$(echo "${run_info}" | cut -f3)
 
         has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}" )
@@ -48,7 +48,7 @@ main () {
         reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
         is_reported=$(extract_object_shared ${reporting_id} "prod" | wc -l )
 
-        if [[ ${has_finished_run} < 1 ]]; then
+        if [[ ${has_finished_run} -lt 1 ]]; then
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} : status = ${status}"
@@ -61,10 +61,10 @@ main () {
     echo "### FINISHED PANEL RUNS:"
     counter=0
     while read -r run_info; do
-       echo
+        echo
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
-        barcode=$(echo "${set_name}" | awk -F '_' '{print $4}')
+        barcode=$(echo "${set_name}" | awk -F '_' '{print $3}')
         status=$(echo "${run_info}" | cut -f3)
 
         has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}" )
@@ -72,11 +72,11 @@ main () {
         reporting_id=$( extract_reporting_id_on_barcode ${barcode} "prod")
         is_reported=$( extract_object_shared ${reporting_id} "prod" | wc -l )
 
-        if [[ ( ${has_finished_run} > 0 ) && ( ${is_reported} < 1 ) ]]; then
-            counter=$((counter+1))
-            echo "---------"
-            echo "-${counter}- ${set_name} : status = ${status}"
-            echo " ** Action - create a report and upload it to the sharing bucket for NKI/AVL using the script: create_panel_report ${set_name} "
+        if [[ ${has_finished_run} -gt 0 && ${is_reported} -lt 1 ]]; then
+             counter=$((counter+1))
+             echo "---------"
+             echo "-${counter}- ${set_name} : status = ${status}"
+             echo " ** Action - create a report and upload it to the sharing bucket for NKI/AVL using the script: create_panel_report ${set_name} "
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.status] | @tsv')
 
