@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 out_dir=$1 && shift # prod or pilot lims dir
-#no_cleanup=$1 && shift # optional
+lims_export_source=${1:-nas} && shift # can also be bucket
 
 if [[ -z "${out_dir}" ]]; then
     echo "Usage: $(basename $0) /path/to/out/dir"
@@ -30,6 +30,14 @@ NAS_FILES=(
   "${NAS_DIR}/${FOR_002_FILE_2021}"
 )
 
+LIMS_BUCKET="lims-export"
+LIMS_FILES=(
+  "gs://${LIMS_BUCKET}/${FOR_001_FILE}"
+  "gs://${LIMS_BUCKET}/${FOR_002_FILE}"
+  "gs://${LIMS_BUCKET}/${FOR_001_FILE_2021}"
+  "gs://${LIMS_BUCKET}/${FOR_002_FILE_2021}"
+)
+
 LAMA_BUCKET="lama-export"
 LAMA_FILES=(
   "gs://${LAMA_BUCKET}/Cohorts.json"
@@ -52,12 +60,22 @@ main() {
     mkdir -p "${DAY_DIR}"
     mkdir -p "${TMP_DIR}"
 
-    info "Retrieving input files from NAS"
-    for nas_file_path in "${NAS_FILES[@]}"; do
-      retrieve_file_from_nas "$nas_file_path" "${TMP_DIR}"
-    done
+    # TODO: make sure infracom syncs data to bucket so that we can always use that path in this procedure
+    if [[ "${lims_export_source}" == "bucket" ]]; then
+        info "Retrieving LIMS input files from bucket (gs://${LIMS_BUCKET})"
+        for file in "${LIMS_FILES[@]}"; do
+            gsutil cp "$file" "${TMP_DIR}" || die "Unable to copy file ($file)"
+        done
+    elif [[ "${lims_export_source}" == "nas" ]]; then
+        info "Retrieving input files from NAS"
+        for nas_file_path in "${NAS_FILES[@]}"; do
+          retrieve_file_from_nas "$nas_file_path" "${TMP_DIR}"
+        done
+    else
+        die "Incorrect LIMS export source configured (${lims_export_source})"
+    fi
 
-    info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
+    info "Retrieving LAMA input files from bucket (gs://${LAMA_BUCKET})"
     for lama_json_file in "${LAMA_FILES[@]}"; do
       gsutil cp "$lama_json_file" "${TMP_DIR}" || die "Unable to copy file ($lama_json_file)"
     done
@@ -91,13 +109,6 @@ main() {
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
       symlink_to_latest "${txt_file}" "$SYM_DIR"
     done
-
-#    if [[ -z "$no_cleanup" ]]; then
-#      info "Cleaning up raw files from day dir (${DAY_DIR})"
-#      rm -r "$TMP_DIR"
-#    else
-#      info "Skipping cleanup of raw files from day dir (${DAY_DIR})"
-#    fi
 
     info "Finished with $(basename $0)"
 }
