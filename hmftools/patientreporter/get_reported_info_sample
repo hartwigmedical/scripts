@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+sampleId=$1 && shift
+
+[[ -n "${sampleId}" ]] || die "No set provided. Exiting"
+
+barcode=$( hmf_api_get samples?name=${sampleId} | jq -r .[].barcode )
+
+created_records=$( hmf_api_get reports/created?barcode=${barcode} | jq 'length' )
+echo "Number of reports have been created for ${sampleId} - ${barcode}: ${i}"
+i=0
+while ((i<${created_records})); do
+    echo " - Report $( expr ${i} + 1 ) - "
+    hmf_api_get reports/created?barcode=${barcode} | jq .[${i}] | jq -r '"  Source: " + .source'
+    hmf_api_get reports/created?barcode=${barcode} | jq .[${i}] | jq -r '"  Report type: " + .report_type'
+    hmf_api_get reports/created?barcode=${barcode} | jq .[${i}] | jq -r '"  Create time: " + .create_time' | tr 'T' ' '
+    report_created_id=$( hmf_api_get reports/created?barcode=${barcode} | jq -r .[$i].id )
+    if [[ $( hmf_api_get reports/shared?report_created_id=${report_created_id} | jq -r .[] | wc -l ) -gt 0 ]]; then
+        hmf_api_get reports/shared?report_created_id=${report_created_id}  | jq .[] | jq -r '"  Share time: " + .share_time' | tr 'T' ' '
+    else
+        echo "  This report is not shared!"
+    fi
+    let i++
+done
+
+
