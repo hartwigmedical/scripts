@@ -102,9 +102,7 @@ main () {
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-            extract_object_created_on_reporting_id ${reporting_id} "prod"
-            extract_object_shared ${reporting_id} "prod"
+            get_reported_info_sample ${sample_name}
         fi
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
@@ -161,9 +159,7 @@ main () {
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
-            reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
-            extract_object_created_on_reporting_id ${reporting_id} "prod"
-            extract_object_shared ${reporting_id} "prod"
+            get_reported_info_sample ${sample_name}
         fi
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
