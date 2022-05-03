@@ -279,7 +279,7 @@ locate_actin_external_treatment_mapping_tsv() {
 }
 
 locate_actin_serve_bridge_tsv() {
-    echo "/data/actin/serve_bridge/actin_knowledgebase.tsv"
+    echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
 }
 
 locate_cuppa_ref_dir_dna_rna() {
@@ -304,6 +304,10 @@ locate_actin_cohort_directory() {
 }
 
 ################################# ACTIN Data ###################################
+
+locate_tmp_actin_serve_bridge_tsv() {
+    echo "/data/actin/serve_bridge/actin_knowledgebase.tsv"
+}
 
 locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed/latest"

@@ -4,7 +4,7 @@ source locate_files || exit 1
 
 treatment_database_directory="$(locate_actin_treatment_database_directory)"
 
-output_serve_knowledgebase_tsv="$(locate_actin_serve_bridge_tsv)"
+output_serve_knowledgebase_tsv="$(locate_tmp_actin_serve_bridge_tsv)"
 
 actin_jar="$(locate_pilot_actin)"
 
