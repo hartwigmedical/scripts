@@ -9,6 +9,7 @@ SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Fastq"
 CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROUNDING_SCRIPT="${CODEDIR}/../utilityscripts/base_count_to_gbase.py"
+NAS_SSH_PORT=2210
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     script=$(basename "$0")
@@ -61,8 +62,8 @@ for seq_dir in "${seq_dirs[@]}"; do
     fi
     
     ## store further cmds so we can print all together at the end
-    cmds_to_execute+=("rsync -ah ${report_path}/Reports nas:/volume1/web/qc/conversion/${nasrun_name}/")
-    cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
+    cmds_to_execute+=("rsync -e \"ssh -p ${NAS_SSH_PORT}\" -ah ${report_path}/Reports nas:/volume1/web/qc/conversion/${nasrun_name}/")
+    cmds_to_execute+=("rsync -e \"ssh -p ${NAS_SSH_PORT}\" -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
 done
 
 printHeader "SAMPLE info"
