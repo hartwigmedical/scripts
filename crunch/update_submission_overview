@@ -14,6 +14,7 @@ nas_reports_target="/volume1/web/overviews/submissions/pdf_reports"
 reports_target="/data/data_archive/overviews/submissions/pdf_reports"
 
 password=$(get_nas_rsyncuser_credentials)
+ssh_port=2210
 
 ## Sanity checks
 [[ -n "${password}" ]] || die "Was somehow unable to retrieve password"
@@ -24,7 +25,7 @@ info " Finding all submissions in ${src_dir}"
 dirs_to_sync=$(find ${src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
 info " Syncing logs to NAS (into ${nas_tgt_dir})"
-sshpass -p "$password" rsync -ah \
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -ah \
   --omit-dir-times \
   --exclude "*/data/" \
   --include "*/" \
@@ -35,7 +36,7 @@ sshpass -p "$password" rsync -ah \
   "rsyncuser@nas.prod-1:${nas_tgt_dir}"
 
 info " Syncing pdfs from NAS source dir (into ${reports_target})"
-sshpass -p "$password" rsync -trh \
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
@@ -43,7 +44,7 @@ sshpass -p "$password" rsync -trh \
   "${reports_target}/"
 
 info " Syncing back pdfs to NAS target dir (into ${nas_reports_target})"
-sshpass -p "$password" rsync -trh \
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \

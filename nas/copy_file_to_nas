@@ -17,8 +17,9 @@ password=$(get_nas_rsyncuser_credentials)
 
 source=$1 && shift
 target=$1 && shift
+ssh_port=2210
 
 [[ -f "${source}" ]] || die "Source is not a file (perhaps you want the sync_dir_to_nas instead)."
 
 info "  Syncing local file '${source}' to 'nas.prod-1:${target}'"
-sshpass -p "${password}" rsync --perms --protect-args "${source}" "rsyncuser@nas.prod-1:${target}"
+sshpass -p "${password}" rsync -e "ssh -p ${ssh_port}" --perms --protect-args "${source}" "rsyncuser@nas.prod-1:${target}"

@@ -17,10 +17,11 @@ password=$(get_nas_rsyncuser_credentials)
 
 source=$1 && shift
 target=$1 && shift
+ssh_port=2210
 
 if [[ -d "$target" && ! "$target" =~ \/$ ]]; then
     target="${target}/"
 fi
 
 info "  Syncing 'nas.prod-1:${source}' to '${target}'"
-sshpass -p "${password}" rsync --chmod=ugo=rw --protect-args "rsyncuser@nas.prod-1:${source}" "${target}"
+sshpass -p "${password}" rsync -e "ssh -p ${ssh_port}" --chmod=ugo=rw --protect-args "rsyncuser@nas.prod-1:${source}" "${target}"
