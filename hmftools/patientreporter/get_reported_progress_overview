@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+
+all_created_reports=$( hmf_api_get "reports/created" )
+created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1577833199 )]')
+
+while read -r report_info; do
+    sample_name=$(echo "${report_info}" | cut -f1)
+    report_type=$(echo "${report_info}" | cut -f2)
+    create_date=$(echo "${report_info}" | cut -f3 | cut -d "-" -f1,2)
+    id=$(echo "${report_info}" | cut -f4)
+    if [[ $( hmf_api_get reports/shared?report_created_id=${id} | jq -r .[] | wc -l ) -gt 0 ]]; then
+         if [[ $( cat test.tsv | grep ${sample_name} | wc -l ) gt 0 ]]; then
+             cat test.tsv | grep -v ${sample_name} > test.tsv
+         fi
+         share_date=$(hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time | cut -d "-" -f1,2)
+         echo $sample_name $report_type $share_date >> test.tsv
+    fi
+done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.create_time,.id] | @tsv')
+
+
