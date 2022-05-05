@@ -78,7 +78,7 @@ function main() {
         grep "^## RunOverview" "${conversion_report_tsv}" | sed 's#\#\#\ RunOverview INFO:\ ##g' > "${run_report_tsv}"
         process_samples "${conversion_report_tsv}" > "${samples_report_tsv}"
 
-        cmds_to_execute+=("rsync -ah ${outdir}/ nas:/volume1/web/qc/conversion/${nas_name}/")
+        cmds_to_execute+=("sync_dir_to_nas ${outdir}/ /volume1/machines/BFX/conversionReports/${nas_name}/")
     done
 
     info "SAMPLE info"
