@@ -10,17 +10,21 @@ SAMPLES_REPORT="hmf_samples_report.tsv"
 RUN_REPORT="hmf_run_report.tsv"
 
 FORENSICS_BUCKET="bcl-forensics-prod-1"
+NAS_REPORT_PATH="/volume1/reports/bclconvert"
 
+info "Checking dependencies"
 command -v "$PARSE_SCRIPT" >/dev/null || die "Dependency not found: $PARSE_SCRIPT"
 command -v "$ROUNDING_SCRIPT" >/dev/null || die "Dependency not found: $ROUNDING_SCRIPT"
 command -v "hmf_api_get" >/dev/null || die "Dependency not found: hmf_api_get"
+command -v "sync_dir_to_nas" >/dev/null || die "Dependency not found: sync_dir_to_nas"
 
 error_log="output/results/Logs/Errors.log"
 samplesheet_csv="input/SampleSheet.csv"
 runinfo_xml="input/RunInfo.xml"
 demux_csv="output/results/Reports/Demultiplex_Stats.csv"
 quality_csv="output/results/Reports/Quality_Metrics.csv"
-required_files=("$error_log" "$samplesheet_csv" "$runinfo_xml" "$demux_csv" "$quality_csv")
+top_unknown_csv="output/results/Reports/Top_Unknown_Barcodes.csv"
+required_files=("$error_log" "$samplesheet_csv" "$runinfo_xml" "$demux_csv" "$quality_csv" "$top_unknown_csv")
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     script=$(basename "$0")
@@ -34,7 +38,6 @@ fi
 flowcells_ids=("$@")
 
 function main() {
-    cmds_to_execute=()
 
     tmpdir="/tmp/$(basename "$0")/$(date '+%y%m%d%M%S')"
     info "Creating tmp dir [${tmpdir}]"
@@ -65,7 +68,8 @@ function main() {
         done
 
         hmf_name="$(grep '^Experiment' "${outdir}/SampleSheet.csv" | cut -d',' -f2 | tr -d '\r')"
-        nas_name="${hmf_name}__${seq_run}"
+        nas_dir_name="${hmf_name}__${seq_run}"
+        nas_dir_path="${NAS_REPORT_PATH}/${nas_dir_name}"
         info="${info}|${hmf_name}"
 
         [[ -s "${outdir}/Errors.log" ]] && warn "  Non-empty error log!!"
@@ -78,7 +82,8 @@ function main() {
         grep "^## RunOverview" "${conversion_report_tsv}" | sed 's#\#\#\ RunOverview INFO:\ ##g' > "${run_report_tsv}"
         process_samples "${conversion_report_tsv}" > "${samples_report_tsv}"
 
-        cmds_to_execute+=("sync_dir_to_nas ${outdir}/ /volume1/machines/BFX/conversionReports/${nas_name}/")
+        info "  Syncing output files from ${outdir} to NAS [${nas_dir_path}]"
+        sync_dir_to_nas "${outdir}" "${nas_dir_path}"
     done
 
     info "SAMPLE info"
@@ -90,9 +95,7 @@ function main() {
     echo ""
 
     info "Extra actions:"
-    for cmd in "${cmds_to_execute[@]}"; do
-        echo "${cmd}"
-    done
+    echo "rm -r ${tmpdir}"
     echo ""
 }
 
