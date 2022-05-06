@@ -279,7 +279,7 @@ create_run_specific_files () {
         fi
 
         # Get file specific md5 hash
-        info "  Signing URL for ${file_name} (target: ${target_file_name})"
+        info "  Signing URL for ${file_name} (download name: ${target_file_name})"
         md5sum=$(get_md5_for_gs_url "${gs_url}")
         [[ -n "${md5sum}" ]] || die "Unable to retrieve md5 hash for file at url (${gs_url})"
         printf '%s  %s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
