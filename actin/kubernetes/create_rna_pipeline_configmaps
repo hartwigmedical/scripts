@@ -5,7 +5,7 @@ source locate_files || exit 1
 
 # NOTES:
 #  1. Manually prepare the configs in the config_dir (update dates + pipeline images)
-#     - All available images for batch framework can be found via "gcloud container images list-tags eu.gcr.io/hmf-build/batch5"
+#     - All available images for batch framework can be found via "gcloud container images list-tags eu.gcr.io/hmf-build/batch"
 #  2. Manually build the batch-operations repo (mvn clean package)
 #  3. Connect to VPN
 #  4. Run this script
