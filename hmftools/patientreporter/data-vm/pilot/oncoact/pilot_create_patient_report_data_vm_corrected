@@ -54,6 +54,7 @@ fi
 
 if [[ ${correction_extern} == "intern" ]]; then
   pilot_do_patient_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
+        -corrected_report \
         -output_dir_report ${output_dir_report} \
         -output_dir_data ${output_dir_report} "$@"
 fi
