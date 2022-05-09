@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source lims_functions || exit 1
+
+sample=$1 && shift
+fail_reason=$1 && shift
+ref_sample_mandatory=$1 && shift
+correction_extern=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "No tumor sample provided. Exiting"
+fi
+
+if [[ -z "${correction_extern}" ]]; then
+    error "Missing correction extern argument"
+fi
+
+if [[ -z "${fail_reason}" ]]; then
+    error "No fail reason provided (insufficient_tcp_shallow_wgs | insufficient_dna | technical_failure). Exiting"
+fi
+
+echo ""
+echo "--- A pre-pipeline fail report will be created for ${sample}  ---"/
+
+## running patient reporter
+
+ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+fi
+
+barcode=$(find_barcode_for_sample_name ${sample})
+
+output_dir_report=${HOME}/reports/pilot
+
+if [[ ${correction_extern} == "extern" ]]; then
+    pilot_do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+      -corrected_report \
+      -corrected_report_extern \
+      -output_dir_report ${output_dir_report} \
+      -output_dir_data ${output_dir_report} "@"
+fi
+
+if [[ ${correction_extern} == "intern" ]]; then
+    pilot_do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+      -corrected_report \
+      -output_dir_report ${output_dir_report} \
+      -output_dir_data ${output_dir_report} "@"
+fi
+
