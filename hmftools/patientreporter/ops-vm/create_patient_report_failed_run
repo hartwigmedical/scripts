@@ -98,8 +98,7 @@ if [[ ${correction_comments} != "" ]]; then
         -peach_genotype_tsv ${peach_genotype_tsv} \
         -purple_purity_tsv ${purple_purity_tsv} \
         -purple_qc_file ${purple_qc_file} \
-        -comments "${correction_comments}" \
-        -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        -comments "${correction_comments}" "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 else
     #Normal report
     do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
