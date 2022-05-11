@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
+source api_functions || exit 1
+
+sample=$1 && shift
+correction_extern=$1 && shift
+
+if [[ -z "${correction_extern}" ]]; then
+    error "Missing correction extern argument"
+fi
+
+fail_reason="insufficient_dna_panel"
+
+tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
+fi
+
+barcode=$(find_barcode_for_sample_name ${sample})
+
+output_dir_report=${HOME}/reports/pilot
+output_dir_data=${HOME}/reports/pilot
+
+if [[ ${correction_extern} == "extern" ]]; then
+    pilot_do_run_qc_fail_panel_reporter ${sample} ${barcode} \
+          -corrected_report \
+          -corrected_report_extern \
+          -panel_qc_fail \
+          -panel_qc_fail_reason ${fail_reason} \
+          -output_dir_data ${output_dir_data} \
+          -output_dir_report ${output_dir_report} "$@"
+fi
+
+if [[ ${correction_extern} == "intern" ]]; then
+    pilot_do_run_qc_fail_panel_reporter ${sample} ${barcode} \
+          -corrected_report \
+          -panel_qc_fail \
+          -panel_qc_fail_reason ${fail_reason} \
+          -output_dir_data ${output_dir_data} \
+          -output_dir_report ${output_dir_report} "$@"
+fi
