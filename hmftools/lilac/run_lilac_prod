@@ -30,6 +30,7 @@ rna_bam_command=""
 if [[ -f ${tumor_rna_hla_bam} ]]; then
     rna_bam_command="-rna_bam ${tumor_rna_hla_bam}"
 fi
+
 java -jar ${lilac_jar} \
     -sample ${tumor_sample} \
     -resource_dir "/data/resources/public/lilac" \
@@ -37,7 +38,7 @@ java -jar ${lilac_jar} \
     -reference_bam ${reference_dna_hla_bam} \
     -tumor_bam ${tumor_dna_hla_bam} \
     ${rna_bam_command} \
-    -gene_copy_number_file ${purple_gene_copy_number_tsv} \
-    -somatic_variants_file ${purple_somatic_variant_vcf} \
+    -gene_copy_number ${purple_gene_copy_number_tsv} \
+    -somatic_vcf ${purple_somatic_variant_vcf} \
     -output_dir ${output_dir} \
     "$@"
