@@ -10,12 +10,12 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-# Set the pipeline manually to v5.27
+# Set the pipeline manually to v5.28
 pipeline_version_file="${run_dir}/pipeline.version"
 if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
 fi
-version="5.27"
+version="5.28"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
@@ -25,7 +25,7 @@ if [[ -d "${virusbreakend_dir}" ]]; then
     cp -r "${virusbreakend_dir}" "${run_dir}/virusbreakend_orig"
 fi
 
-# Rerun virus interpreter since older runs will have v1.0 or v1.1
+# Rerun virus interpreter since older runs will have pre v1.2
 run_virus_interpreter_prod ${run_dir}
 load_virusinterpreter_data_prod ${run_dir}
 
@@ -51,8 +51,13 @@ if [[ -d "${protect_dir}" ]]; then
 fi
 
 # Rerun protect to bump to v2.1 and use ACTIN + reload to prod database
-run_protect_research_on_actin ${run_dir}
+run_protect_research_on_actin_db ${run_dir}
 load_protect_data_prod_to_pilot_db ${run_dir}
 
 # Run ORANGE in ACTIN mode to produce final molecular output.
 run_orange_in_actin_mode ${run_dir}
+
+# Run PROTECT+ORANGE upcoming
+run_protect_pilot_on_actin_pilot_db ${run_dir}
+run_orange_pilot ${run_dir} -max_evidence_level C
+

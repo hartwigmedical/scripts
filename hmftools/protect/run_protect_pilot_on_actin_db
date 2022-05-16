@@ -11,7 +11,7 @@ fi
 
 serve_actionability_dir="/data/resources/crunch/actin/serve_db"
 
-output_dir="${run_dir}/protect_pilot_actin"
+output_dir="${run_dir}/protect_pilot"
 protect_jar=$(locate_pilot_protect)
 
 do_run_protect_pilot ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} -log_debug
