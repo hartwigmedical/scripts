@@ -50,14 +50,10 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v2.1 and use ACTIN + reload to prod database
+# Rerun protect to bump to v2.2 and use ACTIN + reload to prod database
 run_protect_research_on_actin_db ${run_dir}
-load_protect_data_prod_to_pilot_db ${run_dir}
+load_protect_data_prod ${run_dir}
 
 # Run ORANGE in ACTIN mode to produce final molecular output.
 run_orange_in_actin_mode ${run_dir}
-
-# Run PROTECT+ORANGE upcoming
-run_protect_pilot_on_actin_pilot_db ${run_dir}
-run_orange_pilot ${run_dir} -max_evidence_level C
 
