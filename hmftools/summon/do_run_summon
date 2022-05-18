@@ -55,4 +55,5 @@ java -Xms2G -Xmx8G -jar ${summon_jar} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
+    -log_debug \
     "$@"
