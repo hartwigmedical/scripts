@@ -42,7 +42,7 @@ java -Xms2G -Xmx8G -jar ${summon_jar} \
     -driver_gene_37_tsv ${driver_gene_37_tsv} \
     -driver_gene_38_tsv ${driver_gene_38_tsv} \
     -tumor_sample_id ${tumor_sample} \
-    -reference_sample_id ${reference_sample} \
+    -ref_sample_id ${reference_sample} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
