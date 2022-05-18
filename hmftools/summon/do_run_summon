@@ -11,7 +11,7 @@ output_dir=$1 && shift
 actionability_database_tsv=$1 && shift
 summon_jar=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}" || -z "${protect_jar}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}" || -z "${summon_jar}" ]]; then
     error "Missing input parameters. Exiting";
 fi
 
