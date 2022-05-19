@@ -36,6 +36,7 @@ driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
 
 info "Running SUMMON pilot on ${run_dir}"
 
+echo ${summon_jar}
 java -Xms2G -Xmx8G -jar ${summon_jar} \
     -actionability_database_tsv ${actionability_database_tsv} \
     -output_dir ${output_dir} \
