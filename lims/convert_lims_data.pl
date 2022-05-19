@@ -192,7 +192,7 @@ sub addLamaSamplesToSamples{
 
         my $sample_name = $sample_to_store{sample_name};
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
