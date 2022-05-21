@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-external_treatment_mapping_tsv="$(locate_actin_external_treatment_mapping_tsv)"
+external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
 sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})"
 orange_json="$(locate_orange_json ${sample_cohort_dir})"
@@ -24,7 +24,7 @@ info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json ${orange_json} \
-    -external_treatment_mapping_tsv ${external_treatment_mapping_tsv} \
+    -external_trial_mapping_tsv ${external_trial_mapping_tsv} \
     -output_directory ${output_directory} \
     "$@"
 

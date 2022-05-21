@@ -278,8 +278,8 @@ locate_actin_minimal_molecular_json() {
     echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
 
-locate_actin_external_treatment_mapping_tsv() {
-    echo "/data/resources/crunch/actin/orange_curation/external_treatment_mapping.tsv"
+locate_actin_external_trial_mapping_tsv() {
+    echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_serve_bridge_tsv() {
