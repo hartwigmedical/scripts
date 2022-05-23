@@ -429,17 +429,23 @@ locate_rna_hla_bam() {
     echo "${bam}"
 }
 
-locate_rna_sage_directory() {
+locate_rna_sage_somatic_directory() {
     local run_dir=$1 && shift
 
-    echo "${run_dir}/rna_sage"
+    echo "${run_dir}/sage_rna_somatic"
+}
+
+locate_rna_sage_germline_directory() {
+    local run_dir=$1 && shift
+
+    echo "${run_dir}/sage_rna_germline"
 }
 
 locate_rna_annotated_somatic_variants() {
     local run_dir=$1 && shift
 
-    local rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
-    local rna_annotated_vcf=$(find -L "${rna_sage_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
+    local rna_sage_somatic_directory=$(locate_rna_sage_somatic_directory ${run_dir})
+    local rna_annotated_vcf=$(find -L "${rna_sage_somatic_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
 
     echo "${rna_annotated_vcf}"
 }
