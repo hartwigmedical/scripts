@@ -16,12 +16,16 @@ locate_prod_sage() {
     echo "/data/tools/sage/3.0.1/sage.jar"
 }
 
+locate_pilot_sage() {
+    echo "/data/experiments/pilot_tools/sage/sage.jar"
+}
+
 locate_prod_purple() {
     echo "/data/tools/purple/3.4.2/purple.jar"
 }
 
 locate_pilot_purple() {
-    echo "/data/tools/purple/pilot/purple.jar"
+    echo "/data/experiments/pilot_tools/purple/purple.jar"
 }
 
 locate_prod_virus_interpreter() {
@@ -37,7 +41,7 @@ locate_prod_lilac() {
 }
 
 locate_pilot_lilac() {
-    echo "/data/experiments/tools/lilac.jar"
+    echo "/data/experiments/pilot_tools/lilac/lilac.jar"
 }
 
 locate_prod_cuppa() {
@@ -57,7 +61,7 @@ locate_prod_linx() {
 }
 
 locate_pilot_linx() {
-    echo "/data/tools/linx/pilot/linx.jar"
+    echo "/data/experiments/pilot_tools/linx/linx.jar"
 }
 
 locate_prod_sigs() {
@@ -65,7 +69,7 @@ locate_prod_sigs() {
 }
 
 locate_pilot_sigs() {
-    echo "/data/tools/sigs/pilot/sigs.jar"
+    echo "/data/experiments/pilot_tools/sigs/sigs.jar"
 }
 
 locate_prod_orange() {

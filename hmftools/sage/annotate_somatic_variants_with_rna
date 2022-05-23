@@ -24,7 +24,7 @@ create_or_cleanup_dir ${rna_sage_directory}
 
 out="${rna_sage_directory}/${sample}.purple.somatic.with_rna.vcf.gz"
 
-sage_jar=$(locate_prod_sage)
+sage_jar=$(locate_pilot_sage)
 
 info "Running SAGE RNA annotation on somatic variants for ${sample}"
 java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.append.SageAppendApplication \
