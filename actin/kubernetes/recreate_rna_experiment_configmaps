@@ -25,6 +25,8 @@ if [[ ! -f ${batch_jar} ]]; then
     error "Could not locate batch jar: ${batch_jar}"
 fi
 
+kubectl delete configmap actin-rna-experiment-inputs
 kubectl create configmap actin-rna-experiment-inputs --from-file=actin_rna.csv=${config_dir}/actin_rna_experiment_input.csv
 
+kubectl delete configmap actin-rna-experiment-operations
 kubectl create configmap actin-rna-experiment-operations --from-file=batch-operations.jar=${batch_jar}
