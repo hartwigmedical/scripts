@@ -34,6 +34,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
     run_lilac_for_actin_run ${run_dir}
 
     # TODO Try annotate germline VCF on pipeline v5.28
+    #annotate_germline_variants_with_rna ${run_dir}
 
     # Clean up RNA bam
     rm -r ${rna_bam_dir}
