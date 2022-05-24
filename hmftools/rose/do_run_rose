@@ -8,10 +8,10 @@ source api_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
-summon_jar=$1 && shift
+rose_jar=$1 && shift
 actionability_database_tsv=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}" || -z "${summon_jar}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}" || -z "${rose_jar}" ]]; then
     error "Missing input parameters. Exiting";
 fi
 
@@ -35,9 +35,9 @@ molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
 driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
 
-info "Running SUMMON pilot on ${run_dir}"
+info "Running ROSE pilot on ${run_dir}"
 
-java -Xms2G -Xmx8G -jar ${summon_jar} \
+java -Xms2G -Xmx8G -jar ${rose_jar} \
     -actionability_database_tsv ${actionability_database_tsv} \
     -output_dir ${output_dir} \
     -ref_genome_version 37 \

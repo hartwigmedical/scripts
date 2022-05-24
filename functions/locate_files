@@ -156,8 +156,8 @@ locate_pilot_protect() {
     echo "/data/experiments/pilot_tools/protect/protect.jar"
 }
 
-locate_pilot_summon() {
-    echo "/data/experiments/pilot_tools/summon/summon.jar"
+locate_pilot_rose() {
+    echo "/data/experiments/pilot_tools/rose/rose.jar"
 }
 
 locate_prod_pave() {
@@ -617,10 +617,10 @@ locate_private_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/curation/private_doids_mapping.tsv"
 }
 
-############################### SERVE Resources ################################
+############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
-    echo "/data/resources/crunch/summon/summary_actionability.tsv"
+    echo "/data/resources/crunch/rose/summary_actionability.tsv"
 }
 
 #################################### Repos #####################################

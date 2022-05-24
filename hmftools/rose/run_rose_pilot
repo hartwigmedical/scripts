@@ -9,9 +9,9 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-output_dir="${run_dir}/summon_pilot"
-summon_jar=$(locate_pilot_summon)
+output_dir="${run_dir}/rose_pilot"
+rose_jar=$(locate_pilot_rose)
 actionability_database_tsv=$(locate_actionability_database_tsv)
 
 
-do_run_summon ${run_dir} ${output_dir} ${summon_jar} ${actionability_database_tsv} "$@"
+do_run_rose ${run_dir} ${output_dir} ${rose_jar} ${actionability_database_tsv} "$@"
