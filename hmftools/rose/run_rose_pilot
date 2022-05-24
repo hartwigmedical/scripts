@@ -10,6 +10,8 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 output_dir="${run_dir}/rose_pilot"
+create_or_cleanup_dir ${output_dir}
+
 rose_jar=$(locate_pilot_rose)
 actionability_database_tsv=$(locate_actionability_database_tsv)
 
