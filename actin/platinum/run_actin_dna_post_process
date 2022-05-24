@@ -51,15 +51,5 @@ if [[ -d "${protect_dir}" ]]; then
     cp -r "${protect_dir}" "${run_dir}/protect_orig"
 fi
 
-# Rerun protect to bump to v2.2 and use ACTIN + reload to prod database
-run_protect_research_on_actin_db ${run_dir}
-
-# TODO Re-enable once prod is on v3.71 patient-db.
-#load_protect_data_prod ${run_dir}
-
-# Also load to pilot db for proper source names
-load_protect_data_prod_to_pilot_db ${run_dir}
-
-# Run ORANGE in ACTIN mode to produce final molecular output.
-run_orange_in_actin_mode ${run_dir}
+run_actin_dna_interpretation_pipeline ${run_dir}
 

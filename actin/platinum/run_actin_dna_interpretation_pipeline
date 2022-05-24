@@ -4,19 +4,15 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-sample=$1 && shift
-
-if [[ -z "${sample}" ]]; then
-    error "Parameters missing. Exiting.";
-fi
-
-run_dir="/data/actin/molecular/${sample}"
+run_dir=$1 && shift
 
 if [[ ! -d "${run_dir}" ]]; then
     error "Run dir '${run_dir}' not present."
 fi
 
-info "Running ACTIN molecular pipeline post-SERVE update on ${sample} in ${run_dir}"
+sample=$(basename ${run_dir})
+
+info "Running ACTIN DNA interpretation pipeline update on ${sample} in ${run_dir}"
 
 # Rerun protect to bump to v2.2 and use ACTIN + reload to prod database
 run_protect_research_on_actin_db ${run_dir}
