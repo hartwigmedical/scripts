@@ -42,6 +42,6 @@ run_actin_dna_post_process ${run_dir}
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
 
-# Intepret ORANGE results for ACTIN ingestion
+# Interpret ORANGE results for ACTIN ingestion
 actin_orange_interpreter_pilot ${sample}
 load_actin_molecular_pilot ${sample}
