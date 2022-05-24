@@ -620,7 +620,7 @@ locate_private_missing_doids_mapping_tsv() {
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
-    echo "/data/resources/crunch/rose/summary_actionability.tsv"
+    echo "/data/resources/crunch/rose/actionability.tsv"
 }
 
 #################################### Repos #####################################
