@@ -102,6 +102,8 @@ fi
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
+${isofox_cancer_type_cmd}
+
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
