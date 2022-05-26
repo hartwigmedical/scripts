@@ -59,6 +59,30 @@ linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
+
+isofox_gene_distribution_cmd=""
+isofox_alt_sj_cohort_cmd=""
+isofox_cancer_type=""
+isofox_summary_cmd=""
+isofox_gene_data_cmd=""
+isofox_fusion_cmd=""
+isofox_alt_splice_junction_cmd=""
+if [[ -d "${run_dir}/isofox" ]]; then
+    isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
+    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
+    cancertype=$(cat $(locate_actin_rna_sample_metadata_file) | grep ${tumor_sample} |  tr "," " " | awk '{print $2}')
+
+    if [[ -z ${cancertype} ]]; then
+        error "Sample ${sample} not present yet in ACTIN rna sample metadata file. Exiting"
+    fi
+    isofox_cancer_type="-isofox_cancer_type ${cancertype}"
+    isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
+    isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
+    isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
+    isofox_alt_splice_junction_cmd="-isofox_alt_splice_junction_csv $(locate_isofox_alt_splice_junctions ${run_dir})"
+fi
+
+annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
     cuppa_result_csv=$(locate_cuppa_dna_rna_result_csv ${run_dir})
@@ -69,16 +93,14 @@ else
     cuppa_summary_plot=$(locate_cuppa_summary_plot ${run_dir})
     cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
 fi
-annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
-peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
-
-# TODO Switch back to PROTECT PROD upon v1.8 release (with PROTECT v2.2)
-protect_evidence_tsv=$(locate_protect_evidence_pilot ${run_dir})
 
 cuppa_feature_plot_cmd=""
 if [[ ! -z ${cuppa_feature_plot} ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
+
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
@@ -88,6 +110,9 @@ java -jar ${orange_jar} \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -cohort_percentiles_tsv ${cohort_percentiles_tsv} \
+    ${isofox_gene_distribution_cmd} \
+    ${isofox_alt_sj_cohort_cmd} \
+    ${isofox_cancer_type_cmd} \
     ${pipeline_version_cmd} \
     -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
     -ref_sample_flagstat_file ${ref_sample_flagstat_file} \
@@ -109,11 +134,15 @@ java -jar ${orange_jar} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -linx_driver_tsv ${linx_driver_tsv} \
     -linx_plot_directory ${linx_plot_directory} \
+    ${isofox_summary_cmd} \
+    ${isofox_gene_data_cmd} \
+    ${isofox_fusion_cmd} \
+    ${isofox_alt_splice_junction_cmd} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -cuppa_result_csv ${cuppa_result_csv} \
     -cuppa_summary_plot ${cuppa_summary_plot} \
     ${cuppa_feature_plot_cmd} \
-    -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -log_debug \

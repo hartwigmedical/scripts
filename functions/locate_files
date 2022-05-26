@@ -493,6 +493,14 @@ locate_cohort_percentiles_tsv() {
     echo "/data/resources/public/orange/cohort_percentiles.tsv"
 }
 
+locate_isofox_gene_distribution_csv() {
+    echo "/data/experiments/rna/cohort/isofox.all_2766.gene_distribution.csv"
+}
+
+locate_isofox_alt_sj_cohort_csv() {
+    echo "/data/experiments/rna/cohort/isofox.hmf_2766.alt_sj_cohort.csv"
+}
+
 locate_doid_json() {
     echo "/data/resources/public/disease_ontology/doid.json"
 }
@@ -1089,6 +1097,44 @@ locate_linx_svs() {
         error "Unable to locate linx svs tsv in ${run_dir}."
     fi
     echo ${svs_tsv}
+}
+
+#################################### ISOFOX ####################################
+
+locate_isofox_summary() {
+    local run_dir=$1
+    local summary_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.summary.csv")
+    if [[ -z "${summary_csv}" ]]; then
+        error "Unable to locate isofox summary csv in ${run_dir}."
+    fi
+    echo ${summary_csv}
+}
+
+locate_isofox_gene_data() {
+    local run_dir=$1
+    local gene_data_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.gene_data.csv")
+    if [[ -z "${gene_data_csv}" ]]; then
+        error "Unable to locate isofox gene data csv in ${run_dir}."
+    fi
+    echo ${gene_data_csv}
+}
+
+locate_isofox_pass_fusions() {
+    local run_dir=$1
+    local pass_fusions_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.pass_fusions.csv")
+    if [[ -z "${pass_fusions_csv}" ]]; then
+        error "Unable to locate isofox pass fusions csv in ${run_dir}."
+    fi
+    echo ${pass_fusions_csv}
+}
+
+locate_isofox_alt_splice_junctions() {
+    local run_dir=$1
+    local alt_splice_junc_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.alt_splice_junc.csv")
+    if [[ -z "${alt_splice_junc_csv}" ]]; then
+        error "Unable to locate isofox alt splice junction csv in ${run_dir}."
+    fi
+    echo ${alt_splice_junc_csv}
 }
 
 ##################################### Sigs #####################################
