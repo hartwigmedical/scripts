@@ -62,7 +62,7 @@ linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
 
 isofox_gene_distribution_cmd=""
 isofox_alt_sj_cohort_cmd=""
-isofox_cancer_type=""
+isofox_cancer_type_cmd=""
 isofox_summary_cmd=""
 isofox_gene_data_cmd=""
 isofox_fusion_cmd=""
@@ -75,7 +75,7 @@ if [[ -d "${run_dir}/isofox" ]]; then
     if [[ -z ${cancertype} ]]; then
         error "Sample ${sample} not present yet in ACTIN rna sample metadata file. Exiting"
     fi
-    isofox_cancer_type="-isofox_cancer_type ${cancertype}"
+    isofox_cancer_type_cmd="-isofox_cancer_type ${cancertype}"
     isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
     isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
     isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
@@ -101,6 +101,14 @@ fi
 
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+
+echo ${isofox_gene_distribution_cmd}
+echo ${isofox_alt_sj_cohort_cmd}
+echo ${isofox_cancer_type_cmd}
+echo ${isofox_summary_cmd}
+echo ${isofox_gene_data_cmd}
+echo ${isofox_fusion_cmd}
+echo ${isofox_alt_splice_junction_cmd}
 
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
