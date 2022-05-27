@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir="/data/output/pilot_output_all_sources"
+output_dir="/data/output/prod_output_all_sources"
 create_or_cleanup_dir ${output_dir}
 
 actin_trial_tsv=$(locate_actin_trial_tsv)
@@ -18,7 +18,7 @@ hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
 hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
 missing_doids_mapping_tsv=/data/resources/crunch/serve/curation/all_doids_mapping.tsv
 
-do_run_serve_pilot \
+do_run_serve_prod \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
