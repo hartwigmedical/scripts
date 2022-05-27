@@ -15,5 +15,5 @@ run_orange_research ${run_dir} -max_evidence_level C
 run_orange_research_no_germline ${run_dir} -max_evidence_level C
 
 # Experimental
-run_orange_pilot ${run_dir} -max_level_evidence C
+run_orange_pilot ${run_dir} -max_evidence_level C
 
