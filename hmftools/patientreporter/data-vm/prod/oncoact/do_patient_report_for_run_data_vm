@@ -50,7 +50,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 linx_svs_tsv=$(locate_linx_svs ${run_dir})
 
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-sample_summary_tsv=$(locate_summary_patient_report_prod)
+sample_summary_tsv=${run_dir}/rose_pilot/ACTN01020079T.rose.tsv
 sample_special_remark_tsv=$(locate_special_remark_patient_report_prod)
 
 do_run_base_patient_reporter_data_vm \
