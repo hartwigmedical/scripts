@@ -13,14 +13,13 @@ signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
-## UDI code will be in pipeline 5.28: (01)8720299486027(8012)v5.28
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -udi_di "(01) 8720299486010(8012)v5.25" \
+    -udi_di "(01)8720299486027(8012)v5.28" \
     -require_pipeline_version_file \
     -expected_pipeline_version ${expected_pipeline_version} \
     "$@"

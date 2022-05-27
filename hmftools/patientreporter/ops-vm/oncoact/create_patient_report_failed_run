@@ -6,6 +6,7 @@ source lims_functions || exit 1
 
 set=$1 && shift
 correction_comments=$1 && shift
+correction_extern=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
@@ -91,15 +92,34 @@ peach_genotype_tsv=$(locate_peach_prod_genotype ${temp_folder_path})
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
-    do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
-        -output_dir_report ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -pipeline_version_file ${pipeline_version_file} \
-        -peach_genotype_tsv ${peach_genotype_tsv} \
-        -purple_purity_tsv ${purple_purity_tsv} \
-        -purple_qc_file ${purple_qc_file} \
-        -comments "${correction_comments}" \
-        -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    if [[ -z "${correction_extern}" ]]; then
+        error "Missing correction extern argument"
+    fi
+
+    if [[ ${correction_extern} == "extern" ]]; then
+        do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+                -output_dir_report ${output_dir_report} \
+                -output_dir_data ${output_dir_data_report} \
+                -pipeline_version_file ${pipeline_version_file} \
+                -peach_genotype_tsv ${peach_genotype_tsv} \
+                -purple_purity_tsv ${purple_purity_tsv} \
+                -purple_qc_file ${purple_qc_file} \
+                -comments "${correction_comments}" \
+                -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+
+    if [[ ${correction_extern} == "intern" ]]; then
+            do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+                    -output_dir_report ${output_dir_report} \
+                    -output_dir_data ${output_dir_data_report} \
+                    -pipeline_version_file ${pipeline_version_file} \
+                    -peach_genotype_tsv ${peach_genotype_tsv} \
+                    -purple_purity_tsv ${purple_purity_tsv} \
+                    -purple_qc_file ${purple_qc_file} \
+                    -comments "${correction_comments}" \
+                    -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        fi
+
 else
     #Normal report
     do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
@@ -115,8 +135,7 @@ fi
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
-    api=$( ls ${temp_folder_path}/new_report | grep "api-update.json" )
+    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep "oncoact.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -151,7 +170,7 @@ if [[ "${sample:0:6}" -eq "COREDB01" ]]; then
 fi
 
 ### Patch reporting created endpoint
-api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
+api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
 echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 read answer
 if [[ $answer == 'Y' ]]; then

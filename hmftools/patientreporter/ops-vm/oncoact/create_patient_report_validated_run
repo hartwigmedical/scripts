@@ -4,9 +4,9 @@ source message_functions || exit 1
 source locate_files || exit 1
 source lims_functions || exit 1
 
-
 set=$1 && shift
 correction_comments=$1 && shift
+correction_extern=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
@@ -82,7 +82,7 @@ output_dir_data_report=${temp_folder_path}/new_report
 echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
 read answer_protect
 if [[ $answer_protect == 'Y' ]]; then
-    run_protect_prod_on_vicc ${set} ${barcode} ${sample} ${temp_folder_path}
+    run_protect_prod_for_diagnostic ${set} ${barcode} ${sample} ${temp_folder_path}
 fi
 echo '[INPUT] Do you want to manually edit the PROTECT file? Please answer Y or N.'
 read answer_edit_protect
@@ -107,11 +107,28 @@ fi
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
-    do_patient_report_for_run ${temp_folder_path} ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} \
-        -output_dir_report ${output_dir_report} \
-        -output_dir_data ${output_dir_data_report} \
-        -comments "${correction_comments}" \
-        -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    if [[ -z "${correction_extern}" ]]; then
+        error "Missing correction extern argument"
+    fi
+    if [[ ${correction_extern} == "extern" ]]; then
+        do_patient_report_for_run ${temp_folder_path} ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} \
+                -output_dir_report ${output_dir_report} \
+                -output_dir_data ${output_dir_data_report} \
+                -comments "${correction_comments}" \
+                -corrected_report_extern \
+                -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+
+    if [[ ${correction_extern} == "intern" ]]; then
+            do_patient_report_for_run ${temp_folder_path} ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} \
+                    -output_dir_report ${output_dir_report} \
+                    -output_dir_data ${output_dir_data_report} \
+                    -comments "${correction_comments}" \
+                    -corrected_report "$@" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        fi
+
+
+
 else
     #Normal report
     do_patient_report_for_run ${temp_folder_path} ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} \
@@ -122,7 +139,7 @@ fi
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep ".json" )
+    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep "oncoact.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -158,7 +175,7 @@ if [[ "${sample:0:8}" == "COREDB01" ]]; then
 fi
 
 ### Patch reporting created endpoint
-api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_summary" | grep "api-update.json")
+api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_conclusion" | grep "api-update.json")
 echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 read answer
 if [[ $answer == 'Y' ]]; then

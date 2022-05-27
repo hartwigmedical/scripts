@@ -7,6 +7,7 @@ source lims_functions || exit 1
 
 set=$1 && shift
 correction_comments=$1 && shift
+correction_extern=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
@@ -73,11 +74,25 @@ output_dir_data_report=${temp_folder_path}/new_report
 
 if [[ ${correction_comments} != "" ]]; then
     #corrected report
-    do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
-      -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_data_report} \
-      -comments "${correction_comments}" \
-      -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+    if [[ -z "${correction_extern}" ]]; then
+        error "Missing correction extern argument"
+    fi
+    if [[ ${correction_extern} == "extern" ]]; then
+        do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+              -output_dir_report ${output_dir_report} \
+              -output_dir_data ${output_dir_data_report} \
+              -comments "${correction_comments}" \
+              -corrected_report_extern \
+              -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+    fi
+
+    if [[ ${correction_extern} == "intern" ]]; then
+            do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+                  -output_dir_report ${output_dir_report} \
+                  -output_dir_data ${output_dir_data_report} \
+                  -comments "${correction_comments}" \
+                  -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+    fi
 else
     #Normal report
     do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
@@ -88,7 +103,6 @@ fi
 
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep ".json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
@@ -151,7 +165,7 @@ info "The report $report and the accompanying ${sample}_${barcode}.tar.gz are up
 rm -r ${temp_folder_path}/ 2>&1
 
 ### Patch reporting created endpoint
-api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
+api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
 echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 read answer
 if [[ $answer == 'Y' ]]; then

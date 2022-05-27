@@ -7,8 +7,43 @@ source message_functions || exit 1
 source api_functions || exit 1
 
 sample=$1 && shift
+correction_comments=$1 && shift
+correction_extern=$1 && shift
 
-fail_reason="panel_failure"
+if [[ -z "${sample}" ]]; then
+    error "No tumor sample provided. Exiting"
+fi
+
+echo ""
+echo "--- A pre-pipeline fail panel report will be created for ${sample}  ---"
+
+if [[ ${correction_comments} != "" ]]; then
+    echo "[IMPORTANT] this will be an correction report!"
+    echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
+fi
+
+if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    warn 'There already exists a patient report for this sample:'
+    gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+    echo '[INPUT] Are you sure you want to continue with making a new report? (all data will be overwritten, except for the report when making a corrected report) Please answer Y or N.'
+    read answer
+    if [[ $answer != 'Y' ]]; then
+        warn "Report will not be created. exiting"
+        exit 1
+    fi
+fi
+
+
+### create temp folder in VM
+temp_folder_path=$( pwd )"/temp_cp_${sample}"
+mkdir $temp_folder_path
+
+# create folder for report
+mkdir ${temp_folder_path}/new_report
+output_dir_report=${temp_folder_path}/new_report
+output_dir_data_report=${temp_folder_path}/new_report
+
+## running patient reporter
 
 tumor_sample_barcode=$(find_barcode_for_sample_name ${sample})
 
@@ -19,11 +54,107 @@ fi
 
 barcode=$(find_barcode_for_sample_name ${sample})
 
-output_dir_report=${HOME}/reports/pilot
-output_dir_data=${HOME}/reports/pilot
+fail_reason="insufficient_dna_panel"
 
-do_run_qc_fail_panel_reporter ${sample} ${barcode}  \
-      -panel_qc_fail \
-      -panel_qc_fail_reason ${fail_reason} \
-      -output_dir_data ${output_dir_data} \
-      -output_dir_report ${output_dir_report} "$@"
+if [[ ${correction_comments} != "" ]]; then
+    #corrected report
+    if [[ -z "${correction_extern}" ]]; then
+        error "Missing correction extern argument"
+    fi
+    if [[ ${correction_extern} == "extern" ]]; then
+      do_run_qc_fail_panel_reporter ${sample} ${barcode}  \
+                -panel_qc_fail \
+                -panel_qc_fail_reason ${fail_reason} \
+                -output_dir_data ${output_dir_data_report} \
+                -output_dir_report ${output_dir_report} \
+                -comments "${correction_comments}" \
+                -corrected_report_extern \
+                -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+
+    if [[ ${correction_extern} == "intern" ]]; then
+          do_run_qc_fail_panel_reporter ${sample} ${barcode}  \
+                    -panel_qc_fail \
+                    -panel_qc_fail_reason ${fail_reason} \
+                    -output_dir_data ${output_dir_data_report} \
+                    -output_dir_report ${output_dir_report} \
+                    -comments "${correction_comments}" \
+                    -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        fi
+
+else
+    do_run_qc_fail_panel_reporter ${sample} ${barcode}  \
+          -panel_qc_fail \
+          -panel_qc_fail_reason ${fail_reason} \
+          -output_dir_data ${output_dir_data_report} \
+          -output_dir_report ${output_dir_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+fi
+
+#check whether a report has been made
+if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep ".json" )
+    info "The report $report has been created"
+else
+    warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
+    rm -r ${temp_folder_path}/ 2>&1
+    warn "The script will end here. Exiting"
+    exit 1
+fi
+
+
+#### check log file of making the report
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
+    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
+else
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep 'WARN ' | grep "has already been reported"
+    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
+fi
+
+#### cp report to gs://patient-reporter-manual-prod-1/
+gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
+info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
+gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+
+
+if [[ $( gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+    warn 'A patient report for this sample has already been shared in gs://oncopanel-result-files-nki/:'
+    gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
+    echo '[INPUT] Are you sure you want to continue sharing a new report and result files? (all data will be overwritten) Please answer Y or N.'
+    read answer
+    if [[ $answer != 'Y' ]]; then
+        warn "Report and result files will not be shared. exiting"
+        rm -r ${temp_folder_path}/ 2>&1
+        exit 1
+    fi
+fi
+
+#### cp report to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
+gsutil -q cp -r ${temp_folder_path}/new_report/*.pdf gs://oncopanel-result-files-nki/
+info "The report is shared in gs://oncopanel-result-files-nki/:"
+gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
+
+### EXTRA: upload report + tar to NC
+upload_file_to_nc_new_reports_viewing  gs://oncopanel-result-files-nki/ $report &> /dev/null
+info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
+
+### remove temporary folder
+rm -r ${temp_folder_path}/ 2>&1
+
+### Patch reporting created endpoint
+api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
+echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+read answer
+if [[ $answer == 'Y' ]]; then
+  post_api_created_report ${api_update_json} ${sample}
+fi
+
+
+echo '[INPUT] Do you want to also do the final processing (since the report has been shared) ? Please answer Y or N.'
+read answer
+if [[ $answer == 'Y' ]]; then
+    copy_panel_report_to_final_reports_gcp ${set}
+fi
+
+echo ""

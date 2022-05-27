@@ -47,11 +47,13 @@ molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${run_dir})
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+linx_svs_tsv=$(locate_linx_svs ${run_dir})
 
 germline_reporting_tsv=$(locate_germline_reporting_prod)
 sample_summary_tsv=$(locate_summary_patient_report_prod)
+sample_special_remark_tsv=$(locate_special_remark_patient_report_prod)
 
-do_run_base_patient_reporter \
+do_run_base_patient_reporter_data_vm \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${sample} \
@@ -68,6 +70,7 @@ do_run_base_patient_reporter \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+    -linx_svs_tsv ${linx_svs_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
     -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
@@ -76,5 +79,6 @@ do_run_base_patient_reporter \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
+    -sample_special_remark_tsv ${sample_special_remark_tsv} \
     -ref_genome_version 37 \
     "$@"
