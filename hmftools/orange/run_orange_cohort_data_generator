@@ -7,14 +7,14 @@ orange_jar=$(locate_pilot_orange)
 
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
-output_directory="/data/experiments/orange_cohort"
+output_directory="/data/experiments/orange"
 
 credentials=$(prod_writer_sql_credentials)
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "hmfpatients")
 
-java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCohortGenerator \
+java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCohortDataGenerator \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -output_directory ${output_directory} \
