@@ -60,6 +60,7 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
 
+rna_sample_cmd=""
 isofox_gene_distribution_cmd=""
 isofox_alt_sj_cohort_cmd=""
 isofox_cancer_type_cmd=""
@@ -68,6 +69,8 @@ isofox_gene_data_cmd=""
 isofox_fusion_cmd=""
 isofox_alt_splice_junction_cmd=""
 if [[ -d "${run_dir}/isofox" ]]; then
+    rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
+
     isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
     isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
     isofox_cancertype=$(cat $(locate_actin_rna_sample_metadata_file) | grep ${tumor_sample} |  cut -d "," -f2)
@@ -105,6 +108,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
+    ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \

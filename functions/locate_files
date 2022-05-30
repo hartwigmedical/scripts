@@ -409,12 +409,6 @@ locate_actin_reports_directory() {
 
 ##################################### RNA ######################################
 
-locate_rna_bam_directory() {
-    local run_dir=$1 && shift
-
-    echo "${run_dir}/rna_bam"
-}
-
 locate_rna_bam() {
     local run_dir=$1 && shift
 
