@@ -99,9 +99,9 @@ fi
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
-# -reference_sample_id ${reference_sample} \
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
+    -reference_sample_id ${reference_sample} \
     ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
