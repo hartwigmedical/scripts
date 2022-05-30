@@ -21,6 +21,7 @@ doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
 cohort_percentiles_tsv=$(locate_cohort_percentiles_tsv)
 driver_gene_panel_tsv=$(locate_driver_gene_panel_37_tsv)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -110,6 +111,7 @@ java -jar ${orange_jar} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -cohort_percentiles_tsv ${cohort_percentiles_tsv} \
     -driver_gene_panel_tsv ${driver_gene_panel_tsv} \
+    -known_fusion_file ${known_fusion_file} \
     ${isofox_gene_distribution_cmd} \
     ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
