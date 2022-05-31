@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(cohorts hospitals)
+classes=(cohorts hospitals statuses/frbarcodes patients/tumorsamples)
 
 print_usage(){
     script=$(basename "$0")
@@ -55,6 +55,12 @@ main(){
     elif [[ "${class}" == "hospitals" ]]; then
         printf "#%s\t%s\t%s\n" hospitalName emailAddresses id
         jq -r '.[] | [.hospitalName, (.emailAddresses | join(",")), ._id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "statuses/frbarcodes" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\n" frBarcodeDNA frBarcodeRNA isolationStatus cohort id
+        jq -r '. | [.frBarcodeDNA, .frBarcodeRNA, .isolationStatus, .cohort._id, ._id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "patients/tumorsamples" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" arrivalHmf primaryTumorType biopsySite collectionDate hospitalPaSampleId refFrBarcode id
+        jq -r '. | [.arrivalHmf, .primaryTumorType, .biopsySite, .collectionDate, .hospitalPaSampleId, .refFrBarcode, ._id] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
