@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-serve_actionability_dir="/data/resources/custum/common-resources-private/serve/37"
+serve_actionability_dir="/data/resources/custom/common-resources-private/serve/37"
 
 gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp;  touch ~/temp/tmp.csv;"
 gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "for file in ${serve_actionability_dir}/*; \

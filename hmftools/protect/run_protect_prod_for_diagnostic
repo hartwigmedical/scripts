@@ -32,7 +32,7 @@ output_dir="${run_dir}/protect"
 protect_jar=$(locate_prod_protect)
 
 info "Rerunning protect for $set (only in VM; pipeline data will not be overwritten)"
-serve_actionability_dir="/data/resources/custum/common-resources-private/serve/37"
+serve_actionability_dir="/data/resources/custom/common-resources-private/serve/37"
 info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log
 
 do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log
