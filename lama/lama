@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts patients/tumorsamples)
+classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples)
 
 print_usage(){
     script=$(basename "$0")
@@ -68,7 +68,7 @@ main(){
     elif [[ "${class}" == "hospitals" ]]; then
         printf "#%s\t%s\t%s\n" hospitalName emailAddresses id
         jq -r '.[] | [.hospitalName, (.emailAddresses | join(",")), ._id] | @tsv' <<< "${json_result}"
-    elif [[ "${class}" == "statuses/frbarcodes" || "${class}" == "statuses/cohorts" ]]; then
+    elif [[ "${class}" =~ ^statuses ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId frBarcodeDNA isolationStatus prepStatus isolationStatusRNA prepStatusRNA cohort id
         jq -r '.[] | [.sampleId, .frBarcodeDNA//"NA", .isolationStatus, .prepStatus, .isolationStatusRNA, .prepStatusRNA, .cohort._id, ._id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "patients/tumorsamples" ]]; then
