@@ -70,7 +70,13 @@ isofox_gene_data_cmd=""
 isofox_fusion_cmd=""
 isofox_alt_splice_junction_cmd=""
 if [[ -d "${run_dir}/isofox" ]]; then
-    rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
+    # TODO Make mandatory once all purple data can be annotated with RNA correctly.
+    rna_sample_id="${tumor_sample}_RNA"
+    if [[ $(zcat ${purple_somatic_variant_vcf} | grep -c ${rna_sample_id}) = 1 ]]; then
+        rna_sample_cmd="-rna_sample_id ${rna_sample_id}"
+    else
+        warn "Isofox data is present but somatic vcf doesn't seem to be annotated with RNA data!"
+    fi
 
     isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
     isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
