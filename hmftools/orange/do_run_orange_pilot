@@ -80,7 +80,6 @@ if [[ -d "${run_dir}/isofox" ]]; then
 
     isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
     isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
-    isofox_cancer_type_cmd="-isofox_cancer_type \"${isofox_cancertype}\""
     isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
     isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
     isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
