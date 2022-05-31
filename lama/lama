@@ -9,6 +9,10 @@ print_usage(){
     script=$(basename "$0")
     echo "---"
     echo "Usage: $script [-j] <class> [<filter-value> <filter-key>]"
+    echo "Examples:"
+    echo " $script statuses/frbarcodes FR30539000"
+    echo " $script statuses/cohorts ACTIN"
+    echo " $script patients/tumorsamples ACTN01020001T"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV"
     echo "Notes:"
@@ -65,11 +69,11 @@ main(){
         printf "#%s\t%s\t%s\n" hospitalName emailAddresses id
         jq -r '.[] | [.hospitalName, (.emailAddresses | join(",")), ._id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "statuses/frbarcodes" || "${class}" == "statuses/cohorts" ]]; then
-        printf "#%s\t%s\t%s\t%s\n" frBarcodeDNA isolationStatus cohort id
-        jq -r '.[] | [.frBarcodeDNA//"NA", .isolationStatus, .cohort._id, ._id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId frBarcodeDNA isolationStatus prepStatus isolationStatusRNA prepStatusRNA cohort id
+        jq -r '.[] | [.sampleId, .frBarcodeDNA//"NA", .isolationStatus, .prepStatus, .isolationStatusRNA, .prepStatusRNA, .cohort._id, ._id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "patients/tumorsamples" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" arrivalHmf primaryTumorType biopsySite collectionDate hospitalPaSampleId refFrBarcode id
-        jq -r '.[] | [.arrivalHmf, .primaryTumorType, .biopsySite, .collectionDate, .hospitalPaSampleId, .refFrBarcode, ._id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr arrivalHmf isCUP primaryTumorType biopsySite
+        jq -r '.[] | [._id, .submissionNr, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
