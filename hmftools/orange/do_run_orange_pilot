@@ -63,6 +63,8 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_germline_disruption_tsv=$(locate_linx_germline_disruptions ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
+lilac_result_csv=$(locate_lilac_results ${run_dir})
+lilac_qc_csv=${locate_lilac_qc ${run_dir}}
 
 rna_sample_cmd=""
 isofox_gene_distribution_cmd=""
@@ -144,6 +146,8 @@ java -jar ${orange_jar} \
     -linx_driver_tsv ${linx_driver_tsv} \
     -linx_germline_disruption_tsv ${linx_germline_disruption_tsv} \
     -linx_plot_directory ${linx_plot_directory} \
+    -lilac_result_csv ${lilac_result_csv} \
+    -lilac_qc_csv ${lilac_qc_csv} \
     ${isofox_summary_cmd} \
     ${isofox_gene_data_cmd} \
     ${isofox_fusion_cmd} \

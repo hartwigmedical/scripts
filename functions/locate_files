@@ -1120,7 +1120,7 @@ locate_linx_svs() {
     echo ${svs_tsv}
 }
 
-################################# LINX GERMLINE #################################
+################################# LINX GERMLINE ################################
 
 locate_linx_germline_disruptions() {
     local run_dir=$1
@@ -1129,6 +1129,26 @@ locate_linx_germline_disruptions() {
         error "Unable to locate linx germline disruptions in ${run_dir}."
     fi
     echo ${germline_disruption_tsv}
+}
+
+##################################### LILAC ####################################
+
+locate_lilac_results() {
+    local run_dir=$1
+    local result_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.csv")
+    if [[ -z "${result_csv}" ]]; then
+        error "Unable to locate lilac result csv in ${run_dir}."
+    fi
+    echo ${result_csv}
+}
+
+locate_lilac_qc() {
+    local run_dir=$1
+    local qc_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.qc.csv")
+    if [[ -z "${qc_csv}" ]]; then
+        error "Unable to locate lilac qc csv in ${run_dir}."
+    fi
+    echo ${qc_csv}
 }
 
 #################################### ISOFOX ####################################

@@ -102,6 +102,12 @@ if [[ $? = 0 ]]; then info " Linx Drivers: ${linx_drivers}"; fi
 linx_germline_disruptions=$(locate_linx_germline_disruptions ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Germline Disruptions: ${linx_germline_disruptions}"; fi
 
+lilac_results=$(locate_lilac_results ${run_dir})
+if [[ $? = 0 ]]; then info " LILAC Results: ${lilac_results}"; fi
+
+lilac_qc=$(locate_lilac_qc ${run_dir})
+if [[ $? = 0 ]]; then info " LILAC QC: ${lilac_qc}"; fi
+
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [[ $? = 0 ]]; then info " CHORD Prediction File: ${chord_prediction}"; fi
 
