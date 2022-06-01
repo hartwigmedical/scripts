@@ -987,6 +987,15 @@ locate_purple_pilot_germline_variants() {
     echo ${germline_vcf}
 }
 
+locate_purple_germline_deletions() {
+    local run_dir=$1
+    local purple_germline_deletion_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.germline.deletion.tsv")
+    if [[ -z "${purple_germline_deletion_tsv}" ]]; then
+        error "Unable to locate purple germline deletions in ${run_dir}."
+    fi
+    echo ${purple_germline_deletion_tsv}
+}
+
 locate_purple_germline_driver_catalog() {
     local run_dir=$1
     local purple_germline_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
@@ -1109,6 +1118,17 @@ locate_linx_svs() {
         error "Unable to locate linx svs tsv in ${run_dir}."
     fi
     echo ${svs_tsv}
+}
+
+################################# LINX GERMLINE #################################
+
+locate_linx_germline_disruptions() {
+    local run_dir=$1
+    local germline_disruption_tsv=$(find -L ${run_dir}/linx_germline/ -type f -name "*.linx.germline.disruption.tsv")
+    if [[ -z "${germline_disruption_tsv}" ]]; then
+        error "Unable to locate linx germline disruptions in ${run_dir}."
+    fi
+    echo ${germline_disruption_tsv}
 }
 
 #################################### ISOFOX ####################################

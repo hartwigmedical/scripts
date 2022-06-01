@@ -69,6 +69,9 @@ if [[ $? = 0 ]]; then info " PURPLE Somatic Copynumbers: ${purple_somatic_copynu
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})
 if [[ $? = 0 ]]; then info " PURPLE Gene Copynumbers: ${purple_gene_copynumbers}"; fi
 
+purple_germline_deletions=$(locate_purple_germline_deletions ${run_dir})
+if [[ $? = 0 ]]; then info " PURPLE Germline Deletions: ${purple_germline_deletions}"; fi
+
 purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
 if [[ $? = 0 ]]; then info " PURPLE Plot Directory: ${purple_plot_directory}"; fi
 
@@ -95,6 +98,9 @@ if [[ $? = 0 ]]; then info " Linx Driver Catalog: ${linx_driver_catalog}"; fi
 
 linx_drivers=$(locate_linx_drivers ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Drivers: ${linx_drivers}"; fi
+
+linx_germline_disruptions=$(locate_linx_germline_disruptions ${run_dir})
+if [[ $? = 0 ]]; then info " Linx Germline Disruptions: ${linx_germline_disruptions}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [[ $? = 0 ]]; then info " CHORD Prediction File: ${chord_prediction}"; fi
