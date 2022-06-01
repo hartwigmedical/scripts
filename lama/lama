@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples)
+classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples patients/bloodsamples)
 
 print_usage(){
     script=$(basename "$0")
@@ -13,10 +13,12 @@ print_usage(){
     echo " $script statuses/frbarcodes FR30539000"
     echo " $script statuses/cohorts ACTIN"
     echo " $script patients/tumorsamples ACTN01020001T"
+    echo " $script patients/bloodsamples ACTN01020001R"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV"
     echo "Notes:"
-    echo "  Available classes: ${classes[*]}"
+    echo "  * Available classes: ${classes[*]}"
+    echo "  * Use script ${get_script} instead for all non-interactive use!"
     echo "---"
     exit 1
 }
@@ -71,7 +73,7 @@ main(){
     elif [[ "${class}" =~ ^statuses ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId frBarcodeDNA isolationStatus prepStatus isolationStatusRNA prepStatusRNA cohort id
         jq -r '.[] | [.sampleId, .frBarcodeDNA//"NA", .isolationStatus, .prepStatus, .isolationStatusRNA, .prepStatusRNA, .cohort._id, ._id] | @tsv' <<< "${json_result}"
-    elif [[ "${class}" == "patients/tumorsamples" ]]; then
+    elif [[ "${class}" == "patients/tumorsamples" || "${class}" == "patients/bloodsamples" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr arrivalHmf isCUP primaryTumorType biopsySite
         jq -r '.[] | [._id, .submissionNr, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
     else
