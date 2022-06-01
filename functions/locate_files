@@ -140,6 +140,10 @@ locate_prod_serve() {
     echo "/data/tools/serve/1.10/serve.jar"
 }
 
+locate_resource_serve() {
+    echo "/data/tools/serve/1.11/serve.jar"
+}
+
 locate_pilot_serve() {
     echo "/data/experiments/pilot_tools/serve/serve.jar"
 }
