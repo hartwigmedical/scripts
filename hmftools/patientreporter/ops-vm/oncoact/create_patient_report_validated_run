@@ -106,9 +106,9 @@ fi
 echo '[INPUT] Do you want to rerun ROSE? Please answer Y or N.'
 read answer_protect
 if [[ $answer_protect == 'Y' ]]; then
-    run_rose_prod ${temp_folder_path}
+    run_rose_prod ${temp_folder_path} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_rose_rerun.log
+    cat ${temp_folder_path}/rose/${sample}.rose.tsv
 fi
-cat ${temp_folder_path}/rose/${sample}.rose.tsv
 
 #### run patient reporter
 
