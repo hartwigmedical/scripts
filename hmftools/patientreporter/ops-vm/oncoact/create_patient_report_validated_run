@@ -11,7 +11,11 @@ correction_extern=$1 && shift
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
 ##TODO remove when hotfix is made
-gsutil cat gs://diagnostic-pipeline-output-prod-1/${set}/sage_somatic/run.log | grep "Exception in thread"
+# Check whether there was an error (potentially present in SAGE 3.0.1)
+sage_exception_count=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set}/sage_somatic/run.log | grep "Exception in thread")
+if [[ ${sage_exception_count} -ge 1 ]]; then
+    warn "Exceptions found in SAGE run log!"
+fi
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
