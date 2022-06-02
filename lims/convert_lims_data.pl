@@ -191,6 +191,9 @@ sub addLamaSamplesToSamples{
         }
 
         my $sample_name = $sample_to_store{sample_name};
+        my $sample_id = $sample_to_store{sample_id};
+        my $sample_print_info = "barcode:$sample_id,name:$sample_name";
+
         my ($patient_id, $study, $center, $tum_or_ref);
         my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         if ($sample_name =~ /$name_regex/ms) {
@@ -198,15 +201,26 @@ sub addLamaSamplesToSamples{
             $sample_to_store{label} = $study;
         }
         else {
-            sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex");
+            sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
             #print Dumper(\%sample_to_store);
             next;
         }
 
+        my $add_to_database = $sample_to_store{add_to_database};
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
         my $analysis_type = $sample_to_store{isolation_type};
+        my $cohort = $sample_to_store{cohort};
         my $final_target_yield = NACHAR;
+
+        #if (not $add_to_database == 1){
+        if (($cohort eq 'OPTIC' or $cohort eq 'OMIC') and not $add_to_database){
+            unless ($original_submission =~ m/^HMFreg\d{4}$/) {
+                sayWarn("ERROR: SKIPPING LAMA sample because add_to_database=false but no submission present [$sample_print_info]");
+                print Dumper(\%sample_to_store);
+                next;
+            }
+        }
 
         if (not defined $isolation_type) {
             sayWarn("SKIPPING: no isolation type defined for $isolate_barcode (pls fix in LAMA)");
