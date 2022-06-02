@@ -35,6 +35,7 @@ else
     fi
 fi
 
+ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
 if [[ -f "${pipeline_version_file}" ]]; then
@@ -115,6 +116,7 @@ java -jar ${orange_jar} \
     -reference_sample_id ${reference_sample} \
     ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
+    -ref_genome_version ${ref_genome_version} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
