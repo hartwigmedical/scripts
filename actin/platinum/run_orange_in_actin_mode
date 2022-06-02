@@ -14,6 +14,3 @@ run_orange_research ${run_dir} -max_evidence_level C
 # Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
 run_orange_research_no_germline ${run_dir} -max_evidence_level C
 
-# Experimental
-run_orange_pilot ${run_dir} -max_evidence_level C
-
