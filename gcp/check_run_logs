@@ -29,7 +29,8 @@ grep_url_for_errors(){
         | grep -v '.error' \
         | grep -v '0 errors.' \
         | grep -v 'GenomeAnalysisTK.jar!/META-INF/log4j-provider.properties' \
-        | grep -v 'ERROR StatusLogger Log4j2 could not find a logging implementation'
+        | grep -v 'ERROR StatusLogger Log4j2 could not find a logging implementation' \
+        | grep -v '"@type" : "type.googleapis.com/google.rpc.ErrorInfo"'
 }
 
 main
