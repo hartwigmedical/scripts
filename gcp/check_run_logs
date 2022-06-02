@@ -22,6 +22,7 @@ grep_url_for_errors(){
     gs_url=$1 && shift
     gsutil cat "$gs_url" \
         | grep -iE 'error|exception' \
+        | grep -v 'Total Errors : ' \
         | grep -v 'errorCorrection' \
         | grep -v 'OnFirstError' \
         | grep -v 'download:' \
