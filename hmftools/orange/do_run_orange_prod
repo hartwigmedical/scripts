@@ -20,8 +20,6 @@ orange_jar=$(locate_prod_orange)
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
 cohort_percentiles_tsv=$(locate_cohort_percentiles_tsv)
-driver_gene_panel_tsv=$(locate_driver_gene_panel_37_tsv)
-known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -35,7 +33,6 @@ else
     fi
 fi
 
-ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
 if [[ -f "${pipeline_version_file}" ]]; then
@@ -56,41 +53,12 @@ purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_d
 purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
-purple_germline_deletion_tsv=$(locate_purple_germline_deletions ${run_dir})
 purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
-linx_germline_disruption_tsv=$(locate_linx_germline_disruptions ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
-lilac_result_csv=$(locate_lilac_results ${run_dir})
-lilac_qc_csv=$(locate_lilac_qc ${run_dir})
-
-rna_sample_cmd=""
-isofox_gene_distribution_cmd=""
-isofox_alt_sj_cohort_cmd=""
-isofox_summary_cmd=""
-isofox_gene_data_cmd=""
-isofox_fusion_cmd=""
-isofox_alt_splice_junction_cmd=""
-if [[ -d "${run_dir}/isofox" ]]; then
-    # TODO Make mandatory once all purple data can be annotated with RNA correctly.
-    rna_sample_id="${tumor_sample}_RNA"
-    if [[ $(zcat ${purple_somatic_variant_vcf} | grep -c ${rna_sample_id}) = 1 ]]; then
-        rna_sample_cmd="-rna_sample_id ${rna_sample_id}"
-    else
-        warn "Isofox data is present but somatic vcf doesn't seem to be annotated with RNA data!"
-    fi
-
-    isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
-    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
-    isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
-    isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
-    isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
-    isofox_alt_splice_junction_cmd="-isofox_alt_splice_junction_csv $(locate_isofox_alt_splice_junctions ${run_dir})"
-fi
-
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
@@ -104,7 +72,7 @@ else
 fi
 
 cuppa_feature_plot_cmd=""
-if [[ ! -z ${cuppa_feature_plot} ]]; then
+if [[ ! -z "${cuppa_feature_plot}" ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
 
@@ -116,17 +84,11 @@ info "Running ORANGE on ${run_dir}"
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -reference_sample_id ${reference_sample} \
-    ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -ref_genome_version ${ref_genome_version} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
     -cohort_percentiles_tsv ${cohort_percentiles_tsv} \
-    -driver_gene_panel_tsv ${driver_gene_panel_tsv} \
-    -known_fusion_file ${known_fusion_file} \
-    ${isofox_gene_distribution_cmd} \
-    ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
     -ref_sample_wgs_metrics_file ${ref_sample_wgs_metrics_file} \
     -ref_sample_flagstat_file ${ref_sample_flagstat_file} \
@@ -142,20 +104,12 @@ java -jar ${orange_jar} \
     -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
-    -purple_germline_deletion_tsv ${purple_germline_deletion_tsv} \
     -purple_plot_directory ${purple_plot_directory} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -linx_driver_tsv ${linx_driver_tsv} \
-    -linx_germline_disruption_tsv ${linx_germline_disruption_tsv} \
     -linx_plot_directory ${linx_plot_directory} \
-    -lilac_result_csv ${lilac_result_csv} \
-    -lilac_qc_csv ${lilac_qc_csv} \
-    ${isofox_summary_cmd} \
-    ${isofox_gene_data_cmd} \
-    ${isofox_fusion_cmd} \
-    ${isofox_alt_splice_junction_cmd} \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -cuppa_result_csv ${cuppa_result_csv} \
