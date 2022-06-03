@@ -31,7 +31,16 @@ report=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep dna_an
 report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
 json=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep ${barcode} | grep ".json")
 json=$( echo ${json#"gs://patient-reporter-prod-1/"} )
-    
+
+##TODO remove when hotfix is made
+# Check whether there was an error (potentially present in SAGE 3.0.1)
+sage_exception_count=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set}/sage_somatic/run.log | grep "Exception in thread")
+if [[ ${sage_exception_count} -ge 1 ]]; then
+    warn "Exceptions found in SAGE run log!"
+else
+    info "No exceptions found in SAGE run log!"
+fi
+
 ### upload report to NC
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $report &> /dev/null
 info "The report $report is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
