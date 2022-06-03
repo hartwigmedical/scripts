@@ -97,7 +97,7 @@ locate_prod_clinical_patient_db() {
 }
 
 locate_diagnostic_patient_db() {
-    echo "/data/tools/patient-db/3.62/patient-db.jar"
+    echo "/data/tools/patient-db/3.69/patient-db.jar"
 }
 
 locate_pilot_patient_db() {
