@@ -10,15 +10,6 @@ correction_extern=$1 && shift
 
 [[ -n "${set}" ]] || die "No set provided. Exiting"
 
-##TODO remove when hotfix is made
-# Check whether there was an error (potentially present in SAGE 3.0.1)
-sage_exception_count=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set}/sage_somatic/run.log | grep "Exception in thread")
-if [[ ${sage_exception_count} -ge 1 ]]; then
-    warn "Exceptions found in SAGE run log!"
-else
-    info "No exceptions found in SAGE run log!"
-fi
-
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
 exc_buckets="research-pipeline-output-prod"
@@ -43,6 +34,15 @@ if [[ ${run_count} == 0 ]]; then
 fi
 
 set_url="gs://${bucket}/${set}"
+
+##TODO remove when hotfix is made
+# Check whether there was an error (potentially present in SAGE 3.0.1)
+sage_exception_count=$(gsutil cat ${set_url}/sage_somatic/run.log | grep "Exception in thread")
+if [[ ${sage_exception_count} -ge 1 ]]; then
+    warn "Exceptions found in SAGE run log!"
+else
+    info "No exceptions found in SAGE run log!"
+fi
 
 echo ""
 echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"

@@ -32,9 +32,11 @@ report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
 json=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep ${barcode} | grep ".json")
 json=$( echo ${json#"gs://patient-reporter-prod-1/"} )
 
+set_url="gs://${bucket}/${set}"
+
 ##TODO remove when hotfix is made
 # Check whether there was an error (potentially present in SAGE 3.0.1)
-sage_exception_count=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set}/sage_somatic/run.log | grep "Exception in thread")
+sage_exception_count=$(gsutil cat ${set_url}/sage_somatic/run.log | grep "Exception in thread")
 if [[ ${sage_exception_count} -ge 1 ]]; then
     warn "Exceptions found in SAGE run log!"
 else
