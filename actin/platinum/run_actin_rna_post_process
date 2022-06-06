@@ -33,7 +33,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
     annotated_somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
     if [[ -f ${annotated_somatic_vcf} ]]; then
         info "Replace purple somatic VCF with RNA-annotated version"
-        original_somatic_vcf="$(locate_purple_somatic_variants)"
+        original_somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
         cp "${annotated_somatic_vcf}" "${original_somatic_vcf}"
         cp "${annotated_somatic_vcf}.tbi" "${original_somatic_vcf}.tbi"
     fi
