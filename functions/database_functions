@@ -2,6 +2,14 @@
 
 source secrets_functions || exit 1
 
+emc_actin_reader_sql_credentials() {
+    echo $(cat "/data/actin/actin_emc_db_credentials/reader")
+}
+
+emc_actin_writer_sql_credentials() {
+    echo $(cat "/data/actin/actin_emc_db_credentials/writer")
+}
+
 prod_writer_sql_credentials() {
     echo $(get_secret_from_secret_manager "mysql-patients-sql-prod-1-writer")
 }
