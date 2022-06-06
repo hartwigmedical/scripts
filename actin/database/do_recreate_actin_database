@@ -4,22 +4,19 @@ source message_functions || exit 1
 source database_functions || exit 1
 source locate_files || exit 1
 
+actin_credentials=$1 && shift
 actin_database_name=$1 && shift
 
-if [[ -z "${actin_database_name}" ]]; then
+if [[ -z ${actin_credentials} || -z "${actin_database_name}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-# Resources
 actin_database_sql="$(locate_actin_database_sql_script)"
 
-# Database details
-credentials=$(prod_writer_sql_credentials)
-
-db_host=$(extract_database_host "${credentials}")
-db_port=$(extract_database_port "${credentials}")
-db_user=$(extract_database_user "${credentials}")
-db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${actin_credentials}")
+db_port=$(extract_database_port "${actin_credentials}")
+db_user=$(extract_database_user "${actin_credentials}")
+db_pass=$(extract_database_password "${actin_credentials}")
 
 info "Rebuilding ACTIN db '${actin_database_name}' on '${db_host}' using ${actin_database_sql}"
 
