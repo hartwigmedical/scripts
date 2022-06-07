@@ -203,8 +203,8 @@ sub processSample{
         $yield = 1;
     }
 
-    if ( $lab_status ne "Finished" and $lab_status ne "finished" and $name !~ /^VirtualSample\d+/){
-        sayWarn("  Check JSON for sample $name, since lab status is not 'Finished': lab_status='$lab_status'")
+    if ( $lab_status ne "Finished" and $lab_status ne "finished" and $lab_status ne "In process" and $name !~ /^VirtualSample\d+/){
+        sayWarn("  Check JSON for sample $name, since lab status is unexpected: lab_status='$lab_status'")
     }
 
     ## overwrite submission and entity in case of experiment
@@ -343,8 +343,8 @@ sub processSample{
         my $submission_ref = getValueByKey( $ref_obj, 'submission' );
         my $lab_status_ref = getValueByKey( $ref_obj, 'lab_status' );
 
-        if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished" ){
-            sayWarn("  Check JSON for sample $name, since ref lab status is not 'Finished': lab_status_ref='$lab_status_ref'")
+        if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished"  and $lab_status ne "In process" ){
+            sayWarn("  Check JSON for sample $name, since ref lab status is unexpected: lab_status_ref='$lab_status_ref'")
         }
 
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
