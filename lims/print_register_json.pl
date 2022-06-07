@@ -195,11 +195,16 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $priority   = getPriorityForSample( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
+    my $lab_status = getValueByKey( $sample, 'lab_status' );
     
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
+    }
+
+    if ( $lab_status ne "Finished" and $lab_status ne "finished" and $name !~ /^VirtualSample\d+/){
+        sayWarn("  Check JSON for sample $name, since lab status is not 'Finished': lab_status='$lab_status'")
     }
 
     ## overwrite submission and entity in case of experiment
@@ -330,12 +335,18 @@ sub processSample{
             sayWarn("  RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)");
             return "NoJsonMade_RnotFoundForSomaticT";
         }
-        
+
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
         my $patient_ref = getValueByKey( $ref_obj, 'patient' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
         my $submission_ref = getValueByKey( $ref_obj, 'submission' );
+        my $lab_status_ref = getValueByKey( $ref_obj, 'lab_status' );
+
+        if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished" ){
+            sayWarn("  Check JSON for sample $name, since ref lab status is not 'Finished': lab_status_ref='$lab_status_ref'")
+        }
+
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
@@ -380,7 +391,7 @@ sub processSample{
             }
         }
 
-        my $ref_status = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[0].status' | tr -d '"\n'`;
+        my $ref_api_status = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[0].status' | tr -d '"\n'`;
         if ( $patient ne $patient_ref ){
             ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
             my $new_name_ref = $patient . 'R';
@@ -397,7 +408,7 @@ sub processSample{
             $barcode_ref = $new_barcode_ref;
             $submission_ref = $submission;
             $skip_recalculating_yield_ref = 1;
-        } elsif ( $ref_status eq "Deleted" ){
+        } elsif ( $ref_api_status eq "Deleted" ){
             ## add suffix to ref barcode in case ref fastq has already been deleted
             my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
                 $name_ref,
