@@ -64,8 +64,15 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_germline_disruption_tsv=$(locate_linx_germline_disruptions ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
+
 lilac_result_csv=$(locate_lilac_results ${run_dir})
 lilac_qc_csv=$(locate_lilac_qc ${run_dir})
+if [[ ! -f ${lilac_result_csv} || ! -f ${lilac_qc_csv} ]]; then
+    # TODO Remove once LILAC data has been generated for all runs
+    warn "No LILAC output found. Reverting to empty LILAC output"
+    lilac_result_csv="/data/resources/crunch/lilac/empty/empty.lilac.csv"
+    lilac_qc_csv="/data/resources/crunch/lilac/empty/empty.lilac.qc.csv"
+fi
 
 rna_sample_cmd=""
 isofox_gene_distribution_cmd=""
