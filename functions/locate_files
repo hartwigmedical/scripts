@@ -169,7 +169,7 @@ locate_pilot_rose() {
 }
 
 locate_prod_pave() {
-    echo "/data/tools/pave/1.2.1/pave.jar"
+    echo "/data/tools/pave/1.2.2/pave.jar"
 }
 
 locate_prod_hmf_id_generator() {
