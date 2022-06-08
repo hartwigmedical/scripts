@@ -20,7 +20,7 @@ info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
 # Check whether there was an error (potentially present in SAGE 3.0.1)
-sage_exception_count=$(cat ${run_dir}/sage_somatic/run.log | grep -c Exception)
+sage_exception_count=$(cat "${run_dir}/sage_somatic/run.log" | grep -c Exception)
 if [[ ${sage_exception_count} -ge 1 ]]; then
     warn "Exceptions found in SAGE run log!"
 fi

@@ -22,7 +22,6 @@ download_rna_bam_to_run_dir ${run_dir}
 rna_bam_dir="$(locate_rna_bam_directory ${run_dir})"
 if [[ -d "${rna_bam_dir}" ]]; then
     # Annotation of purple somatic variants will only work on v5.28+ pipelines
-    virusbreakend_dir="${run_dir}/virusbreakend"
     if [[ -d "${run_dir}/purple" ]]; then
         cp -r "${run_dir}/purple" "${run_dir}/purple_orig"
     fi
