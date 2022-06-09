@@ -22,11 +22,14 @@ local_registration_jsons_dir=$(locate_sample_registration_registered_jsons_dir) 
 local_new_jsons_dir=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find local new jsons dir path"
 local_registration_logs_dir=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
 
+info "Copying all logs to bucket"
 gsutil -mq cp "${local_registration_logs_dir}/${registration_date}*${prefix}*" "${logs_bucket}" \
     || die "Could not copy all logs to bucket"
 
+info "Copying all jsons to bucket"
 gsutil -mq cp "${local_new_jsons_dir}/*.json" "${jsons_bucket}" || die "Could not upload all jsons to bucket"
 
+info "Moving all jsons to directory for registered samples"
 mv "${local_new_jsons_dir}"/*.json "${local_registration_jsons_dir}/" || die "Could not move all jsons locally"
 
 info "Finished moving new registration jsons and logs"
