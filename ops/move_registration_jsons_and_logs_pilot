@@ -27,7 +27,7 @@ gsutil -mq cp "${local_registration_logs_dir}/${registration_date}*${prefix}*" "
 
 gsutil -mq cp "${local_new_jsons_dir}/*.json" "${jsons_bucket}" || die "Could not upload all jsons to bucket"
 
-mv "${local_new_jsons_dir}/*.json" "${local_registration_jsons_dir}/" || die "Could not move all jsons locally"
+mv "${local_new_jsons_dir}"/*.json "${local_registration_jsons_dir}/" || die "Could not move all jsons locally"
 
 info "Finished moving new registration jsons and logs"
 
