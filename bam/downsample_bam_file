@@ -11,7 +11,7 @@ if [[ ! -f "${in_bam}" || -z "${out_bam}" || -z "${ratio_to_keep}" ]]; then
     error "Missing input files for downslicing"
 fi
 if [[ -z ${picard_jar} ]]; then
-  picard_jar="/data/tools/picard-tools_v1.141/picard.jar"
+  picard_jar="/data/tools/picard/2.18.27/picard.jar"
 fi
 mem_use=50
 
