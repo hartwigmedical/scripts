@@ -216,7 +216,7 @@ sub addLamaSamplesToSamples{
         #if (not $add_to_database == 1){
         if (($cohort eq 'OPTIC' or $cohort eq 'OMIC') and not $add_to_database){
             unless ($original_submission =~ m/^HMFreg\d{4}$/) {
-                sayWarn("ERROR: SKIPPING LAMA sample because add_to_database=false but no submission present [$sample_print_info]");
+                sayWarn("SKIPPING LAMA sample because add_to_database=false but no submission present [$sample_print_info]");
                 print Dumper(\%sample_to_store);
                 next;
             }
