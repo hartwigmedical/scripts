@@ -9,4 +9,3 @@ for run_dir in $(locate_actin_molecular_directory)/*; do
 
     load_actin_treatment_match_emc ${sample}
 done
-

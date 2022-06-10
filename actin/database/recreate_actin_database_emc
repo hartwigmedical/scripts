@@ -3,4 +3,3 @@
 source database_functions || exit 1
 
 do_recreate_actin_database "$(emc_actin_writer_sql_credentials)" "actin"
-
