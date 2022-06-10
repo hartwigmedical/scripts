@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+cloud_sql_proxy_tool="${HOME}/devtools/cloud_sql_proxy/cloud_sql_proxy"
+${cloud_sql_proxy_tool} -instances=hmf-actin:europe-west4:actin-emc-prod-1=tcp:127.0.0.1:3307
