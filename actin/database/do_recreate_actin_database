@@ -7,7 +7,7 @@ source locate_files || exit 1
 actin_credentials=$1 && shift
 actin_database_name=$1 && shift
 
-if [[ -z ${actin_credentials} || -z "${actin_database_name}" ]]; then
+if [[ -z "${actin_credentials}" || -z "${actin_database_name}" ]]; then
     error "Parameters missing. Exiting"
 fi
 

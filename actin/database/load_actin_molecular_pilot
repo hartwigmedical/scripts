@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source database_functions || exit 1
 
 sample=$1 && shift
 
@@ -8,7 +9,8 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
+actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="$(locate_pilot_actin)"
 actin_database_name="actin_pilot"
 
-do_load_actin_molecular ${sample} ${actin_jar} ${actin_database_name}
+do_load_actin_molecular ${sample} ${actin_credentials}$ ${actin_jar} ${actin_database_name}
