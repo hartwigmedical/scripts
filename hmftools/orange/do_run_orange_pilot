@@ -51,6 +51,7 @@ sage_somatic_ref_sample_bqr_plot=$(locate_sage_bqr_plot ${run_dir} ${reference_s
 sage_somatic_tumor_sample_bqr_plot=$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_somatic_copy_number_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
 purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
@@ -58,6 +59,7 @@ purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 purple_germline_deletion_tsv=$(locate_purple_germline_deletions ${run_dir})
 purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
+linx_structural_variant_tsv=$(locate_linx_structural_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
@@ -144,6 +146,7 @@ java -jar ${orange_jar} \
     -sage_somatic_tumor_sample_bqr_plot ${sage_somatic_tumor_sample_bqr_plot} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
+    -purple_somatic_copy_number_tsv ${purple_somatic_copy_number_tsv} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
     -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
     -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
@@ -151,6 +154,7 @@ java -jar ${orange_jar} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -purple_germline_deletion_tsv ${purple_germline_deletion_tsv} \
     -purple_plot_directory ${purple_plot_directory} \
+    -linx_structural_variant_tsv ${linx_structural_variant_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \

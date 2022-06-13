@@ -87,6 +87,9 @@ if [[ $? = 0 ]]; then info " GRIPSS Filtered Structural VCF: ${gripss_structural
 gripss_recovery_candidates=$(locate_gripss_recovery_candidates ${run_dir})
 if [[ $? = 0 ]]; then info " GRIPSS Recovery Candidates VCF: ${gripss_recovery_candidates}"; fi
 
+linx_structural_variants=$(locate_linx_structural_variants ${run_dir})
+if [[ $? = 0 ]]; then info " Linx Structural Variants: ${linx_structural_variants}"; fi
+
 linx_fusions=$(locate_linx_fusions ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Fusions: ${linx_fusions}"; fi
 
