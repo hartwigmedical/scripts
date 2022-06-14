@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+cloud_sql_proxy_tool=$1 && shift
+
+if [[ ! -f ${cloud_sql_proxy_tool} ]]; then
+    error "No valid cloud sql proxy provided: " + ${cloud_sql_proxy_tool}
+fi
+
+info "Starting cloud sql proxy towards hmf-actin"
+
+${cloud_sql_proxy_tool} -instances=hmf-actin:europe-west4:actin-emc-prod-1=tcp:127.0.0.1:3307
