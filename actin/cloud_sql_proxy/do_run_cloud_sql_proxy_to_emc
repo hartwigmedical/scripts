@@ -4,8 +4,8 @@ source message_functions || exit 1
 
 cloud_sql_proxy_tool=$1 && shift
 
-if [[ ! -f ${cloud_sql_proxy_tool} ]]; then
-    error "No valid cloud sql proxy provided: " + ${cloud_sql_proxy_tool}
+if [[ -z ${cloud_sql_proxy_tool} ]]; then
+    error "No cloud sql proxy provided"
 fi
 
 info "Starting cloud sql proxy towards hmf-actin"
