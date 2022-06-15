@@ -35,7 +35,7 @@ print_usage() {
     echo "  -t disk_type           VM boot disk type [${disk_type}]"
     echo "  -e                     Make VM pre-emptible"
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
-    echo "  -u umbrella_scope      Can be 'crunch' or 'ops' and configures service account and VM project [${umbrella_scope}]"
+    echo "  -u umbrella_scope      Can be 'crunch', 'ops' or 'pmc' and configures service account and VM project [${umbrella_scope}]"
     echo "  -c cost_center         Adjust if you want to track costs [${cost_center}]"
     echo ""
     echo "See also:"
@@ -82,6 +82,10 @@ elif [[ "${umbrella_scope}" == "ops" ]]; then
     service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
     vm_project="hmf-ops"
     subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-ops-prod-1"
+elif [[ "${umbrella_scope}" == "pmc" ]]; then
+    service_account="hmf-pmc@hmf-pmc.iam.gserviceaccount.com"
+    vm_project="hmf-pmc"
+    subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-pmc-prod-1"
 else
     die "Unknown umbrella scope [${umbrella_scope}]"
 fi
