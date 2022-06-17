@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+
+sql_file_or_select_statement=$1 && shift
+
+database_name="hmf"
+credentials=$(get_secret_from_secret_manager "mysql-api-sql-prod-1-reader")
+
+do_execute_sql_on_database "${sql_file_or_select_statement}" "${database_name}" "${credentials}"
