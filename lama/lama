@@ -77,8 +77,8 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf isCUP primaryTumorType biopsySite
         jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "patients/bloodsamples" ]]; then
-        printf "#%s\t%s\t%s\n" id submissionNr arrivalHmf
-        jq -r '.[] | [._id, .submissionNr, .arrivalHmf] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf sampleBarcode
+        jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
