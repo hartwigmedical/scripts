@@ -201,7 +201,7 @@ sub addLamaSamplesToSamples{
             $sample_to_store{label} = $study;
         }
         else {
-            sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
+            sayWarn("NOTIFY: Unable to use LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
             #print Dumper(\%sample_to_store);
             next;
         }
@@ -213,17 +213,8 @@ sub addLamaSamplesToSamples{
         my $cohort = $sample_to_store{cohort};
         my $final_target_yield = NACHAR;
 
-        #if (not $add_to_database == 1){
-        if (($cohort eq 'OPTIC' or $cohort eq 'OMIC') and not $add_to_database){
-            unless ($original_submission =~ m/^HMFreg\d{4}$/) {
-                sayWarn("SKIPPING LAMA sample because add_to_database=false but no submission present [$sample_print_info]");
-                print Dumper(\%sample_to_store);
-                next;
-            }
-        }
-
         if (not defined $isolation_type) {
-            sayWarn("SKIPPING: no isolation type defined for $isolate_barcode (pls fix in LAMA)");
+            sayWarn("NOTIFY: LAMA sample has no isolation type defined for $isolate_barcode [$sample_print_info]");
             next;
         }
         elsif ($isolation_type eq 'Tumor FFPE') {
@@ -231,7 +222,7 @@ sub addLamaSamplesToSamples{
             # sanity check that we are indeed dealing with TO (tumor only)
             my $expected_cohort = 'TARGTO';
             if ($sample_to_store{cohort} ne $expected_cohort){
-                sayWarn("SKIPPING: Found 'Tumor FFPE' sample but cohort is not $expected_cohort for $isolate_barcode");
+                sayWarn("NOTIFY: Found 'Tumor FFPE' but cohort != $expected_cohort for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
                 next;
             }
             $final_target_yield = 50;
@@ -253,25 +244,21 @@ sub addLamaSamplesToSamples{
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
-            sayWarn("SKIPPING: unknown isolation type '$isolation_type' for $isolate_barcode (pls fix in LAMA)");
+            sayWarn("NOTIFY: unknown isolation type '$isolation_type' for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
             next
         }
 
         if (not defined $original_submission or $original_submission eq '') {
             if ($analysis_type eq 'Somatic_R') {
-                sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
-            }
-            elsif (not defined $original_submission) {
-                sayWarn("SKIPPING CORE for missing submission id (id:$isolate_barcode name:$sample_name)");
+                sayInfo("    No submission id yet for R sample [$sample_print_info]");
             }
             else{
-                sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
+                sayWarn("NOTIFY: missing submission id [$sample_print_info]");
             }
             next;
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-
             $sample_to_store{ 'entity' } = $original_submission;
             $sample_to_store{ 'project_name' } = $original_submission;
 
@@ -283,19 +270,26 @@ sub addLamaSamplesToSamples{
                 $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
             }
             else {
-                sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
+                sayWarn("NOTIFY: submission ID [$original_submission] not found in submissions [$sample_print_info]");
             }
         }
         elsif (exists $centers_dict->{ $center }) {
-            # All other samples are meant-for-database
+            # All meant-for-database should by from a known center
             my $centername = $centers_dict->{ $center };
             $sample_to_store{original_submission} = $original_submission;
             $sample_to_store{submission} = $original_submission;
             $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
+
+            # For new cohorts check add_to_database is true to avoid storing pipeline data in database before consent is given
+            if (not $add_to_database and ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GAYA')) {
+                my $no_db_entity = "ONCOACT_NO_DATABASE";
+                sayWarn("NOTIFY: LAMA sample has add_to_database=false so resetting entity to $no_db_entity! [$sample_print_info]");
+                $sample_to_store{entity} = $no_db_entity;
+            }
         }
         else {
-            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$isolate_barcode name:$sample_name)");
+            sayWarn("NOTIFY: encountered unknown center ID [$center] for non-CORE sample [$sample_print_info]");
             next;
         }
 
