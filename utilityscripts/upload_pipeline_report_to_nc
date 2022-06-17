@@ -29,7 +29,7 @@ fi
 
 report=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep dna_analysis_report.pdf )
 report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
-json=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep ${barcode} | grep ".json")
+json=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep ${barcode} | grep "oncoact.json")
 json=$( echo ${json#"gs://patient-reporter-prod-1/"} )
 
 set_url="gs://${bucket}/${set}"
