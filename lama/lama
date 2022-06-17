@@ -74,8 +74,8 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId frBarcodeDNA isolationStatus prepStatus isolationStatusRNA prepStatusRNA cohort id
         jq -r '.[] | [.sampleId, .frBarcodeDNA//"NA", .isolationStatus, .prepStatus, .isolationStatusRNA, .prepStatusRNA, .cohort._id, ._id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "patients/tumorsamples" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr arrivalHmf isCUP primaryTumorType biopsySite
-        jq -r '.[] | [._id, .submissionNr, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf isCUP primaryTumorType biopsySite
+        jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "patients/bloodsamples" ]]; then
         printf "#%s\t%s\t%s\n" id submissionNr arrivalHmf
         jq -r '.[] | [._id, .submissionNr, .arrivalHmf] | @tsv' <<< "${json_result}"
