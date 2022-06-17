@@ -8,5 +8,5 @@ collection_date_for_sample() {
     collection_date=$(lama -j patients/tumorsamples ${sample} | jq -r '.collectionDate')
 
     # Convert format dd-mm-yyyy to yymmdd
-    echo "${collection_date:9:2}${collection_date:4:2}${collection_date:1:2}"
+    echo "${collection_date:8:2}${collection_date:3:2}${collection_date:0:2}"
 }
