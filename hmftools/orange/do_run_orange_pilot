@@ -127,7 +127,7 @@ java -jar ${orange_jar} \
     -reference_sample_id ${reference_sample} \
     ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_date "22222220612" \
+    -experiment_date "220612" \
     -ref_genome_version ${ref_genome_version} \
     -output_dir ${output_dir} \
     -doid_json ${doid_json} \
