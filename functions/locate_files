@@ -77,7 +77,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/1.9/orange.jar"
+    echo "/data/tools/orange/1.10/orange.jar"
 }
 
 locate_pilot_orange() {
