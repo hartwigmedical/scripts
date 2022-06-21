@@ -33,9 +33,13 @@ main () {
         status=$(echo "${run_info}" | jq -r .status)
         bucket=$(echo "${run_info}" | jq -r .bucket)
         info "Found sample (name=${name} status=${status} id=${id})"
-        { echo " gsutil rm gs://${bucket}/${name}"
-          echo " hmf_api_patch -e -c runs -o '${id}' -f status -v 'Deleted'"
-        } >> "${out_cmd_file}"
+        if [[ "$status" == "Deleted" ]]; then
+            info "Found already deleted run. Skipping (name=${name} status=${status} id=${id})"
+        else
+            { echo " gsutil rm gs://${bucket}/${name}"
+              echo " hmf_api_patch -e -c runs -o '${id}' -f status -v 'Deleted'"
+            } >> "${out_cmd_file}"
+        fi
     done
 
     echo "echo 'Finished with ${barcode}'" >> "${out_cmd_file}"
