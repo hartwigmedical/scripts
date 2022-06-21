@@ -36,7 +36,7 @@ main () {
         if [[ "$status" == "Deleted" ]]; then
             info "Found already deleted run. Skipping (name=${name} status=${status} id=${id})"
         else
-            { echo " gsutil rm gs://${bucket}/${name}"
+            { echo " gsutil rm -r gs://${bucket}/${name}"
               echo " hmf_api_patch -e -c runs -o '${id}' -f status -v 'Deleted'"
             } >> "${out_cmd_file}"
         fi
