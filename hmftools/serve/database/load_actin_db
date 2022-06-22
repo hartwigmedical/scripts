@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+actin_trial_tsv=$(locate_actin_trial_tsv)
+serve_jar=$(locate_pilot_serve)
+
+java -cp ${serve_jar} com.hartwig.hmftools.serve.dao.LoadActinDatabase \
+    -actin_db_tsv ${actin_trial_tsv} \
+    "$@"

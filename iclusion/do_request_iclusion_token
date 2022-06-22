@@ -11,11 +11,9 @@ username=$(extract_iclusion_username "${iclusion_api_credentials}")
 password=$(extract_iclusion_password "${iclusion_api_credentials}")
 
 curl --request POST \
-  --url "${endpoint}/oauth/token" \
+  --url "${endpoint}/authentication_token" \
   --header 'Accept: application/json' \
   --header 'content-type: multipart/form-data;' \
   --form grant_type=password \
-  --form "client_id=${client_id}" \
-  --form "client_secret=${client_secret}" \
   --form "username=${username}" \
   --form "password=${password}"

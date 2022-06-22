@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+serve_actionability_dir="/data/output/pilot_output_ckb_based"
+serve_jar=$(locate_pilot_serve)
+
+java -cp ${serve_jar} com.hartwig.hmftools.serve.dao.LoadServeDatabase \
+    -serve_actionability_dir ${serve_actionability_dir} \
+    -ref_genome_version 37 \
+    "$@"
