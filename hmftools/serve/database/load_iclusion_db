@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source database_functions || exit 1
 
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
 serve_jar=$(locate_pilot_serve)
 
+# Database details
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" "knowledgebase_pilot")
+
 java -cp ${serve_jar} com.hartwig.hmftools.serve.dao.LoadIclusionDatabase \
     -iclusion_db_tsv ${iclusion_trial_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
