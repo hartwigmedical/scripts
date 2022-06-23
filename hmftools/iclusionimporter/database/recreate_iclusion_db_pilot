@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-do_recreate_ckb_database iclusion_pilot
+do_recreate_ilusion_database iclusion_pilot
