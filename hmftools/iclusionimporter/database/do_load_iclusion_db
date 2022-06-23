@@ -14,7 +14,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${iclusion_db})
 
-java -cp ${iclusion_importer_jar} com.hartwig.hmftools.iclusion.daoLoadIclusionDatabase \
+java -cp ${iclusion_importer_jar} com.hartwig.hmftools.iclusion.dao.LoadIclusionDatabase \
     -iclusion_db_tsv ${iclusion_trial_tsv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
