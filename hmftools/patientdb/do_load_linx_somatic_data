@@ -14,7 +14,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
-info "Loading linx data for ${sample}"
+info "Loading linx somatic data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
     -sample ${sample} \
