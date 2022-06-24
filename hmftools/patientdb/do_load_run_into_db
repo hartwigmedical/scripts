@@ -12,9 +12,6 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 amber_dir=$(locate_amber_directory ${run_dir})
-somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
-germline_vcf=$(locate_purple_germline_variants ${run_dir})
-structural_vcf=$(locate_purple_structural_variants ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
@@ -26,8 +23,6 @@ ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 ref_flagstat_file=$(locate_flagstats ${run_dir} ${ref_sample})
 tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
-
-is_pass=true #value needed from GCP
 
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
