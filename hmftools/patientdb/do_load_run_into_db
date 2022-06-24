@@ -29,7 +29,8 @@ peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
 do_load_amber_data ${tumor_sample} ${amber_dir} ${database} "${credentials}" ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}
-do_load_linx_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
+do_load_linx_somatic_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
+do_load_linx_germline_data ${tumor_sample} ${run_dir}/linx_germline ${database} "${credentials}" ${patient_db_jar}
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${database} "${credentials}" ${patient_db_jar}
 do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${database} "${credentials}" ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${database} "${credentials}" ${patient_db_jar}

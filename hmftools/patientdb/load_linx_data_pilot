@@ -18,4 +18,4 @@ database="hmfpatients_pilot"
 patient_db_jar=$(locate_pilot_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
-do_load_linx_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"
+do_load_linx_somatic_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"
