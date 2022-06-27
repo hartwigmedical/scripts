@@ -12,7 +12,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-protect_evidence_tsv=$(find -L ${run_dir}/protect_2_1/ -type f -name "*.protect.tsv")
+protect_evidence_tsv=$(find -L ${run_dir}/protect_2_2/ -type f -name "*.protect.tsv")
 
 database="protect_validation"
 credentials=$(prod_writer_sql_credentials)
