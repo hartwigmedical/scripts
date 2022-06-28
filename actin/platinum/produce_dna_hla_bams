@@ -15,7 +15,7 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-if [[ -z ${tumor_sample} || -z ${reference_sample} ]]; then
+if [[ -z "${tumor_sample}" || -z "${reference_sample}" ]]; then
     error "Could not resolve tumor sample or reference sample"
 fi
 
