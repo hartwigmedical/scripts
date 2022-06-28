@@ -2,6 +2,7 @@
 
 source database_functions || exit 1
 
+ensembl_data_root_dir=$1 && shift
 database_name=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -12,5 +13,6 @@ db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadCanonicalTranscripts \
+    -ensembl_data_root_dir ${ensembl_data_root_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
