@@ -4,14 +4,14 @@ source lims_functions || exit 1
 
 load_ref_sample_from_metadata() {
     local run_dir=$1
-    local metadata=${run_dir}/metadata.json
+    local metadata="${run_dir}/metadata.json"
     local ref_sample=$(jq -r '.reference.sampleName' ${metadata})
     echo "${ref_sample}"
 }
 
 load_ref_sample_barcode_from_metadata() {
     local run_dir=$1
-    local metadata=${run_dir}/metadata.json
+    local metadata="${run_dir}/metadata.json"
 
     local ref_sample_barcode=""
     # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
@@ -25,7 +25,7 @@ load_ref_sample_barcode_from_metadata() {
 
 load_tumor_sample_from_metadata() {
     local run_dir=$1
-    local metadata=${run_dir}/metadata.json
+    local metadata="${run_dir}/metadata.json"
     local tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
     echo "${tumor_sample}"
 }
@@ -33,7 +33,7 @@ load_tumor_sample_from_metadata() {
 load_tumor_sample_barcode_from_metadata() {
     local run_dir=$1
     local tumor_sample_barcode=""
-    local metadata=${run_dir}/metadata.json
+    local metadata="${run_dir}/metadata.json"
     # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
     if [[ $(jq 'select(.tumor.barcode != null)' "${metadata}") ]]; then
         tumor_sample_barcode=$(jq -r '.tumor.barcode' ${metadata} | cut -d"_" -f1)
