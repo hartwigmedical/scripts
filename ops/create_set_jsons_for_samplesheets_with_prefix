@@ -9,7 +9,7 @@ SHEETS_LOC=$(locate_samplesheets_dir) || die "Could not find local samplesheets 
 JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
 LOGS_LOC=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
 
-prefix=$1
+prefix=$1 && shift
 curr_date=$(date +'%y%m%d')
 create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
 register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
@@ -22,7 +22,7 @@ info "JsonCreation started for prefix: ${prefix}"
 ## Actual work
 for ssheet in "${SHEETS_LOC}"/"${prefix}"*SampleSheet*; do
     echo "${ssheet}";
-    print_register_json.pl -samplesheet "${ssheet}";
+    print_register_json.pl -samplesheet "${ssheet}" "$@";
 done > "${create_log}"
 
 ## Reporting further actions to screen
