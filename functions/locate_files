@@ -1353,7 +1353,13 @@ locate_virus_breakend_tsv() {
 
 locate_virus_annotation_tsv_pilot() {
     local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
+
+    if [[ -d ${run_dir}/virusintrprtr_pilot/ ]]; then
+      local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr_pilot/ -type f -name "*.virus.annotated.tsv")
+    else
+      local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
+    fi
+
     if [[ -z "${virus_annotation_tsv}" ]]; then
         error "Unable to locate pilot virus annotation TSV in ${run_dir}."
     fi
@@ -1362,7 +1368,13 @@ locate_virus_annotation_tsv_pilot() {
 
 locate_virus_annotation_tsv() {
     local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
+
+    if [[ -d ${run_dir}/virusintrprtr/ ]]; then
+      local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
+    else
+      local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
+    fi
+
     if [[ -z "${virus_annotation_tsv}" ]]; then
         error "Unable to locate virus annotation TSV in ${run_dir}."
     fi
