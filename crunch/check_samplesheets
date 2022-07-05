@@ -90,7 +90,7 @@ function process_sheet () {
     idx_id=$(grep Sample_ID "${sheet}" | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
     idx_name=$(grep Sample_ID "${sheet}" | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1)
     idx_proj=$(grep Sample_ID "${sheet}" | tr "," "\n" | grep -n Project | cut -d":" -f1)
-    all_projects=$(sed -e '1,/Sample_ID/d' "${sheet}" | grep -vP "^[\,\s]+$" | cut -d"," -f "${idx_proj}" | tr -d "\r\n" | sort | uniq)
+    readarray -t all_projects < <(sed -e '1,/Sample_ID/d' "${sheet}" | grep -vP "^[\,\s]+$" | cut -d"," -f "${idx_proj}" | tr -d "\r" | sort | uniq)
     all_projects_long_string=$(join_by "," "${all_projects[@]}")
     all_projects_short_string="${all_projects_long_string//HMFreg/}"
 
