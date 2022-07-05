@@ -131,7 +131,11 @@ main () {
     diff_vcf "${base_som_var}" "${test_som_var}" "ONLY_PASS"
     diff_vcf "${base_sv_var}" "${test_sv_var}" "INCLUDE_ALL"
     diff_vcf "${base_sv_var}" "${test_sv_var}" "NO_PON"
-    diff_vcf "${base_grm_vcf}" "${test_grm_vcf}" "ONLY_PASS"
+    if [[ -f "${base_grm_vcf}" || -f "${test_grm_vcf}" ]]; then
+        diff_vcf "${base_grm_vcf}" "${test_grm_vcf}" "ONLY_PASS"
+    else
+        warn "  NOTE: no GATK VCF's were found, so skipping variant count comparison"
+    fi
 
     print_header "FILE CONTENTS prints"
     info "CHORD file content"
