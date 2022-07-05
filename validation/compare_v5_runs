@@ -44,7 +44,8 @@ main () {
     test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
     tool_dirs_to_check=(amber chord cobalt cuppa gridss gripss_germline gripss_somatic health_checker \
-      linx peach purple protect sage_germline sage_somatic sigs virusbreakend)
+      lilac lilac_slicer linx linx_germline orange pave_germline pave_somatic peach protect purple sage_germline \
+      sage_somatic sigs virusbreakend virusintrprtr)
 
     print_header "Settings"
     info "  BASE DIR: ${base_run_path}"
