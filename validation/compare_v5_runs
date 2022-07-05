@@ -127,11 +127,11 @@ main () {
     check_tool_versions_from_run_log "${base_run_path}" "${test_run_path}"
 
     print_header "VCF VARIANT COUNT check"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.somatic.vcf.gz" "INCLUDE_ALL"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.somatic.vcf.gz" "ONLY_PASS"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.sv.vcf.gz" "INCLUDE_ALL"
-    diff_vcf "${base_run_path}" "${test_run_path}" "purple/*.purple.sv.vcf.gz" "NO_PON"
-    diff_vcf "${base_run_path}" "${test_run_path}" "germline_caller/*.germline.vcf.gz" "ONLY_PASS"
+    diff_vcf "${base_som_var}" "${test_som_var}" "INCLUDE_ALL"
+    diff_vcf "${base_som_var}" "${test_som_var}" "ONLY_PASS"
+    diff_vcf "${base_sv_var}" "${test_sv_var}" "INCLUDE_ALL"
+    diff_vcf "${base_sv_var}" "${test_sv_var}" "NO_PON"
+    diff_vcf "${base_grm_vcf}" "${test_grm_vcf}" "ONLY_PASS"
 
     print_header "FILE CONTENTS prints"
     info "CHORD file content"
@@ -145,19 +145,15 @@ main () {
 }
 
 diff_vcf () {
-    local base_run_path=$1 && shift
-    local test_run_path=$1 && shift
-    local file_name_regex=$1 && shift
+    local base_vcf=$1 && shift
+    local test_vcf=$1 && shift
     local filter=$1 && shift
+
+    die_unless_file_exists "${base_vcf}"
+    die_unless_file_exists "${test_vcf}"
 
     base_count=0
     test_count=0
-
-    # prefix name with * to allow match in case of run path is absolute
-    base_vcf=$(find "${base_run_path}" -wholename "*${file_name_regex}")
-    test_vcf=$(find "${test_run_path}" -wholename "*${file_name_regex}")
-    die_unless_file_exists "${base_vcf}"
-    die_unless_file_exists "${test_vcf}"
 
     if [[ "${filter}" == "INCLUDE_ALL" ]]; then
         base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | wc -l)
@@ -173,9 +169,9 @@ diff_vcf () {
     fi
 
     if [[ "${base_count}" -eq "${test_count}" ]]; then
-        info "  OK Identical variant count (${base_count}) for VCF file (${file_name_regex}) using filter ${filter}"
+        info "  OK Identical variant count (${base_count}) for VCF files (${base_vcf}) and (${test_vcf}) using filter ${filter}"
     else
-        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF file (${file_name_regex}) using filter ${filter}"
+        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF files (${base_vcf}) and (${test_vcf}) using filter ${filter}"
     fi
 }
 
