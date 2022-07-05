@@ -64,16 +64,16 @@ main () {
     base_tum_cram="${base_run_path}/${base_tum_sample}/cram/${base_tum_sample}.cram"
     test_tum_cram="${test_run_path}/${test_tum_sample}/cram/${test_tum_sample}.cram"
 
-    base_grm_vcf="${base_run_path}/${base_ref_sample}/germline_caller/${base_ref_sample}.germline.vcf.gz"
-    test_grm_vcf="${test_run_path}/${test_ref_sample}/germline_caller/${test_ref_sample}.germline.vcf.gz"
-      test_chord=$(locate_chord_prediction "${test_run_path}")
-      base_chord=$(locate_chord_prediction "${base_run_path}")
+    test_grm_vcf=$(locate_gatk_germline_variants "${test_run_path}")
+    base_grm_vcf=$(locate_gatk_germline_variants "${base_run_path}")
+    test_chord=$(locate_chord_prediction "${test_run_path}")
+    base_chord=$(locate_chord_prediction "${base_run_path}")
     test_som_var=$(locate_purple_somatic_variants "${test_run_path}")
     base_som_var=$(locate_purple_somatic_variants "${base_run_path}")
-     test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
-     base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
-    base_vir_ins="${base_run_path}/virusbreakend/${base_tum_sample}.virus.annotated.tsv"
-    test_vir_ins="${test_run_path}/virusbreakend/${test_tum_sample}.virus.annotated.tsv"
+    test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
+    base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
+    test_vir_ins=$(locate_virus_annotation_tsv "${test_run_path}")
+    base_vir_ins=$(locate_virus_annotation_tsv "${base_run_path}")
 
     all_cram_files=("${base_ref_cram}" "${test_ref_cram}" "${base_tum_cram}" "${test_tum_cram}")
     all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}")
