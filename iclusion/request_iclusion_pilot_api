@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+url=$1 && shift
+token=$1 && shift
+
+curl \
+-X POST ${url}'/graphql' \
+-H 'Accept: application/json' \
+-H 'Authorization: Bearer' ${token} \
+-H 'Content-Type: application/json' \
+-d '{"query":"query mutationOrBiomarkers ($first: Int!){genes: mutationOrBiomarkers(first: $first) {totalCount pageInfo {endCursor hasNextPage}edges {node {id name}}}}","variables":{"first":10}}'
+
