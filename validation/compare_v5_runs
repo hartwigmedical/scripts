@@ -173,9 +173,9 @@ diff_vcf () {
     fi
 
     if [[ "${base_count}" -eq "${test_count}" ]]; then
-        info "  OK Identical variant count (${base_count}) for VCF files (${base_vcf}) and (${test_vcf}) using filter ${filter}"
+        info "  OK Identical variant count (${base_count}) for VCF file ($(basename "${base_vcf}")) using filter ${filter}"
     else
-        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF files (${base_vcf}) and (${test_vcf}) using filter ${filter}"
+        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF file ($(basename "${base_vcf}")) using filter ${filter}"
     fi
 }
 
