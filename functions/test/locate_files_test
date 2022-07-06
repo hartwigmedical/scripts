@@ -36,6 +36,12 @@ if [[ $? = 0 ]]; then info " GATK Germline Variants: ${gatk_germline_variants}";
 sage_somatic_variants=$(locate_sage_filtered_somatic_variants ${run_dir})
 if [[ $? = 0 ]]; then info " SAGE Somatic VCF: ${sage_somatic_variants}"; fi
 
+sage_tumor_bqr_tsv=$(locate_sage_bqr_tsv ${run_dir} ${tumor_sample})
+if [[ $? = 0 ]]; then info " SAGE Tumor BQR TSV: ${sage_tumor_bqr_tsv}"; fi
+
+sage_reference_bqr_tsv=$(locate_sage_bqr_tsv ${run_dir} ${ref_sample})
+if [[ $? = 0 ]]; then info " SAGE Reference BQR TSV: ${sage_reference_bqr_tsv}"; fi
+
 sage_tumor_bqr_plot=$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})
 if [[ $? = 0 ]]; then info " SAGE Tumor BQR Plot: ${sage_tumor_bqr_plot}"; fi
 
