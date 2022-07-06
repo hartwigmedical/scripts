@@ -18,6 +18,7 @@ db_url=$(construct_database_url "${credentials}" ${database_name})
 
 info "Loading BQR data for ${sample}"
 
+echo ${patient_db_jar}
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSageBQRData \
     -sample ${sample} \
     -ref_sample_bqr_tsv ${ref_sample_bqr_tsv} \
