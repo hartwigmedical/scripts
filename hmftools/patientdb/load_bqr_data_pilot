@@ -21,11 +21,4 @@ database="hmfpatients_pilot"
 patient_db_jar=$(locate_pilot_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
-echo ${tumor_sample}
-echo ${ref_bqr_tsv}
-echo ${tumor_bqr_tsv}
-echo ${database}
-echo "${credentials}"
-echo ${patient_db_jar}
-
 do_load_bqr_data ${tumor_sample} ${ref_bqr_tsv} ${tumor_bqr_tsv} ${database} "${credentials}" ${patient_db_jar}
