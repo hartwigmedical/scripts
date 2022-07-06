@@ -160,14 +160,14 @@ diff_vcf () {
     test_count=0
 
     if [[ "${filter}" == "INCLUDE_ALL" ]]; then
-        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | wc -l)
-        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | wc -l)
+        base_count=$(unpigz -c "${base_vcf}" | grep -cv "^#")
+        test_count=$(unpigz -c "${test_vcf}" | grep -cv "^#")
     elif [[ "${filter}" == "ONLY_PASS" ]]; then
-        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+        base_count=$(unpigz -c "${base_vcf}" | grep -v "^#" | awk '$7 == "PASS"' | wc -l)
+        test_count=$(unpigz -c "${test_vcf}" | grep -v "^#" | awk '$7 == "PASS"' | wc -l)
     elif [[ "${filter}" == "NO_PON" ]]; then
-        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
-        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+        base_count=$(unpigz -c "${base_vcf}" | grep -v "^#" | awk '$7 != "PON"' | wc -l)
+        test_count=$(unpigz -c "${test_vcf}" | grep -v "^#" | awk '$7 != "PON"' | wc -l)
     else
         die "Unknown filter (${filter})"
     fi
