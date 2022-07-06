@@ -33,7 +33,7 @@ json_creation_log="${unregistered_jsons_dir}/create.log"
 if [[ ${preexisting_json_count} -gt 0 ]]; then
   warn "Pre existing JSON's found in unregistered json dir. Investigate them.: dir=${unregistered_jsons_dir}"
   warn "Move or remove them if necessary. If not, continue with the following command:"
-  info " nohup create_set_jsons_for_samplesheets_with_prefix \"${prefix}\"  \"$*\" > \"${json_creation_log}\" 2>&1 &"
+  info " nohup create_set_jsons_for_samplesheets_with_prefix \"${prefix}\"  $* > \"${json_creation_log}\" 2>&1 &"
 else
   info "Creating registration JSON's in ${unregistered_jsons_dir} . For log see ${json_creation_log} ."
   create_set_jsons_for_samplesheets_with_prefix "${prefix}"  "$@" > "${json_creation_log}" 2>&1
