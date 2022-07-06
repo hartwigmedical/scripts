@@ -1352,6 +1352,7 @@ locate_virus_breakend_tsv() {
 ################################ VIRUS Interpreter #################################
 
 locate_virus_annotation_tsv_pilot() {
+    # TODO: Remove fallback to virusbreakend dir when runs on data VM are upgraded to 5.29
     local run_dir=$1
 
     if [[ -d ${run_dir}/virusintrprtr_pilot/ ]]; then
@@ -1367,6 +1368,7 @@ locate_virus_annotation_tsv_pilot() {
 }
 
 locate_virus_annotation_tsv() {
+    # TODO: Remove fallback to virusbreakend dir when runs on data VM are upgraded to 5.29
     local run_dir=$1
 
     if [[ -d ${run_dir}/virusintrprtr/ ]]; then
