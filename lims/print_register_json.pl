@@ -162,6 +162,9 @@ sub addSamplesFromSamplesheet{
             if (! defined $submission || $submission eq ""){
                 die "[ERROR] No submission found in line: $line\n";
             }
+            if (! defined $id || $id eq ""){
+                die "[ERROR] No sample ID found in line: $line\n";
+            }
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
