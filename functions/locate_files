@@ -778,6 +778,25 @@ locate_sage_full_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_sage_bqr_tsv() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local sage_dir="${run_dir}/sage_somatic"
+
+    local bqr_tsv=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        bqr_tsv=$(find -L ${sage_dir}/ -type f -name "${sample}.sage.bqr.tsv")
+    fi
+
+    if [[ -z "${bqr_tsv}" ]]; then
+        error "Unable to locate BQR TSV for ${sample} in ${run_dir}."
+    fi
+
+    echo ${bqr_tsv}
+}
+
 locate_sage_bqr_plot() {
     local run_dir=$1 && shift
     local sample=$1 && shift
