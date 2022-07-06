@@ -127,7 +127,7 @@ sub addSamplesFromSamplesheet{
     while ( <$header_fh> ){
         chomp;
         if ( $_ =~ /^\[Data\]/ ){
-            my $header_line = <$header_fh>;
+            my $header_line = removeNewlineCharacters(<$header_fh>);
             die "[ERROR] Header line should contain Sample_ID\n" unless $header_line =~ /Sample_ID/;
             @header = split( ",", $header_line );
         }
@@ -139,8 +139,9 @@ sub addSamplesFromSamplesheet{
     open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$samplesheet_fh> ){
         chomp;
-        next if $_ eq '' or $_ =~ /^[\,\s]+$/;
-        if ( $_ =~ /^\[(Header|Reads|Settings|Data)\]/ ){
+        my $line = removeNewlineCharacters($_);
+        next if $line eq '' or $line =~ /^[\,\s]+$/;
+        if ( $line =~ /^\[(Header|Reads|Settings|Data)\]/ ){
             $currblock = $1;
         }
         elsif ( $currblock eq 'Header' ){
@@ -148,8 +149,8 @@ sub addSamplesFromSamplesheet{
             $head{ $field } = $content;
         }
         elsif ( $currblock eq 'Data' ){
-            next if $_ =~ /Sample_ID/; # skip data header line
-            my @line_values = split( ',', $_ );
+            next if $line =~ /Sample_ID/; # skip data header line
+            my @line_values = split( ',', $line );
             my %record = ();
             foreach my $field ( @header ){
                 $record{ $field } = shift @line_values;
@@ -159,7 +160,7 @@ sub addSamplesFromSamplesheet{
             my $submission = $record{ 'Sample_Project' };
 
             if (! defined $submission || $submission eq ""){
-                die "[ERROR] No submission found in line: $_\n";
+                die "[ERROR] No submission found in line: $line\n";
             }
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
@@ -648,3 +649,8 @@ sub sayWarn{
     warn "[WARN] $msg\n"
 }
 
+sub removeNewlineCharacters {
+    my $text = shift;
+    $text =~ s/[\r\n]+//g;
+    return $text;
+}
