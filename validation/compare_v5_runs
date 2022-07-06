@@ -243,12 +243,18 @@ check_tool_directory () {
         file_path="${tool_name}/${file_name}"
         test_file_path="${test_run_path}/${file_path}"
 
-        base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
-        test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
-        if [[ ${base_count} -eq ${test_count} ]]; then
-            info "  OK Identical line count (${base_count}) for file (${file_path})"
+        if [[ ! -f ${base_file_path} ]]; then
+            info_and_warn "  Cannot compare file since does not exist (${base_file_path})"
+        elif [[ ! -f ${test_file_path} ]]; then
+            info_and_warn "  Cannot compare file since does not exist (${test_file_path})"
         else
-            info_and_warn "  DIFFERENT line count (${base_count} vs ${test_count}) for file (${file_path})"
+            base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
+            test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
+            if [[ ${base_count} -eq ${test_count} ]]; then
+                info "  OK Identical line count (${base_count}) for file (${file_path})"
+            else
+                info_and_warn "  DIFFERENT line count (${base_count} vs ${test_count}) for file (${file_path})"
+            fi
         fi
     done
 }
