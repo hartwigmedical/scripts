@@ -794,7 +794,7 @@ locate_sage_bqr_tsv() {
         error "Unable to locate BQR TSV for ${sample} in ${run_dir}."
     fi
 
-    echo ${bqr_plot}
+    echo ${bqr_tsv}
 }
 
 locate_sage_bqr_plot() {
