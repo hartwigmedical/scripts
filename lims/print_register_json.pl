@@ -158,6 +158,10 @@ sub addSamplesFromSamplesheet{
             my $name = $record{ 'Sample_Name' };
             my $submission = $record{ 'Sample_Project' };
 
+            if (! defined $submission || $submission eq ""){
+                die "[ERROR] No submission found in line: $_\n";
+            }
+
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
                 sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
