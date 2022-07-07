@@ -10,4 +10,4 @@ curl \
 -H 'Accept: application/json' \
 -H 'Authorization: Bearer '$( curl -X POST ''${url}'/authentication_token' -H 'Content-Type: application/json' -d '{"username": "'${username}'","password": "'${password}'" }' | jq -r .token )'' \
 -H 'Content-Type: application/json' \
-d '{"query":"query conditions ($first: Int!){conditions(first: $first) {totalCount pageInfo {endCursor hasNextPage}edges {node {id negated study{id} mutationOrBiomarker{id} variant{id} logicType{slug}}}}}","variables":{"first":"'${countEntries}'"}}' | jq .
+-d '{"query":"query conditions ($first: Int!){conditions(first: $first) {totalCount pageInfo {endCursor hasNextPage}edges {node {id negated study{id} mutationOrBiomarker{id} variant{id} logicType{slug}}}}}","variables":{"first":"'${countEntries}'"}}' | jq .
