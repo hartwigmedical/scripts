@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+url=$1 && shift
+username=$1 && shift
+password=$1 && shift
+countEntries=$1 && shift
+
+curl \
+-X POST ${url}'/graphql' \
+-H 'Accept: application/json' \
+-H 'Authorization: Bearer '$( curl -X POST '"'${url}'"/authentication_token' -H 'Content-Type: application/json' -d '{"username": "'${username}'","password": "'${password}'" }' | jq -r .token )'' \
+-H 'Content-Type: application/json' \
+d '{"query":"query institutes ($first: Int!){institutes(first: $first) {totalCount pageInfo {endCursor hasNextPage}edges {node {id name abbreviation city countryCode regions{edges{node{id}}}}}}}","variables":{"first":"'${countEntries}'"}}' | jq .
