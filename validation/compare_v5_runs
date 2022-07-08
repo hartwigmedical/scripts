@@ -65,8 +65,8 @@ main () {
     base_tum_cram="${base_run_path}/${base_tum_sample}/cram/${base_tum_sample}.cram"
     test_tum_cram="${test_run_path}/${test_tum_sample}/cram/${test_tum_sample}.cram"
 
-    test_grm_vcf=$(locate_gatk_germline_variants "${test_run_path}")
-    base_grm_vcf=$(locate_gatk_germline_variants "${base_run_path}")
+    test_grm_vcf="${test_run_path}/${test_ref_sample}/germline_caller/${test_ref_sample}.germline.vcf.gz"
+    base_grm_vcf="${base_run_path}/${base_ref_sample}/germline_caller/${base_ref_sample}.germline.vcf.gz"
     test_chord=$(locate_chord_prediction "${test_run_path}")
     base_chord=$(locate_chord_prediction "${base_run_path}")
     test_som_var=$(locate_purple_somatic_variants "${test_run_path}")
