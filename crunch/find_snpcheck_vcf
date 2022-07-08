@@ -53,7 +53,7 @@ if [[ "${search_remote}" == "TRUE" ]]; then
     echo ""
 
     info "Checking ops VM backup directory (${ops_vm_backup_bucket})"
-    gsutil ls "${ops_vm_backup_bucket}**${search}**"
+    gsutil ls "${ops_vm_backup_bucket}/**/*${search}*"
     echo ""
 
     # since January 2021 logs are no longer written to the snpchecklogs
