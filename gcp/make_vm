@@ -147,6 +147,7 @@ ${preemptible_arg} \
 ${startup_script_arg} || die "Something wrong with VM creation. Check the gcloud response."
 
 labels="user=$USER,cost_center=${cost_center}"
+info "Adding labels [${labels}]"
 gcloud compute instances add-labels "${vm_name}" --zone="${zone}" --labels="${labels}"
 gcloud compute disks add-labels "${vm_name}" --zone="${zone}" --labels="${labels}"
 
