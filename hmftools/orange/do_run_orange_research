@@ -16,7 +16,7 @@ fi
 
 create_or_cleanup_dir ${output_dir}
 
-orange_jar=$(locate_research_orange)
+orange_jar="$(locate_research_orange)"
 
 doid_json=$(locate_doid_json)
 cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
