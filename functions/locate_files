@@ -140,7 +140,7 @@ locate_prod_serve() {
     echo "/data/tools/serve/1.10/serve.jar"
 }
 
-locate_resource_serve() {
+locate_research_serve() {
     echo "/data/tools/serve/1.11/serve.jar"
 }
 
