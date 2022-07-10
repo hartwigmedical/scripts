@@ -12,7 +12,7 @@ fi
 
 serve_actionability_dir="/data/resources/crunch/actin/serve_db"
 
-sample_cohort_dir="$(locate_actin_cohort_directory ${run_dir})/protect"
+sample_cohort_dir="$(locate_actin_cohort_sample_directory ${run_dir})/protect"
 create_or_cleanup_dir ${sample_cohort_dir}
 
 protect_jar=$(locate_research_protect)

@@ -316,12 +316,22 @@ locate_cohort_actin() {
     echo "/data/experiments/actin_cohort/system/actin.jar"
 }
 
-locate_actin_cohort_directory() {
+locate_actin_cohort_sample_directory() {
     run_dir=$1
     sample=$(basename ${run_dir})
 
     echo "/data/experiments/actin_cohort/samples/${sample}"
 }
+
+locate_actin_cohort_trial_config_directory() {
+    echo "/data/repos/crunch/actin/cohort/trial_config"
+}
+
+locate_actin_cohort_treatment_database_directory() {
+    echo "/data/experiments/actin_cohort/treatment_database"
+}
+
+
 
 ################################# ACTIN Data ###################################
 
