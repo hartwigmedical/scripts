@@ -3,16 +3,17 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-sample=$1 && shift
+run_dir=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
 actin_credentials="$(prod_writer_sql_credentials)"
-actin_jar="$(locate_pilot_actin)"
-actin_database_name="actin_pilot"
+actin_jar="$(locate_cohort_actin)"
+actin_database_name="actin_cohort"
 
-molecular_json="$(locate_actin_molecular_json ${sample})"
+sample=$(basename ${run_dir})
+molecular_json="$(locate_actin_cohort_molecular_directory ${run_dir})/actin/${sample}.molecular.json"
 
 do_load_actin_molecular ${molecular_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}

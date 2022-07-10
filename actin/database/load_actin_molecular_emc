@@ -13,4 +13,6 @@ actin_credentials="$(prod_actin_writer_sql_credentials)"
 actin_jar="$(locate_pilot_actin)"
 actin_database_name="actin"
 
-do_load_actin_molecular ${sample} "${actin_credentials}" ${actin_jar} ${actin_database_name}
+molecular_json="$(locate_actin_molecular_json ${sample})"
+
+do_load_actin_molecular ${molecular_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}
