@@ -15,7 +15,7 @@ fi
 
 orange_jar="$(locate_research_orange)"
 
-sample_cohort_dir="$(locate_actin_cohort_sample_directory ${run_dir})"
+sample_cohort_dir="$(locate_actin_cohort_molecular_directory ${run_dir})"
 protect_evidence_tsv=$(locate_protect_evidence ${sample_cohort_dir})
 output_dir="${sample_cohort_dir}/orange"
 create_or_cleanup_dir ${output_dir}

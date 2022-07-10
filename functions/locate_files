@@ -316,7 +316,7 @@ locate_cohort_actin() {
     echo "/data/experiments/actin_cohort/system/actin.jar"
 }
 
-locate_actin_cohort_sample_directory() {
+locate_actin_cohort_molecular_directory() {
     run_dir=$1
     sample=$(basename ${run_dir})
 
