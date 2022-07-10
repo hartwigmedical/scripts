@@ -320,7 +320,7 @@ locate_actin_cohort_molecular_directory() {
     run_dir=$1
     sample=$(basename ${run_dir})
 
-    echo "/data/experiments/actin_cohort/samples/${sample}"
+    echo "/data/experiments/actin_cohort/molecular/${sample}"
 }
 
 locate_actin_cohort_clinical_directory() {
@@ -335,11 +335,13 @@ locate_actin_cohort_treatment_database_directory() {
     echo "/data/experiments/actin_cohort/treatment_database"
 }
 
+locate_actin_cohort_treatment_match_directory() {
+    echo "/data/experiments/actin_cohort/treatment_matches"
+}
+
 locate_tmp_actin_cohort_serve_bridge_tsv() {
     echo "/data/experiments/actin_cohort/serve_bridge/actin_knowledgebase.tsv"
 }
-
-
 
 
 ################################# ACTIN Data ###################################

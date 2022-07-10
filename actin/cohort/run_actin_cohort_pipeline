@@ -15,3 +15,5 @@ run_protect_research_on_actin_db_for_cohort ${run_dir}
 run_orange_research_on_actin_cohort ${run_dir}
 
 actin_orange_interpreter_cohort ${run_dir}
+
+create_actin_cohort_clinical_record_from_doid ${run_dir}
