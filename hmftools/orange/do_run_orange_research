@@ -26,6 +26,10 @@ known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 collection_date=$(collection_date_for_sample ${tumor_sample})
+if [[ -z "${collection_date}" ]]; then
+    warn "No collection date found for ${tumor_sample}"
+    collection_date="NA"
+fi
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 if [[ ${tumor_sample} == "COLO"* ]]; then
