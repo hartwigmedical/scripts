@@ -331,6 +331,11 @@ locate_actin_cohort_treatment_database_directory() {
     echo "/data/experiments/actin_cohort/treatment_database"
 }
 
+locate_tmp_actin_cohort_serve_bridge_tsv() {
+    echo "/data/experiments/actin_cohort/serve_bridge/actin_knowledgebase.tsv"
+}
+
+
 
 
 ################################# ACTIN Data ###################################

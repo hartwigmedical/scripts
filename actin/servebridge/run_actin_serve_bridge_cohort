@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+treatment_database_directory="$(locate_actin_cohort_treatment_database_directory)"
+
+output_serve_knowledgebase_tsv="$(locate_tmp_actin_cohort_serve_bridge_tsv)"
+
+actin_jar="$(locate_cohort_actin)"
+
+java -cp ${actin_jar} com.hartwig.actin.serve.ServeBridgeApplication \
+    -treatment_database_directory ${treatment_database_directory} \
+    -output_serve_knowledgebase_tsv ${output_serve_knowledgebase_tsv} \
+    "$@"
+
