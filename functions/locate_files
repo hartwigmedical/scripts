@@ -323,6 +323,10 @@ locate_actin_cohort_molecular_directory() {
     echo "/data/experiments/actin_cohort/samples/${sample}"
 }
 
+locate_actin_cohort_clinical_directory() {
+    echo "/data/experiments/actin_cohort/clinical"
+}
+
 locate_actin_cohort_trial_config_directory() {
     echo "/data/resources/crunch/actin/cohort/trial_config"
 }
