@@ -270,7 +270,7 @@ create_run_specific_files () {
 
         # Get file specific md5 hash
         info "  Processing file ${file_name} (download name: ${target_file_name})"
-        md5sum=$(tr -s " " < "$out_md5" | awk -F " " "/${file_name}$/ {print \$1}")
+        md5sum=$(tr -s " " < "$out_md5" | awk -F" " -v name="$file_name" '$2 == name' | cut -d" " -f1)
 
         # Final checks before writing record
         [[ "${signed_url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${signed_url})"
