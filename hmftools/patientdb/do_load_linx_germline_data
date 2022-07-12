@@ -22,7 +22,7 @@ db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
 info "Loading linx germline data for ${sample}"
-
+backwardsCompatibleDataType $patient_db_jar
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
     -sample ${sample} \
     -linx_dir ${linx_germline_dir} \
