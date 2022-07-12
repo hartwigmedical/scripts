@@ -20,6 +20,8 @@ output_directory="$(locate_actin_cohort_treatment_match_directory)"
 
 actin_jar="$(locate_cohort_actin)"
 
+info "Running ACTIN cohort treatment matcher on ${sample}"
+
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
