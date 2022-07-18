@@ -13,6 +13,7 @@ signature=$(locate_signature_prod)
 
 expected_pipeline_version=$(extract_expected_pipeline_version)
 
+//TODO: move to UDI id (01)08720299486034(8012)v5.29 when updating diagnostic pipeline to v5.29
 java -jar ${patient_reporter_jar} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
     -lims_dir ${lims_dir} \
