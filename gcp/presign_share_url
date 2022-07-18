@@ -1,31 +1,24 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-
 set -e
 
+source message_functions || exit 1
+source secrets_functions || exit 1
+
 gcp_url=$1
-gcp_key_file="/data/dbs/gcp_credentials/hmf-ops"
 
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     error "Usage: $(basename "$0") gs://bucket/path/to_file"
 fi
 
-## first check object existance
-gsutil -q stat "${gcp_url}"
-if [[ $? -ne 0 ]]; then
-    error "Unable to locate file (${gcp_url})"
-fi
-## retrieve presigned URL
-signurl_response=$( gsutil signurl -d 7d "${gcp_key_file}" "${gcp_url}")
-if [[ $? -ne 0 ]]; then
-    error "Unable to generate URL for file"
-fi
+secret_name="gcp-hmf-share-u-hmf-share"
+secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
+signurl_response=$(gsutil signurl -d 7d <(echo "${secret}") "${gcp_url}") || die "Something wrong with signurl"
 
-signurl_data=$(echo "${signurl_response}" | grep -A1 ^URL | tail -1)
-int_url=$(echo "${signurl_data}" | cut -f1)
-expires=$(echo "${signurl_data}" | cut -f3)
-ext_url=$(echo "${signurl_data}" | cut -f4)
+signurl_data_line=$(echo "${signurl_response}" | grep -A1 ^URL | tail -1)
+int_url=$(echo "${signurl_data_line}" | cut -f1)
+expires=$(echo "${signurl_data_line}" | cut -f3)
+ext_url=$(echo "${signurl_data_line}" | cut -f4)
 
 echo "## File is ${int_url}"
 echo "## Expires at ${expires}"
