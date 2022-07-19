@@ -38,9 +38,14 @@ main(){
   fi
 
   ## make sure the FASTQ files contain only ONE sample
-  sample_count=$(echo "${target_r1_fastq_files[@]}" | cut -d"_" -f1 | sort | uniq | wc -l) || die "Could not get sampel count"
+  sample_count=$(echo "${target_r1_fastq_files[@]}" | cut -d"_" -f1 | sort | uniq | wc -l) || die "Could not get sample count"
   if [[ ${sample_count} -ne 1 ]]; then
     die "FASTQ files in dir should be from one sample (found ${sample_count} samples in dir \"${target_fastq_dir}\")"
+  fi
+  barcode_from_target_fastq_names=$(echo "${target_r1_fastq_files[@]}" | cut -d"_" -f1 | sort | uniq) \
+      || die "Could not get barcode from target FASTQ file names"
+  if [[ "${barcode_from_target_fastq_names}" != "${target_barcode}" ]]; then
+    die "Script only works when target FASTQ file names are barcode-based"
   fi
 
   ## collect sample info from API
