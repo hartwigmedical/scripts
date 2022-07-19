@@ -130,6 +130,7 @@ main(){
     source_r1=$(get_matching_fastq "${target_r1}" "${target_barcode}"  "${source_r1_fastq_files[@]}") || \
         die "Could not get source R1 FASTQ for target_r1=${target_r1}"
     lane_id=$(get_field_from_fastq_json "${source_r1}" "lane_id" "${source_fastq_json}") || die "Could not get lane_id for ${source_r1}"
+    qc_pass=$(get_field_from_fastq_json "${source_r1}" "qc_pass" "${source_fastq_json}") || die "Could not get qc_pass for ${source_r1}"
     q30=$(get_field_from_fastq_json "${source_r1}" "q30" "${source_fastq_json}") || die "Could not get q30 for ${source_r1}"
     yield=$(get_field_from_fastq_json "${source_r1}" "yld" "${source_fastq_json}") || die "Could not get yield for ${source_r1}"
 
@@ -137,8 +138,8 @@ main(){
 
     info "Registering fastq R1/R2 pair (name_target_r1=${target_r1})"
     data=$(
-      printf '{"name_r1": "%s", "name_r2": "%s", "bucket": "%s", "sample_id": %s, "lane_id": %s, "q30": %s, "yld": %s}' \
-          "${target_r1}" "${target_r2}" "${FASTQ_BUCKET}" "${target_sample_id}" "${lane_id}" "${q30}" "${yield}"
+      printf '{"name_r1": "%s", "name_r2": "%s", "bucket": "%s", "sample_id": %s, "lane_id": %s, "q30": %s, "yld": %s, "qc_pass": %s}' \
+          "${target_r1}" "${target_r2}" "${FASTQ_BUCKET}" "${target_sample_id}" "${lane_id}" "${q30}" "${yield}" "${qc_pass}"
     ) || die "Could not determine registration data"
     curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
         -X POST "${API_URL}/fastq" --data "${data}" || die "cURL POST of FASTQ failed"
