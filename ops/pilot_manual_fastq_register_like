@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 SCRIPT=$(basename "$0")
 API_URL="http://api.pilot-1/hmf/v1"
-FASTQ_BUCKET="fastq-input-prod-1"
+FASTQ_BUCKET="fastq-input-pilot-1"
 
 
 # TODO: Try this out
@@ -44,14 +44,14 @@ main(){
   fi
 
   ## collect sample info from API
-  target_sample_json=$(hmf_api_get "samples?barcode=${target_barcode}") || die "Could not get target sample JSON from API for barcode '${target_barcode}'"
-  source_sample_json=$(hmf_api_get "samples?barcode=${source_barcode}") || die "Could not get source sample JSON from API for barcode '${source_barcode}'"
+  target_sample_json=$(hmf_api_get -t "samples?barcode=${target_barcode}") || die "Could not get target sample JSON from API for barcode '${target_barcode}'"
+  source_sample_json=$(hmf_api_get -t "samples?barcode=${source_barcode}") || die "Could not get source sample JSON from API for barcode '${source_barcode}'"
   target_sample_id=$(get_sample_json_field "${target_sample_json}" "id") || die "Could not get target sample ID for barcode '${target_barcode}'"
   source_sample_id=$(get_sample_json_field "${source_sample_json}" "id") || die "Could not get source sample ID for barcode '${source_barcode}'"
   target_sample_name=$(get_sample_json_field "${target_sample_json}" "name") || die "Could not get target sample name for barcode '${target_barcode}'"
   source_sample_name=$(get_sample_json_field "${source_sample_json}" "name") || die "Could not get source sample name for barcode '${source_barcode}'"
 
-  source_fastq_json=$(hmf_api_get "fastq?sample_id=${source_sample_id}") || die "Could not get source fastq JSON from API for sample ID '${source_sample_id}'"
+  source_fastq_json=$(hmf_api_get -t "fastq?sample_id=${source_sample_id}") || die "Could not get source fastq JSON from API for sample ID '${source_sample_id}'"
   source_r1_fastq_files=( $(echo "${source_fastq_json}" | jq -r '.[].name_r1') ) || die "Could not get source R1 FASTQ file names"
 
   info "Sample info:"
