@@ -98,8 +98,8 @@ main(){
         jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9) }1'
     elif [[ "${class}" == "flowcells" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc id
-        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, .id] | @tsv' <<< "${json_result}" \
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc updateDate id
+        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|capture("(?<ymd>[0-9\\-]+)").ymd), .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "samples" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
