@@ -93,8 +93,6 @@ else
             -output_dir_data ${output_dir_data_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
-cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
