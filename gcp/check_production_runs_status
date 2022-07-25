@@ -7,7 +7,7 @@ failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insuff
 
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
 
-major_version="5.29"
+major_version="5.28"
 
 ###########
 
