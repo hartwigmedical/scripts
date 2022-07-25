@@ -211,6 +211,7 @@ sub addLamaSamplesToSamples{
         my $isolation_type = $sample_to_store{isolation_type};
         my $analysis_type = $sample_to_store{isolation_type};
         my $cohort = $sample_to_store{cohort};
+        my $is_report_generated = $sample_to_store{is_report_generated};
         my $final_target_yield = NACHAR;
 
         if (not defined $isolation_type) {
@@ -281,11 +282,14 @@ sub addLamaSamplesToSamples{
             $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
 
-            # For new cohorts check add_to_database is true to avoid storing pipeline data in database before consent is given
+            # For newer cohorts the database consent can come in later than start of sequencing
+            # so check add_to_database and reset entity to avoid storing in database when not allowed (yet)
             if (not $add_to_database and ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GAYA')) {
                 my $no_db_entity = "ONCOACT_NO_DATABASE";
-                sayWarn("NOTIFY: LAMA sample has add_to_database=false so resetting entity to $no_db_entity! [$sample_print_info]");
                 $sample_to_store{entity} = $no_db_entity;
+                if ($analysis_type ne 'Somatic_R' and $is_report_generated ne 'true') {
+                    sayWarn("NOTIFY: Unreported OncoAct with add_to_database=false, entity set to $no_db_entity! [$sample_print_info]");
+                }
             }
         }
         else {
@@ -1299,9 +1303,7 @@ sub getFieldNameTranslations{
         'frBarcodeDNA'         => 'sample_id_dna',
         'frBarcodeRNA'         => 'sample_id_rna',
         'isTissue'             => 'is_tissue',
-        'shallowPurity'        => 'shallow_purity', # TODO: remove with LAMA v1.4
-        'finalPurity'          => 'purity', # TODO: remove with LAMA v1.4
-        'reportDate'           => 'report_date' # TODO: remove with LAMA v1.4
+        'isReportGenerated'    => 'is_report_generated'
     );
 
     my %lama_content_translations_by_field_name = (
