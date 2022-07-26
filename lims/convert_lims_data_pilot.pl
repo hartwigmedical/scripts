@@ -195,7 +195,7 @@ sub addLamaSamplesToSamples{
         my $sample_print_info = "barcode:$sample_id,name:$sample_name";
 
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
@@ -284,7 +284,8 @@ sub addLamaSamplesToSamples{
 
             # For newer cohorts the database consent can come in later than start of sequencing
             # so check add_to_database and reset entity to avoid storing in database when not allowed (yet)
-            if (not $add_to_database and ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GAYA')) {
+            my $is_new_cohort = ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GENAYA' or $cohort eq 'GLOW');
+            if ($is_new_cohort and not $add_to_database ) {
                 my $no_db_entity = "ONCOACT_NO_DATABASE";
                 $sample_to_store{entity} = $no_db_entity;
                 if ($analysis_type ne 'Somatic_R' and $is_report_generated ne 'true') {
