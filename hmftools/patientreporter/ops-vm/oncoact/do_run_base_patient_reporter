@@ -19,7 +19,7 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -udi_di "(01)8720299486027(8012)v5.28" \
+    -udi_di "(01)08720299486034(8012)v5.29" \
     -require_pipeline_version_file \
     -expected_pipeline_version ${expected_pipeline_version} \
     "$@"
