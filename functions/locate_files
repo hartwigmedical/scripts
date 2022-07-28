@@ -278,6 +278,10 @@ locate_actin_evaluation_bucket() {
     echo "gs://hmf-crunch-data/actin_evaluation"
 }
 
+locate_actin_shared_reports_bucket() {
+    echo "gs://hmf-crunch-data/actin_shared_reports"
+}
+
 locate_actin_local_crunch_repo() {
     echo "$HOME/hmf/repos/crunch-resources-private/actin"
 }
@@ -1587,6 +1591,22 @@ locate_orange_pdf() {
     fi
 
     echo ${orange_pdf}
+}
+
+locate_orange_no_germline_pdf() {
+    local run_dir=$1
+    local orange_no_germline_pdf=""
+
+    local orange_dir="${run_dir}/orange_no_germline"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_no_germline_pdf=$(find -L ${orange_dir}/ -type f -name "*.orange.pdf")
+    fi
+
+    if [[ -z "${orange_no_germline_pdf}" ]]; then
+        error "Unable to locate ORANGE no-germline pdf in ${run_dir}."
+    fi
+
+    echo ${orange_no_germline_pdf}
 }
 
 ##################################### LIMS #####################################
