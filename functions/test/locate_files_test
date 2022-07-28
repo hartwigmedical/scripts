@@ -149,3 +149,6 @@ if [[ $? = 0 ]]; then info " PROTECT Evidence: ${protect_evidence}"; fi
 
 orange_json=$(locate_orange_json ${run_dir})
 if [[ $? = 0 ]]; then info " ORANGE JSON: ${orange_json}"; fi
+
+orange_pdf=$(locate_orange_pdf ${run_dir})
+if [[ $? = 0 ]]; then info " ORANGE PDF: ${orange_pdf}"; fi

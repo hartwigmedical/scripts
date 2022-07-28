@@ -274,6 +274,10 @@ extract_expected_pipeline_version_research() {
 
 ############################## ACTIN Resources #################################
 
+locate_actin_evaluation_bucket() {
+    echo "gs://hmf-crunch-data/actin_evaluation"
+}
+
 locate_actin_local_crunch_repo() {
     echo "$HOME/hmf/repos/crunch-resources-private/actin"
 }
@@ -434,6 +438,22 @@ locate_actin_treatment_match_json() {
 
 locate_actin_reports_directory() {
     echo "/data/actin/reports"
+}
+
+locate_actin_report_pdf() {
+    local sample=$1 && shift
+    local reports_dir=$(locate_actin_reports_directory)
+
+    if [[ ! -d "${reports_dir}" ]]; then
+        error "Unable to locate ACTIN report directory '${reports_dir}'"
+    fi
+
+    local report_pdf="${reports_dir}/${sample}.actin.pdf"
+    if [[ ! -f ${report_pdf} ]]; then
+        error "Could not locate ACTIN report pdf for sample '${sample}'"
+    fi
+
+    echo "${report_pdf}"
 }
 
 ##################################### RNA ######################################
@@ -1551,6 +1571,22 @@ locate_orange_json() {
     fi
 
     echo ${orange_json}
+}
+
+locate_orange_pdf() {
+    local run_dir=$1
+    local orange_pdf=""
+
+    local orange_dir="${run_dir}/orange"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_pdf=$(find -L ${orange_dir}/ -type f -name "*.orange.pdf")
+    fi
+
+    if [[ -z "${orange_pdf}" ]]; then
+        error "Unable to locate ORANGE pdf in ${run_dir}."
+    fi
+
+    echo ${orange_pdf}
 }
 
 ##################################### LIMS #####################################

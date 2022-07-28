@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+sample_evaluation_bucket="$(locate_actin_evaluation_bucket)/${sample}"
+
+if [[ $(gsutil ls "${sample_evaluation_bucket}" || wc -l) -ge 0 ]]; then
+    error "Archive for ${sample} already exists. Won't overwrite"
+fi
+
+platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+orange_json="$(locate_orange_json ${platinum_dir})"
+orange_pdf="$(locate_orange_pdf ${platinum_dir})"
+
+if [[ -z "${orange_json}" || -z "${orange_pdf}" ]]; then
+    error "Missing ORANGE files for archiving of ${sample}"
+fi
+
+clinical_json="$(locate_actin_clinical_json ${sample})"
+molecular_json="$(locate_actin_molecular_json ${sample})"
+treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
+actin_report_pdf="$(locate_actin_report_pdf ${sample})"
+
+if [[ -z "${clinical_json}" || -z "${molecular_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" ]]; then
+    error "Missing ACTIN data or report for ${sample}"
+fi
+
+info "Archiving ORANGE data and report for ${sample}"
+gsutil cp "${orange_json}" "${sample_evaluation_bucket}/orange/"
+gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/orange/"
+
+info "Archiving ACTIN data and report for ${sample}"
+gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/actin/"
+gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/actin/"
+gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/actin/"
+gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/actin/"
