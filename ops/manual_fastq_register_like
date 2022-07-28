@@ -1,0 +1,232 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT=$(basename "$0")
+API_URL="http://api.prod-1/hmf/v1"
+FASTQ_BUCKET="fastq-input-prod-1"
+
+
+# TODO: Try this out
+
+
+main(){
+  command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
+
+  if [[ -z "$1" || -z "$2"|| -z "$3" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Usage: ${SCRIPT} <target-barcode> <fastq-dir> <source-barcode>"
+    echo "        ${SCRIPT} FR12345678 /path/to/fastq/files/ FR98765432"
+    echo "        ${SCRIPT} FR12345678-c2f{date} gs://hmf-cram2fastq/FR12345678-c2f{date}_FASTQ FR12345678"
+    echo "---"
+    exit 1
+  fi
+
+  info "Starting ${SCRIPT}"
+
+  target_barcode=$1 && shift
+  target_fastq_dir=$1 && shift
+  source_barcode=$1 && shift
+
+  ## find all target_r1 fastq files
+  if [[ ${target_fastq_dir} == gs://* ]]; then
+    info "FASTQ dir is a bucket (${target_fastq_dir})"
+    target_r1_fastq_files=( $(gsutil ls "${target_fastq_dir%/}/*_R1_*" | xargs -I% basename % \;) ) || die "Could not find files in bucket"
+  else
+    info "FASTQ dir is a local dir (${target_fastq_dir})"
+    target_r1_fastq_files=( $(find "${target_fastq_dir}" -name "*_R1_*.fastq.gz" -exec basename {} \;) ) || die "Could not find files in local dir"
+  fi
+
+  ## make sure the FASTQ files contain only ONE sample
+  sample_count=$(echo "${target_r1_fastq_files[@]}" | cut -d"_" -f1 | sort | uniq | wc -l) || die "Could not get sample count"
+  if [[ ${sample_count} -ne 1 ]]; then
+    die "FASTQ files in dir should be from one sample (found ${sample_count} samples in dir \"${target_fastq_dir}\")"
+  fi
+  barcode_from_target_fastq_names=$(echo "${target_r1_fastq_files[@]}" | cut -d"_" -f1 | sort | uniq) \
+      || die "Could not get barcode from target FASTQ file names"
+  if [[ "${barcode_from_target_fastq_names}" != "${target_barcode}" ]]; then
+    die "Script only works when target FASTQ file names are barcode-based"
+  fi
+
+  ## collect sample info from API
+  target_sample_json=$(hmf_api_get "samples?barcode=${target_barcode}") || die "Could not get target sample JSON from API for barcode '${target_barcode}'"
+  if [[ "${target_sample_json}" == "[]" ]]; then
+    die "Target sample not found in API: target_barcode=${target_barcode}"
+  fi
+  target_sample_id=$(get_sample_json_field "${target_sample_json}" "id") || die "Could not get target sample ID for barcode '${target_barcode}'"
+  target_sample_name=$(get_sample_json_field "${target_sample_json}" "name") || die "Could not get target sample name for barcode '${target_barcode}'"
+
+  source_sample_json=$(hmf_api_get "samples?barcode=${source_barcode}") || die "Could not get source sample JSON from API for barcode '${source_barcode}'"
+  if [[ "${source_sample_json}" == "[]" ]]; then
+    die "Source sample not found in API: source_barcode=${source_barcode}"
+  fi
+  source_sample_id=$(get_sample_json_field "${source_sample_json}" "id") || die "Could not get source sample ID for barcode '${source_barcode}'"
+  source_sample_name=$(get_sample_json_field "${source_sample_json}" "name") || die "Could not get source sample name for barcode '${source_barcode}'"
+
+  source_fastq_json=$(hmf_api_get "fastq?sample_id=${source_sample_id}") || die "Could not get source fastq JSON from API for sample ID '${source_sample_id}'"
+  if [[ "${source_fastq_json}" == "[]" ]]; then
+    die "No FASTQ found in API for source sample: source_sample_id=${source_sample_id}"
+  fi
+  source_r1_fastq_files=( $(echo "${source_fastq_json}" | jq -r '.[].name_r1') ) || die "Could not get source R1 FASTQ file names"
+
+  info "Sample info:"
+  info "  target_sample_name=${target_sample_name}"
+  info "  target_barcode=${target_barcode}"
+  info "  target_sample_id=${target_sample_id}"
+  info "  source_sample_name=${source_sample_name}"
+  info "  source_barcode=${source_barcode}"
+  info "  source_sample_id=${source_sample_id}"
+  info "  target_r1_fastq_files="
+  for target_r1 in "${target_r1_fastq_files[@]}"; do
+    info "    ${target_r1}"
+  done
+  info "  source_r1_fastq_files="
+  for source_r1 in "${source_r1_fastq_files[@]}"; do
+    info "    ${source_r1}"
+  done
+
+  ## check everything exists as expected
+  info "Starting checks"
+  for target_r1 in "${target_r1_fastq_files[@]}"; do
+    info "Handling ${target_r1}"
+
+    # Find matching source FASTQ file
+    source_r1=$(get_matching_fastq "${target_r1}" "${target_barcode}"  "${source_r1_fastq_files[@]}") || \
+          die "Could not get source R1 FASTQ for target_r1=${target_r1}"
+    info "  Matching source ${source_r1}"
+
+    # Check necessary source FASTQ stats
+    lane_id=$(get_field_from_fastq_json "${source_r1}" "lane_id" "${source_fastq_json}") || die "Could not get lane_id for ${source_r1}"
+    qc_pass=$(get_field_from_fastq_json "${source_r1}" "qc_pass" "${source_fastq_json}") || die "Could not get qc_pass for ${source_r1}"
+    q30=$(get_field_from_fastq_json "${source_r1}" "q30" "${source_fastq_json}") || die "Could not get q30 for ${source_r1}"
+    yield=$(get_field_from_fastq_json "${source_r1}" "yld" "${source_fastq_json}") || die "Could not get yield for ${source_r1}"
+    info "  Source stats: q30=${q30}, yield=${yield}, qc_pass=${qc_pass}, lane_id=${lane_id}"
+    if [[ "${qc_pass}" != "true" ]]; then
+      warn "QC status is not PASS: qc_pass=${qc_pass}"
+    fi
+
+    # Check R2 file name can be derived from R1 file name
+    target_r2=$(get_r2 "${target_r1}") || die "Could not get r2 for target_r1: target_r1='${target_r1}'"
+    info "  R2 file name: ${target_r2}"
+
+    # Check files exist in FASTQ input bucket
+    if ! gsutil -q stat "gs://${FASTQ_BUCKET}/${target_r1}"; then
+      die "Could not find ${target_r1} in FASTQ bucket '${FASTQ_BUCKET}'"
+    fi
+    if ! gsutil -q stat "gs://${FASTQ_BUCKET}/${target_r2}"; then
+      die "Could not find ${target_r2} in FASTQ bucket '${FASTQ_BUCKET}'"
+    fi
+  done
+
+  # Wait until enter
+  info "Press [ENTER] to register..."
+  read -r -s
+
+  # Delay for emergency ctrl-C
+  sleep 2
+
+  info "Starting registration"
+  for target_r1 in "${target_r1_fastq_files[@]}"; do
+    source_r1=$(get_matching_fastq "${target_r1}" "${target_barcode}"  "${source_r1_fastq_files[@]}") || \
+        die "Could not get source R1 FASTQ for target_r1=${target_r1}"
+    lane_id=$(get_field_from_fastq_json "${source_r1}" "lane_id" "${source_fastq_json}") || die "Could not get lane_id for ${source_r1}"
+    qc_pass=$(get_field_from_fastq_json "${source_r1}" "qc_pass" "${source_fastq_json}") || die "Could not get qc_pass for ${source_r1}"
+    q30=$(get_field_from_fastq_json "${source_r1}" "q30" "${source_fastq_json}") || die "Could not get q30 for ${source_r1}"
+    yield=$(get_field_from_fastq_json "${source_r1}" "yld" "${source_fastq_json}") || die "Could not get yield for ${source_r1}"
+
+    target_r2=$(get_r2 "${target_r1}") || die "Could not get r2 for target_r1: target_r1='${target_r1}'"
+
+    info "Registering fastq R1/R2 pair (name_target_r1=${target_r1})"
+    data=$(
+      printf '{"name_r1": "%s", "name_r2": "%s", "bucket": "%s", "sample_id": %s, "lane_id": %s, "q30": %s, "yld": %s, "qc_pass": %s}' \
+          "${target_r1}" "${target_r2}" "${FASTQ_BUCKET}" "${target_sample_id}" "${lane_id}" "${q30}" "${yield}" "${qc_pass}"
+    ) || die "Could not determine registration data"
+    curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
+        -X POST "${API_URL}/fastq" --data "${data}" || die "cURL POST of FASTQ failed"
+  done
+
+  info "Finished ${SCRIPT}"
+}
+
+get_matching_fastq(){
+  target_fastq=$1 && shift
+  target_barcode=$1 && shift
+  fastq_files=("$@")
+
+  if [[ -z ${target_fastq} ]]; then
+    die "Cannot handle FASTQ file with empty name: target_fastq='${target_fastq}'"
+  fi
+  if [[ -z ${target_barcode} ]]; then
+    die "Cannot handle empty barcode: target_barcode='${target_barcode}'"
+  fi
+  if [[ ${#fastq_files[@]} -eq 0 ]]; then
+    die "Cannot handle empty list of FASTQ files: fastq_files='${fastq_files[*]}'"
+  fi
+
+  target_fastq_base="${target_fastq#"${target_barcode}"}"  # deletes barcode from start of string
+
+  matching_fastq=""
+  for fastq in "${fastq_files[@]}"; do
+    if [[ "${fastq}" == *"${target_fastq_base}" ]]; then
+     matching_fastq="${fastq}"
+    fi
+  done
+
+  if [[ -z "${matching_fastq}" ]]; then
+    die "No matching FASTQ found for '${target_fastq}' in array (${fastq_files[*]})"
+  fi
+
+  echo "${matching_fastq}"
+}
+
+get_r2(){
+  r1=$1 && shift
+  if [[ -z ${r1} ]]; then
+    die "Cannot get r2 for empty target_r1: target_r1='${r1}'"
+  fi
+  if [[ "${target_r1}" != *"_R1_"* ]]; then
+    die "Encountered R1 FASTQ file without substring _R1_: r1='${r1}'"
+  fi
+  echo "${r1//_R1_/_R2_}"
+}
+
+get_sample_json_field(){
+  sample_json=$1 && shift
+  field=$1 && shift
+
+  if [[ -z ${field} ]]; then
+    die "Cannot handle empty field name in ${FUNCNAME[0]}: '${field}'"
+  fi
+  if [[ -z ${sample_json} ]]; then
+    die "Cannot get field '${field}' from empty json INFO: '${sample_json}'"
+  fi
+  result=$(echo "${sample_json}" | jq -r --arg field "${field}" ".[-1].${field}") || die "Cannot get field '${field}' from json INFO: '${sample_json}'"
+  if [[ -z "${result}" || "${result}" == "null" ]]; then
+    die "No field '${field}' found in JSON: '${sample_json}'"
+  fi
+  echo "${result}"
+}
+
+get_field_from_fastq_json(){
+  r1_fastq=$1 && shift
+  field=$1 && shift
+  fastq_json=$1 && shift
+
+  if [[ -z ${field} ]]; then
+    die "Cannot handle empty field name in ${FUNCNAME[0]}: '${field}'"
+  fi
+  if [[ -z ${r1_fastq} ]]; then
+    die "Cannot get ${field} with empty FASTQ name: '${r1_fastq}'"
+  fi
+  if [[ -z ${fastq_json} ]]; then
+    die "Cannot get ${field} from empty JSON: '${fastq_json}'"
+  fi
+
+  result=$(echo "${fastq_json}" | jq -r ".[] | select(.name_r1==\"${r1_fastq}\").${field}") || die "Could not get lane_id for ${r1_fastq}"
+  if [[ -z "${result}" || "${result}" == "null" ]]; then
+    die "No field '${field}' found in JSON: '${fastq_json}'"
+  fi
+  echo "${result}"
+}
+
+main "$@" || die "Could not run main of ${SCRIPT}"
