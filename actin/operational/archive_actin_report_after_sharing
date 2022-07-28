@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
+
+actin_report_pdf="$(locate_actin_report_pdf ${sample})"
+
+if [[ -z "${actin_report_pdf}" ]]; then
+    error "Missing ACTIN report for ${sample}"
+fi
+
+info "Archiving ACTIN report for ${sample}"
+gsutil cp "${actin_report_pdf}" "${shared_reports_bucket}/actin/"

@@ -13,12 +13,10 @@ shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
 
 platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${platinum_dir})"
-actin_report_pdf="$(locate_actin_report_pdf ${sample})"
 
-if [[ -z "${orange_no_germline_pdf}" || -z "${actin_report_pdf}" ]]; then
-    error "Missing ORANGE or ACTIN reports for ${sample}"
+if [[ -z "${orange_no_germline_pdf}" ]]; then
+    error "Missing ORANGE report for ${sample}"
 fi
 
-info "Archiving reports for ${sample}"
+info "Archiving ORANGE (no germline) report for ${sample}"
 gsutil cp "${orange_no_germline_pdf}" "${shared_reports_bucket}/orange/"
-gsutil cp "${actin_report_pdf}" "${shared_reports_bucket}/actin/"
