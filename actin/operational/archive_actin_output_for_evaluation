@@ -11,9 +11,10 @@ fi
 
 sample_evaluation_bucket="$(locate_actin_evaluation_bucket)/${sample}"
 
-error=$(gsutil ls ${sample_evaluation_bucket} 2>&1)
-if [[ "${error}" != *"CommandException"* ]]; then
-    if [[ $(gsutil ls "${sample_evaluation_bucket}" || wc -l) -ge 0 ]]; then
+bucket_exists_error=$(gsutil ls ${sample_evaluation_bucket} 2>&1)
+if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
+    archive_count=$(gsutil ls "${sample_evaluation_bucket}" || wc -l)
+    if [[ ${archive_count} -ge 0 ]]; then
         error "Archive for ${sample} already exists. Won't overwrite"
     fi
 fi
