@@ -11,8 +11,11 @@ fi
 
 sample_evaluation_bucket="$(locate_actin_evaluation_bucket)/${sample}"
 
-if [[ $(gsutil ls "${sample_evaluation_bucket}" || wc -l 2>&1) -ge 0 ]]; then
-    error "Archive for ${sample} already exists. Won't overwrite"
+error=$(gsutil ls ${sample_evaluation_bucket} 2>&1)
+if [[ "${error}" != *"CommandException"* ]]; then
+    if [[ $(gsutil ls "${sample_evaluation_bucket}" || wc -l) -ge 0 ]]; then
+        error "Archive for ${sample} already exists. Won't overwrite"
+    fi
 fi
 
 platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
