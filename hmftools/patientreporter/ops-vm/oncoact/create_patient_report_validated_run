@@ -73,7 +73,7 @@ gsutil -m cp -r ${set_url}/linx/ $temp_folder_path/ &>> $temp_folder_path/copy.l
 gsutil -m cp -r ${set_url}/chord/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/cuppa/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/virusbreakend/ $temp_folder_path/ &>> $temp_folder_path/copy.log
-gsutil -m cp -r ${set_url}/virusintrprtr/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+#gsutil -m cp -r ${set_url}/virusintrprtr/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/peach/ $temp_folder_path/  &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/protect/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 
