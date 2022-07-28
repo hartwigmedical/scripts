@@ -37,11 +37,11 @@ if [[ -z "${clinical_json}" || -z "${molecular_json}" || -z "${treatment_match_j
 fi
 
 info "Archiving ORANGE data and report for ${sample}"
-gsutil cp "${orange_json}" "${sample_evaluation_bucket}/orange/"
-gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/orange/"
+gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/"
 
 info "Archiving ACTIN data and report for ${sample}"
-gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/actin/"
-gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/actin/"
-gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/actin/"
-gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/actin/"
+gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/"
