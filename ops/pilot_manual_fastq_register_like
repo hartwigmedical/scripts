@@ -7,9 +7,6 @@ API_URL="http://api.pilot-1/hmf/v1"
 FASTQ_BUCKET="fastq-input-pilot-1"
 
 
-# TODO: Try this out
-
-
 main(){
   command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
 
