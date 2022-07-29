@@ -460,6 +460,11 @@ locate_actin_report_pdf() {
     echo "${report_pdf}"
 }
 
+locate_actin_evaluation_directory() {
+    echo "/data/actin/evaluation"
+}
+
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {

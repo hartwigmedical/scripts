@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
+
+output_tsv="$(locate_actin_evaluation_directory)/${sample}.evaluation.tsv"
+
+actin_jar="$(locate_pilot_actin)"
+
+java -cp ${actin_jar} com.hartwig.actin.report.TabularTreatmentMatchApplication \
+    -treatment_match_json ${treatment_match_json} \
+    -output_tsv ${output_tsv} \
+    "$@"
