@@ -15,7 +15,7 @@ output_tsv="$(locate_actin_evaluation_directory)/${sample}.evaluation.tsv"
 
 actin_jar="$(locate_pilot_actin)"
 
-java -cp ${actin_jar} com.hartwig.actin.report.TabularTreatmentMatchApplication \
+java -cp ${actin_jar} com.hartwig.actin.report.TabularTreatmentMatchWriterApplication \
     -treatment_match_json ${treatment_match_json} \
     -output_tsv ${output_tsv} \
     "$@"
