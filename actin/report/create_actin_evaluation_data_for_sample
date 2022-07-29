@@ -11,11 +11,11 @@ fi
 
 treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
 
-output_tsv="$(locate_actin_evaluation_directory)/${sample}.evaluation.tsv"
+output_directory="$(locate_actin_evaluation_directory)"
 
 actin_jar="$(locate_pilot_actin)"
 
 java -cp ${actin_jar} com.hartwig.actin.report.TabularTreatmentMatchWriterApplication \
     -treatment_match_json ${treatment_match_json} \
-    -output_tsv ${output_tsv} \
+    -output_directory ${output_directory} \
     "$@"
