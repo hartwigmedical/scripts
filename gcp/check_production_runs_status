@@ -60,7 +60,7 @@ main () {
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-        reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
+        reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l )
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
@@ -94,7 +94,7 @@ main () {
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-        reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
+        reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
@@ -121,7 +121,7 @@ main () {
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-        reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
+        reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
@@ -151,7 +151,7 @@ main () {
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-        reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
+        reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
@@ -172,7 +172,7 @@ main () {
         entity=$(echo "${run_info}" | cut -f3)
         barcode=$(echo "${set_name}" | awk -F '_' '{print $4}')
 
-        reporting_id=$(extract_reporting_id_on_barcode ${barcode} "prod")
+        reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
         exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
 
