@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+source message_functions_dr || exit 1
+source database_functions || exit 1
+
+
+echo ""
+echo "[START] map_oncotree_doid: $(date +"%y%m%d (%T)")"
+echo ""
+
+
+
+
+
+###################### get doids in database #####
+#
+#mkdir data
+#
+#database_name="hmfpatients"
+#credentials=$(prod_reader_sql_credentials)
+##
+#user=$(extract_database_user "${credentials}")
+#password=$(extract_database_password "${credentials}")
+#host=$(extract_database_host "${credentials}")
+#port=$(extract_database_port "${credentials}")
+##
+#sql_file_or_select_statement="select
+#  SUBSTRING_INDEX(SUBSTRING_INDEX(datarequest.doids, ',', numbers.n), ',', -1) doids
+#from
+#  (select 1 n union all
+#   select 2 union all select 3 union all
+#   select 4 union all select 5) numbers INNER JOIN datarequest
+#  on CHAR_LENGTH(datarequest.doids)
+#     -CHAR_LENGTH(REPLACE(datarequest.doids, ',', ''))>=numbers.n-1
+#group by doids;"
+##
+#mysql -sN --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}" \
+#        --execute="${sql_file_or_select_statement}" --batch > data/doids_database.csv
+#
+#############
+#
+#python3 get_relevant_doids.py
+
+#############
+
+sed 's/DOID_//g' data/doids_database_with_ancestors.csv > tmp.csv && mv -f tmp.csv data/doids_database_with_ancestors.csv
+
+rm doids_database_with_ancestors_NCI.csv
+relevant_doids=("")
+while IFS= read -r database_doids
+do
+    database_doids=$( echo ${database_doids} | sed 's/,/ /g' )
+    database_doids=($(echo "${database_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    #########
+
+    for database_doid in ${database_doids[@]}
+    do
+       url_doid="https://www.disease-ontology.org/api/metadata/DOID:${database_doid}/"
+       json_doid=$( curl -s ${url_doid} )
+       NCI=$( echo ${json_doid} | jq -r '.xrefs[]?' | grep NCI | sed "s/NCI://g" )
+       name=$( echo ${json_doid} | jq -r '.name')
+       for row in $( echo ${NCI} )
+       do
+            echo ${row}","${database_doid}","${name} >> doids_database_with_ancestors_NCI.csv
+       done
+    done
+done < data/doids_database_with_ancestors.csv
+
+###
+
+curl -X GET --header 'Accept: text/plain' 'http://oncotree.mskcc.org/api/tumor_types.txt' | sed 's/\t/,/g' > oncotree.csv
+
+
+
+#####################
+
+join -a 1 -a 2  -t "," -1 9 -2 1  -e NA -o 1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2.1,2.2,2.3 <(sort -t "," -k9 oncotree.csv | uniq ) <(sort -t "," -k1 doids_database_with_ancestors_NCI.csv | uniq ) > test.csv
