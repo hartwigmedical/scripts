@@ -65,6 +65,14 @@ extract_reporting_id_on_barcode() {
     echo ${sample_object} | jq .id
 }
 
+extract_most_recent_reporting_id_on_barcode() {
+    sample_barcode=$1 && shift
+
+    reporting_json=$( for reporting_id in $( hmf_api_get reports/created?barcode=${sample_barcode} | jq .[].id ); do hmf_api_get reports/shared?report_created_id=${reporting_id} | jq .[] ; done )
+    reporting_json=$( echo ${reporting_json} | jq -s '.' )
+    echo ${reporting_json} | jq 'sort_by(.share_time)[-1].report_created_id'
+}
+
 extract_object_created_on_reporting_id() {
     id=$1 && shift
     environment=$1 && shift
