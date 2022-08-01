@@ -464,6 +464,37 @@ locate_actin_evaluation_directory() {
     echo "/data/actin/evaluation"
 }
 
+locate_actin_evaluation_details() {
+    local sample=$1 && shift
+    local evaluation_dir=$(locate_actin_evaluation_directory)
+
+     if [[ ! -d "${evaluation_dir}" ]]; then
+            error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
+        fi
+
+        local evaluation_details_tsv="${evaluation_dir}/${sample}.evaluation.details.tsv"
+        if [[ ! -f ${evaluation_details_tsv} ]]; then
+            error "Could not locate ACTIN evaluation details tsv for sample '${sample}'"
+        fi
+
+        echo "${evaluation_details_tsv}"
+}
+
+locate_actin_evaluation_summary() {
+    local sample=$1 && shift
+    local evaluation_dir=$(locate_actin_evaluation_directory)
+
+     if [[ ! -d "${evaluation_dir}" ]]; then
+            error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
+        fi
+
+        local evaluation_summary_tsv="${evaluation_dir}/${sample}.evaluation.summary.tsv"
+        if [[ ! -f ${evaluation_summary_tsv} ]]; then
+            error "Could not locate ACTIN evaluation summary tsv for sample '${sample}'"
+        fi
+
+        echo "${evaluation_summary_tsv}"
+}
 
 ##################################### RNA ######################################
 

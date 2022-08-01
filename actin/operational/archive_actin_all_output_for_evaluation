@@ -31,9 +31,11 @@ clinical_json="$(locate_actin_clinical_json ${sample})"
 molecular_json="$(locate_actin_molecular_json ${sample})"
 treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
 actin_report_pdf="$(locate_actin_report_pdf ${sample})"
+evaluation_details_tsv="$(locate_actin_evaluation_details ${sample})"
+evaluation_summary_tsv="$(locate_actin_evaluation_summary ${sample})"
 
-if [[ -z "${clinical_json}" || -z "${molecular_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" ]]; then
-    error "Missing ACTIN data or report for ${sample}"
+if [[ -z "${clinical_json}" || -z "${molecular_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
+    error "Missing ACTIN data, report or evaluation details for ${sample}"
 fi
 
 info "Archiving ORANGE data and report for ${sample}"
@@ -45,3 +47,5 @@ gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/"
+gsutil cp "${evaluation_details_tsv}" "${sample_evaluation_bucket}/"
+gsutil cp "${evaluation_summary_tsv}" "${sample_evaluation_bucket}/"

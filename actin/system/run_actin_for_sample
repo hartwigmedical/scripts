@@ -12,6 +12,10 @@ actin_treatment_matcher_pilot ${sample}
 
 echo ""
 
+create_actin_evaluation_data_for_sample ${sample}
+
+echo ""
+
 actin_reporter_pilot ${sample}
 
 echo ""
