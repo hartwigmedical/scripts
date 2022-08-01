@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+patient=$1
+
+if [[ -z "${patient}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+gcloud compute scp data-vm-prod-2:$(locate_actin_evaluation_directory)/*${patient}*.evaluation.summary.tsv ~/hmf/tmp/
