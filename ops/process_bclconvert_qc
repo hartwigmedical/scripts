@@ -11,8 +11,8 @@ RUN_REPORT="hmf_run_report.tsv"
 
 FORENSICS_BUCKET="bcl-forensics-prod-1"
 NAS_REPORT_PATH="/volume1/reports/bclconvert"
+NAS_WEB_REPORT_PATH="/volume1/web/qc/conversion"
 
-info "Checking dependencies"
 command -v "$PARSE_SCRIPT" >/dev/null || die "Dependency not found: $PARSE_SCRIPT"
 command -v "$ROUNDING_SCRIPT" >/dev/null || die "Dependency not found: $ROUNDING_SCRIPT"
 command -v "hmf_api_get" >/dev/null || die "Dependency not found: hmf_api_get"
@@ -38,9 +38,9 @@ fi
 flowcells_ids=("$@")
 
 function main() {
-
-    tmpdir="/tmp/$(basename "$0")/$(date '+%y%m%d%M%S')"
-    info "Creating tmp dir [${tmpdir}]"
+    script="$(basename $0)"
+    tmpdir="/tmp/${script}/$(date '+%y%m%d%M%S')"
+    info "Started ${script} with tmp dir [${tmpdir}]"
     mkdir -p "${tmpdir}" || die "Unable to create tmp dir [$info]"
 
     for flowcell_id in "${flowcells_ids[@]}"; do
@@ -60,6 +60,7 @@ function main() {
         run_report_tsv="${outdir}/${RUN_REPORT}"
 
         mkdir -p "${outdir}" || die "Unable to create output dir [$info]"
+        info "  Output dir created [${outdir}]"
 
         info "  Retrieving files from bucket [$info]"
         for file in "${required_files[@]}"; do
@@ -70,6 +71,7 @@ function main() {
         hmf_name="$(grep '^Experiment' "${outdir}/SampleSheet.csv" | cut -d',' -f2 | tr -d '\r')"
         nas_dir_name="${hmf_name}__${seq_run}"
         nas_dir_path="${NAS_REPORT_PATH}/${nas_dir_name}"
+        nas_web_dir_path="${NAS_WEB_REPORT_PATH}/${nas_dir_name}"
         info="${info}|${hmf_name}"
 
         [[ -s "${outdir}/Errors.log" ]] && warn "  Non-empty error log!!"
@@ -82,8 +84,11 @@ function main() {
         grep "^## RunOverview" "${conversion_report_tsv}" | sed 's#\#\#\ RunOverview INFO:\ ##g' > "${run_report_tsv}"
         process_samples "${conversion_report_tsv}" > "${samples_report_tsv}"
 
-        info "  Syncing output files from ${outdir} to NAS [${nas_dir_path}]"
+        info "  Syncing output files to NAS [${nas_dir_path}]"
         sync_dir_to_nas "${outdir}" "${nas_dir_path}"
+
+        info "  Syncing output files to NAS web [${nas_web_dir_path}]"
+        sync_dir_to_nas "${outdir}" "${nas_web_dir_path}"
     done
 
     info "SAMPLE info"
