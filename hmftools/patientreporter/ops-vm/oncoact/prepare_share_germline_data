@@ -33,9 +33,9 @@ fi
 #    error "No sample name found. Exiting"
 #fi
 
-# Check if samplename is correct
+# Check if samplename is correct (still for NKI)
 if [[ $samplename != COREDB01* ]]; then
-        error "Samplename not in correct format. Exiting."
+        error "Samplename not in correct NKI format. Exiting."
 fi
 
 echo "## Preparing germline files for transfer for ${samplename}"
@@ -45,9 +45,9 @@ ic_status=$(curl http://lama.prod-1/api/patients/samples/${samplename} | jq --ar
 # Check if only one api response received
 if [[ "$ic_status" != "\"Yes\"" ]]; then
 	echo ${ic_status}
-	error "No informed consent given by the patient for germline analysis. Exiting"
+	echo "IMPORTANT: No informed consent is registered for germline analysis. Make sure you are allowed to share the data."
 else
-	echo "Patient gave consent for germline reporting."
+	echo "Informed consent registered for germline reporting."
 fi
 
 
