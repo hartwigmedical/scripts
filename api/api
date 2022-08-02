@@ -108,17 +108,37 @@ main(){
     elif [[ "${class}" == "runs" ]]; then
         if [[ "${add_remarks}" == "TRUE" ]]; then
             printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket remarks id
-            jq -r '.[] | [.set.name, .set.ref_sample, .set.tumor_sample, .ini, .version, .status, .bucket, (select(.failure) | "Remarks:" + .failure.source + "|" + .failure.type)//"Remarks:None", .id] | @tsv' <<< "${json_result}"
+            jq -r '.[] | [.set.name,
+            .set.ref_sample,
+            .set.tumor_sample,
+            .ini,
+            .version,
+            .status,
+            .bucket,
+            (select(.failure) | "Remarks:" + .failure.source + "|" + .failure.type)//"Remarks:None",
+            .id] | @tsv' <<< "${json_result}"
         else
             printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket id
-            jq -r '.[] | [.set.name, .set.ref_sample, .set.tumor_sample, .ini, .version, .status, .bucket, .id] | @tsv' <<< "${json_result}"
+            jq -r '.[] | [.set.name,
+            .set.ref_sample,
+            .set.tumor_sample,
+            .ini, .version,
+            .status,
+            .bucket,
+            .id] | @tsv' <<< "${json_result}"
         fi
     elif [[ "${class}" == "platforms" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
         jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "sets" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ref_name tum_name ref_barcode tum_barcode id
-        jq -r '.[] | [.name, .entity_id, .ref_sample, .tumor_sample, (.samples[]|select(.type=="ref")|.barcode)//"NA", (.samples[]|select(.type=="tumor")|.barcode)//"NA", .id] | @tsv' <<< "${json_result}"
+        jq -r '.[] | [.name,
+        .entity_id,
+        (.samples[]|select(.type=="ref")|.name)//"NA",
+        (.samples[]|select(.type|contains("tumor"))|.name)//"NA",
+        (.samples[]|select(.type=="ref")|.barcode)//"NA",
+        (.samples[]|select(.type|contains("tumor"))|.barcode)//"NA",
+        .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "entities" ]]; then
         printf "#%s\t%s\t%s\t%s\n" name bucket add_to_db id
         jq -r '.[] | [.name, .bucket, .add_to_db, .id] | @tsv' <<< "${json_result}"
