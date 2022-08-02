@@ -5,23 +5,30 @@ source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
 
-crunch_seq_runs_dir=/data1/illumina_data
 local_sheets_dir=$(locate_samplesheets_dir) || die "Could not find the samplesheets dir"
 samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samplesheets bucket path"
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
-for i in {1,2}; do
-    crunch_name="crunch${i}.prod-1"
-    info "Checking ${crunch_name} for samplesheets"
+for server in crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1; do
 
-    ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
+    info "Checking ${server} for samplesheets"
+
+    if [[ "${server}" =~ ^sts ]]; then
+        flowcells_dir="/data/flowcells"
+    elif [[ "${server}" =~ ^crunch ]]; then
+        flowcells_dir="/data1/illumina_data"
+    else
+        warn "Cannot process server ${server} because of unknown type!"
+    fi
+
+    ssh ${server} find ${flowcells_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
     while read -r sheet_path; do
         run_path=$(dirname "${sheet_path}")
         run_name=$(basename "${run_path}")
         dest_path="${local_sheets_dir}/${run_name}_SampleSheet.csv"
         info "  Executing rsync for ${run_name}"
-        rsync_log_line_count=$(rsync -rtv "${crunch_name}:${sheet_path}" "${dest_path}" | wc -l) || die "Could not rsync"
+        rsync_log_line_count=$(rsync -rtv "${server}:${sheet_path}" "${dest_path}" | wc -l) || die "Could not rsync"
         if [[ "${rsync_log_line_count}" -gt 4 ]]; then
             info "   Synced to ${dest_path}"
         fi
