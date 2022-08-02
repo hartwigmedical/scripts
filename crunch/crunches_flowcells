@@ -77,7 +77,7 @@ function process_flowcell () {
         fi
     else
         # Every platform does things slightly different so need some nasty grepping
-        grep='(Cycle[\W\_]{1})|(Cycle\d+)'
+        grep='(Cycle[\W\_]{1})|(Cycle[[:digit:]]+)'
         cycle_count=$(ssh "$server" find "${run_base}/Logs/" -maxdepth 1 -type f | grep -Eo "${grep}" | grep -v "Cycle0" | sort | uniq | wc -l | tr -d " ")
     fi
 
