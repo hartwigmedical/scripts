@@ -46,10 +46,15 @@ function main() {
     for flowcell_id in "${flowcells_ids[@]}"; do
 
         info="$flowcell_id"
-        info "Working on flowcell [${info}]"
+        info "Start processing flowcell [${info}]"
 
-        flowcell_api_info=$(get_flowcell_from_api "${flowcell_id}") || die "Unable to find flowcell in API [$info]"
         flowcell_forensics_url=$(get_forensics_url "${FORENSICS_BUCKET}" "${flowcell_id}") || die "Unable to find forensics [$info]"
+        flowcell_api_info=$(get_flowcell_from_api "${flowcell_id}") || die "Unable to find flowcell in API [$info]"
+        api_status=$(jq -r '.status' <<< "$flowcell_api_info")
+        api_name=$(jq -r '.name' <<< "$flowcell_api_info")
+        info="${info},${api_name}"
+
+        [[ "$api_status" == "Converted" || "$api_status" == "Failed" ]] || die "Unexpected status [${api_status}] in API [$info]"
 
         seq_run=$(basename "${flowcell_forensics_url}")
         outdir="${tmpdir}/${seq_run}"
@@ -72,7 +77,6 @@ function main() {
         nas_dir_name="${hmf_name}__${seq_run}"
         nas_dir_path="${NAS_REPORT_PATH}/${nas_dir_name}"
         nas_web_dir_path="${NAS_WEB_REPORT_PATH}/${nas_dir_name}"
-        info="${info}|${hmf_name}"
 
         [[ -s "${outdir}/Errors.log" ]] && warn "  Non-empty error log!!"
 
@@ -91,7 +95,7 @@ function main() {
         sync_dir_to_nas "${outdir}" "${nas_web_dir_path}"
     done
 
-    info "SAMPLE info"
+    info "SAMPLE info [${info}]"
     find "$tmpdir" -name "${SAMPLES_REPORT}" -exec cat {} \; | sort -r
     echo ""
 
@@ -106,10 +110,13 @@ function main() {
 
 function get_flowcell_from_api () {
     local flowcell_id=$1 && shift
+    local json=""
+    local count=0
     json=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")
-    count=$(jq 'length' <<< $json)
+    count=$(jq 'length' <<< "$json")
     if [[ "$count" -eq 1 ]]; then
-        echo "$json" && return 0
+        flowcell_json=$(jq '.[-1]' <<< "$json")
+        echo "$flowcell_json" && return 0
     else
         return 1
     fi
