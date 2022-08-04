@@ -2,8 +2,9 @@
 
 source message_functions || exit 1
 
-flowcells_dir=/data1/illumina_data
 min_days_converted=1
+flowcells_dir=/data/flowcells
+[[ "$(hostname)" =~ ^crunch ]] && flowcells_dir=/data1/illumina_data
 
 info "Checking upload status of flowcells"
 
