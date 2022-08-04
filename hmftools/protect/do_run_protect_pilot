@@ -29,6 +29,8 @@ if [[ -z "${primary_tumor_doids}" ]]; then
 fi
 
 doid_json=$(locate_doid_json)
+driver_gene_tsv=$(locate_driver_gene_panel_37_tsv)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
@@ -55,6 +57,8 @@ java -Xms2G -Xmx8G -jar ${protect_jar} \
     -serve_actionability_dir ${serve_actionability_dir} \
     -ref_genome_version 37 \
     -doid_json ${doid_json} \
+    -driver_gene_tsv ${driver_gene_tsv} \
+    -known_fusion_file ${known_fusion_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
