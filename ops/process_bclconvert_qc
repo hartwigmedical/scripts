@@ -26,6 +26,8 @@ quality_csv="output/results/Reports/Quality_Metrics.csv"
 top_unknown_csv="output/results/Reports/Top_Unknown_Barcodes.csv"
 required_files=("$error_log" "$samplesheet_csv" "$runinfo_xml" "$demux_csv" "$quality_csv" "$top_unknown_csv")
 
+[[ "$(hostname)" =~ ^ops-vm-prod ]] || die "This script is meant to be executed from ops-vm only!"
+
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     script=$(basename "$0")
     echo ""
