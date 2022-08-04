@@ -2,25 +2,51 @@
 
 source message_functions || exit 1
 
-min_days_converted=1
-flowcells_dir=/data/flowcells
-[[ "$(hostname)" =~ ^crunch ]] && flowcells_dir=/data1/illumina_data
+MIN_DAYS_CONVERTED=1
+SERVERS=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
+CRUNCH_TYPE='crunch'
 
-info "Checking upload status of flowcells"
+main () {
+    info "Starting cleanup check for flowcells"
+    for server in "${SERVERS[@]}"; do
+        type='sts'
+        [[ "${server}" =~ ^crunch ]] && type="$CRUNCH_TYPE"
+        info "Checking flowcells for ${server}"
+        process_server "$server" "$type"
+    done
+}
 
-cleanup=()
-while read -r flowcell_path; do
-    flowcell_name=$(basename "${flowcell_path}")
-    conversion_log="${flowcell_path}/conversionDone.txt"
-    upload_log="${flowcell_path}/GCPUploadComplete.txt"
+function process_server () {
+    local server=$1 && shift
+    local type=$1 && shift
 
-    if [[ ! -f "${conversion_log}" ]]; then
-        warn "  ${flowcell_name} not converted locally yet!!"
-        continue
-    elif [[ ! -f "${upload_log}" ]]; then
-        warn "  ${flowcell_name} not uploaded yet!!"
-        continue
+    local flowcells_to_process=()
+    local search_dir="/data/flowcells"
+    if [[ "$type" == "$CRUNCH_TYPE" ]]; then
+        search_dir="/data1/illumina_data"
     fi
+    while IFS=  read -r -d $'\0'; do
+        flowcells_to_process+=("$REPLY")
+    done < <(ssh "${server}" find "${search_dir}/" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -print0)
+    declare -a all_stdout
+    for flowcell_path in "${flowcells_to_process[@]}"; do
+        mapfile -t stdout < <(process_flowcell "$server" "$type" "$flowcell_path")
+        all_stdout=( "${all_stdout[@]}" "${stdout[@]}" )
+    done
+    if [[ "${#all_stdout[@]}" -gt 0 ]]; then
+        echo ""
+        info "Potential cleanup (SSH into $server and execute cmd below):"
+        echo "  sudo -u sbsuser rm -r $(printf '%s ' "${all_stdout[@]}")"
+        echo ""
+    fi
+}
+
+function process_flowcell () {
+    local server=$1 && shift
+    local type=$1 && shift
+    local flowcell_path=$1 && shift
+    local flowcell_name=""
+    flowcell_name=$(basename "${flowcell_path}")
 
     flowcell_id="${flowcell_name##*_}"
     if [[ ${flowcell_id} =~ [AB]H[A-Z0-9]{8} ]]; then
@@ -28,38 +54,38 @@ while read -r flowcell_path; do
       flowcell_id="${flowcell_id:1}"
     fi
 
-    flowcell_id_count_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq length | tr -d '"\n"') \
-        || die "Could not get number of flowcells in the API with flowcell ID '${flowcell_id}'"
-    if [[ "${flowcell_id_count_in_api}" != "1" ]]; then
-        warn "  ${flowcell_name} exists in API ${flowcell_id_count_in_api} times instead of 1 time!!"
-        continue
+    info="${flowcell_name}"
+    api_flowcells=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}") || die "Unable to get flowcell from API [$flowcell_id]"
+
+    api_flowcell_count=$(jq 'length' <<< "${api_flowcells}")
+    if [[ "${api_flowcell_count}" -ne 1 ]]; then
+        warn "  $info: API count not exactly one" && return 0
     fi
 
-    flowcell_status_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq '.[0].status' | tr -d '"\n"') \
-        || die "Could not get flowcell status in API for ID '${flowcell_id}'"
+    api_flowcell=$(jq '.[-1]' <<< "${api_flowcells}")
+    flowcell_status_in_api=$(jq -r '.status' <<< "${api_flowcell}")
+    flowcell_qc_in_api=$(jq -r '.undet_rds_p_pass' <<< "${api_flowcell}")
+    convert_date_in_api=$(jq -r '.convertTime' <<< "${api_flowcell}")
+
     if [[ "${flowcell_status_in_api}" != "Converted" ]]; then
-        warn "  ${flowcell_name} status in API is '${flowcell_status_in_api}' instead of 'Converted'!!"
-        continue
+        warn "  $info: API status is not Converted" && return 0
     fi
 
-    flowcell_qc_in_api=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}" | jq '.[0].undet_rds_p_pass' | tr -d '"\n"')\
-        || die "Could not get flowcell QC status in API for ID '${flowcell_id}'"
     if [[ "${flowcell_qc_in_api}" != "true" ]]; then
-        warn "  ${flowcell_name} qc status in API is '${flowcell_qc_in_api}' instead of 'true'!!"
-        continue
+        warn "  $info: API qc status is not true" && return 0
     fi
 
-    # Flowcell fully uploaded and converted!
-    days=$(( ($(date +%s) - $(date -r "${conversion_log}" +%s) )/(60*60*24) ))
-    info "  OK ${flowcell_name} uploaded to GCP (converted ${days} days ago)"
-    if [[ "${days}" -ge "${min_days_converted}" ]]; then
-        cleanup+=("${flowcell_path}")
+    if [[ ! "${convert_date_in_api}" =~ ^[[:digit:]]+ ]]; then
+        warn "  $info: convertDate in api does not contain digits somehow" && return 0
     fi
-done < <(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -exec ls -d {} +)
 
-info "Potential cleanup:"
-for flowcell_path in "${cleanup[@]}"; do
-    # sanity check on variable content before we print a sudo rm command
-    [[ "${flowcell_path}" =~ ^/data1/illumina_data/[^/]+$ ]] || die "The flowcell path string has unexpected format (${flowcell_path})"
-    info "  sudo -u sbsuser rm -r ${flowcell_path}"
-done
+    days=$(( ($(date +%s) - $(date -d "${convert_date_in_api}" +%s) )/(60*60*24) ))
+    if [[ "${days}" -le "${MIN_DAYS_CONVERTED}" ]]; then
+        warn "  $info: uploaded and converted (but only $days days ago)" && return 0
+    fi
+
+    warn "  $info: uploaded and converted $days days ago so added to cleanup list"
+    echo "$flowcell_path"
+}
+
+main
