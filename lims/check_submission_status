@@ -70,6 +70,10 @@ while read -r smp_sop_str; do
 done < <(echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed" and .lab_status != "NA" ) | .lab_sop_versions')
 
 req_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") and .total_yield_required != "" then .total_yield_required else 0 end' )
+if [[ ! "$req_yield" =~ ^[[:digit:]]+$ ]]; then
+    die "Required yield [$req_yield] contains more than just digits"
+fi
+
 samples=$(hmf_api_get "samples?submission=${submission}")
 measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready" or .status=="Deleted") | .yld] | add')
 measured_yield_gbase=$((measured_yield / 1000000000))
