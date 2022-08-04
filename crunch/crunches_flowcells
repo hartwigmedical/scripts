@@ -4,25 +4,28 @@ source message_functions || exit 1
 
 command -v hmf_api_get > /dev/null || die "Dependency not found [hmf_api_get]"
 
-[[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check SampleSheets from crunch/sts directly"
+servers=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
+server1=${servers[0]}
+
+[[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check flowcells from crunch/sts directly"
+ping "$server1" -t 1 > /dev/null || die "Unable to ping server ${server1} (pls check network/VPN)"
 
 main () {
     declare -a all_stdout
-    for server in crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1; do
+    for server in "${servers[@]}"; do
         if [[ "${server}" =~ ^sts ]]; then
-            info "Checking flowcells on ${server} [/data/flowcells]"
+            info "Checking flowcells for ${server}:/data/flowcells"
             mapfile -t stdout < <(process_server "$server" "/data/flowcells")
             all_stdout=( "${all_stdout[@]}" "${stdout[@]}" )
         elif [[ "${server}" =~ ^crunch ]]; then
-            info "Checking flowcells on ${server} [/data1/illumina_data]"
+            info "Checking flowcells for ${server}:/data1/illumina_data"
             mapfile -t stdout < <(process_server "$server" "/data1/illumina_data")
             all_stdout=( "${all_stdout[@]}" "${stdout[@]}" )
         else
             warn "Cannot process server ${server} because of unknown type!"
         fi
     done
-    # sort but do not print first column (YYMMDD)
-    info "Printing sorted output:"
+    info "Printing output sorted by date:"
     printf '%s\n' "${all_stdout[@]}" | sort -r -k1 -k2 | cut -f2-
 }
 
@@ -67,22 +70,20 @@ function process_flowcell () {
     fi
 
     # Check cycle status
-    if [[ "${exp_name}" =~ ^NS ]]; then
-        # Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
-        lane1_dir="${run_base}/Data/Intensities/BaseCalls/L001/"
-        if [[ $(ssh "$server" ls -d "${lane1_dir}" 2> /dev/null) ]]; then
+    cycle_count=0
+    lane1_dir="${run_base}/Data/Intensities/BaseCalls/L001"
+    # shellcheck disable=SC2029
+    if ssh "$server" "[ -d '${lane1_dir}' ]"; then
+        if [[ "${exp_name}" =~ ^NS ]]; then
+            # Nextseqs do things differently. Yay!
             cycle_count=$(ssh "$server" find "${lane1_dir}" -maxdepth 1 -name "*.bgzf" | wc -l | tr -d " ")
         else
-            cycle_count=0
+            cycle_count=$(ssh "$server" find "$lane1_dir" -mindepth 1 -maxdepth 1 -type d -name "C*" | wc -l | tr -d " ")
         fi
-    else
-        # Every platform does things slightly different so need some nasty grepping
-        grep='(Cycle[\W\_]{1})|(Cycle[[:digit:]]+)'
-        cycle_count=$(ssh "$server" find "${run_base}/Logs/" -maxdepth 1 -type f | grep -Eo "${grep}" | grep -v "Cycle0" | sort | uniq | wc -l | tr -d " ")
     fi
 
     if [[ "${expected_cycle_count}" =~ ^[0-9]+$ && "${cycle_count}" -eq "${expected_cycle_count}" ]]; then
-        run_status="Sequenced(${cycle_count}/${expected_cycle_count})"
+        run_status="Ready(${cycle_count}/${expected_cycle_count})"
     else
         run_status="Sequencing(${cycle_count}/${expected_cycle_count})"
     fi
