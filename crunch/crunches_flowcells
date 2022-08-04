@@ -4,11 +4,9 @@ source message_functions || exit 1
 
 command -v hmf_api_get > /dev/null || die "Dependency not found [hmf_api_get]"
 
-servers=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
-server1=${servers[0]}
-
 [[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check flowcells from crunch/sts directly"
-ping "$server1" -t 1 > /dev/null || die "Unable to ping server ${server1} (pls check network/VPN)"
+
+servers=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
 
 main () {
     declare -a all_stdout
