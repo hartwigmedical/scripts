@@ -12,7 +12,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence_pilot ${run_dir})
 
 database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
