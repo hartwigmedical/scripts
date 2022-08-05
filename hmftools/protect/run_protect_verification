@@ -11,7 +11,7 @@ fi
 
 serve_actionability_dir="/data/resources/crunch/serve/pilot"
 
-output_dir="${run_dir}/protect_2_2"
+output_dir="${run_dir}/protect_research_2_2"
 protect_jar=$(locate_research_protect)
 
 do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} "$@"
