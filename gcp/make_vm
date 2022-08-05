@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 vm_name=""
+vm_project=""
 
 image_name=""
 image_project="hmf-build"
@@ -13,6 +14,7 @@ machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="200G"
 network="projects/hmf-vpc-network/global/networks/vpc-network-prod-1"
+network_arg=""
 
 preemptible="FALSE"
 startup_script="NONE"
@@ -43,7 +45,6 @@ print_usage() {
     echo "  https://cloud.google.com/compute/docs/machine-types"
     echo "  https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
     echo "  gcloud --project ${image_project} compute images list | grep ${image_family}"
-    echo "  gcloud --project ${vm_project} compute compute instances list"
     echo ""
     echo "Commands:"
     echo "  gcloud compute instances delete --zone ${zone} --quiet {your-vm}"
@@ -77,15 +78,20 @@ fi
 if [[ "${umbrella_scope}" == "crunch" ]]; then
     service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
     vm_project="hmf-crunch"
-    subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
+    network_arg="--network ${network} --subnet projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
 elif [[ "${umbrella_scope}" == "ops" ]]; then
     service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
     vm_project="hmf-ops"
-    subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-ops-prod-1"
+    network_arg="--network ${network} --subnet projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-ops-prod-1"
 elif [[ "${umbrella_scope}" == "pmc" ]]; then
     service_account="hmf-pmc@hmf-pmc.iam.gserviceaccount.com"
     vm_project="hmf-pmc"
-    subnet="projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-pmc-prod-1"
+    network_arg="--network ${network} --subnet projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-pmc-prod-1"
+elif [[ "${umbrella_scope}" == "onboarding" ]]; then
+    service_account="hmf-onboarding@hmf-onboarding.iam.gserviceaccount.com"
+    vm_project="hmf-onboarding"
+    network_arg=""
+    cost_center="onboarding"
 else
     die "Unknown umbrella scope [${umbrella_scope}]"
 fi
@@ -139,10 +145,9 @@ gcloud compute instances create "${vm_name}" \
 --no-restart-on-failure \
 --zone "${zone}" \
 --service-account "${service_account}" \
---network "${network}" \
---subnet "${subnet}" \
 --no-address \
 --metadata enable-oslogin=TRUE \
+${network_arg} \
 ${preemptible_arg} \
 ${startup_script_arg} || die "Something wrong with VM creation. Check the gcloud response."
 
