@@ -40,7 +40,7 @@ java -Xms2G -Xmx8G -jar ${rose_jar} \
     -actionability_database_tsv ${actionability_database_tsv} \
     -output_dir ${output_dir} \
     -ref_genome_version 37 \
-    -driver_gene_37_tsv ${driver_gene_37_tsv} \
+    -driver_gene_tsv ${driver_gene_37_tsv} \
     -tumor_sample_id ${tumor_sample} \
     -ref_sample_id ${reference_sample} \
     -purple_purity_tsv ${purple_purity_tsv} \
