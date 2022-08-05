@@ -15,8 +15,10 @@ if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}
     error "Missing input parameters. Exiting";
 fi
 
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+patient_id=$(echo ${tumor_sample} | cut -c1-12)
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
@@ -41,6 +43,8 @@ java -Xms2G -Xmx8G -jar ${rose_jar} \
     -output_dir ${output_dir} \
     -ref_genome_version 37 \
     -driver_gene_tsv ${driver_gene_37_tsv} \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -patient_id ${patient_id} \
     -tumor_sample_id ${tumor_sample} \
     -ref_sample_id ${reference_sample} \
     -purple_purity_tsv ${purple_purity_tsv} \
