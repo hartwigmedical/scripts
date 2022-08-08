@@ -33,13 +33,11 @@ print_usage(){
 }
 
 output_json='FALSE'
-add_remarks='FALSE'
 additional_get_params=""
 
 while getopts ':jrt' flag; do
     case "${flag}" in
         j) output_json='TRUE' ;;
-        r) add_remarks='TRUE' ;;
         t) additional_get_params="-t";;
         *) print_usage >&2
         exit 1 ;;
@@ -99,34 +97,24 @@ main(){
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9) }1'
     elif [[ "${class}" == "flowcells" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc updateDate id
-        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|capture("(?<ymd>[0-9\\-]+)").ymd), .id] | @tsv' <<< "${json_result}" \
+        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|.[:10]), .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "samples" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
         jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
-        if [[ "${add_remarks}" == "TRUE" ]]; then
-            printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket remarks id
-            jq -r '.[] | [.set.name,
-            .set.ref_sample,
-            .set.tumor_sample,
-            .ini,
-            .version,
-            .status,
-            .bucket,
-            (select(.failure) | "Remarks:" + .failure.source + "|" + .failure.type)//"Remarks:None",
-            .id] | @tsv' <<< "${json_result}"
-        else
-            printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket id
-            jq -r '.[] | [.set.name,
-            .set.ref_sample,
-            .set.tumor_sample,
-            .ini, .version,
-            .status,
-            .bucket,
-            .id] | @tsv' <<< "${json_result}"
-        fi
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket startDate endDate id
+        jq -r '.[] | [.set.name,
+        .set.ref_sample,
+        .set.tumor_sample,
+        .ini,
+        .version,
+        .status,
+        .bucket,
+        (if .startTime then .startTime|.[:10] else "NA" end),
+        (if .endTime then .endTime|.[:10] else "NA" end),
+        .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "platforms" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
         jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
