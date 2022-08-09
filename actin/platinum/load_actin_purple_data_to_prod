@@ -18,12 +18,12 @@ rna="${sample}_RNA"
 purple_dir="${run_dir}/purple"
 
 database="hmfpatients"
-credentials=$(prod_writer_sql_credentials)
+credentials="$(prod_writer_sql_credentials)"
 
 # Database details
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_url=$(construct_database_url "${credentials}" ${database_name})
+db_url=$(construct_database_url "${credentials}" ${database})
 
 patient_db_jar=$(locate_research_patient_db)
 
