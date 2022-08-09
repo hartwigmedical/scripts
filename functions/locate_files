@@ -85,7 +85,7 @@ locate_pilot_orange() {
 }
 
 locate_research_patient_db() {
-    echo "/data/tools/patient-db/3.70/patient-db.jar"
+    echo "/data/tools/patient-db/3.71/patient-db.jar"
 }
 
 locate_prod_patient_db() {
