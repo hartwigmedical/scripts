@@ -141,7 +141,7 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/1.11/serve.jar"
+    echo "/data/tools/serve/1.12/serve.jar"
 }
 
 locate_pilot_serve() {
