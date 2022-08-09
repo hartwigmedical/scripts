@@ -30,7 +30,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
     load_rna_annotated_somatic_variants_to_prod ${run_dir}
 
     annotated_somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
-    if [[ -f ${annotated_somatic_vcf} ]]; then
+    if [[ -f "${annotated_somatic_vcf}" ]]; then
         info "Replacing purple somatic VCF with RNA-annotated version"
         original_somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
         cp "${annotated_somatic_vcf}" "${original_somatic_vcf}"
@@ -44,6 +44,16 @@ if [[ -d "${rna_bam_dir}" ]]; then
 
     # TODO Germline VCF can be annotated on pipeline v5.29
     #annotate_germline_variants_with_rna ${run_dir}
+
+    annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
+    if [[ -f "${annotated_somatic_vcf}" ]]; then
+        info "Replacing purple germline VCF with RNA-annotated version"
+        original_germline_vcf="$(locate_purple_germline_variants ${run_dir})"
+        cp "${annotated_germline_vcf}" "${original_germline_vcf}"
+        cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
+    fi
+
+    # reload purple data entirely once germline variants are annotated?
 
     # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
     run_orange_in_actin_mode ${run_dir}

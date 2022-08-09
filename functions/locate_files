@@ -543,6 +543,15 @@ locate_rna_annotated_somatic_variants() {
     echo "${rna_annotated_vcf}"
 }
 
+locate_rna_annotated_germline_variants() {
+    local run_dir=$1 && shift
+
+    local rna_sage_germline_directory=$(locate_rna_sage_germline_directory ${run_dir})
+    local rna_annotated_vcf=$(find -L "${rna_sage_germline_directory}/" -type f -name "*.purple.germline.with_rna.vcf.gz")
+
+    echo "${rna_annotated_vcf}"
+}
+
 locate_rna_analysis_bucket() {
     local sample=$1 && shift
     local rna_analysis_bucket=""
