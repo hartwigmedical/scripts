@@ -53,7 +53,8 @@ if [[ -d "${rna_bam_dir}" ]]; then
         cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
     fi
 
-    # reload purple data entirely once germline variants are annotated?
+    # TODO Enable once all germline VCFs can be re-enabled.
+    # load_rna_annotated_purple_data_to_prod ${run_dir}
 
     # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
     run_orange_in_actin_mode ${run_dir}
