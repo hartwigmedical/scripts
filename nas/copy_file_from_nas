@@ -23,5 +23,4 @@ if [[ -d "$target" && ! "$target" =~ \/$ ]]; then
     target="${target}/"
 fi
 
-info "  Syncing 'nas.prod-1:${source}' to '${target}'"
 sshpass -p "${password}" rsync -e "ssh -p ${ssh_port}" --chmod=ugo=rw --protect-args "rsyncuser@nas.prod-1:${source}" "${target}"
