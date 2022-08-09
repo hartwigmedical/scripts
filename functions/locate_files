@@ -723,6 +723,10 @@ locate_ckb_drug_class_curation_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation_pilot.tsv"
 }
 
+locate_ckb_drug_class_curation_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation.tsv"
+}
+
 locate_public_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/curation/public_doids_mapping.tsv"
 }
