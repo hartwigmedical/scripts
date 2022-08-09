@@ -48,7 +48,7 @@ function process_flowcell () {
     server_short="${server_short/\.prod-1/}"
 
     # shellcheck disable=SC2029
-    sheet_content=$(ssh "$server" cat "$sheet")
+    sheet_content=$(ssh "$server" cat "$sheet" | tr -d '\r')
     sheet_header=$(sed -n '/Sample_ID/q;p' <<< "$sheet_content")
     sheet_samples=$(sed -n '/Sample_ID/,$p' <<< "$sheet_content" | awk '$0 ~ /[a-zA-Z0-9]+/')
 
