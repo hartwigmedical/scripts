@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+info "Running ACTIN data snaphots backup"
+
+
+
+# -d = delete files on GS that no longer exist in the origin destination
+# -e = exclude symlinks to go to GS
+# -r = Recursive
+gsutil_cmd="gsutil -m rsync -d -r -e"
+backup_bucket="gs://hmf-crunch-actin-backups"
+
+shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
+
+actin_shared_report_count=$(gsutil ls "${shared_reports_bucket}/actin" | wc -l)
+if [[ ${actin_shared_report_count} -lt 70 ]]; then
+    error "Too few ACTIN reports found in shared reports bucket at ${shared_reports_bucket}"
+fi
+
+orange_shared_report_count=$(gsutil ls "${shared_reports_bucket}/orange" | wc -l)
+if [[ ${orange_shared_report_count} -lt 85 ]]; then
+    error "Too few ORANGE reports found in shared reports bucket at ${shared_reports_bucket}"
+fi
+
+${gsutil_cmd} ${shared_reports_bucket} "${backup_bucket}/shared_reports/"
+
+evaluation_bucket="$(locate_actin_evaluation_bucket)"
+
+evaluation_count=$(gsutil ls "${evaluation_bucket}/" | wc -l)
+if [[ ${evaluation_count} -lt 5 ]]; then
+    error "Too few samples found in evaluation bucket at ${evaluation_bucket}"
+fi
+
+${gsutil_cmd} ${evaluation_bucket} "${backup_bucket}/evaluations/"
+
