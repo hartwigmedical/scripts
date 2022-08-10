@@ -161,7 +161,7 @@ locate_pilot_protect() {
 }
 
 locate_prod_rose() {
-    echo "/data/tools/rose/1.0/rose.jar"
+    echo "/data/tools/rose/1.1/rose.jar"
 }
 
 locate_pilot_rose() {
