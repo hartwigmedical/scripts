@@ -14,7 +14,7 @@ actin_trial_tsv=$(locate_actin_trial_tsv)
 actin_filter_tsv=$(locate_actin_filter_tsv)
 missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
-serve_jar=$(locate_research_serve)
+serve_jar=/data/tools/serve/1.11/serve.jar
 
 do_run_serve ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
