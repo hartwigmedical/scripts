@@ -7,6 +7,7 @@ SERVERS=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
 CRUNCH_TYPE='crunch'
 
 [[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check flowcells on crunch/sts directly"
+[[ ! "$(hostname)" =~ ^ops ]] && die "Currently only to be executed at ops-vm"
 
 main () {
     info "Starting cleanup check for flowcells"
@@ -56,12 +57,12 @@ function process_flowcell () {
       flowcell_id="${flowcell_id:1}"
     fi
 
-    info="${flowcell_name}"
+    log_info="${flowcell_name}"
     api_flowcells=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}") || die "Unable to get flowcell from API [$flowcell_id]"
 
     api_flowcell_count=$(jq 'length' <<< "${api_flowcells}")
     if [[ "${api_flowcell_count}" -ne 1 ]]; then
-        warn "  $info: API count not exactly one" && return 0
+        warn "  $log_info: API count not exactly one" && return 0
     fi
 
     api_flowcell=$(jq '.[-1]' <<< "${api_flowcells}")
@@ -70,23 +71,23 @@ function process_flowcell () {
     convert_date_in_api=$(jq -r '.convertTime' <<< "${api_flowcell}")
 
     if [[ "${flowcell_status_in_api}" != "Converted" ]]; then
-        warn "  $info: API status is not Converted" && return 0
+        warn "  $log_info: API status is not Converted [$flowcell_status_in_api]" && return 0
     fi
 
     if [[ "${flowcell_qc_in_api}" != "true" ]]; then
-        warn "  $info: API qc status is not true" && return 0
+        warn "  $log_info: API qc status is not true [$flowcell_qc_in_api]" && return 0
     fi
 
     if [[ ! "${convert_date_in_api}" =~ ^[[:digit:]]+ ]]; then
-        warn "  $info: convertDate in api does not contain digits somehow" && return 0
+        warn "  $log_info: convertDate in api does not contain digits somehow" && return 0
     fi
 
     days=$(( ($(date +%s) - $(date -d "${convert_date_in_api}" +%s) )/(60*60*24) ))
     if [[ "${days}" -le "${MIN_DAYS_CONVERTED}" ]]; then
-        warn "  $info: uploaded and converted (but only $days days ago)" && return 0
+        warn "  $log_info: uploaded and converted (but only $days days ago)" && return 0
     fi
 
-    warn "  $info: uploaded and converted $days days ago so added to cleanup list"
+    warn "  $log_info: uploaded and converted $days days ago so added to cleanup list"
     echo "$flowcell_path"
 }
 
