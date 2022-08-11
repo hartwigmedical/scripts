@@ -3,7 +3,8 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples patients/bloodsamples)
+classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples patients/bloodsamples
+queries/consents)
 
 print_usage(){
     script=$(basename "$0")
@@ -80,6 +81,14 @@ main(){
     elif [[ "${class}" == "patients/bloodsamples" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf sampleBarcode
         jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "queries/consents" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode database intUse extUseWoCheck extUseWithCheck
+        jq -r '.[] | [.sampleId,
+          .barcode,
+          .addToDatabase,
+          .allowInternalUse,
+          .allowExternalUseWithoutCheck,
+          .allowExternalUseWithCheck] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
