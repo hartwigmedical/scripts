@@ -7,7 +7,7 @@ SERVERS=(sts1.prod-1 sts2.prod-1)
 main () {
     info "Starting server status check"
     for server in "${SERVERS[@]}"; do
-        process_server "$server" "$type"
+        process_server "$server"
     done
 }
 
@@ -17,7 +17,7 @@ function process_server () {
     header "Docker"
     ssh "$server" "docker ps --format '{{.Names}}: {{.Status}}'"
     header "Flowcells"
-    ssh "$server" "find /data/flowcells -mindepth 1 -maxdepth 1 -type d -not -name TestRuns -not -name MyRun" 
+    ssh "$server" "find /data/flowcells -mindepth 1 -maxdepth 1 -type d -not -name TestRuns -not -name MyRun" | sort
     echo ""
 }
 
