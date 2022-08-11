@@ -24,7 +24,7 @@ orange_json="$(locate_orange_json ${platinum_dir})"
 orange_pdf="$(locate_orange_pdf ${platinum_dir})"
 
 if [[ -z "${orange_json}" || -z "${orange_pdf}" ]]; then
-    error "Missing ORANGE files for archiving of ${sample}"
+    info "Missing ORANGE files for archiving of ${sample}"
 fi
 
 clinical_json="$(locate_actin_clinical_json ${sample})"
