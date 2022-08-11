@@ -19,32 +19,32 @@ if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
     fi
 fi
 
-platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
-orange_json="$(locate_orange_json ${platinum_dir})"
-orange_pdf="$(locate_orange_pdf ${platinum_dir})"
-
-if [[ -z "${orange_json}" || -z "${orange_pdf}" ]]; then
-    info "Missing ORANGE files for archiving of ${sample}"
-fi
-
 clinical_json="$(locate_actin_clinical_json ${sample})"
-molecular_json="$(locate_actin_molecular_json ${sample})"
 treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
 actin_report_pdf="$(locate_actin_report_pdf ${sample})"
 evaluation_details_tsv="$(locate_actin_evaluation_details ${sample})"
 evaluation_summary_tsv="$(locate_actin_evaluation_summary ${sample})"
 
-if [[ -z "${clinical_json}" || -z "${molecular_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
+if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
     error "Missing ACTIN data, report or evaluation details for ${sample}"
 fi
 
-info "Archiving ORANGE data and report for ${sample}"
-gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"
-gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/"
+platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+orange_json="$(locate_orange_json ${platinum_dir})"
+orange_pdf="$(locate_orange_pdf ${platinum_dir})"
+molecular_json="$(locate_actin_molecular_json ${sample})"
+
+if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then
+    info "Archiving ORANGE data, report and ACTIN interpretation for ${sample}"
+    gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"
+    gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/"
+    gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
+else
+    warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"
+fi
 
 info "Archiving ACTIN data and report for ${sample}"
 gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/"
-gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/"
 gsutil cp "${evaluation_details_tsv}" "${sample_evaluation_bucket}/"
