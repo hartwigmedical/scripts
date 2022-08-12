@@ -15,6 +15,7 @@ print_usage(){
     echo " $script statuses/cohorts ACTIN"
     echo " $script patients/tumorsamples ACTN01020001T"
     echo " $script patients/bloodsamples ACTN01020001R"
+    echo " $script queries/consents FR30539000 barcode"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV"
     echo "Notes:"
@@ -37,6 +38,7 @@ while getopts ':jt' flag; do
 done
 class=${*:$OPTIND:1} && shift # obligatory
 filter_input=${*:$OPTIND:1} && shift # optional
+filter_field=${*:$OPTIND:1} && shift # optional but required if searching by any field other than the "name" of object
 
 if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
     print_usage >&2
@@ -47,8 +49,14 @@ main(){
 
     json_result=""
     if [[ -n "${filter_input}" ]]; then
-        # shellcheck disable=SC2086
-        json_result=$($get_script $additional_get_params "${class}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
+        # Some classes in LAMA use the RESTful notation while others not yet so need to check
+        if [[ "${class}" == "queries/consents" ]]; then
+            # shellcheck disable=SC2086
+            json_result=$($get_script $additional_get_params "${class}?${filter_field}=${filter_input}") || die "No result from API (with filter)"
+        else
+            # shellcheck disable=SC2086
+            json_result=$($get_script $additional_get_params "${class}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
+        fi
     else
         # shellcheck disable=SC2086
         json_result=$($get_script $additional_get_params "${class}") || die "Unable to get result (without filter)"
