@@ -53,12 +53,16 @@ main () {
             name_r2=$(jq -r '.name_r2' <<< "$fastq")
             qc=$(jq -r '.qc_pass' <<< "$fastq")
             if [[ "${qc}" != "false" ]]; then
-                warn "Encountered FASTQ pair with QC not set to false. Pls make sure you want to delete these! [${name_r2}]"
+                warn "Encountered FASTQ pair with QC not set to false. Pls make sure you want to delete these! [${name_r1}]"
             fi
-            if [[ "${bucket}" != "NA" && "${name_r1}" != "NA" ]]; then
+            if [[ "${bucket}" == "null" ]]; then
+                warn "Encountered already deleted FASTQ pair with bucket set to null. Skipping! [${name_r1}]"
+                continue
+            fi
+            if [[ "${name_r1}" != "null" && "${name_r1}" != "NA" ]]; then
                 echo " gsutil rm gs://${bucket}/${name_r1}" >> "${out_cmd_file}"
             fi
-            if [[ "${bucket}" != "NA" && "${name_r2}" != "NA" ]]; then
+            if [[ "${name_r2}" != "null" && "${name_r2}" != "NA" ]]; then
                 echo " gsutil rm gs://${bucket}/${name_r2}" >> "${out_cmd_file}"
             fi
             echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null" >> "${out_cmd_file}"
