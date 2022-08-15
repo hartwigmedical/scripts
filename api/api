@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-classes=(accounts biopsies datasets entities fastq flowcells groups inis platforms runs samples sets sequencers
+classes=(accounts biopsies datasets entities fastq lanes flowcells groups inis platforms runs samples sets sequencers
 reports/created reports/shared)
 
 print_usage(){
@@ -95,6 +95,9 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
         jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9) }1'
+    elif [[ "${class}" == "lanes" ]]; then
+        printf "#%s\t%s\t%s\n" name flowcell_id id
+        jq -r '.[] | [.name, .flowcell_id, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "flowcells" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc updateDate id
         jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|.[:10]), .id] | @tsv' <<< "${json_result}" \
