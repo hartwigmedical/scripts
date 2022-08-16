@@ -45,6 +45,7 @@ print_usage() {
     echo "  https://cloud.google.com/compute/docs/machine-types"
     echo "  https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
     echo "  gcloud --project ${image_project} compute images list | grep ${image_family}"
+    echo "  gcloud --project hmf-pipeline-development compute images list | grep pipeline5-5-29"
     echo ""
     echo "Commands:"
     echo "  gcloud compute instances delete --zone ${zone} --quiet {your-vm}"
