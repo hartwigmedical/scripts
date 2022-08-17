@@ -1488,7 +1488,9 @@ locate_virus_annotation_tsv() {
     # TODO: Remove fallback to virusbreakend dir when runs on data VM are upgraded to 5.29
     local run_dir=$1
 
-    if [[ -d ${run_dir}/virusintrprtr/ ]]; then
+    if [[ -d ${run_dir}/virus_interpreter/ ]]; then
+        local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
+    elif [[ -d ${run_dir}/virusintrprtr/ ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
     else
         local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
