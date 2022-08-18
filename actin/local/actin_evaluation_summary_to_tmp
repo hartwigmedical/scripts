@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-patient=$1
+patient=$1 && shift
 
 if [[ -z "${patient}" ]]; then
     error "Missing parameters. Exiting."
