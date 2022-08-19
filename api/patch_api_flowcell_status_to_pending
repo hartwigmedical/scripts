@@ -1,0 +1,33 @@
+#!/bin/bash
+
+source message_functions || exit 1
+
+flowcell_id=$1
+field_to_update="status"
+new_status="Pending"
+
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo "Descr: Patches field [${field_to_update}] of flowcell to [${new_status}] to let automatic BCL cleanup take place."
+    echo "Usage: $(basename $0) <flowcell ID>"
+    echo "Exmpl: $(basename $0) HG3NHBGXF"
+    echo "---"
+    exit 1
+fi
+
+info "Searching flowcell by flowcell id ${flowcell_id}"
+flowcell="$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")"
+
+[[ $(echo "${flowcell}" | jq length) -eq 1 ]] || die "Unable to find exactly one flowcell with provided flowcell_id (${flowcell_id})"
+
+oid=$(echo "${flowcell}" | jq -r .[0].id)
+name=$(echo "${flowcell}" | jq -r .[0].name)
+status=$(echo "${flowcell}" | jq -r .[0].status)
+qc_status=$(echo "${flowcell}" | jq -r .[0].undet_rds_p_pass)
+info_string="${name}|${flowcell_id}|${status}|${qc_status}|${oid}"
+
+info "Found flowcell ${info_string}"
+
+[[ "${status}" != "Failed" ]] && warn "ATTENTION: Status is not 'Failed' for flowcell (${info_string})"
+
+hmf_api_patch -c "flowcells" -o "${oid}" -f "${field_to_update}" -v "${new_status}"
