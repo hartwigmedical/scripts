@@ -10,6 +10,7 @@ credentials=$1 && shift
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 amber_dir=$(locate_amber_directory ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
@@ -43,6 +44,9 @@ do_load_sigs_data ${tumor_sample} ${sigs_dir} ${database} "${credentials}" ${pat
 do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${database} "${credentials}" ${patient_db_jar}
 do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${database} "${credentials}" ${patient_db_jar}
 do_load_virusinterpreter_data ${tumor_sample} ${virus_annotation_tsv} ${database} "${credentials}" ${patient_db_jar}
+
+# DEV-2848: testing phase so not yet by default
+#do_load_sampleidmapping_data ${tumor_sample} ${tumor_barcode} ${database} "${credentials}" ${patient_db_jar}
 
 # first fix at GCP
 #do_update_snpcheck_status ${tumor_sample} ${is_pass} ${database} "${credentials}" ${patient_db_jar}
