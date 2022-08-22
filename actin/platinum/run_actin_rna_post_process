@@ -46,7 +46,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
     #annotate_germline_variants_with_rna ${run_dir}
 
     annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
-    if [[ -f "${annotated_somatic_vcf}" ]]; then
+    if [[ -f "${annotated_germline_vcf}" ]]; then
         info "Replacing purple germline VCF with RNA-annotated version"
         original_germline_vcf="$(locate_purple_germline_variants ${run_dir})"
         cp "${annotated_germline_vcf}" "${original_germline_vcf}"

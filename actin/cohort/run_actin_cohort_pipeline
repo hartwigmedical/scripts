@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-run_protect_research_on_actin_db_for_cohort ${run_dir}
+run_protect_on_actin_db_for_cohort ${run_dir}
 
 run_orange_research_on_actin_cohort ${run_dir}
 

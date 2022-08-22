@@ -15,7 +15,7 @@ serve_actionability_dir="/data/resources/crunch/actin/cohort/serve_db"
 sample_cohort_dir="$(locate_actin_cohort_molecular_directory ${run_dir})/protect"
 create_or_cleanup_dir ${sample_cohort_dir}
 
-protect_jar="$(locate_research_protect)"
+protect_jar="$(locate_actin_protect)"
 
 do_run_protect ${run_dir} ${sample_cohort_dir} ${serve_actionability_dir} ${protect_jar} "$@"
 
