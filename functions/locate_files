@@ -588,7 +588,8 @@ locate_amber_snpcheck_38_vcf() {
 }
 
 locate_cuppa_ref_dir_dna() {
-    echo "/data/resources/private/cuppa"
+    # TODO Switch to "/data/resources/private/cuppa" once CUPPA is upgraded to v1.7 in this script
+    echo "/data/resources/crunch/actin/cuppa_ref_dna_1_6"
 }
 
 locate_cohort_mapping_tsv() {
