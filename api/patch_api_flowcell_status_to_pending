@@ -8,7 +8,7 @@ new_status="Pending"
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo "Descr: Patches field [${field_to_update}] of flowcell to [${new_status}] to let automatic BCL cleanup take place."
+    echo "Descr: Patches field [${field_to_update}] of flowcell to [${new_status}] to reconvert flowcell."
     echo "Usage: $(basename $0) <flowcell ID>"
     echo "Exmpl: $(basename $0) HG3NHBGXF"
     echo "---"
