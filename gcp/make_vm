@@ -37,7 +37,7 @@ print_usage() {
     echo "  -t disk_type           VM boot disk type [${disk_type}]"
     echo "  -e                     Make VM pre-emptible"
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
-    echo "  -u umbrella_scope      Can be 'crunch', 'ops', 'pmc' or 'onboarding' to use specific configuration [${umbrella_scope}]"
+    echo "  -u umbrella_scope      Can be crunch/innovation/ops/pmc/onboarding and configures accordingly [${umbrella_scope}]"
     echo "  -c cost_center         Adjust if you want to track costs [${cost_center}]"
     echo ""
     echo "See also:"
@@ -93,6 +93,11 @@ elif [[ "${umbrella_scope}" == "onboarding" ]]; then
     vm_project="hmf-onboarding"
     network_arg=""
     cost_center="onboarding"
+elif [[ "${umbrella_scope}" == "innovation" ]]; then
+    service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
+    vm_project="hmf-crunch"
+    network_arg="--network ${network} --subnet projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1"
+    cost_center="innovation"
 else
     die "Unknown umbrella scope [${umbrella_scope}]"
 fi
