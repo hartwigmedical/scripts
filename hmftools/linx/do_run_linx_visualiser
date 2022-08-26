@@ -10,13 +10,15 @@ input_dir=$1 && shift
 # Load metadata
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-circos_binary=/data/tools/circos/0.69.6/bin/circos
+circos_binary="/data/tools/circos/0.69.6/bin/circos"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
 info "Running linx visualiser for ${sample}"
 java -Xmx8G -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     -sample ${sample} \
     -ref_genome_version 37 \
     -circos ${circos_binary} \
+    -ensembl_data_dir ${ensembl_data_dir} \
     -vis_file_dir ${input_dir} \
     -data_out ${input_dir}/circos \
     -plot_out ${input_dir}/plot \
