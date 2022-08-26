@@ -339,6 +339,15 @@ sub addLamaSamplesToSamples{
             $sample->{'ref_sample_id'} = $ref_sample_id;
         }
     }
+
+    # TODO: remove once INC-194 (PGX DPYD bug) is solved
+    sayInfo("Resetting reportPgx to false for INC-194");
+    while ( my($barcode, $sample) = each %store ) {
+        next unless $sample->{analysis_type} eq 'Somatic_T';
+        next unless defined $sample->{report_pgx};
+        $sample->{report_pgx} = "false";
+    }
+
     return \%store;
 }
 
@@ -592,6 +601,7 @@ sub parseTsvCsv{
         fixDateFields( $obj );
         fixIntegerFields( $obj );
         fixBooleanFields( $obj );
+
         $store{ $key } = $obj;
     }
     close IN;
