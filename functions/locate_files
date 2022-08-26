@@ -57,7 +57,7 @@ locate_prod_paddle() {
 }
 
 locate_prod_linx() {
-    echo "/data/tools/linx/1.17/linx.jar"
+    echo "/data/tools/linx/1.19/linx.jar"
 }
 
 locate_pilot_linx() {
