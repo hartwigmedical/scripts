@@ -93,7 +93,7 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode database intUse extUseWoCheck extUseWithCheck
         jq -r '.[] | [.sampleId,
           .barcode,
-          .addToDatabase,
+          .storeDataForReuse,
           .allowInternalUse,
           .allowExternalUseWithoutCheck,
           .allowExternalUseWithCheck] | @tsv' <<< "${json_result}"
