@@ -345,7 +345,7 @@ sub addLamaSamplesToSamples{
     while ( my($barcode, $sample) = each %store ) {
         next unless $sample->{analysis_type} eq 'Somatic_T';
         next unless defined $sample->{report_pgx};
-        $sample->{report_pgx} = "false";
+        $sample->{report_pgx} = JSON::XS::false;
     }
 
     return \%store;
