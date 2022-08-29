@@ -90,7 +90,7 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf sampleBarcode
         jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "queries/consents" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode database intUse extUseWoCheck extUseWithCheck
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeData intUse extUseWoCheck extUseWithCheck
         jq -r '.[] | [.sampleId,
           .barcode,
           .storeDataForReuse,
