@@ -1275,9 +1275,9 @@ locate_lilac_qc() {
 
 ##################################### LILAC ####################################
 
-locate_rose() {
+locate_rose_pilot() {
     local run_dir=$1
-    local rose_tsv=$(find -L ${run_dir}/rose/ -type f -name "*.rose.tsv")
+    local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
     if [[ -z "${rose_tsv}" ]]; then
         error "Unable to locate rose tsv in ${run_dir}."
     fi
