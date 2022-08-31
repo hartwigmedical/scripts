@@ -50,7 +50,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 linx_svs_tsv=$(locate_linx_structural_variants ${run_dir})
 lilac_result_csv=$(locate_lilac_results ${run_dir})
 lilac_qc_csv=$(locate_lilac_qc ${run_dir})
-rose_tsv=$(locate_rose ${run_dir})
+rose_tsv=$(locate_rose_pilot ${run_dir})
 
 germline_reporting_tsv=$(locate_germline_reporting_prod)
 sample_special_remark_tsv=$(locate_special_remark_patient_report_pilot)
