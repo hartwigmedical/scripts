@@ -1273,6 +1273,17 @@ locate_lilac_qc() {
     echo ${qc_csv}
 }
 
+##################################### LILAC ####################################
+
+locate_rose() {
+    local run_dir=$1
+    local rose_tsv=$(find -L ${run_dir}/rose/ -type f -name "*.rose.tsv")
+    if [[ -z "${rose_tsv}" ]]; then
+        error "Unable to locate rose tsv in ${run_dir}."
+    fi
+    echo ${rose_tsv}
+}
+
 #################################### ISOFOX ####################################
 
 locate_isofox_summary() {

@@ -48,10 +48,13 @@ annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 linx_svs_tsv=$(locate_linx_structural_variants ${run_dir})
+lilac_result_csv=$(locate_lilac_results ${run_dir})
+lilac_qc_csv=$(locate_lilac_qc ${run_dir})
+rose_tsv=$(locate_rose ${run_dir})
 
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-sample_summary_tsv=$(locate_summary_patient_report_prod)
 sample_special_remark_tsv=$(locate_special_remark_patient_report_pilot)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
@@ -77,8 +80,12 @@ pilot_do_run_base_patient_reporter \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
+    -lilac_result_csv ${lilac_result_csv} \
+    -lilac_qc_csv ${lilac_qc_csv} \
+    -rose_tsv ${rose_tsv} \
+    -add_rose \
+    -known_fusion_file ${known_fusion_file} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
-    -sample_summary_tsv ${sample_summary_tsv} \
     -sample_special_remark_tsv ${sample_special_remark_tsv} \
     -ref_genome_version 37 \
     -log_debug \
