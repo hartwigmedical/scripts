@@ -12,10 +12,10 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
+cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
 
 database="hmfpatients_pilot"
 patient_db_jar=$(locate_pilot_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
-do_load_cuppa_data ${sample} ${molecular_tissue_origin_txt} ${database} "${credentials}" ${patient_db_jar}
+do_load_cuppa_data ${sample} ${cuppa_result_csv} ${database} "${credentials}" ${patient_db_jar}
