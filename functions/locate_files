@@ -269,7 +269,7 @@ locate_peach_main() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.29"
+    echo "5.28"
 }
 
 extract_expected_pipeline_version_research() {
