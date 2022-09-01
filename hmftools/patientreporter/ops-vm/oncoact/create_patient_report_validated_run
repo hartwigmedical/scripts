@@ -88,6 +88,8 @@ mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
 output_dir_data_report=${temp_folder_path}/new_report
 
+vi $temp_folder_path/peach/${sample}.peach.genotype.tsv
+
 ### rerun of protect (if applicable)
 echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
 read answer_protect
