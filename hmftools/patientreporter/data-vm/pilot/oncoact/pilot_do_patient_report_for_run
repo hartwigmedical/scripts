@@ -42,8 +42,8 @@ linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
-molecular_tissue_origin_plot=$(locate_cuppa_conclusion_plot ${run_dir})
+cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+cuppa_plot=$(locate_cuppa_conclusion_plot ${run_dir})
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
@@ -75,8 +75,8 @@ pilot_do_run_base_patient_reporter \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -linx_svs_tsv ${linx_svs_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
-    -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
-    -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
+    -cuppa_result_csv ${cuppa_result_csv} \
+    -cuppa_plot ${cuppa_plot} \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
