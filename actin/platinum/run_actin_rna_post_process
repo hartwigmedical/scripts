@@ -42,8 +42,8 @@ if [[ -d "${rna_bam_dir}" ]]; then
     # Rerun LILAC to produce data on DNA/RNA combined.
     run_lilac_for_actin_run ${run_dir}
 
-    # TODO Germline VCF can be annotated on pipeline v5.29
-    #annotate_germline_variants_with_rna ${run_dir}
+    # TODO Germline VCF can be annotated on pipeline v5.29. Requires PAVE rerun across HMF cohort to be enabled.
+    annotate_germline_variants_with_rna ${run_dir}
 
     annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
     if [[ -f "${annotated_germline_vcf}" ]]; then
