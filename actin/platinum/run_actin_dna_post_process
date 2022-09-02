@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-# Set the pipeline manually to v5.29
+# Set the pipeline manually to desired version
 pipeline_version_file="${run_dir}/pipeline.version"
 if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
