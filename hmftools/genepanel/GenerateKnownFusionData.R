@@ -8,13 +8,17 @@ ensemblPath38 = '~/data/ensembl_hg38/'
 ensemblPath37 = '~/data/ensembl_db/ensembl_37_104/'
 ensemblPath38 = '~/data/ensembl_db/ensembl_38_104/'
 outputDir = '~/data/fusion_ref/'
-fileVersion = 'v4'
+fileVersion = 'v7'
 
 # export from Google sheet and move & rename
-# mv ~/Downloads/HMF\ Fusion\ Knowledgebase\ -\ Main-2.tsv ./HmfKnownFusionSheet.tsv
+# mv ~/Downloads/HMF\ Fusion\ Knowledgebase\ -\ Main.tsv ~/data/fusion_ref/HmfKnownFusionSheet_20220801.tsv
 #rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet.tsv')
 rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210419.tsv')
-rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210927.tsv')
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210927.tsv') # v3
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20211129.tsv') # v4
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20220606.tsv') # v5
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20220801.tsv') # v6
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20220901.tsv') # v7 - fixes up IG 'chr' prefix for HG38
 
 ensemblGeneData37 = read.csv(paste0(ensemblPath37,'ensembl_gene_data.csv'))
 ensemblGeneData38 = read.csv(paste0(ensemblPath38,'ensembl_gene_data.csv'))
@@ -23,7 +27,7 @@ View(ensemblGeneData37)
 View(ensemblGeneData38)
 
 rawFusionData = read.csv(rawFusionFile,sep='\t')
-rawFusionData = rawFusionData %>% arrange(Type)
+rawFusionData = rawFusionData %>% arrange(Type,FiveGene,ThreeGene)
 View(rawFusionData)
 View(rawFusionData %>% group_by(Type) %>% count)
 View(rawFusionData %>% filter(as.character(FiveGene)!=as.character(FiveGeneRef38)|as.character(ThreeGene)!=as.character(ThreeGeneRef38)) %>%
@@ -36,8 +40,6 @@ nrow(rawFusionData %>% filter(ThreeGene!='' & !(ThreeGene %in% ensemblGeneData37
 
 nrow(rawFusionData %>% filter(FiveGene!=''&!(FiveGene %in% c('IGH','IGL','IGK')) & !(FiveGene %in% ensemblGeneData38$GeneName))) # none
 nrow(rawFusionData %>% filter(ThreeGene!='' & !(ThreeGene %in% ensemblGeneData38$GeneName))) # none
-
-
 
 
 # write each file version of known_fusion_data for Linx and Isofox
@@ -69,7 +71,10 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
   igKnownGenes = igKnownGenes %>% mutate(IgRangeData=stri_replace_all_fixed(IgRangeData,'IG_RANGE=',''))
   igKnownGenes = igKnownGenes %>% separate(IgRangeData,c('UpStrand','UpChr','UpGeneStart','UpGeneEnd'),sep=';')
   igKnownGenes = igKnownGenes %>% mutate(UpStrand=as.numeric(UpStrand),UpGeneStart=as.numeric(UpGeneStart),UpGeneEnd=as.numeric(UpGeneEnd))
-
+  
+  # strip chr prefix from IG genes for 38
+  igKnownGenes = igKnownGenes %>% mutate(UpChr=stri_replace_all_fixed(UpChr,'chr',''))
+  
   igKnownGenes = merge(igKnownGenes,
                        ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),
                        by.x='ThreeGene',by.y='GeneName',all.x=T)
@@ -94,9 +99,8 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
   
   kpBedInfo = rbind(kpBedInfo,igKnownGenes %>% select(-DownstreamDistance))
 
-  View(kpBedInfo)
-  #str(kpBedInfo)
-  
+  # View(kpBedInfo)
+
   preGeneBuffer=10e3
   
   kpBedInfo = kpBedInfo %>%
@@ -114,13 +118,7 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
       Strand2=ifelse(DownStrand==1,'-','+'),
       Score=0)
   
-  # pre-pend 'chr' for HG38
-  if(isRef38)
-  {
-    kpBedInfo = kpBedInfo %>% mutate(UpChr=paste('chr',UpChr,sep=''),DownChr=paste('chr',DownChr,sep=''))
-  }
-
-  bedpe = kpBedInfo %>% mutate(
+  kpBedInfo = kpBedInfo %>% mutate(
     StartIsUp = UpChr < DownChr | (UpChr == DownChr & Start1 < Start2),
     StartChr = if_else(StartIsUp, UpChr, DownChr),
     StartPositionStart = ifelse(StartIsUp, Start1, Start2),
@@ -130,10 +128,18 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
     EndPositionStart = ifelse(!StartIsUp, Start1, Start2),
     EndPositionEnd = ifelse(!StartIsUp, End1, End2),
     EndStrand = ifelse(!StartIsUp, Strand1, Strand2)) %>%
-    select(StartChr, StartPositionStart, StartPositionEnd, EndChr, EndPositionStart, EndPositionEnd, Name, Score, StartStrand, EndStrand, UpChr, DownChr) %>%
     arrange(StartChr, StartPositionStart)
   
-  # View(bedpe)
+  # pre-pend 'chr' for HG38
+  if(isRef38)
+  {
+    kpBedInfo = kpBedInfo %>% mutate(UpChr=paste('chr',UpChr,sep=''),DownChr=paste('chr',DownChr,sep=''),
+                                     StartChr=paste('chr',StartChr,sep=''),EndChr=paste('chr',EndChr,sep=''))
+  }
+
+  View(kpBedInfo)
+  
+  bedpe = kpBedInfo %>% select(StartChr, StartPositionStart, StartPositionEnd, EndChr, EndPositionStart, EndPositionEnd, Name, Score, StartStrand, EndStrand, UpChr, DownChr)
   write.table(bedpe,outputFile,row.names=F,col.names=F,sep="\t",quote=F)  
 }
 
@@ -143,88 +149,10 @@ create_bedpe_file(rawFusionData %>% select(Type,FiveGene,ThreeGene,Overrides),en
 create_bedpe_file(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene=ThreeGeneRef38,Overrides=OverridesRef38),ensemblGeneData38,T,
                   paste0(outputDir,'known_fusions.38_',fileVersion,'.bedpe'))
 
-
-# scp known_fusion_data* datastore:/data/dbs/fusions/
-# scp known_fusions*bedpe datastore:/data/dbs/fusions/
-
-# copy to GCP
-# gsutil -m cp known_fusion_data.37_v3.csv gs://common-resources/knowledgebases/37/known_fusion_data.csv
-# gsutil -m cp known_fusion_data.38_v3.csv gs://common-resources/knowledgebases/38/known_fusion_data.csv
-# gsutil -m cp known_fusions.37_v3.bedpe gs://common-resources/knowledgebases/37/known_fusions.bedpe
-# gsutil -m cp known_fusions.38_v3.bedpe gs://common-resources/knowledgebases/38/known_fusions.bedpe
-
-## GRIPSS BED files (37 and 38) for high-confidence promiscuous gene exon ranges
-## decided not to use these
-
-ensemblTransExonData37 = read.csv(paste0(ensemblPath37,'ensembl_trans_exon_data.csv'))
-ensemblTransExonData38 = read.csv(paste0(ensemblPath38,'ensembl_trans_exon_data.csv'))
-
-View(ensemblTransExonData37)
-canonicalTrans = ensemblTransExonData37 %>% group_by(GeneId,TransId) %>% summarise(ExonCount=n(),IsCanonical=first(CanonicalTranscriptId)==first(TransId))
-View(canonicalTrans %>% group_by(GeneId) %>% summarise(TransCount=n(),CanonicalCount=sum(IsCanonical)))
+# deployment
+# cp known_fusion_data.37_v7.csv ~/hmf/repos/common-resources-public/fusions/37/known_fusion_data.37.csv
+# cp known_fusion_data.38_v7.csv ~/hmf/repos/common-resources-public/fusions/38/known_fusion_data.38.csv
+# cp known_fusions.37_v7.bedpe ~/hmf/repos/common-resources-public/fusions/37/known_fusions.37.bedpe
+# cp known_fusions.38_v7.bedpe ~/hmf/repos/common-resources-public/fusions/38/known_fusions.38.bedpe
 
 
-
-create_bed_file<-function(fusionData,ensemblGeneData,ensemblTransExonData,isRef38,outputFile)
-{
-  highConfRegions = fusionData %>% filter(Type %in% c('PROMISCUOUS_3','PROMISCUOUS_5')&KnownExonTranscript!='')
-  
-  highConfRegions = highConfRegions %>% mutate(ExonInfo=ifelse(Type=='PROMISCUOUS_5',as.character(KnownExonUpRange),as.character(KnownExonDownRange)),
-                                               GeneName=ifelse(Type=='PROMISCUOUS_5',as.character(FiveGene),as.character(ThreeGene)))
-  
-  highConfRegions = merge(highConfRegions,ensemblGeneData %>% select(GeneName,Chromosome),by='GeneName',all.x=T)
-  
-  highConfRegions = highConfRegions %>% separate(ExonInfo,c('ExonRankUp','ExonRankDown'),sep=';')
-  
-  highConfRegions = highConfRegions %>% mutate(ExonRankUpPrev=ifelse(Type=='PROMISCUOUS_3',as.numeric(ExonRankUp)-1,as.numeric(ExonRankUp)),
-                                               ExonRankDownNext=ifelse(Type=='PROMISCUOUS_5',as.numeric(ExonRankDown)+1,as.numeric(ExonRankDown)))
-  
-  # View(highConfRegions %>% select(Type,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange,ExonRankUp,ExonRankUpPrev,ExonRankDown,ExonRankDownNext,everything()))
-  
-  
-  highConfRegions2 = merge(highConfRegions,ensemblTransExonData %>% select(KnownExonTranscript=TransName,Strand,ExonRankUp=ExonRank,ExonUpStart=ExonStart,ExonUpEnd=ExonEnd),
-                           by=c('KnownExonTranscript','ExonRankUp'),all.x=T)
-  
-  highConfRegions2 = merge(highConfRegions2,ensemblTransExonData %>% select(KnownExonTranscript=TransName,ExonRankUpPrev=ExonRank,ExonUpPrevStart=ExonStart,ExonUpPrevEnd=ExonEnd),
-                           by=c('KnownExonTranscript','ExonRankUpPrev'),all.x=T)
-  
-  highConfRegions2 = merge(highConfRegions2,ensemblTransExonData %>% select(KnownExonTranscript=TransName,ExonRankDown=ExonRank,ExonDownStart=ExonStart,ExonDownEnd=ExonEnd),
-                           by=c('KnownExonTranscript','ExonRankDown'),all.x=T)
-  
-  highConfRegions2 = merge(highConfRegions2,ensemblTransExonData %>% select(KnownExonTranscript=TransName,ExonRankDownNext=ExonRank,ExonDownNextStart=ExonStart,ExonDownNextEnd=ExonEnd),
-                           by=c('KnownExonTranscript','ExonRankDownNext'),all.x=T)
-  
-  # View(highConfRegions2 %>% select(Type,Strand,ExonRankUp,ExonRankDown,ExonUpStart,ExonUpEnd,ExonUpPrevStart,ExonUpPrevEnd,ExonDownStart,ExonDownEnd,ExonDownNextStart,ExonDownNextEnd,everything()))
-  
-  # correct for regions ending at the last exon
-  highConfRegions2 = highConfRegions2 %>% mutate(ExonDownNextStart=ifelse(is.na(ExonDownNextStart),ExonDownEnd,ExonDownNextStart),
-                                                 ExonDownNextEnd=ifelse(is.na(ExonDownNextEnd),ExonDownEnd,ExonDownNextEnd))
-  
-  highConfRegions2 = highConfRegions2 %>% mutate(RangeStart=ifelse(Type=='PROMISCUOUS_5'&Strand==1,ExonUpEnd,ifelse(Type=='PROMISCUOUS_5'&Strand==-1,ExonDownNextEnd,
-                                                                                                                    ifelse(Type=='PROMISCUOUS_3'&Strand==1,ExonUpPrevEnd,ExonDownEnd))),
-                                                 RangeEnd=ifelse(Type=='PROMISCUOUS_5'&Strand==1,ExonDownNextStart,ifelse(Type=='PROMISCUOUS_5'&Strand==-1,ExonUpStart,
-                                                                                                                          ifelse(Type=='PROMISCUOUS_3'&Strand==1,ExonDownStart,ExonUpPrevStart))))
-  
-  # View(highConfRegions2 %>% select(Type,Strand,ExonRankUp,ExonRankDown,RangeStart,RangeEnd,ExonUpStart,ExonUpEnd,ExonUpPrevStart,ExonUpPrevEnd,ExonDownStart,ExonDownEnd,ExonDownNextStart,ExonDownNextEnd,everything()))
-  bedData = highConfRegions2 %>% select(Chromosome,RangeStart,RangeEnd,GeneName,Strand) %>% 
-    mutate(ChrSorted=factor(Chromosome,levels=c(1:22,'X','Y'), ordered = T)) %>% arrange(ChrSorted,RangeStart)
-  
-  if(isRef38)
-  {
-    bedData = bedData %>% mutate(Chromosome=paste('chr',Chromosome,sep=''))
-  }
-  
-  bedData = bedData %>% mutate(Score=0,Strand=ifelse(Strand=='1','+','-'))
-  
-  write.table(bedData %>% select(Chromosome,RangeStart,RangeEnd,GeneName,Score,Strand),outputFile,row.names=F,col.names=F,sep="\t",quote=F)  
-}
-
-create_bed_file(rawFusionData %>% select(Type,FiveGene,ThreeGene,KnownExonTranscript,KnownExonUpRange,KnownExonDownRange),
-                ensemblGeneData37,ensemblTransExonData37,F,paste0(outputDir,'known_fusions.37_',fileVersion,'.bed'))
-
-create_bed_file(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene=ThreeGeneRef38,KnownExonTranscript=KnownExonTranscriptRef38,KnownExonUpRange,KnownExonDownRange),
-                ensemblGeneData38,ensemblTransExonData38,T,paste0(outputDir,'known_fusions.38_',fileVersion,'.bed'))
-
-View(highConfRegions2 %>% select(Type,GeneName,Chromosome,Strand,ExonRankUp,ExonRankDown,RangeStart,RangeEnd,ExonUpStart,ExonUpEnd,ExonUpPrevStart,ExonUpPrevEnd,ExonDownStart,ExonDownEnd,ExonDownNextStart,ExonDownNextEnd,everything()))
-write.csv(highConfRegions2 %>% select(Type,GeneName,Chromosome,Strand,ExonRankUp,ExonRankDown,RangeStart,RangeEnd,ExonUpStart,ExonUpEnd,ExonUpPrevStart,ExonUpPrevEnd,ExonDownStart,ExonDownEnd,ExonDownNextStart,ExonDownNextEnd,everything()),
-          '~/logs/fusion_bed_working.csv',row.names = F,quote = F)
