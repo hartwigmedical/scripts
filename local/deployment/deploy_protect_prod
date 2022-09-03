@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+version="2.3"
+
+do_deploy_prod_tool "protect" ${version}

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+orig_run_dir="/data/datasets/${sample}"
+
+if [[ ! -d "${orig_run_dir}" ]]; then
+    error "Run dir '${orig_run_dir}' not present. Probably not downloaded yet?"
+fi
+
+info "Running ACTIN molecular pipeline on ${sample}"
+
+run_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+if [[ -d "${run_dir}" ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r "${run_dir}"
+fi
+
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r "${orig_run_dir}" "${run_dir}"
+
+# Check to see if HLA BAMs for DNA need to be produced. These are kept outside of the run dir as a one-off.
+tumor_hla_bam="$(locate_actin_lilac_hla_bam_dir)/${sample}/${sample}.hla.bam"
+if [[ ! -f "${tumor_hla_bam}" ]]; then
+    info "Producing DNA HLA BAMs for ${sample}"
+    produce_dna_hla_bams ${run_dir}
+else
+    info "Skipping production of DNA HLA BAMs as they already exist for ${sample}"
+fi
+
+# Post-process all DNA
+run_actin_dna_post_process ${run_dir}
+
+# Post-process all RNA and integrate with DNA.
+run_actin_rna_post_process ${run_dir}
+
+# Interpret ORANGE results for ACTIN ingestion
+actin_orange_interpreter_pilot ${sample}
+load_actin_molecular_pilot ${sample}

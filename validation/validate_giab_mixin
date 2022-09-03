@@ -11,7 +11,7 @@ gatk_jar='/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar'
 rtg_exec='/data/tools/rtg-tools/3.9.1/rtg'
 rtg_sdf_path='/data/dbs/RTGSDF_GRCh37/'
 rtg_threads=8
-ref_genome_fasta=$(locate_ref_genome_37_fasta_file_ds)
+ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
 
 truth_version='giab_mixin_truth_set_160628'
 truth_vcf_name='na12878-na24385-somatic-truth.vcf.gz'

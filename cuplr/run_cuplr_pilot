@@ -29,7 +29,7 @@ purple_cnv="${run_dir}/purple/${tum_sample}.purple.cnv.somatic.tsv"
 linx_fus="${run_dir}/linx/${tum_sample}.linx.fusion.tsv"
 linx_ins="${run_dir}/linx/${tum_sample}.linx.viral_inserts.tsv"
 linx_vis="${run_dir}/linx/${tum_sample}.linx.vis_sv_data.tsv"
-germline_vcf=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
+germline_vcf=$(locate_gatk_germline_variants ${run_dir})
 
 cuplr_pilot.R \
     "${tool_dir}" \

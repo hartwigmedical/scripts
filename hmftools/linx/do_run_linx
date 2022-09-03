@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+database=$1 && shift
+linx_jar=$1 && shift
+output_dir=$1 && shift
+
+# Database details
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" ${database})
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# reference files
+viral_hosts_csv=/data/dbs/has_been_moved_to_gcp/linx/viral_host_ref.csv
+known_fusion_data=$(locate_known_fusion_data_37_csv)
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+gene_transcripts_dir=/data/dbs/has_been_moved_to_gcp/ensembl_data_cache/37
+fragile_sites=/data/dbs/has_been_moved_to_gcp/linx/37/fragile_sites_hmf.37.csv
+line_elements=/data/dbs/has_been_moved_to_gcp/linx/37/line_elements.37.csv
+replication_origins=/data/dbs/has_been_moved_to_gcp/linx/37/heli_rep_origins.37.bed
+
+if [[ -d "${output_dir}" ]]; then
+    linx_files=$(find ${output_dir} -type f -name "*linx*")
+    if [[ ! -z "${linx_files}" ]]; then
+        rm ${output_dir}/*linx*
+    fi
+else
+    mkdir -p ${output_dir}
+fi
+
+java -Xmx8G -Xms4G -jar ${linx_jar} \
+    -sample ${sample} \
+    -output_dir ${output_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -fragile_site_file ${fragile_sites} \
+    -line_element_file ${line_elements} \
+    -replication_origins_file ${replication_origins} \
+    -viral_hosts_file ${viral_hosts_csv} \
+    -gene_transcripts_dir ${gene_transcripts_dir} \
+    -check_fusions \
+    -known_fusion_file ${known_fusion_data} \
+    -chaining_sv_limit 0 \
+    -check_drivers \
+    -driver_gene_panel ${driver_gene_panel} \
+    "$@"

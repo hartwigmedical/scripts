@@ -16,10 +16,10 @@ password=$(get_nas_rsyncuser_credentials)
 
 source_dir=$1 && shift
 target_dir=$1 && shift
+ssh_port=2210
 
 [[ "${source_dir}" =~ \/$ ]] || source_dir="${source_dir}/"
 [[ "${target_dir}" =~ \/$ ]] || target_dir="${target_dir}/"
 [[ -d "${source_dir}" ]] || die "Source dir is not a directory (${source_dir})"
 
-info "  Syncing '${source_dir}' to 'nas.prod-1:${target_dir}'"
-sshpass -p "${password}" rsync -ah --omit-dir-times --protect-args "${source_dir}" "rsyncuser@nas.prod-1:${target_dir}"
+sshpass -p "${password}" rsync -e "ssh -p ${ssh_port}" -ah --omit-dir-times --protect-args "${source_dir}" "rsyncuser@nas.prod-1:${target_dir}"

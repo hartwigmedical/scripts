@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-source message_functions || exit 1
-
-file=$1 && shift
-
-info "Copying ${file} to ~/hmf/tmp/"
-gcloud compute scp serve-vm:${file} ${HOME}/hmf/tmp/

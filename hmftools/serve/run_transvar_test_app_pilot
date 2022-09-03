@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+gene_37=$1 && shift
+protein_37=$1 && shift
+
+gene_38=$1 && shift
+protein_38=$1 && shift
+
+transcript_37=$1 && shift
+transcript_38=$1 && shift
+
+if [[ -z ${gene_37} ]]; then
+    error "No gene name of V37 is provided!"
+fi
+
+if [[ -z ${protein_37} ]]; then
+    error "No protein of V37 is provided!"
+fi
+
+if [[ -z ${gene_38} ]]; then
+    gene_38=${gene_37}
+fi
+
+if [[ -z ${protein_38} ]]; then
+    protein_38=${protein_37}
+fi
+
+transcript_37_cmd=""
+if [[ ! -z ${transcript_37} ]]; then
+    transcript_37_cmd="-transcript_37 ${transcript_37}"
+fi
+
+transcript_38_cmd=""
+if [[ ! -z ${transcript_38} ]]; then
+    transcript_38_cmd="-transcript_38 ${transcript_38}"
+fi
+
+serve_jar=$(locate_pilot_serve)
+
+ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
+ensembl_data_dir_38=$(locate_ensembl_data_dir_38)
+
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
+ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
+
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.transvar.tools.TransvarTestApplication \
+    -ensembl_data_dir_37 ${ensembl_data_dir_37} \
+    -ensembl_data_dir_38 ${ensembl_data_dir_38} \
+    -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
+    -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
+    -gene_37 ${gene_37} \
+    -gene_38 ${gene_38} \
+    -protein_37 ${protein_37} \
+    -protein_38 ${protein_38} \
+    ${transcript_37_cmd} \
+    ${transcript_38_cmd} \
+    "$@"

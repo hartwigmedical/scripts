@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+vcf_37=$1
+working_dir=$2
+vcf_38=$3
+
+ref_genome=$(locate_ref_genome_38_fasta_file)
+
+info "Running Picard LiftOver on ${vcf_37}"
+java -jar /data/tools/picard/2.18.27/picard.jar LiftoverVcf \
+    I=${vcf_37} \
+    O=${vcf_38} \
+    CHAIN=/data/resources/crunch/reference_genome_liftover/hg19ToHg38.over.chain \
+    REJECT=${working_dir}/rejected_variants.vcf \
+    R=${ref_genome}

@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-
-info "Running ACTIN Clinical"
 actin_clinical_ingestion_pilot
 
-info "Loading ACTIN data into pilot database"
-load_actin_database_pilot
+reload_all_actin_clinical_pilot

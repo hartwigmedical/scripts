@@ -2,41 +2,55 @@
 
 source message_functions || exit 1
 
+environment='prod'
+source='hmfapi'
+
 print_usage(){
     self=$(basename "$0")
     echo ""
-    echo "Descr: Runs a GET query against HMF API"
-    echo "Usage: $self [-t] \${query}"
-    echo "Exmpl: $self 'samples?name=GIAB12878'"
-    echo "       $self 'samples?barcode=FR17758478-200806'"
-    echo "       $self 'samples?name=name&type=tumor'"
-    echo "       $self 'runs/63961'"
-    echo "       $self -t 'samples'"
-    echo "       $self 'runs?ini=ShallowSeq.ini'"
+    echo "Description: Runs a GET query against HMF API"
+    echo "Usage: $self [options] \${query}"
+    echo "Examples:"
+    echo "  $self 'samples?name=GIAB12878'"
+    echo "  $self 'samples?barcode=FR12345678'"
+    echo "  $self 'samples?name=name&type=tumor'"
+    echo "  $self 'runs/63961'"
+    echo "  $self 'runs?set_name_contains=COREDB'"
+    echo "  $self 'sets?name=YYMMDD_HMFregXXXX_FR1_FR2_Sample'"
+    echo "  $self 'runs?barcode=FR12345678'"
+    echo "  $self 'runs?ini=ShallowSeq.ini'"
+    echo "  $self 'flowcells?flowcell_id=HJKMYALXX'"
+    echo "  $self -e pilot 'platforms'"
     echo "Options:"
-    echo "   -t  Use testing/pilot environment instead of production"
+    echo "  -t  Use testing/pilot environment instead of production"
+    echo "Remarks:"
+    echo "  * Can also query LAMA api via script lama_api_get."
+    echo "  * Options need to be placed before any other parameters."
     echo ""
     exit 1
 }
 
-environment='prod'
-
-while getopts ':t' flag; do
+while getopts ':tl' flag; do
     case "${flag}" in
-        t) environment='pilot' && shift ;;
+        t) environment="pilot";;
+        l) source="lama";;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
-query=$1 && shift
+query=${*:$OPTIND:1} && shift
 
-# no default for api credentials and url to avoid using wrong env as much as possible
-if [[ "${environment}" == "prod" ]]; then
+if [[ "${source}" == "hmfapi" && "${environment}" == "prod" ]]; then
     api_url="http://api.prod-1/hmf/v1"
-elif [[ "${environment}" == "pilot" ]]; then
+elif [[ "${source}" == "hmfapi" && "${environment}" == "pilot" ]]; then
     api_url="http://api.pilot-1/hmf/v1"
+elif [[ "${source}" == "lama" && "${environment}" == "prod" ]]; then
+    api_url="http://lama.prod-1/api"
+elif [[ "${source}" == "lama" && "${environment}" == "pilot" ]]; then
+    api_url="http://lama.pilot-1/api"
+    die "LAMA API has no pilot environment yet. Exiting."
 else
-    die "Environment should be either prod or pilot"
+    die "Unknown combination of source (${source}) environment (${environment}). Exiting."
 fi
 
 main () {

@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 out_dir=$1 && shift # prod or pilot lims dir
+lims_export_source=${1:-nas} && shift # can also be bucket
 
 if [[ -z "${out_dir}" ]]; then
     echo "Usage: $(basename $0) /path/to/out/dir"
@@ -10,18 +11,31 @@ if [[ -z "${out_dir}" ]]; then
     exit 1
 fi
 
-## setup main variables
 LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
+TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 
-FOR_001_FILE="HMF-FOR-001 Received Samples 2021 v5.11.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2021 v4.3.xlsx"
+FOR_001_FILE="HMF-FOR-001 Received Samples 2022 v5.13.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process 2022 v4.6.xlsx"
+
+FOR_001_FILE_2021="HMF-FOR-001 Received Samples 2021 v5.12.xlsx"
+FOR_002_FILE_2021="HMF-FOR-002 Sample in process 2021 v4.4.xlsx"
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
   "${NAS_DIR}/${FOR_002_FILE}"
+  "${NAS_DIR}/${FOR_001_FILE_2021}"
+  "${NAS_DIR}/${FOR_002_FILE_2021}"
+)
+
+LIMS_BUCKET="lims-export"
+LIMS_FILES=(
+  "gs://${LIMS_BUCKET}/${FOR_001_FILE}"
+  "gs://${LIMS_BUCKET}/${FOR_002_FILE}"
+  "gs://${LIMS_BUCKET}/${FOR_001_FILE_2021}"
+  "gs://${LIMS_BUCKET}/${FOR_002_FILE_2021}"
 )
 
 LAMA_BUCKET="lama-export"
@@ -42,29 +56,54 @@ main() {
     dir_exists_and_is_writable "${LAB_DIR}"
     dir_exists_and_is_writable "${SYM_DIR}"
 
+    info "Working dir set to ${DAY_DIR}"
     mkdir -p "${DAY_DIR}"
+    mkdir -p "${TMP_DIR}"
 
-    for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
-    for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
+    # TODO: make sure infracom syncs data to bucket so that we can always use that path in this procedure
+    if [[ "${lims_export_source}" == "bucket" ]]; then
+        info "Retrieving LIMS input files from bucket (gs://${LIMS_BUCKET})"
+        for file in "${LIMS_FILES[@]}"; do
+            gsutil cp "$file" "${TMP_DIR}" || die "Unable to copy file ($file)"
+        done
+    elif [[ "${lims_export_source}" == "nas" ]]; then
+        info "Retrieving input files from NAS"
+        for nas_file_path in "${NAS_FILES[@]}"; do
+          retrieve_file_from_nas "$nas_file_path" "${TMP_DIR}"
+        done
+    else
+        die "Incorrect LIMS export source configured (${lims_export_source})"
+    fi
+
+    info "Retrieving LAMA input files from bucket (gs://${LAMA_BUCKET})"
+    for lama_json_file in "${LAMA_FILES[@]}"; do
+      gsutil cp "$lama_json_file" "${TMP_DIR}" || die "Unable to copy file ($lama_json_file)"
+    done
+
+    for001_source="${TMP_DIR}/${FOR_001_FILE}" # Excel FOR-001
+    for002_source="${TMP_DIR}/${FOR_002_FILE}" # Excel FOR-002
 
     for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
     for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
     for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
     for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
 
-    info "Retrieving input files from NAS (${DAY_DIR})"
-    for nas_file_path in "${NAS_FILES[@]}"; do
-      retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
-    done
-
-    info "Retrieving LAMA input files from bucket (${LAMA_BUCKET})"
-    echo "${LAMA_FILES[@]}" | tr " " "\n" | gsutil -m cp -I "${DAY_DIR}"
-
     info "Converting input files to text formats"
     excel_sheet_to_tsv "${for001_source}" "${for001_subm_txt}" "1" "5"
     excel_sheet_to_tsv "${for001_source}" "${for001_samp_txt}" "2" "2"
-    excel_sheet_to_tsv "${for001_source}" "${for001_cont_txt}" "3" "1"
+    excel_sheet_to_tsv "${for001_source}" "${for001_cont_txt}" "3" "2"
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
+
+    # We need to support the files from previous year until lab team has finished with updates
+    for001_source_2021="${TMP_DIR}/${FOR_001_FILE_2021}" # Excel FOR-001
+    for002_source_2021="${TMP_DIR}/${FOR_002_FILE_2021}" # Excel FOR-002
+    for001_samp_txt_2021="${DAY_DIR}/2021_for001_samples.tsv"
+    for001_subm_txt_2021="${DAY_DIR}/2021_for001_submissions.tsv"
+    for002_proc_txt_2021="${DAY_DIR}/2021_for002_processing.tsv"
+    info "Converting input files to text formats (2021)"
+    excel_sheet_to_tsv "${for001_source_2021}" "${for001_subm_txt_2021}" "1" "5"
+    excel_sheet_to_tsv "${for001_source_2021}" "${for001_samp_txt_2021}" "2" "2"
+    excel_sheet_to_tsv "${for002_source_2021}" "${for002_proc_txt_2021}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
@@ -78,12 +117,12 @@ excel_sheet_to_tsv() {
     local input_excel_file=$1 && shift
     local output_tsv=$1 && shift
     local sheet_index=$1 && shift
-    local skip_rows=$1 && shift
+    local first_row_index=$1 && shift
     local excel_name=""
     excel_name=$(basename "${input_excel_file}")
 
-    info "  Converting '${excel_name}' sheet ${sheet_index} with ${skip_rows} header rows"
-    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > "${output_tsv}"
+    info "  Converting '${excel_name}' sheet ${sheet_index} with ${first_row_index} row as header (${output_tsv})"
+    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}"
     [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
 

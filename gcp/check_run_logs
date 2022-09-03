@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_url=$1 && shift
+
+[[ -n "${run_url}" ]] || die "No run URL provided. Exiting"
+[[ "${run_url}" =~ ^gs ]] || die "Run URL does not start with 'gs'. Exiting"
+
+main(){
+    run_url=${run_url%/} # remove trailing slash if present
+    run_log_urls=() # need while loop to fill array for bash3 support
+    while IFS='' read -r line; do run_log_urls+=("$line"); done < <(gsutil ls "${run_url}/**/run.log")
+    info "Found ${#run_log_urls[@]} run log files. Start checking them one by one now."
+    for url in "${run_log_urls[@]}"; do
+        info "  Checking run log file $url"
+        grep_url_for_errors "${url}"
+    done
+}
+
+grep_url_for_errors(){
+    gs_url=$1 && shift
+    gsutil cat "$gs_url" \
+        | grep -iE 'error|exception' \
+        | grep -v 'Total Errors : ' \
+        | grep -v 'errorCorrection' \
+        | grep -v 'OnFirstError' \
+        | grep -v 'download:' \
+        | grep -v '.error' \
+        | grep -v '0 errors.' \
+        | grep -v 'GenomeAnalysisTK.jar!/META-INF/log4j-provider.properties' \
+        | grep -v 'ERROR StatusLogger Log4j2 could not find a logging implementation' \
+        | grep -v '"@type" : "type.googleapis.com/google.rpc.ErrorInfo"'
+}
+
+main

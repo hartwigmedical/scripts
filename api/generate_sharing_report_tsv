@@ -3,14 +3,16 @@
 set -e
 
 wd="$(mktemp -d)"
-CURL="curl --silent --fail http://api.prod-1/hmf/v1"
+CURL="curl -q --fail http://api.prod-1/hmf/v1"
+OUT=sharing_db_generated.tsv
 
+echo "Generating sharing DB TSV in $wd" >&2
 pushd . >/dev/null
 cd $wd
 ${CURL}/reports/shared > shared.json
 ${CURL}/reports/created > created.json
 
-printf "tumorBarcode\tsampleId\tcohort\tshareDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\n"
+printf "tumorBarcode\tsampleId\tcohort\tshareDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\tcreateDate\n" > $OUT
 jq '.[].id' shared.json | while read shared_id; do
     shared_record="$(jq --arg id "$shared_id" '.[] | select(.id == ($id|tonumber))' shared.json)"
     created_id=$(echo "$shared_record" | jq '.report_created_id')
@@ -18,13 +20,15 @@ jq '.[].id' shared.json | while read shared_id; do
     barcode=$(echo "${created_record}" | jq -r '.barcode' | sed 's#^null$#N/A#')
     sample_name=$(echo "${created_record}" | jq -r '.sample_name' | sed 's#^null$#N/A#')
     cohort=$(echo "${created_record}" | jq -r '.cohort' | sed 's#^null$#N/A#')
-    share_date=$(date "+%d-%b-%Y" --date="$(echo $shared_record | jq -r '.share_time')")
+    create_date=$(date "+%d-%b-%Y" --date="$(echo "$created_record" | jq -r '.create_time')")
+    share_date=$(date "+%d-%b-%Y" --date="$(echo "$shared_record" | jq -r '.share_time')")
     report_type="$(echo "${created_record}" | jq -r '.report_type')"
     purity="$(echo "${created_record}" | jq -r '.purity' | sed 's#^null$#N/A#')"
     rel_q="$(echo "${created_record}" | jq -r '.has_reliable_quality' | sed 's#^null$#N/A#')"
     rel_p="$(echo "${created_record}" | jq -r '.has_reliable_purity' | sed 's#^null$#N/A#')"
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $barcode $sample_name $cohort $share_date $report_type $purity $rel_q $rel_p
-done
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $barcode $sample_name $cohort $share_date $report_type $purity $rel_q $rel_p $create_date
+done >> $OUT
+cp $OUT /data/ops/lims/prod
 
 popd >/dev/null
 rm -r $wd

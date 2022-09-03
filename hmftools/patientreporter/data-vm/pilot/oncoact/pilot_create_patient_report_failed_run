@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source lims_functions || exit 1
+source metadata_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
+
+if [[ -z "${tumor_sample_barcode}" ]]; then
+    info "Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+fi
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
+
+if [[ -z "${ref_sample_barcode}" ]]; then
+    info "Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
+    ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+fi
+
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_barcode}" ]]; then
+    warn "Incomplete information for reporter. Exiting"
+    warn "  ref_sample name: ${ref_sample}"
+    warn "  ref sample barcode: ${ref_sample_barcode}"
+    warn "  tumor_sample name: ${tumor_sample}"
+    warn "  tum sample barcode: ${tumor_sample_barcode}"
+    exit 1;
+fi
+
+output_dir_report=${HOME}/reports/pilot
+
+## running patient reporter
+ref_sample_mandatory=1
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+
+if [[ $( cat ${run_dir}/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
+     fail_reason="insufficient_tcp_deep_wgs"
+else
+    fail_reason="sufficient_tcp_qc_failure"
+fi
+
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
+pipeline_version_file=${run_dir}/pipeline.version
+
+pilot_do_run_qc_fail_patient_reporter ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+  -output_dir_report ${output_dir_report} \
+  -output_dir_data ${output_dir_report} \
+  -pipeline_version_file ${pipeline_version_file} \
+  -peach_genotype_tsv ${peach_genotype_tsv} \
+  -purple_purity_tsv ${purple_purity_tsv} \
+  -purple_qc_file ${purple_qc_file} "$@"

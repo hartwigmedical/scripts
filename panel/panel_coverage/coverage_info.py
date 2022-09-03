@@ -20,25 +20,6 @@ class CoverageInfo(object):
         return self.__min_coverage_to_interval_to_count_exceeding[min_coverage][interval]
 
 
-def parallel_get_sample_to_coverage_info(
-        sample_to_depth_file: Dict[str, Path],
-        intervals: Set[Interval],
-        min_coverages: Tuple[int, ...],
-) -> Dict[str, CoverageInfo]:
-    logging.info("Before coverage_info process pool")
-    with ProcessPoolExecutor() as executor:
-        sample_to_future = {
-            sample: executor.submit(get_coverage_info, depth_file, intervals, min_coverages)
-            for sample, depth_file in sample_to_depth_file.items()
-        }
-        sample_to_coverage_info = {
-            sample: future.result()
-            for sample, future in sample_to_future.items()
-        }
-    logging.info("After coverage_info process pool")
-    return sample_to_coverage_info
-
-
 def get_coverage_info(
         depth_file: Path, intervals: Set[Interval], min_coverages: Tuple[int, ...]) -> CoverageInfo:
     try:

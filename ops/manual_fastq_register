@@ -57,7 +57,3 @@ echo "${R1_fastq_files}" | while read -r R1; do
           -X POST "${api_url}/fastq" --data "${data}" || die "cURL POST of FASTQ failed"
     fi
 done
-
-new_sample_status="Pending_QC"
-info "Updating sample status to Pending_QC"
-hmf_api_patch -e -c samples -o "$sample_id" -f "status" -v "$new_sample_status"

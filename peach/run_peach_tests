@@ -5,6 +5,25 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
+TRUE="TRUE"
+FALSE="FALSE"
+
+print_usage() {
+  echo ""
+  echo "Descr: Run PEACH tests"
+  echo "Usage: $(basename "$0")"
+  echo "Exmpl: $(basename "$0")"
+  echo "       $(basename "$0") --repodir /some/peach/repo --venv /directory/containing/peach/venv"
+  echo "       $(basename "$0") -r /some/peach/repo/dir -v /directory/containing/peach/venv"
+  echo "Options:"
+  echo "  -r/--repodir   [OPTIONAL]   Directory containing the PEACH git repo."
+  echo "                              The default value is taken from the locate_files script."
+  echo "  -v/--venv      [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
+  echo "                              The default value is taken from the locate_files script."
+  echo ""
+  exit 1
+}
+
 main() {
   info "Started ${SCRIPT_NAME}"
 
@@ -37,9 +56,22 @@ main() {
   fi
 
   # Sanity checks
-  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
-  [[ -d ${peach_repo_base_dir} ]] || die "peach_repo_base_dir should be a dir: ${peach_repo_base_dir}."
-  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
+  local sanity_check_fail="${FALSE}"
+  if [[ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]]; then
+    warn "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${peach_repo_base_dir} ]]; then
+    warn "peach_repo_base_dir should be a dir: ${peach_repo_base_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${venv_dir} ]]; then
+    warn "venv_dir should be a dir: ${venv_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
+    print_usage
+  fi
 
   info "Activate PEACH venv"
   source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"

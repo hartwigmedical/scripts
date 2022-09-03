@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DIR="/data/tools"
+
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
@@ -7,32 +9,28 @@ source locate_gcp_files || exit 1
 set -e
 
 info "Syncing tools from GCP"
-gsutil -m rsync -r gs://common-tools /data/tools
-chmod +x /data/tools/kraken2/2.1.0/kraken2
-chmod +x /data/tools/kraken2/2.1.0/classify
-chmod +x /data/tools/repeatmasker/4.1.1/RepeatMasker
-chmod +x /data/tools/bcftools/1.3.1/bcftools
-chmod +x /data/tools/bcftools/1.9/bcftools
-chmod +x /data/tools/snpEff/4.3s/snpEff.sh
-chmod +x /data/tools/bwa/0.7.17/bwa
-chmod +x /data/tools/sambamba/0.6.5/sambamba
-chmod +x /data/tools/sambamba/0.6.8/sambamba
-chmod +x /data/tools/chord/60.02_1.03/extractSigPredictHRD.R
-chmod +x /data/tools/chord/2.00_1.14/extractSigPredictHRD.R
-chmod +x /data/tools/gridss/2.7.2/gridss.sh
-chmod +x /data/tools/gridss/2.8.3/gridss.sh
-chmod +x /data/tools/gridss/2.9.3/gridss.sh
-chmod +x /data/tools/gridss/2.9.4/gridss.sh
-chmod +x /data/tools/gridss/2.11.1/gridss.sh
-chmod +x /data/tools/gridss/2.11.1/gridsstools
-chmod +x /data/tools/gridss/2.11.1/virusbreakend.sh
-chmod +x /data/tools/gridss/2.11.1/gridss_annotate_vcf_kraken2.sh
-chmod +x /data/tools/gridss/2.11.1/gridss_annotate_vcf_repeatmasker.sh
-chmod +x /data/tools/samtools/1.9/samtools
-chmod +x /data/tools/samtools/1.10/samtools
-chmod +x /data/tools/bcl2fastq/2.20.0.422/bcl2fastq
-chmod +x /data/tools/star/2.7.3a/STAR
-chmod +x /data/tools/rmblast/2.10.0/rmblastn
-chmod +x /data/tools/trf/4.0.9/trf
+gsutil -m rsync -r gs://common-tools ${DIR}
+chmod +x ${DIR}/kraken2/2.1.0/kraken2
+chmod +x ${DIR}/kraken2/2.1.0/classify
+chmod +x ${DIR}/bcftools/1.3.1/bcftools
+chmod +x ${DIR}/bcftools/1.9/bcftools
+chmod +x ${DIR}/snpEff/4.3s/snpEff.sh
+chmod +x ${DIR}/bwa/0.7.17/bwa
+chmod +x ${DIR}/sambamba/0.6.5/sambamba
+chmod +x ${DIR}/sambamba/0.6.8/sambamba
+chmod +x ${DIR}/chord/60.02_1.03/extractSigPredictHRD.R
+chmod +x ${DIR}/chord/2.00_1.14/extractSigPredictHRD.R
+chmod +x ${DIR}/samtools/1.9/samtools
+chmod +x ${DIR}/samtools/1.10/samtools
+chmod +x ${DIR}/bcl2fastq/2.20.0.422/bcl2fastq
+chmod +x ${DIR}/star/2.7.3a/STAR
+chmod +x ${DIR}/rmblast/2.10.0/rmblastn
+chmod +x ${DIR}/trf/4.0.9/trf
+
+if [[ $(whoami) == "root" ]]; then
+    chgrp -R users ${DIR}
+    chmod -R g+w ${DIR}
+fi
+
 info "Tools synced from GCP"
 

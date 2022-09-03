@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+version="1.1"
+
+do_deploy_prod_tool "rose" ${version}

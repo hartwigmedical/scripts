@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+out_dir="/data/tmp/Pv5"
+script="$(basename "$0")"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Creates dir structure for verify_pipeline_run"
+    echo " Usage: $script -t <truth_run_url> -n <new_run_url> [options]"
+    echo "   -t  truth_run  Path to directory of truth run"
+    echo "   -n  new_run    Path to directory of new run to be verified"
+    echo " Options:"
+    echo "   -o  output_dir [$out_dir]"
+    echo " Example:"
+    echo "   $script gs://hmf-ops-archive/path/to/COLO829v003T_524 gs://{verification-bucket}/COLO829v003T_525"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':t:n:o:' flag; do
+    case "${flag}" in
+        t) truth_run_url=${OPTARG} ;;
+        n) new_run_url=${OPTARG} ;;
+        o) out_dir=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${out_dir}" || -z "${truth_run_url}" || -z "${new_run_url}" ]]; then
+    print_usage
+fi
+
+main() {
+    info "Starting with script $script"
+
+    [[ -n "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir format (${out_dir})?"
+    [[ -n "${truth_run_url}" && "${truth_run_url}" =~ ^gs\:// ]] || die "Wrong truth run url format (${truth_run_url})"
+    [[ -n "${new_run_url}" && "${new_run_url}" =~ ^gs\:// ]] || die "Wrong new run url format (${new_run_url})"
+    [[ ! "${truth_run_url}" =~ \/$ ]] || die "No trailing slashes allowed in URL (${truth_run_url})"
+    [[ ! "${new_run_url}" =~ \/$ ]] || die "No trailing slashes allowed in URL (${new_run_url})"
+
+    info "Checking pipeline runs (meta)data"
+    check_pipeline_version_file "${truth_run_url}"
+    check_pipeline_version_file "${new_run_url}"
+
+    out_runs_dir="${out_dir}/runs"
+    out_logs_dir="${out_dir}/logs"
+    truth_run_name=$(basename "${truth_run_url}")-truth
+    new_run_name=$(basename "${new_run_url}")-target
+    truth_dir_path="${out_runs_dir}/${truth_run_name}"
+    new_dir_path="${out_runs_dir}/${new_run_name}"
+    truth_metadata_file="${truth_run_url}/metadata.json"
+    new_metadata_file="${new_run_url}/metadata.json"
+    truth_sample=$(parse_tumor_sample_name_from_metadata_json "$truth_metadata_file")
+    new_sample=$(parse_tumor_sample_name_from_metadata_json "$new_metadata_file")
+    truth_version_tag="TODO"
+    new_version_tag="TODO"
+
+    info "Creating setup and downloading runs:"
+    info "  Out path: ${out_dir}"
+    info "  Truth run: ${truth_run_name} (sample=${truth_sample})"
+    info "  New run: ${new_run_name} (sample=${new_sample})"
+
+    info "Creating directory structure and downloading runs"
+    mkdir -p "${out_dir}" "${out_runs_dir}" "${out_logs_dir}" || die "Unable to create output dirs (${out_dir})"
+
+    download_run_from_gcp "${truth_run_url}" "${truth_dir_path}" "${out_logs_dir}"
+    download_run_from_gcp "${new_run_url}" "${new_dir_path}" "${out_logs_dir}"
+
+    info "Finished with $script"
+    next_cmd="nohup verify_pipeline_run"
+    next_cmd+=" --out_dir ${out_dir}/verification"
+    next_cmd+=" --truth_run_dir ${truth_dir_path}"
+    next_cmd+=" --new_run_dir ${new_dir_path}"
+    next_cmd+=" --truth_db_schema ${truth_version_tag}"
+    next_cmd+=" --new_db_schema ${new_version_tag}"
+    next_cmd+=" > ${out_dir}/verification.log &"
+    info "Next step: $next_cmd"
+}
+
+parse_tumor_sample_name_from_metadata_json () {
+    local json_url=$1 && shift
+    sample_name=$(gsutil cat "${json_url}" | jq -r '.tumor.sampleName')
+    if [[ "$sample_name" == "" || "$sample_name" == "null" ]]; then
+        warn "Unable to parse sample name from metadata json (${json_url})"
+    fi
+    echo "$sample_name"
+}
+
+check_pipeline_version_file () {
+    local run_url=$1 && shift
+    vsn_file="${run_url}/pipeline.version"
+
+    info "Checking version file of ${run_url}"
+    msg=$(gsutil ls "${vsn_file}" 2>&1)
+    if [[ $? -eq 1 ]]; then
+        warn "Version file (${vsn_file}) not found"
+        warn "ErrCode=${?} ErrMsg=\"${msg}\""
+        warn "Check run contents with: gsutil ls ${url}"
+        exit 1
+    else
+        info "  OK file ${vsn_file} present so assuming run is complete"
+    fi
+}
+
+download_run_from_gcp() {
+    local url=$1 && shift
+    local target_dir=$1 && shift
+    local logs_dir=$1 && shift
+
+    run_basename=$(basename "${url}")
+    local download_log="${logs_dir}/download_${run_basename}.log"
+    local download_check_log="${download_log}.check"
+
+    mkdir -p "${target_dir}"
+
+    info "Starting download excluding CRAMs/BAMs (${url})"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*\.bam$|.*\.cram$" \
+        "${url}/" "${target_dir}/" > "${download_log}" 2>&1 \
+        || die "Something went wrong with download (pls check ${download_log})"
+
+    info "Starting re-download to double check (${url})"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*\.bam$|.*\.cram$" \
+        "${url}/" "${target_dir}/" > "${download_check_log}" 2>&1 \
+        || die "Something went wrong with re-download (pls check ${download_check_log})"
+
+    line_count=$(grep -cvP "Building sync|Starting sync" "${download_check_log}")
+    [[ "${line_count}" -eq 0 ]] || die "Download check log should be empty but is not (pls check ${download_check_log})"
+}
+
+main

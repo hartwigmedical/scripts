@@ -1,17 +1,18 @@
 from pathlib import Path
 from typing import Tuple, NamedTuple
 
+from gcp.base import GCPPath
 from genome import BafSite, FusionSite, Position, MsiSite, PgxSite, Interval, Exon
 from util import assert_file_exists
 
 
 class ProgramConfig(NamedTuple):
     panel_config_dir: Path
-    output_dir: Path
+    output_dir: GCPPath
     samtools: Path
     working_dir: Path
     min_coverages: Tuple[int, ...]
-    bams: Tuple[Path, ...]
+    bams: Tuple[GCPPath, ...]
 
 
 class PanelFileConfig(NamedTuple):

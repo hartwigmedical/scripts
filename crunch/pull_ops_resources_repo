@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pull_resources_repo "ops" || exit 1

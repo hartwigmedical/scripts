@@ -2,7 +2,7 @@
 
 source message_functions || exit 1
 
-dir=$1
+dir=$1 && shift
 
 if [[ -z "${dir}" ]]; then
     error "Parameters missing. Exiting."
@@ -10,10 +10,21 @@ fi
 
 mv "${dir}/Actin_Data_Extractie-Questionnaire.tsv" "${dir}/questionnaire.tsv"
 mv "${dir}/Actin_Data_Extractie-Patient.tsv" "${dir}/patient.tsv"
-mv "${dir}/Actin_Data_Extractie-Metingen.tsv" "${dir}/bloodpressure.tsv"
+mv "${dir}/Actin_Data_Extractie-Metingen.tsv" "${dir}/vital_function.tsv"
 mv "${dir}/Actin_Data_Extractie-Medicatie.tsv" "${dir}/medication.tsv"
 mv "${dir}/Actin_Data_Extractie-Labwaarden.tsv" "${dir}/lab.tsv"
 mv "${dir}/Actin_Data_Extractie-Encounters.tsv" "${dir}/encounter.tsv"
-mv "${dir}/Actin_Data_Extractie-ComplicatiesDiagnoses.tsv" "${dir}/complication.tsv"
 mv "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" "${dir}/intolerance.tsv"
 mv "${dir}/Actin_Data_Extractie-Gewicht.tsv" "${dir}/bodyweight.tsv"
+
+no_consent_patients=("ACTN-01-02-0059" "ACTN-01-02-0067" "ACTN-01-02-0073" "ACTN-01-02-0083" "ACTN-01-02-0086" \
+    "ACTN-01-02-0090" "ACTN-01-02-0092" "ACTN-01-02-0096" "ACTN-01-02-0097" "ACTN-01-02-0099")
+
+for file in ${dir}/*.tsv; do
+    for patient in ${no_consent_patients[@]}; do
+        count=$(cat ${file} | grep -c ${patient})
+        if [[ count -gt 0 ]]; then
+            warn "Found ${patient} in ${file} ${count} times"
+        fi
+    done
+done

@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-prod_protect_tsv=$1 && shift
-pilot_protect_tsv=$1 && shift
-
-diff ${prod_protect_tsv} ${pilot_protect_tsv}

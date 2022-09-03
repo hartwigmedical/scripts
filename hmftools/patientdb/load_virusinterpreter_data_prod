@@ -16,6 +16,6 @@ virus_annotation_tsv=$(locate_virus_annotation_tsv ${run_dir})
 
 database="hmfpatients"
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_research_patient_db)
 
 do_load_virusinterpreter_data ${sample} ${virus_annotation_tsv} ${database} "${credentials}" ${patient_db_jar}

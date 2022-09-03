@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+barcode=$1 # sample barcode
+out_cmd_file=$2 # output file for rm/patch cmds
+
+if [[ -z "${barcode}" || -z "${out_cmd_file}" ]]; then
+    echo "---"
+    echo "Descr: Prints commands to patch API records and gsutil commands to delete pipeline runs"
+    echo "Usage: $(basename $0) \${barcode} \${output_cmd_file}"
+    echo "   Eg: $(basename $0) FR12345678 ./delete_FR12345678.sh"
+    echo "---"
+    exit 1
+fi
+
+main () {
+    # input checks
+    [[ -n "${barcode}" ]] || die "No barcode"
+    [[ -n "${out_cmd_file}" ]] || die "No output file"
+    [[ ! -f "${out_cmd_file}" ]] || die "Output file already exists (${out_cmd_file})"
+
+    info "Searching for runs by barcode (${barcode})"
+    runs_json=$(hmf_api_get "runs?barcode=${barcode}" | jq '[.[] | select(.ini != "Rerun.ini")]')
+    count=$(echo "${runs_json}" | jq length)
+
+    info "  ${count} runs found for barcode [${barcode}]"
+
+    echo "echo 'Starting with run cleanup for ${barcode}'" > "${out_cmd_file}"
+    echo "${runs_json}" | jq -c '.[]' | while read -r run_info; do
+        id=$(echo "${run_info}" | jq -r .id)
+        name=$(echo "${run_info}" | jq -r .set.name)
+        status=$(echo "${run_info}" | jq -r .status)
+        bucket=$(echo "${run_info}" | jq -r .bucket)
+        info "Found sample (name=${name} status=${status} id=${id})"
+        if [[ "$status" == "Deleted" ]]; then
+            info "Found already deleted run. Skipping (name=${name} status=${status} id=${id})"
+        else
+            { echo " gsutil -q -m rm -r gs://${bucket}/${name}"
+              echo " hmf_api_patch -e -c runs -o '${id}' -f status -v 'Deleted'"
+            } >> "${out_cmd_file}"
+        fi
+    done
+
+    echo "echo 'Finished with ${barcode}'" >> "${out_cmd_file}"
+    chmod +x "${out_cmd_file}"
+    info "Check contents and then execute with eg: nohup ${out_cmd_file} > ${out_cmd_file}.log &"
+}
+
+main

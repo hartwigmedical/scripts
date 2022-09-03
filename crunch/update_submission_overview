@@ -7,24 +7,25 @@ YYMMDD=$(date '+%y%m%d')
 task_id="updateSubmissionOverview"
 
 nas_tgt_dir="/volume1/web/overviews/submissions"
- ds_src_dir="/data/submissions"
+src_dir="/data/submissions"
 
 nas_reports_source="/volume1/machines/BFX/dataReports"
 nas_reports_target="/volume1/web/overviews/submissions/pdf_reports"
- ds_reports_target="/data/data_archive/overviews/submissions/pdf_reports"
+reports_target="/data/data_archive/overviews/submissions/pdf_reports"
 
 password=$(get_nas_rsyncuser_credentials)
+ssh_port=2210
 
 ## Sanity checks
 [[ -n "${password}" ]] || die "Was somehow unable to retrieve password"
-[[ -d "${ds_src_dir}" ]] || die "INPUT DIR does not exist (${ds_src_dir})"
+[[ -d "${src_dir}" ]] || die "INPUT DIR does not exist (${src_dir})"
 
 info "Starting task ${task_id} ($YYMMDD)"
-info " Finding all submissions in ${ds_src_dir}"
-dirs_to_sync=$(find ${ds_src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
+info " Finding all submissions in ${src_dir}"
+dirs_to_sync=$(find ${src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
-info " Syncing logs from datastore to NAS (to ${nas_tgt_dir})"
-sshpass -p "$password" rsync -ah \
+info " Syncing logs to NAS (into ${nas_tgt_dir})"
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -ah \
   --omit-dir-times \
   --exclude "*/data/" \
   --include "*/" \
@@ -34,20 +35,20 @@ sshpass -p "$password" rsync -ah \
   ${dirs_to_sync} \
   "rsyncuser@nas.prod-1:${nas_tgt_dir}"
 
-info " Syncing pdfs from NAS share to Datastore (to ${ds_reports_target})"
-sshpass -p "$password" rsync -trh \
+info " Syncing pdfs from NAS source dir (into ${reports_target})"
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
   "rsyncuser@nas.prod-1:${nas_reports_source}/" \
-  "${ds_reports_target}/"
+  "${reports_target}/"
 
-info " Syncing back pdfs from Datastore to NAS (to ${nas_reports_target})"
-sshpass -p "$password" rsync -trh \
+info " Syncing back pdfs to NAS target dir (into ${nas_reports_target})"
+sshpass -p "$password" rsync -e "ssh -p ${ssh_port}" -trh \
   --omit-dir-times \
   --include '*.pdf' \
   --exclude '*' \
-  "${ds_reports_target}/" \
+  "${reports_target}/" \
   "rsyncuser@nas.prod-1:${nas_reports_target}/"
 
 info "Finished with task ${task_id}"

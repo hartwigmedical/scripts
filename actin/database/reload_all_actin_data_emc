@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+reload_all_actin_clinical_emc
+reload_all_actin_molecular_emc
+reload_all_actin_treatments_emc
+reload_all_actin_treatment_matches_emc

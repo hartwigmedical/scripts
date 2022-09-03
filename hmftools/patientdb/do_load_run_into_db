@@ -10,34 +10,31 @@ credentials=$1 && shift
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 amber_dir=$(locate_amber_directory ${run_dir})
-somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
-germline_vcf=$(locate_purple_germline_variants ${run_dir})
-structural_vcf=$(locate_purple_structural_variants ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 virus_annotation_tsv=$(locate_virus_annotation_tsv ${run_dir})
 sigs_dir=$(locate_sigs_dir ${run_dir})
+lilac_results=$(locate_lilac_results ${run_dir})
+lilac_qc=$(locate_lilac_qc ${run_dir})
 
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 ref_flagstat_file=$(locate_flagstats ${run_dir} ${ref_sample})
 tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
 
-is_pass=true #value needed from GCP
-
 peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
 peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 
 do_load_amber_data ${tumor_sample} ${amber_dir} ${database} "${credentials}" ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}
-do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_germline_variants ${tumor_sample} ${ref_sample} ${germline_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_structural_variants ${tumor_sample} ${structural_vcf} ${database} "${credentials}" ${patient_db_jar}
-do_load_linx_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
+do_load_linx_somatic_data ${tumor_sample} ${run_dir}/linx ${database} "${credentials}" ${patient_db_jar}
+do_load_linx_germline_data ${tumor_sample} ${run_dir}/linx_germline ${database} "${credentials}" ${patient_db_jar}
+do_load_lilac_data ${tumor_sample} ${lilac_results} ${lilac_qc} ${database} "${credentials}" ${patient_db_jar}
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${database} "${credentials}" ${patient_db_jar}
 do_load_flagstat_data ${tumor_sample} ${ref_flagstat_file} ${tumor_flagstat_file} ${database} "${credentials}" ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${database} "${credentials}" ${patient_db_jar}
@@ -47,6 +44,9 @@ do_load_sigs_data ${tumor_sample} ${sigs_dir} ${database} "${credentials}" ${pat
 do_load_cuppa_data ${tumor_sample} ${molecular_tissue_origin_txt} ${database} "${credentials}" ${patient_db_jar}
 do_load_virusbreakend_data ${tumor_sample} ${virus_breakend_tsv} ${database} "${credentials}" ${patient_db_jar}
 do_load_virusinterpreter_data ${tumor_sample} ${virus_annotation_tsv} ${database} "${credentials}" ${patient_db_jar}
+
+# DEV-2848: testing phase so not yet by default
+#do_load_sampleidmapping_data ${tumor_sample} ${tumor_barcode} ${database} "${credentials}" ${patient_db_jar}
 
 # first fix at GCP
 #do_update_snpcheck_status ${tumor_sample} ${is_pass} ${database} "${credentials}" ${patient_db_jar}

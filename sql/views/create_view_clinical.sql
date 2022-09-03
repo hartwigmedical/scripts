@@ -2,7 +2,8 @@ CREATE OR REPLACE VIEW clinical AS
 
 SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPatientId,
     sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rnaStatistics.sampleId)) as hasRNA, setName,
-    sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
+    sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate,
+    baseline.inHMFDatabase, baseline.outsideEU, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType,
     baseline.primaryTumorExtraDetails, doidView.doids,
     baseline.hospital, baseline.gender, baseline.birthYear,

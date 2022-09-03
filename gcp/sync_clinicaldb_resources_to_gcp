@@ -10,10 +10,12 @@ info "Syncing clinicaldb resources to GCP"
 gsutil cp /data/ecrf/cpct_ecrf.xml ${BUCKET}/cpct_ecrf.xml
 gsutil cp /data/ecrf/cpct_form_status.csv ${BUCKET}/cpct_form_status.csv 
 gsutil cp /data/ecrf/drup_ecrf.xml ${BUCKET}/drup_ecrf.xml
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* ${BUCKET}/lims
-gsutil cp /data/dbs/disease_ontology/201015_doid.json ${BUCKET}/201015_doid.json
-gsutil cp /data/dbs/clinical_curation/tumor_location_mapping.tsv ${BUCKET}/tumor_location_mapping.tsv 
-gsutil cp /data/dbs/clinical_curation/treatment_mapping.tsv ${BUCKET}/treatment_mapping.tsv 
-gsutil cp /data/dbs/clinical_curation/biopsy_site_mapping.tsv ${BUCKET}/biopsy_site_mapping.tsv 
-gsutil cp /data/dbs/clinical_curation/tumor_location_overrides.tsv ${BUCKET}/tumor_location_overrides.tsv
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/*.tsv ${BUCKET}/lims/
+gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/lims/
+gsutil cp /data/resources/public/disease_ontology/doid.json ${BUCKET}/doid.json
+gsutil cp /data/resources/ops/clinical_curation/tumor_location_mapping.tsv ${BUCKET}/tumor_location_mapping.tsv
+gsutil cp /data/resources/ops/clinical_curation/treatment_mapping.tsv ${BUCKET}/treatment_mapping.tsv
+gsutil cp /data/resources/ops/clinical_curation/biopsy_site_mapping.tsv ${BUCKET}/biopsy_site_mapping.tsv
+gsutil cp /data/resources/ops/clinical_curation/tumor_location_overrides.tsv ${BUCKET}/tumor_location_overrides.tsv
+gsutil cp /data/resources/ops/informed_consent/informed_consents_config.tsv ${BUCKET}/informed_consents_config.tsv
 info "Clinicaldb resources synced"

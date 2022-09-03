@@ -30,11 +30,17 @@ if [[ $? = 0 ]]; then info " Flagstats Tumor Sample: ${tumor_sample_flagstats}";
 amber_dir=$(locate_amber_directory ${run_dir})
 if [[ $? = 0 ]]; then info " AMBER directory: ${amber_dir}"; fi
 
-gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
+gatk_germline_variants=$(locate_gatk_germline_variants ${run_dir})
 if [[ $? = 0 ]]; then info " GATK Germline Variants: ${gatk_germline_variants}"; fi
 
-sage_somatic_variants=$(locate_sage_somatic_variants ${run_dir})
+sage_somatic_variants=$(locate_sage_filtered_somatic_variants ${run_dir})
 if [[ $? = 0 ]]; then info " SAGE Somatic VCF: ${sage_somatic_variants}"; fi
+
+sage_tumor_bqr_tsv=$(locate_sage_bqr_tsv ${run_dir} ${tumor_sample})
+if [[ $? = 0 ]]; then info " SAGE Tumor BQR TSV: ${sage_tumor_bqr_tsv}"; fi
+
+sage_reference_bqr_tsv=$(locate_sage_bqr_tsv ${run_dir} ${ref_sample})
+if [[ $? = 0 ]]; then info " SAGE Reference BQR TSV: ${sage_reference_bqr_tsv}"; fi
 
 sage_tumor_bqr_plot=$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})
 if [[ $? = 0 ]]; then info " SAGE Tumor BQR Plot: ${sage_tumor_bqr_plot}"; fi
@@ -69,6 +75,12 @@ if [[ $? = 0 ]]; then info " PURPLE Somatic Copynumbers: ${purple_somatic_copynu
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})
 if [[ $? = 0 ]]; then info " PURPLE Gene Copynumbers: ${purple_gene_copynumbers}"; fi
 
+purple_germline_deletions=$(locate_purple_germline_deletions ${run_dir})
+if [[ $? = 0 ]]; then info " PURPLE Germline Deletions: ${purple_germline_deletions}"; fi
+
+purple_plot_directory=$(locate_purple_plot_directory ${run_dir})
+if [[ $? = 0 ]]; then info " PURPLE Plot Directory: ${purple_plot_directory}"; fi
+
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 if [[ $? = 0 ]]; then info " PURPLE Circos Plot: ${purple_circos_plot}"; fi
 
@@ -81,6 +93,9 @@ if [[ $? = 0 ]]; then info " GRIPSS Filtered Structural VCF: ${gripss_structural
 gripss_recovery_candidates=$(locate_gripss_recovery_candidates ${run_dir})
 if [[ $? = 0 ]]; then info " GRIPSS Recovery Candidates VCF: ${gripss_recovery_candidates}"; fi
 
+linx_structural_variants=$(locate_linx_structural_variants ${run_dir})
+if [[ $? = 0 ]]; then info " Linx Structural Variants: ${linx_structural_variants}"; fi
+
 linx_fusions=$(locate_linx_fusions ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Fusions: ${linx_fusions}"; fi
 
@@ -92,6 +107,15 @@ if [[ $? = 0 ]]; then info " Linx Driver Catalog: ${linx_driver_catalog}"; fi
 
 linx_drivers=$(locate_linx_drivers ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Drivers: ${linx_drivers}"; fi
+
+linx_germline_disruptions=$(locate_linx_germline_disruptions ${run_dir})
+if [[ $? = 0 ]]; then info " Linx Germline Disruptions: ${linx_germline_disruptions}"; fi
+
+lilac_results=$(locate_lilac_results ${run_dir})
+if [[ $? = 0 ]]; then info " LILAC Results: ${lilac_results}"; fi
+
+lilac_qc=$(locate_lilac_qc ${run_dir})
+if [[ $? = 0 ]]; then info " LILAC QC: ${lilac_qc}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [[ $? = 0 ]]; then info " CHORD Prediction File: ${chord_prediction}"; fi
@@ -108,13 +132,16 @@ if [[ $? = 0 ]]; then info " Cuppa Conclusion File: ${cuppa_conclusion_txt}"; fi
 cuppa_conclusion_plot=$(locate_cuppa_conclusion_plot ${run_dir})
 if [[ $? = 0 ]]; then info " Cuppa Conclusion Plot: ${cuppa_conclusion_plot}"; fi
 
+cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
+if [[ $? = 0 ]]; then info " Cuppa Feature Plot: ${cuppa_feature_plot}"; fi
+
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 if [[ $? = 0 ]]; then info " VIRUSBreakend Output: ${virus_breakend_tsv}"; fi
 
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 if [[ $? = 0 ]]; then info " Annotated Virus File: ${annotated_virus_tsv}"; fi
 
-peach_genotype_tsv=$(locate_peach_genotype_prod_tsv ${run_dir})
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 if [[ $? = 0 ]]; then info " PEACH Genotypes: ${peach_genotype_tsv}"; fi
 
 protect_evidence=$(locate_protect_evidence ${run_dir})
@@ -122,3 +149,6 @@ if [[ $? = 0 ]]; then info " PROTECT Evidence: ${protect_evidence}"; fi
 
 orange_json=$(locate_orange_json ${run_dir})
 if [[ $? = 0 ]]; then info " ORANGE JSON: ${orange_json}"; fi
+
+orange_pdf=$(locate_orange_pdf ${run_dir})
+if [[ $? = 0 ]]; then info " ORANGE PDF: ${orange_pdf}"; fi

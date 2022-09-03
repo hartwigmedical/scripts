@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sampleId=$1 && shift
+
+if [[ -z ${sampleId} ]]; then
+    error "No sample ID provided"
+fi
+
+gsutil cp ${sampleId}_cup_report.pdf gs://patient-reporter-final-prod-1/final_cuppa_ruo_reports/
+
+info "CUPPA RUO report of ${sampleId} is archived!"

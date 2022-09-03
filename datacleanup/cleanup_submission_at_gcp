@@ -144,11 +144,14 @@ process_runs_for_sample() {
             echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
 
             if [[ "$run_type" == "fastq" ]]; then
-                info "  SKIPPING: run is type fastq so cleanup done at sample level for $run_info" >> "$log_file"
+                info "  SKIPPING: run is of type FASTQ so cleanup done at sample level for $run_info" >> "$log_file"
             elif [[ "$run_type" == "pipeline" ]]; then
                 process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
+            elif [[ "$run_type" == "bcl" ]]; then
+                warn "  SKIPPING: run is of type BCL so cleanup needs to be performed manually!"
+                continue
             else
-                die "Run somehow neither fastq or pipeline (ini=$ini_name): this should not happen! ($run_info)"
+                die "Run type is not pipeline/fastq/bcl (ini=$ini_name): inspect this one! ($run_info)"
             fi
             echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
         done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')

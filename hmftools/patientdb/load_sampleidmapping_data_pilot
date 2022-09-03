@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+sample=$(load_tumor_sample_from_metadata "${run_dir}")
+barcode=$(load_tumor_sample_barcode_from_metadata "${run_dir}")
+
+database="hmfpatients_pilot"
+patient_db_jar=$(locate_pilot_patient_db)
+credentials=$(prod_writer_sql_credentials)
+
+do_load_sampleidmapping_data "${sample}" "${barcode}" "${database}" "${credentials}" "${patient_db_jar}"

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source io_functions || exit 1
+
+output_dir="/data/output/pilot_output_all_sources"
+create_or_cleanup_dir ${output_dir}
+
+actin_trial_tsv=$(locate_actin_trial_tsv)
+actin_filter_tsv=$(locate_actin_filter_tsv)
+ckb_dir=$(locate_ckb_flex_data_latest_dir)
+ckb_filter_tsv=$(locate_ckb_filter_pilot_tsv)
+iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv_pilot)
+iclusion_filter_tsv=$(locate_iclusion_filter_tsv)
+vicc_json=$(locate_vicc_json)
+docm_tsv=$(locate_docm_tsv)
+hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
+hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
+missing_doids_mapping_tsv=/data/resources/crunch/serve/curation/all_doids_mapping.tsv
+
+do_run_serve_pilot \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
+    -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
+    -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
+    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
+    -use_docm -docm_tsv ${docm_tsv} \
+    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+    -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
+    -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
+    -output_dir ${output_dir} \
+    "$@"

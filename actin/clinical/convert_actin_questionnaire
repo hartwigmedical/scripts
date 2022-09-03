@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+questionnaire=$1 && shift
+
+if [[ -z ${questionnaire} ]]; then
+    error "No questionnaire passed"
+fi
+
+actin_jar="$(locate_pilot_actin)"
+
+java -cp ${actin_jar} com.hartwig.actin.clinical.ReformatQuestionnaireApplication -questionnaire ${questionnaire}
+

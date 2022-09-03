@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_name=$1
+
+key='status'
+val="Failed"
+
+if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo "Descr: Patches run ${key} to ${val}"
+    echo "Usage: $(basename $0) \$run_name"
+    echo "   Eg: $(basename $0) 200101_HMFregXXXX_FR123_FR456_SAMPLE"
+    echo "-----"
+    exit 1
+fi
+
+info "Querying api to find run by name (${run_name})"
+runs_json=$(hmf_api_get "runs?set_name=${run_name}")
+count=$(echo "${runs_json}" | jq length)
+[[ "${count}" -eq 1 ]] || die "Amount of runs found for ${run_name} is not 1 (${count})"
+
+run=$(echo "${runs_json}" | jq -r .[0])
+oid=$(echo "${run}" | jq -r .id)
+sts=$(echo "${run}" | jq -r .status)
+
+info "About to patch run object ${oid} with ${key}=${val}"
+[[ "${sts}" != "${val}" ]] || die "Field ${key} is already set to ${val} for ${run_name}"
+
+hmf_api_patch -c "runs" -o "${oid}" -f "${key}" -v "${val}"
+

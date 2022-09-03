@@ -1,37 +1,28 @@
+#!/usr/bin/env bash
+
 source message_functions || exit 1
 source locate_files || exit 1
 source locate_gcp_files || exit 1
 
 set -e
 
-info "Syncing resources from GIT and common-resources"
-cd /data/resources/public && git pull
-cd /data/resources/private && git pull
-gsutil -mq cp -rn gs://common-resources/* /data/resources/bucket
-info "Done"
-
-info "Syncing tools from common-tools"
-gsutil -mq cp -rn gs://common-tools/* /data/tools/
-cd /data/repos/scripts && git pull
-info "Done"
-
-info "Syncing ops data from ops-vm used in development"
+info "Syncing data from ops-vm used in development"
 gsutil -mq cp -r gs://data-vm-resources-prod-1/* /data
 info "Done"
 
 info "Syncing datasets with dsync"
 credentials=/tmp/credentials.properties
-gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reader  --project=hmf-secrets | sed s/\"//g  > ${credentials}
+gcloud secrets versions access "latest" --secret=mysql-patients-sql-prod-1-reader --project=hmf-secrets | sed s/\"//g  > ${credentials}
 
 api_url=http://api.prod-1
 local_path=/data/datasets
 dsync_jar=$(locate_dsync)
 db_url=jdbc:mysql://patients.sql.prod-1/hmfpatients
-java11 -jar ${dsync_jar} \
+java -jar ${dsync_jar} \
     --api_url ${api_url} \
     --patient_db_url ${db_url} \
     --patient_db_credentials ${credentials} \
     --local_path ${local_path} \
-    --threads 100 > /tmp/dsync-$(date +%Y%m%d%H%M).out
+    --threads 100
 rm ${credentials}
 info "Done"

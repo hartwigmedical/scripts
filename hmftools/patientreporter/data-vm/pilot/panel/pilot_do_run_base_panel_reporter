@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+patient_reporter_jar=$(locate_pilot_patient_reporter)
+
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor.tsv
+lims_dir=/data/ops/lims/pilot
+company_logo=$(locate_company_logo_prod)
+signature=$(locate_signature_prod)
+
+expected_pipeline_version=$(extract_expected_pipeline_version_research)
+
+java -cp ${patient_reporter_jar} com.hartwig.hmftools.patientreporter.PanelReporterApplication \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    -comments "This is a pilot patient report and is not meant for production purpose" \
+    "$@"

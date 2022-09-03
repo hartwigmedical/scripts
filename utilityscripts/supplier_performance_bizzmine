@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+api_url=$"https://api.bizzmine.cloud/collection/ContractManagement/"
+api_token=$( gcloud secrets versions access "latest" --secret=bizzmine-api-token-dr --project=hmf-secrets )
+#curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq
+
+#create temp folder
+temp_folder_path=$( pwd )"/temp"
+mkdir $temp_folder_path
+
+echo '[INPUT] For which year do you want to get the supplier performance?'
+read year
+
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq -r '.[]? as $c | $c | .SupplierPerformance[]? as $s | select($s.SupplierPerformance_SupplierPerformance_Year=="'${year}'") | [$c.ContractManagement_Contractname,$s.SupplierPerformance_SupplierPerformance_Communication,$s.SupplierPerformance_SupplierPerformance_Robustness,$s.SupplierPerformance_SupplierPerformance_Service ,$s.SupplierPerformance_SupplierPerformance_Price,$s.SupplierPerformance_SupplierPerformance_Deliverytime,(($s.SupplierPerformance_SupplierPerformance_Communication+$s.SupplierPerformance_SupplierPerformance_Robustness+$s.SupplierPerformance_SupplierPerformance_Service+$s.SupplierPerformance_SupplierPerformance_Price+$s.SupplierPerformance_SupplierPerformance_Deliverytime)/5),$s.SupplierPerformance_Comment] | @csv' > ${temp_folder_path}/year.csv
+sort ${temp_folder_path}/year.csv > ${temp_folder_path}/year.tmp && mv ${temp_folder_path}/year.tmp ${temp_folder_path}/year.csv
+awk 'BEGIN{print "Supplier,Communication,Robustness,Service,Price,Delivery_time,Overall_'${year}',Comments"}1'  ${temp_folder_path}/year.csv > ${temp_folder_path}/year.tmp && mv ${temp_folder_path}/year.tmp ${temp_folder_path}/year.csv
+
+prev1_year=$( expr ${year} - 1 )
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq -r '.[]? as $c | $c | .SupplierPerformance[]? as $s | select($s.SupplierPerformance_SupplierPerformance_Year=="'${prev1_year}'") | [$c.ContractManagement_Contractname,(($s.SupplierPerformance_SupplierPerformance_Communication+$s.SupplierPerformance_SupplierPerformance_Robustness+$s.SupplierPerformance_SupplierPerformance_Service+$s.SupplierPerformance_SupplierPerformance_Price+$s.SupplierPerformance_SupplierPerformance_Deliverytime)/5)] | @csv' > ${temp_folder_path}/prev1_year.csv
+sort ${temp_folder_path}/prev1_year.csv > ${temp_folder_path}/prev1_year.tmp && mv ${temp_folder_path}/prev1_year.tmp ${temp_folder_path}/prev1_year.csv
+awk 'BEGIN{print "Supplier,Overall_'${prev1_year}'"}1'  ${temp_folder_path}/prev1_year.csv > ${temp_folder_path}/prev1_year.tmp && mv ${temp_folder_path}/prev1_year.tmp ${temp_folder_path}/prev1_year.csv
+
+prev2_year=$( expr ${year} - 2 )
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq -r '.[]? as $c | $c | .SupplierPerformance[]? as $s | select($s.SupplierPerformance_SupplierPerformance_Year=="'${prev2_year}'") | [$c.ContractManagement_Contractname,(($s.SupplierPerformance_SupplierPerformance_Communication+$s.SupplierPerformance_SupplierPerformance_Robustness+$s.SupplierPerformance_SupplierPerformance_Service+$s.SupplierPerformance_SupplierPerformance_Price+$s.SupplierPerformance_SupplierPerformance_Deliverytime)/5)] | @csv' > ${temp_folder_path}/prev2_year.csv
+sort ${temp_folder_path}/prev2_year.csv > ${temp_folder_path}/prev2_year.tmp && mv ${temp_folder_path}/prev2_year.tmp ${temp_folder_path}/prev2_year.csv
+awk 'BEGIN{print "Supplier,Overall_'${prev2_year}'"}1'  ${temp_folder_path}/prev2_year.csv > ${temp_folder_path}/prev2_year.tmp && mv ${temp_folder_path}/prev2_year.tmp ${temp_folder_path}/prev2_year.csv
+
+prev3_year=$( expr ${year} - 3 )
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq -r '.[]? as $c | $c | .SupplierPerformance[]? as $s | select($s.SupplierPerformance_SupplierPerformance_Year=="'${prev3_year}'") | [$c.ContractManagement_Contractname,(($s.SupplierPerformance_SupplierPerformance_Communication+$s.SupplierPerformance_SupplierPerformance_Robustness+$s.SupplierPerformance_SupplierPerformance_Service+$s.SupplierPerformance_SupplierPerformance_Price+$s.SupplierPerformance_SupplierPerformance_Deliverytime)/5)] | @csv' > ${temp_folder_path}/prev3_year.csv
+sort ${temp_folder_path}/prev3_year.csv > ${temp_folder_path}/prev3_year.tmp && mv ${temp_folder_path}/prev3_year.tmp ${temp_folder_path}/prev3_year.csv
+awk 'BEGIN{print "Supplier,Overall_'${prev3_year}'"}1'  ${temp_folder_path}/prev3_year.csv > ${temp_folder_path}/prev3_year.tmp && mv ${temp_folder_path}/prev3_year.tmp ${temp_folder_path}/prev3_year.csv
+
+join -1 1 -2 1 -t',' -a1 ${temp_folder_path}/year.csv  ${temp_folder_path}/prev1_year.csv > supplier_performance.csv
+join -1 1 -2 1 -t',' -a1 supplier_performance.csv  ${temp_folder_path}/prev2_year.csv > supplier_performance.tmp && mv supplier_performance.tmp supplier_performance.csv
+join -1 1 -2 1 -t',' -a1 supplier_performance.csv  ${temp_folder_path}/prev3_year.csv > supplier_performance.tmp && mv supplier_performance.tmp supplier_performance.csv
+
+
+rm -r ${temp_folder_path}/
+echo "The file supplier_performance.csv is ready!"

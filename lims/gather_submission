@@ -8,9 +8,9 @@ submission=$1
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]] ; then echo " Usage: $0 HMFreg0000"; exit 1; fi
 [[ -n "${submission}" ]] || die "Missing submission id as input"
-[[ "${submission}" =~ ^HMFreg ]] || die "Submission is expected to start with 'HMFreg'"
+[[ "${submission}" =~ ^HMFreg[0-9]{4} ]] || die "Submission is expected to match HMFreg[0-9]{4}"
 
-## setting up variables
+# Setting up variables
 out_path="${SUBMISSIONS_DIR}/${submission}"
 log_file="${out_path}/log.txt"
 date_string=$(date)
@@ -25,11 +25,11 @@ lims_json="${lims_file/.txt/.json}"
 samp_json="${samp_file/.txt/.json}"
 runs_json="${runs_file/.txt/.json}"
 
-## create dirs
+# Create dirs
 [[ ! -e "${out_path}" ]] || die "Output dir exists already (${out_path})"
 mkdir -p "${out_path}" || die "Unable to create output dir (${out_path})"
 
-## gather submission info from LAB LIMS
+# Gather submission info from LAB LIMS
 info "Querying HMF LIMS to get submission info"
 lims_submission_json=$(query_lims.pl -type submissions -filter "submission=${submission}" -json | jq --sort-keys '.[0]')
 echo "${lims_submission_json}" > "${subm_json}"
@@ -42,12 +42,12 @@ p_type=$(jq -r '.analysis_type' <<< "${lims_submission_json}")
 
 [[ -n "${p_name}" ]] || die "Unable to find project for submission"
 
-## get all samples involved from LAB LIMS
+# Get all samples from LAB LIMS
 info "Querying HMF LIMS to get sample list"
 query_lims.pl -type samples -filter "submission=${submission}" > "${lims_file}"
 query_lims.pl -type samples -filter "submission=${submission}" -json > "${lims_json}"
 
-## get q30/yield data from HMF API
+# Get sample info from HMF API
 info "Querying HMF API to get sample status"
 api samples "${submission}" submission > "${samp_file}"
 api_samples_json=$(hmf_api_get "samples?submission=${submission}")
@@ -55,20 +55,20 @@ api_samples_json=$(hmf_api_get "samples?submission=${submission}")
 total_yield_gbase=$(echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
 echo "${api_samples_json}" > "${samp_json}"
 
-## get entity/run-status from HMF API
+# Get run info from HMF API
 info "Querying HMF API to get run status"
 api runs "${submission}" set_name_contains > "${runs_file}"
 api_runs_json=$(hmf_api_get "runs?set_name_contains=${submission}")
 echo "${api_runs_json}" > "${runs_json}"
 
-## get counts to check completeness
+# Get counts to check completeness
 hmf_count=$(grep -cv "^#" "${lims_file}" | cut -f2)
 api_count=$(echo "${api_samples_json}" | jq -c '[.[] | select(.status=="Ready")] | length')
 
-## setup barcodes file (needed later for fastq file cleanup)
+# Setup barcodes file
 grep -v "^#" "${samp_file}" | cut -f2 > "${barc_file}"
 
-## setup reporting info
+# Setup reporting info
 rm -f "${repo_file}"
 pdf_name="${submission}_${p_name}.pdf"
 
@@ -115,14 +115,14 @@ info " cat ${runs_file}"
 echo ""
 
 info "And/or get the aria2 download config:"
-echo " nohup gather_submission_aria_config ${submission} > ${out_path}/gather_aria.log &"
+echo " nohup gather_submission_aria_config ${submission} ${p_name} > ${out_path}/gather_aria.log &"
 echo ""
 
 info "And/or print info for (PDF) report:"
 echo " cat ${repo_file}"
 echo ""
 
-## warn if not potentially complete
+# Warn if not potentially complete
 if [[ ${hmf_count} -ne ${api_count} ]]; then
     warn "Not all samples have status Ready (so FASTQ might be missing)!"
 fi

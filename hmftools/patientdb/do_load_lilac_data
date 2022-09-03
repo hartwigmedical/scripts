@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+
+sample=$1 && shift
+lilac_output_file=$1 && shift
+lilac_qc_metrics_file=$1 && shift
+database_name=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+
+# Database details
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" ${database_name})
+
+info "Loading lilac data for ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLilacData \
+    -sample ${sample} \
+    -lilac_output_file ${lilac_output_file} \
+    -lilac_qc_metrics_file ${lilac_qc_metrics_file} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

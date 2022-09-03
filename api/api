@@ -2,7 +2,8 @@
 
 source message_functions || exit 1
 
-classes=(accounts biopsies datasets entities fastq flowcells groups inis platforms runs samples sets sequencers)
+classes=(accounts biopsies datasets entities fastq lanes flowcells groups inis platforms runs samples sets sequencers
+reports/created reports/shared)
 
 print_usage(){
     script=$(basename "$0")
@@ -10,20 +11,23 @@ print_usage(){
     echo "Usage: $script [-j, -t] <class> [<filter-value> <filter-key>]"
     echo "Examples:"
     echo " $script platforms"
-    echo " $script -j platforms"
-    echo " $script -t samples"
+    echo " $script -e pilot platforms"
+    echo " $script -e pilot samples"
     echo " $script flowcells | tail"
     echo " $script flowcells NS21-0064"
     echo " $script samples CPCT02460007T"
     echo " $script samples FR17455547 barcode"
     echo " $script fastq 37510 sample_id"
-    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna' id"
+    echo " $script datasets 'CPCT02010325T'"
+    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna'"
+    echo " $script reports/created | tail"
     echo "Options:"
-    echo " -j  output raw json instead of TSV table"
-    echo " -t  use testing/pilot API instead of prod"
+    echo " -j  Output raw api json content instead of TSV"
+    echo " -t  Use testing/pilot environment instead of production"
     echo "Notes:"
-    echo " Default filter-key is 'name'"
-    echo " Classes: ${classes[*]}"
+    echo " * Default filter-key is 'name'"
+    echo " * Available classes: ${classes[*]}"
+    echo " * Use script hmf_api_get instead for all scripted use"
     echo "---"
     exit 1
 }
@@ -31,18 +35,17 @@ print_usage(){
 output_json='FALSE'
 additional_get_params=""
 
-while getopts ':jt' flag; do
+while getopts ':jrt' flag; do
     case "${flag}" in
-        j) output_json='TRUE' && shift ;;
-        t) additional_get_params="-t " && shift ;;
+        j) output_json='TRUE' ;;
+        t) additional_get_params="-t";;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
-
-class=$1 # obligatory
-filter_input=$2 # optional
-filter_field=$3 # optional but required if searching by any field other than the "name" of object
+class=${*:$OPTIND:1} && shift # obligatory
+filter_input=${*:$OPTIND:1} && shift # optional
+filter_field=${*:$OPTIND:1} && shift # optional but required if searching by any field other than the "name" of object
 
 if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
     print_usage >&2
@@ -55,8 +58,9 @@ main(){
     if [[ -n "${filter_field}" ]]; then
         filter_field="${filter_field}"
     elif [[ "${class}" == "runs" ]]; then
-        # runs have no name field but do have a set_name filter
-        filter_field="set_name"
+        filter_field="set_name" # runs have no name field but do have a set_name filter
+    elif [[ "${class}" == "datasets" ]]; then
+        filter_field="id"
     else
         filter_field="name"
     fi
@@ -81,27 +85,51 @@ main(){
     # Printing
     if [[ "${output_json}" == "TRUE" ]]; then
         echo "${json_result}"
+    elif [[ "${class}" == "reports/created" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" barcode sample_name cohort report_type source create_time run_id id
+        jq -r '.[] | [.barcode, .sample_name, .cohort, .report_type, .source, .create_time, .run_id, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "reports/shared" ]]; then
+        printf "#%s\t%s\t%s\n" share_time report_created_id id
+        jq -r '.[] | [.share_time, .report_created_id, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "fastq" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
         jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
-        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9) }1'
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9) }1'
+    elif [[ "${class}" == "lanes" ]]; then
+        printf "#%s\t%s\t%s\n" name flowcell_id id
+        jq -r '.[] | [.name, .flowcell_id, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "flowcells" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc id
-        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, .id] | @tsv' <<< "${json_result}" \
-        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yield undet_yield status qc updateDate id
+        jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|.[:10]), .id] | @tsv' <<< "${json_result}" \
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "samples" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
         jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
-        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum entity_id ini status version bucket id
-        jq -r '.[] | [.set.name, .set.ref_sample, .set.tumor_sample, .set.entity_id, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket startDate endDate id
+        jq -r '.[] | [.set.name,
+        .set.ref_sample,
+        .set.tumor_sample,
+        .ini,
+        .version,
+        .status,
+        .bucket,
+        (if .startTime then .startTime|.[:10] else "NA" end),
+        (if .endTime then .endTime|.[:10] else "NA" end),
+        .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "platforms" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
         jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "sets" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name entity_id ref_name tum_name ref_barcode tum_barcode id
-        jq -r '.[] | [.name, .entity_id, .ref_sample, .tumor_sample, (.samples[]|select(.type=="ref")|.barcode)//"NA", (.samples[]|select(.type=="tumor")|.barcode)//"NA", .id] | @tsv' <<< "${json_result}"
+        jq -r '.[] | [.name,
+        .entity_id,
+        (.samples[]|select(.type=="ref")|.name)//"NA",
+        (.samples[]|select(.type|contains("tumor"))|.name)//"NA",
+        (.samples[]|select(.type=="ref")|.barcode)//"NA",
+        (.samples[]|select(.type|contains("tumor"))|.barcode)//"NA",
+        .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "entities" ]]; then
         printf "#%s\t%s\t%s\t%s\n" name bucket add_to_db id
         jq -r '.[] | [.name, .bucket, .add_to_db, .id] | @tsv' <<< "${json_result}"
@@ -120,6 +148,11 @@ main(){
     elif [[ "${class}" == "groups" ]]; then
         printf "#%s\t%s\n" name id
         jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "datasets" ]]; then
+        printf "#%s\t%s\t%s\t%s\n" sample_name version file_type file_url
+        jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\(.[$s].version)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
+        # Need to grab RNA data separately because data structure differs
+        jq --arg t "rna_raw_reads" -r 'select(.[][$t]) | .[][$t] | keys[] as $s | .[$s][] | [$s, .version, $t, .path] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi

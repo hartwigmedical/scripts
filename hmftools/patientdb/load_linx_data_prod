@@ -18,4 +18,4 @@ database="hmfpatients"
 credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_linx_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"
+do_load_linx_somatic_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"

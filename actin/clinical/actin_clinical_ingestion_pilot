@@ -2,7 +2,16 @@
 
 source locate_files || exit 1
 
-actin_jar="$(locate_pilot_actin)"
-output_directory="$(locate_actin_clinical_directory)"
+feed_directory="$(locate_actin_clinical_input_feed_directory)"
+curation_directory="$(locate_actin_clinical_curation_directory)"
+output_directory="$(locate_actin_curated_clinical_directory)"
 
-do_ingest_actin_clinical ${actin_jar} ${output_directory}
+actin_jar="$(locate_pilot_actin)"
+
+info "Running ACTIN Clinical on ${feed_directory}"
+java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \
+    -feed_directory ${feed_directory} \
+    -curation_directory ${curation_directory} \
+    -output_directory ${output_directory} \
+    "$@"
+

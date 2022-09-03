@@ -11,10 +11,9 @@ fi
 
 clinical_json="$(locate_actin_clinical_json ${sample})"
 
-molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
-molecular_json="$(locate_orange_json ${molecular_dir})"
-
+molecular_json="$(locate_actin_molecular_json ${sample})"
 if [[ -z "${molecular_json}" ]]; then
+    warn "No molecular json found for ${sample}. Falling back on minimal molecular json"
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 
@@ -24,7 +23,7 @@ output_directory="$(locate_actin_reports_directory)"
 
 actin_jar="$(locate_pilot_actin)"
 
-java11 -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
+java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
     -treatment_match_json ${treatment_match_json} \

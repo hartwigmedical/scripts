@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_research_patient_db)
 credentials=$(prod_writer_sql_credentials)
 database="pipeline_v5_validation"
 

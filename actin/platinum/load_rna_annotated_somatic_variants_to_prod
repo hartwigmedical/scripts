@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference=$(load_ref_sample_from_metadata ${run_dir})
+rna="${sample}_RNA"
+
+somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
+
+patient_db_jar="$(locate_prod_patient_db)"
+
+database="hmfpatients"
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" ${database})
+
+info "Loading somatic variant DNA/RNA data for ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
+    -sample ${sample} \
+    -reference ${reference} \
+    -rna ${rna} \
+    -somatic_vcf ${somatic_vcf} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

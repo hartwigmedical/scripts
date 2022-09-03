@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
-java11 -cp $(locate_run_contexts_writer) com.hartwig.clinicaldb.RunContextsWriter
+java -cp $(locate_run_contexts_writer) com.hartwig.clinicaldb.RunContextsWriter

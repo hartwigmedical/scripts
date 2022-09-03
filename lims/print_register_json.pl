@@ -20,6 +20,7 @@ my $SOM_INI = "Somatic.ini";
 my $SHA_INI = "ShallowSeq.ini";
 my $RNA_INI = "Rna.ini";
 my $BCL_INI = "BCL.ini";
+my $TAR_INI = "Targeted.ini";
 
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
@@ -31,6 +32,9 @@ my $LIMS_IN_FILE = '/data/ops/lims/prod/lims.json';
 my $OUTPUT_DIR = '/data/ops/api/prod/jsons';
 my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
+my $SKIP_RECALCULATING_YIELD_REF = 0;
+my $SKIP_RECALCULATING_YIELD_TUM = 0;
+my $IGNORE_SHALLOWSEQ = 0;
 my $FORCE_OUTPUT = 0;
 
 my %opt = ();
@@ -40,6 +44,7 @@ GetOptions (
     "limsjson=s"     => \$LIMS_IN_FILE,
     "useExistingRef" => \$USE_EXISTING_REF,
     "useExistingTum" => \$USE_EXISTING_TUM,
+    "noShallow"      => \$IGNORE_SHALLOWSEQ,
     "forceOutput"    => \$FORCE_OUTPUT,
     "experiment"     => \$opt{ as_experiment },
     "debug"          => \$opt{ debug },
@@ -68,7 +73,8 @@ my $HELP =<<HELP;
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
     -forceOutput       (write json even if sample already has a run in API)
-    -experiment <s>    (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
+    -noShallow         (do not create ShallowSeq run even if set in LIMS)
+    -experiment        (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
 
 HELP
 
@@ -121,7 +127,7 @@ sub addSamplesFromSamplesheet{
     while ( <$header_fh> ){
         chomp;
         if ( $_ =~ /^\[Data\]/ ){
-            my $header_line = <$header_fh>;
+            my $header_line = removeNewlineCharacters(<$header_fh>);
             die "[ERROR] Header line should contain Sample_ID\n" unless $header_line =~ /Sample_ID/;
             @header = split( ",", $header_line );
         }
@@ -133,8 +139,9 @@ sub addSamplesFromSamplesheet{
     open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$samplesheet_fh> ){
         chomp;
-        next if $_ eq '' or $_ =~ /^[\,\s]+$/;
-        if ( $_ =~ /^\[(Header|Reads|Settings|Data)\]/ ){
+        my $line = removeNewlineCharacters($_);
+        next if $line eq '' or $line =~ /^[\,\s]+$/;
+        if ( $line =~ /^\[(Header|Reads|Settings|Data)\]/ ){
             $currblock = $1;
         }
         elsif ( $currblock eq 'Header' ){
@@ -142,8 +149,8 @@ sub addSamplesFromSamplesheet{
             $head{ $field } = $content;
         }
         elsif ( $currblock eq 'Data' ){
-            next if $_ =~ /Sample_ID/; # skip data header line
-            my @line_values = split( ',', $_ );
+            next if $line =~ /Sample_ID/; # skip data header line
+            my @line_values = split( ',', $line );
             my %record = ();
             foreach my $field ( @header ){
                 $record{ $field } = shift @line_values;
@@ -151,6 +158,13 @@ sub addSamplesFromSamplesheet{
             my $id = $record{ 'Sample_ID' };
             my $name = $record{ 'Sample_Name' };
             my $submission = $record{ 'Sample_Project' };
+
+            if (! defined $submission || $submission eq ""){
+                die "[ERROR] No submission found in line: $line\n";
+            }
+            if (! defined $id || $id eq ""){
+                die "[ERROR] No sample ID found in line: $line\n";
+            }
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
@@ -189,11 +203,16 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $priority   = getPriorityForSample( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
+    my $lab_status = getValueByKey( $sample, 'lab_status' );
     
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
+    }
+
+    if ( $lab_status ne "Finished" and $lab_status ne "finished" and $lab_status ne "In process" and $name !~ /^VirtualSample\d+/){
+        sayWarn("  Check JSON for sample $name, since lab status is unexpected: lab_status='$lab_status'")
     }
 
     ## overwrite submission and entity in case of experiment
@@ -205,6 +224,8 @@ sub processSample{
     
     my $use_existing_ref = $USE_EXISTING_REF;
     my $use_existing_tum = $USE_EXISTING_TUM;
+    my $skip_recalculating_yield_ref = $SKIP_RECALCULATING_YIELD_REF;
+    my $skip_recalculating_yield_tum = $SKIP_RECALCULATING_YIELD_TUM;
 
     ## not all samples have q30 field because this was added later to lims
     my $q30 = $Q30_LIM;
@@ -229,7 +250,17 @@ sub processSample{
         $json_data{ 'ini' } = "$BCL_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'ref',
+            $q30,
+            $yield,
+            $use_existing_ref,
+            $skip_recalculating_yield_ref,
+        );
     }
     elsif ( $analysis eq 'FASTQ' ){
         my $set = join("_", $date, $submission, $barcode, $name );
@@ -238,7 +269,17 @@ sub processSample{
         $json_data{ 'entity' } = "$entity";
 
         $json_data{ 'fastq_portal' } = JSON::true;
-        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'ref',
+            $q30,
+            $yield,
+            $use_existing_ref,
+            $skip_recalculating_yield_ref,
+        );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
@@ -246,7 +287,17 @@ sub processSample{
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'ref',
+            $q30,
+            $yield,
+            $use_existing_ref,
+            $skip_recalculating_yield_ref,
+        );
     }
     elsif ( $analysis eq 'RNAanalysis' ){
         my $set = join( "_", $date, "HMFregRNA", $barcode, $name );
@@ -257,7 +308,17 @@ sub processSample{
         $json_data{ 'ini' } = "$RNA_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor-rna', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'tumor-rna',
+            $q30,
+            $yield,
+            $use_existing_ref,
+            $skip_recalculating_yield_ref,
+        );
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
@@ -282,17 +343,23 @@ sub processSample{
             sayWarn("  RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)");
             return "NoJsonMade_RnotFoundForSomaticT";
         }
-        
+
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
         my $patient_ref = getValueByKey( $ref_obj, 'patient' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
         my $submission_ref = getValueByKey( $ref_obj, 'submission' );
+        my $lab_status_ref = getValueByKey( $ref_obj, 'lab_status' );
+
+        if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished"  and $lab_status ne "In process" ){
+            sayWarn("  Check JSON for sample $name, since ref lab status is unexpected: lab_status_ref='$lab_status_ref'")
+        }
+
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
         ## adjust content in case of ShallowSeq
-        if ( $needs_shallow ){
+        if ( $needs_shallow and not $IGNORE_SHALLOWSEQ ){
             sayInfo("  ShallowSeq flag set in LIMS");
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
 
@@ -332,6 +399,7 @@ sub processSample{
             }
         }
 
+        my $ref_api_status = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[0].status' | tr -d '"\n'`;
         if ( $patient ne $patient_ref ){
             ## add suffix to ref barcode and use tumor submission in case ref is needed from other existing patientId
             my $new_name_ref = $patient . 'R';
@@ -347,34 +415,33 @@ sub processSample{
             $name_ref = $new_name_ref;
             $barcode_ref = $new_barcode_ref;
             $submission_ref = $submission;
-        } else {
+            $skip_recalculating_yield_ref = 1;
+        } elsif ( $ref_api_status eq "Deleted" ){
             ## add suffix to ref barcode in case ref fastq has already been deleted
-            my $ref_status = `hmf_api_get 'samples?barcode=$barcode_ref' | jq '.[0].status' | tr -d '"\n'`;
-            if ( $ref_status eq "Deleted" ){
-                my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
-                    $name_ref,
-                    $barcode_ref,
-                    $name,
-                    $barcode,
-                    \@warn_msg,
-                    $date,
-                    "REF sample is 'Deleted'.",
-                );
-                $barcode_ref = $new_barcode_ref;
-            }
+            my $new_barcode_ref = getCorrectBarcodeWithSuffixForRefSampleName(
+                $name_ref,
+                $barcode_ref,
+                $name,
+                $barcode,
+                \@warn_msg,
+                $date,
+                "REF sample is 'Deleted'.",
+            );
+            $barcode_ref = $new_barcode_ref;
+            $skip_recalculating_yield_ref = 1;
         }
  
         ## check if barcode already exists in HMF API
-        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'select(.[].status != "Unregistered") | length'`;
-        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'select(.[].status != "Unregistered") | length'`;
+        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'map(select(.status != "Unregistered")) | length'`;
+        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'map(select(.status != "Unregistered")) | length'`;
         chomp($tum_exists);
         chomp($ref_exists);
-        
-        if ( $tum_exists ){
+
+        if ( $tum_exists ne "0" ){
             sayInfo("  TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
             $use_existing_tum = 1;
-        }        
-        if ( $ref_exists ){
+        }
+        if ( $ref_exists ne "0" ){
             sayInfo("  REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)");
             $use_existing_ref = 1;
         }
@@ -384,8 +451,57 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         $json_data{ 'priority' } = $priority;
-        addSampleToJsonData( \%json_data, $submission_ref, $barcode_ref, $name_ref, 'ref', $q30, $yield_ref, $use_existing_ref );
-        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor', $q30, $yield, $use_existing_tum );
+        addSampleToJsonData(
+            \%json_data,
+            $submission_ref,
+            $barcode_ref,
+            $name_ref,
+            'ref',
+            $q30,
+            $yield_ref,
+            $use_existing_ref,
+            $skip_recalculating_yield_ref,
+        );
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'tumor',
+            $q30,
+            $yield,
+            $use_existing_tum,
+            $skip_recalculating_yield_tum,
+        );
+    }
+    elsif ( $analysis eq 'Targeted_Tumor_Only' ){
+        my $ini = $TAR_INI;
+        my $set = join( "_", $date, $submission, $barcode, $patient );
+        my $exists_in_api = `hmf_api_get 'samples?barcode=$barcode' | jq 'map(select(.status != "Unregistered")) | length'`;
+        chomp($exists_in_api);
+
+        if ( $exists_in_api ne "0" ){
+            sayInfo("  Sample barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
+            $use_existing_tum = 1;
+        }
+
+        sayInfo("  Set name constructed to $set");
+        $json_data{ 'ini' } = "$ini";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
+        $json_data{ 'priority' } = $priority;
+        addSampleToJsonData(
+            \%json_data,
+            $submission,
+            $barcode,
+            $name,
+            'tumor',
+            $q30,
+            $yield,
+            $use_existing_tum,
+            $skip_recalculating_yield_tum,
+        );
+
     }
     elsif ( $analysis eq 'Somatic_R' ){
         sayInfo("  RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)");
@@ -403,10 +519,9 @@ sub processSample{
     ## check if set was already registered earlier
     my $setname_wo_date = $json_data{ 'set_name' };
     $setname_wo_date =~ s/^\d{6}_//;
-    # If no such runs exit, $existing_count is empty string
-    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'select(.[].status != "Invalidated") | length' | tr -d '"\n'`;
+    my $existing_count = `hmf_api_get 'runs?set_name_contains=$setname_wo_date' | jq 'map(select(.status != "Invalidated")) | length' | tr -d '"\n'`;
 
-    if ( $existing_count ne "" ){
+    if ( $existing_count ne "0" ){
         if ( $FORCE_OUTPUT ){
             push( @warn_msg, "Existing run(s) found in API for $setname_wo_date ($existing_count) but output was enforced" );
         }
@@ -431,19 +546,19 @@ sub processSample{
 
 sub getCorrectBarcodeWithSuffixForRefSampleName{
     my ($name_ref, $barcode_ref, $name, $barcode, $warn_msg, $date, $change_reason) = @_;
-    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready") | length' | tr -d '"\n'`;
+    my $ready_new_ref_sample_count = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready")) | length' | tr -d '"\n'`;
     my $new_barcode_ref;
     my $new_warn_msg;
     if ( $ready_new_ref_sample_count eq "1" ){
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready"))[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Reusing existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
-    } elsif ( $ready_new_ref_sample_count eq "" ) {
-        $new_barcode_ref = $barcode_ref . "_c2f" . $date;
+    } elsif ( $ready_new_ref_sample_count eq "0" ) {
+        $new_barcode_ref = $barcode_ref . "-c2f" . $date;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Adding suffix to create new REF barcode ($new_barcode_ref)";
     } else {
-        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'select(.[].status == "Ready")[0].barcode' | tr -d '"\n'`;
+        $new_barcode_ref = `hmf_api_get 'samples?name=$name_ref' | jq 'map(select(.status == "Ready"))[0].barcode' | tr -d '"\n'`;
         $new_warn_msg = "DOUBLE CHECK JSON for $barcode ($name): " .
             "$change_reason Out of multiple choices, randomly chose existing 'Ready' REF barcode ($new_barcode_ref) to replace ($barcode_ref)";
     }
@@ -509,7 +624,7 @@ sub getPriorityForSample{
 }
 
 sub addSampleToJsonData{
-    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing) = @_;
+    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing, $skip_recalculating_yield) = @_;
     my %tmp = (
         'barcode'    => "$barcode",
         'name'       => "$name",
@@ -520,6 +635,9 @@ sub addSampleToJsonData{
     );
     if ( $use_existing ){
         $tmp{ 'use_existing_sample' } = JSON::true;
+    }
+    if ( $skip_recalculating_yield ){
+        $tmp{ 'skip_recalculate' } = JSON::true;
     }
     push( @{$store->{ 'samples' }}, \%tmp );
 }
@@ -534,3 +652,8 @@ sub sayWarn{
     warn "[WARN] $msg\n"
 }
 
+sub removeNewlineCharacters {
+    my $text = shift;
+    $text =~ s/[\r\n]+//g;
+    return $text;
+}

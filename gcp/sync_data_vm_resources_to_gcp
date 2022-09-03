@@ -4,20 +4,12 @@ set -e
 source message_functions || exit 1
 
 BUCKET="gs://data-vm-resources-prod-1"
+FASTCP="gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp"
 
 info "Syncing data-vm resources to GCP"
 gsutil cp /data/dbs/clinical_data/curated_primary_tumor.tsv ${BUCKET}/dbs/clinical_data/curated_primary_tumor.tsv
-gsutil cp /data/dbs/germline_reporting/germline_reporting.tsv ${BUCKET}/dbs/germline_reporting/germline_reporting.tsv
-gsutil cp /data/dbs/summary_patient_report/summary_samples.tsv ${BUCKET}/dbs/summary_patient_report/summary_samples.tsv
-gsutil cp /data/dbs/virus_interpreter/taxonomy_db.tsv ${BUCKET}/dbs/virus_interpreter/taxonomy_db.tsv
-gsutil cp /data/dbs/virus_interpreter/virus_interpretation.tsv ${BUCKET}/dbs/virus_interpreter/virus_interpretation.tsv
-gsutil cp /data/dbs/virus_interpreter/virus_blacklist.tsv ${BUCKET}/dbs/virus_interpreter/virus_blacklist.tsv
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* ${BUCKET}/ops/lims/prod/
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/dbs/clinical_curation/* ${BUCKET}/ops/clinical_curation/
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ecrf/* ${BUCKET}/ecrf/
-gsutil cp /data/dbs/patient_reporter_images/* ${BUCKET}/dbs/patient_reporter_images/
-gsutil cp /data/dbs/disease_ontology/201015_doid.json ${BUCKET}/dbs/disease_ontology/201015_doid.json
-gsutil cp /data/dbs/summary_patient_report/summary_samples.tsv ${BUCKET}/dbs/summary_patient_report/summary_samples.tsv
-gsutil cp /data/ecrf/* ${BUCKET}/ecrf/
+$FASTCP /data/ops/lims/prod/*.tsv ${BUCKET}/ops/lims/prod/
+gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/ops/lims/prod/
+$FASTCP /data/ecrf/* ${BUCKET}/ecrf/
 
 info "Done syncing data-vm resources"

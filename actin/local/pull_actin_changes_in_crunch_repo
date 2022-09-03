@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+current_path=$(pwd)
+
+cd "$HOME/hmf/repos/crunch-resources-private"
+
+git pull
+
+cd "${work_path}"

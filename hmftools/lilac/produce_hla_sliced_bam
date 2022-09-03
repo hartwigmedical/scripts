@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+input_cram=$1 && shift
+output_hla_bam=$1 && shift
+
+if [[ -z "${input_cram}" || -z "${output_hla_bam}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+samtools="/data/tools/samtools/1.10/samtools"
+ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
+hla_bed="/data/resources/crunch/lilac/hla_v37.bed"
+
+${samtools} view \
+    -T ${ref_genome_fasta} \
+    -L ${hla_bed} -u -@ 5 -M \
+    -o ${output_hla_bam} \
+    ${input_cram}
+
+${samtools} index ${output_hla_bam}
+
+

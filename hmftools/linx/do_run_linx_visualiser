@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source metadata_functions || exit 1
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+linx_jar=$1 && shift
+input_dir=$1 && shift
+
+# Load metadata
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+circos_binary="/data/tools/circos/0.69.6/bin/circos"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+
+info "Running linx visualiser for ${sample}"
+java -Xmx8G -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
+    -sample ${sample} \
+    -ref_genome_version 37 \
+    -circos ${circos_binary} \
+    -ensembl_data_dir ${ensembl_data_dir} \
+    -vis_file_dir ${input_dir} \
+    -data_out ${input_dir}/circos \
+    -plot_out ${input_dir}/plot \
+    "$@"
+
+#Example usage
+#   run_linx_visualiser_prod /data/datasets/<run> -threads 8
+#   run_linx_visualiser_prod /data/datasets/<run> -plot_reportable
+#   run_linx_visualiser_pilot /data/datasets/<run> -chromosome 15 -debug
+#
+# Optional arguments
+#
+# -threads  sets number of threads
+# -chromosome   will only produce plot for supplied chromosome
+# -clusterId    will only produce plot for supplied clusterId
+# -debug    replaces sv positions with sv id

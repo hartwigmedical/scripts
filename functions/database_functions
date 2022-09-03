@@ -2,6 +2,14 @@
 
 source secrets_functions || exit 1
 
+prod_actin_reader_sql_credentials() {
+    echo $(get_secret_from_secret_manager "mysql-actin-sql-prod-1-reader")
+}
+
+prod_actin_writer_sql_credentials() {
+    echo $(get_secret_from_secret_manager "mysql-actin-sql-prod-1-writer")
+}
+
 prod_writer_sql_credentials() {
     echo $(get_secret_from_secret_manager "mysql-patients-sql-prod-1-writer")
 }
@@ -27,6 +35,16 @@ construct_database_url() {
     local db_dependencies=$(extract_database_dependencies "${credentials}")
 
     echo "mysql://${db_host}:${db_port}/${database_name}?serverTimezone=CET${db_dependencies}"
+}
+
+construct_database_url_no_dependencies() {
+    local credentials=$1 && shift
+    local database_name=$1 && shift
+
+    local db_host=$(extract_database_host "${credentials}")
+    local db_port=$(extract_database_port "${credentials}")
+
+    echo "mysql://${db_host}:${db_port}/${database_name}"
 }
 
 extract_database_user() {

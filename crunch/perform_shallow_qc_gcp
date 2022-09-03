@@ -3,83 +3,69 @@ set -e
 
 source message_functions || exit 1
 
+CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CALC_YIELD_SCRIPT="${CODEDIR}/../utilityscripts/get_yield_from_read_count_and_excluded_base_percentage.py"
+
 REF_TARGET_YIELD=100
 TUM_TARGET_YIELD=300
 BASES_PER_READ=150
 BASES_PER_GBASE=1000000000
 
 ADD_YIELD_NOT_APPLICABLE="NA"
+NA="na"
 REF_COV_MINIMUM_REQUIREMENT=26
 
-set_names=("$@")
+ID_ARG="id"
 
-if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
-    echo "---"
-    echo " Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
-    echo "    Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
-    echo "---"
-    exit 1
-fi
+main() {
+  first_arg=$1
+  set_names=("$@")
 
-get_add_yield() {
-    local target_yield=$1 && shift
-    local reads=$1 && shift
-    local exc=$1 && shift
+  if [[ ${#set_names[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+      echo "---"
+      echo "           Usage: $(basename "$0") <set-name> [<set-name-2> <set-name-N>]"
+      echo "              Eg: $(basename "$0") 210101_ShallowSeq_A_B_C"
+      echo " Alternate usage: $(basename "$0") id <run-id> [<run-id-2> <run-id-N>]"
+      echo "---"
+      exit 1
+  fi
 
-    if [[ -z ${exc} ]]; then
-        die "Not enough arguments for ${FUNCNAME[0]}: ${target_yield}, ${reads}, ${exc}"
-    fi
+  echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+  \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
-    if [[ ${exc:0:2} != "0." ]]; then
-        die "Calculation only works if exc is between 0 and 1: exc=${exc}"
-    fi
+  for set_name in "${set_names[@]}"; do
+      if [[ "${set_name}" == "${ID_ARG}" ]]; then
+          continue
+      fi
 
-    # Calculation of current yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
-    # However, bash doesn't do floating point math and exc is a fraction.
-    # Since exc is between 0 and 1 we can avoid the floating point math as follows:
-    exc_decimals="${exc#*.}"
-    exc_decimals_length="${#exc_decimals}"
-    exc_decimals_factor=$(( 10**exc_decimals_length ))
-    # We know that exc == exc_decimals/exc_decimals_factor.
-    # This implies that 1-exc == (exc_decimals_factor - exc_decimals) / exc_decimals_factor
-    # As an example, if exc=0.217 then exc_decimals=217, exc_decimals_factor=1000. In this case
-    # 1-exc=1-0.217=0.783=783/1000=(1000-217)/1000=(exc_decimals_factor-exc_decimals)/exc_decimals_factor
-    #
-    # We can then write
-    # current_yield=(((exc_decimals_factor - exc_decimals) / exc_decimals_factor to write) * reads * BASES_PER_READ / BASES_PER_GBASE)
-    # To avoid the multiple roundings (from the divisions), the final formula is as follows:
-    # current_yield=((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE)
-    # Note that the result is rounded down to an integer.
-    current_yield=$(( ((exc_decimals_factor-exc_decimals)*reads*BASES_PER_READ) / (exc_decimals_factor*BASES_PER_GBASE) ))
+      # retrieve run info from API
+      if [[ "${first_arg}" == "${ID_ARG}" ]]; then
+          run_json=$(hmf_api_get "runs/${set_name}") || die "Unable to retrieve run info from API by id (${set_name})"
+      else
+          run_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
+      fi
 
-    add_yield=$(( target_yield-current_yield ))
-
-    if [[ ${add_yield} -lt 0 ]]; then
-        # Already has enough yield
-        add_yield="${ADD_YIELD_NOT_APPLICABLE}"
-    fi
-
-    echo "${add_yield}"
+      print_shallow_qc_for_run "${run_json}" || die "Could not print shallow qc for run for set '${set_name}'"
+  done
 }
 
-na="na"
+print_shallow_qc_for_run() {
+    local run_json=$1 && shift
 
-echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
-\tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
+    if [[ -z ${run_json} ]]; then
+        die "Not enough arguments for ${FUNCNAME[0]}: ${run_json}"
+    fi
 
-for set_name in "${set_names[@]}"; do
-    ## init variables
-    ref_sample=${na}; ref_cov=${na}; ref_rds=${na}; ref_map=${na}; ref_exc=${na}; ref_dup=${na}
-    tum_sample=${na}; tum_cov=${na}; tum_rds=${na}; tum_map=${na}; tum_exc=${na}; tum_dup=${na}
-    purity=${na}; status=${na}; qc_stat=${na}; amb_qc=${na}; pur_vsn=${na}; pip_vsn=${na}
+    local ref_sample=${NA}; local ref_cov=${NA}; local ref_rds=${NA}; local ref_map=${NA}; local ref_exc=${NA}
+    local ref_dup=${NA}; local tum_sample=${NA}; local tum_cov=${NA}; local tum_rds=${NA}; local tum_map=${NA}
+    local tum_exc=${NA}; local tum_dup=${NA}; local purity=${NA}; local status=${NA}; local qc_stat=${NA}
+    local amb_qc=${NA}; local pur_vsn=${NA}; local pip_vsn=${NA}; local set_name="${NA}"
 
-    # retrieve run info from API
-    run=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '.[-1]') || die "Unable to retrieve run info from API (${set_name})"
-
-    pip_vsn=$(jq -r '.version' <<< "${run}")
-    bucket=$(jq -r '.bucket' <<< "${run}")
-    ref_sample=$(jq -r '.set.ref_sample' <<< "${run}")
-    tum_sample=$(jq -r '.set.tumor_sample' <<< "${run}")
+    pip_vsn=$(jq -r '.version' <<< "${run_json}")
+    bucket=$(jq -r '.bucket' <<< "${run_json}")
+    ref_sample=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    tum_sample=$(jq -r '.set.tumor_sample' <<< "${run_json}")
+    set_name=$(jq -r '.set.name' <<< "${run_json}")
     run_url="gs://${bucket}/${set_name}"
 
     amb_dir="${run_url}/amber"
@@ -114,23 +100,23 @@ for set_name in "${set_names[@]}"; do
     tum_val=$(echo "${wgs_file_t_content}" | tail -1)
     ref_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${ref_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
     tum_jsn=$(perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${tum_val}\"); %m = (); @m{@h} = @v; print encode_json \%m;")
-  
+
     ref_cov=$(echo "${ref_jsn}" | jq -r '.MEAN_COVERAGE')
     ref_exc=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_TOTAL')
     ref_dup=$(echo "${ref_jsn}" | jq -r '.PCT_EXC_DUPE')
     tum_cov=$(echo "${tum_jsn}" | jq -r '.MEAN_COVERAGE')
     tum_exc=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_TOTAL')
     tum_dup=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_DUPE')
-  
+
     ## gather Flagstat info
     ref_rds=$(echo "${flg_file_r_content}" | grep 'total ('  | cut -d ' ' -f1)
     tum_rds=$(echo "${flg_file_t_content}" | grep 'total ('  | cut -d ' ' -f1)
     ref_map=$(echo "${flg_file_r_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
     tum_map=$(echo "${flg_file_t_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
- 
+
     ## gather Amber info
     amb_qc=$(echo "${aqc_file_content}" | grep QCStatus | cut -f2)
-  
+
     ## gather Purple info
     pur_vsn=$(echo "${vsn_file_content}" | grep version | cut -d"=" -f2)
     purity=$(echo "${ppu_file_content}" | tail -1 | cut -f1)
@@ -138,12 +124,14 @@ for set_name in "${set_names[@]}"; do
     qc_stat=$(echo "${pqc_file_content}" | grep QCStatus | cut -f2)
 
     ## calculate yield to add in GBase
-    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}")
+    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}") \
+            || die "Could not determine REF yield to add for run for set ${set_name}"
     if [[ ${ref_cov%%.*} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
         # Already has enough yield
         ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
     fi
-    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}")
+    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}") \
+            || die "Could not determine TUM yield to add for run for set ${set_name}"
 
     ## output
     printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
@@ -152,4 +140,33 @@ for set_name in "${set_names[@]}"; do
         "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
         "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
         "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}"
-done
+}
+
+get_add_yield() {
+    local target_yield=$1 && shift
+    local reads=$1 && shift
+    local exc=$1 && shift
+
+    if [[ -z ${exc} ]]; then
+        die "Not enough arguments for ${FUNCNAME[0]}: ${target_yield}, ${reads}, ${exc}"
+    fi
+
+    if [[ ${exc:0:2} != "0." ]]; then
+        die "Calculation only works if exc is between 0 and 1: exc=${exc}"
+    fi
+
+    # Calculation of current yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
+    current_yield=$(python3 "${CALC_YIELD_SCRIPT}" --read_count "${reads}" --excluded_base_percentage "${exc}") || \
+          die "Could not calculate current yield from read count ${reads} and exc ${exc}"
+
+    add_yield=$(( target_yield-current_yield ))
+
+    if [[ ${add_yield} -lt 0 ]]; then
+        # Already has enough yield
+        add_yield="${ADD_YIELD_NOT_APPLICABLE}"
+    fi
+
+    echo "${add_yield}"
+}
+
+main "$@"

@@ -1,0 +1,139 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp;
+use Time::Piece;
+use JSON;
+#use YAML qw(DumpFile);
+#use YAML::Tiny;
+use YAML::PP;
+use 5.010.000;
+
+my $SCRIPT = basename $0;
+
+my %opt = ();
+GetOptions (
+    "fastq_bucket|b=s" => \$opt{fastq_bucket},
+    "output_file|o=s" => \$opt{output_file},
+    "ref_string|r=s" => \$opt{ref_string},
+    "tum_string|t=s" => \$opt{tum_string},
+    "analysis_name|n=s" => \$opt{name},
+    "template_yaml|y=s" => \$opt{template_file},
+    "help|h" => \$opt{help}
+) or die "Error in command line arguments\n";
+
+my $HELP =<<HELP;
+  Description: Creates the fastq part of YAML config for platinum.
+  Usage: $SCRIPT -b
+HELP
+
+die $HELP if $opt{help};
+die $HELP unless $opt{fastq_bucket} && $opt{output_file} && $opt{ref_string} && $opt{tum_string} && $opt{name};
+
+my @ref_samples = split(",", $opt{ref_string});
+my @tum_samples = split(",", $opt{tum_string});
+
+my $ref_count = scalar @ref_samples;
+my $tum_count = scalar @tum_samples;
+
+say "Starting with $ref_count ref samples and $tum_count tumor samples";
+
+my $data = getTemplate();
+my %patient = (name => $opt{name});
+foreach my $ref_sample (@ref_samples){
+    my ($barcode, $name) = split(':', $ref_sample);
+    my $ref_data = construct_data_for_one_sample($barcode, $name);
+    #push(@{$patient{normal}}, $ref_data);
+    $patient{normal} = $ref_data;
+}
+foreach my $tum_sample (@tum_samples){
+    my ($barcode, $name) = split(':', $tum_sample);
+    my $tum_data = construct_data_for_one_sample($barcode, $name);
+    push(@{$patient{tumors}}, $tum_data);
+}
+push(@{$data->{samples}}, \%patient);
+printYaml($data, "$opt{output_file}");
+#printJson($data, "$opt{output_file}.json");
+
+sub construct_data_for_one_sample{
+    my ($barcode, $name) = @_;
+    say "  Constructing data for sample [$barcode, $name]";
+    my %sample_data = (name => $name);
+    my $pairs = get_fastq_pairs_for_sample($barcode);
+    $sample_data{fastq} = $pairs;
+    return \%sample_data;
+}
+
+sub get_fastq_pairs_for_sample{
+    my ($barcode) = @_;
+    my $dir_url = 'gs://' . $opt{fastq_bucket} . '/' . $barcode;
+    say "    Retrieving fastq urls for sample [$barcode, $dir_url]";
+    my @fastq_r1 = `gsutil ls "$dir_url"`;
+    my $r1_count = scalar @fastq_r1;
+    if ($r1_count == 0){
+        warn "[WARN] Number of R1 found: $r1_count";
+    }else{
+        say "      Number of R1 found: $r1_count";
+    }
+    chomp(@fastq_r1);
+    my @fastq_pairs = ();
+    foreach my $r1 (@fastq_r1){
+        my $r2 = $r1;
+        $r2 =~ s/_R1_/_R2_/g;
+        my %pair = (
+            read1 => "$r1",
+            read2 => $r2,
+        );
+        push(@fastq_pairs, \%pair);
+    }
+    return \@fastq_pairs;
+}
+
+sub getTemplate{
+    my %data = ();
+    my %data2 = ();
+    $data{gcp}{project} = 'hmf-crunch';
+    $data{gcp}{region} = 'europe-west4';
+    $data{serviceAccount}{name} = 'hmf-crunch@hmf-crunch.iam.gserviceaccount.com';
+    $data{serviceAccount}{existingSecret} = 'service-account-key';
+    $data{cluster} = 'service-account-key';
+    $data{cmek} = 'projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001';
+    $data{image} = 'eu.gcr.io/hmf-build/pipeline5:5.28.1';
+    $data{outputBucket} = 'dev-2707-tispa';
+    $data{argumentOverrides}{ref_genome_version} = 37;
+    $data{argumentOverrides}{image_project} = 'hmf-pipeline-prod-e45b00f2';
+    $data{argumentOverrides}{image_name} = 'pipeline5-5-28-202204281626-202204281749-private';
+    #$data{argumentOverrides}{shallow} = JSON::true;
+    $data{argumentOverrides}{shallow} = 'true';
+    $data{argumentOverrides}{cost_center_label} = 'experiments';
+    return \%data2;
+}
+
+sub printJson{
+    my ($data, $out_path) = @_;
+    say "  Writing json ($out_path)";
+    my $json_obj = JSON->new->allow_nonref;
+    my $json_txt = $json_obj->pretty->encode( $data );
+    open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
+    print OUT $json_txt;
+    close OUT;
+}
+
+sub printYaml{
+    my ($data, $out_path) = @_;
+    say "  Writing YAML to $out_path";
+    #my $yaml = YAML::Tiny->new($data);
+    #$yaml->write($out_path);
+    my $ypp = YAML::PP->new;
+    my $string = $ypp->dump_string($data);
+    $string =~ s/gs\:/\"gs\:/g;
+    $string =~ s/fastq\.gz/fastq\.gz\"/g;
+    open my $fh, '>', $out_path or die "[ERROR] Unable to open output file ($out_path): $!\n";
+      print $fh $string . "\n";
+    close $fh;
+}

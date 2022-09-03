@@ -1,0 +1,8 @@
+CREATE OR REPLACE VIEW relevantDrugClass AS (
+
+SELECT evidenceId, treatmentApproachEvidenceId, drugClassId, group_concat(distinct(drugClass)) as drugClasses,
+treatmentApproach.createDate, treatmentApproach.updateDate
+FROM treatmentApproachEvidence
+INNER JOIN treatmentApproachDrugClass ON treatmentApproachDrugClass.treatmentApproachId=treatmentApproachEvidence.treatmentApproachEvidenceId
+INNER JOIN treatmentApproach ON treatmentApproach.treatmentApproachId = treatmentApproachEvidence.treatmentApproachEvidenceId
+GROUP BY evidenceId);

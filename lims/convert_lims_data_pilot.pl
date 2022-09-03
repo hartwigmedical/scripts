@@ -72,21 +72,29 @@ my $LAMA_LIBRARYPREP_JSON = $LATEST_DIR . '/LibraryPreps.json';
 my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/SampleStatus.json';
 
 # Files from previous years
+my $SUBM_TSV_2021 = $LATEST_DIR . '/2021_for001_submissions.tsv';
+my $SAMP_TSV_2021 = $LATEST_DIR . '/2021_for001_samples.tsv';
+my $PROC_TSV_2021 = $LATEST_DIR . '/2021_for002_processing.tsv';
+
 my $SUBM_TSV_2020 = $LATEST_DIR . '/2020_for001_submissions.tsv';
 my $SAMP_TSV_2020 = $LATEST_DIR . '/2020_for001_samples.tsv';
 my $PROC_TSV_2020 = $LATEST_DIR . '/2020_for002_processing.tsv';
+
 my $SUBM_TSV_2019 = $LATEST_DIR . '/2019_for001_submissions.tsv';
 my $SAMP_TSV_2019 = $LATEST_DIR . '/2019_for001_samples.tsv';
 my $PROC_TSV_2019 = $LATEST_DIR . '/2019_for002_processing.tsv';
+
 my $SUBM_TSV_2018 = $LATEST_DIR . '/2018_subm';
 my $SAMP_TSV_2018 = $LATEST_DIR . '/2018_samp';
 my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
+
 my $PROC_TSV_2017 = $LATEST_DIR . '/2017_proc';
 my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 
 my @ALL_INPUT_FILES = (
     $LAMA_ISOLATION_JSON, $LAMA_PATIENT_JSON, $LAMA_LIBRARYPREP_JSON, $LAMA_SAMPLESTATUS_JSON,
-    $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV,
+    $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV, $FOR_001_CONT_TSV,
+    $SUBM_TSV_2021, $SAMP_TSV_2021, $PROC_TSV_2021,
     $SUBM_TSV_2020, $SAMP_TSV_2020, $PROC_TSV_2020,
     $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
     $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018,
@@ -120,18 +128,20 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2020'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
-
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2021'}, 'submission', 0, $SUBM_TSV_2021, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 my $lama_status = parseLamaSampleStatus($LAMA_SAMPLESTATUS_JSON);
@@ -181,25 +191,42 @@ sub addLamaSamplesToSamples{
         }
 
         my $sample_name = $sample_to_store{sample_name};
+        my $sample_id = $sample_to_store{sample_id};
+        my $sample_print_info = "barcode:$sample_id,name:$sample_name";
+
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
         }
         else {
-            sayWarn("SKIPPING LAMA sample because name ($sample_name) does not fit regex $name_regex");
+            sayWarn("NOTIFY: Unable to use LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
+            #print Dumper(\%sample_to_store);
             next;
         }
 
+        my $add_to_database = $sample_to_store{add_to_database};
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
         my $analysis_type = $sample_to_store{isolation_type};
+        my $cohort = $sample_to_store{cohort};
+        my $is_report_generated = $sample_to_store{is_report_generated};
         my $final_target_yield = NACHAR;
 
         if (not defined $isolation_type) {
-            sayWarn("SKIPPING: no isolation type defined for $isolate_barcode (pls fix in LAMA)");
+            sayWarn("NOTIFY: LAMA sample has no isolation type defined for $isolate_barcode [$sample_print_info]");
             next;
+        }
+        elsif ($isolation_type eq 'Tumor FFPE') {
+            $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
+            # sanity check that we are indeed dealing with TO (tumor only)
+            my $expected_cohort = 'TARGTO';
+            if ($sample_to_store{cohort} ne $expected_cohort){
+                sayWarn("NOTIFY: Found 'Tumor FFPE' but cohort != $expected_cohort for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
+                next;
+            }
+            $final_target_yield = 50;
         }
         elsif ($isolation_type eq 'Tissue') {
             $analysis_type = 'Somatic_T'; # DNA from tumor tissue
@@ -218,20 +245,21 @@ sub addLamaSamplesToSamples{
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
-            sayWarn("SKIPPING: unknown isolation type '$isolation_type' for $isolate_barcode (pls fix in LAMA)");
+            sayWarn("NOTIFY: unknown isolation type '$isolation_type' for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
             next
         }
 
-        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            if ($original_submission eq '') {
-                if ($analysis_type eq 'Somatic_R') {
-                    sayInfo("    No submission id yet for R sample (id:$isolate_barcode name:$sample_name)");
-                }
-                else{
-                    sayWarn("SKIPPING CORE for incorrect submission id \"$original_submission\" (id:$isolate_barcode name:$sample_name)");
-                }
-                next;
+        if (not defined $original_submission or $original_submission eq '') {
+            if ($analysis_type eq 'Somatic_R') {
+                sayInfo("    No submission id yet for R sample [$sample_print_info]");
             }
+            else{
+                sayWarn("NOTIFY: missing submission id [$sample_print_info]");
+            }
+            next;
+        }
+
+        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
             $sample_to_store{ 'entity' } = $original_submission;
             $sample_to_store{ 'project_name' } = $original_submission;
 
@@ -243,20 +271,30 @@ sub addLamaSamplesToSamples{
                 $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
             }
             else {
-                sayWarn("Unable to update submission \"$original_submission\" not found in submissions (id:$isolate_barcode name:$sample_name)");
+                sayWarn("NOTIFY: submission ID [$original_submission] not found in submissions [$sample_print_info]");
             }
         }
         elsif (exists $centers_dict->{ $center }) {
-            # All other samples are clinical study based (CPCT/DRUP/WIDE/ACTN/COREDB)
+            # All meant-for-database should by from a known center
             my $centername = $centers_dict->{ $center };
-            my $register_submission = 'HMFreg' . $study;
             $sample_to_store{original_submission} = $original_submission;
-            $sample_to_store{submission} = $register_submission;
-            $sample_to_store{project_name} = $register_submission;
+            $sample_to_store{submission} = $original_submission;
+            $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
+
+            # For newer cohorts the database consent can come in later than start of sequencing
+            # so check add_to_database and reset entity to avoid storing in database when not allowed (yet)
+            my $is_new_cohort = ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GENAYA' or $cohort eq 'GLOW');
+            if ($is_new_cohort and not $add_to_database ) {
+                my $no_db_entity = "ONCOACT_NO_DATABASE";
+                $sample_to_store{entity} = $no_db_entity;
+                if ($analysis_type ne 'Somatic_R' and $is_report_generated ne 'true') {
+                    sayWarn("NOTIFY: Unreported OncoAct with add_to_database=false, entity set to $no_db_entity! [$sample_print_info]");
+                }
+            }
         }
         else {
-            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$isolate_barcode name:$sample_name)");
+            sayWarn("NOTIFY: encountered unknown center ID [$center] for non-CORE sample [$sample_print_info]");
             next;
         }
 
@@ -301,6 +339,15 @@ sub addLamaSamplesToSamples{
             $sample->{'ref_sample_id'} = $ref_sample_id;
         }
     }
+
+    # TODO: remove once INC-194 (PGX DPYD bug) is solved
+    sayInfo("Resetting reportPgx to false for INC-194");
+    while ( my($barcode, $sample) = each %store ) {
+        next unless $sample->{analysis_type} eq 'Somatic_T';
+        next unless defined $sample->{report_pgx};
+        $sample->{report_pgx} = JSON::XS::false;
+    }
+
     return \%store;
 }
 
@@ -554,6 +601,7 @@ sub parseTsvCsv{
         fixDateFields( $obj );
         fixIntegerFields( $obj );
         fixBooleanFields( $obj );
+
         $store{ $key } = $obj;
     }
     close IN;
@@ -642,22 +690,35 @@ sub parseDictFile{
 
 sub addContactInfoToSubmissions{
     my ($submissions, $contact_groups) = @_;
-    my @fields = qw( requester_report_contact_name requester_report_contact_email data_contact_name data_contact_email );
+    my @required_fields = qw(
+        requester_report_contact_name
+        requester_report_contact_email
+        report_contact_name
+        report_contact_email
+        data_contact_name
+        data_contact_email
+    );
     sayInfo("  Adding contact group information to submissions");
     my %store = %{$submissions};
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
 
-        if( exists $submission->{ 'requester_report_contact_email' } ){
-            # Skip records from the time when contact info was entered in shipments tab
+        if( exists $submission->{ 'report_contact_email' } ){
+            # Submission is from the time when contact info was entered in shipments tab
+            foreach my $field ( @required_fields ){
+                unless ( exists $submission->{$field} ){
+                    $submission->{$field} = NACHAR;
+                }
+            }
             next;
         }
         elsif( defined $submission->{ 'group_id' } ){
+            # Retrieve contact info from the contact group table
             my $group_id = $submission->{ 'group_id' };
             next if $group_id eq 'na';
             if ( exists $contact_groups->{ $group_id } ){
                 my $group = $contact_groups->{ $group_id };
-                foreach my $field ( @fields ){
+                foreach my $field ( @required_fields ){
                     $submission->{$field} = $group->{ $field };
                 }
             }
@@ -667,7 +728,7 @@ sub addContactInfoToSubmissions{
             }
         }
         else{
-            sayWarn("No Group ID field in place for submission $submission_id");
+            sayWarn("No Group ID defined for submission $submission_id");
             next;
         }
     }
@@ -709,8 +770,8 @@ sub checkDrupStage3Info{
 
 sub checkContactInfo{
     my ($contact_groups) = @_;
-    my @name_fields = qw(client_contact_name requester_report_contact_name data_contact_name);
-    my @mail_fields = qw(requester_report_contact_email data_contact_email);
+    my @name_fields = qw(client_contact_name requester_report_contact_name report_contact_name data_contact_name);
+    my @mail_fields = qw(requester_report_contact_email report_contact_email data_contact_email);
     sayInfo("  Checking contact group information for completeness");
     foreach my $id (sort keys %$contact_groups){
         my $info = $contact_groups->{$id};
@@ -801,6 +862,10 @@ sub addExcelSamplesToSamples{
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
             $analysis_type = 'SnpGenotyping';
+            $row_info->{ 'analysis_type' } = $analysis_type;
+        }
+        elsif ( $analysis_type eq 'SOMATIC PANEL' ){
+            $analysis_type = 'SomaticPanel';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
         else {
@@ -994,7 +1059,7 @@ sub parseExcelSheet{
 sub isSkipValue{
     my ($value) = @_;
     die "[ERROR] Value to check for skipping is not defined\n" if not defined $value;
-    my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x' );
+    my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x', '#N/A' );
     foreach my $skip_string ( @to_skip ){
         return 1 if $value =~ /^$skip_string$/i;
     }
@@ -1046,13 +1111,15 @@ sub sayWarn{
 sub getFieldNameTranslations{
     # Columns contact sheet in current FOR-001
     my %CONT_DICT = (
-        "Group_ID"               => 'group_id',
-        "Client_contact_name"    => 'client_contact_name',
-        "Client_contact_email"   => 'client_contact_email',
-        "On_behalf_of_client_name"  => 'on_behalf_of_client_contact_name',
-        "On_behalf_of_client_email" => 'on_behalf_of_client_contact_email',
-        "Report_contact_name"    => 'requester_report_contact_name',
-        "Report_contact_email"   => 'requester_report_contact_email',
+        "Group_ID"                      => 'group_id',
+        "Client_contact_name"           => 'client_contact_name',
+        "Client_contact_email"          => 'client_contact_email',
+        "On_behalf_of_client_name"      => 'on_behalf_of_client_contact_name',
+        "On_behalf_of_client_email"     => 'on_behalf_of_client_contact_email',
+        "Report_contact_name"           => 'report_contact_name',
+        "Report_contact_email"          => 'report_contact_email',
+        "Requester_report_contact_name" => 'requester_report_contact_name',
+        "Requester_report_contact_email" => 'requester_report_contact_email',
         "Data_contact_name"      => 'data_contact_name',
         "Data_contact_email"     => 'data_contact_email',
         "Lab_contact_name"       => 'lab_contact_name',
@@ -1069,8 +1136,8 @@ sub getFieldNameTranslations{
         "Sample_count"      => 'sample_count',
         "Lab_is_finished"   => 'has_lab_finished',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'requester_report_contact_name',
-        "Contact_email"     => 'requester_report_contact_email',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
         "Remarks"           => 'remarks',
         "Storage_status"    => 'lab_storage_status',
     );
@@ -1086,8 +1153,8 @@ sub getFieldNameTranslations{
         "Lab_is_finished"   => 'has_lab_finished',
         "Group_ID"          => 'group_id',
         "TAT_lab"           => 'turn_around_time',
-        "Contact_name"      => 'requester_report_contact_name',
-        "Contact_email"     => 'requester_report_contact_email',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
         "Portal_contact_name" => 'data_contact_name',
         "Portal_contact_email" => 'data_contact_email',
         "Remarks"           => 'remarks',
@@ -1108,7 +1175,7 @@ sub getFieldNameTranslations{
     );
 
     # Columns shipments sheet in rest lims (FOR-001)
-    my %SUBM_DICT = (
+    my %SUBM_DICT_2021 = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
         "HMF_reg"           => 'submission',
@@ -1120,6 +1187,8 @@ sub getFieldNameTranslations{
         "Total_yield_required" => 'total_yield_required',
         "Remarks"           => 'remarks',
     );
+
+    my %SUBM_DICT = %SUBM_DICT_2021;
 
     # Columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
@@ -1163,9 +1232,12 @@ sub getFieldNameTranslations{
     # Columns samples sheet 2020 FOR-001 is identical to 2019
     my %SAMP_DICT_2020 = %SAMP_DICT_2019;
 
-    # Columns samples sheet CURRENT FOR-001 has extra ShallowSeq field
-    my %SAMP_DICT = %SAMP_DICT_2020;
-    $SAMP_DICT{"ShallowSeq_required"} = 'shallowseq';
+    # Columns samples sheet of 2021 FOR-001 has extra ShallowSeq field
+    my %SAMP_DICT_2021 = %SAMP_DICT_2020;
+    $SAMP_DICT_2021{"ShallowSeq_required"} = 'shallowseq';
+
+    # Columns samples sheet CURRENT FOR-001 are identical to 2021 format
+    my %SAMP_DICT = %SAMP_DICT_2021;
 
     # Columns In Process sheet (HMF-FOR-002)
     my %PROC_DICT = (
@@ -1242,9 +1314,7 @@ sub getFieldNameTranslations{
         'frBarcodeDNA'         => 'sample_id_dna',
         'frBarcodeRNA'         => 'sample_id_rna',
         'isTissue'             => 'is_tissue',
-        'shallowPurity'        => 'shallow_purity',
-        'finalPurity'          => 'purity',
-        'reportDate'           => 'report_date'
+        'isReportGenerated'    => 'is_report_generated'
     );
 
     my %lama_content_translations_by_field_name = (
@@ -1262,10 +1332,12 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2021' => \%SUBM_DICT_2021,
         'SUBM_2020' => \%SUBM_DICT_2020,
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2021' => \%SAMP_DICT_2021,
         'SAMP_2020' => \%SAMP_DICT_2020,
         'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,

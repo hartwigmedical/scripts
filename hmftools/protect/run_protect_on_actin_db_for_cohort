@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+serve_actionability_dir="/data/resources/crunch/actin/cohort/serve_db"
+
+sample_cohort_dir="$(locate_actin_cohort_molecular_directory ${run_dir})/protect"
+create_or_cleanup_dir ${sample_cohort_dir}
+
+protect_jar="$(locate_actin_protect)"
+
+do_run_protect ${run_dir} ${sample_cohort_dir} ${serve_actionability_dir} ${protect_jar} "$@"
+

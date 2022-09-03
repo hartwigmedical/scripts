@@ -6,13 +6,16 @@ source database_functions || exit 1
 sql_file_or_select_statement=$1 && shift
 database_name=$1 && shift
 credentials=$1 && shift
+
+if [[ -z "${database_name}" ]]; then
+    error "No database name provided. Exiting."
+fi
+
+if [[ -z "${credentials}" ]]; then
+    error "No credentials available. Exiting."
+fi
+
 from_file='true'
-
-user=$(extract_database_user "${credentials}")
-password=$(extract_database_password "${credentials}")
-host=$(extract_database_host "${credentials}")
-port=$(extract_database_port "${credentials}")
-
 if [[ ! -f "${sql_file_or_select_statement}" ]]; then
     if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then
         error "Provided sql is not an existing file but no SELECT statement either (${sql_file_or_select_statement}). Exiting."
@@ -21,17 +24,15 @@ if [[ ! -f "${sql_file_or_select_statement}" ]]; then
     fi
 fi
 
-if [[ -z "${database_name}" ]]; then
-    error "No database name provided. Exiting."
-fi
-
-if [[ "$credentials" == "" ]]; then
-    error "No credentials available. Exiting."
-fi
+user=$(extract_database_user "${credentials}")
+password=$(extract_database_password "${credentials}")
+host=$(extract_database_host "${credentials}")
+port=$(extract_database_port "${credentials}")
 
 if [[ "${from_file}" == "true" ]]; then
     mysql --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}"  \
     < "${sql_file_or_select_statement}"
 else
-    mysql --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}" --execute="${sql_file_or_select_statement}" --batch
+    mysql --user=${user} --password=${password} --host=${host} --port=${port} --database="${database_name}" \
+        --execute="${sql_file_or_select_statement}" --batch
 fi

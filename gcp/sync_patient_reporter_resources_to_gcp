@@ -7,11 +7,11 @@ BUCKET="gs://patient-reporter-resources-prod-1"
 
 info "Syncing patient-reporter resources to GCP"
 gsutil cp /data/dbs/clinical_data/curated_primary_tumor.tsv ${BUCKET}/primary_tumor.tsv
-gsutil cp /data/dbs/germline_reporting/germline_reporting.tsv ${BUCKET}/germline_reporting.tsv
-gsutil cp /data/dbs/summary_patient_report/summary_samples.tsv ${BUCKET}/sample_summary.tsv
-gsutil cp /data/dbs/virus_interpreter/taxonomy_db.tsv ${BUCKET}/taxonomy_db.tsv
-gsutil cp /data/dbs/virus_interpreter/virus_interpretation.tsv ${BUCKET}/virus_interpretation.tsv
-gsutil cp /data/dbs/virus_interpreter/virus_blacklist.tsv ${BUCKET}/virus_blacklist.tsv
-gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/* ${BUCKET}/lims
-gsutil cp /data/dbs/patient_reporter_images/* ${BUCKET}/
+gsutil cp /data/resources/ops/germline_reporting/germline_reporting.tsv ${BUCKET}/germline_reporting.tsv
+gsutil cp /data/resources/ops/summary_patient_report/summary_samples.tsv ${BUCKET}/sample_summary.tsv
+gsutil cp /data/resources/ops/special_remark_patient_report/special_remark_samples.tsv ${BUCKET}/special_remark_samples.tsv
+gsutil cp /data/resources/public/virus_interpreter/taxonomy_db.tsv ${BUCKET}/taxonomy_db.tsv
+gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/*.tsv ${BUCKET}/lims/
+gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/lims/
+gsutil cp /data/resources/ops/patient_report_images/* ${BUCKET}/
 info "Done syncing patient-reporter resources"

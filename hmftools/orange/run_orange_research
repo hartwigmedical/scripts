@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting";
+fi
+
+output_dir="${run_dir}/orange"
+
+do_run_orange_research ${run_dir} ${output_dir} "$@"

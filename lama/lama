@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+get_script="lama_api_get"
+classes=(cohorts hospitals statuses/frbarcodes statuses/cohorts statuses patients/tumorsamples patients/bloodsamples
+queries/consents)
+
+print_usage(){
+    script=$(basename "$0")
+    echo "---"
+    echo "Usage: $script [-j] <class> [<filter-value> <filter-key>]"
+    echo "Examples:"
+    echo " $script statuses/frbarcodes FR30539000"
+    echo " $script statuses/cohorts ACTIN"
+    echo " $script patients/tumorsamples ACTN01020001T"
+    echo " $script patients/bloodsamples ACTN01020001R"
+    echo " $script queries/consents FR30539000 barcode"
+    echo "Options:"
+    echo "  -j  Output raw api json content instead of TSV"
+    echo "Notes:"
+    echo "  * Available classes: ${classes[*]}"
+    echo "  * Use script ${get_script} instead for all non-interactive use!"
+    echo "---"
+    exit 1
+}
+
+output_json='FALSE'
+additional_get_params=""
+
+while getopts ':jt' flag; do
+    case "${flag}" in
+        j) output_json='TRUE' ;;
+        t) additional_get_params="-t";;
+        *) print_usage >&2
+        exit 1 ;;
+    esac
+done
+class=${*:$OPTIND:1} && shift # obligatory
+filter_input=${*:$OPTIND:1} && shift # optional
+filter_field=${*:$OPTIND:1} && shift # optional but required if searching by any field other than the "name" of object
+
+if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
+    print_usage >&2
+fi
+
+main(){
+    contains "${class}" "${classes[@]}" || die "Unknown class '${class}' provided."
+
+    json_result=""
+    if [[ -n "${filter_input}" ]]; then
+        # Some classes in LAMA use the RESTful notation while others not yet so need to check
+        if [[ "${class}" == "queries/consents" ]]; then
+            # shellcheck disable=SC2086
+            json_result=$($get_script $additional_get_params "${class}?${filter_field}=${filter_input}") || die "No result from API (with filter)"
+        else
+            # shellcheck disable=SC2086
+            json_result=$($get_script $additional_get_params "${class}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
+        fi
+    else
+        # shellcheck disable=SC2086
+        json_result=$($get_script $additional_get_params "${class}") || die "Unable to get result (without filter)"
+    fi
+
+    if [[ "${output_json}" == "TRUE" ]]; then
+        echo "${json_result}"
+        exit 0
+    fi
+
+    # make sure json is an array from now on regardless of count
+    firstCharacter=${json_result:0:1}
+    if [[ ! "${firstCharacter}" == '[' ]]; then
+        json_result="[${json_result}]"
+    fi
+
+    if [[ "${class}" == "cohorts" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\n" cohortCode hmfRegEnding addToDatabase addToDatarequests id
+        jq -r '.[] | [.cohortCode, .hmfRegEnding, .addToDatabase, .addToDatarequests, ._id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "hospitals" ]]; then
+        printf "#%s\t%s\t%s\n" hospitalName emailAddresses id
+        jq -r '.[] | [.hospitalName, (.emailAddresses | join(",")), ._id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" =~ ^statuses ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        sampleId frBarcodeDNA isTissue isolationStatus prepStatus isolationStatusRNA prepStatusRNA cohort addToDatabase id
+        jq -r '.[] | [.sampleId, .frBarcodeDNA//"NA", .isTissue, .isolationStatus, .prepStatus, .isolationStatusRNA, .prepStatusRNA, .cohort._id, .cohort.addToDatabase, ._id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "patients/tumorsamples" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf isCUP primaryTumorType biopsySite
+        jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .isCUP, .primaryTumorType, .biopsySite] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "patients/bloodsamples" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\n" id submissionNr collectionDate arrivalHmf sampleBarcode
+        jq -r '.[] | [._id, .submissionNr, .collectionDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "queries/consents" ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeData intUse extUseWoCheck extUseWithCheck
+        jq -r '.[] | [.sampleId,
+          .barcode,
+          .storeDataForReuse,
+          .allowInternalUse,
+          .allowExternalUseWithoutCheck,
+          .allowExternalUseWithCheck] | @tsv' <<< "${json_result}"
+    else
+        die "Table print for class ${class} is not supported"
+    fi
+}
+
+contains(){
+    local e match="$1"
+    shift
+    for e; do [[ "$e" == "$match" ]] && return 0; done
+    return 1
+}
+
+main

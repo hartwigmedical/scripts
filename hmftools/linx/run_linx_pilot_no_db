@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+linx_jar=$(locate_pilot_linx)
+structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
+purple_dir=${run_dir}/purple_pilot
+output_dir=${run_dir}/linx_pilot
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# reference files
+viral_hosts_csv=/data/dbs/has_been_moved_to_gcp/linx/viral_host_ref.csv
+known_fusion_data=$(locate_known_fusion_data_37_csv)
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+ensembl_data_dir=$(locate_ensembl_data_dir_37)
+fragile_sites=/data/dbs/has_been_moved_to_gcp/linx/37/fragile_sites_hmf.37.csv
+line_elements=/data/dbs/has_been_moved_to_gcp/linx/37/line_elements.37.csv
+replication_origins=/data/dbs/has_been_moved_to_gcp/linx/37/heli_rep_origins.37.bed
+ref_genome=$(locate_ref_genome_37_fasta_file)
+
+if [[ -d "${output_dir}" ]]; then
+    linx_files=$(find ${output_dir} -type f -name "*linx*")
+    if [[ ! -z "${linx_files}" ]]; then
+        rm ${output_dir}/*linx*
+    fi
+else
+    mkdir -p ${output_dir}
+fi
+
+info "Running linx for ${sample}"
+
+java -Xmx8G -Xms4G -jar ${linx_jar} \
+    -sample ${sample} \
+    -sv_vcf ${structural_vcf} \
+    -purple_dir ${purple_dir} \
+    -ref_genome ${ref_genome} \
+    -output_dir ${output_dir} \
+    -fragile_site_file ${fragile_sites} \
+    -line_element_file ${line_elements} \
+    -replication_origins_file ${replication_origins} \
+    -viral_hosts_file ${viral_hosts_csv} \
+    -gene_transcripts_dir ${ensembl_data_dir} \
+    -check_fusions \
+    -known_fusion_file ${known_fusion_data} \
+    -chaining_sv_limit 0 \
+    -check_drivers \
+    -driver_gene_panel ${driver_gene_panel} \
+    -write_vis_data \
+    "$@"

@@ -30,36 +30,30 @@ my $ROUND_DECIMALS = 1; # Q30 with one decimal by default
 ## QC limits should be in sync with those from api (can be checked with cmd "api platforms")
 my %SETTINGS_PER_PLATFORM = (
     'NovaSeq' => {
-        'platform_name' => "NOVASEQ",
+        'platform_name'    => "NOVASEQ",
         'min_flowcell_q30' => 85,
         'min_sample_yield' => 1e9,
         'max_undetermined' => 8,
-        'yield_factor'     => 1e6
+        'yield_factor'     => 1e6,
+        'run_name_regex'   => '^NO\d{2}-[\w]+$'
     },
     'NextSeq' => {
         'platform_name' => "NEXTSEQ",
         'min_flowcell_q30' => 75,
         'min_sample_yield' => 1e9,
         'max_undetermined' => 50,
-        'yield_factor'     => 1e6
+        'yield_factor'     => 1e6,
+        'run_name_regex'   => '^NS\d{2}-[\w]+$'
     },
     'ISeq' => {
         'platform_name' => "ISEQ",
         'min_flowcell_q30' => 75,
         'min_sample_yield' => 1e6,
         'max_undetermined' => 50,
-        'yield_factor'     => 1
-    },
-    'HiSeq' => {
-        'platform_name' => "HISEQ",
-        'min_flowcell_q30' => 75,
-        'min_sample_yield' => 1e9,
-        'max_undetermined' => 8,
-        'yield_factor'     => 1e6
-    },
+        'yield_factor'     => 1,
+        'run_name_regex'   => '^IS\d{2}-[\w]+$'
+    }
 );
-my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
-
 my $RUN_PATH;
 my $JSON_PATH;
 my $RXML_PATH;
@@ -130,7 +124,7 @@ my $seq_run = basename $RUN_PATH;
 my $ssht_info = readSampleSheet( $SSHT_PATH );
 
 ## Need to make sure we know the exact platform
-my $platform = determinePlatformByString($ssht_info->{'platform'}, \@KNOWN_PLATFORMS);
+my $platform = determinePlatformByRunName($ssht_info->{'runname'}, \%SETTINGS_PER_PLATFORM);
 my $SETTINGS = $SETTINGS_PER_PLATFORM{$platform};
 $SETTINGS->{yield_factor} = $opt{yield_factor} if defined $opt{yield_factor};
 my $YIELD_FACTOR = $SETTINGS->{yield_factor};
@@ -207,20 +201,23 @@ sub readJson{
     return( $json_obj );
 }
 
-sub determinePlatformByString {
-    my ($platform, $known_platforms) = @_;
+sub determinePlatformByRunName {
+    my ($runname, $settings_per_platform) = @_;
     my $final_platform = "";
 
-    ## exact platform string varies too much so try to match by regex
-    foreach my $known (@$known_platforms) {
-        if ($platform =~ m/^$known/i) {
-            $final_platform = $known;
-            say "## INFO: platform configured to $known (based on input '$platform')";
+    ## try to match by regex
+    while(my($platform_option, $settings) = each %$settings_per_platform) {
+        if ($runname =~ m/$settings->{ 'run_name_regex' }/) {
+            if ($final_platform ne "") {
+                die "Multiple platforms match run name regex ($final_platform and $platform_option)\n"
+            }
+            $final_platform = $platform_option;
+            say "## INFO: platform configured to $platform_option (based on input '$runname')";
         }
     }
 
     if ($final_platform eq "") {
-        die "[ERROR] Unable to determine platform from string ($platform)\n";
+        die "[ERROR] Unable to determine platform from run name ($runname)\n";
     }
     return $final_platform;
 }
@@ -565,7 +562,6 @@ sub readSampleSheet{
     my %output;
     $output{ 'samples' } = {};
     $output{ 'runname' } = 'NO_RUNNAME_FROM_SAMPLESHEET';
-    $output{ 'platform' } = 'NO_PLATFORM_FROM_SAMPLESHEET';
     my @header;
     
     if ( ! -e $csv_file ){
@@ -584,10 +580,6 @@ sub readSampleSheet{
         if ($fields[0] =~ /Experiment(.)*Name/ ){
             my $run_name = $fields[1] || 'NA';
             $output{ 'runname' } = $run_name;
-        }
-        elsif ($fields[0] =~ /InstrumentType/ ){
-            my $platform = $fields[1] || 'NA';
-            $output{ 'platform' } = $platform;
         }
 
         ## find header

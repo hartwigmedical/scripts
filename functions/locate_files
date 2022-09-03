@@ -2,51 +2,54 @@
 
 source message_functions || exit 1
 
-base_path="/data"
-
-############################# Nextcloud Credentials ############################
-
-locate_nextcloud_upload_credentials() {
-    echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
-}
-
 ##################################### JARS #####################################
 
 locate_pilot_actin() {
-    echo "/data/tools/actin/pilot/actin.jar"
+    echo "/data/actin/system/actin.jar"
 }
 
 locate_pilot_isofox() {
-    echo "/data/tools/isofox/pilot/isofox.jar"
+    echo "/data/experiments/pilot_tools/isofox/isofox.jar"
 }
 
 locate_prod_sage() {
-    echo "/data/tools/sage/2.8/sage.jar"
+    echo "/data/tools/sage/3.0.1/sage.jar"
+}
+
+locate_pilot_sage() {
+    echo "/data/experiments/pilot_tools/sage/sage.jar"
 }
 
 locate_prod_purple() {
-    echo "/data/tools/purple/3.1/purple.jar"
+    echo "/data/tools/purple/3.4.2/purple.jar"
 }
 
 locate_pilot_purple() {
-    echo "/data/tools/purple/pilot/purple.jar"
+    echo "/data/experiments/pilot_tools/purple/purple.jar"
 }
 
-#TODO: Move to v1.1 when validation to done
 locate_prod_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/1.0/virus-interpreter.jar"
+    echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
 }
 
 locate_pilot_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/pilot/virus-interpreter.jar"
+    echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
+}
+
+locate_prod_lilac() {
+    echo "/data/tools/lilac/1.2/lilac.jar"
+}
+
+locate_pilot_lilac() {
+    echo "/data/experiments/pilot_tools/lilac/lilac.jar"
 }
 
 locate_prod_cuppa() {
-    echo "/data/tools/cuppa/1.5/cuppa.jar"
+    echo "/data/tools/cuppa/1.6/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
-    echo "/data/tools/cuppa/pilot/cuppa.jar"
+    echo "/data/experiments/pilot_tools/cuppa/cuppa.jar"
 }
 
 locate_prod_paddle() {
@@ -54,103 +57,123 @@ locate_prod_paddle() {
 }
 
 locate_prod_linx() {
-    echo "/data/tools/linx/1.16/linx.jar"
+    echo "/data/tools/linx/1.19/linx.jar"
 }
 
 locate_pilot_linx() {
-    echo "/data/tools/linx/pilot/linx.jar"
+    echo "/data/experiments/pilot_tools/linx/linx.jar"
 }
 
 locate_prod_sigs() {
     echo "/data/tools/sigs/1.0/sigs.jar"
 }
 
-locate_prod_sigs_ds() {
-    echo ${base_path}/tools/sigs_v1.0/sigs.jar
-}
-
 locate_pilot_sigs() {
-    echo "/data/tools/sigs/pilot/sigs.jar"
+    echo "/data/experiments/pilot_tools/sigs/sigs.jar"
 }
 
 locate_prod_orange() {
-    echo "/data/tools/orange/1.4/orange.jar"
+    echo "/data/tools/orange/1.6/orange.jar"
+}
+
+locate_research_orange() {
+    echo "/data/tools/orange/1.10/orange.jar"
 }
 
 locate_pilot_orange() {
-    echo "/data/tools/orange/pilot/orange.jar"
+    echo "/data/experiments/pilot_tools/orange/orange.jar"
+}
+
+locate_research_patient_db() {
+    echo "/data/tools/patient-db/3.71/patient-db.jar"
 }
 
 locate_prod_patient_db() {
-    echo "/data/tools/patient-db/3.62/patient-db.jar"
+    echo "/data/tools/patient-db/3.69/patient-db.jar"
+}
+
+locate_prod_clinical_patient_db() {
+    echo "/data/tools/patient-db/3.69/patient-db.jar"
 }
 
 locate_diagnostic_patient_db() {
-    echo "/data/tools/patient-db/3.61/patient-db.jar"
+    echo "/data/tools/patient-db/3.69/patient-db.jar"
 }
 
 locate_pilot_patient_db() {
-    echo "/data/tools/patientdb/pilot/patient-db.jar"
+    echo "/data/experiments/pilot_tools/patient-db/patient-db.jar"
 }
 
-locate_prod_patient_reporter_ds() {
-    echo "${base_path}/tools/patientreporter/7.23/patient-reporter.jar"
+locate_prod_patient_reporter() {
+    echo "/data/tools/patient-reporter/7.25.3/patient-reporter.jar"
 }
 
-locate_prod_patient_reporter_gcp() {
-    echo "${base_path}/tools/patientreporter/7.23/patient-reporter-infrastructure_hotfix1.jar"
-}
-
-locate_pilot_patient_reporter_ds() {
-    echo "${base_path}/tools/patientreporter/pilot/patient-reporter.jar"
+locate_pilot_patient_reporter() {
+    echo "/data/experiments/pilot_tools/patient-reporter/patient-reporter.jar"
 }
 
 locate_prod_vicc_importer() {
-    echo "/data/tools/vicc-importer/1.1/vicc-importer.jar"
+    echo "/data/tools/vicc-importer/1.2/vicc-importer.jar"
 }
 
 locate_pilot_vicc_importer() {
-    echo "/data/tools/vicc-importer/pilot/vicc-importer.jar"
+    echo "/data/experiments/pilot_tools/vicc-importer/vicc-importer.jar"
 }
 
 locate_prod_iclusion_importer() {
-    echo "/data/tools/iclusion-importer/1.4/iclusion-importer.jar"
+    echo "/data/tools/iclusion-importer/1.6/iclusion-importer.jar"
 }
 
 locate_pilot_iclusion_importer() {
-    echo "/data/tools/iclusion-importer/pilot/iclusion-importer.jar"
+    echo "/data/experiments/pilot_tools/iclusion-importer/iclusion-importer.jar"
 }
 
 locate_prod_ckb_importer() {
-    echo "/data/tools/ckb-importer/1.1/ckb-importer.jar"
+    echo "/data/tools/ckb-importer/1.3/ckb-importer.jar"
 }
 
 locate_pilot_ckb_importer() {
-    echo "/data/tools/ckb-importer/pilot/ckb-importer.jar"
+    echo "/data/experiments/pilot_tools/ckb-importer/ckb-importer.jar"
 }
 
 locate_prod_serve() {
-    echo "/data/tools/serve/1.7/serve.jar"
+    echo "/data/tools/serve/1.10/serve.jar"
+}
+
+locate_research_serve() {
+    echo "/data/tools/serve/1.12/serve.jar"
 }
 
 locate_pilot_serve() {
-    echo "/data/tools/serve/pilot/serve.jar"
+    echo "/data/experiments/pilot_tools/serve/serve.jar"
 }
 
 locate_prod_protect() {
-    echo "/data/tools/protect/1.6/protect.jar"
+    echo "/data/tools/protect/2.2/protect.jar"
+}
+
+locate_actin_protect() {
+    echo "/data/tools/protect/2.2/protect.jar"
 }
 
 locate_research_protect() {
-    echo "/data/tools/protect/1.7/protect.jar"
+    echo "/data/tools/protect/2.2/protect.jar"
 }
 
 locate_pilot_protect() {
-    echo "/data/tools/protect/pilot/protect.jar"
+    echo "/data/experiments/pilot_tools/protect/protect.jar"
 }
 
-locate_pilot_sig_analyser() {
-    echo "/data/tools/sig-analyser/pilot/sig-analyser.jar"
+locate_prod_rose() {
+    echo "/data/tools/rose/1.1/rose.jar"
+}
+
+locate_pilot_rose() {
+    echo "/data/experiments/pilot_tools/rose/rose.jar"
+}
+
+locate_prod_pave() {
+    echo "/data/tools/pave/1.2.2/pave.jar"
 }
 
 locate_prod_hmf_id_generator() {
@@ -170,21 +193,71 @@ locate_pilot_datarequest() {
 }
 
 locate_dsync() {
-    echo "/data/tools/dsync/1.3.3/dsync.jar"
+    echo "/data/tools/dsync/1.6.0/dsync.jar"
 }
 
 locate_run_contexts_writer() {
     echo "/data/tools/clinical-db-loader/1.0/clinical-db-loader.jar"
 }
 
-############################# PIPELINE VERSION #################################
+############################# Clinical patient data ############################
 
-extract_expected_pipeline_version() {
-    echo "5.22"
+locate_tumor_location_mapping_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_tumor_location_mapping.tsv"
 }
 
-extract_expected_pipeline_version_research() {
-    echo "5.24"
+locate_tumor_location_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/tumor_location_mapping.tsv"
+}
+
+locate_tumor_location_overrides_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_tumor_location_overrides.tsv"
+}
+
+locate_tumor_location_overrides_prod() {
+    echo "/data/resources/ops/clinical_curation/tumor_location_overrides.tsv"
+}
+
+locate_treatment_mapping_pilot() {
+    echo "/data/resources/ops/clinical_curation/pilot_treatment_mapping.tsv"
+}
+
+locate_treatment_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/treatment_mapping.tsv"
+}
+
+locate_biopsy_site_mapping_prod() {
+    echo "/data/resources/ops/clinical_curation/biopsy_site_mapping.tsv"
+}
+
+############################# Patient report data ############################
+
+locate_germline_reporting_prod() {
+    echo "/data/resources/ops/germline_reporting/germline_reporting.tsv"
+}
+
+locate_summary_patient_report_prod() {
+    echo "/data/resources/ops/summary_patient_report/summary_samples.tsv"
+}
+
+locate_special_remark_patient_report_pilot() {
+    echo "/data/resources/ops/special_remark_patient_report/special_remark_samples_pilot.tsv"
+}
+
+locate_special_remark_patient_report_prod() {
+    echo "/data/resources/ops/special_remark_patient_report/special_remark_samples.tsv"
+}
+
+locate_rva_logo_prod() {
+    echo "/data/resources/ops/patient_report_images/L633_l_testlaboratoria_rva_en_color.jpeg"
+}
+
+locate_company_logo_prod() {
+    echo "/data/resources/ops/patient_report_images/hartwig_logo.jpg"
+}
+
+locate_signature_prod() {
+    echo "/data/resources/ops/patient_report_images/signature_edwin_transparant.png"
 }
 
 ############################### NON JAVA TOOLS #################################
@@ -193,45 +266,113 @@ locate_peach_main() {
     echo "$(locate_repo_dir "peach")/peach"
 }
 
-############################## ACTIN Resources #################################
+############################# PIPELINE VERSION #################################
 
-locate_actin_database_sql_script() {
-    echo "/data/resources/custom/actin/sql_database/generate_database.sql"
+extract_expected_pipeline_version() {
+    echo "5.29"
 }
 
-locate_actin_clinical_feed_directory() {
-    echo "/data/resources/custom/actin/ehr_data_dump/actin_ehr_dump"
+extract_expected_pipeline_version_research() {
+    echo "5.29"
+}
+
+############################## ACTIN Resources #################################
+
+locate_actin_evaluation_bucket() {
+    echo "gs://hmf-crunch-data/actin_evaluation"
+}
+
+locate_actin_shared_reports_bucket() {
+    echo "gs://hmf-crunch-data/actin_shared_reports"
+}
+
+locate_actin_local_crunch_repo() {
+    echo "$HOME/hmf/repos/crunch-resources-private/actin"
+}
+
+locate_actin_database_sql_script() {
+    echo "/data/resources/crunch/actin/sql_database/generate_database.sql"
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/custom/actin/clinical_curation"
+    echo "/data/resources/crunch/actin/clinical_curation"
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/custom/actin/trial_config"
-}
-
-locate_actin_treatment_database_directory() {
-    echo "/data/resources/custom/actin/treatment_database"
+    echo "/data/resources/crunch/actin/trial_config"
 }
 
 locate_actin_minimal_molecular_json() {
-    echo "/data/resources/custom/actin/minimal_molecular_json/minimal.json"
+    echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
+}
+
+locate_actin_external_trial_mapping_tsv() {
+    echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
+}
+
+locate_actin_serve_bridge_tsv() {
+    echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
+}
+
+locate_cuppa_ref_dir_dna_rna() {
+    echo "/data/resources/crunch/actin/cuppa_ref"
 }
 
 locate_actin_rna_sample_metadata_file() {
-    echo "/data/experiments/rna/samples/actn_sample_ids.csv"
+    echo "/data/resources/crunch/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
+
+############################### ACTIN Cohort ###################################
+
+locate_cohort_actin() {
+    echo "/data/experiments/actin_cohort/system/actin.jar"
+}
+
+locate_actin_cohort_molecular_directory() {
+    run_dir=$1
+    sample=$(basename ${run_dir})
+
+    echo "/data/experiments/actin_cohort/molecular/${sample}"
+}
+
+locate_actin_cohort_clinical_directory() {
+    echo "/data/experiments/actin_cohort/clinical"
+}
+
+locate_actin_cohort_trial_config_directory() {
+    echo "/data/resources/crunch/actin/cohort/trial_config"
+}
+
+locate_actin_cohort_treatment_database_directory() {
+    echo "/data/experiments/actin_cohort/treatment_database"
+}
+
+locate_actin_cohort_treatment_match_directory() {
+    echo "/data/experiments/actin_cohort/treatment_matches"
+}
+
+locate_tmp_actin_cohort_serve_bridge_tsv() {
+    echo "/data/experiments/actin_cohort/serve_bridge/actin_knowledgebase.tsv"
+}
+
 
 ################################# ACTIN Data ###################################
 
-locate_actin_clinical_directory() {
-    echo "/data/actin/clinical"
+locate_tmp_actin_serve_bridge_tsv() {
+    echo "/data/actin/serve_bridge/actin_knowledgebase.tsv"
+}
+
+locate_actin_clinical_input_feed_directory() {
+    echo "/data/actin/clinical/input_feed/latest"
+}
+
+locate_actin_curated_clinical_directory() {
+    echo "/data/actin/clinical/curated"
 }
 
 locate_actin_clinical_json() {
     local sample=$1 && shift
-    local clinical_dir=$(locate_actin_clinical_directory)
+    local clinical_dir=$(locate_actin_curated_clinical_directory)
 
     if [[ ! -d "${clinical_dir}" ]]; then
         error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
@@ -245,24 +386,42 @@ locate_actin_clinical_json() {
     echo "${clinical_json}"
 }
 
+locate_actin_lilac_hla_bam_dir() {
+    echo "/data/actin/dna_hla_bams"
+}
+
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
 }
 
-locate_actin_molecular_directory_for_sample() {
+locate_actin_platinum_directory_for_sample() {
     local sample=$1 && shift
-    local molecular_dir=$(locate_actin_molecular_directory)
 
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
+    if [[ -z "${sample}" ]]; then
+        error "No sample provided. Exiting"
     fi
 
-    local molecular_sample_dir="${molecular_dir}/${sample}"
-    if [[ ! -d ${molecular_sample_dir} ]]; then
-        error "Could not locate molecular dir for sample '${sample}'"
+    echo "$(locate_actin_molecular_directory)/${sample}"
+}
+
+locate_actin_molecular_json() {
+    local sample=$1
+    local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
+
+    if [[ ! -d "${platinum_dir}" ]]; then
+        error "Unable to locate ACTIN platinum directory '${platinum_dir}'"
     fi
 
-    echo "${molecular_sample_dir}"
+    local molecular_json="${platinum_dir}/actin/${sample}.molecular.json"
+    if [[ ! -f ${molecular_json} ]]; then
+        error "Could not locate molecular json for sample '${sample}'"
+    fi
+
+    echo "${molecular_json}"
+}
+
+locate_actin_treatment_database_directory() {
+    echo "/data/actin/treatment_database"
 }
 
 locate_actin_treatment_match_directory() {
@@ -289,6 +448,58 @@ locate_actin_reports_directory() {
     echo "/data/actin/reports"
 }
 
+locate_actin_report_pdf() {
+    local sample=$1 && shift
+    local reports_dir=$(locate_actin_reports_directory)
+
+    if [[ ! -d "${reports_dir}" ]]; then
+        error "Unable to locate ACTIN report directory '${reports_dir}'"
+    fi
+
+    local report_pdf="${reports_dir}/${sample}.actin.pdf"
+    if [[ ! -f ${report_pdf} ]]; then
+        error "Could not locate ACTIN report pdf for sample '${sample}'"
+    fi
+
+    echo "${report_pdf}"
+}
+
+locate_actin_evaluation_directory() {
+    echo "/data/actin/evaluation"
+}
+
+locate_actin_evaluation_details() {
+    local sample=$1 && shift
+    local evaluation_dir=$(locate_actin_evaluation_directory)
+
+    if [[ ! -d "${evaluation_dir}" ]]; then
+        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
+    fi
+
+    local evaluation_details_tsv="${evaluation_dir}/${sample}.evaluation.details.tsv"
+    if [[ ! -f ${evaluation_details_tsv} ]]; then
+        error "Could not locate ACTIN evaluation details tsv for sample '${sample}'"
+    fi
+
+    echo "${evaluation_details_tsv}"
+}
+
+locate_actin_evaluation_summary() {
+    local sample=$1 && shift
+    local evaluation_dir=$(locate_actin_evaluation_directory)
+
+    if [[ ! -d "${evaluation_dir}" ]]; then
+        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
+    fi
+
+    local evaluation_summary_tsv="${evaluation_dir}/${sample}.evaluation.summary.tsv"
+    if [[ ! -f ${evaluation_summary_tsv} ]]; then
+        error "Could not locate ACTIN evaluation summary tsv for sample '${sample}'"
+    fi
+
+    echo "${evaluation_summary_tsv}"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
@@ -303,22 +514,46 @@ locate_rna_bam() {
     local bam_directory=$(locate_rna_bam_directory ${run_dir})
     local bam=$(find -L "${bam_directory}/" -type f -name "*.sorted.dups.bam")
 
-    echo ${bam}
+    echo "${bam}"
 }
 
-locate_rna_sage_directory() {
+locate_rna_hla_bam() {
     local run_dir=$1 && shift
 
-    echo "${run_dir}/rna_sage"
+    local bam_directory=$(locate_rna_bam_directory ${run_dir})
+    local bam=$(find -L "${bam_directory}/" -type f -name "*.hla.bam")
+
+    echo "${bam}"
+}
+
+locate_rna_sage_somatic_directory() {
+    local run_dir=$1 && shift
+
+    echo "${run_dir}/sage_rna_somatic"
+}
+
+locate_rna_sage_germline_directory() {
+    local run_dir=$1 && shift
+
+    echo "${run_dir}/sage_rna_germline"
 }
 
 locate_rna_annotated_somatic_variants() {
     local run_dir=$1 && shift
 
-    local rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
-    local rna_annotated_vcf=$(find -L "${rna_sage_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
+    local rna_sage_somatic_directory=$(locate_rna_sage_somatic_directory ${run_dir})
+    local rna_annotated_vcf=$(find -L "${rna_sage_somatic_directory}/" -type f -name "*.purple.somatic.with_rna.vcf.gz")
 
-    echo ${rna_annotated_vcf}
+    echo "${rna_annotated_vcf}"
+}
+
+locate_rna_annotated_germline_variants() {
+    local run_dir=$1 && shift
+
+    local rna_sage_germline_directory=$(locate_rna_sage_germline_directory ${run_dir})
+    local rna_annotated_vcf=$(find -L "${rna_sage_germline_directory}/" -type f -name "*.purple.germline.with_rna.vcf.gz")
+
+    echo "${rna_annotated_vcf}"
 }
 
 locate_rna_analysis_bucket() {
@@ -331,21 +566,30 @@ locate_rna_analysis_bucket() {
         rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
     fi
 
-    echo ${rna_analysis_bucket}
+    echo "${rna_analysis_bucket}"
 }
 
 ############################# Pipeline Resources ###############################
+
+locate_ensembl_data_dir_37() {
+    echo "/data/resources/public/ensembl_data_cache/37"
+}
+
+locate_ensembl_data_dir_38() {
+    echo "/data/resources/public/ensembl_data_cache/38"
+}
 
 locate_amber_snpcheck_37_vcf() {
     echo "/data/resources/public/amber/37/Amber.snpcheck.37.vcf"
 }
 
-locate_cuppa_ref_dir_dna() {
-    echo "/data/resources/private/cuppa"
+locate_amber_snpcheck_38_vcf() {
+    echo "/data/resources/public/amber/38/Amber.snpcheck.38.vcf"
 }
 
-locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/custom/actin/cuppa_ref"
+locate_cuppa_ref_dir_dna() {
+    # TODO Switch to "/data/resources/private/cuppa" once CUPPA is upgraded to v1.7 in this script
+    echo "/data/resources/crunch/actin/cuppa_ref_dna_1_6"
 }
 
 locate_cohort_mapping_tsv() {
@@ -356,8 +600,16 @@ locate_cohort_percentiles_tsv() {
     echo "/data/resources/public/orange/cohort_percentiles.tsv"
 }
 
+locate_isofox_gene_distribution_csv() {
+    echo "/data/experiments/rna/cohort/isofox.all_2766.gene_distribution.csv"
+}
+
+locate_isofox_alt_sj_cohort_csv() {
+    echo "/data/experiments/rna/cohort/isofox.hmf_2766.alt_sj_cohort.csv"
+}
+
 locate_doid_json() {
-    echo "/data/resources/public/disease_ontology/201015_doid.json"
+    echo "/data/resources/public/disease_ontology/doid.json"
 }
 
 locate_driver_gene_panel_37_tsv() {
@@ -377,9 +629,8 @@ locate_known_fusion_data_38_csv() {
 }
 
 locate_peach_resource_dir() {
-    echo "${base_path}/dbs/peach"
+    echo "/data/dbs/peach"
 }
-
 
 ############################### Ops Resources #################################
 
@@ -410,27 +661,51 @@ locate_snpcheck_vcf_upload_dir() {
 ############################### SERVE Resources ################################
 
 locate_pilot_iclusion_trial_tsv() {
-    echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
 }
 
 locate_prod_iclusion_trial_tsv() {
-    echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_prod.tsv"
+}
+
+locate_prod_iclusion_trial_tsv_pilot() {
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
+}
+
+locate_iclusion_filter_tsv() {
+    echo "/data/resources/crunch/serve/curation/iclusion_filters.tsv"
+}
+
+locate_iclusion_filter_pilot_tsv() {
+  echo "/data/resources/crunch/serve/curation/iclusion_filters_pilot.tsv"
+}
+
+locate_actin_trial_tsv() {
+    echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
+}
+
+locate_actin_filter_tsv() {
+    echo "/data/resources/crunch/serve/curation/actin_filters.tsv"
+}
+
+locate_actin_filter_pilot_tsv() {
+    echo "/data/resources/crunch/serve/curation/actin_filters_pilot.tsv"
 }
 
 locate_vicc_json() {
-    echo "/data/resources/custom/vicc/all.json"
+    echo "/data/resources/crunch/serve/vicc/all.json"
 }
 
 locate_docm_tsv() {
-    echo "/data/resources/custom/docm/docm_v3.2.tsv"
+    echo "/data/resources/crunch/serve/docm/docm_v3.2.tsv"
 }
 
 locate_hartwig_cohort_tsv() {
-    echo "/data/resources/custom/hartwig/hartwig_cohort.tsv"
+    echo "/data/resources/crunch/serve/hartwig/hartwig_cohort.tsv"
 }
 
 locate_hartwig_curated_tsv() {
-    echo "/data/resources/custom/hartwig/hartwig_curated.tsv"
+    echo "/data/resources/crunch/serve/hartwig/hartwig_curated.tsv"
 }
 
 locate_ckb_flex_data_production_dir() {
@@ -442,32 +717,51 @@ locate_ckb_flex_data_latest_dir() {
 }
 
 locate_ckb_filter_tsv() {
-    echo "/data/resources/custom/serve/ckb_filters.tsv"
+    echo "/data/resources/crunch/serve/curation/ckb_filters.tsv"
 }
 
-locate_ckb_filter_tsv_empty() {
-    echo "/data/resources/custom/serve/ckb_filters_empty.tsv"
+locate_ckb_filter_pilot_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_filters_pilot.tsv"
+}
+
+locate_ckb_drug_class_curation_pilot_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation_pilot.tsv"
+}
+
+locate_ckb_drug_class_curation_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation.tsv"
+}
+
+locate_public_missing_doids_mapping_tsv() {
+    echo "/data/resources/crunch/serve/curation/public_doids_mapping.tsv"
+}
+
+locate_private_missing_doids_mapping_tsv() {
+    echo "/data/resources/crunch/serve/curation/private_doids_mapping.tsv"
+}
+
+############################### ROSE Resources ################################
+
+locate_actionability_database_tsv() {
+    echo "/data/resources/private/rose/actionability.tsv"
 }
 
 #################################### Repos #####################################
 
 locate_repo_dir() {
     local repo_name=$1 && shift
-    echo "${base_path}/repos/${repo_name}"
+    echo "/data/repos/${repo_name}"
+}
+
+locate_resources_repo_dir() {
+    local repo_name=$1 && shift
+    echo "/data/resources/${repo_name}"
 }
 
 ################################# REF GENOME ###################################
 
-locate_ref_genome_37_fasta_file_ds() {
-    echo "${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
-}
-
 locate_ref_genome_37_fasta_file() {
     echo "/data/resources/bucket/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
-}
-
-locate_ref_genome_38_fasta_file_ds() {
-    echo "${base_path}/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna"
 }
 
 locate_ref_genome_38_fasta_file() {
@@ -475,11 +769,11 @@ locate_ref_genome_38_fasta_file() {
 }
 
 locate_ref_genome_37_to_38_chain() {
-    echo "/data/resources/custom/reference_genome_liftover/hg19ToHg38.over.chain"
+    echo "/data/resources/crunch/reference_genome_liftover/hg19ToHg38.over.chain"
 }
 
 locate_ref_genome_38_to_37_chain() {
-    echo "/data/resources/custom/reference_genome_liftover/hg38ToHg19.over.chain"
+    echo "/data/resources/crunch/reference_genome_liftover/hg38ToHg19.over.chain"
 }
 
 ##################################  METRICS ####################################
@@ -549,7 +843,7 @@ locate_amber_directory() {
 
 ###################################### SAGE ####################################
 
-locate_sage_somatic_variants() {
+locate_sage_filtered_somatic_variants() {
     local run_dir=$1
     local sage_dir_old=${run_dir}/sage
     local sage_dir=${run_dir}/sage_somatic
@@ -563,9 +857,47 @@ locate_sage_somatic_variants() {
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
-        error "Unable to locate sage somatic variants in ${run_dir}."
+        error "Unable to locate sage filtered somatic variants in ${run_dir}."
     fi
     echo ${somatic_vcf}
+}
+
+locate_sage_full_somatic_variants() {
+    local run_dir=$1
+    local sage_dir_old=${run_dir}/sage
+    local sage_dir=${run_dir}/sage_somatic
+
+    local somatic_vcf=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.vcf.gz")
+    elif [[ -d "${sage_dir_old}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir_old}/ -type f -name "*.sage.somatic.vcf.gz")
+    fi
+
+    if [[ -z "${somatic_vcf}" ]]; then
+        error "Unable to locate sage full somatic variants in ${run_dir}."
+    fi
+    echo ${somatic_vcf}
+}
+
+locate_sage_bqr_tsv() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local sage_dir="${run_dir}/sage_somatic"
+
+    local bqr_tsv=""
+
+    if [[ -d "${sage_dir}" ]]; then
+        bqr_tsv=$(find -L ${sage_dir}/ -type f -name "${sample}.sage.bqr.tsv")
+    fi
+
+    if [[ -z "${bqr_tsv}" ]]; then
+        error "Unable to locate BQR TSV for ${sample} in ${run_dir}."
+    fi
+
+    echo ${bqr_tsv}
 }
 
 locate_sage_bqr_plot() {
@@ -692,6 +1024,15 @@ locate_purple_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_purple_somatic_variants_panel() {
+    local run_dir=$1
+    local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
+    if [[ -z "${somatic_vcf}" ]]; then
+        error "Unable to locate purple somatic variants in ${run_dir}."
+    fi
+    echo ${somatic_vcf} | tr "/" " " | awk '{print $NF}'
+}
+
 locate_purple_pilot_somatic_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -768,6 +1109,15 @@ locate_purple_pilot_germline_variants() {
     echo ${germline_vcf}
 }
 
+locate_purple_germline_deletions() {
+    local run_dir=$1
+    local purple_germline_deletion_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.purple.germline.deletion.tsv")
+    if [[ -z "${purple_germline_deletion_tsv}" ]]; then
+        error "Unable to locate purple germline deletions in ${run_dir}."
+    fi
+    echo ${purple_germline_deletion_tsv}
+}
+
 locate_purple_germline_driver_catalog() {
     local run_dir=$1
     local purple_germline_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
@@ -805,11 +1155,16 @@ locate_purple_pilot_structural_variants() {
 
 locate_gripss_structural_variants() {
     local run_dir=$1
-    local gripss_dir=${run_dir}/gripss
+    local gripss_dir="${run_dir}/gripss_somatic"
+    [[ -d "${gripss_dir}" ]] || gripss_dir="${run_dir}/gripss"
 
     local structural_vcf=""
     if [[ -d "${gripss_dir}" ]]; then
         structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.filtered.vcf.gz")
+        # With GRIPSS 2.0 the name has changed from "somatic filtered" to "filtered somatic"
+        if [[ -z ${structural_vcf} ]]; then
+            structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.filtered.somatic.vcf.gz")
+        fi
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
@@ -820,7 +1175,8 @@ locate_gripss_structural_variants() {
 
 locate_gripss_recovery_candidates() {
     local run_dir=$1
-    local gripss_dir=${run_dir}/gripss
+    local gripss_dir="${run_dir}/gripss_somatic"
+    [[ -d "${gripss_dir}" ]] || gripss_dir="${run_dir}/gripss"
 
     local structural_vcf=""
     if [[ -d "${gripss_dir}" ]]; then
@@ -877,6 +1233,95 @@ locate_linx_plot_directory() {
     echo ${linx_plot_dir}
 }
 
+locate_linx_structural_variants() {
+    local run_dir=$1
+    local structural_variant_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.svs.tsv")
+    if [[ -z "${structural_variant_tsv}" ]]; then
+        error "Unable to locate linx structural variant tsv in ${run_dir}."
+    fi
+    echo ${structural_variant_tsv}
+}
+
+################################# LINX GERMLINE ################################
+
+locate_linx_germline_disruptions() {
+    local run_dir=$1
+    local germline_disruption_tsv=$(find -L ${run_dir}/linx_germline/ -type f -name "*.linx.germline.disruption.tsv")
+    if [[ -z "${germline_disruption_tsv}" ]]; then
+        error "Unable to locate linx germline disruptions in ${run_dir}."
+    fi
+    echo ${germline_disruption_tsv}
+}
+
+##################################### LILAC ####################################
+
+locate_lilac_results() {
+    local run_dir=$1
+    local result_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.csv")
+    if [[ -z "${result_csv}" ]]; then
+        error "Unable to locate lilac result csv in ${run_dir}."
+    fi
+    echo ${result_csv}
+}
+
+locate_lilac_qc() {
+    local run_dir=$1
+    local qc_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.qc.csv")
+    if [[ -z "${qc_csv}" ]]; then
+        error "Unable to locate lilac qc csv in ${run_dir}."
+    fi
+    echo ${qc_csv}
+}
+
+##################################### LILAC ####################################
+
+locate_rose_pilot() {
+    local run_dir=$1
+    local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
+    if [[ -z "${rose_tsv}" ]]; then
+        error "Unable to locate rose tsv in ${run_dir}."
+    fi
+    echo ${rose_tsv}
+}
+
+#################################### ISOFOX ####################################
+
+locate_isofox_summary() {
+    local run_dir=$1
+    local summary_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.summary.csv")
+    if [[ -z "${summary_csv}" ]]; then
+        error "Unable to locate isofox summary csv in ${run_dir}."
+    fi
+    echo ${summary_csv}
+}
+
+locate_isofox_gene_data() {
+    local run_dir=$1
+    local gene_data_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.gene_data.csv")
+    if [[ -z "${gene_data_csv}" ]]; then
+        error "Unable to locate isofox gene data csv in ${run_dir}."
+    fi
+    echo ${gene_data_csv}
+}
+
+locate_isofox_pass_fusions() {
+    local run_dir=$1
+    local pass_fusions_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.pass_fusions.csv")
+    if [[ -z "${pass_fusions_csv}" ]]; then
+        error "Unable to locate isofox pass fusions csv in ${run_dir}."
+    fi
+    echo ${pass_fusions_csv}
+}
+
+locate_isofox_alt_splice_junctions() {
+    local run_dir=$1
+    local alt_splice_junc_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.alt_splice_junc.csv")
+    if [[ -z "${alt_splice_junc_csv}" ]]; then
+        error "Unable to locate isofox alt splice junction csv in ${run_dir}."
+    fi
+    echo ${alt_splice_junc_csv}
+}
+
 ##################################### Sigs #####################################
 
 locate_sigs_dir() {
@@ -884,7 +1329,7 @@ locate_sigs_dir() {
     if [[ ! -d ${run_dir} ]]; then
         error "Run dir is not a directory: ${run_dir}"
     fi
-    echo ${run_dir}/sigs
+    echo "${run_dir}/sigs"
 }
 
 locate_sigs_pilot_dir() {
@@ -892,33 +1337,27 @@ locate_sigs_pilot_dir() {
     if [[ ! -d ${run_dir} ]]; then
         error "Run dir is not a directory: ${run_dir}"
     fi
-    echo ${run_dir}/sigs_pilot
+    echo "${run_dir}/sigs_pilot"
 }
 
 ##################################### GATK #####################################
 
 locate_gatk_germline_variants() {
     local run_dir=$1 && shift
-    local ref_sample=$1 && shift
 
     local germline_vcf=""
-    local gatk_dir=${run_dir}/${ref_sample}/germline_caller
+    local gatk_dir="${run_dir}/gatk_germline"
 
-    if [[ -d ${gatk_dir} ]]; then
+    if [[ -d "${gatk_dir}" ]]; then
         germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.germline.vcf.gz")
         # Some runs have GATK calls in a new place but with old file name.
-        if [[ -z ${germline_vcf} ]]; then
+        if [[ -z "${germline_vcf}" ]]; then
             germline_vcf=$(find -L ${gatk_dir}/ -type f -name "*.annotated.vcf.gz")
         fi
     fi
 
-    if [[ -z ${germline_vcf} ]]; then
-        # Probably no v5 pipeline done yet
-        germline_vcf=$(find -L ${run_dir}/germline_caller/*/ -type f -name "*.annotated.vcf.gz")
-    fi
-
     if [[ -z "${germline_vcf}" ]]; then
-        error "Unable to locate germline VCF in ${run_dir}."
+        error "Unable to locate GATK germline VCF in ${run_dir}."
     fi
 
     echo ${germline_vcf}
@@ -941,8 +1380,7 @@ locate_peach_pilot_output_dir() {
 
 locate_peach_pilot_calls() {
     local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
     local peach_pilot_calls_tsv=""
 
@@ -959,8 +1397,7 @@ locate_peach_pilot_calls() {
 
 locate_peach_pilot_genotype() {
     local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
     local peach_pilot_genotype_tsv=""
 
@@ -982,8 +1419,7 @@ locate_peach_prod_output_dir() {
 
 locate_peach_prod_calls() {
     local run_dir=$1
-    local peach_prod_output_dir
-    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+    local peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
 
     local peach_prod_calls_tsv=""
 
@@ -1000,8 +1436,7 @@ locate_peach_prod_calls() {
 
 locate_peach_prod_genotype() {
     local run_dir=$1
-    local peach_prod_output_dir
-    peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
+    local peach_prod_output_dir=$(locate_peach_prod_output_dir "${run_dir}")
 
     local peach_prod_genotype_tsv=""
 
@@ -1014,33 +1449,6 @@ locate_peach_prod_genotype() {
     fi
 
     echo "${peach_prod_genotype_tsv}"
-}
-
-locate_peach_pilot_vcf() {
-    local run_dir=$1
-    local peach_pilot_output_dir
-    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
-
-    local peach_pilot_vcf=""
-
-    if [[ -d "${peach_pilot_output_dir}" ]]; then
-        peach_pilot_vcf=$(find -L "${peach_pilot_output_dir}" -type f -name "*.peach.filtered.vcf")
-    fi
-
-    if [[ -z "${peach_pilot_vcf}" ]]; then
-        error "Unable to locate pilot PEACH VCF file in ${run_dir}."
-    fi
-
-    echo "${peach_pilot_vcf}"
-}
-
-locate_peach_genotype_prod_tsv() {
-    local run_dir=$1
-    local peach_genotype=$(find -L ${run_dir}/peach/ -type f -name "*.peach.genotype.tsv")
-    if [[ -z "${peach_genotype}" ]]; then
-        error "Unable to locate peach genotype tsv in ${run_dir}."
-    fi
-    echo ${peach_genotype}
 }
 
 #################################### CHORD #####################################
@@ -1077,25 +1485,48 @@ locate_virus_breakend_tsv() {
 ################################ VIRUS Interpreter #################################
 
 locate_virus_annotation_tsv_pilot() {
+    # TODO: Remove fallback to virusbreakend dir when runs on data VM are upgraded to 5.29
     local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
+
+    if [[ -d ${run_dir}/virusintrprtr_pilot/ ]]; then
+        local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr_pilot/ -type f -name "*.virus.annotated.tsv")
+    else
+        local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend_pilot/ -type f -name "*.virus.annotated.tsv")
+    fi
+
     if [[ -z "${virus_annotation_tsv}" ]]; then
-        warn "Unable to locate pilot virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="${base_path}/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        error "Unable to locate pilot virus annotation TSV in ${run_dir}."
     fi
     echo ${virus_annotation_tsv}
 }
 
 locate_virus_annotation_tsv() {
+    # TODO: Remove fallback to virusbreakend dir when runs on data VM are upgraded to 5.29
     local run_dir=$1
-    local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
+
+    if [[ -d ${run_dir}/virus_interpreter/ ]]; then
+        local virus_annotation_tsv=$(find -L ${run_dir}/virus_interpreter/ -type f -name "*.virus.annotated.tsv")
+    elif [[ -d ${run_dir}/virusintrprtr/ ]]; then
+        local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
+    else
+        local virus_annotation_tsv=$(find -L ${run_dir}/virusbreakend/ -type f -name "*.virus.annotated.tsv")
+    fi
+
     if [[ -z "${virus_annotation_tsv}" ]]; then
-        warn "Unable to locate virus annotation TSV in ${run_dir}. Reverting to empty virus interpretation."
-        virus_annotation_tsv="${base_path}/dbs/virus_interpreter/empty.virus.annotated.tsv"
+        error "Unable to locate virus annotation TSV in ${run_dir}."
     fi
     echo ${virus_annotation_tsv}
 }
 
+################################ iClusion importer #################################
+
+locate_pilot_iclusion_importer_trial_tsv() {
+    echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"
+}
+
+locate_prod_iclusion_importer_trial_tsv() {
+    echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
+}
 ################################## CUPPA #######################################
 
 locate_cuppa_result_csv() {
@@ -1103,6 +1534,15 @@ locate_cuppa_result_csv() {
     local result_csv=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.data.csv")
     if [[ -z "${result_csv}" ]]; then
         error "Unable to locate cuppa result csv in ${run_dir}."
+    fi
+    echo ${result_csv}
+}
+
+locate_cuppa_dna_rna_result_csv() {
+    local run_dir=$1
+    local result_csv=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.data.csv")
+    if [[ -z "${result_csv}" ]]; then
+        error "Unable to locate cuppa dna-rna result csv in ${run_dir}."
     fi
     echo ${result_csv}
 }
@@ -1116,10 +1556,26 @@ locate_cuppa_summary_plot() {
     echo ${plot}
 }
 
+locate_cuppa_dna_rna_summary_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.summary.png")
+    if [[ -z "${plot}" ]]; then
+        error "Unable to locate cuppa dna-rna summary plot in ${run_dir}."
+    fi
+    echo ${plot}
+}
+
 locate_cuppa_feature_plot() {
     # Feature plot is optional so no warn if it cannot be found.
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.features.png")
+    echo ${plot}
+}
+
+locate_cuppa_dna_rna_feature_plot() {
+    # Feature plot is optional so no warn if it cannot be found.
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.features.png")
     echo ${plot}
 }
 
@@ -1152,20 +1608,20 @@ locate_protect_evidence() {
     echo ${protect_evidence_tsv}
 }
 
-locate_protect_evidence_pilot_ckb() {
+locate_protect_evidence_old() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_old/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}."
+        error "Unable to locate PROTECT evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }
 
-locate_protect_evidence_pilot_vicc() {
+locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_vicc/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot VICC evidence tsv in ${run_dir}."
+        error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }
@@ -1176,8 +1632,8 @@ locate_orange_json() {
     local run_dir=$1
     local orange_json=""
 
-    local orange_dir=${run_dir}/orange
-    if [[ -d ${orange_dir} ]]; then
+    local orange_dir="${run_dir}/orange"
+    if [[ -d "${orange_dir}" ]]; then
         orange_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
     fi
 
@@ -1186,6 +1642,38 @@ locate_orange_json() {
     fi
 
     echo ${orange_json}
+}
+
+locate_orange_pdf() {
+    local run_dir=$1
+    local orange_pdf=""
+
+    local orange_dir="${run_dir}/orange"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_pdf=$(find -L ${orange_dir}/ -type f -name "*.orange.pdf")
+    fi
+
+    if [[ -z "${orange_pdf}" ]]; then
+        error "Unable to locate ORANGE pdf in ${run_dir}."
+    fi
+
+    echo ${orange_pdf}
+}
+
+locate_orange_no_germline_pdf() {
+    local run_dir=$1
+    local orange_no_germline_pdf=""
+
+    local orange_dir="${run_dir}/orange_no_germline"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_no_germline_pdf=$(find -L ${orange_dir}/ -type f -name "*.orange.pdf")
+    fi
+
+    if [[ -z "${orange_no_germline_pdf}" ]]; then
+        error "Unable to locate ORANGE no-germline pdf in ${run_dir}."
+    fi
+
+    echo ${orange_no_germline_pdf}
 }
 
 ##################################### LIMS #####################################
@@ -1213,8 +1701,6 @@ locate_reporting_db_tsv_pilot() {
     fi
     echo ${reporting_db_tsv}
 }
-
-##################################### LIMS #####################################
 
 locate_reporting_db_tsv() {
     local reporting_db_tsv=/data/ops/lims/prod/reporting_db.tsv

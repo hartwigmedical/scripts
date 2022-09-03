@@ -18,16 +18,16 @@ reference_bam=$(locate_rna_bam ${run_dir})
 ref_genome=$(locate_ref_genome_37_fasta_file)
 
 input_vcf=$(locate_purple_somatic_variants ${run_dir})
-rna_sage_directory=$(locate_rna_sage_directory ${run_dir})
+rna_sage_somatic_directory=$(locate_rna_sage_somatic_directory ${run_dir})
 
-create_or_cleanup_dir ${rna_sage_directory}
+create_or_cleanup_dir ${rna_sage_somatic_directory}
 
-out="${rna_sage_directory}/${sample}.purple.somatic.with_rna.vcf.gz"
+out="${rna_sage_somatic_directory}/${sample}.purple.somatic.with_rna.vcf.gz"
 
-sage_jar=$(locate_prod_sage)
+sage_jar=$(locate_pilot_sage)
 
 info "Running SAGE RNA annotation on somatic variants for ${sample}"
-java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.SageAppendApplication \
+java -Xms4G -Xmx32G -cp ${sage_jar} com.hartwig.hmftools.sage.append.SageAppendApplication \
     -reference ${reference} -reference_bam ${reference_bam} \
     -ref_genome ${ref_genome} \
     -input_vcf ${input_vcf} \

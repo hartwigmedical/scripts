@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+orig_run_dir="/data/datasets/${sample}"
+
+if [[ ! -d "${orig_run_dir}" ]]; then
+    error "Run dir '${orig_run_dir}' not present. Probably not downloaded yet?"
+fi
+
+run_dir="/data/molecular/${sample}"
+if [[ -d "${run_dir}" ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r "${run_dir}"
+fi
+
+info "Copying ${orig_run_dir} to ${run_dir}"
+cp -r "${orig_run_dir}" "${run_dir}"
+
+run_virus_interpreter_prod ${run_dir}
+run_protect_research ${run_dir}
+run_orange_research_no_germline ${run_dir} -max_evidence_level C

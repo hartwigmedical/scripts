@@ -13,9 +13,16 @@ fi
 if [[ -f "${source_file}" ]]; then
     info "Renaming ${source_file} to ${target_file}"
     mv "${source_file}" "${target_file}"
+
+    info "Converting ${target_file} from DOS to UNIX format"
+    dos2unix -q "${target_file}"
 fi
 
 if [[ -f "${target_file}" ]]; then
-    info "Uploading ${target_file} to ${target_dir}/"
-    gcloud compute scp ${target_file} data-vm-prod-1:${target_dir}/
+    info "Copying ${target_file} to ${target_dir}/"
+    cp ${target_file} ${target_dir}/
+
+    info "Removing ${target_file}"
+    rm ${target_file}
 fi
+

@@ -8,6 +8,6 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-cuppa_dir=${run_dir}/cuppa
+cuppa_dir="${run_dir}/cuppa"
 
 do_generate_cup_report ${run_dir} ${cuppa_dir}

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+output_dir="/data/experiments/virus_interpreter_cohort"
+
+virus_interpreter_jar=$(locate_prod_virus_interpreter)
+
+do_run_virus_interpreter ${run_dir} ${virus_interpreter_jar} ${output_dir}

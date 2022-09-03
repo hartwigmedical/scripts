@@ -18,8 +18,8 @@ if [[ "${dates_count}" -lt 1 ]]; then
 fi
 
 for date in "${sheet_dates[@]}"; do
-    info "Searching for ${samplesheets_bucket}${date}_*_SampleSheet.csv"
-    gsutil ls "${samplesheets_bucket}${date}_*_SampleSheet.csv" | while read -r sheet; do
+    info "Searching for ${samplesheets_bucket}/${date}_*_SampleSheet.csv"
+    gsutil ls "${samplesheets_bucket}/${date}_*_SampleSheet.csv" | while read -r sheet; do
         api_check_samples_of_one_flowcell "${sheet}"
     done
 done

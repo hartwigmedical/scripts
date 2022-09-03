@@ -9,7 +9,7 @@ if [[ -z "${fastq_dir}" || -z "${output_csv}" ]]; then
     error "Missing parameters. Exiting"
 fi
 
-java -Xmx4G -jar /data/tools/fastq-stats/1.1/fastq-stats.jar \
+java -Xmx4G -jar "/data/tools/fastq-stats/1.2/fastq-stats.jar" \
     -fastq_dir ${fastq_dir} \
     -out ${output_csv} \
     -threadCount 4

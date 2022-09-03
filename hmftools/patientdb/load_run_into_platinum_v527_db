@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+patient_db_jar=/data/tools/patient-db/3.67/patient-db.jar
+database="platinum_v527"
+credentials=$(prod_writer_sql_credentials)
+
+do_load_run_into_db ${run_dir} ${patient_db_jar} ${database} "${credentials}"

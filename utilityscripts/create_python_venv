@@ -25,6 +25,7 @@ done
 # Sanity checks
 [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
 [[ -z ${requirements} || -f ${requirements} ]] || die "requirements file should be a file, if provided: ${requirements}."
+[[ -n ${venv_dir}  ]] || die "venv_dir is a required argument."
 
 # Provide command to delete existing venv if it exists
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then

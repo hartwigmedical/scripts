@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
+
+platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${platinum_dir})"
+
+if [[ -z "${orange_no_germline_pdf}" ]]; then
+    error "Missing ORANGE report for ${sample}"
+fi
+
+info "Archiving ORANGE (no germline) report for ${sample}"
+gsutil cp "${orange_no_germline_pdf}" "${shared_reports_bucket}/orange/"

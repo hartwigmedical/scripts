@@ -22,7 +22,7 @@ locate_tumor_cram() {
     local sample=${biopsy}
     local api_request="datasets/${biopsy}"
 
-    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
+    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample} | select(.path | test(\"cram$\")) | .path"
 }
 
 locate_reference_cram() {
@@ -31,7 +31,7 @@ locate_reference_cram() {
     sample=$(echo "$biopsy" | cut -c1-12)R
     local api_request="datasets/${biopsy}"
 
-    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path"
+    hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample} | select(.path | test(\"cram$\")) | .path"
 }
 
 load_sample_name_for_barcode() {

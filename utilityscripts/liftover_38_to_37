@@ -1,11 +1,18 @@
-tmp_38_hotspots=$1
-working_dir=$2
-target_37_hotspots=$3
+#!/usr/bin/env bash
 
-info "Running Picard LiftOver on ${tmp_38_hotspots}"
-java -jar /data/tools/picard-tools/2.18.27/picard.jar LiftoverVcf \
-    I=${tmp_38_hotspots} \
-    O=${target_37_hotspots} \
-    CHAIN=/data/refgenomes/liftover/hg38ToHg19.over.chain \
+source locate_files || exit 1
+source message_functions || exit 1
+
+vcf_38=$1
+working_dir=$2
+vcf_37=$3
+
+ref_genome=$(locate_ref_genome_37_fasta_file)
+
+info "Running Picard LiftOver on ${vcf_38}"
+java -jar /data/tools/picard/2.18.27/picard.jar LiftoverVcf \
+    I=${vcf_38} \
+    O=${vcf_37} \
+    CHAIN=/data/resources/crunch/reference_genome_liftover/hg38ToHg19.over.chain \
     REJECT=${working_dir}/rejected_variants.vcf \
-    R=/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+    R=${ref_genome}

@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+purple_output_dir=${run_dir}/purple
+
+purple_jar=$(locate_prod_purple)
+somatic_vcf=$(locate_sage_filtered_somatic_variants ${run_dir})
+structural_vcf=$(locate_gripss_structural_variants ${run_dir})
+sv_recovery_vcf=$(locate_gripss_recovery_candidates ${run_dir})
+
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+amber_dir=$(locate_amber_directory ${run_dir})
+
+if [[ ! -d "${amber_dir}" ]]; then
+    error "Unable to locate AMBER data. Exiting."
+fi
+
+if [[ ! -f "${somatic_vcf}" ]]; then
+    error "Unable to locate somatic variants. Exiting."
+fi
+
+if [[ ! -f "${structural_vcf}" ]]; then
+    error "Unable to locate structural variants. Exiting."
+fi
+
+if [[ ! -f "${sv_recovery_vcf}" ]]; then
+    error "Unable to locate sv recovery variants. Exiting."
+fi
+
+if [[ -d "${purple_output_dir}" ]]; then
+    rm -r "${purple_output_dir}"/*
+else
+    mkdir -p "${purple_output_dir}"
+    if [[ $? = 1 ]]; then
+        error "Could not create directory ${purple_output_dir}. Exiting."
+    fi
+fi
+
+gc_profile=/data/resources/public/gc_profiles/37/GC_profile.1000bp.37.cnp
+ref_genome=$(locate_ref_genome_37_fasta_file)
+somatic_hotspot_vcf=/data/resources/public/sage/37/KnownHotspots.somatic.37.vcf.gz
+germline_hotspot_vcf=/data/resources/public/sage/37/KnownHotspots.germline.37.vcf.gz
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+
+db_args=""
+
+info "Running purple for ${tumor_sample}"
+
+java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
+    -jar ${purple_jar} \
+    -somatic_vcf ${somatic_vcf} \
+    -structural_vcf ${structural_vcf} \
+    -circos /data/tools/circos/0.69.6/bin/circos\
+    -reference ${reference_sample} \
+    -tumor ${tumor_sample} \
+    -amber ${amber_dir} \
+    -cobalt ${run_dir}/cobalt \
+    -ref_genome ${ref_genome} \
+    -output_dir ${purple_output_dir} \
+    -gc_profile ${gc_profile} \
+    -sv_recovery_vcf ${sv_recovery_vcf} \
+    -driver_catalog \
+    -somatic_hotspots ${somatic_hotspot_vcf} \
+    -germline_hotspots ${germline_hotspot_vcf} \
+    -driver_gene_panel ${driver_gene_panel} \
+    -min_ploidy 3.1 \
+    -max_ploidy 3.1 \
+    -min_purity 0.35 \
+    -max_purity 0.35 \
+    ${db_args} \
+    "$@"

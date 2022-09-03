@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+database_sql="${HOME}/hmf/repos/actin/database/src/main/resources/generate_database.sql"
+
+if [[ ! -f "${database_sql}" ]]; then
+    error "Could not locate ACTIN sql. Exiting"
+fi
+
+pull_actin_changes_in_crunch_repo
+
+cp "${database_sql}" "$(locate_actin_local_crunch_repo)/sql_database"
+
+push_actin_changes_in_crunch_repo

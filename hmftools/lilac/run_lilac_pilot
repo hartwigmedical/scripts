@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source io_functions || exit 1
+source api_functions || exit
+
+run_dir=$1 && shift
+reference_dna_hla_bam=$1 && shift
+tumor_dna_hla_bam=$1 && shift
+tumor_rna_hla_bam=$1 && shift
+
+if [[ -z "${run_dir}" || -z "${reference_dna_hla_bam}" || -z "${tumor_dna_hla_bam}" ]]; then
+    error "Missing input parameters. Exiting";
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+lilac_jar=$(locate_pilot_lilac)
+
+ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
+output_dir="${run_dir}/lilac_pilot"
+create_or_cleanup_dir ${output_dir}
+
+purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
+
+rna_bam_command=""
+if [[ -f ${tumor_rna_hla_bam} ]]; then
+    rna_bam_command="-rna_bam ${tumor_rna_hla_bam}"
+fi
+
+java -jar ${lilac_jar} \
+    -sample ${tumor_sample} \
+    -resource_dir "/data/resources/crunch/lilac" \
+    -ref_genome ${ref_genome_fasta} \
+    -reference_bam ${reference_dna_hla_bam} \
+    -tumor_bam ${tumor_dna_hla_bam} \
+    ${rna_bam_command} \
+    -gene_copy_number ${purple_gene_copy_number_tsv} \
+    -somatic_vcf ${purple_somatic_variant_vcf} \
+    -output_dir ${output_dir} \
+    "$@"

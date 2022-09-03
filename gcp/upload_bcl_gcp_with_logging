@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-/data/repos/scripts/gcp/upload_bcl_gcp $1 > /data/bcl_upload_logs/upload_$(date +%Y%m%d%H%M) 2>&1

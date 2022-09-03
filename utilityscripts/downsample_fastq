@@ -11,17 +11,15 @@ main() {
     fraction=$1 && shift
     seed=$1 && shift
 
-    script_name=$(basename $"0")
+    script_name=$(basename "$0")
 
     if [[ -z ${seqtk_path} ]] || [[ -z "${source_dir}" ]] || [[ -z "${output_dir}" ]] || [[ -z "${fraction}" ]] || [[ -z "${seed}" ]]; then
         die "Not all input parameters to ${script_name}. Should include seqtk_path, source_dir, output_dir, fraction and seed. Exiting"
     fi
 
-    ref_output_dir=${output_dir}/REF
     downsampled_output_dir=${output_dir}/${fraction}
     tmp_dir=${output_dir}/${fraction}/tmp
 
-    mkdir --parents "${ref_output_dir}"
     mkdir --parents "${downsampled_output_dir}"
     rm -rf "${tmp_dir}"
     mkdir --parents "${tmp_dir}"
@@ -29,33 +27,20 @@ main() {
     for file in "${source_dir}"/*.fastq.gz
     do
         file_name=$(basename "${file}")
-        sample_id=${file_name%%_*}
-        sample_type=${sample_id: -1}
 
         info "Handling ${file_name} for fraction ${fraction}"
 
-        if [ "${sample_type}" = "R" ]; then
-            if [ ! -f "${ref_output_dir}"/"${file_name}" ]; then
-                    info "Copying ref sample file: ${file_name} to ${ref_output_dir}"
-                    cp "${file}" "${ref_output_dir}"
-                else
-                    info "File ${file_name} already in REF directory"
-            fi
-        elif [ "${sample_type}" = "T" ]; then
-            # these paths are for the uncompressed files
-            downsampled_file_path=${downsampled_output_dir}/${file_name%???}
-            tmp_downsampled_file_path=${tmp_dir}/${file_name%???}
-            if [ ! -f "${downsampled_file_path}" ] && [ ! -f "${downsampled_file_path}.gz" ]; then
-                info "Downsampling ${file_name} to ${fraction}"
-                rm -f "${tmp_downsampled_file_path}"
-                eval "${seqtk_path} sample -s${seed} ${file} ${fraction} > ${tmp_downsampled_file_path}"
-                mv "${tmp_downsampled_file_path}" "${downsampled_file_path}"
-                rm -f "${tmp_downsampled_file_path}"
-            else
-                info "${file_name} has already been downsampled to ${fraction}"
-            fi
+        # these paths are for the uncompressed files
+        downsampled_file_path=${downsampled_output_dir}/${file_name%???}
+        tmp_downsampled_file_path=${tmp_dir}/${file_name%???}
+        if [ ! -f "${downsampled_file_path}" ] && [ ! -f "${downsampled_file_path}.gz" ]; then
+            info "Downsampling ${file_name} to ${fraction}"
+            rm -f "${tmp_downsampled_file_path}"
+            eval "${seqtk_path} sample -s${seed} ${file} ${fraction} > ${tmp_downsampled_file_path}"
+            mv "${tmp_downsampled_file_path}" "${downsampled_file_path}"
+            rm -f "${tmp_downsampled_file_path}"
         else
-            warn "Sample type of fastq file not recognized: ${file_name}. Ignored"
+            info "${file_name} has already been downsampled to ${fraction}"
         fi
     done
 

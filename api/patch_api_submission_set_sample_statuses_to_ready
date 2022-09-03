@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+submission=$1
+
+new_status="Ready"
+
+if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo "Descr: Patches all samples in submission ${submission} to ready"
+    echo "Usage: $(basename $0) submission"
+    echo "   Eg: $(basename $0) HMFreg0001"
+    echo "-----"
+    exit 1
+fi
+
+info "Querying api to find samples of submission (${submission})"
+
+samples=$(hmf_api_get "samples?submission=${submission}")
+
+jq -r ".[] | [.id, .submission, .barcode, .name, .status] | @tsv" <<< "${samples}"
+
+read -p "Are you sure you want to patch the above samples? [Yy] " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Yy]$ ]]
+then
+  jq -c '.[]' <<< "$samples" | while read -r sample_info; do
+      status=$(jq -r '.status' <<< "$sample_info")
+      if [[ "$status" != $new_status ]]; then
+          barcode=$(jq -r '.barcode' <<< "$sample_info")
+          id=$(jq -r '.id' <<< "$sample_info")
+          echo "Patching $status to $new_status for barcode $barcode (oid=$id)"
+          hmf_api_patch -c "samples" -o "${id}" -f "status" -v "${new_status}" -e
+      fi
+  done
+else
+  echo "Not patching samples"
+fi

@@ -25,7 +25,7 @@ if [[ -z "${ind}" ]]; then
 fi
 
 api_url=$"https://api.bizzmine.cloud/collection/RiskAnalyses/"
-api_token=$( cat /data/dbs/api_credentials/bizzmine/api_token )
+api_token=$( gcloud secrets versions access "latest" --secret=bizzmine-api-token-dr --project=hmf-secrets )
 
 ## start with script
 echo ""
@@ -36,6 +36,7 @@ curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" $
 n_risks=$( jq -r '.[] | select(.RiskAnalyses_Regulation.text=="ISO27001") | .RiskAnalyses_RiskAnalysesID ' temp.json | sort |  uniq | wc -l )
 echo ""
 echo "--- total number of ISO27001 risks ---"
+n_risks=$(expr ${n_risks} )
 echo ${n_risks}
 
 jq -r '.[] | select(.RiskAnalyses_Regulation.text=="ISO27001") | .ISO27001Annexes[]?.ISO27001Annexes_Annex' temp.json > annexes.txt
@@ -47,6 +48,7 @@ for annex in "${annexes[@]}"; do
     echo ${annex}
     annex=$( echo ${annex:0:4} | sed -e 's/^[[:space:]]*//' )
     n_head_annex=$( cat annexes.txt | grep "${annex}" | wc -l )
+    n_head_annex=$(expr ${n_head_annex} )
     perc=$( awk 'BEGIN{printf "%.0f\n",'${n_head_annex}'/'${n_risks}'*100}' )
     echo -n "- number of risks under head annex: "; echo -n ${n_head_annex}; echo " ("${perc}"%)"
     if [[ ${ind} == 1 ]]; then
@@ -57,6 +59,7 @@ for annex in "${annexes[@]}"; do
         cat annexes.txt | grep "${annex}" | sort | uniq > sub_annexes.txt
         while read sub_annex; do
             n_sub_annex=$( cat annexes.txt | grep "${sub_annex}" | wc -l )
+            n_sub_annex=$(expr ${n_sub_annex} )
             perc=$( awk 'BEGIN{printf "%.0f\n",'${n_sub_annex}'/'${n_risks}'*100}' )
             echo -n "     "${sub_annex}": "; echo -n ${n_sub_annex}; echo " ("${perc}"%)"
             if [[ ${ind} == 1 ]]; then

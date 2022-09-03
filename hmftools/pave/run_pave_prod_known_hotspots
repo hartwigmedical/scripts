@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source io_functions || exit 1
+
+known_hotspots=$1 && shift
+
+if [[ -z "${known_hotspots}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+output_dir="/data/experiments/hotspot_checker"
+
+ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
+ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
+pave_jar=$(locate_prod_pave)
+
+java -jar ${pave_jar} \
+  -vcf_file ${known_hotspots} \
+  -ensembl_data_dir ${ensembl_data_dir_37} \
+  -ref_genome ${ref_genome_37_fasta_file} \
+  -ref_genome_version 37 \
+  -output_dir ${output_dir}

@@ -5,23 +5,26 @@ source message_functions || exit 1
 source secrets_functions || exit 1
 source metadata_functions || exit 1
 
+SECRET_NAME="mysql-patients-sql-verification-6-writer"
+
 set -e
 
 run_dir=$1 && shift
+database=$1 && shift
+patient_db_jar=$1
 
-if [[ -z "${run_dir}" ]]; then
-    error "No run dir passed. Exiting"
+if [[ -z "${run_dir}" || -z ${database} ]]; then
+    echo "Missing arguments!"
+    error "USAGE: $0 [run directory] [database name] [optional path to patient db JAR]"
 fi
 
-patient_db_jar=$(locate_prod_patient_db)
-secret_name="mysql-verification-db-writer"
-credentials=$(get_secret_from_secret_manager "${secret_name}")
+[[ -z ${patient_db_jar} ]] && patient_db_jar=$(locate_prod_patient_db)
+credentials=$(get_secret_from_secret_manager "${SECRET_NAME}")
 tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
-database="hmfpatients"
 
 info "Config (tumor sample): $tumor_sample"
 info "Config (patient db jar): $patient_db_jar"
 info "Config (database): $database"
-info "Config (secret name): ${secret_name}"
+info "Config (secret name): ${SECRET_NAME}"
 
 do_load_run_into_db "${run_dir}" "${patient_db_jar}" "${database}" "${credentials}"

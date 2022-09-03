@@ -26,8 +26,8 @@ out_tar_name=""
 function join_by { local IFS="$1"; shift; echo "$*"; }
 sample_sheet="${path_of_dir_to_tar}/SampleSheet.csv"
 if [[ -f "${sample_sheet}" ]]; then
-    col_idx=$(grep ^Sample_ID "${sample_sheet}" | tr "," "\n" | grep -n Project | cut -d":" -f1)
-    projects=$(join_by "-" "$(sed -e '1,/Sample_ID/d' "${sample_sheet}" | \
+    col_idx=$(grep ^Sample_ID "${sample_sheet}" | tr -d '\r' | tr "," "\n" | grep -n Project | cut -d":" -f1)
+    projects=$(join_by "-" "$(sed -e '1,/Sample_ID/d' "${sample_sheet}" | tr -d '\r' | \
         grep -vP "^[\,\s]+$" | cut -d"," -f "${col_idx}" | sort | uniq)")
     out_tar_name="${tar_dir_name}_${projects}_BCL.tar"
 else
@@ -87,6 +87,4 @@ info "Output files ready:"
 info " ${out_tar_path} (${du_of_tar})"
 info " ${out_cnt_path}"
 info " ${out_md5_path}"
-info "Cmd to sync output files to datastore:"
-info "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
 info ""

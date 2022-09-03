@@ -336,7 +336,7 @@ sub getUnreportedBiopsies{
                 
         ## skip if not production biopsy
         next unless defined $sample->{'label'};
-        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE|ACTN)$/;
+        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA|OPTC|OMIC)$/;
         
         ## skip T0 biopsies (these should always have a T as well)
         next if $sample_name =~ /T0$/;

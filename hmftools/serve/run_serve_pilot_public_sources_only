@@ -3,14 +3,14 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir=/data/output/pilot_output_public_only
+output_dir="/data/output/pilot_output_public_only_with_hotspot"
 create_or_cleanup_dir ${output_dir}
 
 vicc_json=$(locate_vicc_json)
 docm_tsv=$(locate_docm_tsv)
 hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
 hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
-missing_doids_mapping_tsv=/data/resources/custom/serve/public_doids_mapping.tsv
+missing_doids_mapping_tsv=$(locate_public_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \

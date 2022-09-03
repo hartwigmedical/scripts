@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source metadata_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+sigs_jar=$1 && shift
+output_dir=$1 && shift
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
+
+cosmic_signatures="/data/resources/public/sigs/snv_cosmic_signatures.csv"
+
+create_or_cleanup_dir ${output_dir}
+
+java -Xmx4G -jar ${sigs_jar} \
+    -sample ${sample} \
+    -signatures_file ${cosmic_signatures} \
+    -somatic_vcf_file ${somatic_vcf} \
+    -output_dir ${output_dir}

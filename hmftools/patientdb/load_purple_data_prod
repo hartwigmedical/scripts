@@ -14,7 +14,7 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 database="hmfpatients"
-patient_db_jar=$(locate_prod_patient_db)
+patient_db_jar=$(locate_research_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
 do_load_purple_data ${sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}

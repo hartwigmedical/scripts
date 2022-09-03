@@ -2,6 +2,9 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source secrets_functions || exit 1
+
+set -e
 
 function print_help () {
     echo "-----"
@@ -22,9 +25,8 @@ info "Running script $(basename $0)"
 info "Directory to upload into is ${nextcloud_dir}"
 info "Collecting credentials"
 
-credentials=$(locate_nextcloud_upload_credentials)
-user=$(awk '/^user/ {print $2}' ${credentials})
-pass=$(awk '/^pass/ {print $2}' ${credentials})
+user=$(get_nextcloud_upload_user)
+pass=$(get_nextcloud_upload_password)
 
 info "Checking input files"
 for file in "${files_to_upload[@]}"; do

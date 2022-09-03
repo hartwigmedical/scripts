@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+source iclusion_functions || exit 1
+
+iclusion_importer_jar=$1 && shift
+iclusion_trial_tsv=$1 && shift
+
+## iclusion credentials
+iclusion_api_credentials=$(iclusion_credentials)
+
+iclusion_endpoint=$(extract_iclusion_endpoint "${iclusion_api_credentials}")
+iclusion_client_id=$(extract_iclusion_client_id "${iclusion_api_credentials}")
+iclusion_client_secret=$(extract_iclusion_client_secret "${iclusion_api_credentials}")
+iclusion_user=$(extract_iclusion_username "${iclusion_api_credentials}")
+iclusion_password=$(extract_iclusion_password "${iclusion_api_credentials}")
+
+java -jar ${iclusion_importer_jar} \
+    -iclusion_endpoint ${iclusion_endpoint} \
+    -iclusion_client_id ${iclusion_client_id} \
+    -iclusion_client_secret ${iclusion_client_secret} \
+    -iclusion_username ${iclusion_user} \
+    -iclusion_password ${iclusion_password} \
+    -iclusion_trial_tsv ${iclusion_trial_tsv} \
+    "$@"

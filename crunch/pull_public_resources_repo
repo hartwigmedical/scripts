@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pull_resources_repo "public" || exit 1

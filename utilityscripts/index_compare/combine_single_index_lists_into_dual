@@ -1,0 +1,111 @@
+#!/usr/bin/perl
+use strict;
+use warnings FATAL => 'all';
+
+use Data::Dumper;
+use Getopt::Long;
+use File::Basename;
+use Text::CSV qw/csv/;
+use 5.010.000;
+
+use constant NA => "NA";
+
+my $script_name = basename $0;
+my $i7tsv;
+my $i5tsv;
+my $outfile;
+my $help;
+
+my $HELP =<<HELP;
+
+  Description:
+    Reads in two single index lists with each two columns (name and sequence) and creates a dual index file.
+
+  Usage:
+    $script_name -out <output-name> -i7 <single-index-i7-tsv1> -i5 <single-index-i5-tsv2>
+    $script_name -out ID_dual_indexes.tsv -i7 ID_i7_indexes.tsv -i5 ID_i5_indexes.tsv
+
+  Example input i7 TSV:
+    #i7name i7seq
+    i7-bc-1  CTGATCGT
+    i7-bc-2  CTGATCGA
+
+  Example input i5 TSV:
+    #i5name i5seq
+    i5-bc-1  CTGATCGT
+    i5-bc-2  CTGATCGA
+
+  Example TSV output:
+    #i7name i7seq    i5name i5seq
+    i7-bc-1 CTGATCGT i5-bc-1 GCGCATAT
+    i7-bc-2 CTGATCGT i5-bc-1 GCGCATAT
+    i7-bc-1 CTGATCGT i5-bc-2 GCGCATAT
+    i7-bc-2 CTGATCGT i5-bc-2 GCGCATAT
+
+HELP
+
+print $HELP and exit(0) if scalar @ARGV == 0;
+GetOptions (
+    "out=s" => \$outfile,
+    "i5=s" => \$i5tsv,
+    "i7=s" => \$i7tsv,
+    "help|h" => \$help,
+) or die "[ERROR] Issue in command line arguments\n";
+print $HELP and exit(0) if defined $help;
+
+defined $outfile || die "[ERROR] Out name not defined\n";
+defined $i7tsv || die "[ERROR] i7tsv not defined\n";
+defined $i5tsv || die "[ERROR] i7tsv not defined\n";
+
+say "[INFO] Starting with $outfile";
+my $i7idx = readIndexesTsv($i7tsv, "#i7name", "i7seq");
+my $i5idx = readIndexesTsv($i5tsv, "#i5name", "i5seq");
+#my $i7idx = readIndexesTsv($i7tsv, "#name", "seq");
+#my $i5idx = readIndexesTsv($i5tsv, "#name", "seq");
+combineAndPrint($i7idx, $i5idx, $outfile);
+
+sub combineAndPrint {
+    my ($i7, $i5, $file) = @_;
+    my $counter = 0;
+    say "[INFO] Combining single index records into dual ones";
+    open my $fh, '>', $file or die "Unable to open output file ($file): $!\n";
+    print $fh join("\t", '#i7name', 'i7seq', 'i5name', 'i5seq') . "\n";
+    foreach my $i7seq (keys %$i7){
+        my $i7name = $i7->{$i7seq};
+        foreach my $i5seq (keys %$i5){
+            my $i5name = $i5->{$i5seq};
+            print $fh join("\t", $i7name, $i7seq, $i5name, $i5seq) . "\n";
+            $counter++;
+        }
+    }
+    close $fh;
+    say "[INFO]   Written $counter records to file $file"
+}
+
+sub readIndexesTsv {
+    my ($file, $name_header_tag, $seq_header_tag) = @_;
+    my $index_count = 0;
+    my %out = ();
+    my %seqs_seen = ();
+    my %names_seen = ();
+    say "[INFO] Reading file $file";
+    my $lines = csv(in => $file, headers => 'auto', sep_char=> "\t", skip_empty_rows => 1);
+    foreach my $line (@$lines) {
+        my $name = $line->{$name_header_tag} || dieAndPrintObject("Unable to get index name from TSV line", $line);
+        my $seq = $line->{$seq_header_tag} || dieAndPrintObject("Unable to get index seq from TSV line", $line);
+        dieAndPrintObject("Duplicate index name found in $file", $line) if exists $names_seen{$name};
+        dieAndPrintObject("Duplicate index seq found in $file", $line) if exists $seqs_seen{$seq};
+        $out{$seq} = $name;
+        $seqs_seen{$seq} = 1;
+        $names_seen{$name} = 1;
+        $index_count++;
+    }
+    say "[INFO]   Encountered $index_count indexes in file $file";
+    return \%out;
+}
+
+sub dieAndPrintObject {
+    my ($msg, $object) = @_;
+    print Dumper $object;
+    die "$msg\n";
+}

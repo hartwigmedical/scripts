@@ -6,7 +6,7 @@ source message_functions || exit 1
 
 prefix=$(dirname $(readlink $0 || echo $0))
 
-ref_genome=$(locate_ref_genome_37_fasta_file_ds)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 run_dir=$1 && shift
 set=$(basename ${run_dir})

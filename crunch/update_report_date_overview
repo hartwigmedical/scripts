@@ -14,7 +14,7 @@ fi
 
 ## Syncing source file twice (second time as txt which can be read directly in browser)
 info "START with ${task_id} $(date '+%y%m%d')"
-info " Syncing ${rep_src_file_sharing} from datastore to NAS (to ${nas_loc})"
+info " Syncing ${rep_src_file_sharing} to NAS (to ${nas_loc})"
 copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/"
 copy_file_to_nas "${rep_src_file_sharing}" "${nas_loc}/sharing_db_generated.txt"
 info "  File updated (see https://hmf-nas.synology.me/overviews/reporting/)"

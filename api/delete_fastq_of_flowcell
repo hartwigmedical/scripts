@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+flowcell_id=$1 # full flowcell id
+out_cmd_file=$2 # output file for rm/patch cmds
+
+if [[ -z "${flowcell_id}" || -z "${out_cmd_file}" ]]; then
+    echo "---"
+    echo "Descr: Prints commands to delete fastq of a flowcell (and patch API accordingly)"
+    echo "Usage: $(basename "$0") {flowcell-id} {output-cmd-file}"
+    echo "   Eg: $(basename "$0") HJKMYALXX ./delete_HJKMYALXX_fastq.sh"
+    echo "---"
+    exit 1
+fi
+
+main () {
+    # input checks
+    [[ -n "${flowcell_id}" ]] || die "No flowcell id provided"
+    [[ -n "${out_cmd_file}" ]] || die "No output file provided"
+    [[ ! -f "${out_cmd_file}" ]] || die "Output file already exists [${out_cmd_file}]"
+
+    info "Searching for flowcell with input [${flowcell_id}]"
+    result=$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")
+    count=$(jq length <<< "${result}")
+
+    [[ "${count}" -eq 1 ]] || die "Number of flowcells found not 1 but ${count} [${flowcell_id}]"
+    flowcell=$(jq -r .[0] <<< "${result}")
+
+    fcid=$(jq -r .flowcell_id <<< "${flowcell}")
+    id=$(jq -r .id <<< "${flowcell}")
+    name=$(jq -r .name <<< "${flowcell}")
+    status=$(jq -r .status <<< "${flowcell}")
+    qc=$(jq -r .undet_rds_p_pass <<< "${flowcell}")
+    info="fcid=${fcid},name=${name},status=${status},qc=${qc},id=${id}"
+
+    info "Found flowcell [${info}]"
+    lanes_json=$(hmf_api_get "lanes?flowcell_id=${id}")
+    lane_count=$(jq length <<< "${lanes_json}")
+    info "Number of lanes to process: ${lane_count}"
+
+    echo "set -e" > "${out_cmd_file}"
+    echo "echo 'Starting fastq deletion of [${info}]'" >> "${out_cmd_file}"
+    while read -r lane; do
+        lane_id=$(jq -r '.id' <<< "$lane")
+        lane_name=$(jq -r '.name' <<< "$lane")
+        info "  Processing lane ${lane_name}"
+        fastq_json=$(hmf_api_get "fastq?lane_id=${lane_id}")
+        while read -r fastq; do
+            fastq_id=$(jq -r '.id' <<< "$fastq")
+            bucket=$(jq -r '.bucket' <<< "$fastq")
+            name_r1=$(jq -r '.name_r1' <<< "$fastq")
+            name_r2=$(jq -r '.name_r2' <<< "$fastq")
+            qc=$(jq -r '.qc_pass' <<< "$fastq")
+            if [[ "${qc}" != "false" ]]; then
+                warn "Encountered FASTQ pair with QC not set to false. Pls make sure you want to delete these! [${name_r1}]"
+            fi
+            if [[ "${bucket}" == "null" ]]; then
+                warn "Encountered already deleted FASTQ pair with bucket set to null. Skipping! [${name_r1}]"
+                continue
+            fi
+            if [[ "${name_r1}" != "null" && "${name_r1}" != "NA" ]]; then
+                echo " gsutil rm gs://${bucket}/${name_r1}" >> "${out_cmd_file}"
+            fi
+            if [[ "${name_r2}" != "null" && "${name_r2}" != "NA" ]]; then
+                echo " gsutil rm gs://${bucket}/${name_r2}" >> "${out_cmd_file}"
+            fi
+            echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null" >> "${out_cmd_file}"
+            echo " echo 'Cleanup of ${name_r1} done'" >> "${out_cmd_file}"
+        done < <(jq -cr '.[]' <<< "${fastq_json}")
+    done < <(jq -cr '.[]' <<< "${lanes_json}")
+
+    echo "echo 'Finished with fastq deletion of ${flowcell_id}'" >> "${out_cmd_file}"
+    chmod +x "${out_cmd_file}"
+    info "Check contents of cmd file: cat ${out_cmd_file} | less"
+    info "And execute with eg: nohup ${out_cmd_file} > ${out_cmd_file}.log &"
+}
+
+main

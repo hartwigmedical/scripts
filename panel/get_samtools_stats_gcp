@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  bam=$1 && shift
+  output=$1 && shift
+  samtools=$1 && shift  # version 1.13 or greater
+
+  # sanity checks
+  [[ -n ${samtools} ]] || die "Not enough arguments to script ${SCRIPT_NAME}"
+  [[ "${bam}" == *.bam ]] || die "Bam argument does have format *.bam: ${bam}"
+
+  gsutil -q stat "${output}"
+  status=$?
+  if [[ $status == 0 ]]; then
+    info "Output file exists in bucket, so SKIP"
+  else
+    info "Start handling BAM ${bam}"
+    bam_file_name=$(basename "${bam}") || die "Could not get bam file name"
+
+    GCS_OAUTH_TOKEN=$(gcloud auth application-default print-access-token) || die "Could not get GCS auth token for ${bam_file_name}"
+    export GCS_OAUTH_TOKEN
+
+    output_dir="$(dirname "${output}")" || die "Could not dirname for output"
+    local_working_dir="${output_dir/"gs://"/"$HOME/"}"
+
+    if [[ ! -d ${local_working_dir} ]]; then
+      mkdir --parents "${local_working_dir}" || die "Could not create local working dir for ${bam_file_name}"
+    fi
+    local_stats_file="${local_working_dir}/${bam_file_name/.bam/.stats}"
+
+    get_samtools_stats "${bam}" "${samtools}" > "${local_stats_file}" || die "Could not get samtools stats for ${bam_file_name}"
+    gsutil -mq cp "${local_stats_file}" "${output}" || die "Could not upload samtools stats file for ${bam_file_name}"
+
+    info "Finished handling BAM ${bam}"
+  fi
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"

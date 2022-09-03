@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+sample_evaluation_bucket="$(locate_actin_evaluation_bucket)/${sample}"
+
+bucket_exists_error=$(gsutil ls ${sample_evaluation_bucket} 2>&1)
+if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
+    archive_count=$(gsutil ls "${sample_evaluation_bucket}" | wc -l)
+    if [[ ${archive_count} -ge 0 ]]; then
+        error "Archive for ${sample} already exists. Won't overwrite"
+    fi
+fi
+
+clinical_json="$(locate_actin_clinical_json ${sample})"
+treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
+actin_report_pdf="$(locate_actin_report_pdf ${sample})"
+evaluation_details_tsv="$(locate_actin_evaluation_details ${sample})"
+evaluation_summary_tsv="$(locate_actin_evaluation_summary ${sample})"
+
+if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
+    error "Missing ACTIN data, report or evaluation details for ${sample}"
+fi
+
+platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+orange_json="$(locate_orange_json ${platinum_dir})"
+orange_pdf="$(locate_orange_pdf ${platinum_dir})"
+molecular_json="$(locate_actin_molecular_json ${sample})"
+
+if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then
+    info "Archiving ORANGE data, report and ACTIN interpretation for ${sample}"
+    gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"
+    gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/"
+    gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
+else
+    warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"
+fi
+
+info "Archiving ACTIN data and report for ${sample}"
+gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/"
+gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/"
+gsutil cp "${evaluation_details_tsv}" "${sample_evaluation_bucket}/"
+gsutil cp "${evaluation_summary_tsv}" "${sample_evaluation_bucket}/"

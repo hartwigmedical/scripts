@@ -6,8 +6,30 @@ source metadata_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
+TRUE="TRUE"
+FALSE="FALSE"
+
 FULL_DPYD_PANEL_NAME="DPYD.json"
 MINIMAL_DPYD_PANEL_NAME="min_DPYD.json"
+
+print_usage() {
+  echo ""
+  echo "Descr: Do a pilot run of PEACH"
+  echo "Usage: $(basename "$0") --rundir /some/run"
+  echo "Exmpl: $(basename "$0") --rundir /some/run"
+  echo "       $(basename "$0") --rundir /some/run --main /peach/repo/peach --venv /some/peach/venv/"
+  echo ""
+  echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
+  echo "Options:"
+  echo "  -r/--run_dir                        [REQUIRED]   Directory containing a pipeline run."
+  echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
+  echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
+  echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
+  echo "  -a/--vcf_reference_assembly_version [OPTIONAL]   V37 or V38, to designate the version of the reference genome used in the run."
+  echo "                                                   Default=V37."
+  echo ""
+  exit 1
+}
 
 main() {
   info "Started ${SCRIPT_NAME}"
@@ -62,10 +84,26 @@ main() {
   fi
 
   # Sanity checks
-  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
-  [[ -n ${run_dir} ]] || die "Variable 'rundir' has not been set."
-  [[ -d ${run_dir} ]] || die "run_dir should be a dir: ${run_dir}."
-  [[ -d ${venv_dir} ]] || die "venv_dir should be a dir: ${venv_dir}."
+  local sanity_check_fail="${FALSE}"
+  if [[ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]]; then
+    warn "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ -z ${run_dir} ]]; then
+    warn "Variable 'rundir' has not been set."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${run_dir} ]]; then
+    warn "run_dir should be a dir: ${run_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${venv_dir} ]]; then
+    warn "venv_dir should be a dir: ${venv_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
+    print_usage
+  fi
 
   # Get argument values
   local panel_name="${panel_path##*/}"

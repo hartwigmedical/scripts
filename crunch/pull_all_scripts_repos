@@ -4,10 +4,6 @@ source message_functions || exit 1
 
 pull_script="pull_scripts_repo"
 
-if [[ "$(hostname)" != "datastore" ]]; then
-    error "This script is meant to be executed at datastore. Exiting."
-fi
-
 for server in crunch{1,2}.prod-1; do
     info "---"
     info "Executing \"${pull_script}\" at server ${server}"
@@ -17,5 +13,5 @@ for server in crunch{1,2}.prod-1; do
 done
 
 info "---"
-info "Executing \"${pull_script}\" at server Datastore"
+info "Executing \"${pull_script}\" at current server"
 exec ${pull_script}

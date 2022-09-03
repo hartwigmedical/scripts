@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+vicc_db=$1 && shift
+
+# Resources
+vicc_database_sql="/data/resources/crunch/serve/vicc/create_vicc_database.sql"
+
+# Database details
+credentials=$(prod_writer_sql_credentials)
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_host=$(extract_database_host "${credentials}")
+
+info "Rebuilding VICC db '${vicc_db}' on '${db_host} using ${vicc_database_sql}"
+
+mysql ${vicc_db} --host="${db_host}" --user="${db_user}" --password="${db_pass}" < ${vicc_database_sql}

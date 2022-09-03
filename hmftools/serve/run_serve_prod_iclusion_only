@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source io_functions || exit 1
+
+output_dir="/data/output/prod_output_iclusion_only"
+create_or_cleanup_dir ${output_dir}
+
+iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv_pilot)
+iclusion_filter_tsv=$(locate_iclusion_filter_tsv)
+missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
+
+do_run_serve_prod \
+    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
+    -output_dir ${output_dir} \
+    "$@"

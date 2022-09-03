@@ -23,7 +23,7 @@ sed -i 's/^/chr/g' ${tmp_37_hotspots}
 sed -i 's/^chr#/#/g' ${tmp_37_hotspots}
 
 info "Running Picard LiftOver on ${tmp_37_hotspots}"
-java -jar /data/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
+java -jar /data/tools/picard/2.18.27/picard.jar LiftoverVcf \
     I=${tmp_37_hotspots} \
     O=${target_38_hotspots} \
     CHAIN=/data/refgenomes/liftover/hg19ToHg38.over.chain \

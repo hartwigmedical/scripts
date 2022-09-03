@@ -4,22 +4,38 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 cram=$1 && shift
+samtools=/data/tools/samtools/1.10/samtools
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
-if [[ ! -f "${cram}" ]]; then
-    error "Cram is not a file: ${cram}. Exiting"
+if [[ "${cram}" == "" || "${cram}" == "-h" ]]; then
+    echo "Usage: $(basename "$0") /path/to/cram OR gs://path/to/cram"
+    exit 1
 fi
 
-samtools=/data/tools/samtools/1.10/samtools
-ref_genome=$(locate_ref_genome_37_fasta_file_ds)
+main () {
+    if [[ "${cram}" =~ ^gs: ]]; then
+        info "Input is a gs url so exporting auth token to ENV first"
+        token=$(gcloud auth application-default print-access-token)
+        export GCS_OAUTH_TOKEN="$token"
+    else
+        info "Input is a file so checking for existance"
+        [[ -f "${cram}" ]] || die "Input file does not exist (${cram}). Exiting"
+    fi
 
-echo "-----"
-echo "## Printing header part"
-${samtools} view -H "${cram}"
+    print_header "HEADER"
+    $samtools view -H "${cram}"
 
-echo "-----"
-echo "## Printing data part (head 3) with -T ref genome"
-${samtools} view -T ${ref_genome} "${cram}" | head -3
+    print_header "READS (head 3) with -T ref genome"
+    $samtools view -T "${ref_genome}" "${cram}" | head -3
 
-echo "-----"
-echo "## Printing data part (head 3) without -T ref genome"
-${samtools} view "${cram}" | head -3
+    print_header "READS (head 3) without -T ref genome"
+    $samtools view "${cram}" | head -3
+}
+
+print_header () {
+    echo ""
+    echo "$1"
+    echo "==================="
+}
+
+main

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+dir=$1 && shift
+
+if [[ -z "${dir}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+mv "${dir}/ACTIN Questionnaires - Questionnaires.tsv" "${dir}/manual_questionnaire.tsv"
+
+dos2unix "${dir}/manual_questionnaire.tsv"
+

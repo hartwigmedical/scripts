@@ -9,19 +9,21 @@ exclude_crams=''
 billing_project="hmf-database"
 switch_to_hmf_ops="false"
 
+# Use predefined environment variable if available
+[[ -n "$HMF_GCP_BILLING_PROJECT" ]] && billing_project="$HMF_GCP_BILLING_PROJECT"
+
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Description: Downloads a pipeline run."
     echo " Usage:"
     echo "   $(basename "$0") -u <gcp-url> -d <download-path>"
-    echo "   $(basename "$0") -u gs://path/to/run -d /data/gcp/qc_fail_runs"
-    echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs"
-    echo "   $(basename "$0") -e -u gs://path/to/run -d <download-path> -p hmf-crunch -o"
+    echo "   $(basename "$0") -u gs://path/to/run -d /data/qc_fail_runs"
+    echo "   $(basename "$0") -e -u gs://path/to/run -d /data/qc_fail_runs"
     echo " Options:"
     echo "   -u  GCP url to download from"
     echo "   -d  Directory to download to"
-    echo "   -e  Exclude any BAMs/CRAMs"
-    echo "   -p  Set user project to be billed for the download. Default is ${billing_project}."
+    echo "   -e  Exclude all BAMs/CRAMs"
+    echo "   -p  Set different user billing project [${billing_project}]"
     echo "   -o  Switch to hmf-ops service account"
     echo "---"
     exit 1

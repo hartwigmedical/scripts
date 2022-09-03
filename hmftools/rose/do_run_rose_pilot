@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
+source api_functions || exit 1
+
+run_dir=$1 && shift
+output_dir=$1 && shift
+rose_jar=$1 && shift
+actionability_database_tsv=$1 && shift
+
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}" || -z "${rose_jar}" ]]; then
+    error "Missing input parameters. Exiting";
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+patient_id=$(echo ${tumor_sample} | cut -c1-12)
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
+purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
+linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
+linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
+linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
+annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
+cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+
+driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
+
+info "Running ROSE pilot on ${run_dir}"
+
+java -Xms2G -Xmx8G -jar ${rose_jar} \
+    -actionability_database_tsv ${actionability_database_tsv} \
+    -output_dir ${output_dir} \
+    -ref_genome_version 37 \
+    -driver_gene_tsv ${driver_gene_37_tsv} \
+    -patient_id ${patient_id} \
+    -tumor_sample_id ${tumor_sample} \
+    -ref_sample_id ${reference_sample} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
+    -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+    -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_breakend_tsv ${linx_breakend_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -cuppa_result_csv ${cuppa_result_csv} \
+    "$@"

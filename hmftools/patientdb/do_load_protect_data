@@ -14,7 +14,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
-info "Loading PROTECT data for ${sample}"
+info "Loading PROTECT data for ${sample} to ${database_name}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadProtectData \
     -sample ${sample} \
