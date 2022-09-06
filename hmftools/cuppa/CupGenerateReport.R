@@ -40,14 +40,14 @@ cupPlotData <- cupPlotData %>% mutate(RefValueLabel = sprintf('%.0f%%', RefValue
 
 ## Do not show GENDER CLASSIFIER on analysis
 cupClassData <- cupPlotData %>%
-  filter(Category == 'CLASSIFIER' | Category == 'COMBINED') %>%
+  filter(ResultType == 'CLASSIFIER' | Category == 'COMBINED') %>%
   filter(DataType != 'GENDER') %>%
   mutate(DataLabel = DataType)
 
 ## Ensure logical order in summary plot when including RNA data
 if ('RNA COMBINED' %in% cupClassData$DataType)
   {
-  orderPlot <- c("COMBINED", "RNA COMBINED", "ALT SJ COHORT", "EXPRESSION PAIRWISE", "DNA COMBINED", "FEATURE", "GENOMIC POSITION SIMILARITY", "SNV 96 PAIRWISE SIMILARITY")
+  orderPlot <- c("COMBINED", "RNA COMBINED", "ALT SJ COHORT", "EXPRESSION PAIRWISE", "DNA COMBINED", "FEATURE", "GENOMIC POSITION COHORT", "SNV 96 PAIRWISE")
 
   cupClassData$DataType <- factor(cupClassData$DataType, orderPlot)
   cupClassData$DataLabel <- factor(cupClassData$DataLabel, orderPlot)
@@ -62,7 +62,7 @@ cupGender <- cupPlotData %>%
          PrevColour = ifelse(RefValue == 0, 'high', ifelse(RefValue <= 0.02, 'low', 'norm')))
 
 # Ensure features are shown in alphabetical order
-cupFeatures <- cupPlotData %>% filter(Category == 'FEATURE' & ResultType != 'LIKELIHOOD')
+cupFeatures <- cupPlotData %>% filter(Category == 'FEATURE' & ResultType != 'LIKELIHOOD' & ResultType != 'CLASSIFIER')
 featureOrder <- cupFeatures %>%
   group_by(DataType, Value) %>%
   count %>%
@@ -75,7 +75,7 @@ cupFeatures <- merge(cupFeatures, featureOrder %>% select(Value, FeatureIndex), 
 cupFeatures <- cupFeatures %>% mutate(DataLabel = Value)
 
 cupOtherData <- cupPlotData %>%
-  filter(Category != 'CLASSIFIER' &
+  filter(ResultType != 'CLASSIFIER' &
            ResultType != 'LIKELIHOOD' &
            DataType != 'GENDER' &
            Category != 'FEATURE') %>%
