@@ -22,6 +22,7 @@ fi
 
 tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna_rna"
 
+# TODO: Switch to virus-interpreter after v5.30 rerun
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
 cp -r ${run_dir}/purple/* ${tmp_sample_data_dir}/
@@ -29,17 +30,12 @@ cp -r ${run_dir}/linx/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/virusbreakend/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 
-purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
-purple_structural_variant_vcf=$(locate_purple_structural_variants ${run_dir})
-
 info "Running Cuppa DNA-RNA on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
     -categories ALL \
     -ref_data_dir ${ref_data_dir} \
     -sample_data ${tumor_sample} \
     -sample_data_dir ${tmp_sample_data_dir} \
-    -sample_sv_file ${purple_structural_variant_vcf} \
-    -sample_somatic_vcf ${purple_somatic_variant_vcf} \
     -output_dir ${cuppa_dir} \
     "$@"
 
