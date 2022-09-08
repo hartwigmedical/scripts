@@ -15,19 +15,16 @@ LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
 TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
-NAS_DIR="/volume1/sync_from_infracom"
+NAS_DIR="/volume1/machines/00 LIMS"
 
 FOR_001_FILE="HMF-FOR-001 Received Samples 2022 v5.13.xlsx"
 FOR_002_FILE="HMF-FOR-002 Sample in process 2022 v4.6.xlsx"
-
 FOR_001_FILE_2021="HMF-FOR-001 Received Samples 2021 v5.12.xlsx"
-FOR_002_FILE_2021="HMF-FOR-002 Sample in process 2021 v4.4.xlsx"
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
   "${NAS_DIR}/${FOR_002_FILE}"
   "${NAS_DIR}/${FOR_001_FILE_2021}"
-  "${NAS_DIR}/${FOR_002_FILE_2021}"
 )
 
 LIMS_BUCKET="lims-export"
@@ -35,7 +32,6 @@ LIMS_FILES=(
   "gs://${LIMS_BUCKET}/${FOR_001_FILE}"
   "gs://${LIMS_BUCKET}/${FOR_002_FILE}"
   "gs://${LIMS_BUCKET}/${FOR_001_FILE_2021}"
-  "gs://${LIMS_BUCKET}/${FOR_002_FILE_2021}"
 )
 
 LAMA_BUCKET="lama-export"
@@ -96,14 +92,11 @@ main() {
 
     # We need to support the files from previous year until lab team has finished with updates
     for001_source_2021="${TMP_DIR}/${FOR_001_FILE_2021}" # Excel FOR-001
-    for002_source_2021="${TMP_DIR}/${FOR_002_FILE_2021}" # Excel FOR-002
     for001_samp_txt_2021="${DAY_DIR}/2021_for001_samples.tsv"
     for001_subm_txt_2021="${DAY_DIR}/2021_for001_submissions.tsv"
-    for002_proc_txt_2021="${DAY_DIR}/2021_for002_processing.tsv"
     info "Converting input files to text formats (2021)"
     excel_sheet_to_tsv "${for001_source_2021}" "${for001_subm_txt_2021}" "1" "5"
     excel_sheet_to_tsv "${for001_source_2021}" "${for001_samp_txt_2021}" "2" "2"
-    excel_sheet_to_tsv "${for002_source_2021}" "${for002_proc_txt_2021}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
