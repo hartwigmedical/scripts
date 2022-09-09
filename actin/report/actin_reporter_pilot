@@ -6,7 +6,7 @@ source message_functions || exit 1
 patient=$1 && shift
 sample_postfix=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
