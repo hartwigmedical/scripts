@@ -3,17 +3,17 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-sample=$1 && shift
+patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_clinical_json ${sample})"
+clinical_json="$(locate_actin_clinical_json ${patient})"
 
-molecular_json="$(locate_actin_molecular_json ${sample})"
+molecular_json="$(locate_actin_molecular_json ${patient})"
 if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${sample}. Falling back on minimal molecular json"
+    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 
@@ -24,7 +24,7 @@ output_directory="$(locate_actin_treatment_match_directory)"
 
 actin_jar="$(locate_pilot_actin)"
 
-info "Running ACTIN treatment matcher on ${sample}"
+info "Running ACTIN treatment matcher on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
     -clinical_json ${clinical_json} \

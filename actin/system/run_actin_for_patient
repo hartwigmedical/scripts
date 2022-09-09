@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+actin_treatment_matcher_pilot ${patient}
+
+echo ""
+
+create_actin_evaluation_data_for_sample ${patient}
+
+echo ""
+
+actin_reporter_pilot ${patient}
+
+echo ""
+
+load_actin_treatment_match_pilot ${patient}

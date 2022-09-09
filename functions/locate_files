@@ -372,16 +372,16 @@ locate_actin_curated_clinical_directory() {
 }
 
 locate_actin_clinical_json() {
-    local sample=$1 && shift
+    local patient=$1 && shift
     local clinical_dir=$(locate_actin_curated_clinical_directory)
 
     if [[ ! -d "${clinical_dir}" ]]; then
         error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
     fi
 
-    local clinical_json="${clinical_dir}/${sample}.clinical.json"
+    local clinical_json="${clinical_dir}/${patient}.clinical.json"
     if [[ ! -f ${clinical_json} ]]; then
-        error "Could not locate clinical json for sample '${sample}'"
+        error "Could not locate clinical json for patient '${patient}'"
     fi
 
     echo "${clinical_json}"
@@ -406,7 +406,9 @@ locate_actin_platinum_directory_for_sample() {
 }
 
 locate_actin_molecular_json() {
-    local sample=$1
+    local patient=$1
+    # TODO: Take highest sampleId rather than assume sampleId appends T to patientId.
+    local sample="${patient}T"
     local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
 
     if [[ ! -d "${platinum_dir}" ]]; then
@@ -430,16 +432,16 @@ locate_actin_treatment_match_directory() {
 }
 
 locate_actin_treatment_match_json() {
-    local sample=$1 && shift
+    local patient=$1 && shift
     local treatment_match_dir=$(locate_actin_treatment_match_directory)
 
     if [[ ! -d "${treatment_match_dir}" ]]; then
         error "Unable to locate ACTIN treatment match directory '${treatment_match_dir}'"
     fi
 
-    local treatment_match_json="${treatment_match_dir}/${sample}.treatment_match.json"
+    local treatment_match_json="${treatment_match_dir}/${patient}.treatment_match.json"
     if [[ ! -f ${treatment_match_json} ]]; then
-        error "Could not locate treatment match json for sample '${sample}'"
+        error "Could not locate treatment match json for patient '${patient}'"
     fi
 
     echo "${treatment_match_json}"

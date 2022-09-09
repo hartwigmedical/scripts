@@ -9,7 +9,8 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_clinical_json ${sample})"
+patient=${sample:0:12}
+clinical_json="$(locate_actin_clinical_json ${patient})"
 
 molecular_json="$(locate_actin_molecular_json ${sample})"
 if [[ -z "${molecular_json}" ]]; then
@@ -17,7 +18,7 @@ if [[ -z "${molecular_json}" ]]; then
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 
-treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
+treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
 
 output_directory="$(locate_actin_reports_directory)"
 

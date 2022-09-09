@@ -2,16 +2,16 @@
 
 source message_functions || exit 1
 
-sample=$1 && shift
+patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
 echo "Running ACTIN in historic mode"
 
-actin_treatment_matcher_pilot ${sample} -run_historically
+actin_treatment_matcher_pilot ${patient} -run_historically
 
 echo ""
 
-load_actin_treatment_match_pilot ${sample}
+load_actin_treatment_match_pilot ${patient}
