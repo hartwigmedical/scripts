@@ -406,9 +406,7 @@ locate_actin_platinum_directory_for_sample() {
 }
 
 locate_actin_molecular_json() {
-    local patient=$1
-    # TODO: Take highest sampleId rather than assume sampleId appends T to patientId.
-    local sample="${patient}T"
+    local sample=$1
     local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
 
     if [[ ! -d "${platinum_dir}" ]]; then

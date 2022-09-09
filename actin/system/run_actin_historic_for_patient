@@ -3,14 +3,15 @@
 source message_functions || exit 1
 
 patient=$1 && shift
+sample_postfix=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${sample_postfix}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
 echo "Running ACTIN in historic mode"
 
-actin_treatment_matcher_pilot ${patient} -run_historically
+actin_treatment_matcher_pilot ${patient} ${sample_postfix} -run_historically
 
 echo ""
 

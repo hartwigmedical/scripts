@@ -4,16 +4,18 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 patient=$1 && shift
+sample_postfix=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${sample_postfix}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
 clinical_json="$(locate_actin_clinical_json ${patient})"
 
-molecular_json="$(locate_actin_molecular_json ${patient})"
+sample="${patient}${sample_postfix}"
+molecular_json="$(locate_actin_molecular_json ${sample})"
 if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
+    warn "No molecular json found for ${sample}. Falling back on minimal molecular json"
     molecular_json="$(locate_actin_minimal_molecular_json)"
 fi
 

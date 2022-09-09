@@ -3,20 +3,21 @@
 source message_functions || exit 1
 
 patient=$1 && shift
+sample_postfix=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${sample_postfix}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-actin_treatment_matcher_pilot ${patient}
+actin_treatment_matcher_pilot ${patient} ${sample_postfix}
 
 echo ""
 
-create_actin_evaluation_data_for_sample ${patient}
+create_actin_evaluation_data_for_sample ${patient} ${sample_postfix}
 
 echo ""
 
-actin_reporter_pilot ${patient}
+actin_reporter_pilot ${patient} ${sample_postfix}
 
 echo ""
 
