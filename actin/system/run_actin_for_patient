@@ -17,7 +17,7 @@ actin_treatment_matcher_pilot ${patient} ${sample_postfix}
 
 echo ""
 
-create_actin_evaluation_data_for_sample ${patient} ${sample_postfix}
+create_actin_evaluation_data_for_patient ${patient}
 
 echo ""
 
