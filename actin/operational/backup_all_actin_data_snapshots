@@ -29,7 +29,7 @@ evaluation_bucket="$(locate_actin_evaluation_bucket)"
 
 evaluation_count=$(gsutil ls "${evaluation_bucket}/" | wc -l)
 if [[ ${evaluation_count} -lt 15 ]]; then
-    error "Too few samples found in evaluation bucket at ${evaluation_bucket}"
+    error "Too few patients found in evaluation bucket at ${evaluation_bucket}"
 fi
 
 ${gsutil_cmd} ${evaluation_bucket} "${backup_bucket}/evaluations/"
