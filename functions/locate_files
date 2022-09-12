@@ -421,7 +421,7 @@ locate_most_recent_actin_molecular_json() {
         sample="${patient}T"
     fi
 
-    echo locate_actin_molecular_json ${sample}
+    echo $(locate_actin_molecular_json ${sample})
 }
 
 locate_actin_molecular_json() {
