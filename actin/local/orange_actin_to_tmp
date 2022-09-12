@@ -3,9 +3,9 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-patient=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${sample}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
@@ -14,4 +14,4 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-gcloud compute scp data-vm-prod-2:$(locate_actin_molecular_directory)/*${patient}*/orange/*.pdf ${local_dir}/
+gcloud compute scp data-vm-prod-2:$(locate_actin_molecular_directory)/*${sample}*/orange/*.pdf ${local_dir}/
