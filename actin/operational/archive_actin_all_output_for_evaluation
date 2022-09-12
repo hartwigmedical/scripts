@@ -19,11 +19,12 @@ if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
     fi
 fi
 
-clinical_json="$(locate_actin_clinical_json ${sample})"
-treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
-actin_report_pdf="$(locate_actin_report_pdf ${sample})"
-evaluation_details_tsv="$(locate_actin_evaluation_details ${sample})"
-evaluation_summary_tsv="$(locate_actin_evaluation_summary ${sample})"
+patient=${sample:0:12}
+clinical_json="$(locate_actin_clinical_json ${patient})"
+treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
+actin_report_pdf="$(locate_actin_report_pdf ${patient})"
+evaluation_details_tsv="$(locate_actin_evaluation_details ${patient})"
+evaluation_summary_tsv="$(locate_actin_evaluation_summary ${patient})"
 
 if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
     error "Missing ACTIN data, report or evaluation details for ${sample}"

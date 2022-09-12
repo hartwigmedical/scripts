@@ -5,8 +5,6 @@ source message_functions || exit 1
 
 info "Running ACTIN data snaphots backup"
 
-
-
 # -d = delete files on GS that no longer exist in the origin destination
 # -e = exclude symlinks to go to GS
 # -r = Recursive

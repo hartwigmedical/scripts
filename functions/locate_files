@@ -412,12 +412,12 @@ locate_most_recent_actin_molecular_json() {
     for i in {9..1}; do
         sample="${patient}T${i}"
         platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
-        if [[ -d ${platinum_dir} ]]; then
+        if [[ -d "${platinum_dir}" ]]; then
             break
         fi
     done
 
-    if [[ ! -d ${platinum_dir} ]]; then
+    if [[ ! -d "${platinum_dir}" ]]; then
         sample="${patient}T"
     fi
 
@@ -469,16 +469,16 @@ locate_actin_reports_directory() {
 }
 
 locate_actin_report_pdf() {
-    local sample=$1 && shift
+    local patient=$1 && shift
     local reports_dir=$(locate_actin_reports_directory)
 
     if [[ ! -d "${reports_dir}" ]]; then
         error "Unable to locate ACTIN report directory '${reports_dir}'"
     fi
 
-    local report_pdf="${reports_dir}/${sample}.actin.pdf"
+    local report_pdf="${reports_dir}/${patient}.actin.pdf"
     if [[ ! -f ${report_pdf} ]]; then
-        error "Could not locate ACTIN report pdf for sample '${sample}'"
+        error "Could not locate ACTIN report pdf for patient '${patient}'"
     fi
 
     echo "${report_pdf}"
@@ -489,32 +489,32 @@ locate_actin_evaluation_directory() {
 }
 
 locate_actin_evaluation_details() {
-    local sample=$1 && shift
+    local patient=$1 && shift
     local evaluation_dir=$(locate_actin_evaluation_directory)
 
     if [[ ! -d "${evaluation_dir}" ]]; then
         error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
     fi
 
-    local evaluation_details_tsv="${evaluation_dir}/${sample}.evaluation.details.tsv"
+    local evaluation_details_tsv="${evaluation_dir}/${patient}.evaluation.details.tsv"
     if [[ ! -f ${evaluation_details_tsv} ]]; then
-        error "Could not locate ACTIN evaluation details tsv for sample '${sample}'"
+        error "Could not locate ACTIN evaluation details tsv for patient '${patient}'"
     fi
 
     echo "${evaluation_details_tsv}"
 }
 
 locate_actin_evaluation_summary() {
-    local sample=$1 && shift
+    local patient=$1 && shift
     local evaluation_dir=$(locate_actin_evaluation_directory)
 
     if [[ ! -d "${evaluation_dir}" ]]; then
         error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
     fi
 
-    local evaluation_summary_tsv="${evaluation_dir}/${sample}.evaluation.summary.tsv"
+    local evaluation_summary_tsv="${evaluation_dir}/${patient}.evaluation.summary.tsv"
     if [[ ! -f ${evaluation_summary_tsv} ]]; then
-        error "Could not locate ACTIN evaluation summary tsv for sample '${sample}'"
+        error "Could not locate ACTIN evaluation summary tsv for patient '${patient}'"
     fi
 
     echo "${evaluation_summary_tsv}"

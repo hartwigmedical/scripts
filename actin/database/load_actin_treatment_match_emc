@@ -3,9 +3,9 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-sample=$1 && shift
+patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
@@ -13,6 +13,6 @@ actin_credentials="$(prod_actin_writer_sql_credentials)"
 actin_jar="$(locate_pilot_actin)"
 actin_database_name="actin"
 
-treatment_match_json="$(locate_actin_treatment_match_json ${sample})"
+treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
 
 do_load_actin_treatment_match ${treatment_match_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}

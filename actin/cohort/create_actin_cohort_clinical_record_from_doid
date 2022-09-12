@@ -17,14 +17,16 @@ if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
+patient=${sample:0:12}
+
 output_directory="$(locate_actin_cohort_clinical_directory)"
 
 actin_jar="$(locate_cohort_actin)"
 
-info "Running ACTIN Build Clinical From Doids Only on ${sample}"
+info "Running ACTIN Build Clinical From Doids Only on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.clinical.BuildClinicalFromDoidsOnly \
-    -sample ${sample} \
+    -patient ${patient} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_directory ${output_directory} \
     "$@"

@@ -11,5 +11,6 @@ fi
 
 actin_jar="$(locate_pilot_actin)"
 
-java -cp ${actin_jar} com.hartwig.actin.clinical.ReformatQuestionnaireApplication -questionnaire ${questionnaire}
+java -cp ${actin_jar} com.hartwig.actin.clinical.ReformatQuestionnaireApplication \
+    -questionnaire ${questionnaire}
 
