@@ -3,12 +3,18 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-sample=$1 && shift
+patient=$1 && shift
+sample_postfix=${1} && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
+if [[ -z "${sample_postfix}" ]]; then
+    sample_postfix="T"
+fi
+
+sample=${patient}${sample_postfix}
 sample_evaluation_bucket="$(locate_actin_evaluation_bucket)/${sample}"
 
 bucket_exists_error=$(gsutil ls ${sample_evaluation_bucket} 2>&1)
@@ -19,7 +25,6 @@ if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
     fi
 fi
 
-patient=${sample:0:12}
 clinical_json="$(locate_actin_clinical_json ${patient})"
 treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
 actin_report_pdf="$(locate_actin_report_pdf ${patient})"
