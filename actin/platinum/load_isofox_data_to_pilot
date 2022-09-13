@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source metadata_functions || exit 1
 source message_functions || exit 1
 source database_functions || exit 1
 
-sample_data_dir=$1 && shift
+run_dir=$1 && shift
 
-if [[ -z "${sample_data_dir}" ]]; then
+if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-sample=$(basename ${sample_data_dir})
+sample=$(load_tumor_sample_from_metadata ${run_dir})
 sample_with_cancertype="$(cat $(locate_actin_rna_sample_metadata_file) | grep ${sample})"
 
 if [[ -z ${sample_with_cancertype} ]]; then
     error "Sample ${sample} not present yet in ACTIN rna sample metadata file. Exiting"
 fi
+
+isofox_data_dir="${run_dir}/isofox_pilot"
 
 gene_distribution_csv=$(locate_isofox_gene_distribution_csv)
 alt_sj_cohort_csv=$(locate_isofox_alt_sj_cohort_csv)
@@ -29,11 +32,11 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database})
 
-info "Loading isofox data for ${sample}"
+info "Loading isofox pilot data for ${sample} to ${database}"
 
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample "${sample_with_cancertype}" \
-    -sample_data_dir ${sample_data_dir} \
+    -sample_data_dir ${isofox_data_dir} \
     -gene_distribution_file ${gene_distribution_csv} \
     -alt_sj_cohort_file ${alt_sj_cohort_csv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \

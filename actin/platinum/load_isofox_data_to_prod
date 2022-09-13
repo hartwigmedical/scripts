@@ -32,7 +32,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database})
 
-info "Loading isofox data for ${sample}"
+info "Loading isofox data for ${sample} to ${database}"
 
 java -cp ${isofox_jar} com.hartwig.hmftools.isofox.loader.IsofoxDataLoader \
     -sample "${sample_with_cancertype}" \
