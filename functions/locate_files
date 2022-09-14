@@ -45,12 +45,11 @@ locate_pilot_lilac() {
 }
 
 locate_prod_cuppa_dna() {
-    echo "/data/tools/cuppa/1.6/cuppa.jar"
+    echo "/data/tools/cuppa/1.7.1/cuppa.jar"
 }
 
 locate_prod_cuppa_dna_rna() {
-    # TODO Switch to "/data/actin/cuppa_rna/cuppa.jar" once v1.7 is bugfree
-    echo "/data/tools/cuppa/1.6/cuppa.jar"
+    echo "/data/tools/cuppa/1.7.1/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
@@ -609,11 +608,11 @@ locate_amber_snpcheck_38_vcf() {
 
 locate_cuppa_ref_dir_dna() {
     # TODO Switch to "/data/resources/private/cuppa" for cuppa v1.7
-    echo "/data/resources/crunch/actin/cuppa_ref_dna_1_6"
+    echo "/data/resources/private/cuppa"
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/crunch/actin/cuppa_ref"
+    echo "/data/resources/crunch/actin/cuppa_ref_dna_rna_1_7"
 }
 
 locate_cohort_mapping_tsv() {
