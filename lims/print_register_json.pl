@@ -195,18 +195,22 @@ sub processSample{
     }
     my $sample = $lims_samples->{ $sample_id };
     
-    my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
-    my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
-    my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
+    my $name = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
+    my $barcode = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
+    my $patient = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
     my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
-    my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
-    my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
-    my $priority   = getPriorityForSample( $sample );
-    my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
+    my $analysis = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
+    my $entity = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
+    my $priority = getPriorityForSample( $sample );
+    my $yield_in_gbase = getValueByKey( $sample, 'yield' );
     my $lab_status = getValueByKey( $sample, 'lab_status' );
     
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
+    if ($yield_in_gbase !~ /\d+/ ){
+        die "[ERROR] Yield found for sample ($name) is not an integer ($yield_in_gbase)\n";
+    }
+    my $yield = $yield_in_gbase * $YIELD_F;
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
     }
