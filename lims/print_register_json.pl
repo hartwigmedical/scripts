@@ -207,7 +207,7 @@ sub processSample{
     
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
-    if ($yield_in_gbase !~ /\d+/ ){
+    if ($yield_in_gbase !~ /^\d+$/ ){
         die "[ERROR] Yield found for sample ($name) is not an integer ($yield_in_gbase)\n";
     }
     my $yield = $yield_in_gbase * $YIELD_F;
