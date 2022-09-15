@@ -607,7 +607,7 @@ locate_amber_snpcheck_38_vcf() {
 }
 
 locate_cuppa_ref_dir_dna() {
-    echo "/data/resources/private/cuppa"
+    echo "/data/resources/public/cuppa"
 }
 
 locate_cuppa_ref_dir_dna_rna() {
