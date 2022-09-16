@@ -163,7 +163,7 @@ gcloud compute instances add-labels "${vm_name}" --zone="${zone}" --labels="${la
 gcloud compute disks add-labels "${vm_name}" --zone="${zone}" --labels="${labels}"
 
 info "VM usage:"
-info "  Access: gcloud compute ssh ${vm_name}"
+info "  Access: gcloud compute ssh ${vm_name} --tunnel-through-iap"
 info "  Delete: gcloud compute instances delete --zone ${zone} -q ${vm_name}"
 
 info "Finished creating VM instance ${vm_name}"
