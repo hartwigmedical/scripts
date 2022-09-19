@@ -102,7 +102,7 @@ main() {
     sanity_check_fail="${TRUE}"
   fi
   if [[ -z ${output_dir} ]]; then
-    warn "Variable 'outputdir' has not been set."
+    warn "Variable 'output_dir' has not been set."
     sanity_check_fail="${TRUE}"
   fi
   if [[ ! -d ${venv_dir} ]]; then
