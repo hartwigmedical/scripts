@@ -138,8 +138,8 @@ run_peach_pilot_on_subdirs() {
   fi
 
   info "Subdirs: $(ls "${input_base_dir}")"
-  find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
-      bash -c "run_peach_pilot --run_dir {} --output_dir ${output_base_dir}/$(basename {}) ${optional_peach_args[*]}" \
+  find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | xargs -0 -n 1 -P "${MAX_THREADS}" -I % \
+      run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
 
