@@ -9,8 +9,7 @@ SCRIPT_NAME="$(basename "$0")"
 TRUE="TRUE"
 FALSE="FALSE"
 
-FULL_DPYD_PANEL_NAME="DPYD.json"
-MINIMAL_DPYD_PANEL_NAME="min_DPYD.json"
+DEFAULT_PANEL_NAME="min_DPYD.json"
 
 print_usage() {
   echo ""
@@ -37,6 +36,7 @@ main() {
   # Parse args
   local key
   local run_dir
+  local output_dir
   local peach_main
   local venv_dir
   local panel_path
@@ -48,6 +48,9 @@ main() {
   case $key in
       -r|--rundir)
       run_dir="$1" && shift
+      ;;
+      -o|--outputdir)
+      output_dir="$1" && shift
       ;;
       -m|--main)
       peach_main="$1" && shift  # Optional argument
@@ -77,7 +80,7 @@ main() {
   if [[ -z ${panel_path} ]]; then
     local peach_resource_dir
     peach_resource_dir=$(locate_peach_resource_dir) || die "Could not get PEACH resource dir"
-    local panel_path="${peach_resource_dir}/panelfiles/${MINIMAL_DPYD_PANEL_NAME}"
+    local panel_path="${peach_resource_dir}/panelfiles/${DEFAULT_PANEL_NAME}"
   fi
   if [[ -z ${optional_reference_assembly_version_arg} ]]; then
     optional_reference_assembly_version_arg=""
@@ -97,6 +100,10 @@ main() {
     warn "run_dir should be a dir: ${run_dir}."
     sanity_check_fail="${TRUE}"
   fi
+  if [[ -z ${output_dir} ]]; then
+    warn "Variable 'outputdir' has not been set."
+    sanity_check_fail="${TRUE}"
+  fi
   if [[ ! -d ${venv_dir} ]]; then
     warn "venv_dir should be a dir: ${venv_dir}."
     sanity_check_fail="${TRUE}"
@@ -106,9 +113,6 @@ main() {
   fi
 
   # Get argument values
-  local panel_name="${panel_path##*/}"
-  local output_dir
-  output_dir=$(get_output_dir "${run_dir}" "${panel_name}") || die "Could not get output dir"
   local peach_version
   peach_version=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')
   local ref_sample
@@ -128,12 +132,6 @@ main() {
   # Add path to environment variable
   export PYTHONPATH="${PYTHONPATH}:${peach_main}/../"
 
-  # Delete output dir if it exists
-  if [[ -d "${output_dir}" ]]; then
-      info "PEACH pilot dir exist. PEACH dir will first be removed and then be replaced"
-      rm -r "${output_dir}" || die "Could not remove existing PEACH pilot dir"
-  fi
-
   # Run PEACH
   "${peach_main}" \
       "--vcf" "${germline_vcf}" \
@@ -146,24 +144,6 @@ main() {
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
-}
-
-get_output_dir() {
-  local run_dir=$1 && shift
-  local panel_name=$1 && shift
-
-  if [[ -z "${panel_name}" ]]; then
-    die "Not enough arguments to ${FUNCNAME[0]}"
-  fi
-
-  if [[ "${panel_name}" == "${FULL_DPYD_PANEL_NAME}" ]]; then
-    local output_dir_name="peach_pilot_full"
-  elif [[ "${panel_name}" == "${MINIMAL_DPYD_PANEL_NAME}" ]]; then
-    local output_dir_name="peach_pilot"
-  else
-    die "Unrecognized panel name ${panel_name}. Known panel names: '${MINIMAL_DPYD_PANEL_NAME}', '${FULL_DPYD_PANEL_NAME}'"
-  fi
-  echo "${run_dir}/${output_dir_name}"
 }
 
 main "$@"

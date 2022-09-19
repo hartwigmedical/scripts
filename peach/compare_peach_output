@@ -98,7 +98,7 @@ main() {
   fi
   
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${base_dir}" "${optional_peach_args[@]}" \
+  run_peach_pilot_on_subdirs "${base_dir}" "${panel_name}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
@@ -111,6 +111,7 @@ main() {
 
 run_peach_pilot_on_subdirs() {
   local base_dir=$1 && shift
+  local panel_name=$1 && shift
   optional_peach_args=("$@")
 
   if [[ -z "${base_dir}" ]]; then
@@ -119,7 +120,7 @@ run_peach_pilot_on_subdirs() {
 
   info "Subdirs: $(ls "${base_dir}")"
   find "${base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
-      run_peach_pilot --rundir {} "${optional_peach_args[@]}" \
+      run_peach_pilot --rundir {} --outputdir "$(get_output_dir {} "${panel_name}")" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
 
