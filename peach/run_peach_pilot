@@ -21,6 +21,7 @@ print_usage() {
   echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
   echo "Options:"
   echo "  -r/--run_dir                        [REQUIRED]   Directory containing a pipeline run."
+  echo "  -o/--output_dir                     [REQUIRED]   Directory to write output too."
   echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
   echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
   echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
@@ -46,10 +47,10 @@ main() {
   do
   key="$1" && shift
   case $key in
-      -r|--rundir)
+      -r|--run_dir)
       run_dir="$1" && shift
       ;;
-      -o|--outputdir)
+      -o|--output_dir)
       output_dir="$1" && shift
       ;;
       -m|--main)
