@@ -81,7 +81,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/1.10/orange.jar"
+    echo "/data/tools/orange/1.10.1/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -157,11 +157,11 @@ locate_prod_protect() {
 }
 
 locate_actin_protect() {
-    echo "/data/tools/protect/2.2/protect.jar"
+    echo "/data/tools/protect/2.3/protect.jar"
 }
 
 locate_research_protect() {
-    echo "/data/tools/protect/2.2/protect.jar"
+    echo "/data/tools/protect/2.3/protect.jar"
 }
 
 locate_pilot_protect() {
