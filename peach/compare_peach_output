@@ -11,7 +11,6 @@ TRUE="TRUE"
 FALSE="FALSE"
 
 MAX_THREADS=10
-FULL_DPYD_PANEL_NAME="DPYD.json"
 
 print_usage() {
   echo ""
@@ -23,8 +22,9 @@ print_usage() {
   echo ""
   echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
   echo "Options:"
-  echo "  -d/--basedir                        [OPTIONAL]   Directory containing pipeline run directories to test."
-  echo "                                                   Default value is '/data/experiments/peach/test_runs'"
+  echo "  -i/--input_base_dir                 [REQUIRED]   Directory containing pipeline run directories to test."
+  echo "  -o/--output_base_dir                [REQUIRED]   Directory to write output too."
+  echo "  -c/--control_base_dir               [REQUIRED]   Directory containing control outputs."
   echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
   echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
   echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
@@ -39,7 +39,9 @@ main() {
 
   # Parse args
   local key
-  local base_dir
+  local input_base_dir
+  local output_base_dir
+  local control_base_dir
   local peach_main
   local panel_path
   local optional_peach_args
@@ -49,8 +51,14 @@ main() {
   do
   key=$1 && shift
   case $key in
-      -d|--basedir)
-      base_dir="$1" && shift  # Optional argument
+      -i|--input_base_dir)
+      input_base_dir="$1" && shift  # Optional argument
+      ;;
+      -o|--output_base_dir)
+      output_base_dir="$1" && shift  # Optional argument
+      ;;
+      -c|--control_base_dir)
+      control_base_dir="$1" && shift  # Optional argument
       ;;
       -m|--main)
       peach_main="$1" && shift
@@ -73,9 +81,6 @@ main() {
   done
 
   # Default values for arguments
-  if [[ -z ${base_dir} ]]; then
-    base_dir="/data/experiments/peach/test_runs"
-  fi
   if [[ -z ${peach_main} ]]; then
     peach_main=""
   fi
@@ -89,59 +94,71 @@ main() {
     warn "Unrecognized options! : ${unrecognized_options[*]}"
     sanity_check_fail="${TRUE}"
   fi
-  if [[ ! -d ${base_dir} ]]; then
-    warn "base_dir should be a dir: ${base_dir}."
+  if [[ ! -d ${input_base_dir} ]]; then
+    warn "input_base_dir should be a dir: ${input_base_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ ! -d ${control_base_dir} ]]; then
+    warn "output_base_dir should be a dir: ${control_base_dir}."
+    sanity_check_fail="${TRUE}"
+  fi
+  if [[ -z ${output_base_dir} ]]; then
+    warn "output_base_dir should not be an empty string: ${output_base_dir}."
     sanity_check_fail="${TRUE}"
   fi
   if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
     print_usage
   fi
-  
+
+  if [[ -d ${output_base_dir} ]]; then
+    info "Delete output base dir ${output_base_dir}"
+    rm -r "${output_base_dir}" || die "Could not delete output base dir ${output_base_dir}"
+  fi
+  info "Create output base dir ${output_base_dir}"
+  mkdir -p "${output_base_dir}" || die "Could not create output base dir ${output_base_dir}"
+
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${base_dir}" "${panel_name}" "${optional_peach_args[@]}" \
+  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
-  local panel_name="${panel_path##*/}"
-  compare_peach_pilot_output_to_control "${base_dir}" "${panel_name}" \
+  compare_peach_pilot_output_to_control "${input_base_dir}" "${output_base_dir}" "${control_base_dir}" \
       || die "Could not compare PEACH output to control"
   
   info "Finished ${SCRIPT_NAME}"
 }
 
 run_peach_pilot_on_subdirs() {
-  local base_dir=$1 && shift
-  local panel_name=$1 && shift
+  local input_base_dir=$1 && shift
+  local output_base_dir=$1 && shift
   optional_peach_args=("$@")
 
-  if [[ -z "${base_dir}" ]]; then
+  if [[ -z "${output_base_dir}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  info "Subdirs: $(ls "${base_dir}")"
-  find "${base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
-      run_peach_pilot --rundir {} --outputdir "$(get_output_dir {} "${panel_name}")" "${optional_peach_args[@]}" \
+  info "Subdirs: $(ls "${input_base_dir}")"
+  find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -P "${MAX_THREADS}" -I {} \
+      run_peach_pilot --rundir {} --outputdir "${output_base_dir}/$(basename {})" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
 
 compare_peach_pilot_output_to_control() {
-  local base_dir=$1 && shift
-  local panel_name=$1 && shift
+  local input_base_dir=$1 && shift
+  local output_base_dir=$1 && shift
+  local control_base_dir=$1 && shift
 
-  if [[ -z "${panel_name}" ]]; then
+  if [[ -z "${control_base_dir}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  for subdir in "${base_dir}"/*
+  local subdirname
+  for subdir in "${input_base_dir}"/*
   do
       info "Comparing for ${subdir}"
       if [[ -d ${subdir} ]]; then
-        local output_dir
-        output_dir=$(get_output_dir "${subdir}" "${panel_name}") || die "Could not get output dir"
-        local control_dir
-        control_dir=$(get_control_dir "${subdir}" "${panel_name}") || die "Could not get control dir"
-
-        compare_directory_contents "${output_dir}" "${control_dir}" || die "Could not compare directory contents"
+        subdirname=$(basename "${subdir}") || die "Could not get sub directory name for ${subdir}"
+        compare_directory_contents "${output_base_dir}/${subdirname}" "${control_base_dir}/${subdirname}" || die "Could not compare directory contents"
       else
         warn "Is not a directory: ${subdir}"
       fi
@@ -157,6 +174,13 @@ compare_directory_contents() {
   fi
 
   info "Start comparing ${output_dir} to ${control_dir}"
+
+  if [[ ! -d "${output_dir}" ]]; then
+    die "Output dir does not exist: ${output_dir}"
+  fi
+  if [[ ! -d "${control_dir}" ]]; then
+    die "Control dir does not exist: ${control_dir}"
+  fi
 
   local comparison_file_names
   comparison_file_names=$(get_comparison_file_names "${output_dir}" "${control_dir}") \
@@ -194,47 +218,6 @@ get_comparison_file_names() {
       || die "Could not get comparison file names"
 
   echo "${comparison_file_names}"
-}
-
-get_output_dir() {
-  local subdir=$1 && shift
-  local panel_name=$1 && shift
-
-  if [[ -z "${subdir}" ]]; then
-    die "Not enough arguments to ${FUNCNAME[0]}"
-  fi
-
-  local output_dir_name
-  output_dir_name=$(get_output_dir_name "${panel_name}") || die "Could not get output dir name"
-  echo "${subdir}/${output_dir_name}"
-}
-
-get_control_dir() {
-  local subdir=$1 && shift
-  local panel_name=$1 && shift
-
-  if [[ -z "${panel_name}" ]]; then
-    die "Not enough arguments to ${FUNCNAME[0]}"
-  fi
-
-  local output_dir_name
-  output_dir_name=$(get_output_dir_name "${panel_name}") || die "Could not get output dir name"
-
-  local control_dir="${subdir}/${output_dir_name}_control"
-
-  echo "${control_dir}"
-}
-
-get_output_dir_name() {
-  local panel_name=$1 && shift
-
-  if [[ "${panel_name}" == "${FULL_DPYD_PANEL_NAME}" ]]; then
-    local output_dir_name="peach_pilot_full"
-  else
-    local output_dir_name="peach_pilot"
-  fi
-
-  echo "${output_dir_name}"
 }
 
 main "$@"
