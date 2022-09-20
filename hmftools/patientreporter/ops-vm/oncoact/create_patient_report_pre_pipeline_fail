@@ -71,7 +71,7 @@ if [[ ${correction_comments} != "" ]]; then
         error "Missing correction extern argument"
     fi
     if [[ ${correction_extern} == "extern" ]]; then
-        do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+        do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
                     -output_dir_report ${output_dir_report} \
                     -output_dir_data ${output_dir_data_report} \
                     -comments "${correction_comments}" \
@@ -79,7 +79,7 @@ if [[ ${correction_comments} != "" ]]; then
     fi
 
     if [[ ${correction_extern} == "intern" ]]; then
-            do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+            do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
                         -output_dir_report ${output_dir_report} \
                         -output_dir_data ${output_dir_data_report} \
                         -comments "${correction_comments}" \
@@ -88,7 +88,6 @@ if [[ ${correction_comments} != "" ]]; then
 
 else
     #Normal report
-    info "ref_sample_barcode ${ref_sample_barcode}"
     do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
@@ -101,7 +100,7 @@ if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
     rm -r ${temp_folder_path}/ 2>&1
     warn "The script will end here. Exiting"
     exit 1
