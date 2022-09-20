@@ -155,7 +155,7 @@ run_peach_pilot_on_subdirs() {
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  info "Subdirs: $(ls "${input_base_dir}")"
+  info "Samples: ${samples}"
   echo "${samples}" | xargs -d "${SAMPLE_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
       run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
