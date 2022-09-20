@@ -124,8 +124,10 @@ main() {
   fi
 
   if [[ -z ${run_names} ]]; then
-    run_names=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${RUN_NAME_DELIMITER}" | sed 's/.$//') \
-        || die "Could not determine run name list"
+    run_names=$(
+        find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % \
+        | tr '\n' "${RUN_NAME_DELIMITER}" | sed 's/.$//'
+    ) || die "Could not determine run name list"
   fi
 
   if [[ -d ${output_base_dir} ]]; then
@@ -157,7 +159,7 @@ run_peach_pilot_on_subdirs() {
   fi
 
   info "Run names: ${run_names}"
-  echo "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
+  echo -n "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
       run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
