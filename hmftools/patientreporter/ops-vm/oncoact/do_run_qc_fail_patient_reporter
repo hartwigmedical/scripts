@@ -22,6 +22,7 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
     exit 1;
 fi
 
+info "ref sample ${ref_sample}"
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
     if [[ ${ref_sample_mandatory} == "1" ]]; then
         warn "Incomplete information for reporter. Exiting"
