@@ -9,9 +9,9 @@ source locate_files || exit 1
 #  2. Manually build the batch-operations repo (mvn clean package)
 #  3. Connect to VPN
 #  4. Run this script
-#  4. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
-#  5. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
-#  6. Manually clean up the workloads + configmaps + buckets after successful running
+#  5. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
+#  6. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
+#  7. Manually clean up the workloads + configmaps + buckets after successful running
 
 date=$1
 
