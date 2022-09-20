@@ -14,5 +14,5 @@ serve_actionability_dir="/data/resources/crunch/actin/serve_db"
 output_dir="${run_dir}/protect"
 protect_jar=$(locate_actin_protect)
 
-do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} "$@"
+do_run_protect_latest ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} "$@"
 

@@ -17,5 +17,5 @@ create_or_cleanup_dir ${sample_cohort_dir}
 
 protect_jar="$(locate_actin_protect)"
 
-do_run_protect ${run_dir} ${sample_cohort_dir} ${serve_actionability_dir} ${protect_jar} "$@"
+do_run_protect_latest ${run_dir} ${sample_cohort_dir} ${serve_actionability_dir} ${protect_jar} "$@"
 
