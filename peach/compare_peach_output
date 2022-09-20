@@ -70,7 +70,7 @@ main() {
       -c|--control_base_dir)
       control_base_dir="$1" && shift
       ;;
-      -s|--run_names)
+      -r|--run_names)
       run_names="$1" && shift  # Optional argument
       ;;
       -m|--main)
