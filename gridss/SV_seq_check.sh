@@ -4,7 +4,7 @@
 # Version 0.1, 20-09-2022
 # -----------------------
 
-INPUT=~/Work/SV-Test.csv
+INPUT=~/data/SV-Test.csv
 IFS=','
 [ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
 #while read line
