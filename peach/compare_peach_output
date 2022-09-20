@@ -10,7 +10,7 @@ SCRIPT_NAME="$(basename "$0")"
 TRUE="TRUE"
 FALSE="FALSE"
 
-SAMPLE_DELIMITER="|"
+RUN_NAME_DELIMITER="|"
 
 MAX_THREADS=10
 
@@ -25,14 +25,14 @@ print_usage() {
   echo "       --control_base_dir /some/control/dir \\ "
   echo "       --main /peach/repo/peach \\ "
   echo "       --venv /some/peach/venv/ \\"
-  echo "       --samples \"SAMPLE1|SAMPLE2\""
+  echo "       --run_names \"RUN1|RUN2\""
   echo ""
   echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
   echo "Options:"
   echo "  -i/--input_base_dir                 [REQUIRED]   Directory containing pipeline run directories to test."
   echo "  -o/--output_base_dir                [REQUIRED]   Directory to write output too."
   echo "  -c/--control_base_dir               [REQUIRED]   Directory containing control outputs."
-  echo "  -s/--samples                        [OPTIONAL]   List of samples to compare, separated by '${SAMPLE_DELIMITER}'."
+  echo "  -r/--run_names                      [OPTIONAL]   List of run_names to compare, separated by '${RUN_NAME_DELIMITER}'."
   echo "                                                   If left empty, use all subdirectories in 'input_base_dir'."
   echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
   echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
@@ -51,7 +51,7 @@ main() {
   local input_base_dir
   local output_base_dir
   local control_base_dir
-  local samples
+  local run_names
   local peach_main
   local panel_path
   local optional_peach_args
@@ -70,8 +70,8 @@ main() {
       -c|--control_base_dir)
       control_base_dir="$1" && shift
       ;;
-      -s|--samples)
-      samples="$1" && shift  # Optional argument
+      -s|--run_names)
+      run_names="$1" && shift  # Optional argument
       ;;
       -m|--main)
       peach_main="$1" && shift
@@ -123,8 +123,9 @@ main() {
     print_usage
   fi
 
-  if [[ -z ${samples} ]]; then
-    samples=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${SAMPLE_DELIMITER}" | sed 's/.$//')
+  if [[ -z ${run_names} ]]; then
+    run_names=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${RUN_NAME_DELIMITER}" | sed 's/.$//') \
+        || die "Could not determine run name list"
   fi
 
   if [[ -d ${output_base_dir} ]]; then
@@ -135,11 +136,11 @@ main() {
   mkdir -p "${output_base_dir}" || die "Could not create output base dir ${output_base_dir}"
 
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${samples}" "${optional_peach_args[@]}" \
+  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${run_names}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
-  compare_peach_pilot_output_to_control "${input_base_dir}" "${output_base_dir}" "${control_base_dir}" "${samples}" \
+  compare_peach_pilot_output_to_control "${input_base_dir}" "${output_base_dir}" "${control_base_dir}" "${run_names}" \
       || die "Could not compare PEACH output to control"
   
   info "Finished ${SCRIPT_NAME}"
@@ -148,15 +149,15 @@ main() {
 run_peach_pilot_on_subdirs() {
   local input_base_dir=$1 && shift
   local output_base_dir=$1 && shift
-  local samples=$1 && shift
+  local run_names=$1 && shift
   optional_peach_args=("$@")
 
-  if [[ -z "${samples}" ]]; then
+  if [[ -z "${run_names}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  info "Samples: ${samples}"
-  echo "${samples}" | xargs -d "${SAMPLE_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
+  info "Run names: ${run_names}"
+  echo "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
       run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
@@ -165,16 +166,16 @@ compare_peach_pilot_output_to_control() {
   local input_base_dir=$1 && shift
   local output_base_dir=$1 && shift
   local control_base_dir=$1 && shift
-  local samples=$1 && shift
+  local run_names=$1 && shift
 
-  if [[ -z "${samples}" ]]; then
+  if [[ -z "${run_names}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
   local IFS
-  IFS="${SAMPLE_DELIMITER}" read -ra sample_array <<< "${samples}"
+  IFS="${RUN_NAME_DELIMITER}" read -ra run_name_array <<< "${run_names}"
   local run_name
-  for run_name in "${sample_array[@]}"; do
+  for run_name in "${run_name_array[@]}"; do
     compare_directory_contents "${output_base_dir}/${run_name}" "${control_base_dir}/${run_name}" \
         || die "Could not compare directory contents"
   done
