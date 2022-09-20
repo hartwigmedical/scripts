@@ -124,7 +124,7 @@ main() {
   fi
 
   if [[ -z ${samples} ]]; then
-    samples=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${SAMPLE_DELIMITER}")
+    samples=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${SAMPLE_DELIMITER}" | head -c -1)
   fi
 
   if [[ -d ${output_base_dir} ]]; then
