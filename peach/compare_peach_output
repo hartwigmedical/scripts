@@ -10,6 +10,8 @@ SCRIPT_NAME="$(basename "$0")"
 TRUE="TRUE"
 FALSE="FALSE"
 
+SAMPLE_DELIMITER="|"
+
 MAX_THREADS=10
 
 print_usage() {
@@ -22,13 +24,16 @@ print_usage() {
   echo "       --output_base_dir /some/output/dir \\ "
   echo "       --control_base_dir /some/control/dir \\ "
   echo "       --main /peach/repo/peach \\ "
-  echo "       --venv /some/peach/venv/"
+  echo "       --venv /some/peach/venv/ \\"
+  echo "       --samples \"SAMPLE1|SAMPLE2\""
   echo ""
   echo "Unless specified otherwise, default values of optional parameters are taken from the locate_files script"
   echo "Options:"
   echo "  -i/--input_base_dir                 [REQUIRED]   Directory containing pipeline run directories to test."
   echo "  -o/--output_base_dir                [REQUIRED]   Directory to write output too."
   echo "  -c/--control_base_dir               [REQUIRED]   Directory containing control outputs."
+  echo "  -s/--samples                        [OPTIONAL]   List of samples to compare, separated by '${SAMPLE_DELIMITER}'."
+  echo "                                                   If left empty, use all subdirectories in 'input_base_dir'."
   echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
   echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
   echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
@@ -46,6 +51,7 @@ main() {
   local input_base_dir
   local output_base_dir
   local control_base_dir
+  local samples
   local peach_main
   local panel_path
   local optional_peach_args
@@ -56,13 +62,16 @@ main() {
   key=$1 && shift
   case $key in
       -i|--input_base_dir)
-      input_base_dir="$1" && shift  # Optional argument
+      input_base_dir="$1" && shift
       ;;
       -o|--output_base_dir)
-      output_base_dir="$1" && shift  # Optional argument
+      output_base_dir="$1" && shift
       ;;
       -c|--control_base_dir)
-      control_base_dir="$1" && shift  # Optional argument
+      control_base_dir="$1" && shift
+      ;;
+      -s|--samples)
+      samples="$1" && shift  # Optional argument
       ;;
       -m|--main)
       peach_main="$1" && shift
@@ -114,6 +123,10 @@ main() {
     print_usage
   fi
 
+  if [[ -z ${samples} ]]; then
+    samples=$(find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | tr '\n' "${SAMPLE_DELIMITER}")
+  fi
+
   if [[ -d ${output_base_dir} ]]; then
     info "Delete output base dir ${output_base_dir}"
     rm -r "${output_base_dir}" || die "Could not delete output base dir ${output_base_dir}"
@@ -122,11 +135,11 @@ main() {
   mkdir -p "${output_base_dir}" || die "Could not create output base dir ${output_base_dir}"
 
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${optional_peach_args[@]}" \
+  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${samples}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
-  compare_peach_pilot_output_to_control "${input_base_dir}" "${output_base_dir}" "${control_base_dir}" \
+  compare_peach_pilot_output_to_control "${input_base_dir}" "${output_base_dir}" "${control_base_dir}" "${samples}" \
       || die "Could not compare PEACH output to control"
   
   info "Finished ${SCRIPT_NAME}"
@@ -135,14 +148,15 @@ main() {
 run_peach_pilot_on_subdirs() {
   local input_base_dir=$1 && shift
   local output_base_dir=$1 && shift
+  local samples=$1 && shift
   optional_peach_args=("$@")
 
-  if [[ -z "${output_base_dir}" ]]; then
+  if [[ -z "${samples}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
   info "Subdirs: $(ls "${input_base_dir}")"
-  find "${input_base_dir}" -mindepth 1 -maxdepth 1 -type d -print0 | xargs -0 -n 1 -I% basename % | xargs -n 1 -P "${MAX_THREADS}" -I % \
+  echo "${samples}" | xargs -d "${SAMPLE_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
       run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
@@ -151,21 +165,18 @@ compare_peach_pilot_output_to_control() {
   local input_base_dir=$1 && shift
   local output_base_dir=$1 && shift
   local control_base_dir=$1 && shift
+  local samples=$1 && shift
 
-  if [[ -z "${control_base_dir}" ]]; then
+  if [[ -z "${samples}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  local subdirname
-  for subdir in "${input_base_dir}"/*
-  do
-      info "Comparing for ${subdir}"
-      if [[ -d ${subdir} ]]; then
-        subdirname=$(basename "${subdir}") || die "Could not get sub directory name for ${subdir}"
-        compare_directory_contents "${output_base_dir}/${subdirname}" "${control_base_dir}/${subdirname}" || die "Could not compare directory contents"
-      else
-        warn "Is not a directory: ${subdir}"
-      fi
+  local IFS
+  IFS="${SAMPLE_DELIMITER}" read -ra sample_array <<< "${samples}"
+  local run_name
+  for run_name in "${sample_array[@]}"; do
+    compare_directory_contents "${output_base_dir}/${run_name}" "${control_base_dir}/${run_name}" \
+        || die "Could not compare directory contents"
   done
 }
 
@@ -194,16 +205,16 @@ compare_directory_contents() {
   local control_file
   for file_name in $(echo ${comparison_file_names})
   do
-      info "Diff for ${file_name}"
-      actual_file="${output_dir}/${file_name}"
-      control_file="${control_dir}/${file_name}"
+    info "Diff for ${file_name}"
+    actual_file="${output_dir}/${file_name}"
+    control_file="${control_dir}/${file_name}"
 
-      [[ -f "${actual_file}" ]] || warn "Cannot find file ${actual_file}"
-      [[ -f "${control_file}" ]] || warn "Cannot find file ${control_file}"
+    [[ -f "${actual_file}" ]] || warn "Cannot find file ${actual_file}"
+    [[ -f "${control_file}" ]] || warn "Cannot find file ${control_file}"
 
-      if [[ -f "${actual_file}" &&  -f "${control_file}" ]]; then
-        diff "${actual_file}" "${control_file}"
-      fi
+    if [[ -f "${actual_file}" &&  -f "${control_file}" ]]; then
+      diff "${actual_file}" "${control_file}"
+    fi
   done
 
   info "Finished comparing ${output_dir} to ${control_dir}"
