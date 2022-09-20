@@ -12,7 +12,7 @@ qc_fail_reason=$1 && shift
 ref_sample_mandatory=$1 && shift
 
 if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" || -z "${ref_sample}" || -z "${ref_sample_barcode}" ||-z "${qc_fail_reason}" ]]; then
-    error "No tumor infromation and/or QC fail reason provided. Exiting"
+    error "No tumor information and/or QC fail reason provided. Exiting"
 fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then

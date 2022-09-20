@@ -89,7 +89,7 @@ if [[ ${correction_comments} != "" ]]; then
 else
     #Normal report
     info "ref_sample_barcode ${ref_sample_barcode}"
-    do_run_qc_fail_patient_reporter ${sample} ${barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+    do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
