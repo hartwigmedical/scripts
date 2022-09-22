@@ -49,7 +49,7 @@ else
     warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"
 fi
 
-info "Archiving ACTIN data and report for ${sample}"
+info "Archiving ACTIN data and report for ${patient}"
 gsutil cp "${clinical_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${treatment_match_json}" "${sample_evaluation_bucket}/"
 gsutil cp "${actin_report_pdf}" "${sample_evaluation_bucket}/"
