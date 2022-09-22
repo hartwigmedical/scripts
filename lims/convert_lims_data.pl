@@ -934,7 +934,7 @@ sub fixBooleanFields{
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
         }else{
-            sayWarn("Unexpected value ($value) in boolean field ($key)");
+            sayWarn("Unexpected value ($value) in boolean field ($key): data=$obj");
         }
     }
 }
