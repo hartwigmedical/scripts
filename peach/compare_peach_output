@@ -168,7 +168,7 @@ run_peach_pilot_on_subdirs() {
 
   info "Run names: ${run_names}"
   echo -n "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${max_threads}" -I % \
-      bash -c "run_peach_pilot --run_dir ${input_base_dir}/% --output_dir ${output_base_dir}/% ${optional_peach_args[*]} 2>&1 | tee ${output_base_dir}/%/run.log" \
+      bash -c "mkdir -p ${output_base_dir}/%/run.log && run_peach_pilot --run_dir ${input_base_dir}/% --output_dir ${output_base_dir}/% ${optional_peach_args[*]} 2>&1 | tee ${output_base_dir}/%/run.log" \
       || die "Could not run PEACH pilot"
 }
 
