@@ -12,7 +12,7 @@ FALSE="FALSE"
 
 RUN_NAME_DELIMITER="|"
 
-MAX_THREADS=10
+DEFAULT_MAX_THREADS=10
 
 print_usage() {
   echo ""
@@ -34,6 +34,7 @@ print_usage() {
   echo "  -c/--control_base_dir               [REQUIRED]   Directory containing control outputs."
   echo "  -r/--run_names                      [OPTIONAL]   List of run_names to compare, separated by '${RUN_NAME_DELIMITER}'."
   echo "                                                   If left empty, use all subdirectories in 'input_base_dir'."
+  echo "  -t/--threads                        [OPTIONAL]   Thread count for running PEACH in parallel. Default value is ${DEFAULT_MAX_THREADS}"
   echo "  -m/--peach_main                     [OPTIONAL]   Path to the main PEACH script in a local copy of the PEACH git repo."
   echo "  -v/--venv                           [OPTIONAL]   Directory containing a Python virtual environment with PEACH's dependencies."
   echo "  -p/--panel                          [OPTIONAL]   Path to PEACH panel JSON."
@@ -73,6 +74,9 @@ main() {
       -r|--run_names)
       run_names="$1" && shift  # Optional argument
       ;;
+      -t|--threads)
+      max_threads="$1" && shift  # Optional argument
+      ;;
       -m|--main)
       peach_main="$1" && shift
       optional_peach_args+=("--main" "${peach_main}")  # Optional argument
@@ -99,6 +103,9 @@ main() {
   fi
   if [[ -z ${panel_path} ]]; then
     panel_path=""
+  fi
+  if [[ -z ${max_threads} ]]; then
+    max_threads=DEFAULT_MAX_THREADS
   fi
   
   # Sanity checks
@@ -138,7 +145,7 @@ main() {
   mkdir -p "${output_base_dir}" || die "Could not create output base dir ${output_base_dir}"
 
   info "Run PEACH pilot"
-  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${run_names}" "${optional_peach_args[@]}" \
+  run_peach_pilot_on_subdirs "${input_base_dir}" "${output_base_dir}" "${run_names}" "${max_threads}" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
   
   info "Compare PEACH output"
@@ -152,14 +159,15 @@ run_peach_pilot_on_subdirs() {
   local input_base_dir=$1 && shift
   local output_base_dir=$1 && shift
   local run_names=$1 && shift
+  local max_threads=$1 && shift
   optional_peach_args=("$@")
 
-  if [[ -z "${run_names}" ]]; then
+  if [[ -z "${max_threads}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
   info "Run names: ${run_names}"
-  echo -n "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${MAX_THREADS}" -I % \
+  echo -n "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${max_threads}" -I % \
       run_peach_pilot --run_dir "${input_base_dir}/%" --output_dir "${output_base_dir}/%" "${optional_peach_args[@]}" \
       || die "Could not run PEACH pilot"
 }
