@@ -105,7 +105,7 @@ main() {
     panel_path=""
   fi
   if [[ -z ${max_threads} ]]; then
-    max_threads=DEFAULT_MAX_THREADS
+    max_threads=${DEFAULT_MAX_THREADS}
   fi
   
   # Sanity checks
