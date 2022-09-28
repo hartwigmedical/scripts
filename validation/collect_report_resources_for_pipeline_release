@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_log_file=""
+
+public_repo_dir="/data/resources/public"
+private_repo_dir="/data/resources/private"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Collects resource files using imageName from run.log"
+    echo " Usage: $(basename $0) -l <run_log_file_location>"
+    echo " Examp: $(basename $0) -l gs://verification-pipeline-output-pilot-1/results/5_29_2_rc_1_v_5_29_3_rc_1/COLO829v003T/forensics/runs/COLO829v003T-target/run.log"
+    echo "        $(basename $0) -l /local/path/to/run/run.log"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':l:' flag; do
+    case "${flag}" in
+        l) run_log_file=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+[[ -n "${run_log_file}" ]] || print_usage
+
+main() {
+    info "Starting with script $(basename "$0")"
+    image_name=$(get_image_version_from_run_log "${run_log_file}") || die "Unable to get image name from [${run_log_file}]"
+    info "Input run log: $run_log_file"
+    info "Image name found: $image_name"
+    info "Finished with script $(basename "$0")"
+}
+
+get_image_version_from_run_log() {
+    local file=$1 && shift
+    local content=""
+    if [[ "$file" =~ ^gs:// ]]; then
+        content=$(gsutil cat "$file")
+    else
+        [[ -f "$file" ]] || return 1
+        content=$(cat "$file")
+    fi
+    image_name=$(grep -Eo 'imageName=\S+' <<< "${content}" | cut -d"=" -f2 | cut -d"," -f1)
+    echo "${image_name}"
+}
+
+main
