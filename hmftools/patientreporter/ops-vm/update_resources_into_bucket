@@ -20,17 +20,18 @@ git checkout "${image}"
 git branch -l
 
 #files oncoact
-hmf_fusion_panel_changelist_csv="/data/resources/public/fusions/fusion_changelist.csv"
-hmf_funsion_panel_csv="/data/resources/public/fusions/37/known_fusion_data.37.csv"
-hmf_gene_panel_changelist_csv="/data/resources/public/gene_panel/DriverGenePanel_changelist.tsv"
-hmf_gene_panel_csv="/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv"
-virus_reporting_db_tsv="/data/resources/public/virus_interpreter/virus_reporting_db.tsv"
+pipeline_image=""
+hmf_fusion_panel_changelist_csv="${pipeline_image}/fusions/fusion_changelist.csv"
+hmf_funsion_panel_csv="${pipeline_image}/fusions/37/known_fusion_data.37.csv"
+hmf_gene_panel_changelist_csv="${pipeline_image}/gene_panel/DriverGenePanel_changelist.tsv"
+hmf_gene_panel_csv="${pipeline_image}/gene_panel/37/DriverGenePanel.37.tsv"
+virus_reporting_db_tsv="${pipeline_image}/virus_interpreter/virus_reporting_db.tsv"
 oncoact_report_pdf=
-taxonomy_db_tsv="/data/resources/public/virus_interpreter/taxonomy_db.tsv"
+taxonomy_db_tsv="${pipeline_image}/virus_interpreter/taxonomy_db.tsv"
 germline_reporting_tsv=
-hmf_pgx_haplotypes="/data/resources/public/peach/haplotypes.tsv"
-hmf_pgx_variants_tsv="/data/resources/public/peach/variants.tsv"
-hmf_pgx_drugs_tsv="/data/resources/public/peach/drugs.tsv"
+hmf_pgx_haplotypes="${pipeline_image}/peach/haplotypes.tsv"
+hmf_pgx_variants_tsv="${pipeline_image}/peach/variants.tsv"
+hmf_pgx_drugs_tsv="${pipeline_image}/peach/drugs.tsv"
 onocoact_readme=
 
 #files onocpanel
