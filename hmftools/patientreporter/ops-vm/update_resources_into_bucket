@@ -37,7 +37,7 @@ germline_reporting_tsv=
 hmf_pgx_haplotypes="${pipeline_image}/peach/haplotypes.tsv"
 hmf_pgx_variants_tsv="${pipeline_image}/peach/variants.tsv"
 hmf_pgx_drugs_tsv="${pipeline_image}/peach/drugs.tsv"
-onocoact_readme=
+onocoact_readme="${external_link_resources_dir}/oncoact_readme.txt"
 
 # Copy oncoact data to the archive dir
 cp ${hmf_fusion_panel_changelist_csv} ${archive_dir_oncoact}
@@ -53,14 +53,13 @@ cp ${hmf_pgx_variants_tsv} ${archive_dir_oncoact}
 cp ${hmf_pgx_drugs_tsv} ${archive_dir_oncoact}
 cp ${onocoact_readme} ${archive_dir_oncoact}
 
-
 #files onocpanel
 info "Collecting oncoPanel data"
 
 onco_panel_genes_tsv=
 onco_panel_vcf_header_definitions=
 oncopanel_report_pdf=
-oncopanel_readme=
+oncopanel_readme="${external_link_resources_dir}/oncopanel_readme.txt"
 
 ## Copy oncopanel data to the archive dir
 cp ${onco_panel_genes_tsv} ${archive_dir_oncopanel}
