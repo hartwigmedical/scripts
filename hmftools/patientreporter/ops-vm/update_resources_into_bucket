@@ -39,6 +39,54 @@ hmf_pgx_variants_tsv="${pipeline_image}/peach/variants.tsv"
 hmf_pgx_drugs_tsv="${pipeline_image}/peach/drugs.tsv"
 onocoact_readme="${external_link_resources_dir}/oncoact_readme.txt"
 
+if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
+        error "Unable to locate fusion panel changelist csv file."
+fi
+
+if [[ -z "${hmf_funsion_panel_csv}" ]]; then
+        error "Unable to locate funsion panel csv file."
+fi
+
+if [[ -z "${hmf_gene_panel_changelist_csv}" ]]; then
+        error "Unable to locate gene panel changelist csv file."
+fi
+
+if [[ -z "${hmf_gene_panel_csv}" ]]; then
+        error "Unable to locate gene panel csv file."
+fi
+if [[ -z "${virus_reporting_db_tsv}" ]]; then
+        error "Unable to locate virus reporting db tsv file."
+fi
+
+if [[ -z "${oncoact_report_pdf}" ]]; then
+        error "Unable to locate oncoact report pdf file."
+fi
+
+if [[ -z "${taxonomy_db_tsv}" ]]; then
+        error "Unable to locate taxonomy db tsv file."
+fi
+
+if [[ -z "${germline_reporting_tsv}" ]]; then
+        error "Unable to locate germline reporting tsv file."
+fi
+
+if [[ -z "${hmf_pgx_haplotypes}" ]]; then
+        error "Unable to locate pgx haplotypes file."
+fi
+
+if [[ -z "${hmf_pgx_variants_tsv}" ]]; then
+        error "Unable to locate pgx variants tsv file."
+fi
+
+if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
+        error "Unable to locate pgx drugs tsv file."
+fi
+
+if [[ -z "${onocoact_readme}" ]]; then
+        error "Unable to locate onocoact readme file."
+fi
+
+
 # Copy oncoact data to the archive dir
 cp ${hmf_fusion_panel_changelist_csv} ${archive_dir_oncoact}
 cp ${hmf_funsion_panel_csv} ${archive_dir_oncoact}
@@ -60,6 +108,22 @@ onco_panel_genes_tsv=
 onco_panel_vcf_header_definitions=
 oncopanel_report_pdf=
 oncopanel_readme="${external_link_resources_dir}/oncopanel_readme.txt"
+
+if [[ -z "${onco_panel_genes_tsv}" ]]; then
+        error "Unable to locate onco panel genes tsv file."
+fi
+
+if [[ -z "${onco_panel_vcf_header_definitions}" ]]; then
+        error "Unable to locate onco panel vcf header definitions file."
+fi
+
+if [[ -z "${oncopanel_report_pdf}" ]]; then
+        error "Unable to locate oncopanel report pdf file."
+fi
+
+if [[ -z "${oncopanel_readme}" ]]; then
+        error "Unable to locate oncopanel readme file."
+fi
 
 ## Copy oncopanel data to the archive dir
 cp ${onco_panel_genes_tsv} ${archive_dir_oncopanel}
