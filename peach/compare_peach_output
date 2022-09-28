@@ -11,6 +11,7 @@ TRUE="TRUE"
 FALSE="FALSE"
 
 RUN_NAME_DELIMITER="|"
+RUN_LOG_FILE_NAME="run.log"
 
 DEFAULT_MAX_THREADS=10
 
@@ -168,7 +169,7 @@ run_peach_pilot_on_subdirs() {
 
   info "Run names: ${run_names}"
   echo -n "${run_names}" | xargs -d "${RUN_NAME_DELIMITER}" -n 1 -P "${max_threads}" -I % \
-      bash -c "mkdir -p ${output_base_dir}/% && run_peach_pilot --run_dir ${input_base_dir}/% --output_dir ${output_base_dir}/% ${optional_peach_args[*]} 2>&1 | tee ${output_base_dir}/%/run.log" \
+      bash -c "mkdir -p ${output_base_dir}/% && run_peach_pilot --run_dir ${input_base_dir}/% --output_dir ${output_base_dir}/% ${optional_peach_args[*]} 2>&1 | tee ${output_base_dir}/%/${RUN_LOG_FILE_NAME}" \
       || die "Could not run PEACH pilot"
 }
 
@@ -216,6 +217,9 @@ compare_directory_contents() {
   local control_file
   for file_name in $(echo ${comparison_file_names})
   do
+    if [[ "${file_name}" == "${RUN_LOG_FILE_NAME}" ]]; then
+      continue
+    fi
     info "Diff for ${file_name}"
     actual_file="${output_dir}/${file_name}"
     control_file="${control_dir}/${file_name}"
