@@ -2,6 +2,8 @@
 
 source message_functions || exit 1
 
+info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
+
 currentDate=$(date +'%Y%m%d')
 external_link_resources_dir="/data/resources/external_link/"
 achive_dir="${external_link_resources_dir}/${currentDate}_patient_report_resources"
@@ -12,14 +14,17 @@ mkdir ${archive_dir_oncoact}
 mkdir ${archive_dir_oncopanel}
 
 # generate image of using pipeline
+info "Generating pipeline image data..."
 #TODO grep collect name
 image=""
 project=""
 gcloud --project "${project}" source repos clone common-resources-public
 git checkout "${image}"
 git branch -l
+info "Pipeline image data of ${image} is extracted"
 
 #files oncoact
+info "Collecting oncoAct data"
 pipeline_image=""
 hmf_fusion_panel_changelist_csv="${pipeline_image}/fusions/fusion_changelist.csv"
 hmf_funsion_panel_csv="${pipeline_image}/fusions/37/known_fusion_data.37.csv"
@@ -33,12 +38,6 @@ hmf_pgx_haplotypes="${pipeline_image}/peach/haplotypes.tsv"
 hmf_pgx_variants_tsv="${pipeline_image}/peach/variants.tsv"
 hmf_pgx_drugs_tsv="${pipeline_image}/peach/drugs.tsv"
 onocoact_readme=
-
-#files onocpanel
-onco_panel_genes_tsv=
-onco_panel_vcf_header_definitions=
-oncopanel_report_pdf=
-oncopanel_readme=
 
 # Copy oncoact data to the archive dir
 cp ${hmf_fusion_panel_changelist_csv} ${archive_dir_oncoact}
@@ -54,6 +53,15 @@ cp ${hmf_pgx_variants_tsv} ${archive_dir_oncoact}
 cp ${hmf_pgx_drugs_tsv} ${archive_dir_oncoact}
 cp ${onocoact_readme} ${archive_dir_oncoact}
 
+
+#files onocpanel
+info "Collecting oncoPanel data"
+
+onco_panel_genes_tsv=
+onco_panel_vcf_header_definitions=
+oncopanel_report_pdf=
+oncopanel_readme=
+
 ## Copy oncopanel data to the archive dir
 cp ${onco_panel_genes_tsv} ${archive_dir_oncopanel}
 cp ${onco_panel_vcf_header_definitions} ${archive_dir_oncopanel}
@@ -61,17 +69,22 @@ cp ${oncopanel_report_pdf} ${archive_dir_oncopanel}
 cp ${oncopanel_readme} ${archive_dir_oncopanel}
 
 ## Zipping the dir
+info "Zipping the oncoPanel and OncoAct data"
 oncoact_zip="${external_link_resources_dir}/oncoact.zip"
 oncopanel_zip="${external_link_resources_dir}/oncopanel.zip"
 zip -r ${oncoact_zip} ${archive_dir_oncoact}
 zip -r ${oncopanel_zip} ${archive_dir_oncopanel}
 
 # copy data to bucket
+info "Copy the oncoAct data to the gcp bucket"
 bucket="hmf-public"
 path_oncoact="OncoAct-Resources"
 gcp_url_oncoact="https://storage.googleapis.com/${bucket}/${path_oncoact}"
 gsutil cp ${oncoact_zip} ${gcp_url_oncoact}
 
+info "Copy the oncoPanel data to the gcp bucket"
 path_oncopanel="OncoPanel-Resources"
 gcp_url_oncopanel="https://storage.googleapis.com/${bucket}/${path_oncopanel}"
 gsutil cp ${oncopanel_zip} ${gcp_url_oncopanel}
+
+info "Complete"
