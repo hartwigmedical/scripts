@@ -38,10 +38,10 @@ virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.ts
 oncoact_report_pdf="${external_link_resources_dir}/hmf_oncoact.pdf"
 taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-hmf_pgx_haplotypes="${git_clone_dir}/peach/haplotypes.tsv"
-hmf_pgx_variants_tsv="${git_clone_dir}/peach/variants.tsv"
-hmf_pgx_drugs_tsv="${git_clone_dir}/peach/drugs.tsv"
-gene_transcripts=""
+hmf_pgx_haplotypes="script"
+hmf_pgx_variants_tsv="script"
+hmf_pgx_drugs_tsv="script"
+gene_transcripts="collect"
 onocoact_readme="${external_link_resources_dir}/oncoact_readme.txt"
 
 if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
@@ -97,19 +97,19 @@ fi
 
 
 # Copy oncoact data to the archive dir
-cp ${hmf_fusion_panel_changelist_csv} ${archive_dir_oncoact}
-cp ${hmf_funsion_panel_csv} ${archive_dir_oncoact}
-cp ${hmf_gene_panel_changelist_csv} ${archive_dir_oncoact}
-cp ${hmf_gene_panel_csv} ${archive_dir_oncoact}
-cp ${virus_reporting_db_tsv} ${archive_dir_oncoact}
-cp ${oncoact_report_pdf} ${archive_dir_oncoact}
-cp ${taxonomy_db_tsv} ${archive_dir_oncoact}
-cp ${germline_reporting_tsv} ${archive_dir_oncoact}
-cp ${hmf_pgx_haplotypes} ${archive_dir_oncoact}
-cp ${hmf_pgx_variants_tsv} ${archive_dir_oncoact}
-cp ${hmf_pgx_drugs_tsv} ${archive_dir_oncoact}
-cp ${gene_transcripts} ${archive_dir_oncoact}
-cp ${onocoact_readme} ${archive_dir_oncoact}
+cp ${hmf_fusion_panel_changelist_csv} "${archive_dir_oncoact}/hmf_fusion_changelist.csv"
+cp ${hmf_funsion_panel_csv} "${archive_dir_oncoact}/hmf_fusion_panel.csv"
+cp ${hmf_gene_panel_changelist_csv} "${archive_dir_oncoact}/hmf_oncoact_gene_panel_changelist.csv"
+cp ${hmf_gene_panel_csv} "${archive_dir_oncoact}/hmf_oncoact_gene_panel.csv"
+cp ${virus_reporting_db_tsv} "${archive_dir_oncoact}/hmf_virus_reporting_db.tsv"
+cp ${oncoact_report_pdf} "${archive_dir_oncoact}/hmf_oncoact_report.pdf"
+cp ${taxonomy_db_tsv} "${archive_dir_oncoact}/hmf_taxonomy_db.tsv"
+cp ${germline_reporting_tsv} "${archive_dir_oncoact}/hmf_germline_reporting.tsv"
+cp ${hmf_pgx_haplotypes} "${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
+cp ${hmf_pgx_variants_tsv} "${archive_dir_oncoact}/hmf_pgx_variants.tsv"
+cp ${hmf_pgx_drugs_tsv} "${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
+cp ${gene_transcripts} "${archive_dir_oncoact}/hmf_canonical_transcripts.tsv"
+cp ${onocoact_readme} "${archive_dir_oncoact}/hmf_oncoact_readme.txt"
 
 #files onocpanel
 info "Collecting oncoPanel data"
@@ -136,10 +136,10 @@ if [[ -z "${oncopanel_readme}" ]]; then
 fi
 
 ## Copy oncopanel data to the archive dir
-cp ${onco_panel_genes_tsv} ${archive_dir_oncopanel}
-cp ${onco_panel_vcf_header_definitions} ${archive_dir_oncopanel}
-cp ${oncopanel_report_pdf} ${archive_dir_oncopanel}
-cp ${oncopanel_readme} ${archive_dir_oncopanel}
+cp ${onco_panel_genes_tsv} "${archive_dir_oncopanel}/hmf_oncoact_gene_panel.tsv"
+cp ${onco_panel_vcf_header_definitions} "${archive_dir_oncopanel}/hmf_vcf_header_definitions.tsv"
+cp ${oncopanel_report_pdf} "${archive_dir_oncopanel}/hmf_oncopanel_report.pdf"
+cp ${oncopanel_readme} "${archive_dir_oncopanel}/hmf_oncopanel_readme.txt"
 
 ## Zipping the dir
 info "Zipping the oncoPanel and OncoAct data"
