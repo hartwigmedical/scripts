@@ -20,7 +20,7 @@ mkdir ${archive_dir_oncopanel}
 # generate image of using pipeline
 info "Generating pipeline image data..."
 imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file})
-image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}')
+image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}') # TODO: split private and public tag from each other pipeline5-5-29-202206241631-202206302035-private
 project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
 
 git_clone_dir="${report_resources_dir}/common-resources-public"
