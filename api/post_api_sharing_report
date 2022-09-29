@@ -13,13 +13,11 @@ cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" $
 
 if [[ ${cohort} == '"COREDB"' ]]; then
   publish_to_portal="true"
+  data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
 else
-  publish_to_portal="false"
+  data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
 fi
 
-data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
-
-echo ${data}
 if [[ -z ${report_created_id} ]];then
   error "No reporting created entry is present. Add entry first in created endpoint"
   exit 1
