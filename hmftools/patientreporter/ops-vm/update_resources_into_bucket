@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-colo_log_file=$1 && shift
+colo_log_file=$1 && shift #eg. gs://verification-pipeline-output-pilot-1/results/5_29_2_rc_1_v_5_29_3_rc_1/COLO829v003T/forensics/runs/COLO829v003T-target/run.log
 
 info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
 
