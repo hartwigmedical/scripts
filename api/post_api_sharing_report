@@ -12,9 +12,9 @@ report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${
 cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
 
 if [[ ${cohort} == '"COREDB"' ]]; then
-  publish_to_portal="true"
+  publish_to_portal=true
 else
-  publish_to_portal="false"
+  publish_to_portal=false
 fi
 
 data=$(printf '{"%s": %s, "%s": %s}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
