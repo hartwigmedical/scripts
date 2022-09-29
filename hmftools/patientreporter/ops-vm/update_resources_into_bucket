@@ -146,22 +146,29 @@ cp ${oncopanel_readme} "${archive_dir_oncopanel}/hmf_oncopanel_readme.txt"
 
 ## Zipping the dir
 info "Zipping the oncoPanel and OncoAct data"
-oncoact_zip="${report_resources_dir}/oncoact.zip"
-oncopanel_zip="${report_resources_dir}/oncopanel.zip"
-zip -r ${oncoact_zip} ${archive_dir_oncoact}
-zip -r ${oncopanel_zip} ${archive_dir_oncopanel}
+oncoact_zip_date="${report_resources_dir}/${currentDate}_oncoact.zip"
+oncoact_zip_latest="${report_resources_dir}/latest_oncoact.zip"
+oncopanel_zip_date="${report_resources_dir}/${currentDate}_oncopanel.zip"
+oncopanel_zip_latest="${report_resources_dir}/latest_oncopanel.zip"
+
+zip -r ${oncoact_zip_date} ${archive_dir_oncoact}
+zip -r ${oncoact_zip_latest} ${archive_dir_oncoact}
+zip -r ${oncopanel_zip_date} ${archive_dir_oncopanel}
+zip -r ${oncopanel_zip_latest} ${archive_dir_oncopanel}
 
 # copy data to bucket
 info "Copy the oncoAct data to the gcp bucket"
 bucket="hmf-public"
 path_oncoact="OncoAct-Resources"
 gcp_url_oncoact="https://storage.googleapis.com/${bucket}/${path_oncoact}"
-gsutil cp ${oncoact_zip} ${gcp_url_oncoact}
+gsutil cp ${oncoact_zip_date} ${gcp_url_oncoact}
+gsutil cp ${oncoact_zip_latest} ${gcp_url_oncoact}
 
 info "Copy the oncoPanel data to the gcp bucket"
 path_oncopanel="OncoPanel-Resources"
 gcp_url_oncopanel="https://storage.googleapis.com/${bucket}/${path_oncopanel}"
-gsutil cp ${oncopanel_zip} ${gcp_url_oncopanel}
+gsutil cp ${oncopanel_zip_date} ${gcp_url_oncopanel}
+gsutil cp ${oncopanel_zip_latest} ${gcp_url_oncopanel}
 
 #Deleting data
 info "Removing temporarily data"
