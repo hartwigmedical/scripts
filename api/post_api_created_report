@@ -15,17 +15,19 @@ report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
-if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"' ||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ||  ${cohort} == '"SHERPA"'  ||  ${cohort} == '"GENAYA"' ||  ${cohort} == '"OPTIC"'  ||  ${cohort} == '"GLOW"' ]]; then
+if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"'
+||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ||  ${cohort} == '"SHERPA"'  ||
+${cohort} == '"GENAYA"' ||  ${cohort} == '"OPTIC"'  ||  ${cohort} == '"GLOW"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-    run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | grep "Somatic" | tail -n 1)
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="Somatic.ini") | .id')
   else
-    run_id=$( api runs ${sample_name} sample_name | grep diagnostic-pipeline-output-prod-1 | awk '{print $NF}' | grep "Shallow" | tail -n 1)
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="ShallowSeq.ini") | .id')
   fi
 elif [[ ${cohort} == '"CORE"' || ${cohort} == '"CORELR02"' || ${cohort} == '"CORERI02"' || ${cohort} == '"CORELR11"' || ${cohort} == '"CORESC11"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-      run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}' | grep "Somatic" | tail -n 1)
-    else
-      run_id=$( api runs ${sample_name} sample_name | grep services-pipeline-output-prod-1 | awk '{print $NF}' | grep "Shallow" | tail -n 1)
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=services-pipeline-output-prod-1" | jq '.[] | select(.ini=="Somatic.ini") | .id')
+  else
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="ShallowSeq.ini") | .id')
     fi
 else
     warn "Cohort of sample isn't assigned"
