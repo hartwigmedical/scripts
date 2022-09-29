@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source collect_peach_resources || exit 1
 
 colo_log_file=$1 && shift #eg. gs://verification-pipeline-output-pilot-1/results/5_29_2_rc_1_v_5_29_3_rc_1/COLO829v003T/forensics/runs/COLO829v003T-target/run.log
 
@@ -38,11 +39,13 @@ virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.ts
 oncoact_report_pdf="${report_resources_dir}/hmf_oncoact.pdf"
 taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-hmf_pgx_haplotypes="script"
-hmf_pgx_variants_tsv="script"
-hmf_pgx_drugs_tsv="script"
 gene_transcripts="collect"
 onocoact_readme="${report_resources_dir}/oncoact_readme.txt"
+
+collect_temporarily_data_of_peach_json_file
+hmf_pgx_haplotypes="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+hmf_pgx_variants_tsv="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+hmf_pgx_drugs_tsv="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
 
 if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
         error "Unable to locate fusion panel changelist csv file."
@@ -160,7 +163,11 @@ path_oncopanel="OncoPanel-Resources"
 gcp_url_oncopanel="https://storage.googleapis.com/${bucket}/${path_oncopanel}"
 gsutil cp ${oncopanel_zip} ${gcp_url_oncopanel}
 
-#Deleting git clone
+#Deleting data
+info "Removing temporarily data"
 rm -r ${git_clone_dir}
+rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
 
 info "Complete"
