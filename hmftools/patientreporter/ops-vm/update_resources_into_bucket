@@ -8,8 +8,8 @@ colo_log_file=$1 && shift #eg. gs://verification-pipeline-output-pilot-1/results
 info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
 
 currentDate=$(date +'%Y%m%d')
-external_link_resources_dir="/data/resources/external_link/"
-achive_dir="${external_link_resources_dir}/${currentDate}_patient_report_resources"
+report_resources_dir="/data/resources/report_resources/"
+achive_dir="${report_resources_dir}/${currentDate}_patient_report_resources"
 archive_dir_oncoact="${achive_dir}/oncoact"
 archive_dir_oncopanel="${achive_dir}/oncopanel"
 mkdir ${achive_dir}
@@ -22,7 +22,7 @@ imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_f
 image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}')
 project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
 
-git_clone_dir="${external_link_resources_dir}/common-resources-public"
+git_clone_dir="${report_resources_dir}/common-resources-public"
 gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
 git checkout "git_clone_dir/${image}"
 git branch -l
@@ -35,14 +35,14 @@ hmf_funsion_panel_csv="${git_clone_dir}/fusions/37/known_fusion_data.37.csv"
 hmf_gene_panel_changelist_csv="${git_clone_dir}/gene_panel/DriverGenePanel_changelist.tsv"
 hmf_gene_panel_csv="${git_clone_dir}/gene_panel/37/DriverGenePanel.37.tsv"
 virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.tsv"
-oncoact_report_pdf="${external_link_resources_dir}/hmf_oncoact.pdf"
+oncoact_report_pdf="${report_resources_dir}/hmf_oncoact.pdf"
 taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 germline_reporting_tsv=$(locate_germline_reporting_prod)
 hmf_pgx_haplotypes="script"
 hmf_pgx_variants_tsv="script"
 hmf_pgx_drugs_tsv="script"
 gene_transcripts="collect"
-onocoact_readme="${external_link_resources_dir}/oncoact_readme.txt"
+onocoact_readme="${report_resources_dir}/oncoact_readme.txt"
 
 if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
         error "Unable to locate fusion panel changelist csv file."
@@ -116,8 +116,8 @@ info "Collecting oncoPanel data"
 
 onco_panel_genes_tsv=
 onco_panel_vcf_header_definitions=
-oncopanel_report_pdf="${external_link_resources_dir}/hmf_oncoact.pdf"
-oncopanel_readme="${external_link_resources_dir}/oncopanel_readme.txt"
+oncopanel_report_pdf="${report_resources_dir}/hmf_oncoact.pdf"
+oncopanel_readme="${report_resources_dir}/oncopanel_readme.txt"
 
 if [[ -z "${onco_panel_genes_tsv}" ]]; then
         error "Unable to locate onco panel genes tsv file."
@@ -143,8 +143,8 @@ cp ${oncopanel_readme} "${archive_dir_oncopanel}/hmf_oncopanel_readme.txt"
 
 ## Zipping the dir
 info "Zipping the oncoPanel and OncoAct data"
-oncoact_zip="${external_link_resources_dir}/oncoact.zip"
-oncopanel_zip="${external_link_resources_dir}/oncopanel.zip"
+oncoact_zip="${report_resources_dir}/oncoact.zip"
+oncopanel_zip="${report_resources_dir}/oncopanel.zip"
 zip -r ${oncoact_zip} ${archive_dir_oncoact}
 zip -r ${oncopanel_zip} ${archive_dir_oncopanel}
 
