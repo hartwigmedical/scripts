@@ -19,15 +19,15 @@ if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"C
 ||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ||  ${cohort} == '"SHERPA"'  ||
 ${cohort} == '"GENAYA"' ||  ${cohort} == '"OPTIC"'  ||  ${cohort} == '"GLOW"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="Somatic.ini") | .id')
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=Somatic.ini" | jq '.[-1].id')
   else
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="ShallowSeq.ini") | .id')
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=ShallowSeq.ini" | jq '.[-1].id')
   fi
 elif [[ ${cohort} == '"CORE"' || ${cohort} == '"CORELR02"' || ${cohort} == '"CORERI02"' || ${cohort} == '"CORELR11"' || ${cohort} == '"CORESC11"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=services-pipeline-output-prod-1" | jq '.[] | select(.ini=="Somatic.ini") | .id')
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=services-pipeline-output-prod-1&ini=Somatic.ini" | jq '.[-1].id')
   else
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1" | jq '.[] | select(.ini=="ShallowSeq.ini") | .id')
+    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=ShallowSeq.ini" | jq '.[-1].id')
     fi
 else
     warn "Cohort of sample isn't assigned"
