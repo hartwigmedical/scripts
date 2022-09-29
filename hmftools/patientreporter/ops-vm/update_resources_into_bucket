@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
+
+colo_log_file=$1 && shift
 
 info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
 
@@ -15,28 +18,30 @@ mkdir ${archive_dir_oncopanel}
 
 # generate image of using pipeline
 info "Generating pipeline image data..."
-#TODO grep collect name
-image=""
-project=""
-gcloud --project "${project}" source repos clone common-resources-public
-git checkout "${image}"
+imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file})
+image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}')
+project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
+
+git_clone_dir="${external_link_resources_dir}/common-resources-public"
+gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
+git checkout "git_clone_dir/${image}"
 git branch -l
 info "Pipeline image data of ${image} is extracted"
 
 #files oncoact
 info "Collecting oncoAct data"
-pipeline_image=""
-hmf_fusion_panel_changelist_csv="${pipeline_image}/fusions/fusion_changelist.csv"
-hmf_funsion_panel_csv="${pipeline_image}/fusions/37/known_fusion_data.37.csv"
-hmf_gene_panel_changelist_csv="${pipeline_image}/gene_panel/DriverGenePanel_changelist.tsv"
-hmf_gene_panel_csv="${pipeline_image}/gene_panel/37/DriverGenePanel.37.tsv"
-virus_reporting_db_tsv="${pipeline_image}/virus_interpreter/virus_reporting_db.tsv"
-oncoact_report_pdf=
-taxonomy_db_tsv="${pipeline_image}/virus_interpreter/taxonomy_db.tsv"
-germline_reporting_tsv=
-hmf_pgx_haplotypes="${pipeline_image}/peach/haplotypes.tsv"
-hmf_pgx_variants_tsv="${pipeline_image}/peach/variants.tsv"
-hmf_pgx_drugs_tsv="${pipeline_image}/peach/drugs.tsv"
+hmf_fusion_panel_changelist_csv="${git_clone_dir}/fusions/fusion_changelist.csv"
+hmf_funsion_panel_csv="${git_clone_dir}/fusions/37/known_fusion_data.37.csv"
+hmf_gene_panel_changelist_csv="${git_clone_dir}/gene_panel/DriverGenePanel_changelist.tsv"
+hmf_gene_panel_csv="${git_clone_dir}/gene_panel/37/DriverGenePanel.37.tsv"
+virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.tsv"
+oncoact_report_pdf="${external_link_resources_dir}/hmf_oncoact.pdf"
+taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
+germline_reporting_tsv=$(locate_germline_reporting_prod)
+hmf_pgx_haplotypes="${git_clone_dir}/peach/haplotypes.tsv"
+hmf_pgx_variants_tsv="${git_clone_dir}/peach/variants.tsv"
+hmf_pgx_drugs_tsv="${git_clone_dir}/peach/drugs.tsv"
+gene_transcripts=""
 onocoact_readme="${external_link_resources_dir}/oncoact_readme.txt"
 
 if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
@@ -82,6 +87,10 @@ if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
         error "Unable to locate pgx drugs tsv file."
 fi
 
+if [[ -z "${gene_transcripts}" ]]; then
+        error "Unable to locate gene transcripts tsv file."
+fi
+
 if [[ -z "${onocoact_readme}" ]]; then
         error "Unable to locate onocoact readme file."
 fi
@@ -99,6 +108,7 @@ cp ${germline_reporting_tsv} ${archive_dir_oncoact}
 cp ${hmf_pgx_haplotypes} ${archive_dir_oncoact}
 cp ${hmf_pgx_variants_tsv} ${archive_dir_oncoact}
 cp ${hmf_pgx_drugs_tsv} ${archive_dir_oncoact}
+cp ${gene_transcripts} ${archive_dir_oncoact}
 cp ${onocoact_readme} ${archive_dir_oncoact}
 
 #files onocpanel
@@ -106,7 +116,7 @@ info "Collecting oncoPanel data"
 
 onco_panel_genes_tsv=
 onco_panel_vcf_header_definitions=
-oncopanel_report_pdf=
+oncopanel_report_pdf="${external_link_resources_dir}/hmf_oncoact.pdf"
 oncopanel_readme="${external_link_resources_dir}/oncopanel_readme.txt"
 
 if [[ -z "${onco_panel_genes_tsv}" ]]; then
@@ -149,5 +159,8 @@ info "Copy the oncoPanel data to the gcp bucket"
 path_oncopanel="OncoPanel-Resources"
 gcp_url_oncopanel="https://storage.googleapis.com/${bucket}/${path_oncopanel}"
 gsutil cp ${oncopanel_zip} ${gcp_url_oncopanel}
+
+#Deleting git clone
+rm -r ${git_clone_dir}
 
 info "Complete"
