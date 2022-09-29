@@ -17,7 +17,7 @@ else
   publish_to_portal="false"
 fi
 
-data=$(printf '{"%s": %s, "%s": %s}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
+data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
 
 echo ${data}
 if [[ -z ${report_created_id} ]];then
