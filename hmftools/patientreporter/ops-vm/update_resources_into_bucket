@@ -23,7 +23,7 @@ project="hmf-pipeline-development"
 
 git_clone_dir="${report_resources_dir}/common-resources-public"
 gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
-git checkout "${git_clone_dir}/common-resources-public"
+git checkout "${git_clone_dir}"
 info "Pipeline image data of ${image} is extracted"
 
 #info "Extracting peach information to tsv files"
