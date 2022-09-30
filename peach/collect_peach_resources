@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-source message_functions || exit 1
-source locate_files || exit 1
-
-collect_temporarily_data_of_peach_json_file(){
-  echo ""
-}

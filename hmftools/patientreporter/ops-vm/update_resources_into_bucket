@@ -20,14 +20,18 @@ mkdir ${archive_dir_oncopanel}
 ## generate image of using pipeline
 info "Generating pipeline image data..."
 image=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image name found" | awk '{print $NF}' | awk -F "-" '{OFS = "-"; print $1,$2,$3,$4}')
-project=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image project found" | awk '{print $NF}')
+project="hmf-pipeline-development"
 
 git_clone_dir="${report_resources_dir}/common-resources-public"
 gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
 git checkout "git_clone_dir/${image}"
 info "Pipeline image data of ${image} is extracted"
 
-##files oncoact
+#info "Extracting peach information to tsv files"
+## names of pgx files can be found in the make peach script
+#make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/min_DPYD.json --output_dir ${archive_dir_oncoact}
+#
+###files oncoact
 #info "Collecting oncoAct data"
 #hmf_fusion_panel_changelist_csv="${git_clone_dir}/fusions/fusion_changelist.csv"
 #hmf_funsion_panel_csv="${git_clone_dir}/fusions/37/known_fusion_data.37.csv"
@@ -38,12 +42,8 @@ info "Pipeline image data of ${image} is extracted"
 #taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 #germline_reporting_tsv=$(locate_germline_reporting_prod)
 #onocoact_readme="${report_resources_dir}/oncoact_readme.txt"
-#
 ##gene_transcripts="collect"
-##collect_temporarily_data_of_peach_json_file
-##hmf_pgx_haplotypes="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
-##hmf_pgx_variants_tsv="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
-##hmf_pgx_drugs_tsv="${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+
 #
 #if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
 #        error "Unable to locate fusion panel changelist csv file."
@@ -106,12 +106,9 @@ info "Pipeline image data of ${image} is extracted"
 ##cp ${oncoact_report_pdf} "${archive_dir_oncoact}/hmf_oncoact_report.pdf"
 #cp ${taxonomy_db_tsv} "${archive_dir_oncoact}/hmf_taxonomy_db.tsv"
 #cp ${germline_reporting_tsv} "${archive_dir_oncoact}/hmf_germline_reporting.tsv"
-##cp ${hmf_pgx_haplotypes} "${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
-##cp ${hmf_pgx_variants_tsv} "${archive_dir_oncoact}/hmf_pgx_variants.tsv"
-##cp ${hmf_pgx_drugs_tsv} "${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
 ##cp ${gene_transcripts} "${archive_dir_oncoact}/hmf_canonical_transcripts.tsv"
 #cp ${onocoact_readme} "${archive_dir_oncoact}/hmf_oncoact_readme.txt"
-#
+
 ##files onocpanel
 #info "Collecting oncoPanel data"
 #
@@ -170,7 +167,7 @@ info "Pipeline image data of ${image} is extracted"
 #
 ##Deleting data
 #info "Removing temporarily data"
-##rm -r ${git_clone_dir}
+##rm -rf ${git_clone_dir}
 ##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
 ##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
 ##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"

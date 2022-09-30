@@ -30,10 +30,8 @@ done
 main() {
     info "Starting with script $(basename "$0")"
     image_name=$(get_image_version_from_run_log "${run_log_file}") || die "Unable to get image name from [${run_log_file}]"
-    image_project=$(get_image_project_from_run_log "${run_log_file}") || die "Unable to get image name from [${run_log_file}]"
     info "Input run log: $run_log_file"
     info "Image name found: $image_name"
-    info "Image project found: $image_project"
     info "Finished with script $(basename "$0")"
 }
 
@@ -47,19 +45,6 @@ get_image_version_from_run_log() {
         content=$(cat "$file")
     fi
     image_name=$(grep -Eo 'imageName=\S+' <<< "${content}" | cut -d"=" -f2 | cut -d"," -f1)
-    echo "${image_name}"
-}
-
-get_image_project_from_run_log() {
-    local file=$1 && shift
-    local content=""
-    if [[ "$file" =~ ^gs:// ]]; then
-        content=$(gsutil cat "$file")
-    else
-        [[ -f "$file" ]] || return 1
-        content=$(cat "$file")
-    fi
-    image_name=$(grep -Eo 'imageProject=\S+' <<< "${content}" | cut -d"=" -f2 | cut -d"," -f1)
     echo "${image_name}"
 }
 
