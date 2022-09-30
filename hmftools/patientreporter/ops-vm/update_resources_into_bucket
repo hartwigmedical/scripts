@@ -19,7 +19,7 @@ mkdir ${archive_dir_oncopanel}
 
 ## generate image of using pipeline
 info "Generating pipeline image data..."
-imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file})
+imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image project found" | awk '{print $NF}')
 image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}' | awk -F "-" '{OFS = "-"; print $1,$2,$3,$4}')
 project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
 
