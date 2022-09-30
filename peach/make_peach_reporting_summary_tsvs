@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+print_usage() {
+  echo ""
+  echo "Descr: Create TSV's describing reported drugs, haplotypes and variants."
+  echo "Usage: $(basename "$0") --input panel.json --output_dir ./output/path"
+  echo ""
+  echo "Options:"
+  echo "  -i/--input          Path to the panel JSON to base the output files on."
+  echo "  -o/--output_dir     Directory where the output files are created. Directory is created if it doesn't exist yet."
+  echo ""
+  exit 1
+}
+
+TRUE="TRUE"
+FALSE="FALSE"
+
+HAPLOTYPES_TSV_FILE_NAME="hmf_pgx_haplotypes.tsv"
+VARIANTS_TSV_FILE_NAME="hmf_pgx_variants.tsv"
+DRUGS_TSV_FILE_NAME="hmf_pgx_drugs.tsv"
+
+HAPLOTYPES_TSV_HEADER="Gene\tHaplotype\tAllele Functionality\tRsids of Variants\n"
+VARIANTS_TSV_HEADER="Gene\tRsid\tPart of Haplotypes\tChromosome GRCh37\tPosition GRCh37\tRef Allele GRCh37\tChromosome GRCh38\tPosition GRCh38\tRef Allele GRCh38\tAlt Allele(s) GRCh38\n"
+DRUGS_TSV_HEADER="Gene\tDrug\tPrescription Info\n"
+
+WILD_TYPE_FUNCTION_STRING="Normal function"
+NA_STRING="N/A"
+MULTIPLE_ENTRY_DELIMITER=","
+
+info "Starting creation of PEACH reporting TSV's"
+
+# Parse args
+while [[ $# -gt 0 ]]
+do
+key="$1" && shift
+case $key in
+    -i|--input)
+    input="$1" && shift  # Optional argument
+    ;;
+    -o|--output_dir)
+    output_dir="$1" && shift  # Optional argument
+    ;;
+    *)    # Unknown option
+    OTHER_OPTIONS+=("$key") # Save it in an array for later
+    ;;
+esac
+done
+
+# Sanity checks
+sanity_check_fail="${FALSE}"
+if [[ -z ${input} ]]; then
+  warn "No value for 'input' provided!"
+  sanity_check_fail="${TRUE}"
+fi
+if [[ -z ${output_dir} ]]; then
+  warn "No value for 'output_dir' provided!"
+  sanity_check_fail="${TRUE}"
+fi
+if [[ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]]; then
+  warn "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+  sanity_check_fail="${TRUE}"
+fi
+if [[ ! -f ${input} ]]; then
+  warn "Input JSON file should be a file: ${input}."
+  sanity_check_fail="${TRUE}"
+fi
+if [[ "${sanity_check_fail}" == "${TRUE}" ]]; then
+  print_usage
+fi
+
+if [[ ! -d ${output_dir} ]]; then
+  info "Create output dir '${output_dir}'"
+  mkdir -p "${output_dir}" || die "Could not create output dir '${output_dir}'"
+fi
+
+haplotypes_tsv_file_path="${output_dir}/${HAPLOTYPES_TSV_FILE_NAME}"
+variants_tsv_file_path="${output_dir}/${VARIANTS_TSV_FILE_NAME}"
+drugs_tsv_file_path="${output_dir}/${DRUGS_TSV_FILE_NAME}"
+[[ ! -f "${haplotypes_tsv_file_path}" ]] || die "Haplotypes TSV output already exists: '${haplotypes_tsv_file_path}'"
+[[ ! -f "${variants_tsv_file_path}" ]] || die "Variants TSV output already exists: '${variants_tsv_file_path}'"
+[[ ! -f "${drugs_tsv_file_path}" ]] || die "Drugs TSV output already exists: '${drugs_tsv_file_path}'"
+
+info "Write headers"
+printf "${HAPLOTYPES_TSV_HEADER}" >> "${haplotypes_tsv_file_path}" || die "Could not write header to haplotypes TSV"
+printf "${VARIANTS_TSV_HEADER}" >> "${variants_tsv_file_path}" || die "Could not write header to variants TSV"
+printf "${DRUGS_TSV_HEADER}" >> "${drugs_tsv_file_path}" || die "Could not write header to drugs TSV"
+
+jq -cr .genes[] "${input}" | while read -r gene_json; do
+  gene_name=$(jq -r .gene <<< "${gene_json}") || die "Could not get gene name from JSON:\n${gene_json}"
+  info "Handling '${gene_name}'"
+
+  wild_type_haplotype_name=$(jq -r .wildTypeHaplotype <<< "${gene_json}") || die "Could not get wild type haplotype name from JSON:\n${gene_json}"
+  chromosome_v37=$(jq -r .chromosomeV37 <<< "${gene_json}") || die "Could not get chromosome name in v37 from JSON:\n${gene_json}"
+  chromosome_v38=$(jq -r .chromosomeV38 <<< "${gene_json}") || die "Could not get chromosome name in v38 from JSON:\n${gene_json}"
+
+  info "Write wild type haplotype info"
+  printf "%s\t%s\t%s\t%s\n" "${gene_name}" "${wild_type_haplotype_name}" "${WILD_TYPE_FUNCTION_STRING}" "${NA_STRING}" >> "${haplotypes_tsv_file_path}" \
+        || die "Could not write wild type haplotype to haplotypes TSV"
+
+  info "Handle other haplotypes"
+  jq -cr .haplotypes[] <<< "${gene_json}" | while read -r haplotype_json; do
+    haplotype_name=$(jq -r .haplotypeName <<< "${haplotype_json}") || die "Could not get haplotype name from JSON:\n${haplotype_json}"
+    function=$(jq -r .function <<< "${haplotype_json}") || die "Could not get function from JSON:\n${haplotype_json}"
+    rsids=$(jq --arg DEL "${MULTIPLE_ENTRY_DELIMITER}" -r '.haplotypeVariants | map(.rsid) | sort | join($DEL)' <<< "${haplotype_json}") \
+          || die "Could not get rs ID's from JSON:\n${haplotype_json}"
+    printf "%s\t%s\t%s\t%s\n" "${gene_name}" "${haplotype_name}" "${function}" "${rsids}" >> "${haplotypes_tsv_file_path}" \
+          || die "Could not write haplotype to haplotypes TSV"
+  done || die "Could not handle haplotypes to TSV"
+
+  info "Write variant info"
+  jq -cr .variants[] <<< "${gene_json}" | while read -r variants_json; do
+    rs_id=$(jq -r .rsid <<< "${variants_json}") || die "Could not get rs ID from JSON:\n${variants_json}"
+    position_v37=$(jq -r .positionV37 <<< "${variants_json}") || die "Could not get v37 position from JSON:\n${variants_json}"
+    position_v38=$(jq -r .positionV38 <<< "${variants_json}") || die "Could not get v38 position from JSON:\n${variants_json}"
+    reference_allele_v37=$(jq -r .referenceAlleleV37 <<< "${variants_json}") || die "Could not get v37 reference allele from JSON:\n${variants_json}"
+    reference_allele_v38=$(jq -r .referenceAlleleV38 <<< "${variants_json}") || die "Could not get v38 reference allele from JSON:\n${variants_json}"
+    alt_alleles_v38=$(jq -r --arg RSID "${rs_id}" --arg DEL "${MULTIPLE_ENTRY_DELIMITER}" \
+          '[.haplotypes[].haplotypeVariants[] | select( .rsid == $RSID ) | .altAlleleV38] | unique | join($DEL)'  <<< "${gene_json}") \
+          || die "Could not get v38 alt alleles from JSON:\n${gene_json}"
+    related_haplotypes=$(jq -r --arg RSID "${rs_id}" --arg DEL "${MULTIPLE_ENTRY_DELIMITER}" \
+          '[.haplotypes[] | select(.haplotypeVariants[].rsid == $RSID) | .haplotypeName] | unique | join($DEL)'  <<< "${gene_json}") \
+          || die "Could not get related haplotypes from JSON:\n${gene_json}"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+          "${gene_name}" "${rs_id}" "${related_haplotypes}" "${chromosome_v37}" "${position_v37}" "${reference_allele_v37}" \
+          "${chromosome_v38}" "${position_v38}" "${reference_allele_v38}" "${alt_alleles_v38}" >> "${variants_tsv_file_path}" \
+          || die "Could not write variant to variants TSV"
+  done || die "Could not write variant info to TSV"
+
+  info "Write drug info"
+  jq -cr .drugs[] <<< "${gene_json}" | while read -r drugs_json; do
+    drug_name=$(jq -r .name <<< "${drugs_json}") || die "Could not get drug name from JSON:\n${drugs_json}"
+    prescription_info_url=$(jq -r .urlPrescriptionInfo <<< "${drugs_json}") || die "Could not get prescription info URL from JSON:\n${drugs_json}"
+    printf "%s\t%s\t%s\n" \
+          "${gene_name}" "${drug_name}" "${prescription_info_url}" >> "${drugs_tsv_file_path}" \
+          || die "Could not write drug details to drugs TSV"
+  done || die "Could not write drug info to TSV"
+done || die "Could not handle gene"
+
+info "Finished creation of PEACH reporting TSV's"
