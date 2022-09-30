@@ -18,11 +18,13 @@ mkdir ${archive_dir_oncoact}
 mkdir ${archive_dir_oncopanel}
 
 ## generate image of using pipeline
-#info "Generating pipeline image data..."
-#imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file})
-#image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}' | awk -F "-" '{OFS = "-"; print $1,$2,$3,$4}')
-#project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
-#
+info "Generating pipeline image data..."
+imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_file})
+image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}' | awk -F "-" '{OFS = "-"; print $1,$2,$3,$4}')
+project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
+
+echo $image
+echo $project
 #git_clone_dir="${report_resources_dir}/common-resources-public"
 #gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
 #git checkout "git_clone_dir/${image}"
