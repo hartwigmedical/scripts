@@ -23,6 +23,7 @@ imageInformation=$(collect_report_resources_for_pipeline_release -l ${colo_log_f
 image=$(echo ${imageInformation} | grep "Image name found" | awk '{print $NF}' | awk -F "-" '{OFS = "-"; print $1,$2,$3,$4}')
 project=$(echo ${imageInformation} | grep "Image project found" | awk '{print $NF}')
 
+
 echo $image
 echo $project
 #git_clone_dir="${report_resources_dir}/common-resources-public"
