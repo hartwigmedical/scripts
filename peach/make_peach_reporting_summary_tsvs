@@ -23,7 +23,7 @@ VARIANTS_TSV_FILE_NAME="hmf_pgx_variants.tsv"
 DRUGS_TSV_FILE_NAME="hmf_pgx_drugs.tsv"
 
 HAPLOTYPES_TSV_HEADER="Gene\tHaplotype\tAllele Functionality\tRsids of Variants\n"
-VARIANTS_TSV_HEADER="Gene\tRsid\tPart of Haplotypes\tChromosome GRCh37\tPosition GRCh37\tRef Allele GRCh37\tChromosome GRCh38\tPosition GRCh38\tRef Allele GRCh38\tAlt Allele GRCh38\n"
+VARIANTS_TSV_HEADER="Gene\tRsid\tPart of Haplotypes\tChromosome GRCh37\tPosition GRCh37\tRef Allele GRCh37\tAlt Allele GRCh37\tChromosome GRCh38\tPosition GRCh38\tRef Allele GRCh38\tAlt Allele GRCh38\n"
 DRUGS_TSV_HEADER="Gene\tDrug\tPrescription Info\n"
 
 WILD_TYPE_FUNCTION_STRING="Normal function"
@@ -115,17 +115,22 @@ jq -cr .genes[] "${input}" | while read -r gene_json; do
     rs_id=$(jq -r .rsid <<< "${variants_json}") || die "Could not get rs ID from JSON:\n${variants_json}"
     position_v37=$(jq -r .positionV37 <<< "${variants_json}") || die "Could not get v37 position from JSON:\n${variants_json}"
     position_v38=$(jq -r .positionV38 <<< "${variants_json}") || die "Could not get v38 position from JSON:\n${variants_json}"
-    reference_allele_v37=$(jq -r .referenceAlleleV37 <<< "${variants_json}") || die "Could not get v37 reference allele from JSON:\n${variants_json}"
-    reference_allele_v38=$(jq -r .referenceAlleleV38 <<< "${variants_json}") || die "Could not get v38 reference allele from JSON:\n${variants_json}"
+    ref_allele_v37=$(jq -r .referenceAlleleV37 <<< "${variants_json}") || die "Could not get v37 reference allele from JSON:\n${variants_json}"
+    ref_allele_v38=$(jq -r .referenceAlleleV38 <<< "${variants_json}") || die "Could not get v38 reference allele from JSON:\n${variants_json}"
     jq -cr --arg RSID "${rs_id}" --arg DEL "${MULTIPLE_ENTRY_DELIMITER}" \
           '[.haplotypes[].haplotypeVariants[] | select( .rsid == $RSID ) | .altAlleleV38] | unique | .[]'  <<< "${gene_json}"\
           | while read -r alt_allele_v38; do
       related_haplotypes=$(jq -r --arg RSID "${rs_id}" --arg ALT "${alt_allele_v38}" --arg DEL "${MULTIPLE_ENTRY_DELIMITER}" \
                 '[.haplotypes[] | select(.haplotypeVariants[].rsid == $RSID and .haplotypeVariants[].altAlleleV38 == $ALT) | .haplotypeName] | unique | join($DEL)'  <<< "${gene_json}") \
                 || die "Could not get related haplotypes from JSON:\n${gene_json}"
-      printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-                "${gene_name}" "${rs_id}" "${related_haplotypes}" "${chromosome_v37}" "${position_v37}" "${reference_allele_v37}" \
-                "${chromosome_v38}" "${position_v38}" "${reference_allele_v38}" "${alt_allele_v38}" >> "${variants_tsv_file_path}" \
+      if [[ "${alt_allele_v38}" == "${ref_allele_v37}" ]]; then
+        alt_allele_v37="${ref_allele_v38}"
+      else
+        alt_allele_v37="${alt_allele_v38}"
+      fi
+      printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+                "${gene_name}" "${rs_id}" "${related_haplotypes}" "${chromosome_v37}" "${position_v37}" "${ref_allele_v37}" "${alt_allele_v37}" \
+                "${chromosome_v38}" "${position_v38}" "${ref_allele_v38}" "${alt_allele_v38}" >> "${variants_tsv_file_path}" \
                 || die "Could not write variant to variants TSV"
     done || die "Could not handle v38 alt alleles from JSON for rs ID ${rs_id}:\n${gene_json}"
   done || die "Could not write variant info to TSV"
