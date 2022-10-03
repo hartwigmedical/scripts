@@ -5,6 +5,19 @@ source locate_files || exit 1
 
 colo_log_file=$1 && shift #eg. gs://verification-pipeline-output-pilot-1/results/5_29_2_rc_1_v_5_29_3_rc_1/COLO829v003T/forensics/runs/COLO829v003T-target/run.log
 
+echo '[INPUT] Do you have updated the oncoAct PDF report and oncoPanel PDF report? Please answer Y or N.'
+read answer_protect
+if [[ $answer_protect == 'N' ]]; then
+    exit
+fi
+
+echo '[INPUT] Do you have updated the manual files for the report resources (changelist of driver gene panel, changelist of fusion knowledgebase, changelist of peach, readme of OncoAct, readme of oncoPanel? Please answer Y or N.'
+read answer_protect
+if [[ $answer_protect == 'N' ]]; then
+    exit
+fi
+
+
 info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
 
 currentDate=$(date +'%Y%m%d')
@@ -44,6 +57,7 @@ onocoact_readme="/data/resources/ops/report_resources/oncoact_readme.txt"
 hmf_pgx_haplotypes="${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
 hmf_pgx_variants_tsv="${archive_dir_oncoact}/hmf_pgx_variants.tsv"
 hmf_pgx_drugs_tsv="${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
+hmf_pgx_changelist_tsv="/data/resources/ops/report_resources/peach_changelist.tsv"
 #gene_transcripts="collect"
 
 
@@ -90,6 +104,10 @@ if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
         error "Unable to locate pgx drugs tsv file."
 fi
 
+if [[ -z "${hmf_pgx_changelist_tsv}" ]]; then
+        error "Unable to locate pgx change list tsv file."
+fi
+
 #if [[ -z "${gene_transcripts}" ]]; then
 #        error "Unable to locate gene transcripts tsv file."
 #fi
@@ -108,6 +126,7 @@ cp ${virus_reporting_db_tsv} "${archive_dir_oncoact}/hmf_virus_reporting_db.tsv"
 #cp ${oncoact_report_pdf} "${archive_dir_oncoact}/hmf_oncoact_report.pdf"
 cp ${taxonomy_db_tsv} "${archive_dir_oncoact}/hmf_taxonomy_db.tsv"
 cp ${germline_reporting_tsv} "${archive_dir_oncoact}/hmf_germline_reporting.tsv"
+cp ${hmf_pgx_changelist_tsv} "${archive_dir_oncoact}/hmf_peach_changelist.tsv"
 #cp ${gene_transcripts} "${archive_dir_oncoact}/hmf_canonical_transcripts.tsv"
 cp ${onocoact_readme} "${archive_dir_oncoact}/hmf_oncoact_readme.txt"
 
