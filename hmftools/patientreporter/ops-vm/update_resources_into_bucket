@@ -32,68 +32,71 @@ make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/min_DPYD.json -
 #
 ###files oncoact
 info "Collecting oncoAct data"
-hmf_fusion_panel_changelist_csv="${git_clone_dir}/fusions/fusion_changelist.csv"
+hmf_fusion_panel_changelist_csv="/data/resources/ops/report_resources/fusion_changelist.csv"
 hmf_funsion_panel_csv="${git_clone_dir}/fusions/37/known_fusion_data.37.csv"
-hmf_gene_panel_changelist_csv="${git_clone_dir}/gene_panel/DriverGenePanel_changelist.tsv"
+hmf_gene_panel_changelist_csv="/data/resources/ops/report_resources/DriverGenePanel_changelist.tsv"
 hmf_gene_panel_csv="${git_clone_dir}/gene_panel/37/DriverGenePanel.37.tsv"
 virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.tsv"
 #oncoact_report_pdf="${report_resources_dir}/hmf_oncoact.pdf"
 taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-onocoact_readme="${report_resources_dir}/oncoact_readme.txt"
+onocoact_readme="/data/resources/ops/report_resources/oncoact_readme.txt"
+hmf_pgx_haplotypes="${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
+hmf_pgx_variants_tsv="${archive_dir_oncoact}/hmf_pgx_variants.tsv"
+hmf_pgx_drugs_tsv="${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
 #gene_transcripts="collect"
 
-#
-#if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
-#        error "Unable to locate fusion panel changelist csv file."
+
+if [[ -z "${hmf_fusion_panel_changelist_csv}" ]]; then
+        error "Unable to locate fusion panel changelist csv file."
+fi
+
+if [[ -z "${hmf_funsion_panel_csv}" ]]; then
+        error "Unable to locate funsion panel csv file."
+fi
+
+if [[ -z "${hmf_gene_panel_changelist_csv}" ]]; then
+        error "Unable to locate gene panel changelist csv file."
+fi
+
+if [[ -z "${hmf_gene_panel_csv}" ]]; then
+        error "Unable to locate gene panel csv file."
+fi
+if [[ -z "${virus_reporting_db_tsv}" ]]; then
+        error "Unable to locate virus reporting db tsv file."
+fi
+
+#if [[ -z "${oncoact_report_pdf}" ]]; then
+#        error "Unable to locate oncoact report pdf file."
 #fi
-#
-#if [[ -z "${hmf_funsion_panel_csv}" ]]; then
-#        error "Unable to locate funsion panel csv file."
+
+if [[ -z "${taxonomy_db_tsv}" ]]; then
+        error "Unable to locate taxonomy db tsv file."
+fi
+
+if [[ -z "${germline_reporting_tsv}" ]]; then
+        error "Unable to locate germline reporting tsv file."
+fi
+
+if [[ -z "${hmf_pgx_haplotypes}" ]]; then
+        error "Unable to locate pgx haplotypes file."
+fi
+
+if [[ -z "${hmf_pgx_variants_tsv}" ]]; then
+        error "Unable to locate pgx variants tsv file."
+fi
+
+if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
+        error "Unable to locate pgx drugs tsv file."
+fi
+
+#if [[ -z "${gene_transcripts}" ]]; then
+#        error "Unable to locate gene transcripts tsv file."
 #fi
-#
-#if [[ -z "${hmf_gene_panel_changelist_csv}" ]]; then
-#        error "Unable to locate gene panel changelist csv file."
-#fi
-#
-#if [[ -z "${hmf_gene_panel_csv}" ]]; then
-#        error "Unable to locate gene panel csv file."
-#fi
-#if [[ -z "${virus_reporting_db_tsv}" ]]; then
-#        error "Unable to locate virus reporting db tsv file."
-#fi
-#
-##if [[ -z "${oncoact_report_pdf}" ]]; then
-##        error "Unable to locate oncoact report pdf file."
-##fi
-#
-#if [[ -z "${taxonomy_db_tsv}" ]]; then
-#        error "Unable to locate taxonomy db tsv file."
-#fi
-#
-#if [[ -z "${germline_reporting_tsv}" ]]; then
-#        error "Unable to locate germline reporting tsv file."
-#fi
-#
-##if [[ -z "${hmf_pgx_haplotypes}" ]]; then
-##        error "Unable to locate pgx haplotypes file."
-##fi
-##
-##if [[ -z "${hmf_pgx_variants_tsv}" ]]; then
-##        error "Unable to locate pgx variants tsv file."
-##fi
-##
-##if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
-##        error "Unable to locate pgx drugs tsv file."
-##fi
-##
-##if [[ -z "${gene_transcripts}" ]]; then
-##        error "Unable to locate gene transcripts tsv file."
-##fi
-#
-#if [[ -z "${onocoact_readme}" ]]; then
-#        error "Unable to locate onocoact readme file."
-#fi
+
+if [[ -z "${onocoact_readme}" ]]; then
+        error "Unable to locate onocoact readme file."
+fi
 #
 #
 ## Copy oncoact data to the archive dir
@@ -114,7 +117,7 @@ cp ${onocoact_readme} "${archive_dir_oncoact}/hmf_oncoact_readme.txt"
 ##onco_panel_genes_tsv=
 ##onco_panel_vcf_header_definitions=
 ##oncopanel_report_pdf="${report_resources_dir}/hmf_oncoact.pdf"
-#oncopanel_readme="${report_resources_dir}/oncopanel_readme.txt"
+#oncopanel_readme="/data/resources/ops/report_resources/oncopanel_readme.txt"
 #
 ##if [[ -z "${onco_panel_genes_tsv}" ]]; then
 ##        error "Unable to locate onco panel genes tsv file."
