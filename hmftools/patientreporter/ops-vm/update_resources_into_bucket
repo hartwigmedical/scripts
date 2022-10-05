@@ -42,7 +42,8 @@ git_clone_dir="${report_resources_dir}/common-resources-public"
 gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
 cd ${git_clone_dir}
 git checkout "${answer_image}"
-echo "The working branch is: " git branch -l
+echo "The working branch is: "
+git branch -l
 info "Pipeline image data of ${answer_image} is extracted"
 
 info "Extracting peach information to tsv files"
