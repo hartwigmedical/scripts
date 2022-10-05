@@ -20,6 +20,14 @@ for file in ${dir}/*.tsv; do
     done
 done
 
+# Check header position
+for file in ${dir}/*.tsv; do
+    header=$(head -1 ${file} | grep "subject")
+    if [[ -z "${header}" ]]; then
+    error "Detection of malformed header(s) in ${file}. Exiting."
+    fi
+done
+
 # Sort by first column and rename files
 (head -n 1 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" | sort) > "${dir}/questionnaire.tsv"
 (head -n 1 "${dir}/Actin_Data_Extractie-Patient.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Patient.tsv" | sort) > "${dir}/patient.tsv"
