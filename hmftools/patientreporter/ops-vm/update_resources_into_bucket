@@ -178,18 +178,18 @@ zip -r ${oncopanel_zip_latest} ${archive_dir_oncopanel}
 info "Copy the oncoAct data to the gcp bucket"
 bucket="hmf-public"
 path_oncoact="OncoAct-Resources"
-gcp_url_oncoact="https://storage.googleapis.com/${bucket}/${path_oncoact}"
-gsutil cp ${oncoact_zip_date} ${gcp_url_oncoact}
-gsutil cp ${oncoact_zip_latest} ${gcp_url_oncoact}
+# file download on https://storage.googleapis.com/${bucket}/${path_oncoact}"
+gsutil cp ${oncoact_zip_date} gs://${bucket}/${path_oncoact}
+gsutil cp ${oncoact_zip_latest} gs://${bucket}/${path_oncoact}
 
 info "Copy the oncoPanel data to the gcp bucket"
 path_oncopanel="OncoPanel-Resources"
-gcp_url_oncopanel="https://storage.googleapis.com/${bucket}/${path_oncopanel}"
-gsutil cp ${oncopanel_zip_date} ${gcp_url_oncopanel}
-gsutil cp ${oncopanel_zip_latest} ${gcp_url_oncopanel}
+# file download on "https://storage.googleapis.com/${bucket}/${path_oncopanel}"
+gsutil cp ${oncopanel_zip_date} gs://${bucket}/${path_oncopanel}
+gsutil cp ${oncopanel_zip_latest} gs://${bucket}/${path_oncopanel}
 
 ##Deleting data
-#info "Removing temporarily data"
+info "Removing temporarily data"
 ##rm -rf ${git_clone_dir}
 ##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
 ##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
