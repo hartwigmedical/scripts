@@ -21,7 +21,7 @@ ${cohort} == '"GENAYA"' ||  ${cohort} == '"OPTIC"'  ||  ${cohort} == '"GLOW"' ]]
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
     run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=Somatic.ini" | jq '.[-1].id')
   else
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=ShallowSeq.ini" | jq '.[-1].id')
+    run_id=null
   fi
 elif [[ ${cohort} == '"CORE"' || ${cohort} == '"CORELR02"' || ${cohort} == '"CORERI02"' || ${cohort} == '"CORELR11"' || ${cohort} == '"CORESC11"' ]]; then
   if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
