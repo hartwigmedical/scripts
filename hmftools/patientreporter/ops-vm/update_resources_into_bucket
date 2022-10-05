@@ -21,7 +21,7 @@ fi
 info "Starting to generate the oncoAct and oncoPanel data to the resources gcp bucket"
 
 currentDate=$(date +'%Y%m%d')
-report_resources_dir="/data/resources/report_resources/"
+report_resources_dir="/data/resources/report_resources"
 achive_dir="${report_resources_dir}/${currentDate}_patient_report_resources"
 archive_dir_oncoact="${achive_dir}/oncoact"
 archive_dir_oncopanel="${achive_dir}/oncopanel"
@@ -191,8 +191,10 @@ gsutil cp ${oncopanel_zip_latest} gs://${bucket}/${path_oncopanel}
 ##Deleting data
 info "Removing temporarily data"
 ##rm -rf ${git_clone_dir}
-##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
-##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
-##rm "${report_resources_dir}/hmf_pgx_haplotypes.tsv"
+rm ${oncoact_zip_date}
+rm ${oncoact_zip_latest}
+rm ${oncopanel_zip_date}
+rm ${oncopanel_zip_latest}
+rm -r ${achive_dir}
 
 info "Complete"
