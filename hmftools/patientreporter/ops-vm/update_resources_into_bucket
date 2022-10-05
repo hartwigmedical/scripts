@@ -35,15 +35,15 @@ info "Generating pipeline image data..."
 pipelineImageInfo=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image name found")
 echo "${pipelineImageInfo}"
 echo '[INPUT] Which image do you want to use of the common resources?'
-image=$(read answer_protect)
+read answer_image
 project="hmf-pipeline-development"
 
 git_clone_dir="${report_resources_dir}/common-resources-public"
 gcloud --project "${project}" source repos clone common-resources-public ${git_clone_dir}
 cd ${git_clone_dir}
-git checkout "${image}"
+git checkout "${answer_image}"
 echo "The working branch is: " git branch -l
-info "Pipeline image data of ${image} is extracted"
+info "Pipeline image data of ${answer_image} is extracted"
 
 info "Extracting peach information to tsv files"
 # names of pgx files can be found in the make peach script
