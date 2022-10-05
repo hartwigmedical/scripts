@@ -61,7 +61,7 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}")
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}" "create_time" "2022-10-03T14:51:36")
 ## check if it is a failed run
 if [[ ${purity} != "N/A" ]];then
     purityQualityData=$(printf ',"%s": %s,"%s": %s, "%s": %s' "purity" "${purity}" "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
