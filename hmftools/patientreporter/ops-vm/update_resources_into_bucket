@@ -34,7 +34,7 @@ info "Generating pipeline image data..."
 
 pipelineImageInfo=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image name found")
 echo "${pipelineImageInfo}"
-echo '[INPUT] Which image do you want to use of the common resources?'
+echo '[INPUT] Which image do you want to use of the common resources repo?'
 read answer_image
 project="hmf-pipeline-development"
 
@@ -196,8 +196,8 @@ rm ${oncoact_zip_date}
 rm ${oncoact_zip_latest}
 rm ${oncopanel_zip_date}
 rm ${oncopanel_zip_latest}
-#rm ${oncopanel_report_pdf}
-#rm ${oncoact_report_pdf}
+rm ${oncopanel_report_pdf}
+rm ${oncoact_report_pdf}
 rm -r ${achive_dir}
 rm -rf ${git_clone_dir}
 
