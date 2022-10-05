@@ -33,7 +33,7 @@ mkdir ${archive_dir_oncopanel}
 info "Generating pipeline image data..."
 
 pipelineImageInfo=$(collect_report_resources_for_pipeline_release -l ${colo_log_file} | grep "Image name found")
-echo "The pipeline image infromation is ${pipelineImageInfo}"
+echo "${pipelineImageInfo}"
 echo '[INPUT] Which image do you want to use of the common resources?'
 image=$(read answer_protect)
 project="hmf-pipeline-development"
