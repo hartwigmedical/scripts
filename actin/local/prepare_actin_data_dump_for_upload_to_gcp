@@ -8,15 +8,6 @@ if [[ -z "${dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-mv "${dir}/Actin_Data_Extractie-Questionnaire.tsv" "${dir}/questionnaire.tsv"
-mv "${dir}/Actin_Data_Extractie-Patient.tsv" "${dir}/patient.tsv"
-mv "${dir}/Actin_Data_Extractie-Metingen.tsv" "${dir}/vital_function.tsv"
-mv "${dir}/Actin_Data_Extractie-Medicatie.tsv" "${dir}/medication.tsv"
-mv "${dir}/Actin_Data_Extractie-Labwaarden.tsv" "${dir}/lab.tsv"
-mv "${dir}/Actin_Data_Extractie-Encounters.tsv" "${dir}/encounter.tsv"
-mv "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" "${dir}/intolerance.tsv"
-mv "${dir}/Actin_Data_Extractie-Gewicht.tsv" "${dir}/bodyweight.tsv"
-
 no_consent_patients=("ACTN-01-02-0059" "ACTN-01-02-0067" "ACTN-01-02-0073" "ACTN-01-02-0083" "ACTN-01-02-0086" \
     "ACTN-01-02-0090" "ACTN-01-02-0092" "ACTN-01-02-0096" "ACTN-01-02-0097" "ACTN-01-02-0099")
 
@@ -24,7 +15,20 @@ for file in ${dir}/*.tsv; do
     for patient in ${no_consent_patients[@]}; do
         count=$(cat ${file} | grep -c ${patient})
         if [[ count -gt 0 ]]; then
-            warn "Found ${patient} in ${file} ${count} times"
+            error "Found ${patient} in ${file} ${count} times. Exiting."
         fi
     done
 done
+
+# Sort by first column and rename files
+(head -n 1 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" | sort) > "${dir}/questionnaire.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Patient.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Patient.tsv" | sort) > "${dir}/patient.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Metingen.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Metingen.tsv" | sort) > "${dir}/vital_function.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Medicatie.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Medicatie.tsv" | sort) > "${dir}/medication.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Labwaarden.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Labwaarden.tsv" | sort) > "${dir}/lab.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Encounters.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Encounters.tsv" | sort) > "${dir}/encounter.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" | sort) > "${dir}/intolerance.tsv"
+(head -n 1 "${dir}/Actin_Data_Extractie-Gewicht.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Gewicht.tsv" | sort) > "${dir}/bodyweight.tsv"
+
+# Remove old files
+rm "${dir}/Actin_Data_Extractie-"*tsv
