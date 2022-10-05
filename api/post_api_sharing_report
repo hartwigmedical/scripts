@@ -18,7 +18,7 @@ cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" $
 #  data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
 #fi
 
-data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "share_time" "2022-10-04T14:51:36")
+data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "share_time" "2022-10-03T14:51:36")
 
 if [[ -z ${report_created_id} ]];then
   error "No reporting created entry is present. Add entry first in created endpoint"
