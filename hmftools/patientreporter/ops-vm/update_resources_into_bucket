@@ -47,7 +47,7 @@ info "Pipeline image data of ${answer_image} is extracted"
 
 info "Extracting peach information to tsv files"
 # names of pgx files can be found in the make peach script
-make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/min_DPYD.json --output_dir ${archive_dir_oncoact}
+make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/peach.json --output_dir ${archive_dir_oncoact}
 
 #files oncoact
 info "Collecting oncoAct data"
