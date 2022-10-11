@@ -9,7 +9,7 @@ task_id="updateSubmissionOverview"
 nas_tgt_dir="/volume1/web/overviews/submissions"
 src_dir="/data/submissions"
 
-nas_reports_source="/volume1/machines/BFX/dataReports"
+nas_reports_source="/volume1/machines/15\ Hartwig\ Sequencing\ Services/dataReports/"
 nas_reports_target="/volume1/web/overviews/submissions/pdf_reports"
 reports_target="/data/data_archive/overviews/submissions/pdf_reports"
 
