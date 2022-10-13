@@ -1,3 +1,6 @@
+args <- commandArgs(trailingOnly = TRUE)
+print(args)
+
 ensemblGeneData <- read.csv('/data/resources/public/ensembl_data_cache/37/ensembl_gene_data.csv')
 ensemblTransExonData <- read.csv('/data/resources/public/ensembl_data_cache/37/ensembl_trans_exon_data.csv')
 driverGenePanel <- read.csv('/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv',sep='\t')
