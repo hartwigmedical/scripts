@@ -690,6 +690,10 @@ locate_prod_iclusion_trial_tsv() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_trials_prod.tsv"
 }
 
+locate_latest_iclusion_trial_tsv() {
+    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_latest.tsv"
+}
+
 locate_prod_iclusion_trial_tsv_pilot() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
 }
@@ -1557,6 +1561,10 @@ locate_pilot_iclusion_importer_trial_tsv() {
 
 locate_prod_iclusion_importer_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_prod.tsv"
+}
+
+locate_latest_iclusion_importer_trial_tsv() {
+    echo "/data/resources/custom/iclusion/iclusion_trials_latest.tsv"
 }
 ################################## CUPPA #######################################
 
