@@ -8,6 +8,7 @@ create_or_cleanup_dir ${output_dir}
 
 ckb_dir=$(locate_ckb_flex_data_latest_dir)
 ckb_filter_tsv=$(locate_ckb_filter_pilot_tsv)
+ckb_drug_class_curation_tsv=$(locate_ckb_drug_class_curation_tsv)
 iclusion_trial_tsv=$(locate_latest_iclusion_trial_tsv)
 iclusion_filter_tsv=$(locate_iclusion_filter_pilot_tsv)
 actin_trial_tsv=$(locate_actin_trial_tsv)
@@ -16,7 +17,7 @@ missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} \
+    -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} -ckb_drug_curation_tsv ${ckb_drug_class_curation_tsv} \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
     -use_actin -actin_trial_tsv ${actin_trial_tsv} -actin_filter_tsv ${actin_filter_tsv} \
     -output_dir ${output_dir} \
