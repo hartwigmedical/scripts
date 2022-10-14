@@ -17,6 +17,7 @@ $| = 1; # Disable stdout buffering
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
+use constant DATA_SOURCE_FIELD => "data_source";
 
 # Fields that will actively be set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx add_to_database add_to_datarequest);
@@ -303,6 +304,17 @@ sub addLamaSamplesToSamples{
         $sample_to_store{original_submission} = $original_submission;
         $sample_to_store{yield} = $final_target_yield;
 
+        # Add reporting ID
+        if (defined $sample_to_store{cohort_code} and $sample_to_store{cohort_code} ne ""){
+            my $cohort_code = $sample_to_store{cohort_code};
+            if ($cohort_code =~ "^(CORE|GAYA)"){
+                $sample_to_store{reporting_id} = $sample_to_store{hospital_patient_id};
+            }else{
+                $sample_to_store{reporting_id} = $sample_to_store{sample_name};
+            }
+        }
+
+
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
 
@@ -319,7 +331,8 @@ sub addLamaSamplesToSamples{
             }
         }
 
-        # And store the final result
+        # Define data source and store the final result
+        $sample_to_store{"".DATA_SOURCE_FIELD} = "LAMA";
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
     }
 
@@ -906,6 +919,7 @@ sub addExcelSamplesToSamples{
         if ( $reason_not_to_store ){
             sayWarn("SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store") and next;
         }
+        $row_info->{ "".DATA_SOURCE_FIELD } = "EXCEL";
         $store{ $unique } = $row_info;
 
     }
@@ -934,7 +948,8 @@ sub fixBooleanFields{
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
         }else{
-            sayWarn("Unexpected value ($value) in boolean field ($key)");
+            my $name = $obj->{ 'sample_name' } || "SampleNameUnknown";
+            sayWarn("Unexpected value ($value) in boolean field ($key) for sample ($name)");
         }
     }
 }
