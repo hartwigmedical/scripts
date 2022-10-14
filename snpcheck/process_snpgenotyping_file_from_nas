@@ -5,7 +5,7 @@ source locate_files || exit 1
 
 command -v copy_file_from_nas > /dev/null || die "Missing dependency copy_file_from_nas"
 
-nas_dir='/volume1/machines/Experimenten/SNP\ check'
+nas_dir='/volume1/machines/03\ SNP\ check'
 snpcheck_dir=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
 target_dir="${snpcheck_dir}/input"
 file_suffix='Results.csv'

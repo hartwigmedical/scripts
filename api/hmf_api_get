@@ -48,7 +48,6 @@ elif [[ "${source}" == "lama" && "${environment}" == "prod" ]]; then
     api_url="http://lama.prod-1/api"
 elif [[ "${source}" == "lama" && "${environment}" == "pilot" ]]; then
     api_url="http://lama.pilot-1/api"
-    die "LAMA API has no pilot environment yet. Exiting."
 else
     die "Unknown combination of source (${source}) environment (${environment}). Exiting."
 fi

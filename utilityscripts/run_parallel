@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+max_threads=$(($(nproc)-1))
+
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "-----"
+  echo "Descr: Runs a list of commands with GNU parallel"
+  echo "Usage: $(basename $0) \$file_with_one_command_per_line"
+  echo "       $(basename $0) \$file_with_one_command_per_line \$nr_of_threads"
+  echo "   Eg: nohup $(basename $0) run_toolX_on_all.sh 10 > output.log &"
+  echo "-----"
+  exit 1
+fi
+
+cmds_file=$1
+threads=${2:-${max_threads}}
+
+[[ $threads -le $max_threads ]] || die "Maximum threads at this machine is (${max_threads})"
+[[ -f "${cmds_file}" ]] || die "Cmds file does not exist (${cmds_file})"
+
+cmd_count=$(wc -l < "${cmds_file}")
+
+info "Starting ${cmd_count} commands with ${threads} parallel threads (from file ${cmds_file})"
+parallel --jobs "${threads}" -I% --max-args 1 % < "${cmds_file}"
+info "Finished running parallel job"

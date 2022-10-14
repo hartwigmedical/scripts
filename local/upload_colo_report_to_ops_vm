@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+oncoact_pdf=$1 && shift
+oncopanel_pdf=$1 && shift
+
+gcloud -q --project hmf-ops compute scp $HOME/hmf/tmp/${oncoact_pdf} lieke@ops-vm-prod-2:/data/resources/report_resources/hmf_oncoact_report.pdf
+gcloud -q --project hmf-ops compute scp $HOME/hmf/tmp/${oncopanel_pdf} lieke@ops-vm-prod-2:/data/resources/report_resources/hmf_oncopanel_report.pdf

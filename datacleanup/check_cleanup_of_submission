@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+submission=$1
+
+log_dir=/data/ops/recurrent/submission_cleanup/logs/$submission
+setup_log="$log_dir/setup.log"
+rm_cmd_file="$log_dir/cleanup_at_gcp"
+rm_log_file="$log_dir/cleanup_at_gcp.log"
+rm_err_file="$log_dir/cleanup_at_gcp.log.err"
+log_final_msg="Finished cleanup for submission"
+
+echo "=== Checking cleanup of SUBMISSION ($submission) ===="
+
+[[ -n "$submission" ]] || die "No submission ID provided"
+[[ -d "$log_dir" ]] || die "Directory not found ($log_dir)"
+[[ -f "$setup_log" ]] || die "Expected file not found ($setup_log)"
+[[ -s "$setup_log" ]] || die "File should not be empty ($setup_log)"
+[[ -s "$rm_log_file" ]] || die "File should not be empty ($rm_log_file)"
+[[ ! -s "$rm_err_file" ]] || die "File should be empty ($rm_err_file)"
+
+rm_count=$(grep -c 'rm -r' < "$rm_cmd_file")
+info "Found $rm_count rm cmds in $rm_cmd_file"
+
+file=$setup_log
+count=$(grep -cv INFO < "$file")
+if [[ "$count" -gt 0 ]]; then warn "File $file has non INFO lines!"
+else info "File OK ($file)"; fi
+
+file=$rm_log_file
+count=$(grep -cv INFO < "$file")
+if [[ $(grep -c "$log_final_msg" < "$file") -ne 1 ]]; then warn "Removal still in process!"
+elif [[ "$count" -gt 0 ]]; then warn "File $file has non INFO lines!"
+else info "File OK ($file)"; fi
+
+file=$rm_err_file
+count=$(wc -l < "$file")
+if [[ "$count" -gt 0 ]]; then warn "Err file $file has content!"
+else info "File OK ($file)"; fi

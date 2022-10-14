@@ -33,5 +33,5 @@ locate_shallow_processed_runs_log_at_gcp() {
 }
 
 locate_snpcheck_vcfs_at_gcp() {
-    echo "gs://hmf-snpcheck/snpcheckvcfs"
+    echo "gs://snpcheck-prod-1/snpcheckvcfs"
 }

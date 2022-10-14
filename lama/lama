@@ -18,6 +18,7 @@ print_usage(){
     echo " $script queries/consents FR30539000 barcode"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV"
+    echo "  -t  Use testing/pilot environment instead of production"
     echo "Notes:"
     echo "  * Available classes: ${classes[*]}"
     echo "  * Use script ${get_script} instead for all non-interactive use!"

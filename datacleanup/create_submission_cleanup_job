@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+YYMMDD=$(date +%y%m%d)
+input="/data/ops/recurrent/submission_cleanup/jobs/input_submission.list"
+output="/data/ops/recurrent/submission_cleanup/jobs/${YYMMDD}_cleanup_submissions"
+
+[[ -f "${input}" ]] || die "Input file does not exist [$input]"
+[[ ! -e "${output}" ]] || die "Output file exists [$output]"
+
+count=$(wc -l < "${input}")
+info "Reading input file with ${count} submissions [${input}]"
+cut -d" " -f1 < "${input}" | while read submission; do
+    echo "cleanup_submission_at_gcp -e -s $submission"
+done > "${output}"
+info "Output in [${output}]"
+info "Potential next action: nohup run_parallel ${output} > ${output}.log &"

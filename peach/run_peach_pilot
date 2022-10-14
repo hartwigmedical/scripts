@@ -9,7 +9,7 @@ SCRIPT_NAME="$(basename "$0")"
 TRUE="TRUE"
 FALSE="FALSE"
 
-DEFAULT_PANEL_NAME="min_DPYD.json"
+DEFAULT_PANEL_NAME="peach.json"
 
 print_usage() {
   echo ""
