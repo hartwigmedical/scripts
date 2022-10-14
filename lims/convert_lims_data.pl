@@ -307,7 +307,7 @@ sub addLamaSamplesToSamples{
         # Add reporting ID
         if (defined $sample_to_store{cohort_code} and $sample_to_store{cohort_code} ne ""){
             my $cohort_code = $sample_to_store{cohort_code};
-            if ($cohort_code =~ "^(CORE|GAYA)"){
+            if ($cohort_code =~ "^(CORE|GAYA|TARG)"){
                 $sample_to_store{reporting_id} = $sample_to_store{hospital_patient_id};
             }else{
                 $sample_to_store{reporting_id} = $sample_to_store{sample_name};
