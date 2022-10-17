@@ -5,7 +5,7 @@ ensemblTransExonData <- read.csv('/data/resources/public/ensembl_data_cache/37/e
 driverGenePanel <- read.csv('/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv',sep='\t')
 driverGeneData <- ensemblGeneData %>% filter(GeneName %in% driverGenePanel$gene) %>% select(GeneName)
 driverTranscripts <- ensemblTransExonData %>% filter(ExonRank==1) %>% filter(CanonicalTranscriptId==TransId | TransName=='ENST00000579755') # manually include the CDKN2A alt transcript
-driverGeneTransData <- merge(driverGeneData,driverTranscripts %>% select(TransName),by='GeneId',all.x=T)
+driverGeneTransData <- merge(driverGeneData,driverTranscripts %>% select(TransName),by='TransName',all.x=T)
 
 outputFile <-  paste0('/home/lschoenmaker/tmp/hmf_reportable_gene_transcripts.tsv')
 write.table(driverGeneTransData, file = outputFile, row.names=TRUE, sep="\t")
