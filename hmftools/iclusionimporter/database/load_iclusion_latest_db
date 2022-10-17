@@ -2,7 +2,7 @@
 
 source locate_files || exit 1
 
-iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
+iclusion_trial_tsv=$(locate_latest_iclusion_trial_tsv)
 iclusion_importer_jar=$(locate_prod_iclusion_importer)
 
 do_load_iclusion_db ${iclusion_importer_jar} ${iclusion_trial_tsv} "iclusion_latest"
