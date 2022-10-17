@@ -260,6 +260,10 @@ locate_company_logo_prod() {
     echo "/data/resources/ops/patient_report_images/hartwig_logo.jpg"
 }
 
+locate_company_logo_oncoact_prod() {
+    echo "/data/resources/ops/patient_report_images/hartwig_oncoact_logo.jpg"
+}
+
 locate_signature_prod() {
     echo "/data/resources/ops/patient_report_images/signature_edwin_transparant.png"
 }
