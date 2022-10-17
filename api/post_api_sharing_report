@@ -11,12 +11,12 @@ report_source=$1 && shift
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
 cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
 
-#if [[ ${cohort} == '"COREDB"' ]]; then
-#  publish_to_portal="true"
-#  data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
-#else
-#  data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
-#fi
+if [[ ${cohort} == '"COREDB"' ]]; then
+  publish_to_portal="true"
+  data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
+else
+  data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
+fi
 
 data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "share_time" "2022-10-04T14:51:36")
 
