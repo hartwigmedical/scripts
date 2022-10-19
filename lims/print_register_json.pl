@@ -264,6 +264,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'FASTQ' ){
@@ -283,6 +284,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
@@ -301,6 +303,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'RNAanalysis' ){
@@ -322,10 +325,12 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'Somatic_T' ){
-        
+
+        my $reporting_id = getValueByKey( $sample, 'reporting_id' );
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
@@ -465,6 +470,7 @@ sub processSample{
             $yield_ref,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
         addSampleToJsonData(
             \%json_data,
@@ -476,6 +482,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
+            $reporting_id,
         );
     }
     elsif ( $analysis eq 'Targeted_Tumor_Only' ){
@@ -504,6 +511,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
+            '',
         );
 
     }
@@ -628,7 +636,7 @@ sub getPriorityForSample{
 }
 
 sub addSampleToJsonData{
-    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing, $skip_recalculating_yield) = @_;
+    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing, $skip_recalculating_yield, $reporting_id) = @_;
     my %tmp = (
         'barcode'    => "$barcode",
         'name'       => "$name",
@@ -642,6 +650,9 @@ sub addSampleToJsonData{
     }
     if ( $skip_recalculating_yield ){
         $tmp{ 'skip_recalculate' } = JSON::true;
+    }
+    if ( $reporting_id ){
+        $tmp{ 'reporting_id' } = $reporting_id;
     }
     push( @{$store->{ 'samples' }}, \%tmp );
 }
