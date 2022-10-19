@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+barcode=$1
+JSON1=${2:-"/data/ops/lims/prod/lims.json"}
+JSON2=${3:-"/data/ops/lims/pilot/lims.json"}
+
+main (){
+    info "Diffing one sample"
+    info "  LIMS json 1: ${JSON1}"
+    info "  LIMS json 2: ${JSON2}"
+    info "  Barcode: ${barcode}"
+    diff_barcode "${barcode}"
+}
+
+diff_barcode() {
+    local barcode=$1 && shift
+
+    one=$(query_lims.pl -lims "${JSON1}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
+      || die "Querying LIMS JSON 1 failed ($barcode)"
+    two=$(query_lims.pl -lims "${JSON2}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
+          || die "Querying LIMS JSON 2 failed ($barcode)"
+
+    diff_count=$(diff <(jq -S <<< "${one}") <(jq -S <<< "${two}") | wc -l)
+    if [[ "${diff_count}" -eq 0 ]]; then
+        info "  DIFF OK (${barcode})"
+    else
+        warn "  DIFF FAIL (${barcode})"
+        diff <(jq -S <<< "${one}") <(jq -S <<< "${two}")
+    fi
+}
+
+main
