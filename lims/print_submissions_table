@@ -60,6 +60,8 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
         fi
     elif [[ "${cohort}" == "Cohort" ]]; then
         analysis="NA"
+    elif [[ "${cohort}" == "Innovation" ]]; then
+        cohort="INN"
     else
         cohort="CheckProjectType(${cohort})"
     fi
