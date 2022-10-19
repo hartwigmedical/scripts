@@ -893,11 +893,14 @@ sub addExcelSamplesToSamples{
             $row_info->{ 'project_name' } = $project_name;
 
             if ( $sub->{ 'project_type' } eq 'KG production' ){
-
                 my @dvo_parts = split( /\-/, $project_name );
                 my $center = uc( $dvo_parts[0] );
                 $row_info->{ 'entity' } = 'KG_' . $center;
                 $row_info->{ 'label' } = 'KG';
+            }
+            elsif( $sub->{ 'project_type' } eq 'Innovation' ){
+                $row_info->{ 'entity' } = 'INNOVATION';
+                $row_info->{ 'label' } = 'INNOVATION';
             }
             # Assumes that all samples of submission need same analysis
             $sub->{ 'analysis_type' } = $analysis_type;
