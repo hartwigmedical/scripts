@@ -792,7 +792,7 @@ sub checkContactInfo{
         # These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
-                sayWarn("No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)");
+                sayWarn("No content in field [$field] for contact group ID [$id] (see FOR-001 Contacts tab)");
             }
         }
         # These fields should contain only (valid) email addresses
@@ -803,7 +803,7 @@ sub checkContactInfo{
                     next;
                 }
                 elsif( not Email::Valid->address($address) ){
-                    sayWarn("No valid email address ($address) in field '$field' for contact group ID '$id' (see FOR-001 Contacts tab)");
+                    sayWarn("Invalid email address [$address] in field [$field] for contact group ID [$id] (see FOR-001 Contacts tab)");
                 }
             }
         }
