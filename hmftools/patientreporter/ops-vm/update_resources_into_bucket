@@ -11,8 +11,7 @@ if [[ $answer_protect == 'N' ]]; then
     exit
 fi
 
-echo '[INPUT] Do you have updated the manual files for the report resources (changelist of driver gene panel, changelist of fusion
-knowledgebase, changelist of peach, readme of OncoAct, readme of oncoPanel? Please answer Y or N.'
+echo '[INPUT] Do you have updated the manual files for the report resources (readme of OncoAct, readme of oncoPanel?) Please answer Y or N.'
 read answer_protect
 if [[ $answer_protect == 'N' ]]; then
     exit
@@ -50,7 +49,8 @@ info "Extracting peach information to tsv files"
 make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/peach.json --output_dir ${archive_dir_oncoact}
 
 info "Extracting gene transcript information to tsv file"
-Rscript generate_transript.R
+Rscript generate_transript_oncoact.R
+Rscript generate_transript_oncopanel.R
 
 #files oncoact
 info "Collecting oncoAct data"
@@ -64,7 +64,7 @@ onocoact_readme="/data/resources/ops/report_resources/oncoact_readme.txt"
 hmf_pgx_haplotypes="${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
 hmf_pgx_variants_tsv="${archive_dir_oncoact}/hmf_pgx_variants.tsv"
 hmf_pgx_drugs_tsv="${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
-gene_transcripts="${archive_dir_oncoact}/hmf_reportable_gene_transcripts.tsv"
+oncoact_gene_transcripts="${archive_dir_oncoact}/hmf_reportable_gene_transcripts.tsv"
 
 if [[ -z "${hmf_funsion_panel_csv}" ]]; then
         error "Unable to locate funsion panel csv file."
@@ -101,7 +101,7 @@ if [[ -z "${hmf_pgx_drugs_tsv}" ]]; then
         error "Unable to locate pgx drugs tsv file."
 fi
 
-if [[ -z "${gene_transcripts}" ]]; then
+if [[ -z "${oncoact_gene_transcripts}" ]]; then
         error "Unable to locate gene transcripts tsv file."
 fi
 
@@ -125,6 +125,7 @@ onco_panel_genes_tsv="/data/resources/ops/report_resources/hmf_oncopanel_gene_pa
 onco_panel_vcf_header_definitions="/data/resources/ops/report_resources/hmf_header_definitions.tsv"
 oncopanel_report_pdf="${report_resources_dir}/hmf_oncopanel_report.pdf"
 oncopanel_readme="/data/resources/ops/report_resources/oncopanel_readme.txt"
+oncopanel_gene_transcripts="${archive_dir_oncopanel}/hmf_reportable_gene_transcripts.tsv"
 
 if [[ -z "${onco_panel_genes_tsv}" ]]; then
         error "Unable to locate onco panel genes tsv file."
@@ -140,6 +141,10 @@ fi
 
 if [[ -z "${oncopanel_readme}" ]]; then
         error "Unable to locate oncopanel readme file."
+fi
+
+if [[ -z "${oncopanel_gene_transcripts}" ]]; then
+        error "Unable to locate gene transcript file."
 fi
 
 # Copy oncopanel data to the archive dir
