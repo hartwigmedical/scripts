@@ -121,7 +121,7 @@ cp ${onocoact_readme} "${archive_dir_oncoact}/hmf_oncoact_readme.txt"
 #files onocpanel
 info "Collecting oncoPanel data"
 
-onco_panel_genes_tsv="/data/resources/ops/report_resources/hmf_oncopanel_gene_panel.csv"
+onco_panel_genes_tsv="${git_clone_dir}/gene_panel/38/DriverGenePanel.38.tsv"
 onco_panel_vcf_header_definitions="/data/resources/ops/report_resources/hmf_header_definitions.tsv"
 oncopanel_report_pdf="${report_resources_dir}/hmf_oncopanel_report.pdf"
 oncopanel_readme="/data/resources/ops/report_resources/oncopanel_readme.txt"
