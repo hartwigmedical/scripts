@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-version="1.2"
-
-do_deploy_prod_tool "vicc-importer" ${version}
