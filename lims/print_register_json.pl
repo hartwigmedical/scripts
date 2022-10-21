@@ -170,13 +170,13 @@ sub addSamplesFromSamplesheet{
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
-                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
+                sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             elsif ($submission eq "HMFregGIAB"){
-                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
+                sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             elsif (exists $data{ $id }){
-                sayWarn("Encountered barcode ($id) more than once in Samplesheet");
+                sayWarn("  Encountered barcode ($id) more than once in Samplesheet");
             }
             else{
                 $data{ $id } = 1;
@@ -622,7 +622,7 @@ sub getSomaticRSampleByStringForField{
             return $info->{ $sample_id };
         }
     }
-    sayWarn("$search_string not found in field $search_field of any record");
+    sayWarn("  $search_string not found in field $search_field of any record");
     return(undef);
 }
 
