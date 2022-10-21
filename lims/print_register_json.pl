@@ -466,7 +466,7 @@ sub processSample{
             $use_existing_ref = 1;
         }
 
-        if (not($ref_exists) && not(exists $sample_id_hash{ $name_ref })){
+        if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $name_ref }) ){
             sayWarn("  Reference sample ID $name_ref for $name not found in samples to register or in API");
         }
 
