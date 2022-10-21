@@ -173,6 +173,9 @@ sub addSamplesFromSamplesheet{
             elsif ($submission eq "HMFregGIAB"){
                 sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
+            elsif (exists $data{ $id }){
+                sayWarn("Encountered barcode ($id) more than once in Samplesheet");
+            }
             else{
                 $data{ $id } = 1;
             }
