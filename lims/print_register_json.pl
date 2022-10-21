@@ -242,6 +242,11 @@ sub processSample{
     if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
         die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
+
+    my $entity_count_in_api = `hmf_api_get 'entities?name=$entity' | jq 'length'`;
+    if ( $entity_count_in_api eq "0" ){
+        sayWarn("  Entity ($entity) not fount in HMF API");
+    }
     
     ## init the json info
     my %json_data = ();
