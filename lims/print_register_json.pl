@@ -192,7 +192,8 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims_samples, \%sample_id_hash) = @_;
+    my ($sample_id, $lims_samples, $sample_id_hash_ref) = @_;
+    my %sample_id_hash = %{ $sample_id_hash_ref };
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
         sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
