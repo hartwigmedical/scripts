@@ -96,10 +96,12 @@ sayInfo("Reading LIMS file ($LIMS_IN_FILE)");
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
+my %id_hash;
+$id_hash{$_} = 1 for (@ids);
 
 foreach my $sample_id ( @ids ){
     sayInfo("Processing $sample_id");
-    my $return = processSample( $sample_id, $samples);
+    my $return = processSample( $sample_id, $samples, \%id_hash);
     $stats{ $return }++;
 }
 
@@ -190,7 +192,7 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims_samples) = @_;
+    my ($sample_id, $lims_samples, \%sample_id_hash) = @_;
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
         sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
@@ -247,7 +249,7 @@ sub processSample{
     if ( $entity_count_in_api eq "0" ){
         sayWarn("  Entity ($entity) not fount in HMF API");
     }
-    
+
     ## init the json info
     my %json_data = ();
 
@@ -461,6 +463,10 @@ sub processSample{
         if ( $ref_exists ne "0" ){
             sayInfo("  REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)");
             $use_existing_ref = 1;
+        }
+
+        if (not($ref_exists) && not(exists $sample_id_hash{ $name_ref })){
+            sayWarn("  Reference sample ID $name_ref for $name not found in samples to register or in API");
         }
 
         sayInfo("  Set name constructed to $set");
