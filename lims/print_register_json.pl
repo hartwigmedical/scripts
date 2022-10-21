@@ -466,8 +466,8 @@ sub processSample{
             $use_existing_ref = 1;
         }
 
-        if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $name_ref }) ){
-            sayWarn("  Reference sample ID $name_ref for $name not found in samples to register or in API");
+        if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $barcode_ref }) ){
+            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in samples to register or in API");
         }
 
         sayInfo("  Set name constructed to $set");
