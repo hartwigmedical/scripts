@@ -182,6 +182,7 @@ sub read_indexes_tsv{
     open my $fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$fh> ) {
         chomp;
+        s/\r//g; # remove potential DOS line endings (avoids having to use dos2unix)
         next if $_ eq '' or $_ =~ /^#/;
         my ($tag1, $seq1, $tag2, $seq2) = split("\t", $_);
 
