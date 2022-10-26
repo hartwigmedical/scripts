@@ -120,10 +120,14 @@ if [[ "${report_source}" == "automatic" ]]; then
     gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
+    sharedReportLocation=$(${url_bucket_report_auto}${report})
+    sharedApiLocation=$(${url_bucket_report_auto}${json})
 else
     gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+    sharedReportLocation=$(${url_bucket_report_manual}${report})
+    sharedApiLocation=$(${url_bucket_report_manual}${json})
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
@@ -144,7 +148,7 @@ fi
 if [[ ${report} == *"corrected"* ]]; then
     if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
       info "A record has been added for ${sample} to sharing api"
-      post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
+      post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod" ${sharedReportLocation} ${sharedApiLocation}
       info "Reports shared registration for ${sample}:"
       extract_object_created ${barcode} ${report_type} ${report_source} "prod"
       extract_object_shared ${reporting_id} "prod"
@@ -157,7 +161,7 @@ if [[ ${report} == *"corrected"* ]]; then
 else
     if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"
-         post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod"
+         post_api_sharing_report ${barcode} ${report_type} ${report_source} "prod" ${sharedReportLocation} ${sharedApiLocation}
          info "Reports shared registration for ${sample}:"
          extract_object_created ${barcode} ${report_type} ${report_source} "prod"
          extract_object_shared ${reporting_id} "prod"

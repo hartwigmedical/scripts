@@ -6,6 +6,8 @@ source locate_reporting_api || exit 1
 sample_barcode=$1 && shift
 report_type=$1 && shift
 report_source=$1 && shift
+sharedReportLocation=$1 && shift
+sharedApiLocation=$1 && shift
 
 ## extract correct report created id
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
@@ -15,7 +17,15 @@ if [[ ${cohort} == '"COREDB"' ]]; then
   publish_to_portal="true"
   data=$(printf '{"%s": %s, "%s": "%s"}' "report_created_id" "${report_created_id}" "publish_to_portal" "${publish_to_portal}")
 else
-  data=$(printf '{"%s": %s}' "report_created_id" "${report_created_id}")
+  reportFile=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $3}')
+  reportBucket=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $2}')
+  apiFile=$(echo ${sharedApiLocation} | tr "/" " " | awk '{print $3}')
+  apiBucket=$(echo ${sharedApiLocation} | tr "/" " " | awk '{print $2}')
+  reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${reportBucket}" "path" "${reportFile}")
+  reportApi=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${apiBucket}" "path" "${apiFile}")
+  reportFiles=$()
+
+  data=$(printf '{"%s": %s "%s": %s}' "report_created_id" "${report_created_id}" "report_files" "${reportFiles}")
 fi
 
 if [[ -z ${report_created_id} ]];then
