@@ -37,6 +37,7 @@ purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
+purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
@@ -69,6 +70,7 @@ pilot_do_run_base_patient_reporter \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+    -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
     -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
