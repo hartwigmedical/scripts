@@ -281,11 +281,11 @@ locate_peach_main() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.29"
+    echo "5.31"
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.29"
+    echo "5.31"
 }
 
 ############################## ACTIN Resources #################################
