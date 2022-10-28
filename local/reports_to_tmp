@@ -13,6 +13,7 @@ set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
 
 gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp; mkdir temp_cup; \
 gsutil cp gs://patient-reporter-final-prod-1/${sample}*report.pdf ~/temp; \
+gsutil cp gs://patient-reporter-final-prod-1/${sample}*oncoact.json ~/temp; \
 gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ~/temp; \
 gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/cuppa/${sample}*_cup_report.pdf ~/temp_cup;"
 
@@ -21,6 +22,7 @@ echo "Do you want to copy the final OncoAct report? y or n"
 read answer_report
 if [[ ${answer_report} == "y" ]]; then
     gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*report.pdf ~/hmf/tmp/
+    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*.json ~/hmf/tmp/
 fi
 
 echo ""

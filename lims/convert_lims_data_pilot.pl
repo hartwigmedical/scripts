@@ -17,9 +17,11 @@ $| = 1; # Disable stdout buffering
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
+use constant DATA_SOURCE_FIELD => "data_source";
+use constant ONCOACT_ENTITY => "CORE_01";
 
 # Fields that will actively be set to boolean for json output
-use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx add_to_database add_to_datarequest);
+use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx);
 # Fields that will actively be set to integer for json output
 use constant INTEGER_FIELDS => qw(yield q30);
 # Fields that will be required to exist in input if checked
@@ -202,16 +204,12 @@ sub addLamaSamplesToSamples{
         }
         else {
             sayWarn("NOTIFY: Unable to use LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
-            #print Dumper(\%sample_to_store);
             next;
         }
 
-        my $add_to_database = $sample_to_store{add_to_database};
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
         my $analysis_type = $sample_to_store{isolation_type};
-        my $cohort = $sample_to_store{cohort};
-        my $is_report_generated = $sample_to_store{is_report_generated};
         my $final_target_yield = NACHAR;
 
         if (not defined $isolation_type) {
@@ -260,7 +258,7 @@ sub addLamaSamplesToSamples{
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            $sample_to_store{ 'entity' } = $original_submission;
+            $sample_to_store{ 'entity' } = ONCOACT_ENTITY;
             $sample_to_store{ 'project_name' } = $original_submission;
 
             # Set the analysis type for CORE submissions to align with Excel LIMS samples
@@ -282,16 +280,17 @@ sub addLamaSamplesToSamples{
             $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
 
+            # TODO: Obsolete to be deleted soon (LAMA + Consent-synchronizer now decide upon running research + add to DB yes/no)
             # For newer cohorts the database consent can come in later than start of sequencing
             # so check add_to_database and reset entity to avoid storing in database when not allowed (yet)
-            my $is_new_cohort = ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GENAYA' or $cohort eq 'GLOW');
-            if ($is_new_cohort and not $add_to_database ) {
-                my $no_db_entity = "ONCOACT_NO_DATABASE";
-                $sample_to_store{entity} = $no_db_entity;
-                if ($analysis_type ne 'Somatic_R' and $is_report_generated ne 'true') {
-                    sayWarn("NOTIFY: Unreported OncoAct with add_to_database=false, entity set to $no_db_entity! [$sample_print_info]");
-                }
-            }
+            # my $is_new_cohort = ($cohort eq 'OPTIC' or $cohort eq 'OMIC' or $cohort eq 'GENAYA' or $cohort eq 'GLOW');
+            # if ($is_new_cohort and not $add_to_database ) {
+            #     my $no_db_entity = "ONCOACT_NO_DATABASE";
+            #     $sample_to_store{entity} = $no_db_entity;
+            #     if ($analysis_type ne 'Somatic_R' and $is_report_generated ne 'true') {
+            #         sayWarn("NOTIFY: Unreported OncoAct with add_to_database=false, entity set to $no_db_entity! [$sample_print_info]");
+            #     }
+            # }
         }
         else {
             sayWarn("NOTIFY: encountered unknown center ID [$center] for non-CORE sample [$sample_print_info]");
@@ -302,6 +301,17 @@ sub addLamaSamplesToSamples{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
         $sample_to_store{yield} = $final_target_yield;
+
+        # Add reporting ID
+        if (defined $sample_to_store{cohort_code} and $sample_to_store{cohort_code} ne ""){
+            my $cohort_code = $sample_to_store{cohort_code};
+            if ($cohort_code =~ "^(CORE|GAYA|TARG)"){
+                $sample_to_store{reporting_id} = $sample_to_store{hospital_patient_id};
+            }else{
+                $sample_to_store{reporting_id} = $sample_to_store{sample_name};
+            }
+        }
+
 
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
@@ -319,7 +329,8 @@ sub addLamaSamplesToSamples{
             }
         }
 
-        # And store the final result
+        # Define data source and store the final result
+        $sample_to_store{"".DATA_SOURCE_FIELD} = "LAMA";
         storeRecordByKey(\%sample_to_store, $isolate_barcode, \%store, "final storing of $isolate_barcode", 1);
     }
 
@@ -340,13 +351,13 @@ sub addLamaSamplesToSamples{
         }
     }
 
-    # TODO: remove once INC-194 (PGX DPYD bug) is solved
-    sayInfo("Resetting reportPgx to false for INC-194");
-    while ( my($barcode, $sample) = each %store ) {
-        next unless $sample->{analysis_type} eq 'Somatic_T';
-        next unless defined $sample->{report_pgx};
-        $sample->{report_pgx} = JSON::XS::false;
-    }
+    # # TODO: remove once INC-194 (PGX DPYD bug) is solved
+    # sayInfo("Resetting reportPgx to false for INC-194");
+    # while ( my($barcode, $sample) = each %store ) {
+    #     next unless $sample->{analysis_type} eq 'Somatic_T';
+    #     next unless defined $sample->{report_pgx};
+    #     $sample->{report_pgx} = JSON::XS::false;
+    # }
 
     return \%store;
 }
@@ -779,7 +790,7 @@ sub checkContactInfo{
         # These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
-                sayWarn("No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)");
+                sayWarn("No content in field [$field] for contact group ID [$id] (see FOR-001 Contacts tab)");
             }
         }
         # These fields should contain only (valid) email addresses
@@ -790,7 +801,7 @@ sub checkContactInfo{
                     next;
                 }
                 elsif( not Email::Valid->address($address) ){
-                    sayWarn("No valid email address ($address) in field '$field' for contact group ID '$id' (see FOR-001 Contacts tab)");
+                    sayWarn("Invalid email address [$address] in field [$field] for contact group ID [$id] (see FOR-001 Contacts tab)");
                 }
             }
         }
@@ -880,11 +891,14 @@ sub addExcelSamplesToSamples{
             $row_info->{ 'project_name' } = $project_name;
 
             if ( $sub->{ 'project_type' } eq 'KG production' ){
-
                 my @dvo_parts = split( /\-/, $project_name );
                 my $center = uc( $dvo_parts[0] );
                 $row_info->{ 'entity' } = 'KG_' . $center;
                 $row_info->{ 'label' } = 'KG';
+            }
+            elsif( $sub->{ 'project_type' } eq 'Innovation' ){
+                $row_info->{ 'entity' } = 'INNOVATION';
+                $row_info->{ 'label' } = 'INNOVATION';
             }
             # Assumes that all samples of submission need same analysis
             $sub->{ 'analysis_type' } = $analysis_type;
@@ -906,6 +920,7 @@ sub addExcelSamplesToSamples{
         if ( $reason_not_to_store ){
             sayWarn("SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store") and next;
         }
+        $row_info->{ "".DATA_SOURCE_FIELD } = "EXCEL";
         $store{ $unique } = $row_info;
 
     }
@@ -934,7 +949,8 @@ sub fixBooleanFields{
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
         }else{
-            sayWarn("Unexpected value ($value) in boolean field ($key)");
+            my $name = $obj->{ 'sample_name' } || "SampleNameUnknown";
+            sayWarn("Unexpected value ($value) in boolean field ($key) for sample ($name)");
         }
     }
 }
@@ -1256,8 +1272,6 @@ sub getFieldNameTranslations{
         'flagGermlineOnReport' => 'flag_germline_on_report',
         'reportConclusion'     => 'report_conclusion',
         'isShallowStandard'    => 'shallowseq',
-        'addToDatabase'        => 'add_to_database',
-        'addToDatarequests'    => 'add_to_datarequests',
         'sendPatientReport'    => 'send_patient_report'
     );
 

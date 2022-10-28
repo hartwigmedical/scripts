@@ -23,7 +23,7 @@ isofox_data_dir="${run_dir}/isofox"
 gene_distribution_csv=$(locate_isofox_gene_distribution_csv)
 alt_sj_cohort_csv=$(locate_isofox_alt_sj_cohort_csv)
 
-isofox_jar="$(locate_pilot_isofox)"
+isofox_jar="$(locate_actin_isofox)"
 
 database="hmfpatients"
 credentials=$(prod_writer_sql_credentials)

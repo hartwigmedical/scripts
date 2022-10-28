@@ -12,6 +12,10 @@ locate_pilot_isofox() {
     echo "/data/experiments/pilot_tools/isofox/isofox.jar"
 }
 
+locate_actin_isofox() {
+    echo "/data/actin/tools/isofox/1.6/isofox.jar"
+}
+
 locate_prod_sage() {
     echo "/data/tools/sage/3.1.1/sage.jar"
 }
@@ -260,6 +264,10 @@ locate_company_logo_prod() {
     echo "/data/resources/ops/patient_report_images/hartwig_logo.jpg"
 }
 
+locate_company_logo_oncoact_prod() {
+    echo "/data/resources/ops/patient_report_images/hartwig_oncoact_logo.jpg"
+}
+
 locate_signature_prod() {
     echo "/data/resources/ops/patient_report_images/signature_edwin_transparant.png"
 }
@@ -273,11 +281,11 @@ locate_peach_main() {
 ############################# PIPELINE VERSION #################################
 
 extract_expected_pipeline_version() {
-    echo "5.29"
+    echo "5.31"
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.29"
+    echo "5.31"
 }
 
 ############################## ACTIN Resources #################################
@@ -316,6 +324,10 @@ locate_actin_external_trial_mapping_tsv() {
 
 locate_actin_serve_bridge_tsv() {
     echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
+}
+
+locate_actin_ckb_flex_directory() {
+    echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
 locate_actin_rna_sample_metadata_file() {

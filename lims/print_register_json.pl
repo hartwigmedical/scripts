@@ -96,10 +96,12 @@ sayInfo("Reading LIMS file ($LIMS_IN_FILE)");
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
+my %id_hash;
+$id_hash{$_} = 1 for (@ids);
 
 foreach my $sample_id ( @ids ){
     sayInfo("Processing $sample_id");
-    my $return = processSample( $sample_id, $samples);
+    my $return = processSample( $sample_id, $samples, \%id_hash);
     $stats{ $return }++;
 }
 
@@ -168,10 +170,13 @@ sub addSamplesFromSamplesheet{
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
-                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
+                sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             elsif ($submission eq "HMFregGIAB"){
-                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
+                sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
+            }
+            elsif (exists $data{ $id }){
+                sayWarn("  Encountered barcode ($id) more than once in Samplesheet");
             }
             else{
                 $data{ $id } = 1;
@@ -187,7 +192,8 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims_samples) = @_;
+    my ($sample_id, $lims_samples, $sample_id_hash_ref) = @_;
+    my %sample_id_hash = %{ $sample_id_hash_ref };
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
         sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
@@ -239,7 +245,13 @@ sub processSample{
     if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
         die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
-    
+
+    my $entity_count_in_api = `hmf_api_get 'entities?name=$entity' | jq 'length'`;
+    chomp($entity_count_in_api);
+    if ( $entity_count_in_api eq "0" ){
+        sayWarn("  Entity ($entity) not fount in HMF API");
+    }
+
     ## init the json info
     my %json_data = ();
 
@@ -264,6 +276,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'FASTQ' ){
@@ -283,6 +296,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
@@ -301,6 +315,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'RNAanalysis' ){
@@ -322,10 +337,12 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
     }
     elsif ( $analysis eq 'Somatic_T' ){
-        
+
+        my $reporting_id = getValueByKey( $sample, 'reporting_id' );
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
@@ -450,6 +467,10 @@ sub processSample{
             $use_existing_ref = 1;
         }
 
+        if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $barcode_ref }) ){
+            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in samples to register or in API");
+        }
+
         sayInfo("  Set name constructed to $set");
         $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
@@ -465,6 +486,7 @@ sub processSample{
             $yield_ref,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
+            '',
         );
         addSampleToJsonData(
             \%json_data,
@@ -476,6 +498,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
+            $reporting_id,
         );
     }
     elsif ( $analysis eq 'Targeted_Tumor_Only' ){
@@ -504,6 +527,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
+            '',
         );
 
     }
@@ -599,7 +623,7 @@ sub getSomaticRSampleByStringForField{
             return $info->{ $sample_id };
         }
     }
-    sayWarn("$search_string not found in field $search_field of any record");
+    sayWarn("  $search_string not found in field $search_field of any record");
     return(undef);
 }
 
@@ -628,7 +652,7 @@ sub getPriorityForSample{
 }
 
 sub addSampleToJsonData{
-    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing, $skip_recalculating_yield) = @_;
+    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing, $skip_recalculating_yield, $reporting_id) = @_;
     my %tmp = (
         'barcode'    => "$barcode",
         'name'       => "$name",
@@ -642,6 +666,9 @@ sub addSampleToJsonData{
     }
     if ( $skip_recalculating_yield ){
         $tmp{ 'skip_recalculate' } = JSON::true;
+    }
+    if ( $reporting_id ){
+        $tmp{ 'reporting_id' } = $reporting_id;
     }
     push( @{$store->{ 'samples' }}, \%tmp );
 }
