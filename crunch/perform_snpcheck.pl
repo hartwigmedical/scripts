@@ -64,7 +64,7 @@ my $HELP_TEXT = <<EOF;
     -designVcf     [s] vcf design file with positions to include
     -vcfDir        [s] directory with input vcf files
     -qc                quality check mode (needs vcfDir as well)
-    -alwaysPass        quality check mode (needs vcfDir as well)
+    -alwaysPass        sets QC values such that final result is always OK
  ---
 EOF
 
