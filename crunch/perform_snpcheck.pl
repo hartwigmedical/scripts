@@ -27,6 +27,7 @@ my $design_vcf = "";
 my $use_tab_delim;
 my $collapse_call;
 my $qc_mode;
+my $always_pass;
 
 my $HELP_TEXT = <<EOF;
  ---
@@ -63,6 +64,7 @@ my $HELP_TEXT = <<EOF;
     -designVcf     [s] vcf design file with positions to include
     -vcfDir        [s] directory with input vcf files
     -qc                quality check mode (needs vcfDir as well)
+    -alwaysPass        quality check mode (needs vcfDir as well)
  ---
 EOF
 
@@ -73,6 +75,7 @@ print $HELP_TEXT and exit(0) if scalar(@ARGV) == 0;
 GetOptions (
     "help|h" => \$help,
     "verbose" => \$verbose,
+    "alwaysPass" => \$always_pass,
     "tabDelim" => \$use_tab_delim,
     "outputFile=s" => \$output_file,
     "collapseCall" => \$collapse_call,
@@ -91,6 +94,14 @@ die "[ERROR] Use either vcfDir or separate VCFs as input, not both.\n" if scalar
 
 ## some cleanup
 $input_vcf_dir =~ s/\/$//;
+
+## set qc values such that we always pass if requested
+if ($always_pass){
+    say "[INFO] Running in Always pass mode!";
+    $MIN_USABLE = 0;
+    $MIN_IDENTICAL = 0;
+    $MAX_DISTANCE = 1e6;
+}
 
 ## -----
 ## main
