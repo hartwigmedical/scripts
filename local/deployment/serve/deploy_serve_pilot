@@ -12,4 +12,4 @@ cp -r "${source_path}" "${target_path}"
 
 mv "${target_path}/target/algo-${version}-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
 
-do_deploy_prod_serve_tool "serve" ${version}
+do_deploy_pilot_serve_tool "serve"
