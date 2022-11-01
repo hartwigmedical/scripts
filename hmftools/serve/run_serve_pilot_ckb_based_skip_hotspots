@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-run_serve_pilot_ckb_based -skip_hotspot_resolving
