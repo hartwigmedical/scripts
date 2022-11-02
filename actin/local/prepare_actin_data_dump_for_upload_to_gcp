@@ -29,14 +29,14 @@ for file in ${dir}/*.tsv; do
 done
 
 # Sort by first column and rename files
-(head -n 1 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Questionnaire.tsv" | sort) > "${dir}/questionnaire.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Patient.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Patient.tsv" | sort) > "${dir}/patient.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Metingen.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Metingen.tsv" | sort) > "${dir}/vital_function.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Medicatie.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Medicatie.tsv" | sort) > "${dir}/medication.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Labwaarden.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Labwaarden.tsv" | sort) > "${dir}/lab.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Encounters.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Encounters.tsv" | sort) > "${dir}/encounter.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-AllergyIntollerance.tsv" | sort) > "${dir}/intolerance.tsv"
-(head -n 1 "${dir}/Actin_Data_Extractie-Gewicht.tsv" && tail -n +2 "${dir}/Actin_Data_Extractie-Gewicht.tsv" | sort) > "${dir}/bodyweight.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Questionnaire.tsv" && tail -n +2 "${dir}/ACTIN_Data_Questionnaire.tsv" | sort) > "${dir}/questionnaire.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Patient.tsv" && tail -n +2 "${dir}/ACTIN_Data_Patient.tsv" | sort) > "${dir}/patient.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Metingen.tsv" && tail -n +2 "${dir}/ACTIN_Data_Metingen.tsv" | sort) > "${dir}/vital_function.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Medicatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Medicatie.tsv" | sort) > "${dir}/medication.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Labwaarden.tsv" && tail -n +2 "${dir}/ACTIN_Data_Labwaarden.tsv" | sort) > "${dir}/lab.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Encounters.tsv" && tail -n +2 "${dir}/ACTIN_Data_Encounters.tsv" | sort) > "${dir}/encounter.tsv"
+(head -n 1 "${dir}/ACTIN_Data_AllergyIntollerance.tsv" && tail -n +2 "${dir}/ACTIN_Data_AllergyIntollerance.tsv" | sort) > "${dir}/intolerance.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Gewicht.tsv" && tail -n +2 "${dir}/ACTIN_Data_Gewicht.tsv" | sort) > "${dir}/bodyweight.tsv"
 
 # Remove old files
-rm "${dir}/Actin_Data_Extractie-"*tsv
+rm "${dir}/ACTIN_Data_"*tsv
