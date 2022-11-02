@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source lims_functions || exit 1
+
+set=$1 && shift
+correction_comments=$1 && shift
+correction_extern=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
+sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
+barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
+ref_sample=$( echo $runs_json | jq -r '.[].set.ref_sample' )
+ref_sample_barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${ref_sample}'") | .barcode' | cut -d"_" -f1 )
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+set_url="gs://${bucket}/${set}"
+
+
+echo ""
+echo "--- A ROSE summary will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"
+
+### Copy run data from bucket to local in vm
+temp_folder_path=$( pwd )"/temp_cp_${set}"
+mkdir $temp_folder_path
+gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path/copy.log
+gsutil -m cp ${set_url}/metadata.json $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/linx/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/chord/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/cuppa/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/virusbreakend/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/virusintrprtr/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/peach/ $temp_folder_path/  &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/protect/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+
+
+if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
+    warn "Making the copy gave errors (see below). Exiting."
+    cat $temp_folder_path/copy.log
+    rm -r $temp_folder_path/
+    exit 1
+fi
+
+### rerun of rose
+run_rose_prod ${temp_folder_path} &>> ${temp_folder_path}/${sample}_${barcode}_rose_rerun.log
+
+#### check log file of making the report
+if [[ $( cat  ${temp_folder_path}/${sample}_${barcode}_rose_rerun.log | grep "WARN \|Exception in thread"  | wc -l ) > 0 ]]; then
+    warn "Running ROSE gave warnings/errors:"
+    cat  ${temp_folder_path}/${sample}_${barcode}_rose_rerun.log
+else
+    info "No warnings/errors  in running ROSE."
+fi
+
+### print rose summary
+cat ${temp_folder_path}/rose/${sample}.rose.tsv
+
+rm -r ${temp_folder_path}/ 2>&1
