@@ -31,7 +31,7 @@ echo ""
 echo "Do you want to upload the ORANGE report? y or n"
 read answer_orange
 if [[ ${answer_orange} == "y" ]]; then
-    upload_file_to_nc_for_viewing ~/temp/${sample}*report.pdf ~/temp/${sample}*orange.pdf
+    upload_file_to_nc_for_viewing ~/temp/${sample}*orange.pdf
     echo "The ORANGE report for ${sample} is uploaded to nextcloud STAGING/New-Reports-Viewing"
 fi
 
@@ -39,7 +39,7 @@ echo ""
 echo "Do you want to upload the CUPPA RUO report? y or n"
 read answer_cuppa_ruo
 if [[ ${answer_cuppa_ruo} == "y" ]]; then
-    upload_file_to_nc_for_viewing ~/temp/${sample}*report.pdf ~/temp_cup/${sample}*_cup_report.pdf
+    upload_file_to_nc_for_viewing ~/temp_cup/${sample}*_cup_report.pdf
     echo "The CUPPA RUO report for ${sample} is uploaded to nextcloud STAGING/New-Reports-Viewing"
 fi
 
