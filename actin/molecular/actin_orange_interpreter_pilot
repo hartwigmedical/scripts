@@ -13,6 +13,7 @@ fi
 platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 
 orange_json="$(locate_orange_json ${platinum_dir})"
+serve_directory="$(locate_actin_serve_db)"
 external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
 output_directory="${platinum_dir}/actin"
@@ -24,6 +25,7 @@ info "Running ACTIN ORANGE interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json ${orange_json} \
+    -serve_directory ${serve_directory} \
     -external_trial_mapping_tsv ${external_trial_mapping_tsv} \
     -output_directory ${output_directory} \
     "$@"
