@@ -3,10 +3,9 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-serve_actionability_dir="/data/output/pilot_output_ckb_iclusion_based"
+serve_actionability_dir="/data/output/pilot_output_public_only"
 serve_jar=$(locate_pilot_serve)
 
-# Database details
 credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
