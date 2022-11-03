@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="3.71.1"
+version="3.72"
 
 do_deploy_prod_tool "patient-db" ${version}
