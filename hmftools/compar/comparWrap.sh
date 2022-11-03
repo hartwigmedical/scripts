@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Author: Teoman Deger
-# 23-09-2022
+# Version 0.3, 03-11-2022
 # -----------------------
 
 source ~/scripts/functions/message_functions || exit 1
@@ -79,6 +79,8 @@ do
        -file_sources ${filesource}\
        -output_dir ${outputDir}\
        -output_id ${outid}"_"${VALUE} -log_debug
+sed -i -e "s/REF_ONLY/${refName}_only/g" ${outputDir}${expName}.cmp.${outid}_${VALUE}.combined.csv
+sed -i -e "s/NEW_ONLY/${newName}_only/g" ${outputDir}${expName}.cmp.${outid}_${VALUE}.combined.csv
 done
 
 if [[ ${runCats} == ALL ]] && [[ ${sepOutput} == "TRUE" ]]
@@ -92,6 +94,8 @@ java -jar ${comparLoc}\
      -file_sources ${filesource}\
      -output_dir ${outputDir}\
      -output_id ${outid} -log_debug
+sed -i -e "s/REF_ONLY/${refName}_only/g" ${outputDir}${expName}.cmp.${outid}.combined.csv
+sed -i -e "s/NEW_ONLY/${newName}_only/g" ${outputDir}${expName}.cmp.${outid}.combined.csv
 fi
 
 if [[ ${level} == REPORTABLE ]]
