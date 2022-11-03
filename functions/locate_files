@@ -284,6 +284,10 @@ extract_expected_pipeline_version() {
     echo "5.29"
 }
 
+extract_expected_pipeline_version_data_vm() {
+    echo "5.31"
+}
+
 extract_expected_pipeline_version_research() {
     echo "5.31"
 }
