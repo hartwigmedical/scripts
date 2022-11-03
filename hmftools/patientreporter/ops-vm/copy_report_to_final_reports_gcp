@@ -120,14 +120,10 @@ if [[ "${report_source}" == "automatic" ]]; then
     gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
-    sharedReportLocation=(${url_bucket_report_auto}${report})
-    sharedJsonLocation=(${url_bucket_report_auto}${json})
 else
     gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
     gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
-    sharedReportLocation=(${url_bucket_report_manual}${report})
-    sharedJsonLocation=(${url_bucket_report_manual}${json})
 fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
@@ -142,6 +138,10 @@ else
     warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
     exit 1
 fi
+
+sharedReportLocation=(${url_bucket_report_final}${report})
+sharedJsonLocation=(${url_bucket_report_final}${json})
+
 
 ## add reporting info to registration file
 
