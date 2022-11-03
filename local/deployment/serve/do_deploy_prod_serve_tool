@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+tool=$1 && shift
+version=$1 && shift
+
+if [[ -z ${tool} || -z ${version} ]]; then
+    error "Not enough parameters provided. Exiting"
+fi
+
+tool_jar=$(find -L "${HOME}/hmf/repos/serve/${tool}/target" -type f -name "${tool}-${version}-jar-with-dependencies.jar")
+
+if [[ ! -f "${tool_jar}" ]]; then
+    error "Could not locate ${tool} jar!"
+fi
+
+info "Copying ${tool_jar} to gs://common-tools/"
+gsutil cp ${tool_jar} gs://common-tools/${tool}/${version}/${tool}.jar

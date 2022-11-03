@@ -9,7 +9,7 @@ lims_dir=/data/ops/lims/prod
 company_logo=$(locate_company_logo_prod)
 signature=$(locate_signature_prod)
 
-expected_pipeline_version=$(extract_expected_pipeline_version)
+expected_pipeline_version=$(extract_expected_pipeline_version_data_vm)
 
 java -cp ${patient_reporter_jar} com.hartwig.hmftools.patientreporter.PanelReporterApplication \
     -primary_tumor_tsv ${primary_tumor_tsv} \
