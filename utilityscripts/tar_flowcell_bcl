@@ -2,10 +2,10 @@
 
 source message_functions || exit 1
 
-path_of_dir_to_tar=$1
-out_root="${2:-/data2/processed}"
+path_of_dir_to_tar="$1"
+out_root="$2"
 
-if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z $1 || -z $2 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Creates tar of flowcell including BCL (excluding Images/Logs/FASTQ)"
     echo "        Output will be written to ${out_root}"
@@ -18,9 +18,13 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
+original_working_dir=$(pwd)
 in_root=$(dirname "${path_of_dir_to_tar}")
 tar_dir_name=$(basename "${path_of_dir_to_tar}")
 out_tar_name=""
+
+in_root=$(realpath "$in_root")
+out_root=$(realpath "$out_root")
 
 # If possible add all projects from SampleSheet to output file name
 function join_by { local IFS="$1"; shift; echo "$*"; }
@@ -52,8 +56,8 @@ if [[ ! -e "${path_of_dir_to_tar}" ]]; then
     error "Provided dir to tar does not exist (${path_of_dir_to_tar})"
 fi
 
-if [[ $(find ${path_of_dir_to_tar} -type f -name "*.bcl.bgzf" -or -name "*.cbcl" | wc -l) -lt 1 ]]; then
-    error "Provided dir to tar does not contain BCL or CBCL files (${path_of_dir_to_tar})"
+if [[ $(find "${path_of_dir_to_tar}" -type f -name "*.bcl.bgzf" -or -name "*.cbcl" | wc -l) -lt 1 ]]; then
+    error "Provided dir to tar does not contain any BCL or CBCL files (${path_of_dir_to_tar})"
 fi
 
 ## construct tar command
@@ -68,7 +72,7 @@ tar_cmd+=" ${tar_dir_name}"
 
 ## create output files
 info "Changing dir to in root (${in_root})"
-cd ${in_root} || exit 1
+cd "${in_root}" || exit 1
 
 info "Creating tar file (${out_tar_path})"
 ${tar_cmd} || exit 1
@@ -77,8 +81,8 @@ du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 info "Creating content file (${out_cnt_path})"
 tar -tf "${out_tar_path}" > "${out_cnt_path}"
 
-info "Changing dir to out root (${out_root})"
-cd ${out_root} || exit 1
+info "Changing dir back to where we started (${original_working_dir})"
+cd "${original_working_dir}" || exit 1
 
 info "Creating md5 file (${out_md5_path})"
 md5sum "${out_tar_name}" > "${out_md5_path}"
