@@ -6,12 +6,13 @@ source message_functions || exit 1
 source database_functions || exit 1
 
 run_dir=$1 && shift
+sample=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-sample=$(load_tumor_sample_from_metadata ${run_dir})
+#sample=$(load_tumor_sample_from_metadata ${run_dir})
 cuppa_results_csv=$(locate_cuppa_result_csv ${run_dir})
 
 database="hmfpatients_pilot"
