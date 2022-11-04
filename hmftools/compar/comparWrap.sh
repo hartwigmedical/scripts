@@ -3,7 +3,7 @@
 # Version 0.3, 03-11-2022
 # -----------------------
 
-source ~/scripts/functions/message_functions || exit 1
+source message_functions || exit 1
 
 #quickuse
 #~/comparWRAP.sh -J ~/data/COMPAR/compar_v1.1beta.jar -R ~/data/TISPA/PT01/TV-PT01-WVT-DNA-WGS/ -N ~/data/TISPA/PT01/TV-PT01-WVTT-DNA-WGS/ -C ALL -L DETAILED -S -O ./COMPAR_OUT
