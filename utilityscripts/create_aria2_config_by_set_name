@@ -46,6 +46,7 @@ function main() {
     bucket=$(jq -r '.bucket' <<< "${run_json}")
     entity_id=$(jq -r '.set.entity_id' <<< "${run_json}")
     status=$(jq -r '.status' <<< "${run_json}")
+    context=$(jq -r '.context' <<< "${run_json}")
     pip=$(jq -r '.version' <<< "${run_json}")
     ini=$(jq -r '.ini' <<< "${run_json}")
     ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
@@ -145,14 +146,14 @@ create_run_specific_files () {
         exit 1
     fi
  
-    # From pipeline v5.10 onwards CRAM replaced BAM
+    # From pipeline v5.10 onwards CRAM replaced BAM (but DIAGNOSTIC context still has BAM format as final alignments file)
     if [[ "${pip}" == "Fastq" ]]; then
         # For fastq type runs no pipeline output is available
         ref_bam="undef"
         ref_bam_bai="undef"
         tumor_bam="undef"
         tumor_bam_bai="undef"
-    elif [[ "${minor_version}" -lt 10 ]]; then
+    elif [[ "${minor_version}" -lt 10 || "${context}" == "DIAGNOSTIC" ]]; then
         ref_bam="${ref}/aligner/${ref}.bam"
         ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
         tumor_bam="${tum}/aligner/${tum}.bam"
