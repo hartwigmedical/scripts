@@ -249,7 +249,7 @@ sub processSample{
     my $entity_count_in_api = `hmf_api_get 'entities?name=$entity' | jq 'length'`;
     chomp($entity_count_in_api);
     if ( $entity_count_in_api eq "0" ){
-        sayWarn("  Entity ($entity) not fount in HMF API");
+        sayWarn("  Entity ($entity) not found in HMF API");
     }
 
     ## init the json info
