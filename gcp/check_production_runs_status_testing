@@ -9,8 +9,6 @@ url_bucket_report_pipline="gs://patient-reporter-prod-1/"
 
 major_version="5.29"
 
-###########
-
 main () {
     echo ""
     info "Production run status check for runs on pipeline version ${major_version} (date=$(date +'%y%m%d'))"
@@ -18,17 +16,13 @@ main () {
     info "Retrieving bucket contents [${url_bucket_report_pipline}]"
     patient_reporter_bucket_contents=$(gsutil ls "$url_bucket_report_pipline")
 
-    # Create all required run collections
     info "Retrieving required information from API..."
     mapfile -t non_db_entities < <(hmf_api_get "entities" | jq -r '.[] | select(.add_to_db == false) | .name')
-
-#    all_runs=$(hmf_api_get "runs") || die "Unable to retrieve runs from API"
-#    runs=$(echo "${all_runs}" | jq '[.[] | select(.ini == "Somatic.ini" or .ini == "CPCT.ini")]') || die "Unable to select runs by ini"
     all_cpct_runs=$(hmf_api_get "runs?ini=CPCT.ini" | jq '[.[] | select(.context != "RESEARCH")]') || die "Unable to retrieve CPCT runs from API"
     all_somatic_runs=$(hmf_api_get "runs?ini=Somatic.ini" | jq '[.[] | select(.context != "RESEARCH")]') || die "Unable to retrieve Somatic runs from API"
     runs=$(jq '.[]' <(echo "$all_cpct_runs") <(echo "$all_somatic_runs") | jq -s '.') || die "Unable to combine CPCT and Somatic ini runs"
 
-    info "Creating run collections to check..."
+    info "Creating separate run/sample collections..."
     all_vali_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Validated")]')
     all_fail_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Failed")]')
     all_fini_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Finished")]')
@@ -40,18 +34,15 @@ main () {
     tumor_samples_with_proc_run=$(get_tumor_samples_from_runs_json "${all_proc_runs}")
     tumor_samples_with_wait_run=$(get_tumor_samples_from_runs_json "${all_wait_runs}")
 
-    # We only consider current runs to check for further processing
     current_vali_runs=$(select_runs_to_check "${all_vali_runs}" "${major_version}")
     current_fail_runs=$(select_runs_to_check "${all_fail_runs}" "${major_version}")
     current_fini_runs=$(select_runs_to_check "${all_fini_runs}" "${major_version}")
     current_proc_runs=$(select_runs_to_check "${all_proc_runs}" "${major_version}")
     current_wait_runs=$(select_runs_to_check "${all_wait_runs}" "")
 
-    # Now ready to check each status on by one
-
     echo ""
     echo ""
-    echo "### FAILED RUNS THAT HAVE NOT BEEN REPORTED BEFORE ( please solve! ):"
+    echo "### FAILED RUNS THAT NOT HAVE BEEN REPORTED BEFORE ( please solve! ):"
     counter=0
     while read -r run_info; do
       echo
@@ -67,10 +58,9 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l )
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
-        if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
+        if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${shared_count} == 0 ]]; then
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -100,10 +90,9 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
-        if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
+        if [[  ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${shared_count} -gt 0 ]]; then
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} has Failed but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -127,10 +116,9 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
-        if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
+        if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${shared_count} == 0 ]]; then
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -157,10 +145,9 @@ main () {
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
-        if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ( ${exists_in_success_run_dirs} > 0 || ${exists_in_qcfail_run_dirs} > 0 ) ]]; then
+        if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 && ${shared_count} -gt 0 ]]; then
             counter=$((counter+1))
             echo "---------"
             echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
@@ -178,8 +165,7 @@ main () {
         barcode=$(echo "${set_name}" | cut -d'_' -f4)
 
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
-        exists_in_success_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
-        exists_in_qcfail_run_dirs=$(extract_object_shared ${reporting_id} "prod" | wc -l)
+        shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
         if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
             validation_ss_run=1
@@ -190,17 +176,17 @@ main () {
                 validation_ss_run=1
             fi
         fi
-        if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && ${validation_ss_run} == 0 ]]; then
+        if [[ ${shared_count} == 0 && ${validation_ss_run} == 0 ]]; then
 
             validated_runs_not_yet_reported=$validated_runs_not_yet_reported$set_name" "
 
             error="none"
 
-            if [[ $(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*.log$") -gt 0 ]]; then
+            if [[ $(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}.*\.log$") -gt 0 ]]; then
+                reporter_log_file=$(grep -E "${sample_name}.*.log$" <<< "$patient_reporter_bucket_contents" | tail -1)
 
                 # error - reporter
                 doid_error=$( doid_check_validated_run "${set_name}" 2>&1 )
-                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*.log$" | tail -1)
                 reporter_log_error=$( gsutil cat "$reporter_log_file" | grep 'WARN -'  2>&1 )
 
                 # error - reporter - summary
@@ -229,8 +215,7 @@ main () {
             fi
 
             # error - no report made
-            #report_exists_error=$( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep dna_analysis_report.pdf | wc -l )
-            report_exists_error=$(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*dna_analysis_report.pdf$")
+            report_exists_error=$(grep -cE "${sample_name}.*dna_analysis_report.pdf$" <<< "$patient_reporter_bucket_contents")
             if [[ "$report_exists_error" == 0 ]]; then
                  error="no_report_error"
             fi
@@ -240,7 +225,6 @@ main () {
             if [[ "$health_error" == *"WARN"* ]]; then
                  error="health_error"
             fi
-
 
             set_name_error="error_"$set_name
             eval ${set_name_error}=$error
@@ -264,11 +248,8 @@ main () {
                 echo "-${counter}- The report for ${sample_name} (run: ${set_name}) can be shared # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 info_validated_run ${set_name}
 
-                #gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -' | grep "has already been reported"
-                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*.log$" | tail -1)
+                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -E "${sample_name}.*.log$" | tail -1)
                 gsutil cat "$reporter_log_file" | grep 'WARN -' | grep  "has already been reported"
-
-                #echo "Note, if you still want to inspect the log file you can run: gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log )"
                 echo "Note, if you still want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
@@ -296,11 +277,8 @@ main () {
                 echo "-${counter}- ${set_name} is validated, there were no information warnings while creating the report but the summary is missing # db_status:diagnostic=${db_status}/research=${research_db_status}"
                 info_validated_run ${set_name}
 
-                #gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -'
-                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*.log$" | tail -1)
+                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -E "${sample_name}.*.log$" | tail -1)
                 gsutil cat "$reporter_log_file" | grep 'WARN -'
-
-                #echo "Note, if you still want to inspect the log file you can run: gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log )"
                 echo "Note, if you still want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
@@ -335,11 +313,8 @@ main () {
                 info_validated_run ${set_name}
                 doid_check_validated_run ${set_name}
 
-                #gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log ) | grep 'WARN -'
-                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -cE "${sample_name}*.log$" | tail -1)
+                reporter_log_file=$(echo "$patient_reporter_bucket_contents" | grep -E "${sample_name}.*.log$" | tail -1)
                 gsutil cat "$reporter_log_file" | grep 'WARN -'
-
-                #echo "Note, if you also want to inspect the log file you can run: gsutil cat $( gsutil ls ${url_bucket_report_pipline} | grep  ${sample_name} | grep .log )"
                 echo "Note, if you also want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
@@ -354,16 +329,13 @@ main () {
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
-
-
-
     echo ""
     echo ""
     echo "### VALIDATED RUNS WITH NO REPORT CREATED ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
-        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
+        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) -gt 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "no_report_error" ]]; then
@@ -382,15 +354,13 @@ main () {
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
 
-
-
     echo ""
     echo ""
     echo "### VALIDATED RUNS WITH HEALTH WARNING ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
-        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) > 0 ]]; then
+        if [[ $( echo $validated_runs_not_yet_reported | grep $set_name | wc -l ) -gt 0 ]]; then
             sample_name=$(echo "${run_info}" | cut -f1)
             set_name_error="error_"$set_name
             if [[ "${!set_name_error}" == "health_error" ]]; then
