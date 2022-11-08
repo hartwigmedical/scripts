@@ -70,7 +70,7 @@ IFS='"' read -r -a arrayref <<< ${metaR}
 IFS='"' read -r -a arraynew <<< ${metaN}
 #variable run-name, or default (COMPAR_DATE)
 if [[ -z "${expName}" ]]; then
-expName=COMPAR.$(date +'%y%m%d'); fi
+expName=$(date +'%y%m%d').COMPAR; fi
 echo "SampleId,RefSampleId,NewSampleId" > temp_sampID.csv; \
 echo "${expName},${arrayref[29]},${arraynew[29]}" >> temp_sampID.csv
 #outputname
@@ -109,7 +109,7 @@ fi
 if [[ ${level} == REPORTABLE ]]
 then
   echo -e "\n"
-  cat ${outputDir}${expName}.cmp.${outid}.combined.csv
+  cat ${outputDir}${expName}.cmp.${VALUE}.combined.csv
 fi
 
 rm temp_sampID.csv
