@@ -117,6 +117,12 @@ if [[ $? = 0 ]]; then info " LILAC Results: ${lilac_results}"; fi
 lilac_qc=$(locate_lilac_qc ${run_dir})
 if [[ $? = 0 ]]; then info " LILAC QC: ${lilac_qc}"; fi
 
+lilac_tumor_hla_bam=$(locate_lilac_hla_bam_for_sample ${run_dir} ${tumor_sample})
+if [[ $? = 0 ]]; then info " LILAC Tumor HLA BAM: ${lilac_tumor_hla_bam}"; fi
+
+lilac_reference_hla_bam=$(locate_lilac_hla_bam_for_sample ${run_dir} ${ref_sample})
+if [[ $? = 0 ]]; then info " LILAC Reference HLA BAM: ${lilac_reference_hla_bam}"; fi
+
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [[ $? = 0 ]]; then info " CHORD Prediction File: ${chord_prediction}"; fi
 

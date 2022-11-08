@@ -13,8 +13,8 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
-reference_dna_hla_bam="$(locate_actin_lilac_hla_bam_dir)/${tumor_sample}/${reference_sample}.hla.bam"
-tumor_dna_hla_bam="$(locate_actin_lilac_hla_bam_dir)/${tumor_sample}/${tumor_sample}.hla.bam"
+reference_dna_hla_bam="$(locate_lilac_hla_bam_for_sample ${run_dir} ${reference_sample})"
+tumor_dna_hla_bam="$(locate_lilac_hla_bam_for_sample ${run_dir} ${tumor_sample})"
 
 if [[ ! -f ${reference_dna_hla_bam} || ! -f ${tumor_dna_hla_bam} ]]; then
     warn "DNA HLA BAMs could not be found for ${tumor_sample}. Skipping LILAC"

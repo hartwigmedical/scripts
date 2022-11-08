@@ -50,8 +50,8 @@ if [[ -d "${rna_bam_dir}" ]]; then
     # Rerun LILAC to produce data on DNA/RNA combined.
     run_lilac_for_actin_run ${run_dir}
 
-    # TODO Germline VCF can be annotated on pipeline v5.29. Requires PAVE rerun across HMF cohort to be enabled.
     annotate_germline_variants_with_rna ${run_dir}
+    load_rna_annotated_purple_data_to_prod ${run_dir}
 
     annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
     if [[ -f "${annotated_germline_vcf}" ]]; then
@@ -60,9 +60,6 @@ if [[ -d "${rna_bam_dir}" ]]; then
         cp "${annotated_germline_vcf}" "${original_germline_vcf}"
         cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
     fi
-
-    # TODO Enable once all germline VCFs can be re-enabled.
-    # load_rna_annotated_purple_data_to_prod ${run_dir}
 
     # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
     run_orange_in_actin_mode ${run_dir}

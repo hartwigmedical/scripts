@@ -1319,6 +1319,19 @@ locate_lilac_qc() {
     echo ${qc_csv}
 }
 
+locate_lilac_hla_bam_for_sample() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    # TODO Move HLA bams to final place.
+    local hla_bam=$(find -L ${run_dir}/lilac/5.30.2/lilac_slicer -type f -name "${sample}.hla.bam")
+    if [[ -z "${result_csv}" ]]; then
+        error "Unable to locate lilac HLA BAM for ${sample} in ${run_dir}."
+    fi
+    echo ${hla_bam}
+}
+
+
 ##################################### LILAC ####################################
 
 locate_rose_pilot() {

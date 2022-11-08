@@ -27,15 +27,6 @@ fi
 info "Copying ${orig_run_dir} to ${run_dir}"
 cp -r "${orig_run_dir}" "${run_dir}"
 
-# Check to see if HLA BAMs for DNA need to be produced. These are kept outside of the run dir as a one-off.
-tumor_hla_bam="$(locate_actin_lilac_hla_bam_dir)/${sample}/${sample}.hla.bam"
-if [[ ! -f "${tumor_hla_bam}" ]]; then
-    info "Producing DNA HLA BAMs for ${sample}"
-    produce_dna_hla_bams ${run_dir}
-else
-    info "Skipping production of DNA HLA BAMs as they already exist for ${sample}"
-fi
-
 # Post-process all DNA
 run_actin_dna_post_process ${run_dir}
 
