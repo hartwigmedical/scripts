@@ -41,3 +41,5 @@ generate_cup_report ${run_dir}
 # ACTIN expects v1.2 lilac output while v1.1 is produced by pipeline v5.30
 run_lilac_for_actin_run ${run_dir}
 
+# Run ORANGE to pick up all latest versions
+run_orange_in_actin_mode ${run_dir}

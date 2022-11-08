@@ -35,7 +35,6 @@ if [[ -d "${rna_bam_dir}" ]]; then
     fi
 
     annotate_somatic_variants_with_rna ${run_dir}
-    load_rna_annotated_somatic_variants_to_prod ${run_dir}
 
     annotated_somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
     if [[ -f "${annotated_somatic_vcf}" ]]; then
@@ -45,13 +44,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
         cp "${annotated_somatic_vcf}.tbi" "${original_somatic_vcf}.tbi"
     fi
 
-    slice_rna_bam_for_hla ${run_dir}
-
-    # Rerun LILAC to produce data on DNA/RNA combined.
-    run_lilac_for_actin_run ${run_dir}
-
     annotate_germline_variants_with_rna ${run_dir}
-    load_rna_annotated_purple_data_to_prod ${run_dir}
 
     annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
     if [[ -f "${annotated_germline_vcf}" ]]; then
@@ -60,6 +53,14 @@ if [[ -d "${rna_bam_dir}" ]]; then
         cp "${annotated_germline_vcf}" "${original_germline_vcf}"
         cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
     fi
+
+    load_rna_annotated_purple_data_to_prod ${run_dir}
+
+    # Extract the HLA regions for the RNA BAM
+    slice_rna_bam_for_hla ${run_dir}
+
+    # Rerun LILAC to produce data on DNA/RNA combined.
+    run_lilac_for_actin_run ${run_dir}
 
     # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
     run_orange_in_actin_mode ${run_dir}
