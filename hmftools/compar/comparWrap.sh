@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Author: Teoman Deger
-# Version 0.3, 03-11-2022
+# Version 0.4, 08-11-2022
 # -----------------------
 
 source message_functions || exit 1
@@ -62,20 +62,19 @@ if [[ ${runCats} == ALL ]] && [[ ${sepOutput} == "TRUE" ]]; then
 else
  list=$runCats; fi
 
-
+#extract folder-structure and file-names
 filesource=\"REF\;sample_dir=$refdir\,NEW\;sample_dir=${newdir}\"
-IFS='/' read -r -a arrayref <<< "$refdir"
-IFS='/' read -r -a arraynew <<< "$newdir"
-rlen=${#arrayref[@]}
-nlen=${#arraynew[@]}
-
+metaR=$(cat ${refdir}metadata.json)
+metaN=$(cat ${newdir}metadata.json)
+IFS='"' read -r -a arrayref <<< ${metaR}
+IFS='"' read -r -a arraynew <<< ${metaN}
+#variable run-name, or default (COMPAR_DATE)
 if [[ -z "${expName}" ]]; then
-expName=${arrayref[$((rlen-2))]}; fi
+expName=COMPAR.$(date +'%y%m%d'); fi
 echo "SampleId,RefSampleId,NewSampleId" > temp_sampID.csv; \
-echo "${expName},${arrayref[$((rlen-1))]},${arraynew[$((nlen-1))]}" >> temp_sampID.csv
-
-outid=${expName}_${arrayref[$((rlen-1))]}"_vs_"${arraynew[$((nlen-1))]}
-
+echo "${expName},${arrayref[29]},${arraynew[29]}" >> temp_sampID.csv
+#outputname
+outid=${expName}_${arrayref[29]}"_vs_"${arraynew[29]}
 
 for VALUE in "${list[@]}"
 do
