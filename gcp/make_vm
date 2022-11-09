@@ -19,7 +19,6 @@ network_arg=""
 preemptible="FALSE"
 startup_script="NONE"
 umbrella_scope="crunch"
-cost_center="experiments"
 
 print_usage() {
     script=$(basename "$0")
@@ -38,7 +37,7 @@ print_usage() {
     echo "  -e                     Make VM pre-emptible"
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
     echo "  -u umbrella_scope      Can be crunch/innovation/ops/pmc/onboarding and configures accordingly [${umbrella_scope}]"
-    echo "  -c cost_center         Adjust if you want to track costs [${cost_center}]"
+    echo "  -c cost_center         Track costs under this label [${cost_center}]"
     echo ""
     echo "See also:"
     echo "  https://cloud.google.com/compute/docs/disks"
@@ -72,7 +71,7 @@ while getopts ':n:u:p:f:i:m:s:t:ed:c:' flag; do
     esac
 done
 
-if [[ -z "${vm_name}" || "$1" == "-h" || "$1" == "--help" ]]; then
+if [[ -z "${vm_name}" || -z "${cost_center}" || "$1" == "-h" || "$1" == "--help" ]]; then
     print_usage
 fi
 
