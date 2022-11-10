@@ -65,6 +65,7 @@ main () {
             echo "---------"
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR\|Health checker log from'
+            get_current_tat.sh ${sample_name}
             echo "**"
             echo " Action - inspect the error above and solve if possible with lab (extra sequencing for coverage and/or second biopt)... "
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
@@ -123,6 +124,7 @@ main () {
             echo "---------"
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
+            get_current_tat.sh ${sample_name}
             echo "**"
             echo " Action - if snpcheck is FAIL - research the fail (follow sop)"
             echo " Action - if snpcheck is OK - update the api using the script: patch_api_run_validate ${set_name}"
@@ -253,6 +255,7 @@ main () {
                 echo "Note, if you still want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
+                get_current_tat.sh ${sample_name}
                 echo "**"
                 echo " Action - upload the report for final checking and sharing to nc using the script: upload_pipeline_report_to_nc ${set_name}"
                 #echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${set_name}"
@@ -282,6 +285,7 @@ main () {
                 echo "Note, if you still want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
+                get_current_tat.sh ${sample_name}
                 echo "**"
                 echo " Action (temporary) - make ROSE summary using the script: create_rose_summary ${set_name}"
                 echo " Action - upload the report for KMBP to nc using the script: upload_pipeline_report_to_nc ${set_name}"
@@ -318,6 +322,7 @@ main () {
                 echo "Note, if you also want to inspect the log file you can run: gsutil cat ${reporter_log_file}"
 
                 sql_checks_reporting ${sample_name}
+                get_current_tat.sh ${sample_name}
                 echo "**"
                 echo " Action when lims information warning - ask lab to update lims, thereafter update the API using the script: update_lims"
                 echo " Action when doid/clinical curation warning - solve the clinical curation (follow sop), thereafter update using the script: update_clinical_curation"
@@ -347,6 +352,7 @@ main () {
                 info_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
+                get_current_tat.sh ${sample_name}
                 echo "**"
                 echo " Action - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 #echo " Action - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${set_name}"
@@ -372,6 +378,7 @@ main () {
                 info_validated_run ${set_name}
                 health_check_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
+                get_current_tat.sh ${sample_name}
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -386,6 +393,7 @@ main () {
         set_name=$(echo "${run_info}" | cut -f1)
         status=$(echo "${run_info}" | cut -f2)
         echo "# -${counter}- ${set_name} is ${status}"
+        get_current_tat.sh ${sample_name}
     done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
 
@@ -397,6 +405,7 @@ main () {
         set_name=$(echo "${run_info}" | cut -f1)
         status=$(echo "${run_info}" | cut -f2)
         echo "# -${counter}- ${set_name} is ${status}"
+        get_current_tat.sh ${sample_name}
     done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
