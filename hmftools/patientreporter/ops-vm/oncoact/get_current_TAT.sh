@@ -47,7 +47,14 @@ barcode=$( hmf_api_get samples?name=${sampleId} | jq -r .[].barcode )
 report_created_id=$( extract_most_recent_reporting_id_on_barcode $barcode )
 reported=$( hmf_api_get reports/shared?report_created_id=${report_created_id}  | jq .[] | jq -r '.share_time' | tr 'T' ' ' | sed 's/\s.*$//')
 
-if [ $(echo $reported | wc -w) > 0 ]; then
+if [ $(echo $reported | wc -w ) == 0 ]; then
+    ##### If not show the current TAT
+    now_sec=$(date +%s)
+    echo "This sample is still in process!"
+    echo "The current TAT is:"
+    echo $(( ($now_sec - $start_sec )/(60*60*24) ))
+else
+    ##### If yes show reporting info
     echo "This OncoAct has been reported on:"
     echo $reported
     echo "The TAT of reporting was:"
@@ -57,9 +64,5 @@ if [ $(echo $reported | wc -w) > 0 ]; then
 fi
 
 
-##### If not reported the current TAT
 
-now_sec=$(date +%s)
-echo "This sample is still in process!"
-echo "The current TAT is:"
-echo $(( ($now_sec - $start_sec )/(60*60*24) ))
+
