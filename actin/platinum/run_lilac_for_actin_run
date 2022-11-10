@@ -29,4 +29,4 @@ fi
 
 info "Running LILAC for ${tumor_sample}"
 
-run_lilac_prod ${run_dir} ${reference_dna_hla_bam} ${tumor_dna_hla_bam} ${rna_hla_bam}
+run_lilac_research ${run_dir} ${reference_dna_hla_bam} ${tumor_dna_hla_bam} ${rna_hla_bam}

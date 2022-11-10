@@ -16,10 +16,11 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-lilac_jar=$(locate_pilot_lilac)
+lilac_jar=$(locate_research_lilac)
 
 ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
-output_dir="${run_dir}/lilac_pilot"
+output_dir="${run_dir}/lilac"
+# TODO Consider cleaning the output dir prior to running. Currently not possible since it wipes the HLA BAMs
 
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
@@ -31,7 +32,7 @@ fi
 
 java -jar ${lilac_jar} \
     -sample ${tumor_sample} \
-    -resource_dir "/data/resources/crunch/lilac" \
+    -resource_dir "/data/resources/public/lilac" \
     -ref_genome ${ref_genome_fasta} \
     -reference_bam ${reference_dna_hla_bam} \
     -tumor_bam ${tumor_dna_hla_bam} \

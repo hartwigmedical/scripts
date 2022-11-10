@@ -40,8 +40,12 @@ locate_pilot_virus_interpreter() {
     echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
 }
 
+locate_research_lilac() {
+    echo "/data/tools/lilac/1.4.2/lilac.jar"
+}
+
 locate_prod_lilac() {
-    echo "/data/tools/lilac/1.2/lilac.jar"
+    echo "/data/tools/lilac/1.1/lilac.jar"
 }
 
 locate_pilot_lilac() {
@@ -1332,13 +1336,13 @@ locate_lilac_hla_bam_for_sample() {
 }
 
 
-##################################### LILAC ####################################
+##################################### ROSE #####################################
 
 locate_rose_pilot() {
     local run_dir=$1
     local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
     if [[ -z "${rose_tsv}" ]]; then
-        error "Unable to locate rose tsv in ${run_dir}."
+        error "Unable to locate rose pilot tsv in ${run_dir}."
     fi
     echo ${rose_tsv}
 }
