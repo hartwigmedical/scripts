@@ -32,13 +32,15 @@ if [ $(echo $ref_arrival | wc -w) == 0 ]; then
 fi
 
 
-if [ "$tumor_arrival" > "$ref_arrival" ]; then
-	start=$tumor_arrival
+tumor_arrival_sec=$( date --date=$tumor_arrival +%s )
+ref_arrival_sec=$( date --date=$ref_arrival +%s )
+
+if [[ $tumor_arrival_sec -gt $ref_arrival_sec ]]; then
+	start_sec=$tumor_arrival_sec
 else
-    start=$ref_arrival
+    start_sec=$ref_arrival_sec
 fi
 
-start_sec=$( date --date=$start +%s )
 
 
 ##### Determine whether sample was already reported
