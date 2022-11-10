@@ -28,18 +28,14 @@ info "Collecting credentials"
 user=$(get_nextcloud_upload_user)
 pass=$(get_nextcloud_upload_password)
 
-info "Checking input files"
+info "Checking the existence of input files"
 for file in "${files_to_upload[@]}"; do
-    if [[ ! -f "${file}" ]]; then
-        error "File not found (${file})"
-    fi
+    [[ -f "${file}" ]] || error "File not found (${file})"
 done
 
 info "Starting upload of input files to Nextcloud dir ${nextcloud_dir} for user ${user}"
 for file in "${files_to_upload[@]}"; do
     info "Uploading ${file}"
-    curl -u "${user}:${pass}" -T "${file}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/"
-    if [[ $? -ne 0 ]]; then
-        warn "Upload of file failed (${file})";
-    fi
+    curl -u "${user}:${pass}" -T "${file}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/" || warn "Upload of file failed (${file})"
 done
+info "Finished with upload. See ${nextcloud_dir} at ${nextcloud_url} for results."
