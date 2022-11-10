@@ -390,23 +390,25 @@ main () {
     echo "### PROCESSING/UPLOADING/DOWNLOADING RUNS ( no action required ):"
     while read -r run_info; do
         counter=$((counter+1))
-        set_name=$(echo "${run_info}" | cut -f1)
-        status=$(echo "${run_info}" | cut -f2)
+        sample_name=$(echo "${run_info}" | cut -f1)
+        set_name=$(echo "${run_info}" | cut -f2)
+        status=$(echo "${run_info}" | cut -f3)
         echo "# -${counter}- ${set_name} is ${status}"
         get_current_TAT.sh ${sample_name}
-    done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
+    done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.status] | @tsv')
 
 
     echo ""
     echo "### WAITING RUNS ( no action required ):"
     counter=0
     while read -r run_info; do
+        sample_name=$(echo "${run_info}" | cut -f1)
         counter=$((counter+1))
-        set_name=$(echo "${run_info}" | cut -f1)
-        status=$(echo "${run_info}" | cut -f2)
+        set_name=$(echo "${run_info}" | cut -f2)
+        status=$(echo "${run_info}" | cut -f3)
         echo "# -${counter}- ${set_name} is ${status}"
         get_current_TAT.sh ${sample_name}
-    done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
+    done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.status] | @tsv')
 
     echo ""
 }
