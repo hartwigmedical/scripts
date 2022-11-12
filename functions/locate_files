@@ -1327,8 +1327,7 @@ locate_lilac_hla_bam_for_sample() {
     local run_dir=$1 && shift
     local sample=$1 && shift
 
-    # TODO Move HLA bams to final place.
-    local hla_bam=$(find -L ${run_dir}/lilac/5.30.2/lilac_slicer -type f -name "${sample}.hla.bam")
+    local hla_bam=$(find -L ${run_dir}/lilac_slicer -type f -name "${sample}.hla.bam")
     if [[ -z "${hla_bam}" ]]; then
         error "Unable to locate lilac HLA BAM for ${sample} in ${run_dir}."
     fi
