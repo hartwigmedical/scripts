@@ -410,10 +410,6 @@ locate_actin_clinical_json() {
     echo "${clinical_json}"
 }
 
-locate_actin_lilac_hla_bam_dir() {
-    echo "/data/actin/dna_hla_bams"
-}
-
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
 }
