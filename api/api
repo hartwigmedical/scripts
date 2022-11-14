@@ -107,13 +107,14 @@ main(){
         jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status bucket startDate endDate id
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status context bucket startDate endDate id
         jq -r '.[] | [.set.name,
         .set.ref_sample,
         .set.tumor_sample,
         .ini,
         .version,
         .status,
+        .context,
         .bucket,
         (if .startTime then .startTime|.[:10] else "NA" end),
         (if .endTime then .endTime|.[:10] else "NA" end),
