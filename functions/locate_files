@@ -1736,6 +1736,22 @@ locate_orange_json() {
     echo ${orange_json}
 }
 
+locate_orange_json_pilot() {
+    local run_dir=$1
+    local orange_json=""
+
+    local orange_dir="${run_dir}/orange_pilot"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
+    fi
+
+    if [[ -z "${orange_json}" ]]; then
+        error "Unable to locate ORANGE pilot json in ${run_dir}."
+    fi
+
+    echo ${orange_json}
+}
+
 locate_orange_pdf() {
     local run_dir=$1
     local orange_pdf=""
