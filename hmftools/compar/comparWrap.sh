@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Author: Teoman Deger
-# Version 0.4, 08-11-2022
+# Version 0.5, 15-11-2022
 # -----------------------
 
 source message_functions || exit 1
 
 #quickuse
-#~/comparWRAP.sh -J ~/data/COMPAR/compar_v1.1beta.jar -R ~/data/TISPA/PT01/TV-PT01-WVT-DNA-WGS/ -N ~/data/TISPA/PT01/TV-PT01-WVTT-DNA-WGS/ -C ALL -L DETAILED -S -O ./COMPAR_OUT
+#~/comparWRAP.sh -J ~/data/COMPAR/compar_v1.1beta.jar -R ~/data/COLO-data/COLO829T/COLO829v003T/ -N ~/data/COLO-data/COLO829T/COLO829v002T/ -C ALL -L DETAILED -O ~/ -X V3vsV2
 
 #error message
 print_usage(){
@@ -87,8 +87,8 @@ do
        -file_sources ${filesource}\
        -output_dir ${outputDir}\
        -output_id ${VALUE} -log_debug
-sed -i -e "s/REF_ONLY/${arrayref[$((rlen-1))]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
-sed -i -e "s/NEW_ONLY/${arraynew[$((nlen-1))]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/REF_ONLY/${arrayref[29]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/NEW_ONLY/${arraynew[29]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
 done
 
 if [[ ${runCats} == ALL ]] && [[ ${sepOutput} == "TRUE" ]]
