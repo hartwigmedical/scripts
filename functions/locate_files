@@ -334,6 +334,10 @@ locate_actin_external_trial_mapping_tsv() {
     echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
 }
 
+locate_actin_gene_filter_tsv() {
+    echo "/data/resources/crunch/actin/molecular_interpretation/gene_filter.tsv"
+}
+
 locate_actin_serve_bridge_tsv() {
     echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
 }
@@ -405,6 +409,23 @@ locate_actin_clinical_json() {
     local clinical_json="${clinical_dir}/${patient}.clinical.json"
     if [[ ! -f ${clinical_json} ]]; then
         error "Could not locate clinical json for patient '${patient}'"
+    fi
+
+    echo "${clinical_json}"
+}
+
+locate_actin_clinical_json_for_sample() {
+    local sample=$1 && shift
+    local clinical_dir=$(locate_actin_curated_clinical_directory)
+
+    if [[ ! -d "${clinical_dir}" ]]; then
+        error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
+    fi
+
+    patient=$(echo ${sample} | head -c 12)
+    local clinical_json="${clinical_dir}/${patient}.clinical.json"
+    if [[ ! -f ${clinical_json} ]]; then
+        error "Could not locate clinical json for patient '${patient}' based on sample '${sample}'"
     fi
 
     echo "${clinical_json}"
