@@ -72,15 +72,8 @@ linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 linx_driver_tsv=$(locate_linx_drivers ${run_dir})
 linx_germline_disruption_tsv=$(locate_linx_germline_disruptions ${run_dir})
 linx_plot_directory=$(locate_linx_plot_directory ${run_dir})
-
 lilac_result_csv=$(locate_lilac_results ${run_dir})
 lilac_qc_csv=$(locate_lilac_qc ${run_dir})
-if [[ ! -f ${lilac_result_csv} || ! -f ${lilac_qc_csv} ]]; then
-    # TODO Remove once LILAC data has been generated for all runs
-    warn "No LILAC output found. Falling back to empty LILAC output"
-    lilac_result_csv="/data/resources/crunch/lilac/empty/empty.lilac.csv"
-    lilac_qc_csv="/data/resources/crunch/lilac/empty/empty.lilac.qc.csv"
-fi
 
 rna_sample_cmd=""
 isofox_gene_distribution_cmd=""
@@ -90,14 +83,7 @@ isofox_gene_data_cmd=""
 isofox_fusion_cmd=""
 isofox_alt_splice_junction_cmd=""
 if [[ -d "${run_dir}/isofox" ]]; then
-    # TODO Make mandatory once all purple data can be annotated with RNA correctly.
-    rna_sample_id="${tumor_sample}_RNA"
-    if [[ $(zcat ${purple_somatic_variant_vcf} | grep -c ${rna_sample_id}) = 1 ]]; then
-        rna_sample_cmd="-rna_sample_id ${rna_sample_id}"
-    else
-        warn "Isofox data is present but somatic vcf doesn't seem to be annotated with RNA data!"
-    fi
-
+    rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
     isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
     isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
     isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
