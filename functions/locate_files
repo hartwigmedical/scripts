@@ -40,8 +40,12 @@ locate_pilot_virus_interpreter() {
     echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
 }
 
+locate_research_lilac() {
+    echo "/data/tools/lilac/1.4.2/lilac.jar"
+}
+
 locate_prod_lilac() {
-    echo "/data/tools/lilac/1.2/lilac.jar"
+    echo "/data/tools/lilac/1.1/lilac.jar"
 }
 
 locate_pilot_lilac() {
@@ -201,7 +205,7 @@ locate_pilot_datarequest() {
 }
 
 locate_dsync() {
-    echo "/data/tools/dsync/1.6.0/dsync.jar"
+    echo "/data/tools/dsync/1.7.0/dsync.jar"
 }
 
 locate_run_contexts_writer() {
@@ -330,6 +334,10 @@ locate_actin_external_trial_mapping_tsv() {
     echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
 }
 
+locate_actin_gene_filter_tsv() {
+    echo "/data/resources/crunch/actin/molecular_interpretation/gene_filter.tsv"
+}
+
 locate_actin_serve_bridge_tsv() {
     echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
 }
@@ -406,8 +414,21 @@ locate_actin_clinical_json() {
     echo "${clinical_json}"
 }
 
-locate_actin_lilac_hla_bam_dir() {
-    echo "/data/actin/dna_hla_bams"
+locate_actin_clinical_json_for_sample() {
+    local sample=$1 && shift
+    local clinical_dir=$(locate_actin_curated_clinical_directory)
+
+    if [[ ! -d "${clinical_dir}" ]]; then
+        error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
+    fi
+
+    patient=$(echo ${sample} | head -c 12)
+    local clinical_json="${clinical_dir}/${patient}.clinical.json"
+    if [[ ! -f ${clinical_json} ]]; then
+        error "Could not locate clinical json for patient '${patient}' based on sample '${sample}'"
+    fi
+
+    echo "${clinical_json}"
 }
 
 locate_actin_molecular_directory() {
@@ -1319,13 +1340,25 @@ locate_lilac_qc() {
     echo ${qc_csv}
 }
 
-##################################### LILAC ####################################
+locate_lilac_hla_bam_for_sample() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local hla_bam=$(find -L ${run_dir}/lilac_slicer -type f -name "${sample}.hla.bam")
+    if [[ -z "${hla_bam}" ]]; then
+        error "Unable to locate lilac HLA BAM for ${sample} in ${run_dir}."
+    fi
+    echo ${hla_bam}
+}
+
+
+##################################### ROSE #####################################
 
 locate_rose_pilot() {
     local run_dir=$1
     local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
     if [[ -z "${rose_tsv}" ]]; then
-        error "Unable to locate rose tsv in ${run_dir}."
+        error "Unable to locate rose pilot tsv in ${run_dir}."
     fi
     echo ${rose_tsv}
 }

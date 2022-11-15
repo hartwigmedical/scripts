@@ -185,7 +185,12 @@ if [[ "${sample:0:8}" == "COREDB01" ]]; then
 fi
 
 ### Patch reporting created endpoint
-api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_conclusion" | grep "api-update.json")
+if [[ ${correction_comments} != "" ]]; then
+    api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_conclusion" | grep "api-update.json" | grep "corrected" )
+else
+    api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_conclusion" | grep "api-update.json"  )
+fi
+
 echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
 read answer
 if [[ $answer == 'Y' ]]; then

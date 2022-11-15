@@ -25,16 +25,6 @@ if [[ ${sage_exception_count} -ge 1 ]]; then
     warn "Exceptions found in SAGE run log!"
 fi
 
-# Create a backup of original breakend and then bump to virus interpreter v1.2
-virusbreakend_dir="${run_dir}/virusbreakend"
-if [[ -d "${virusbreakend_dir}" ]]; then
-    cp -r "${virusbreakend_dir}" "${run_dir}/virusbreakend_orig"
-fi
-
-# Rerun virus interpreter since older runs will have pre v1.2
-run_virus_interpreter_prod ${run_dir}
-load_virusinterpreter_data_prod ${run_dir}
-
 # Retain original cuppa and clean up in preparation of rerun.
 cuppa_dir="${run_dir}/cuppa"
 if [[ -d "${cuppa_dir}" ]]; then
@@ -42,20 +32,14 @@ if [[ -d "${cuppa_dir}" ]]; then
     create_or_cleanup_dir "${cuppa_dir}"
 fi
 
-# To correct for the missing SIG data in earlier runs and compatibility with virus interpreter v1.2
+# To make sure cuppa is rerun with v1.7.2. Pipeline v5.30 runs v1.7.1
 run_cuppa_dna_prod ${run_dir}
 
 # To generate the CUPPA report as a picture (png)
 generate_cup_report ${run_dir}
 
-# Produce LILAC output
+# ACTIN expects v1.2 lilac output while v1.1 is produced by pipeline v5.30
 run_lilac_for_actin_run ${run_dir}
 
-# Create a backup of original protect output prior to rerun
-protect_dir="${run_dir}/protect"
-if [[ -d "${protect_dir}" ]]; then
-    cp -r "${protect_dir}" "${run_dir}/protect_orig"
-fi
-
-run_actin_dna_interpretation_pipeline ${run_dir}
-
+# Run ORANGE to pick up all latest versions
+run_orange_in_actin_mode ${run_dir}

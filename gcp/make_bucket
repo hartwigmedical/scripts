@@ -10,8 +10,6 @@ print_usage() {
     exit 1
 }
 
-cost_center="experiments"
-
 while getopts ':n:p:c:' flag; do
     case "${flag}" in
         n) bucket_name=${OPTARG} ;;
@@ -22,7 +20,7 @@ while getopts ':n:p:c:' flag; do
     esac
 done
 
-if [[ -z "${bucket_name}" || -z "${project_name}" ]]; then
+if [[ -z "${bucket_name}" || -z "${project_name}" || -z "${cost_center}" ]]; then
     print_usage
 fi
 
