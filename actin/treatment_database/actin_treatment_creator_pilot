@@ -5,6 +5,7 @@ source io_functions || exit 1
 
 trial_config_directory="$(locate_actin_trial_config_directory)"
 doid_json="$(locate_doid_json)"
+gene_filter_tsv="$(locate_actin_gene_filter_tsv)"
 output_directory="$(locate_actin_treatment_database_directory)"
 
 create_or_cleanup_dir "${output_directory}"
@@ -14,6 +15,7 @@ actin_jar="$(locate_pilot_actin)"
 java -cp ${actin_jar} com.hartwig.actin.treatment.TreatmentCreatorApplication \
     -trial_config_directory ${trial_config_directory} \
     -doid_json ${doid_json} \
+    -gene_filter_tsv ${gene_filter_tsv} \
     -output_directory ${output_directory} \
     "$@"
 
