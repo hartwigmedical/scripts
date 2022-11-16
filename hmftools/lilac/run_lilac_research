@@ -20,7 +20,7 @@ lilac_jar=$(locate_research_lilac)
 
 ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
 output_dir="${run_dir}/lilac"
-# TODO Consider cleaning the output dir prior to running. Currently not possible since it wipes the HLA BAMs
+create_or_cleanup_dir ${output_dir}
 
 purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
