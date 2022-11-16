@@ -164,10 +164,6 @@ locate_prod_protect() {
     echo "/data/tools/protect/2.2/protect.jar"
 }
 
-locate_actin_protect() {
-    echo "/data/tools/protect/2.3/protect.jar"
-}
-
 locate_research_protect() {
     echo "/data/tools/protect/2.3/protect.jar"
 }
