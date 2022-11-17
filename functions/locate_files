@@ -330,8 +330,8 @@ locate_actin_external_trial_mapping_tsv() {
     echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
 }
 
-locate_actin_gene_filter_tsv() {
-    echo "/data/resources/crunch/actin/molecular_interpretation/gene_filter.tsv"
+locate_actin_known_genes_tsv() {
+    echo "/data/resources/crunch/actin/molecular_interpretation/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_serve_bridge_tsv() {
