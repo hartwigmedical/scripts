@@ -8,9 +8,9 @@ output_directory="$(locate_actin_curated_clinical_directory)"
 
 actin_jar="$(locate_pilot_actin)"
 
-info "Running ACTIN Clinical on ${feed_directory}, removing all curated data in ${output_directory}"
+info "Running ACTIN Clinical on ${feed_directory}"
 
-rm ${output_directory}/*.clinical.json
+create_or_cleanup_dir "${output_directory}"
 
 java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \
     -feed_directory ${feed_directory} \
