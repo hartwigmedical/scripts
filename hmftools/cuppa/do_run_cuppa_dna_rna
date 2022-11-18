@@ -26,7 +26,7 @@ info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
 cp -r ${run_dir}/purple/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/linx/* ${tmp_sample_data_dir}/
-cp -r ${run_dir}/virusbreakend/* ${tmp_sample_data_dir}/
+cp -r ${run_dir}/virus_interpreter/* ${tmp_sample_data_dir}/
 cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 
 info "Running Cuppa DNA-RNA on ${run_dir}"
