@@ -31,8 +31,8 @@ if [[ ! -f ${batch_jar} ]]; then
     error "Could not locate batch jar: ${batch_jar}"
 fi
 
-make_bucket -p hmf-crunch -n actin-rna-star-batch-${date}
-make_bucket -p hmf-crunch -n actin-rna-isofox-batch-${date}
+make_bucket -p hmf-crunch -n actin-rna-star-batch-${date} -c "actin_rna_prod"
+make_bucket -p hmf-crunch -n actin-rna-isofox-batch-${date} -c "actin_rna_prod"
 
 kubectl create configmap actin-rna-batch-inputs-${date} \
     --from-file=star.csv=${config_dir}/actin_rna_star_input.csv \
