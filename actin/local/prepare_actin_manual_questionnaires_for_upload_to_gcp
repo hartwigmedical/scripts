@@ -10,5 +10,16 @@ fi
 
 mv "${dir}/ACTIN Questionnaires - Questionnaires.tsv" "${dir}/manual_questionnaire.tsv"
 
+no_consent_patients=("ACTN-01-02-0015" "ACTN-01-02-0059" "ACTN-01-02-0067" "ACTN-01-02-0073" "ACTN-01-02-0083" "ACTN-01-02-0086" \
+    "ACTN-01-02-0090" "ACTN-01-02-0092" "ACTN-01-02-0096" "ACTN-01-02-0097" "ACTN-01-02-0099" "ACTN-01-02-0119" "ACTN-01-02-0128" \
+    "ACTN-01-02-0131" "ACTN-01-02-0133")
+
+for patient in ${no_consent_patients[@]}; do
+    count=$(cat ${dir}/manual_questionnaire.tsv | grep -c ${patient})
+     if [[ count -gt 0 ]]; then
+        error "Found ${patient} in ${file} ${count} times. Exiting."
+     fi
+done
+
 dos2unix "${dir}/manual_questionnaire.tsv"
 
