@@ -2,8 +2,13 @@
 
 source message_functions || exit 1
 
-info "info test 1"
-info "info test 2"
-info "info test 3"
-warn "warn test 1"
-die "die test 1"
+info "Info test 1"
+info "Info test 2"
+warn "Warn test 1"
+warn "Warn test 2"
+color_msg_blue "Blue test message"
+color_msg_green "Green test message"
+color_msg_red "Red test message"
+warn "$(color_msg_red "Red test message wrapped in warning")"
+die "Die test"
+info "THIS MESSAGE SHOULD NOT APPEAR SINCE SCRIPT HAS DIED BY NOW"
