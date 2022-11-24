@@ -1100,6 +1100,15 @@ locate_purple_pilot_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_purple_data_directory() {
+    local run_dir=$1
+    local purple_data_dir="${run_dir}/purple"
+    if [[ ! -d "${purple_data_dir}" ]]; then
+        error "Unable to locate purple data directory in ${run_dir}."
+    fi
+    echo ${purple_data_dir}
+}
+
 locate_purple_plot_directory() {
     local run_dir=$1
     local purple_plot_dir="${run_dir}/purple/plot"
@@ -1278,6 +1287,15 @@ locate_linx_drivers() {
     echo ${driver_tsv}
 }
 
+locate_linx_somatic_data_directory() {
+    local run_dir=$1
+    local linx_somatic_data_directory="${run_dir}/linx"
+    if [[ ! -d "${linx_somatic_data_directory}" ]]; then
+        error "Unable to locate linx somatic data directory in ${run_dir}."
+    fi
+    echo ${linx_somatic_data_directory}
+}
+
 locate_linx_plot_directory() {
     local run_dir=$1
     local linx_plot_dir="${run_dir}/linx/plot"
@@ -1294,6 +1312,15 @@ locate_linx_structural_variants() {
 }
 
 ################################# LINX GERMLINE ################################
+
+locate_linx_germline_data_directory() {
+    local run_dir=$1
+    local linx_germline_data_directory="${run_dir}/linx_germline"
+    if [[ ! -d "${linx_germline_data_directory}" ]]; then
+        error "Unable to locate linx germline data directory in ${run_dir}."
+    fi
+    echo ${linx_germline_data_directory}
+}
 
 locate_linx_germline_disruptions() {
     local run_dir=$1
