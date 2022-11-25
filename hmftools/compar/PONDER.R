@@ -177,7 +177,8 @@ analysisComparOutput <- function(x, export = FALSE){
   outputList <- list(name,countsTotal,"Somatic",countsSNP,countsMNPINDEL,"Germline",countsSNP_GL,countsMNPINDEL_GL,countsCN,countsSV,countsGLV)
   print(outputList)#, file = paste(deparse(substitute(x)),"_",i))
   if (export == "EXPORT"){
-    capture.output(outputList, file = paste0(name,"_COMPARed_Output"))
+    outName <- sub(".cmp.ALL.combined.csv", "", args[1])
+    capture.output(outputList, file = paste0(outName,"_PONDER_Output"))
   }
 }
 analysisComparOutput(input, args[2])
