@@ -93,7 +93,7 @@ function process_flowcell () {
     # Print line that can be pasted directly into RunOverview sheet
     query="flowcells?name=${exp_name}"
     response=$(hmf_api_get "${query}")
-    gcp_info="GCP=Unknown"
+    gcp_info="Unknown"
     if [[ $(echo "${response}" | jq length) -eq 1 ]]; then
         gcp_status=$(echo "${response}" | jq -r '.[-1].status')
         gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
