@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
 
+# for colors see https://man7.org/linux/man-pages/man5/terminal-colors.d.5.html
+RED_BG="\e[1;41m"
+GREEN_BG="\e[1;42m"
+BLUE_BG="\e[1;46m"
+END_COLOR="\e[0m"
+
+msg_with_color() {
+    local color=$1 && shift
+    local msg_content=$* && shift
+    local color_code=""
+    [[ "$color" == "red" ]] && color_code=$RED_BG
+    [[ "$color" == "green" ]] && color_code=$GREEN_BG
+    [[ "$color" == "blue" ]] && color_code=$BLUE_BG
+    echo -e "${color_code}${msg_content}${END_COLOR}"
+}
+
 msg() {
     local msg_type=$1 && shift
     local msg_content=$* && shift
@@ -33,3 +49,14 @@ info_and_warn() {
     msg "WARN" "$@" >&2
 }
 
+color_msg_red() {
+    msg_with_color "red" "$@"
+}
+
+color_msg_green() {
+    msg_with_color "green" "$@"
+}
+
+color_msg_blue() {
+    msg_with_color "blue" "$@"
+}

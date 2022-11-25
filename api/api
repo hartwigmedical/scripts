@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 classes=(accounts biopsies datasets entities fastq lanes flowcells groups inis platforms runs samples sets sequencers
-reports/created reports/shared)
+reports/created reports/shared datatypes)
 
 print_usage(){
     script=$(basename "$0")
@@ -155,6 +155,9 @@ main(){
         jq -r '.[] | del(.rna_raw_reads) | keys[] as $k | .[$k] | keys[] as $s | "\($s)\t\(.[$s].version)\t\($k)\t\(.[$s].path)"' <<< "${json_result}"
         # Need to grab RNA data separately because data structure differs
         jq --arg t "rna_raw_reads" -r 'select(.[][$t]) | .[][$t] | keys[] as $s | .[$s][] | [$s, .version, $t, .path] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "datatypes" ]]; then
+        printf "#%s\t%s\n" name id
+        jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi

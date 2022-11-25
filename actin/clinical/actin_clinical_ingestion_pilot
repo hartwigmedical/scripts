@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source io_functions || exit 1
 
 feed_directory="$(locate_actin_clinical_input_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
@@ -10,9 +11,10 @@ actin_jar="$(locate_pilot_actin)"
 
 info "Running ACTIN Clinical on ${feed_directory}"
 
+create_or_cleanup_dir "${output_directory}"
+
 java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \
     -feed_directory ${feed_directory} \
     -curation_directory ${curation_directory} \
     -output_directory ${output_directory} \
     "$@"
-

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source database_functions || exit 1
+
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+
+database="hmfpatients"
+patient_db_jar=$(locate_prod_patient_db)
+credentials=$(prod_writer_sql_credentials)
+
+do_load_driver_gene_panel ${driver_gene_panel} ${database} "${credentials}" ${patient_db_jar}

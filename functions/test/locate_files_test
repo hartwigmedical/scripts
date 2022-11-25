@@ -51,6 +51,9 @@ if [[ $? = 0 ]]; then info " SAGE Reference BQR Plot: ${sage_reference_bqr_plot}
 sage_germline_gene_coverage=$(locate_sage_germline_gene_coverage ${run_dir})
 if [[ $? = 0 ]]; then info " SAGE Germline Gene Coverage: ${sage_germline_gene_coverage}"; fi
 
+purple_data_directory=$(locate_purple_data_directory ${run_dir})
+if [[ $? = 0 ]]; then info " PURPLE Data Directory: ${purple_data_directory}"; fi
+
 purple_somatic_variants=$(locate_purple_somatic_variants ${run_dir})
 if [[ $? = 0 ]]; then info " PURPLE Somatic VCF: ${purple_somatic_variants}"; fi
 
@@ -92,6 +95,12 @@ if [[ $? = 0 ]]; then info " GRIPSS Filtered Structural VCF: ${gripss_structural
 
 gripss_recovery_candidates=$(locate_gripss_recovery_candidates ${run_dir})
 if [[ $? = 0 ]]; then info " GRIPSS Recovery Candidates VCF: ${gripss_recovery_candidates}"; fi
+
+linx_somatic_data_directory=$(locate_linx_somatic_data_directory ${run_dir})
+if [[ $? = 0 ]]; then info " LINX Somatic Data Directory: ${linx_somatic_data_directory}"; fi
+
+linx_germline_data_directory=$(locate_linx_germline_data_directory ${run_dir})
+if [[ $? = 0 ]]; then info " LINX Germline Data Directory: ${linx_germline_data_directory}"; fi
 
 linx_structural_variants=$(locate_linx_structural_variants ${run_dir})
 if [[ $? = 0 ]]; then info " Linx Structural Variants: ${linx_structural_variants}"; fi

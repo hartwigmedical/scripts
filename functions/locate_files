@@ -89,7 +89,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/1.10.1/orange.jar"
+    echo "/data/tools/orange/1.10.2/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -97,11 +97,11 @@ locate_pilot_orange() {
 }
 
 locate_research_patient_db() {
-    echo "/data/tools/patient-db/3.71/patient-db.jar"
+    echo "/data/tools/patient-db/3.72/patient-db.jar"
 }
 
 locate_prod_patient_db() {
-    echo "/data/tools/patient-db/3.69/patient-db.jar"
+    echo "/data/tools/patient-db/3.72/patient-db.jar"
 }
 
 locate_prod_clinical_patient_db() {
@@ -162,10 +162,6 @@ locate_pilot_serve() {
 
 locate_prod_protect() {
     echo "/data/tools/protect/2.2/protect.jar"
-}
-
-locate_actin_protect() {
-    echo "/data/tools/protect/2.3/protect.jar"
 }
 
 locate_research_protect() {
@@ -334,8 +330,8 @@ locate_actin_external_trial_mapping_tsv() {
     echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
 }
 
-locate_actin_gene_filter_tsv() {
-    echo "/data/resources/crunch/actin/molecular_interpretation/gene_filter.tsv"
+locate_actin_known_genes_tsv() {
+    echo "/data/resources/crunch/actin/molecular_interpretation/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_serve_bridge_tsv() {
@@ -747,18 +743,6 @@ locate_iclusion_filter_pilot_tsv() {
   echo "/data/resources/crunch/serve/curation/iclusion_filters_pilot.tsv"
 }
 
-locate_actin_trial_tsv() {
-    echo "/data/resources/crunch/serve/actin/actin_knowledgebase.tsv"
-}
-
-locate_actin_filter_tsv() {
-    echo "/data/resources/crunch/serve/curation/actin_filters.tsv"
-}
-
-locate_actin_filter_pilot_tsv() {
-    echo "/data/resources/crunch/serve/curation/actin_filters_pilot.tsv"
-}
-
 locate_vicc_json() {
     echo "/data/resources/crunch/serve/vicc/all.json"
 }
@@ -1116,6 +1100,15 @@ locate_purple_pilot_somatic_variants() {
     echo ${somatic_vcf}
 }
 
+locate_purple_data_directory() {
+    local run_dir=$1
+    local purple_data_dir="${run_dir}/purple"
+    if [[ ! -d "${purple_data_dir}" ]]; then
+        error "Unable to locate purple data directory in ${run_dir}."
+    fi
+    echo ${purple_data_dir}
+}
+
 locate_purple_plot_directory() {
     local run_dir=$1
     local purple_plot_dir="${run_dir}/purple/plot"
@@ -1294,6 +1287,15 @@ locate_linx_drivers() {
     echo ${driver_tsv}
 }
 
+locate_linx_somatic_data_directory() {
+    local run_dir=$1
+    local linx_somatic_data_directory="${run_dir}/linx"
+    if [[ ! -d "${linx_somatic_data_directory}" ]]; then
+        error "Unable to locate linx somatic data directory in ${run_dir}."
+    fi
+    echo ${linx_somatic_data_directory}
+}
+
 locate_linx_plot_directory() {
     local run_dir=$1
     local linx_plot_dir="${run_dir}/linx/plot"
@@ -1310,6 +1312,15 @@ locate_linx_structural_variants() {
 }
 
 ################################# LINX GERMLINE ################################
+
+locate_linx_germline_data_directory() {
+    local run_dir=$1
+    local linx_germline_data_directory="${run_dir}/linx_germline"
+    if [[ ! -d "${linx_germline_data_directory}" ]]; then
+        error "Unable to locate linx germline data directory in ${run_dir}."
+    fi
+    echo ${linx_germline_data_directory}
+}
 
 locate_linx_germline_disruptions() {
     local run_dir=$1
@@ -1731,6 +1742,22 @@ locate_orange_json() {
 
     if [[ -z "${orange_json}" ]]; then
         error "Unable to locate ORANGE json in ${run_dir}."
+    fi
+
+    echo ${orange_json}
+}
+
+locate_orange_json_pilot() {
+    local run_dir=$1
+    local orange_json=""
+
+    local orange_dir="${run_dir}/orange_pilot"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
+    fi
+
+    if [[ -z "${orange_json}" ]]; then
+        error "Unable to locate ORANGE pilot json in ${run_dir}."
     fi
 
     echo ${orange_json}

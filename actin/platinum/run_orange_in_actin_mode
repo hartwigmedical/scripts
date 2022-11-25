@@ -8,9 +8,11 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
+# TODO Switch back to research after release of v2.0
+
 # Run standard ORANGE in research
-run_orange_research ${run_dir} -max_evidence_level C
+run_orange_pilot ${run_dir}
 
 # Disabled-germline is generated to be able to share externally with people who do not wish to see germline.
-run_orange_research_no_germline ${run_dir} -max_evidence_level C
+run_orange_pilot_no_germline ${run_dir}
 
