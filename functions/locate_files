@@ -323,7 +323,7 @@ locate_actin_minimal_molecular_json() {
 }
 
 locate_actin_serve_db() {
-    echo "/data/resources/crunch/actin/serve_db_2_0"
+    echo "/data/resources/crunch/actin/serve_db"
 }
 
 locate_actin_external_trial_mapping_tsv() {
