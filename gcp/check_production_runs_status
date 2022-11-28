@@ -196,6 +196,11 @@ main () {
                      error="reporting_summary_error"
                      reporter_error="summary"
                 fi
+                # error - warn present?
+                if [[ "$reporter_log_error" != *"summary"* && "$reporter_log_error" == *"WARN"*  ]]; then
+                     error="reporting_error"
+                     reporter_error=${reporter_error}"_warn"
+                fi
                 # error - reporter - primtumloc
                 if [[ "$doid_error" == *"The primary tumor location provided is Unknown"* && "$doid_error" != *"The primary tumor location provided is Unknown, but it is a CUP so this is correct"* ]]; then
                      error="reporting_error"
@@ -301,7 +306,7 @@ main () {
 
     echo ""
     echo ""
-    echo "### VALIDATED RUNS WITH INFORMATION WARNINGS WHILE CREATING THE REPORT ( please solve! ):"
+    echo "### VALIDATED RUNS WITH (INFORMATION) WARNINGS WHILE CREATING THE REPORT ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
