@@ -197,7 +197,7 @@ main () {
                      reporter_error="summary"
                 fi
                 # error - reporter - primtumloc
-                if [[ "$doid_error" == *"The primary tumor location provided is Unknown"* && "$doid_error" == *"The primary tumor location provided is Unknown, but it is a CUP so this is correct"* ]]; then
+                if [[ "$doid_error" == *"The primary tumor location provided is Unknown"* && "$doid_error" != *"The primary tumor location provided is Unknown, but it is a CUP so this is correct"* ]]; then
                      error="reporting_error"
                      reporter_error=${reporter_error}"_primtumloc"
                 fi
