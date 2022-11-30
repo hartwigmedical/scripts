@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+cram=$1 && shift
+region=$1 && shift
+
+samtools_path="/data/tools/samtools/1.10"
+region_regex="^[^:-]+:[^:-]+-[^:-]+$"
+
+if [[ ! $(command -v samtools &> /dev/null) ]]; then
+    info "Samtools not present so adding to path [${samtools_path}]"
+    export PATH=${samtools_path}/:$PATH
+fi
+
+if [[ "${cram}" == "" || "${region}" == "" || "${cram}" == "-h" || "${cram}" == "--help" ]]; then
+    script="$(basename "$0")"
+    echo "Usage: ${script} <path-to-cram> <region>"
+    echo "   Eg: ${script} /path/to/cram 7:74146969-74146971"
+    echo "       ${script} gs://path/to/cram 7:74146969-74146971"
+    exit 1
+fi
+
+main () {
+    [[ "${region}" =~ ${region_regex} ]] || die "Region needs to comply with regex [${region_regex}] but found [${region}]"
+
+    if [[ "${cram}" =~ ^gs: ]]; then
+        info "Input is a gs url so exporting auth token to ENV first"
+        token=$(gcloud auth application-default print-access-token)
+        export GCS_OAUTH_TOKEN="$token"
+    else
+        info "Input is a file so checking for existence"
+        [[ -f "${cram}" ]] || die "Input file does not exist (${cram}). Exiting"
+    fi
+
+    info "Running MPILEUP with region (${region})"
+    samtools mpileup "${cram}" -r "${region}"
+}
+
+main
