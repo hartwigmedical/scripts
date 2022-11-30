@@ -54,6 +54,7 @@ print_usage() {
     echo "  https://cloud.google.com/compute/docs/machine-types"
     echo "  https://cloud.google.com/compute/docs/instances/create-start-instance"
     echo "  https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
+    echo "  https://cloud.google.com/compute/docs/disks/add-persistent-disk"
     echo ""
     echo "For possible images see also:"
     echo "  gcloud --project ${image_project} compute images list | grep ${image_family}"
