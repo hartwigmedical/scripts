@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 
+source lims_functions || exit 1
+
 sampleId=$1 && shift
 
 [[ -n "${sampleId}" ]] || die "No sampleId provided. Exiting"
 
 barcode=$( hmf_api_get samples?name=${sampleId} | jq -r .[].barcode )
+if [[ -z "${barcode}" ]]; then
+    barcode=$( find_barcode_for_sample_name ${sampleId} )
+fi
 
 created_records=$( hmf_api_get reports/created?barcode=${barcode} | jq 'length' )
 echo "Number of reports have been created for ${sampleId} - ${barcode}: ${created_records}"
