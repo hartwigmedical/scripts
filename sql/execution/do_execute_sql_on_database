@@ -17,7 +17,7 @@ fi
 
 from_file='true'
 if [[ ! -f "${sql_file_or_select_statement}" ]]; then
-    if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select) ]]; then
+    if [[ ! "${sql_file_or_select_statement}" =~ ^(SELECT|select|SHOW|show) ]]; then
         error "Provided sql is not an existing file but no SELECT statement either (${sql_file_or_select_statement}). Exiting."
     else
         from_file='false'
