@@ -279,7 +279,7 @@ sub processSample{
             '',
         );
     }
-    elsif ( $analysis eq 'FASTQ' ){
+    elsif ( $analysis eq 'FASTQ' or $submission =~ /^HMFregINN/ ){
         my $set = join("_", $date, $submission, $barcode, $name );
         sayInfo("  SET: $set");
         $json_data{ 'set_name' } = "$set";
