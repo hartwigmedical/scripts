@@ -69,6 +69,8 @@ main () {
             echo "**"
             echo " Action - inspect the error above and solve if possible with lab (extra sequencing for coverage and/or second biopt)... "
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
+            echo " Action - check whether the SNP check was done and was ok: perform_snpcheck_run ${set_name}"
+            echo " Action - patch the api to validated: patch_api_run_validate ${set_name} "
             echo " Action - create a failed report and upload it to nc for final checking and sharing using the script: create_patient_report_failed_run ${set_name}"
             #echo " Action - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${set_name}"
         fi
