@@ -89,7 +89,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/1.10.2/orange.jar"
+    echo "/data/tools/orange/2.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -677,10 +677,6 @@ locate_driver_gene_panel_37_tsv() {
 
 locate_driver_gene_panel_38_tsv() {
     echo "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
-}
-
-locate_actin_known_fusion_data_37_csv() {
-    echo "/data/resources/crunch/actin/fusions/known_fusion_data.37.csv"
 }
 
 locate_known_fusion_data_37_csv() {
