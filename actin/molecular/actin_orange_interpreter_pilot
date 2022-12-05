@@ -12,8 +12,7 @@ fi
 
 platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
 
-# TODO Switch back to prod after release of v2.0
-orange_json="$(locate_orange_json_pilot ${platinum_dir})"
+orange_json="$(locate_orange_json ${platinum_dir})"
 serve_directory="$(locate_actin_serve_db)"
 external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 clinical_json="$(locate_actin_clinical_json_for_sample ${sample})"
