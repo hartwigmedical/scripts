@@ -38,8 +38,7 @@ my $HISEQ = "HiSeq";
 my %SETTINGS_PER_PLATFORM = (
     $NOVASEQ => {'min_flowcell_q30' => 85, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
     $NEXTSEQ => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' => 50, 'yield_factor' => 1e6},
-    $ISEQ    => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e6, 'max_undetermined' => 50, 'yield_factor' => 1},
-    $HISEQ   => {'min_flowcell_q30' => 75, 'min_sample_yield' => 1e9, 'max_undetermined' =>  8, 'yield_factor' => 1e6},
+    $ISEQ    => {'min_flowcell_q30' => 75, 'min_sample_yield' => 5e6, 'max_undetermined' => 50, 'yield_factor' => 1},
 );
 my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
 
