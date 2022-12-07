@@ -8,7 +8,9 @@ samtools=/data/tools/samtools/1.10/samtools
 ref_genome=$(locate_ref_genome_37_fasta_file)
 
 if [[ "${cram}" == "" || "${cram}" == "-h" ]]; then
-    echo "Usage: $(basename "$0") /path/to/cram OR gs://path/to/cram"
+    script=$(basename "$0")
+    echo "Usage: ${script} /path/to/cram OR gs://path/to/cram"
+    echo "   Eg: ${script} gs://hmf-verification-data-bam/coloMini/COLO829v003R.bam"
     exit 1
 fi
 
