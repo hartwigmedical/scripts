@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+command -v hmf_api_get >/dev/null 2>&1 || die "Missing dependency hmf_api_get"
+
+PASS_ENDPOINTS=(platforms inis biopsies/1 flowcells/52 sets/53188 runs/128589 samples/65807 fastq?sample_id=65807
+reports/created/1 reports/shared/1 datasets/ACTN01020001T)
+
+FAIL_ENDPOINTS=(flowcells/1 sets/1 runs/1 samples/1)
+
+main (){
+    info "Starting HMF-API verification"
+
+    info "Verifying endpoints EXPECTED TO SUCCEED"
+    for endpoint in "${PASS_ENDPOINTS[@]}"; do
+        test_endpoint_pass "${endpoint}"
+    done
+
+    info "Verifying endpoints EXPECTED to FAIL"
+    for endpoint in "${FAIL_ENDPOINTS[@]}"; do
+        test_endpoint_fail "${endpoint}"
+    done
+
+    info "Finished with HMF-API verification"
+}
+
+
+test_endpoint_pass() {
+    local endpoint=$1 && shift
+    info "  Testing success of endpoint [${endpoint}]"
+    hmf_api_get "${endpoint}" 1>/dev/null 2>&1 || die "Querying endpoint failed [${endpoint}]"
+}
+
+test_endpoint_fail() {
+    local endpoint=$1 && shift
+    info "  Testing failure of endpoint ${endpoint}"
+    hmf_api_get "${endpoint}" 1>/dev/null 2>&1 && die "Querying endpoint is ok [${endpoint}]"
+}
+
+main
