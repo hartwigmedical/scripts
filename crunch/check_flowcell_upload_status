@@ -39,7 +39,7 @@ function process_server () {
     if [[ "${#all_stdout[@]}" -gt 0 ]]; then
         echo ""
         info "Potential cleanup (SSH into $server and execute cmd below):"
-        echo "  sudo -u sbsuser rm -r $(printf '%s ' "${all_stdout[@]}")"
+        echo "  sudo -u sbsuser rm -r $(printf '%s ' "${all_stdout[@]}" | sort)"
         echo ""
     fi
 }
