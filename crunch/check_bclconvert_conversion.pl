@@ -230,6 +230,7 @@ sub performQC{
    
     my $stats = $info->{stats};
     my $samples = $info->{samples};
+    my $lanes = $info->{lanes};
     my $fails = 0;
     my $identifier = $stats->{identifier};
 
@@ -243,6 +244,7 @@ sub performQC{
         
     # Sample checks
     $fails += checkObjectField($samples, 'yield', $qc_limits->{min_sample_yield});
+    checkObjectField($lanes, 'q30',   $qc_limits->{min_flowcell_q30}); # lane check only prints warning
     
     # Conclusion
     my $final_qc_result = "NoQcResult";
