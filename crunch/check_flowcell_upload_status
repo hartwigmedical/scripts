@@ -36,10 +36,13 @@ function process_server () {
         mapfile -t stdout < <(process_flowcell "$server" "$type" "$flowcell_path")
         all_stdout=( "${all_stdout[@]}" "${stdout[@]}" )
     done
-    if [[ "${#all_stdout[@]}" -gt 0 ]]; then
+    declare -a sorted_all_stdout
+    IFS=$'\n' mapfile -t sorted_all_stdout < <(sort <<<"${all_stdout[*]}")
+    unset IFS
+    if [[ "${#sorted_all_stdout[@]}" -gt 0 ]]; then
         echo ""
         info "Potential cleanup (SSH into $server and execute cmd below):"
-        echo "  sudo -u sbsuser rm -r $(printf '%s ' "${all_stdout[@]}" | sort)"
+        echo "  sudo -u sbsuser rm -r $(printf '%s ' "${sorted_all_stdout[@]}")"
         echo ""
     fi
 }
