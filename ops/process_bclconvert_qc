@@ -2,10 +2,11 @@
 
 source message_functions || exit 1
 
-PARSE_SCRIPT="check_bcl2fastq_conversion_pilot.pl"
+PARSE_SCRIPT="check_bclconvert_conversion.pl"
 ROUNDING_SCRIPT="base_count_to_gbase.py"
 
 CONVERSION_REPORT="hmf_conversion_report.tsv"
+CONVERSION_REPORT_ERR="hmf_conversion_report.err"
 SAMPLES_REPORT="hmf_samples_report.tsv"
 RUN_REPORT="hmf_run_report.tsv"
 
@@ -54,7 +55,7 @@ function main() {
         flowcell_api_info=$(get_flowcell_from_api "${flowcell_id}") || die "Unable to find flowcell in API [$info]"
         api_status=$(jq -r '.status' <<< "$flowcell_api_info")
         api_name=$(jq -r '.name' <<< "$flowcell_api_info")
-        info="${info},${api_name}"
+        info="${info},${api_name},${api_status}"
 
         [[ "$api_status" == "Converted" || "$api_status" == "Failed" ]] || die "Unexpected status [${api_status}] in API [$info]"
 
@@ -62,8 +63,8 @@ function main() {
         outdir="${tmpdir}/${seq_run}"
 
         conversion_report_tsv="${outdir}/${CONVERSION_REPORT}"
+        conversion_report_err="${outdir}/${CONVERSION_REPORT_ERR}"
         samples_report_tsv="${outdir}/${SAMPLES_REPORT}"
-        run_report_tsv="${outdir}/${RUN_REPORT}"
         run_report_tsv="${outdir}/${RUN_REPORT}"
 
         mkdir -p "${outdir}" || die "Unable to create output dir [$info]"
@@ -82,9 +83,14 @@ function main() {
 
         [[ -s "${outdir}/Errors.log" ]] && warn "  Non-empty error log!!"
 
+        info "  Creating conversion report [$info]"
         ${PARSE_SCRIPT} -sampleSheet "${outdir}/SampleSheet.csv" -runInfoXml "${outdir}/RunInfo.xml" \
           -qualityCsv "${outdir}/Quality_Metrics.csv" -demuxCsv "${outdir}/Demultiplex_Stats.csv" \
-        > "${conversion_report_tsv}" || die "Script $PARSE_SCRIPT exited with non zero exit status"
+        > "${conversion_report_tsv}" 2> "${conversion_report_err}" || die "Script $PARSE_SCRIPT exited with non zero exit status"
+
+        if [[ -s "${conversion_report_err}" ]]; then
+            warn "  Non-empty error log please check [${conversion_report_err}]"
+        fi
 
         info "  Processing conversion report [$info]"
         grep "^## RunOverview" "${conversion_report_tsv}" | sed 's#\#\#\ RunOverview INFO:\ ##g' > "${run_report_tsv}"
@@ -97,7 +103,7 @@ function main() {
         sync_dir_to_nas "${outdir}" "${nas_web_dir_path}"
     done
 
-    info "SAMPLE info [${info}]"
+    info "SAMPLE info"
     find "$tmpdir" -name "${SAMPLES_REPORT}" -exec cat {} \; | sort -r
     echo ""
 

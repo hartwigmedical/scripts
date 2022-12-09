@@ -230,7 +230,6 @@ sub performQC{
    
     my $stats = $info->{stats};
     my $samples = $info->{samples};
-    my $lanes = $info->{lanes};
     my $fails = 0;
     my $identifier = $stats->{identifier};
 
@@ -242,8 +241,7 @@ sub performQC{
         $fails += 1;
     }
         
-    # Lane and Sample checks
-    $fails += checkObjectField($lanes, 'q30',   $qc_limits->{min_flowcell_q30});
+    # Sample checks
     $fails += checkObjectField($samples, 'yield', $qc_limits->{min_sample_yield});
     
     # Conclusion
