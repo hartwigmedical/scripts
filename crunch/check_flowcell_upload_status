@@ -40,7 +40,7 @@ function process_server () {
     if [[ "${#all_stdout[@]}" -gt 0 ]]; then
         declare -a sorted_all_stdout
         IFS=$'\n' mapfile -t sorted_all_stdout < <(echo "${all_stdout[*]}" | xargs -n1 -d ' ' echo | sort); unset IFS
-        
+
         echo ""
         info "Potential cleanup (SSH into $server and execute cmd below):"
         echo "  sudo -u sbsuser rm -r $(printf '%s ' "${sorted_all_stdout[@]}")"
