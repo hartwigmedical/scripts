@@ -37,8 +37,7 @@ function process_server () {
         all_stdout=( "${all_stdout[@]}" "${stdout[@]}" )
     done
     declare -a sorted_all_stdout
-    IFS=$'\n' mapfile -t sorted_all_stdout < <(sort <<<"${all_stdout[*]}")
-    unset IFS
+    mapfile -t sorted_all_stdout < <(sort <<<"${all_stdout[*]}")
     if [[ "${#sorted_all_stdout[@]}" -gt 0 ]]; then
         echo ""
         info "Potential cleanup (SSH into $server and execute cmd below):"
