@@ -10,9 +10,9 @@ if [[ -z "${doid}" ]]; then
 fi
 
 # Can use any jar since tool lives in hmf-common
-any_hmf_jar=$(locate_pilot_protect)
+any_hmf_jar="$(locate_pilot_orange)"
 
-doid_json=$(locate_doid_json)
+doid_json="$(locate_doid_json)"
 
 java -cp ${any_hmf_jar} com.hartwig.hmftools.common.doid.tools.DoidTermResolverApp \
     -doid_json ${doid_json} \
