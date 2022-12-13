@@ -17,7 +17,7 @@ echo "--TAT information for sample ${sampleId}--"
 temp_nr=$( lama patients/tumorsamples $sampleId | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
 tumor_arrival=$( lama patients/tumorsamples $sampleId | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
-sampleId_ref=$( echo $( echo $sampleId | cut -f1 -d'T' )"R" )
+sampleId_ref=$( echo $(echo ${sampleId} | cut -c1-12)R )
 temp_nr=$( lama patients/bloodsamples $sampleId_ref | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
 ref_arrival=$( lama patients/bloodsamples $sampleId_ref | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
