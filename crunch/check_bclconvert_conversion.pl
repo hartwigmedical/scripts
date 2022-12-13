@@ -119,7 +119,7 @@ addSamplesheetInfo($store, $ssht_info);
 addPrintFields($store, $run_info);
 addGeneralStats($store, $run_info);
 
-performQC($store, $settings) unless $opt{no_qc};
+performQC($store, $settings, $run_info) unless $opt{no_qc};
 
 printTable($store, \@OUT_FIELDS);
 printJson($store, $output_json_path) if defined $output_json_path;
@@ -226,7 +226,7 @@ sub determinePlatformByString {
 }
 
 sub performQC{
-    my ($info, $qc_limits) = @_;
+    my ($info, $qc_limits, $run_info) = @_;
    
     my $stats = $info->{stats};
     my $samples = $info->{samples};
@@ -241,7 +241,8 @@ sub performQC{
         warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)\n";
         $fails += 1;
     }
-    my $q30 = $stats->{q30};
+    my $fid = $run_info->{flowcell_id};
+    my $q30 = $info->{flowcell}{$fid}{q30};
     my $min_flowcell_q30 = $qc_limits->{min_flowcell_q30};
     if ($q30 < $min_flowcell_q30){
         warn "## WARNING q30 ($q30) too low (min=$min_flowcell_q30)\n";
