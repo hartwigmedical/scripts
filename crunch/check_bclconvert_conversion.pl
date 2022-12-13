@@ -241,6 +241,12 @@ sub performQC{
         warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)\n";
         $fails += 1;
     }
+    my $q30 = $stats->{q30};
+    my $min_flowcell_q30 = $qc_limits->{min_flowcell_q30};
+    if ($q30 < $min_flowcell_q30){
+        warn "## WARNING q30 ($q30) too low (min=$min_flowcell_q30)\n";
+        $fails += 1;
+    }
         
     # Sample checks
     $fails += checkObjectField($samples, 'yield', $qc_limits->{min_sample_yield});
