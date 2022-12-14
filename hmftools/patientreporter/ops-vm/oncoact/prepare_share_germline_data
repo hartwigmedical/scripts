@@ -88,6 +88,10 @@ gsutil cp ${gripss_germline} ${target_dir}${samplename}/
 gsutil cp ${linx_germline_disruption} ${target_dir}${samplename}/
 gsutil cp ${linx_germline_driver_catalog} ${target_dir}${samplename}/
 gsutil cp ${purple_germline_driver_catalog} ${target_dir}${samplename}/
-echo "## Done."
 
-gsutil cat ${target_dir}${samplename}/
+
+echo "Number of files shared:"
+gsutil ls ${target_dir}${samplename}/ | wc -l
+echo "Specific files:"
+gsutil ls ${target_dir}${samplename}/
+echo "## Done."
