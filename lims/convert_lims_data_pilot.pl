@@ -896,7 +896,7 @@ sub addExcelSamplesToSamples{
                 $row_info->{ 'entity' } = 'KG_' . $center;
                 $row_info->{ 'label' } = 'KG';
             }
-            elsif( $sub->{ 'group_id' } eq 'HMF-INNOVATION' ){
+            elsif( $sub->{ 'group_id' } and $sub->{ 'group_id' } eq 'HMF-INNOVATION' ){
                 $row_info->{ 'entity' } = 'INNOVATION';
                 $row_info->{ 'label' } = 'INNOVATION';
             }
