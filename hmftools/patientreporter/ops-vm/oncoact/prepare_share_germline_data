@@ -86,3 +86,5 @@ gsutil cp ${linx_germline_disruption} ${target_dir}${samplename}/
 gsutil cp ${linx_germline_driver_catalog} ${target_dir}${samplename}/
 gsutil cp ${purple_germline_driver_catalog} ${target_dir}${samplename}/
 echo "## Done."
+
+gsutil cat ${target_dir}${samplename}/
