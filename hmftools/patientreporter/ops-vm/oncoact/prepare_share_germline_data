@@ -22,8 +22,8 @@ sample_dir=${data_dir}${run_dir}
 
 # Check if rundir exists
 if [[ -z "${run_dir}" ]]; then
-    echo "No run dir provided or run dir does not exist due to no Validated diagnostic run available:"
-    api runs "${samplename}" sample_name | grep "diagnostic-pipeline-output-prod-1"
+    echo "No run dir provided or run dir does not exist due to no Validated diagnostic run available. Available runs:"
+    api runs "${samplename}" sample_name
     error "Exiting."
 fi
 
@@ -59,7 +59,8 @@ purple_germline_vcf_tbi=${sample_dir}/purple/${samplename}.purple.germline.vcf.g
 purple_germline_deletion=${sample_dir}/purple/${samplename}.purple.germline.deletion.tsv
 
 # germline disruptions:
-gripss_germline=${sample_dir}/gripss_germline/${sample}R.gripss.filtered.germline.vcf.gz
+ref_samplename=$( imply_ref_sample_from_tumor_sample ${samplename} )
+gripss_germline=${sample_dir}/gripss_germline/${ref_samplename}.gripss.filtered.germline.vcf.gz
 linx_germline_disruption=${sample_dir}/linx_germline/${samplename}.linx.germline.disruption.tsv
 
 # germline driver catalogs
