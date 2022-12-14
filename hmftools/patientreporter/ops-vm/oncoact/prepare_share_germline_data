@@ -62,7 +62,8 @@ purple_germline_deletion=${sample_dir}/purple/${samplename}.purple.germline.dele
 
 # germline disruptions:
 
-gripss_germline=${sample_dir}/gripss_germline/${ref_samplename}.gripss.filtered.germline.vcf.gz
+gripss_germline_vcf=${sample_dir}/gripss_germline/${ref_samplename}.gripss.filtered.germline.vcf.gz
+gripss_germline_vcf_tbi=${sample_dir}/gripss_germline/${ref_samplename}.gripss.filtered.germline.vcf.gz.tbi
 linx_germline_disruption=${sample_dir}/linx_germline/${samplename}.linx.germline.disruption.tsv
 
 # germline driver catalogs
@@ -74,7 +75,8 @@ purple_germline_driver_catalog=${sample_dir}/purple/${samplename}.driver.catalog
 gsutil -q stat ${purple_germline_vcf} || error "Cannot find PURPLE germline file."
 gsutil -q stat ${purple_germline_vcf_tbi} || error "Cannot find PURPLE germline file index."
 gsutil -q stat ${purple_germline_deletion} || error "Cannot find PURPLE germline deletions."
-gsutil -q stat ${gripss_germline} || error "Cannot find GRIPSS germline file."
+gsutil -q stat ${gripss_germline_vcf} || error "Cannot find GRIPSS germline file."
+gsutil -q stat ${gripss_germline_vcf_tbi} || error "Cannot find GRIPSS germline file index."
 gsutil -q stat ${linx_germline_disruption} || error "Cannot find LINX germline file."
 gsutil -q stat ${linx_germline_driver_catalog} || error "Cannot find LINX germline driver catalog file."
 gsutil -q stat ${purple_germline_driver_catalog} || error "Cannot find PURPLE germline driver catalog file."
@@ -84,7 +86,8 @@ gsutil -q stat ${purple_germline_driver_catalog} || error "Cannot find PURPLE ge
 gsutil cp ${purple_germline_vcf} ${target_dir}${samplename}/
 gsutil cp ${purple_germline_vcf_tbi} ${target_dir}${samplename}/
 gsutil cp ${purple_germline_deletion} ${target_dir}${samplename}/
-gsutil cp ${gripss_germline} ${target_dir}${samplename}/
+gsutil cp ${gripss_germline_vcf} ${target_dir}${samplename}/
+gsutil cp ${gripss_germline_vcf_tbi} ${target_dir}${samplename}/
 gsutil cp ${linx_germline_disruption} ${target_dir}${samplename}/
 gsutil cp ${linx_germline_driver_catalog} ${target_dir}${samplename}/
 gsutil cp ${purple_germline_driver_catalog} ${target_dir}${samplename}/
