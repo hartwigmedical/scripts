@@ -40,45 +40,49 @@ fi
 
 echo "## Preparing germline files for transfer for ${samplename}"
 
-# Check if informed consent is available
-ic_status=$(curl http://lama.prod-1/api/patients/samples/${samplename} | jq --arg samplename "$samplename" '.tumorSamples[] | select(._id | contains($samplename)) | .patientGermlineChoice')
-# Check if only one api response received
-if [[ "$ic_status" != "\"Yes\"" ]]; then
-	echo ${ic_status}
-	echo "IMPORTANT: No informed consent is registered for germline analysis. Make sure you are allowed to share the data."
-else
-	echo "Informed consent registered for germline reporting."
-fi
+## Check if informed consent is available
+#ic_status=$(curl http://lama.prod-1/api/patients/samples/${samplename} | jq --arg samplename "$samplename" '.tumorSamples[] | select(._id | contains($samplename)) | .patientGermlineChoice')
+## Check if only one api response received
+#if [[ "$ic_status" != "\"Yes\"" ]]; then
+#	echo ${ic_status}
+#	echo "IMPORTANT: No informed consent is registered for germline analysis. Make sure you are allowed to share the data."
+#else
+#	echo "Informed consent registered for germline reporting."
+#fi
 
 
-# Find the germline files
-purple_germline=${sample_dir}/purple/${samplename}.purple.germline.vcf.gz
-purple_germline_tbi=${sample_dir}/purple/${samplename}.purple.germline.vcf.gz.tbi
-mvlh_sage=${sample_dir}/sage_somatic/${samplename}.sage.gene.coverage.tsv
-#newer files:
-#gripss_germline=${sample_dir}/gripss_germline/${samplename}.gripss.filtered.germline.vcf.gz
-#linx_germline=${sample_dir}/linx_germline/${samplename}.linx.germline.disruption.tsv
-#purple_driver_catalog_germline=${sample_dir}/purple/${samplename}.driver.catalog.germline.tsv
-#linx_driver_catalog_germline=${sample_dir}/linx_germline/${samplename}.linx.germline.driver.catalog.tsv
+# germline SNVs
+purple_germline_vcf=${sample_dir}/purple/${samplename}.purple.germline.vcf.gz
+purple_germline_vcf_tbi=${sample_dir}/purple/${samplename}.purple.germline.vcf.gz.tbi
+
+# germline deletions:
+purple_germline_deletion=${sample_dir}/purple/${samplename}.purple.germline.deletion.tsv
+
+# germline disruptions:
+gripss_germline=${sample_dir}/gripss_germline/${sample}R.gripss.filtered.germline.vcf.gz
+linx_germline_disruption=${sample_dir}/linx_germline/${samplename}.linx.germline.disruption.tsv
+
+# germline driver catalogs
+linx_germline_driver_catalog=${sample_dir}/linx_germline/${samplename}.linx.germline.driver.catalog.tsv
+purple_germline_driver_catalog=${sample_dir}/purple/${samplename}.driver.catalog.germline.tsv
+
 
 # Check if germline files exist
-gsutil -q stat ${purple_germline} || error "Cannot find PURPLE germline file."
-gsutil -q stat ${purple_germline_tbi} || error "Cannot find PURPLE germline file index."
-gsutil -q stat ${mvlh_sage} || error "Cannot find MVLH file from sage somatic."
-#newer files:
-#gsutil -q stat ${gripss_germline} || error "Cannot find GRIPSS germline file."
-#gsutil -q stat ${linx_germline} || error "Cannot find LINX germline file."
-#gsutil -q stat ${purple_driver_catalog_germline} || error "Cannot find PURPLE germline driver catalog file."
-#gsutil -q stat ${linx_driver_catalog_germline} || error "Cannot find LINX germline driver catalog file."
+gsutil -q stat ${purple_germline_vcf} || error "Cannot find PURPLE germline file."
+gsutil -q stat ${purple_germline_vcf_tbi} || error "Cannot find PURPLE germline file index."
+gsutil -q stat ${purple_germline_deletion} || error "Cannot find PURPLE germline deletions."
+gsutil -q stat ${gripss_germline} || error "Cannot find GRIPSS germline file."
+gsutil -q stat ${linx_germline_disruption} || error "Cannot find LINX germline file."
+gsutil -q stat ${linx_germline_driver_catalog} || error "Cannot find LINX germline driver catalog file."
+gsutil -q stat ${purple_germline_driver_catalog} || error "Cannot find PURPLE germline driver catalog file."
 
 
 # Copy files to target dir
-gsutil cp ${purple_germline} ${target_dir}${samplename}/
-gsutil cp ${purple_germline_tbi} ${target_dir}${samplename}/
-gsutil cp ${mvlh_sage} ${target_dir}${samplename}/
-#newer files:
-#gsutil cp ${gripss_germline} ${target_dir}${samplename}/
-#gsutil cp ${linx_germline} ${target_dir}${samplename}/
-#gsutil cp ${purple_driver_catalog_germline} ${target_dir}${samplename}/
-#gsutil cp ${linx_driver_catalog_germline} ${target_dir}${samplename}/
+gsutil cp ${purple_germline_vcf} ${target_dir}${samplename}/
+gsutil cp ${purple_germline_vcf_tbi} ${target_dir}${samplename}/
+gsutil cp ${purple_germline_deletion} ${target_dir}${samplename}/
+gsutil cp ${gripss_germline} ${target_dir}${samplename}/
+gsutil cp ${linx_germline_disruption} ${target_dir}${samplename}/
+gsutil cp ${linx_germline_driver_catalog} ${target_dir}${samplename}/
+gsutil cp ${purple_germline_driver_catalog} ${target_dir}${samplename}/
 echo "## Done."
