@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+# Run standard ORANGE in research
+run_orange_pilot ${run_dir}
+
+# Converted-germline is generated to be able to share externally with people who do not wish to see germline.
+run_orange_pilot_no_germline ${run_dir}
+
+# Tumor-only is run just for testing
+run_orange_pilot_tumor_only ${run_dir}
+
