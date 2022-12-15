@@ -1792,7 +1792,7 @@ locate_orange_no_germline_json_pilot() {
         error "Unable to locate ORANGE no-germline pilot json in ${run_dir}."
     fi
 
-    echo ${orange_jsoorange_no_germline_jsonn}
+    echo ${orange_no_germline_json}
 }
 
 locate_orange_pdf() {
