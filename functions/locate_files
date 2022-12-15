@@ -1747,6 +1747,22 @@ locate_orange_json() {
     echo ${orange_json}
 }
 
+locate_orange_no_germline_json() {
+    local run_dir=$1
+    local orange_no_germline_json=""
+
+    local orange_dir="${run_dir}/orange_no_germline"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_no_germline_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
+    fi
+
+    if [[ -z "${orange_no_germline_json}" ]]; then
+        error "Unable to locate ORANGE no-germline json in ${run_dir}."
+    fi
+
+    echo ${orange_no_germline_json}
+}
+
 locate_orange_json_pilot() {
     local run_dir=$1
     local orange_json=""
@@ -1761,6 +1777,22 @@ locate_orange_json_pilot() {
     fi
 
     echo ${orange_json}
+}
+
+locate_orange_no_germline_json_pilot() {
+    local run_dir=$1
+    local orange_no_germline_json=""
+
+    local orange_dir="${run_dir}/orange_pilot_no_germline"
+    if [[ -d "${orange_dir}" ]]; then
+        orange_no_germline_json=$(find -L ${orange_dir}/ -type f -name "*.orange.json")
+    fi
+
+    if [[ -z "${orange_no_germline_json}" ]]; then
+        error "Unable to locate ORANGE no-germline pilot json in ${run_dir}."
+    fi
+
+    echo ${orange_jsoorange_no_germline_jsonn}
 }
 
 locate_orange_pdf() {
