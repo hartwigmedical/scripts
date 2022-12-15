@@ -23,6 +23,7 @@ cohort_mapping_tsv="$(locate_cohort_mapping_tsv)"
 cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
 driver_gene_panel_tsv="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
+ensembl_data_directory="$(locate_ensembl_data_dir_37)"
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 collection_date=$(collection_date_for_sample ${tumor_sample})
@@ -87,6 +88,7 @@ java -jar ${orange_jar} \
     -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
     -driver_gene_panel_tsv "${driver_gene_panel_tsv}" \
     -known_fusion_file "${known_fusion_file}" \
+    -ensembl_data_directory "${ensembl_data_directory}" \
     ${pipeline_version_cmd} \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
