@@ -10,5 +10,5 @@ if [[ -z "${patient}" ]]; then
 fi
 
 actin_report_to_tmp ${patient}
-orange_pilot_actin_to_tmp ${patient}
-orange_pilot_actin_to_tmp_no_germline ${patient}
+orange_actin_to_tmp ${patient}
+orange_actin_to_tmp_no_germline ${patient}
