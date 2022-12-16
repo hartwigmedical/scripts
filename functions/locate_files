@@ -1600,14 +1600,16 @@ locate_virus_annotation_tsv_pilot() {
 locate_virus_annotation_tsv() {
     local run_dir=$1
 
-    if [[ -d ${run_dir}/virusintrprtr/ ]]; then
+    # TODO Sort out which convention to retain
+    if [[ -d ${run_dir}/virus_interpreter/ ]]; then
+        local virus_annotation_tsv=$(find -L ${run_dir}/virus_interpreter/ -type f -name "*.virus.annotated.tsv")
+    elif [[ -d ${run_dir}/virusintrprtr/ ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
     fi
 
     if [[ -z "${virus_annotation_tsv}" ]]; then
         error "Unable to locate virus annotation TSV in ${run_dir}."
     fi
-
     echo ${virus_annotation_tsv}
 }
 
