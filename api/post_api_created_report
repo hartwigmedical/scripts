@@ -15,22 +15,14 @@ report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
-if [[ ${cohort} == '"CPCT"' || ${cohort} == '"CPCTpancreas"' || ${cohort} == '"CPCTBLINC"' || ${cohort} == '"DRUP"' ||  ${cohort} == '"DRUPstage3"'
-||  ${cohort} == '"WIDE"' ||  ${cohort} == '"COREDB"' ||  ${cohort} == '"COREDB11"' ||  ${cohort} == '"ACTIN"' ||  ${cohort} == '"SHERPA"'  ||
-${cohort} == '"GENAYA"' ||  ${cohort} == '"OPTIC"'  ||  ${cohort} == '"GLOW"' ]]; then
-  if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=Somatic.ini" | jq '.[-1].id')
-  else
-    run_id=null
-  fi
-elif [[ ${cohort} == '"CORE"' || ${cohort} == '"CORELR02"' || ${cohort} == '"CORERI02"' || ${cohort} == '"CORELR11"' || ${cohort} == '"CORESC11"' ]]; then
-  if [[ ${report_type} == '"dna_analysis_report"'* ]]; then
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=services-pipeline-output-prod-1&ini=Somatic.ini" | jq '.[-1].id')
-  else
-    run_id=$( hmf_api_get "runs?sample_name=${sample_name}&bucket=diagnostic-pipeline-output-prod-1&ini=ShallowSeq.ini" | jq '.[-1].id')
-    fi
+run_id_somatic=$( hmf_api_get "runs?sample_name=${sample_name}&ini=Somatic.ini&context=DIAGNOSTIC" | jq '.[-1].id')
+run_id_shallow=$( hmf_api_get "runs?sample_name=${sample_name}&ini=ShallowSeq.ini&context=DIAGNOSTIC" | jq '.[-1].id')
+if [[ ${run_id_somatic} != null ]]; then
+  run_id=${run_id_somatic}
+elif [[ ${run_id_shallow} != null ]]; then
+    run_id=${run_id_shallow}
 else
-    warn "Cohort of sample isn't assigned"
+  run_id=null
 fi
 
 if [[ ${purity} == '"N/A"' ]]; then
@@ -61,7 +53,7 @@ if [[ ${source_report} == "none" ]]; then
   exit 1
 fi
 
-data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}" "create_time" "2022-10-03T14:51:36")
+data=$(printf '{"%s": %s, "%s": %s, "%s": %s, "%s": "%s", "%s": "%s"'  "barcode" "${sample_barcode}" "report_type" "${report_type}" "cohort" "${cohort}" "source" "${source_report}" "sample_name" "${sample_name}")
 ## check if it is a failed run
 if [[ ${purity} != "N/A" ]];then
     purityQualityData=$(printf ',"%s": %s,"%s": %s, "%s": %s' "purity" "${purity}" "has_reliable_purity" "${has_reliable_purity}" "has_reliable_quality" "${has_reliable_quality}")
