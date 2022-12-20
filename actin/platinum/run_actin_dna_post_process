@@ -15,7 +15,7 @@ pipeline_version_file="${run_dir}/pipeline.version"
 if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
 fi
-version="5.30"
+version="5.31"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
@@ -32,14 +32,11 @@ if [[ -d "${cuppa_dir}" ]]; then
     create_or_cleanup_dir "${cuppa_dir}"
 fi
 
-# To make sure cuppa is rerun with v1.7.2. Pipeline v5.30 runs v1.7.1
+# To make sure cuppa is rerun with v1.7.2. Pipeline v5.31 runs v1.7.1
 run_cuppa_dna_prod ${run_dir}
 
 # To generate the CUPPA report as a picture (png)
 generate_cup_report ${run_dir}
-
-# ACTIN expects v1.2 lilac output while v1.1 is produced by pipeline v5.30
-run_lilac_for_actin_run ${run_dir}
 
 # Run ORANGE to pick up all latest versions
 run_orange_in_actin_mode ${run_dir}
