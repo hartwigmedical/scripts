@@ -6,15 +6,14 @@ source message_functions || exit 1
 source database_functions || exit 1
 
 run_dir=$1 && shift
-sample=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+protect_evidence_tsv=$(find -L /home/lschoenmaker/jobs/protect/ -type f -name "*.protect.tsv")
 
-protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
-
-database="protect_validation"
+database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
