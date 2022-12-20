@@ -10,6 +10,7 @@ run_dir=$1 && shift
 if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
+
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 protect_evidence_tsv=$(find -L /home/lschoenmaker/jobs/protect/ -type f -name "*.protect.tsv")
 
