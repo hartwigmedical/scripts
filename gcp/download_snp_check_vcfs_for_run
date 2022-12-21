@@ -31,8 +31,8 @@ ref_tgt_path="${download_path}/${set}_${ref_sample}_snp_genotype_output.vcf"
 tum_tgt_path="${download_path}/${set}_${tum_sample}_snp_genotype_output.vcf"
 
 info "Downloading snp genotype vcfs to ${download_path}"
-gsutil -q -u hmf-database -m cp "gs://${ref_src_path}" "${ref_tgt_path}" || die "Download of ref VCF failed"
-gsutil -q -u hmf-database -m cp "gs://${tum_src_path}" "${tum_tgt_path}" || die "Download of tum VCF failed"
+gsutil -q cp "gs://${ref_src_path}" "${ref_tgt_path}" || die "Download of ref VCF failed"
+gsutil -q cp "gs://${tum_src_path}" "${tum_tgt_path}" || die "Download of tum VCF failed"
 
 info "REF: ${ref_tgt_path}"
 info "TUM: ${tum_tgt_path}"
