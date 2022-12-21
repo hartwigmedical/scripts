@@ -30,9 +30,6 @@ tum_src_path="${run_bucket}/${set}/${tum_sample}/snp_genotype/snp_genotype_outpu
 ref_tgt_path="${download_path}/${set}_${ref_sample}_snp_genotype_output.vcf"
 tum_tgt_path="${download_path}/${set}_${tum_sample}_snp_genotype_output.vcf"
 
-info "Switching to hmf-ops service account"
-switch_to_hmf_ops_service_account
-
 info "Downloading snp genotype vcfs to ${download_path}"
 gsutil -q -u hmf-database -m cp "gs://${ref_src_path}" "${ref_tgt_path}" || die "Download of ref VCF failed"
 gsutil -q -u hmf-database -m cp "gs://${tum_src_path}" "${tum_tgt_path}" || die "Download of tum VCF failed"
