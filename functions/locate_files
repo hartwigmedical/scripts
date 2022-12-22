@@ -1431,6 +1431,15 @@ locate_sigs_dir() {
     echo "${run_dir}/sigs"
 }
 
+locate_sigs_allocation_tsv() {
+    local run_dir=$1
+    local sigs_allocation_tsv=$(find -L ${run_dir}/sigs/ -type f -name "*.sig.allocation.tsv")
+    if [[ -z "${sigs_allocation_tsv}" ]]; then
+        error "Unable to locate sigs allocation tsv in ${run_dir}."
+    fi
+    echo ${sigs_allocation_tsv}
+}
+
 locate_sigs_pilot_dir() {
     local run_dir=$1
     if [[ ! -d ${run_dir} ]]; then

@@ -75,6 +75,8 @@ if [[ ! -z ${cuppa_feature_plot} ]]; then
     cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
 fi
 
+sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
+
 info "Running ORANGE pilot tumor-only on ${run_dir}"
 
 java -jar ${orange_jar} \
@@ -104,4 +106,5 @@ java -jar ${orange_jar} \
     -cuppa_result_csv "${cuppa_result_csv}" \
     -cuppa_summary_plot "${cuppa_summary_plot}" \
     ${cuppa_feature_plot_cmd} \
+    -sigs_allocation_tsv "${sigs_allocation_tsv}" \
     "$@"

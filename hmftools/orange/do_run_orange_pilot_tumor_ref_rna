@@ -99,6 +99,7 @@ if [[ ! -z ${cuppa_feature_plot} ]]; then
 fi
 
 peach_genotype_tsv="$(locate_peach_prod_genotype ${run_dir})"
+sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
 
 info "Running ORANGE pilot tumor-ref-rna on ${run_dir}"
 
@@ -143,4 +144,5 @@ java -jar ${orange_jar} \
     -cuppa_summary_plot "${cuppa_summary_plot}" \
     ${cuppa_feature_plot_cmd} \
     -peach_genotype_tsv "${peach_genotype_tsv}" \
+    -sigs_allocation_tsv "${sigs_allocation_tsv}" \
     "$@"
