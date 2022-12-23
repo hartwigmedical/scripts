@@ -30,7 +30,7 @@ fi
 doid_json="$(locate_doid_json)"
 driver_gene_tsv="$(locate_driver_gene_panel_37_tsv)"
 
-orange_json=$(locate_orange_json ${run_dir})
+orange_json="$(locate_orange_json ${run_dir})"
 
 info "Running PROTECT pilot on ${run_dir}"
 
