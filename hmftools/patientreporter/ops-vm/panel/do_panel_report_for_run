@@ -30,4 +30,5 @@ do_run_base_panel_reporter  \
       -require_pipeline_version_file \
       -tumor_sample_id ${sample} \
       -tumor_sample_barcode ${barcode} \
+      -allow_default_cohort_config \
       -ref_genome_version 38 "$@"

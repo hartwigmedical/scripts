@@ -120,6 +120,10 @@ locate_prod_patient_reporter() {
     echo "/data/tools/patient-reporter/7.25.4/patient-reporter.jar"
 }
 
+locate_panel_patient_reporter() {
+    echo "/data/tools/patient-reporter/7.26/patient-reporter.jar"
+}
+
 locate_pilot_patient_reporter() {
     echo "/data/experiments/pilot_tools/patient-reporter/patient-reporter.jar"
 }
@@ -289,6 +293,10 @@ extract_expected_pipeline_version_data_vm() {
 }
 
 extract_expected_pipeline_version_research() {
+    echo "5.31"
+}
+
+extract_expected_pipeline_version_panel() {
     echo "5.31"
 }
 
