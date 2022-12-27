@@ -14,8 +14,8 @@ correction_extern=$1 && shift
 dirLocation="/data/experiments/panel_DEV-3023/${dir}"
 
 pipeline_version=$( cat ${dirLocation}/pipeline.version | cut -d"." -f1,2 )
-sample=$( cat ${dirLocation}/metadata.json | jq .tumor.sampleName )
-barcode=$( cat ${dirLocation}/metadata.json | jq .tumor.barcode )
+sample=$( cat ${dirLocation}/metadata.json | jq .tumor.sampleName | tr -d '"')
+barcode=$( cat ${dirLocation}/metadata.json | jq .tumor.barcode | tr -d '"')
 
 echo ""
 echo "--- A report will be created for ${sample} from run ${dirLocation}, pipeline version ${pipeline_version} ---"
