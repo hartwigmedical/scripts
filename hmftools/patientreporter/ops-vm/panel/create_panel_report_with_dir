@@ -83,6 +83,7 @@ else
 fi
 
 
+echo $( ls ${temp_folder_path}/new_report | grep ${sample} | grep .pdf | wc -l )
 if [[ $( ls ${temp_folder_path}/new_report | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     info "The report $report has been created"
