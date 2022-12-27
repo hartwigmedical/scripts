@@ -70,9 +70,9 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -somatic_hotspots ${somatic_hotspot_vcf} \
     -germline_hotspots ${germline_hotspot_vcf} \
     -driver_gene_panel ${driver_gene_panel} \
-    -min_ploidy 3.1 \
-    -max_ploidy 3.1 \
-    -min_purity 0.35 \
-    -max_purity 0.35 \
+    -min_ploidy 2.0 \
+    -max_ploidy 2.0 \
+    -min_purity 0.25 \
+    -max_purity 0.25 \
     ${db_args} \
     "$@"
