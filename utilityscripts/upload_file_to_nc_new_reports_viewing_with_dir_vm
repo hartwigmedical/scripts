@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+dir=$1 && shift
+file=$1 && shift
+
+[[ -n "${dir}" ]] || die "No directory provided. Exiting"
+[[ -n "${file}" ]] || die "No file name provided. Exiting"
+
+nextcloud_dir="STAGING/New-Reports-Viewing"
+
+info "Uploading ${file} from ${dir} to Nextcloud for viewing."
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$dir/${file}"

@@ -5,8 +5,6 @@ source locate_files || exit 1
 source lims_functions || exit 1
 
 dir=$1 && shift
-correction_comments=$1 && shift
-correction_extern=$1 && shift
 
 [[ -n "${dir}" ]] || die "No dir provided. Exiting"
 
@@ -17,23 +15,7 @@ pipeline_version=$( cat ${dirLocation}/pipeline.version | cut -d"." -f1,2 )
 sample=$( cat ${dirLocation}/metadata.json | jq .tumor.sampleName | tr -d '"')
 barcode=$( cat ${dirLocation}/metadata.json | jq .tumor.barcode | tr -d '"')
 
-echo ""
 echo "--- A report will be created for ${sample} from run ${dirLocation}, pipeline version ${pipeline_version} ---"
-if [[ ${correction_comments} != "" ]]; then
-    echo "[IMPORTANT] this will be an correction report!"
-    echo "[IMPORTANT] the following comments will be used: ${correction_comments}"
-fi
-
-if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-    warn 'There already exists a patient report for this sample:'
-    gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
-    echo '[INPUT] Are you sure you want to continue with making a new report? (all data will be overwritten, except for the report when making a corrected report) Please answer Y or N.'
-    read answer
-    if [[ $answer != 'Y' ]]; then
-        warn "Report will not be created. exiting"
-        exit 1
-    fi
-fi
 
 ### Copy run data from bucket to local in vm
 temp_folder_path=$( pwd )"/temp_cp_${dir}"
@@ -96,32 +78,12 @@ fi
 
 #### check log file of making the report
 if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
-    warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
+    warn "Running the patient reporter gave warnings/errors, please check using: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
 else
     cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep 'WARN ' | grep "has already been reported"
-    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
+    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
 fi
 
-##### cp report to gs://patient-reporter-manual-prod-1/
-gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
-info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
-gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
-
-if [[ $( gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-    warn 'A patient report for this sample has already been shared in gs://oncopanel-result-files-nki/:'
-    gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-    echo '[INPUT] Are you sure you want to continue sharing a new report and result files? (all data will be overwritten) Please answer Y or N.'
-    read answer
-    if [[ $answer != 'Y' ]]; then
-        warn "Report and result files will not be shared. exiting"
-        rm -r ${temp_folder_path}/ 2>&1
-        exit 1
-    fi
-files
-#
-##### cp report to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
-gsutil -q cp -r ${temp_folder_path}/new_report/*.pdf gs://oncopanel-result-files-nki/
-##### cp related data to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
 ## create folder for tar
 mkdir ${temp_folder_path}/new_report/tar
 cp -r ${temp_folder_path}/purple/*.purple.somatic.vcf.gz ${temp_folder_path}/tar
@@ -131,17 +93,10 @@ cp -r ${temp_folder_path}/purple/*.purple.purity.tsv ${temp_folder_path}/tar
 tar -czf ${temp_folder_path}/new_report/${sample}_${barcode}.tar.gz  -C ${temp_folder_path}/tar .
 info "Tar file created of results. The results that will be shared are:"
 tar -tvf ${temp_folder_path}/new_report/${sample}_${barcode}.tar.gz
-## cp
-gsutil -q cp -r ${temp_folder_path}/new_report/${sample}_${barcode}.tar.gz gs://oncopanel-result-files-nki/
-info "The report and the related tar with result files are shared in gs://oncopanel-result-files-nki/:"
-gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-#
-#### EXTRA: upload report + tar to NC
-upload_file_to_nc_new_reports_viewing  gs://oncopanel-result-files-nki/ $report &> /dev/null
-upload_file_to_nc_new_reports_viewing  gs://oncopanel-result-files-nki/ ${sample}_${barcode}.tar.gz &> /dev/null
-info "The report $report and the accompanying ${sample}_${barcode}.tar.gz are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
 
-### remove temporary folder
-rm -r ${temp_folder_path}/ 2>&1
+#### EXTRA: upload report + tar to NC
+upload_file_to_nc_new_reports_viewing_with_dir_vm  ${temp_folder_path} $report &> /dev/null
+upload_file_to_nc_new_reports_viewing_with_dir_vm  ${temp_folder_path} ${sample}_${barcode}.tar.gz &> /dev/null
+info "The report $report and the accompanying ${sample}_${barcode}.tar.gz are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
 
 info "TODO archive the data to experiment bucket"
