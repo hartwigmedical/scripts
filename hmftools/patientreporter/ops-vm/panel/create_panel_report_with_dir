@@ -36,67 +36,67 @@ mkdir ${temp_folder_path}/new_report
 output_dir_report=${temp_folder_path}/new_report
 output_dir_data_report=${temp_folder_path}/new_report
 
-if [[ ${correction_comments} != "" ]]; then
-    #corrected report
-    if [[ -z "${correction_extern}" ]]; then
-        error "Missing correction extern argument"
-    fi
-    if [[ ${correction_extern} == "extern" ]]; then
-        do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
-              -output_dir_report ${output_dir_report} \
-              -output_dir_data ${output_dir_data_report} \
-              -comments "${correction_comments}" \
-              -corrected_report_extern \
-              -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
-    fi
+#if [[ ${correction_comments} != "" ]]; then
+#    #corrected report
+#    if [[ -z "${correction_extern}" ]]; then
+#        error "Missing correction extern argument"
+#    fi
+#    if [[ ${correction_extern} == "extern" ]]; then
+#        do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+#              -output_dir_report ${output_dir_report} \
+#              -output_dir_data ${output_dir_data_report} \
+#              -comments "${correction_comments}" \
+#              -corrected_report_extern \
+#              -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+#    fi
+#
+#    if [[ ${correction_extern} == "intern" ]]; then
+#            do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+#                  -output_dir_report ${output_dir_report} \
+#                  -output_dir_data ${output_dir_data_report} \
+#                  -comments "${correction_comments}" \
+#                  -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+#    fi
+#else
+#    #Normal report
+#    do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
+#      -output_dir_report ${output_dir_report} \
+#      -output_dir_data ${output_dir_data_report} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
+#fi
 
-    if [[ ${correction_extern} == "intern" ]]; then
-            do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
-                  -output_dir_report ${output_dir_report} \
-                  -output_dir_data ${output_dir_data_report} \
-                  -comments "${correction_comments}" \
-                  -corrected_report "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
-    fi
-else
-    #Normal report
-    do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
-      -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_data_report} "$@" &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log
-fi
-
-if [[ $( ls ${temp_folder_path}/new_report | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    info "The report $report has been created"
-else
-    warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
-    rm -r ${temp_folder_path}/ 2>&1
-    warn "The script will end here. Exiting"
-    exit 1
-fi
+#if [[ $( ls ${temp_folder_path}/new_report | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
+#    report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
+#    info "The report $report has been created"
+#else
+#    warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
+#    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
+#    rm -r ${temp_folder_path}/ 2>&1
+#    warn "The script will end here. Exiting"
+#    exit 1
+#fi
 
 
 #### check log file of making the report
-if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
-    warn "Running the patient reporter gave warnings/errors, please check using: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
-else
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep 'WARN ' | grep "has already been reported"
-    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
-fi
+#if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
+#    warn "Running the patient reporter gave warnings/errors, please check using: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
+#else
+#    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep 'WARN ' | grep "has already been reported"
+#    info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log"
+#fi
 
 ## create folder for tar
 mkdir ${temp_folder_path}/new_report/tar
 cp -r ${temp_folder_path}/purple/*.purple.somatic.vcf.gz ${temp_folder_path}/new_report/tar
 cp -r ${temp_folder_path}/purple/*.purple.somatic.vcf.gz.tbi ${temp_folder_path}/new_report/tar
 cp -r ${temp_folder_path}/purple/*.purple.cnv.gene.tsv ${temp_folder_path}/new_report/tar
-cp -r ${temp_folder_path}/purple/*.purple.purity.tsv ${temp_folder_path}/tar
+cp -r ${temp_folder_path}/purple/*.purple.purity.tsv ${temp_folder_path}/new_report/tar
 tar -czf ${temp_folder_path}/new_report/${sample}_${barcode}.tar.gz  -C ${temp_folder_path}/new_report/tar .
 info "Tar file created of results. The results that will be shared are:"
 tar -tvf ${temp_folder_path}/new_report/${sample}_${barcode}.tar.gz
 
 #### EXTRA: upload report + tar to NC
-upload_file_to_nc_new_reports_viewing_with_dir_vm  ${temp_folder_path}/new_report/ $report &> /dev/null
+#upload_file_to_nc_new_reports_viewing_with_dir_vm  ${temp_folder_path}/new_report/ $report &> /dev/null
 upload_file_to_nc_new_reports_viewing_with_dir_vm  ${temp_folder_path}/new_report/ ${sample}_${barcode}.tar.gz &> /dev/null
-info "The report $report and the accompanying ${sample}_${barcode}.tar.gz are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
+info "The report the accompanying ${sample}_${barcode}.tar.gz are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
 
 info "TODO archive the data to experiment bucket"
