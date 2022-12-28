@@ -5,6 +5,7 @@ source database_functions || exit 1
 
 function backwardsCompatibleDataType() {
     case "$1" in
+     *3.72*) datatype_arg=-germline_only ;;
      *3.71*) datatype_arg=-germline_only ;;
      *) datatype_arg="-data_type \"germline\"" ;;
     esac
