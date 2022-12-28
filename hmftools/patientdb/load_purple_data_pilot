@@ -11,10 +11,11 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 database="hmfpatients_pilot"
 patient_db_jar=$(locate_pilot_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
-do_load_purple_data ${sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}
+do_load_purple_data ${tumor_sample} ${ref_sample} ${run_dir}/purple ${database} "${credentials}" ${patient_db_jar}
