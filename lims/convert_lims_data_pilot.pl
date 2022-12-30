@@ -74,6 +74,10 @@ my $LAMA_LIBRARYPREP_JSON = $LATEST_DIR . '/LibraryPreps.json';
 my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/SampleStatus.json';
 
 # Files from previous years
+my $SUBM_TSV_2022 = $LATEST_DIR . '/2022_for001_submissions.tsv';
+my $SAMP_TSV_2022 = $LATEST_DIR . '/2022_for001_samples.tsv';
+my $PROC_TSV_2022 = $LATEST_DIR . '/2022_for002_processing.tsv';
+
 my $SUBM_TSV_2021 = $LATEST_DIR . '/2021_for001_submissions.tsv';
 my $SAMP_TSV_2021 = $LATEST_DIR . '/2021_for001_samples.tsv';
 my $PROC_TSV_2021 = $LATEST_DIR . '/2021_for002_processing.tsv';
@@ -131,12 +135,14 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2020'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2021'}, 'submission', 0, $SUBM_TSV_2021, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2022'}, 'submission', 0, $SUBM_TSV_2022, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
@@ -144,6 +150,7 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 my $lama_status = parseLamaSampleStatus($LAMA_SAMPLESTATUS_JSON);
@@ -1204,7 +1211,8 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    my %SUBM_DICT = %SUBM_DICT_2021;
+    my %SUBM_DICT_2022 = %SUBM_DICT_2021;
+    my %SUBM_DICT = %SUBM_DICT_2022;
 
     # Columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
@@ -1252,16 +1260,20 @@ sub getFieldNameTranslations{
     my %SAMP_DICT_2021 = %SAMP_DICT_2020;
     $SAMP_DICT_2021{"ShallowSeq_required"} = 'shallowseq';
 
-    # Columns samples sheet CURRENT FOR-001 are identical to 2021 format
-    my %SAMP_DICT = %SAMP_DICT_2021;
+    # Columns samples sheet 2022 FOR-001 is identical to 2021
+    my %SAMP_DICT_2022 = %SAMP_DICT_2021;
+
+    # Columns samples sheet CURRENT FOR-001 are identical to 2022 format
+    my %SAMP_DICT = %SAMP_DICT_2022;
 
     # Columns In Process sheet (HMF-FOR-002)
-    my %PROC_DICT = (
+    my %PROC_DICT_2022 = (
         'Sample_ID'         => 'sample_id', # eg FR12345678
         'Sample_name'       => 'sample_name', # eg CPCT1234567R
         'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
         'Sop_tracking_code' => 'lab_sop_versions',
     );
+    my %PROC_DICT = %PROC_DICT_2022;
 
     my %lama_status_cohort_dict = (
         '_id'                  => 'cohort',
@@ -1346,16 +1358,19 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2022' => \%SUBM_DICT_2022,
         'SUBM_2021' => \%SUBM_DICT_2021,
         'SUBM_2020' => \%SUBM_DICT_2020,
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2022' => \%SAMP_DICT_2022,
         'SAMP_2021' => \%SAMP_DICT_2021,
         'SAMP_2020' => \%SAMP_DICT_2020,
         'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
+        'PROC_2022' => \%PROC_DICT_2022,
         'lama_content_translations_by_field_name' => \%lama_content_translations_by_field_name,
         'lama_status_cohort_dict' => \%lama_status_cohort_dict,
         'lama_patient_dict' => \%lama_patient_dict,
