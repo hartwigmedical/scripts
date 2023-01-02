@@ -128,6 +128,10 @@ locate_pilot_patient_reporter() {
     echo "/data/experiments/pilot_tools/patient-reporter/patient-reporter.jar"
 }
 
+locate_pilot_oncoact_db() {
+    echo "/data/experiments/pilot_tools/oncoact-db/oncoact-db.jar"
+}
+
 locate_prod_vicc_importer() {
     echo "/data/tools/vicc-importer/1.2/vicc-importer.jar"
 }
