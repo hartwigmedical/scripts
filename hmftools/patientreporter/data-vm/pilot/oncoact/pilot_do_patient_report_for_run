@@ -30,7 +30,7 @@ orange_json="$(locate_orange_json ${run_dir})"
 
 # TODO Switch to actual cuppa conclusion plot
 # cuppa_plot="$(locate_cuppa_conclusion_plot ${run_dir})"
-cuppa_plot="data/resources/custom/cuppa-chart/empty.cuppa.chart.png"
+cuppa_plot="/data/resources/custom/cuppa-chart/empty.cuppa.chart.png"
 
 # TODO Switch to PROD once PROTECT v3.0 has become production version
 protect_evidence_tsv="$(locate_protect_evidence_pilot ${run_dir})"
