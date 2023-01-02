@@ -1735,9 +1735,9 @@ locate_protect_evidence_old() {
 
 locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}."
+        error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }

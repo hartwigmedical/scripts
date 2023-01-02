@@ -28,8 +28,12 @@ fi
 pipeline_version_file="${run_dir}/pipeline.version"
 orange_json="$(locate_orange_json ${run_dir})"
 cuppa_plot="$(locate_cuppa_conclusion_plot ${run_dir})"
-protect_evidence_tsv="$(locate_protect_evidence ${run_dir})"
-rose_tsv="$(locate_rose ${run_dir})"
+
+# TODO Switch to PROD once PROTECT v3.0 has become production version
+protect_evidence_tsv="$(locate_protect_evidence_pilot ${run_dir})"
+
+# TODO Switch to PROD once ROSE v2.0 has become production version
+rose_tsv="$(locate_rose_pilot ${run_dir})"
 
 germline_reporting_tsv="$(locate_germline_reporting_prod)"
 sample_special_remark_tsv="$(locate_special_remark_patient_report_pilot)"
