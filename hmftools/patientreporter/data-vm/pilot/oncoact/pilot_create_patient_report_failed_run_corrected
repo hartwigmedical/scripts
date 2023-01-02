@@ -41,42 +41,39 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=${HOME}/reports/pilot
+output_dir="${HOME}/reports/pilot"
 
 ## running patient reporter
 ref_sample_mandatory=1
 
-purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc_file=$(locate_purple_qc ${run_dir})
-
 if [[ $( cat ${run_dir}/purple/${tumor_sample}.purple.qc | grep QCStatus | cut -f2 ) == "FAIL_NO_TUMOR" ]]; then
-     fail_reason="insufficient_tcp_deep_wgs"
+    fail_reason="insufficient_tcp_deep_wgs"
 else
     fail_reason="sufficient_tcp_qc_failure"
 fi
 
-peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
-pipeline_version_file=${run_dir}/pipeline.version
+orange_json="$(locate_orange_json ${run_dir})"
+pipeline_version_file="${run_dir}/pipeline.version"
 
 if [[ ${correction_extern} == "extern" ]]; then
-    pilot_do_run_qc_fail_patient_reporter ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
-      -corrected_report \
-      -corrected_report_extern \
-      -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_report} \
-      -pipeline_version_file ${pipeline_version_file} \
-      -peach_genotype_tsv ${peach_genotype_tsv} \
-      -purple_purity_tsv ${purple_purity_tsv} \
-      -purple_qc_file ${purple_qc_file} "$@"
+    pilot_do_run_qc_fail_patient_reporter \
+        ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+        -corrected_report \
+        -corrected_report_extern \
+        -output_dir_report ${output_dir} \
+        -output_dir_data ${output_dir} \
+        -pipeline_version_file ${pipeline_version_file} \
+        -orange_json ${orange_json} \
+        "$@"
 fi
 
 if [[ ${correction_extern} == "intern" ]]; then
-    pilot_do_run_qc_fail_patient_reporter ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
-      -corrected_report \
-      -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_report} \
-      -pipeline_version_file ${pipeline_version_file} \
-      -peach_genotype_tsv ${peach_genotype_tsv} \
-      -purple_purity_tsv ${purple_purity_tsv} \
-      -purple_qc_file ${purple_qc_file} "$@"
+    pilot_do_run_qc_fail_patient_reporter \
+        ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
+        -corrected_report \
+        -output_dir_report ${output_dir} \
+        -output_dir_data ${output_dir} \
+        -pipeline_version_file ${pipeline_version_file} \
+        -orange_json ${orange_json} \
+        "$@"
 fi
