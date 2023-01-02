@@ -2,7 +2,6 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
-source io_functions || exit 1
 
 run_dir=$1 && shift
 
