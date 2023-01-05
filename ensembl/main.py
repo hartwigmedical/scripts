@@ -187,6 +187,18 @@ class EnsemblRestClient(object):
             species, chrom, position - sequence_pad_size, position + sequence_pad_size, source_coordinate_system)
         return translated_position, source_sequence, target_sequence
 
+    def get_ensembl_id_to_nm_transcript_names(self, species, ensembl_ids, warning_collector, max_workers=None):
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_symbol = {
+                ensembl_id: executor.submit(self.get_nm_transcript_names, species, ensembl_id, warning_collector)
+                for ensembl_id in ensembl_ids
+            }
+        return {ensembl_id: future.result() for ensembl_id, future in future_to_symbol.items()}
+
+    def get_nm_transcript_names(self, species, ensembl_id, warning_collector):
+        logging.info("Start with getting overview for ensembl_id {ensembl_id}".format(ensembl_id=ensembl_id))
+        return self._request_nm_transcript_ids(species, ensembl_id)
+
     def _select_unique_gene_overview(self, gene_overviews, species, symbol, warning_collector):
         if not gene_overviews:
             return None
@@ -374,6 +386,17 @@ class EnsemblRestClient(object):
         )
         return {answer["id"] for answer in answers if answer["id"].startswith("ENSG")}
 
+    def _request_nm_transcript_ids(self, species, ensembl_id):
+        transcript_ids = list()
+        crossrefs = self._rest_client.perform_rest_action(
+            '/xrefs/id/{0}'.format(ensembl_id),
+            params={"species": species, "object_type": "gene", "all_levels": 1}
+        )
+        for crossref in crossrefs:
+            if crossref["db_display_name"] == "RefSeq mRNA":
+                transcript_ids.append(crossref["primary_id"])
+        return transcript_ids
+
     def _request_synonyms(self, species, ensembl_id):
         synonyms = set()
         crossrefs = self._rest_client.perform_rest_action(
@@ -438,6 +461,19 @@ def print_variants(species, symbols):
         print(warning)
 
 
+def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples):
+    client = EnsemblRestClient(reqs_per_sec=5)
+    warning_collector = StringCollector()
+    ensembl_ids = [pair[1] for pair in gene_name_ensembl_id_tuples]
+    ensembl_id_to_nm_transcript_names = client.get_ensembl_id_to_nm_transcript_names(species, ensembl_ids, warning_collector, 15)
+
+    for gene_name, ensembl_id in gene_name_ensembl_id_tuples:
+        print("\t".join([gene_name, ensembl_id, ";".join(ensembl_id_to_nm_transcript_names[ensembl_id])]))
+
+    for warning in warning_collector.get_all():
+        print(warning)
+
+
 def determine_gene_ids_and_canonical_names(input_file):
     species = "human"
     with open(input_file) as f:
@@ -478,11 +514,21 @@ def translate_coordinates(input_file):
         print(warning)
 
 
+def determine_nm_transcript_ids(input_file):
+    species = "human"
+    with open(input_file) as f:
+        lines = f.read().splitlines()
+    gene_name_ensembl_id_tuples = [line.split("\t") for line in lines]
+    print_nm_transcript_ids(species, gene_name_ensembl_id_tuples)
+
+
 def main(request_type, input_file):
     if request_type == "c":
         determine_gene_ids_and_canonical_names(input_file)
     elif request_type == "t":
         translate_coordinates(input_file)
+    elif request_type == "n":
+        determine_nm_transcript_ids(input_file)
     else:
         raise SyntaxError("Unknown type")
 
