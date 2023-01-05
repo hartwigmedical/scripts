@@ -5,4 +5,4 @@ source message_functions || exit 1
 file=$1 && shift
 
 info "Copying ${file} to ~/hmf/tmp/"
-gcloud -q --project hmf-ops compute scp --recurse ops-vm-prod-2:${file} ${HOME}/hmf/tmp/
+gcloud -q --project hmf-ops compute scp --recurse ops-vm-prod-2:"${file}" ${HOME}/hmf/tmp/
