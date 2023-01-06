@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 LIMS_JSON="/data/ops/lims/prod/lims.json"
-submission_count=20
+inn_submission_count=15
+non_inn_submission_count=15
 submission=$1 # optional HMFregXXXX id to print table for
 
 if [[ -n "$submission" ]]; then
     submissions=$(jq --arg key "$submission" '.submissions[$key]' "${LIMS_JSON}")
 else
-    submissions=$(jq "[.submissions[]] | sort_by(.submission) | .[-${submission_count}:] | reverse[]" "${LIMS_JSON}")
+    inn_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregINN\"))) | sort_by(.submission) | .[-${inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
+    non_inn_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregINN\") | not)) | sort_by(.submission) | .[-${non_inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
+    submissions=$(printf "%s\n%s" "${inn_submissions}" "${non_inn_submissions}")
 fi
 
 # header
