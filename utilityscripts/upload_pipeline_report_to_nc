@@ -32,7 +32,7 @@ report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
 
 set_url="gs://${bucket}/${set}"
 
-##TODO remove when hotfix is made
+##TODO remove when v5.31 is in production
 # Check whether there was an error (potentially present in SAGE 3.0.1)
 sage_exception_count=$(gsutil cat ${set_url}/sage_somatic/run.log | grep "Exception in thread")
 if [[ ${sage_exception_count} -ge 1 ]]; then
