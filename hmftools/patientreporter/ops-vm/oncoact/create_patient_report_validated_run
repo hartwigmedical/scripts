@@ -149,7 +149,6 @@ fi
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ${sample} | grep ${barcode} | grep -v "api-update" | grep "oncoact.json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -177,12 +176,6 @@ gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 ### upload report to NC
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
-
-if [[ "${sample:0:8}" == "COREDB01" ]]; then
-  echo $json
-    upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
-    info "The json file $json is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
-fi
 
 ### Patch reporting created endpoint
 if [[ ${correction_comments} != "" ]]; then
