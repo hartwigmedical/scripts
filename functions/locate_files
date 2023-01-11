@@ -13,11 +13,11 @@ locate_pilot_isofox() {
 }
 
 locate_actin_isofox() {
-    echo "/data/actin/tools/isofox/1.6/isofox.jar"
+    echo "/data/actin/tools/isofox/1.6.1/isofox.jar"
 }
 
 locate_prod_sage() {
-    echo "/data/tools/sage/3.1.1/sage.jar"
+    echo "/data/tools/sage/3.2.3/sage.jar"
 }
 
 locate_pilot_sage() {
