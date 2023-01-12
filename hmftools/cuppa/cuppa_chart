@@ -18,7 +18,7 @@ info "Venv environment of python3 is installed"
 sampleId=$(load_tumor_sample_from_metadata ${run_dir})
 
 info "Running cuppa chart of ${sampleId}"
-#python src/cuppa-chart.py \
-#    -sample ${sampleId} \
-#    -sample_data ${run_dir}/cuppa/${sampleId}.cup.data.csv \
-#    -output_dir ${run_dir}/cuppa/
+python src/cuppa-chart.py \
+    -sample ${sampleId} \
+    -sample_data ${run_dir}/cuppa/${sampleId}.cup.data.csv \
+    -output_dir ${run_dir}/cuppa/
