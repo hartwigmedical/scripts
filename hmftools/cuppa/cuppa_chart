@@ -8,16 +8,16 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-$ python3 -m venv ${HOME}/venv
-$ source ${HOME}/venv/bin/activate
-pip install -r requirements.txt
+#$ python3 -m venv ${HOME}/venv
+#$ source ${HOME}/venv/bin/activate
+#pip install -r requirements.txt
 
 info "Venv environment of python3 is installed"
 
 sampleId=$(load_tumor_sample_from_metadata ${run_dir})
 
 info "Running cuppa chart of ${sampleId}"
-python src/cuppa-chart.py \
-    -sample ${sampleId} \
-    -sample_data ${run_dir}/cuppa/${sampleId}.cup.data.csv \
-    -output_dir ${run_dir}/cuppa/
+#python src/cuppa-chart.py \
+#    -sample ${sampleId} \
+#    -sample_data ${run_dir}/cuppa/${sampleId}.cup.data.csv \
+#    -output_dir ${run_dir}/cuppa/
