@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 venv_dir=${HOME}/venv
-create_python_venv --venv_dir "${venv_dir}" --requirements "${DIR_NAME}/requirements.txt" || exit 1
+create_python_venv --venv_dir "${venv_dir}" --requirements "/data/tools/cuppa/requirements.txt" || exit 1
 source "${venv_dir}/bin/activate" || exit 1
 
 info "Venv environment of python3 is installed"
