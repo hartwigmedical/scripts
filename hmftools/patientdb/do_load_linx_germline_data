@@ -5,6 +5,7 @@ source database_functions || exit 1
 
 function backwardsCompatibleDataType() {
     case "$1" in
+     *pilot*) datatype_arg=-germline_only ;;
      *3.72*) datatype_arg=-germline_only ;;
      *3.71*) datatype_arg=-germline_only ;;
      *) datatype_arg="-data_type \"germline\"" ;;
@@ -23,7 +24,7 @@ db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
 info "Loading linx germline data for ${sample}"
-backwardsCompatibleDataType $patient_db_jar
+backwardsCompatibleDataType ${patient_db_jar}
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
     -sample ${sample} \
     -linx_dir ${linx_germline_dir} \
