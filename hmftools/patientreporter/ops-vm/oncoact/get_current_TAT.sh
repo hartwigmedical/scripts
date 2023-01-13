@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_reporting_api || exit 1
+source lims_functions || exit 1
 
 sampleId=$1
 
