@@ -8,13 +8,13 @@ touch test.tsv
 while read -r report_info; do
     sample_name=$(echo "${report_info}" | cut -f1)
     report_type=$(echo "${report_info}" | cut -f2)
-    create_date=$(echo "${report_info}" | cut -f3)
+    #create_date=$(echo "${report_info}" | cut -f3)
     id=$(echo "${report_info}" | cut -f4)
     if [[ $( hmf_api_get reports/shared?report_created_id=${id} | jq -r .[] | wc -l ) -gt 0 ]]; then
          if [[ $( cat test.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
             cat test.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv test.tsv
          fi
-         share_date=$(hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time)
+         share_date=$( hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time | cut -c1-10 )
          tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
          echo $sample_name $share_date $tat $report_type  >> test.tsv
     fi
