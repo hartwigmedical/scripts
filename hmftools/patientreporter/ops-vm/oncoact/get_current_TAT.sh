@@ -46,7 +46,7 @@ fi
 ##### Determine whether sample was already reported
 
 barcode=$( hmf_api_get samples?name=${sampleId} | jq -r .[].barcode )
-report_created_id=$(extract_most_recent_reporting_id_on_barcode $barcode )
+report_created_id=$(extract_first_time_reporting_id_on_barcode $barcode )
 reported=$( hmf_api_get reports/shared?report_created_id=${report_created_id}  | jq .[] | jq -r '.share_time' | tr 'T' ' ' | sed 's/\s.*$//')
 
 if [ $(echo $reported | wc -w ) == 0 ]; then
