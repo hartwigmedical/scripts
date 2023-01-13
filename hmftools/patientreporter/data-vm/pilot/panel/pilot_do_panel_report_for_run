@@ -21,13 +21,13 @@ if [[ -z "${barcode}" ]]; then
     exit 1;
 fi
 
-panel_vcf_name=$(locate_purple_somatic_variants_panel ${run_dir})
-pipeline_version_file=${run_dir}/pipeline.version
+panel_vcf_name="$(locate_purple_somatic_variants_panel ${run_dir})"
+pipeline_version_file="${run_dir}/pipeline.version"
 
-pilot_do_run_base_panel_reporter  \
-      -panel_vcf_name ${panel_vcf_name} \
-      -pipeline_version_file ${pipeline_version_file} \
-      -require_pipeline_version_file \
-      -tumor_sample_id ${sample} \
-      -tumor_sample_barcode ${barcode} \
-      -ref_genome_version 38 "$@"
+pilot_do_run_base_panel_reporter \
+    -panel_vcf_name ${panel_vcf_name} \
+    -pipeline_version_file ${pipeline_version_file} \
+    -require_pipeline_version_file \
+    -tumor_sample_id ${sample} \
+    -tumor_sample_barcode ${barcode} \
+    "$@"

@@ -13,11 +13,15 @@ locate_pilot_isofox() {
 }
 
 locate_actin_isofox() {
-    echo "/data/actin/tools/isofox/1.6/isofox.jar"
+    echo "/data/actin/tools/isofox/1.6.1/isofox.jar"
 }
 
 locate_prod_sage() {
-    echo "/data/tools/sage/3.1.1/sage.jar"
+    echo "/data/tools/sage/3.2.3/sage.jar"
+}
+
+locate_research_sage() {
+    echo "/data/tools/sage/3.2.4/sage.jar"
 }
 
 locate_pilot_sage() {
@@ -126,6 +130,10 @@ locate_panel_patient_reporter() {
 
 locate_pilot_patient_reporter() {
     echo "/data/experiments/pilot_tools/patient-reporter/patient-reporter.jar"
+}
+
+locate_pilot_oncoact_db() {
+    echo "/data/experiments/pilot_tools/oncoact-db/oncoact-db.jar"
 }
 
 locate_prod_vicc_importer() {
@@ -1735,9 +1743,9 @@ locate_protect_evidence_old() {
 
 locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
-        error "Unable to locate PROTECT pilot CKB evidence tsv in ${run_dir}."
+        error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}."
     fi
     echo ${protect_evidence_tsv}
 }

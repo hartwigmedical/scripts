@@ -42,19 +42,21 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=${HOME}/reports/pilot
+output_dir="${HOME}/reports/pilot"
 
 if [[ ${correction_extern} == "extern" ]]; then
-  pilot_do_patient_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
-          -corrected_report \
-          -corrected_report_extern \
-          -output_dir_report ${output_dir_report} \
-          -output_dir_data ${output_dir_report} "$@"
+    pilot_do_patient_report_for_run ${run_dir} \
+        ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
+        -corrected_report \
+        -corrected_report_extern \
+        -output_dir_report ${output_dir} \
+        -output_dir_data ${output_dir} "$@"
 fi
 
 if [[ ${correction_extern} == "intern" ]]; then
-  pilot_do_patient_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
+    pilot_do_patient_report_for_run ${run_dir} \
+        ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
         -corrected_report \
-        -output_dir_report ${output_dir_report} \
-        -output_dir_data ${output_dir_report} "$@"
+        -output_dir_report ${output_dir} \
+        -output_dir_data ${output_dir} "$@"
 fi

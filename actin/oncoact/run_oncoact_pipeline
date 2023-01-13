@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+run_protect_pilot_on_actin_db ${run_dir}
+
+load_protect_data_pilot ${run_dir}
+
+run_rose_pilot ${run_dir}
+
+# TODO Run cuppa-chart
+
+pilot_create_patient_report_data_vm ${run_dir}

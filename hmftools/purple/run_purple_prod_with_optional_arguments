@@ -66,7 +66,6 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -output_dir ${purple_output_dir} \
     -gc_profile ${gc_profile} \
     -sv_recovery_vcf ${sv_recovery_vcf} \
-    -driver_catalog \
     -somatic_hotspots ${somatic_hotspot_vcf} \
     -germline_hotspots ${germline_hotspot_vcf} \
     -driver_gene_panel ${driver_gene_panel} \

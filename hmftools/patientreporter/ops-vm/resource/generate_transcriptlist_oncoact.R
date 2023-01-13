@@ -1,3 +1,5 @@
+#!/usr/bin/Rscript
+
 library(dplyr)
 
 ensemblGeneData <- read.csv('/data/resources/public/ensembl_data_cache/37/ensembl_gene_data.csv')

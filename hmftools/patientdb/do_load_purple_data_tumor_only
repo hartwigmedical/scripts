@@ -3,21 +3,21 @@
 source message_functions || exit 1
 source database_functions || exit 1
 
-sample=$1 && shift
-protect_evidence_tsv=$1 && shift
+tumor_sample=$1 && shift
+purple_dir=$1 && shift
 database_name=$1 && shift
 credentials=$1 && shift
-oncoact_db_jar=$1 && shift
+patient_db_jar=$1 && shift
 
 # Database details
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" ${database_name})
 
-info "Loading PROTECT data for ${sample} to ${database_name}"
+info "Loading purple data for ${tumor_sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${oncoact_db_jar} com.hartwig.oncoact.database.LoadProtectData \
-    -sample ${sample} \
-    -protect_evidence_tsv ${protect_evidence_tsv} \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
+    -sample ${tumor_sample} \
+    -purple_dir ${purple_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

@@ -11,11 +11,11 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-linx_dir="${run_dir}/linx"
+sample=$(basename ${run_dir})
+linx_dir="${run_dir}"
 
-database="hmfpatients"
+database="hmfpatients_pilot"
+patient_db_jar=$(locate_pilot_patient_db)
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar=$(locate_prod_patient_db)
 
-do_load_linx_somatic_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"
+do_load_linx_germline_data ${sample} ${linx_dir} ${database} "${credentials}" ${patient_db_jar} "$@"

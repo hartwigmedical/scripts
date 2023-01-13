@@ -37,8 +37,11 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
-output_dir_report=${HOME}/reports/pilot
+output_dir="${HOME}/reports/pilot"
 
-pilot_do_patient_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
-      -output_dir_report ${output_dir_report} \
-      -output_dir_data ${output_dir_report} "$@"
+info "Running patient-reporter pilot on ${run_dir}"
+
+pilot_do_patient_report_for_run ${run_dir} \
+    ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
+    -output_dir_report ${output_dir} \
+    -output_dir_data ${output_dir} "$@"

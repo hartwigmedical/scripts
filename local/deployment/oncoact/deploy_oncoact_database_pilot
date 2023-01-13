@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source io_functions || exit 1
+
+version="1.0"
+
+source_path="$HOME/hmf/repos/oncoact/database/target"
+target_path="$HOME/hmf/repos/oncoact/oncoact-db"
+
+create_or_cleanup_dir ${target_path}
+cp -r "${source_path}" "${target_path}"
+
+mv "${target_path}/target/database-${version}-jar-with-dependencies.jar" "${target_path}/target/oncoact-db-${version}-jar-with-dependencies.jar"
+
+do_deploy_pilot_oncoact_tool "oncoact-db"

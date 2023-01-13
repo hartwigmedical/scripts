@@ -1,6 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import json
 import logging
+import re
 import sys
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
@@ -16,6 +17,9 @@ logging.basicConfig(
     level=logging.DEBUG,
     datefmt='%Y-%m-%d %H:%M:%S')
 
+
+V37 = "37"
+V38 = "38"
 
 class StringCollector(object):
     def __init__(self):
@@ -112,8 +116,16 @@ class BaseRestClient(object):
 
 
 class EnsemblRestClient(object):
-    def __init__(self, reqs_per_sec=15):
-        self._rest_client = BaseRestClient('http://rest.ensembl.org', reqs_per_sec)
+
+    FULL_CIGAR_MATCH = re.compile(r"\d+M")
+
+    def __init__(self, version: str, reqs_per_sec=15):
+        if version == V38:
+            self._rest_client = BaseRestClient('https://rest.ensembl.org', reqs_per_sec)
+        if version == V37:
+            self._rest_client = BaseRestClient('https://grch37.rest.ensembl.org', reqs_per_sec)
+        else:
+            raise ValueError(f"Unrecognized ref genome version number: {version}")
 
     def get_coordinate_to_translated_position_and_sequences(
             self, species, coordinates, source_coordinate_system, target_coordinate_system, 
@@ -186,6 +198,18 @@ class EnsemblRestClient(object):
         source_sequence = self._request_sequence(
             species, chrom, position - sequence_pad_size, position + sequence_pad_size, source_coordinate_system)
         return translated_position, source_sequence, target_sequence
+
+    def get_ensembl_id_to_nm_transcript_names(self, species, ensembl_ids, warning_collector, max_workers=None):
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_symbol = {
+                ensembl_id: executor.submit(self.get_nm_transcript_names, species, ensembl_id, warning_collector)
+                for ensembl_id in ensembl_ids
+            }
+        return {ensembl_id: future.result() for ensembl_id, future in future_to_symbol.items()}
+
+    def get_nm_transcript_names(self, species, ensembl_id, warning_collector):
+        logging.info("Start with getting overview for ensembl_id {ensembl_id}".format(ensembl_id=ensembl_id))
+        return self._request_nm_transcript_ids(species, ensembl_id)
 
     def _select_unique_gene_overview(self, gene_overviews, species, symbol, warning_collector):
         if not gene_overviews:
@@ -374,6 +398,24 @@ class EnsemblRestClient(object):
         )
         return {answer["id"] for answer in answers if answer["id"].startswith("ENSG")}
 
+    def _request_nm_transcript_ids(self, species, ensembl_id):
+        if ensembl_id[:4] == "ENSG":
+            object_type = "gene"
+        elif ensembl_id[:4] == "ENST":
+            object_type = "transcript"
+        else:
+            raise ValueError("Unrecognized Ensembl ID type")
+
+        transcript_ids = list()
+        crossrefs = self._rest_client.perform_rest_action(
+            '/xrefs/id/{0}'.format(ensembl_id),
+            params={"species": species, "object_type": object_type, "all_levels": 1}
+        )
+        for crossref in crossrefs:
+            if crossref["db_display_name"] == "RefSeq mRNA" and ("cigar_line" not in crossref.keys() or self.FULL_CIGAR_MATCH.fullmatch(crossref["cigar_line"])):
+                transcript_ids.append(crossref["primary_id"])
+        return transcript_ids
+
     def _request_synonyms(self, species, ensembl_id):
         synonyms = set()
         crossrefs = self._rest_client.perform_rest_action(
@@ -407,48 +449,49 @@ class EnsemblRestClient(object):
         return "{" + ", ".join(sorted(key_to_value_strings)) + "}"
 
 
-def print_gene_id_and_name(species, symbols):
-    client = EnsemblRestClient(reqs_per_sec=5)
+def print_gene_id_and_name(species, symbols, output_file, version):
+    client = EnsemblRestClient(version, reqs_per_sec=5)
     warning_collector = StringCollector()
 
     symbol_to_gene_overview = client.get_symbol_to_gene_overview(species, symbols, warning_collector, 15)
 
     symbol_overview_pairs = sorted([(symbol, overview) for symbol, overview in symbol_to_gene_overview.items()])
-    for symbol, overview in symbol_overview_pairs:
-        if overview is None:
-            print("\t".join([symbol, "NO_MATCH", symbol]))
-        else:
-            print("\t".join([symbol, overview["id"], overview["external_name"]]))
+    with open(output_file, "w") as out_f:
+        for symbol, overview in symbol_overview_pairs:
+            if overview is None:
+                out_f.write("\t".join([symbol, "NO_MATCH", symbol]) + "\n")
+            else:
+                out_f.write("\t".join([symbol, overview["id"], overview["external_name"]]) + "\n")
 
     for warning in warning_collector.get_all():
         print(warning)
 
 
-def print_variants(species, symbols):
-    # This is pretty slow. Create an equivalent of EnsemblRestClient.get_symbol_to_gene_overview to make it faster.
-    client = EnsemblRestClient(reqs_per_sec=5)
+def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, version):
+    client = EnsemblRestClient(version, reqs_per_sec=5)
     warning_collector = StringCollector()
-    for symbol in symbols:
-        variants = client.get_variants(species, symbol, warning_collector)
-        if variants:
-            for v in variants:
-                print("{seq_region_name}:{start}-{end}:{strand} ==> {id} ({consequence_type})".format(**v))
+    ensembl_ids = [pair[1] for pair in gene_name_ensembl_id_tuples]
+    ensembl_id_to_nm_transcript_names = client.get_ensembl_id_to_nm_transcript_names(species, ensembl_ids, warning_collector, 15)
+
+    with open(output_file, "w") as out_f:
+        for gene_name, ensembl_id in gene_name_ensembl_id_tuples:
+            out_f.write("\t".join([gene_name, ensembl_id, ";".join(ensembl_id_to_nm_transcript_names[ensembl_id])]) + "\n")
 
     for warning in warning_collector.get_all():
         print(warning)
 
 
-def determine_gene_ids_and_canonical_names(input_file):
+def determine_gene_ids_and_canonical_names(input_file, output_file, version):
     species = "human"
     with open(input_file) as f:
         symbols = f.read().splitlines()
     logging.debug((", ".join([symbol for symbol in symbols])).encode("ascii"))
-    print_gene_id_and_name(species, symbols)
+    print_gene_id_and_name(species, symbols, output_file, version)
 
 
 def get_coordinate_to_translated_position_and_sequences(
-        species, coordinates, source_coordinate_system, target_coordinate_system):
-    client = EnsemblRestClient(reqs_per_sec=5)
+        species, coordinates, source_coordinate_system, target_coordinate_system, version):
+    client = EnsemblRestClient(version, reqs_per_sec=5)
     warning_collector = StringCollector()
     range_to_translated_region = client.get_coordinate_to_translated_position_and_sequences(
         species, coordinates, source_coordinate_system, target_coordinate_system, warning_collector
@@ -456,7 +499,7 @@ def get_coordinate_to_translated_position_and_sequences(
     return range_to_translated_region, warning_collector
 
 
-def translate_coordinates(input_file):
+def translate_coordinates(input_file, output_file, version):
     species = "human"
     with open(input_file) as f:
         lines = f.read().splitlines()
@@ -466,31 +509,46 @@ def translate_coordinates(input_file):
     cast_coordinates = [(chrom, int(pos)) for chrom, pos in coordinates]
 
     coordinate_to_translated_position_and_sequences, warning_collector = get_coordinate_to_translated_position_and_sequences(
-        species, cast_coordinates, source_coordinate_system, target_coordinate_system
+        species, cast_coordinates, source_coordinate_system, target_coordinate_system, version
     )
-
-    for coord, translation in sorted(coordinate_to_translated_position_and_sequences.items(), key=lambda pair: pair[0]):
-        chrom, pos = coord
-        translated_pos, source_seq, target_seq = translation
-        print("\t".join([chrom, str(pos), str(translated_pos), source_seq, target_seq]))
+    with open(output_file, "w") as out_f:
+        for coord, translation in sorted(coordinate_to_translated_position_and_sequences.items(), key=lambda pair: pair[0]):
+            chrom, pos = coord
+            translated_pos, source_seq, target_seq = translation
+            out_f.write("\t".join([chrom, str(pos), str(translated_pos), source_seq, target_seq]) + "\n")
 
     for warning in warning_collector.get_all():
         print(warning)
 
 
-def main(request_type, input_file):
+def determine_nm_transcript_ids(input_file, output_file, version):
+    species = "human"
+    with open(input_file) as f:
+        lines = f.read().splitlines()
+    gene_name_ensembl_id_tuples = [line.split("\t") for line in lines]
+    print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, version)
+
+
+def main(request_type, input_file, output_file, version):
     if request_type == "c":
-        determine_gene_ids_and_canonical_names(input_file)
+        determine_gene_ids_and_canonical_names(input_file, output_file, version)
     elif request_type == "t":
-        translate_coordinates(input_file)
+        translate_coordinates(input_file, output_file, version)
+    elif request_type == "n":
+        determine_nm_transcript_ids(input_file, output_file, version)
     else:
         raise SyntaxError("Unknown type")
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 3:
-        request_type = sys.argv[1]
-        input_file = sys.argv[2]
+    if len(sys.argv) == 5:
+        request_type_arg = sys.argv[1]
+        input_file_arg = sys.argv[2]
+        output_file_arg = sys.argv[3]
+        version_arg = sys.argv[4]
     else:
-        raise SyntaxError("Requires two arguments: type_of_query and input_file")
-    main(request_type, input_file)
+        raise SyntaxError("Requires four arguments: type_of_query, input_file, output_file and reference genome version")
+    if version_arg != V37 and version_arg != V38:
+        raise SyntaxError(f"Ref genome version needs to be either {V37} or {V38}")
+
+    main(request_type_arg, input_file_arg, output_file_arg, version_arg)

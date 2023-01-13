@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_reporting_api || exit 1
+source lims_functions || exit 1
 
 sampleId=$1
 
@@ -22,12 +23,12 @@ temp_nr=$( lama patients/bloodsamples $sampleId_ref | head -n1 | grep -o '^.*arr
 ref_arrival=$( lama patients/bloodsamples $sampleId_ref | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
 if [ $(echo $tumor_arrival | wc -w) == 0 ]; then
-	echo "Tumor material not yet arrived."
+	echo "Tumor_material_not_yet_arrived"
 	exit
 fi
 
 if [ $(echo $ref_arrival | wc -w) == 0 ]; then
-	echo "Reference material not yet arrived."
+	echo "Reference_material_not_yet_arrived"
 	exit
 fi
 
@@ -46,7 +47,10 @@ fi
 ##### Determine whether sample was already reported
 
 barcode=$( hmf_api_get samples?name=${sampleId} | jq -r .[].barcode )
-report_created_id=$(extract_most_recent_reporting_id_on_barcode $barcode )
+if [[ -z "${barcode}" ]]; then
+    barcode=$( find_barcode_for_sample_name ${sampleId} )
+fi
+report_created_id=$(extract_first_time_reporting_id_on_barcode $barcode )
 reported=$( hmf_api_get reports/shared?report_created_id=${report_created_id}  | jq .[] | jq -r '.share_time' | tr 'T' ' ' | sed 's/\s.*$//')
 
 if [ $(echo $reported | wc -w ) == 0 ]; then

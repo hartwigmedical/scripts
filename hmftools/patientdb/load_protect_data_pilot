@@ -12,10 +12,10 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
+protect_evidence_tsv=$(locate_protect_evidence_pilot ${run_dir})
 
 database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar=$(locate_pilot_patient_db)
+oncoact_db_jar="$(locate_pilot_oncoact_db)"
 
-do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
+do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} "${credentials}" ${oncoact_db_jar}

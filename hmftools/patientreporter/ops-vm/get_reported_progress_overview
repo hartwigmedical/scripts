@@ -1,32 +1,29 @@
 #!/usr/bin/env bash
 
+source locate_reporting_api || exit 1
+source message_functions || exit 1
+
 
 all_created_reports=$( hmf_api_get "reports/created" )
-created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1577833199 ) ]' | jq 'sort_by(.create_time)')
+created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1577833199 ) ]' | jq 'sort_by(.create_time) | reverse')
 
-touch test.tsv
+touch reported_samples_list_rev.tsv
 while read -r report_info; do
     sample_name=$(echo "${report_info}" | cut -f1)
     report_type=$(echo "${report_info}" | cut -f2)
-    create_date=$(echo "${report_info}" | cut -f3 | cut -d "-" -f1,2)
-    id=$(echo "${report_info}" | cut -f4)
-    if [[ $( hmf_api_get reports/shared?report_created_id=${id} | jq -r .[] | wc -l ) -gt 0 ]]; then
-         if [[ $( cat test.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
-            cat test.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv test.tsv
+    report_created_id=$(echo "${report_info}" | cut -f3)
+    #
+    if [[ $( hmf_api_get reports/shared?report_created_id=${report_created_id} | jq -r .[] | wc -l ) -gt 0 ]]; then
+         if [[ $( cat reported_samples_list_rev.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
+            cat reported_samples_list_rev.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv reported_samples_list_rev.tsv
          fi
-         share_date=$(hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time | cut -d "-" -f1,2)
-         echo $sample_name $share_date $report_type  >> test.tsv
+         barcode=$( hmf_api_get samples?name=${sample_name} | jq -r .[].barcode )
+         first_report_created_id=$( extract_first_time_reporting_id_on_barcode $barcode )
+         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 )
+         tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
+         T=$(printf '\t')
+         echo $sample_name $T $share_date $T $tat $T $report_type  >> reported_samples_list_rev.tsv
     fi
-done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.create_time,.id] | @tsv')
+done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.id] | @tsv')
 
-
-sed 's/_corrected//g' test.tsv > tmp.tsv && mv -f tmp.tsv test.tsv
-cat test.tsv | awk '{ print $2 " " $3 }' > tmp.tsv && mv -f tmp.tsv test.tsv
-
-awk '{ d[$1]; k[$2]; a[$2,$1]++ }END{
-       printf("%10s"," ");
-       for(i in k) printf("\t%s",i); print "";
-       for(j in d) {
-           printf("%-10s",j);
-           for(i in k) printf("\t%d",a[i,j]); print ""
-       } }' test.tsv > tmp.tsv && mv -f tmp.tsv test.tsv
+#gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/reported_samples_list_rev.tsv ~/reported_samples_list_rev.tsv

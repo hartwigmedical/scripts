@@ -24,24 +24,27 @@ fi
 
 barcode=$(find_barcode_for_sample_name ${sample})
 
-output_dir_report=${HOME}/reports/pilot
-output_dir_data=${HOME}/reports/pilot
+output_dir="${HOME}/reports/pilot"
 
 if [[ ${correction_extern} == "extern" ]]; then
-    pilot_do_run_qc_fail_panel_reporter ${sample} ${barcode} \
-          -corrected_report \
-          -corrected_report_extern \
-          -panel_qc_fail \
-          -panel_qc_fail_reason ${fail_reason} \
-          -output_dir_data ${output_dir_data} \
-          -output_dir_report ${output_dir_report} "$@"
+    pilot_do_run_qc_fail_panel_reporter \
+        ${sample} ${barcode} \
+        -corrected_report \
+        -corrected_report_extern \
+        -panel_qc_fail \
+        -panel_qc_fail_reason ${fail_reason} \
+        -output_dir_data ${output_dir} \
+        -output_dir_report ${output_dir} \
+        "$@"
 fi
 
 if [[ ${correction_extern} == "intern" ]]; then
-    pilot_do_run_qc_fail_panel_reporter ${sample} ${barcode} \
-          -corrected_report \
-          -panel_qc_fail \
-          -panel_qc_fail_reason ${fail_reason} \
-          -output_dir_data ${output_dir_data} \
-          -output_dir_report ${output_dir_report} "$@"
+    pilot_do_run_qc_fail_panel_reporter \
+        ${sample} ${barcode} \
+        -corrected_report \
+        -panel_qc_fail \
+        -panel_qc_fail_reason ${fail_reason} \
+        -output_dir_data ${output_dir_data} \
+        -output_dir_report ${output_dir_report} \
+        "$@"
 fi
