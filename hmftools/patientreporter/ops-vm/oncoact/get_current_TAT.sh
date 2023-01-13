@@ -22,12 +22,12 @@ temp_nr=$( lama patients/bloodsamples $sampleId_ref | head -n1 | grep -o '^.*arr
 ref_arrival=$( lama patients/bloodsamples $sampleId_ref | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
 if [ $(echo $tumor_arrival | wc -w) == 0 ]; then
-	echo "Tumor material not yet arrived."
+	echo "Tumor_material_not_yet_arrived"
 	exit
 fi
 
 if [ $(echo $ref_arrival | wc -w) == 0 ]; then
-	echo "Reference material not yet arrived."
+	echo "Reference_material_not_yet_arrived"
 	exit
 fi
 
