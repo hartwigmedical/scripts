@@ -13,5 +13,4 @@ WHERE
 	AND metric.sufficientCoverage = 1
 	AND snpcheck.isPass = 1
 	AND consentsLAMA.allowExternalUseWithCheck = 'true'
-    AND clinical_purity.sampleId NOT LIKE '%DRUP%'
 	;

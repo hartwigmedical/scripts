@@ -15,5 +15,4 @@ WHERE
 	AND inHMFDatabase =1
 	AND outsideEU =1
 	AND consentsLAMA.allowExternalUseWithoutCheck = 'true'
-    AND clinical_purity.sampleId NOT LIKE '%DRUP%'
 	;
