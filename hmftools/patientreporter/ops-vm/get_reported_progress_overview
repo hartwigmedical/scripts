@@ -8,25 +8,15 @@ touch test.tsv
 while read -r report_info; do
     sample_name=$(echo "${report_info}" | cut -f1)
     report_type=$(echo "${report_info}" | cut -f2)
-    create_date=$(echo "${report_info}" | cut -f3 | cut -d "-" -f1,2)
+    create_date=$(echo "${report_info}" | cut -f3)
     id=$(echo "${report_info}" | cut -f4)
     if [[ $( hmf_api_get reports/shared?report_created_id=${id} | jq -r .[] | wc -l ) -gt 0 ]]; then
          if [[ $( cat test.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
             cat test.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv test.tsv
          fi
-         share_date=$(hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time | cut -d "-" -f1,2)
-         echo $sample_name $share_date $report_type  >> test.tsv
+         share_date=$(hmf_api_get reports/shared?report_created_id=${id} | jq -r .[].share_time)
+         tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
+         echo $sample_name $share_date $tat $report_type  >> test.tsv
     fi
 done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.create_time,.id] | @tsv')
 
-
-sed 's/_corrected//g' test.tsv > tmp.tsv && mv -f tmp.tsv test.tsv
-cat test.tsv | awk '{ print $2 " " $3 }' > tmp.tsv && mv -f tmp.tsv test.tsv
-
-awk '{ d[$1]; k[$2]; a[$2,$1]++ }END{
-       printf("%10s"," ");
-       for(i in k) printf("\t%s",i); print "";
-       for(j in d) {
-           printf("%-10s",j);
-           for(i in k) printf("\t%d",a[i,j]); print ""
-       } }' test.tsv > tmp.tsv && mv -f tmp.tsv test.tsv
