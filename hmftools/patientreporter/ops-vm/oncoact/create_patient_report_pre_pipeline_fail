@@ -65,34 +65,33 @@ elif [[ ${fail_reason} == "insufficient_dna" || ${fail_reason} == "technical_fai
   ref_sample_mandatory=0
 fi
 
-#if [[ ${correction_comments} != "" ]]; then
-#    #corrected report
-#    if [[ -z "${correction_extern}" ]]; then
-#        error "Missing correction extern argument"
-#    fi
-#    if [[ ${correction_extern} == "extern" ]]; then
-#        do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
-#                    -output_dir_report ${output_dir_report} \
-#                    -output_dir_data ${output_dir_data_report} \
-#                    -comments "${correction_comments}" \
-#                    -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-#    fi
-#
-#    if [[ ${correction_extern} == "intern" ]]; then
-#            do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
-#                        -output_dir_report ${output_dir_report} \
-#                        -output_dir_data ${output_dir_data_report} \
-#                        -comments "${correction_comments}" \
-#                        -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-#        fi
-#
-#else
+if [[ ${correction_comments} != "" ]]; then
+    #corrected report
+    if [[ -z "${correction_extern}" ]]; then
+        error "Missing correction extern argument"
+    fi
+    if [[ ${correction_extern} == "extern" ]]; then
+        do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
+                    -output_dir_report ${output_dir_report} \
+                    -output_dir_data ${output_dir_data_report} \
+                    -comments "${correction_comments}" \
+                    -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+    fi
+
+    if [[ ${correction_extern} == "intern" ]]; then
+            do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
+                        -output_dir_report ${output_dir_report} \
+                        -output_dir_data ${output_dir_data_report} \
+                        -corrected_report &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+        fi
+
+else
     #Normal report
     do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
             -output_dir_report ${output_dir_report} \
             -output_dir_data ${output_dir_data_report} \
             -comments "${correction_comments}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
-#fi
+fi
 
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
