@@ -9,7 +9,8 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-# unzip cuppa jar unzip cuppa.jar cuppa-chart/* -d ~/dataset_copy/cuppa-chart-1.6
+# unzip cuppa jar
+# unzip cuppa.jar cuppa-chart/* -d ~/dataset_copy/cuppa-chart-1.6
 
 venv_dir=${HOME}/venv
 create_python_venv --venv_dir "${venv_dir}" --requirements "/home/lschoenmaker/dataset_copy/cuppa-chart-1.7/cuppa-chart/requirements.txt" || exit 1
@@ -24,3 +25,6 @@ python /home/lschoenmaker/dataset_copy/cuppa-chart-1.7/cuppa-chart/cuppa-chart.p
     -sample ${sampleId} \
     -sample_data ${run_dir}/cuppa/${sampleId}.cup.data.csv \
     -output_dir ${run_dir}/cuppa/
+
+info "Removing venv of python"
+rm -r venv_dir
