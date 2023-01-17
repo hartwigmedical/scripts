@@ -680,7 +680,7 @@ locate_isofox_gene_distribution_csv() {
 }
 
 locate_isofox_alt_sj_cohort_csv() {
-    echo "/data/experiments/rna/cohort/isofox.all_3444.gene_expression_matrix.csv"
+    echo "/data/experiments/rna/cohort/isofox.hmf_2766.alt_sj_cohort.csv"
 }
 
 locate_doid_json() {
