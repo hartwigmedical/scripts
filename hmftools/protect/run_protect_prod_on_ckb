@@ -11,8 +11,8 @@ fi
 
 serve_actionability_dir="/data/resources/private/serve/37"
 
-output_dir="${run_dir}/protect_research"
-protect_jar=$(locate_research_protect)
+output_dir="${run_dir}/protect_prod"
+protect_jar=$(locate_prod_protect)
 
 do_run_protect_latest ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} "$@"
 
