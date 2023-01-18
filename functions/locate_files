@@ -56,6 +56,10 @@ locate_pilot_lilac() {
     echo "/data/experiments/pilot_tools/lilac/lilac.jar"
 }
 
+locate_research_cuppa_chart() {
+    echo "/data/tools/cuppa/1.7.1/cuppa-chart"
+}
+
 locate_prod_cuppa_dna() {
     echo "/data/actin/cuppa_1_7_2/cuppa.jar"
 }
