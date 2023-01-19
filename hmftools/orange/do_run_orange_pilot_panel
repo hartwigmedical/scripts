@@ -17,6 +17,7 @@ if [[ -f "${pipeline_version_file}" ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_somatic_tumor_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})"
