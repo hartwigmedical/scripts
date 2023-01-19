@@ -21,7 +21,7 @@ info "Venv environment of python3 is installed"
 info "Running cuppa chart for ${sample_id}"
 python ${cuppa_chart_dir}/cuppa-chart.py \
     -sample ${sample_id} \
-    -sample_data ${cuppa_dir}$/${sample_id}.cup.data.csv \
+    -sample_data ${cuppa_dir}/${sample_id}.cup.data.csv \
     -output_dir ${cuppa_dir}/
 
 info "Removing venv of python"
