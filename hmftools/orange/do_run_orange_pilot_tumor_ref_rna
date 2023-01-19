@@ -87,10 +87,12 @@ if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
     cuppa_result_csv="$(locate_cuppa_dna_rna_result_csv ${run_dir})"
     cuppa_summary_plot="$(locate_cuppa_dna_rna_summary_plot ${run_dir})"
     cuppa_feature_plot="$(locate_cuppa_dna_rna_feature_plot ${run_dir})"
+    cuppa_chart_plot="$(locate_cuppa_dna_rna_chart_plot ${run_dir})"
 else
     cuppa_result_csv="$(locate_cuppa_result_csv ${run_dir})"
     cuppa_summary_plot="$(locate_cuppa_summary_plot ${run_dir})"
     cuppa_feature_plot="$(locate_cuppa_feature_plot ${run_dir})"
+    cuppa_chart_plot="$(locate_cuppa_chart_plot ${run_dir})"
 fi
 
 cuppa_feature_plot_cmd=""
@@ -143,6 +145,7 @@ java -jar ${orange_jar} \
     -cuppa_result_csv "${cuppa_result_csv}" \
     -cuppa_summary_plot "${cuppa_summary_plot}" \
     ${cuppa_feature_plot_cmd} \
+    -cuppa_chart_plot "${cuppa_chart_plot}" \
     -peach_genotype_tsv "${peach_genotype_tsv}" \
     -sigs_allocation_tsv "${sigs_allocation_tsv}" \
     "$@"

@@ -144,11 +144,11 @@ if [[ $? = 0 ]]; then info " Cuppa Summary Plot: ${cuppa_summary_plot}"; fi
 cuppa_conclusion_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 if [[ $? = 0 ]]; then info " Cuppa Conclusion File: ${cuppa_conclusion_txt}"; fi
 
-cuppa_conclusion_plot=$(locate_cuppa_conclusion_plot ${run_dir})
-if [[ $? = 0 ]]; then info " Cuppa Conclusion Plot: ${cuppa_conclusion_plot}"; fi
-
 cuppa_feature_plot=$(locate_cuppa_feature_plot ${run_dir})
 if [[ $? = 0 ]]; then info " Cuppa Feature Plot: ${cuppa_feature_plot}"; fi
+
+cuppa_chart_plot=$(locate_cuppa_chart_plot ${run_dir})
+if [[ $? = 0 ]]; then info " Cuppa Chart Plot: ${cuppa_chart_plot}"; fi
 
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 if [[ $? = 0 ]]; then info " VIRUSBreakend Output: ${virus_breakend_tsv}"; fi

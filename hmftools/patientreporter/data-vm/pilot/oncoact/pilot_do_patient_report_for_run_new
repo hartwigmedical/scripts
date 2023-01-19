@@ -28,7 +28,8 @@ fi
 pipeline_version_file="${run_dir}/pipeline.version"
 orange_json="$(locate_orange_json ${run_dir})"
 
-cuppa_plot="$(locate_cuppa_conclusion_plot ${run_dir})"
+# TODO Remove once patient reporter runs on ORANGE v2.3 which includes this file internally
+cuppa_plot="$(locate_cuppa_chart_plot ${run_dir})"
 
 # TODO Switch to PROD once PROTECT v3.0 has become production version
 protect_evidence_tsv="$(locate_protect_evidence_pilot ${run_dir})"

@@ -1707,6 +1707,24 @@ locate_cuppa_dna_rna_feature_plot() {
     echo ${plot}
 }
 
+locate_cuppa_chart_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
+    if [[ -z "${plot}" ]]; then
+        error "Unable to locate cuppa chart in ${run_dir}."
+    fi
+    echo ${plot}
+}
+
+locate_cuppa_dna_rna_chart_plot() {
+    local run_dir=$1
+    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cuppa.chart.png")
+    if [[ -z "${plot}" ]]; then
+        error "Unable to locate cuppa dna-rna chart in ${run_dir}."
+    fi
+    echo ${plot}
+}
+
 locate_cuppa_conclusion_txt() {
     local run_dir=$1
     local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
@@ -1714,15 +1732,6 @@ locate_cuppa_conclusion_txt() {
         error "Unable to locate cuppa conclusion in ${run_dir}."
     fi
     echo ${conclusion_txt}
-}
-
-locate_cuppa_conclusion_plot() {
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
-    if [[ -z "${plot}" ]]; then
-        error "Unable to locate cuppa plot in ${run_dir}."
-    fi
-    echo ${plot}
 }
 
 ################################### PROTECT ####################################
