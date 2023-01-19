@@ -32,10 +32,9 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
     exit 1;
 fi
 
-output_dir="${HOME}/reports/pilot"
+output_dir_report="${HOME}/reports/pilot"
+output_dir_data="${HOME}/reports/pilot"
 
-pilot_do_panel_report_for_run ${run_dir} \
-    ${tumor_sample} ${tumor_sample_barcode}  \
-    -output_dir_report ${output_dir} \
-    -output_dir_data ${output_dir} \
-    "$@"
+pilot_do_panel_report_for_run ${run_dir} ${tumor_sample} ${tumor_sample_barcode}  \
+      -output_dir_report ${output_dir_report} \
+      -output_dir_data ${output_dir_data} "$@"

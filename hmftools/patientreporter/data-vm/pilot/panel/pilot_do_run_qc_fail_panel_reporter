@@ -21,4 +21,5 @@ fi
 pilot_do_run_base_panel_reporter \
   -tumor_sample_id ${tumor_sample} \
   -tumor_sample_barcode ${tumor_sample_barcode} \
+  -ref_genome_version 38 \
   "$@"
