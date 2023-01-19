@@ -17,7 +17,6 @@ if [[ -f "${pipeline_version_file}" ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_somatic_tumor_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})"
@@ -49,7 +48,7 @@ fi
 
 sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
 
-info "Running ORANGE pilot tumor-only on ${run_dir}"
+info "Running ORANGE pilot panel on ${run_dir}"
 
 do_run_orange_pilot \
     ${pipeline_version_cmd} \
@@ -62,11 +61,5 @@ do_run_orange_pilot \
     -linx_plot_directory "${linx_plot_directory}" \
     -lilac_result_csv "${lilac_result_csv}" \
     -lilac_qc_csv "${lilac_qc_csv}" \
-    -annotated_virus_tsv "${annotated_virus_tsv}" \
-    -chord_prediction_txt "${chord_prediction_txt}" \
-    -cuppa_result_csv "${cuppa_result_csv}" \
-    -cuppa_summary_plot "${cuppa_summary_plot}" \
-    ${cuppa_feature_plot_cmd} \
-    -cuppa_chart_plot "${cuppa_chart_plot}" \
     -sigs_allocation_tsv "${sigs_allocation_tsv}" \
     "$@"

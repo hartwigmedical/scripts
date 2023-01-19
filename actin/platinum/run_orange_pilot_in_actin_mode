@@ -17,3 +17,6 @@ run_orange_pilot_no_germline ${run_dir}
 # Tumor-only is run just for testing
 run_orange_pilot_tumor_only ${run_dir}
 
+# Panel is also run just for testing
+run_orange_pilot_panel ${run_dir}
+
