@@ -15,6 +15,6 @@ load_protect_data_pilot ${run_dir}
 
 run_rose_pilot ${run_dir}
 
-cuppa_chart ${run_dir}
+run_cuppa_chart_dna ${run_dir}
 
 pilot_create_patient_report_data_vm ${run_dir}
