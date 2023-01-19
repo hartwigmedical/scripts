@@ -24,6 +24,7 @@ if [[ -d "${run_dir}/isofox" ]]; then
 
     run_cuppa_dna_rna_prod ${run_dir}
     generate_cup_dna_rna_report ${run_dir}
+    run_cuppa_chart_dna_rna ${run_dir}
 fi
 
 download_rna_bam_to_run_dir ${run_dir}
