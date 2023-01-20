@@ -239,11 +239,14 @@ sub processSample{
 
     ## not all samples have q30 field because this was added later to lims
     my $q30 = $Q30_LIM;
-    if ( defined $sample->{ 'q30' } ){
-        $q30 = $sample->{ 'q30' };
-    }
-    if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
-        die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
+    if ( defined $sample->{ 'q30' } and $sample->{ 'q30' } ne "" ){
+        my $configured_q30 = $sample->{ 'q30' };
+        if ( $configured_q30 =~ /^\d+$/ and $configured_q30 > 0 and $configured_q30 < 100 ){
+            $q30 = $configured_q30;
+        }else{
+            sayWarn("Q30 field found for sample ($name) but not usable as-is ($q30) so taking default ($Q30_LIM)");
+            $q30 = $Q30_LIM;
+        }
     }
 
     my $entity_count_in_api = `hmf_api_get 'entities?name=$entity' | jq 'length'`;
