@@ -89,8 +89,7 @@ else
     #Normal report
     do_run_qc_fail_patient_reporter "${sample}" "${barcode}" "${ref_sample}" "${ref_sample_barcode}" "${fail_reason}" "${ref_sample_mandatory}" \
             -output_dir_report ${output_dir_report} \
-            -output_dir_data ${output_dir_data_report} \
-            -comments "${correction_comments}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
+            -output_dir_data ${output_dir_data_report} &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
 #check whether a report has been made
