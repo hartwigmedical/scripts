@@ -244,7 +244,7 @@ sub processSample{
         if ( $configured_q30 =~ /^\d+$/ and $configured_q30 > 0 and $configured_q30 < 100 ){
             $q30 = $configured_q30;
         }else{
-            sayWarn("Q30 field found for sample ($name) but not usable as-is ($q30) so taking default ($Q30_LIM)");
+            sayWarn("Q30 field found for sample ($name) but not usable as-is ($configured_q30) so taking default ($Q30_LIM)");
             $q30 = $Q30_LIM;
         }
     }
