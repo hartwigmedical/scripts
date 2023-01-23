@@ -39,7 +39,7 @@ run_cuppa_dna_prod ${run_dir}
 generate_cup_report ${run_dir}
 
 # To generate the CUPPA chart as a picture (png)
-run_cuppa_chart_dna ${run_dir}
+# run_cuppa_chart_dna ${run_dir}
 
 # Run ORANGE to pick up all latest versions
 run_orange_in_actin_mode ${run_dir}
