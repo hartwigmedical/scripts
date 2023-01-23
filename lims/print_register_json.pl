@@ -241,7 +241,7 @@ sub processSample{
     my $q30 = $Q30_LIM;
     if ( defined $sample->{ 'q30' } and $sample->{ 'q30' } ne "" ){
         my $configured_q30 = $sample->{ 'q30' };
-        if ( $configured_q30 =~ /^\d+$/ and $configured_q30 > 0 and $configured_q30 < 100 ){
+        if ( $configured_q30 =~ /^\d+$/ and $configured_q30 >= 0 and $configured_q30 < 100 ){
             $q30 = $configured_q30;
         }else{
             sayWarn("Q30 field found for sample ($name) but not usable as-is ($configured_q30) so taking default ($Q30_LIM)");
