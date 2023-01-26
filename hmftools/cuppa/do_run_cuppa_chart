@@ -12,7 +12,7 @@ fi
 
 cuppa_chart_dir="$(locate_research_cuppa_chart)"
 
-venv_dir="${HOME}/venv"
+venv_dir="${cuppa_dir}/venv"
 create_python_venv --venv_dir "${venv_dir}" --requirements "${cuppa_chart_dir}/requirements.txt" || exit 1
 source "${venv_dir}/bin/activate" || exit 1
 
