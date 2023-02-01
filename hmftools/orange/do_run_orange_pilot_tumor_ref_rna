@@ -79,6 +79,7 @@ info "Running ORANGE pilot tumor-ref-rna on ${run_dir}"
 do_run_orange_pilot \
     ${run_dir} \
     ${output_dir} \
+    -experiment_type "WGS" \
     ${isofox_gene_distribution_cmd} \
     ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
