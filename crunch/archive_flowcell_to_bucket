@@ -13,7 +13,7 @@ SCRIPT_NAME="$(basename "$0")"
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Usage: ${SCRIPT_NAME} <crunch-name> <flowcell-path>"
-    echo "        ${SCRIPT_NAME} crunch2.prod-1 /data1/illumina_data/210402_NB500902_0301_AH2V53BGXJ"
+    echo "        ${SCRIPT_NAME} sts1.prod-1 /data1/illumina_data/210402_NB500902_0301_AH2V53BGXJ"
     echo " Descr: Syncs sequencing config files and conversion logs of a flowcell to bucket ${BUCKET_BASE_DIR}. Run this on the ops VM."
     echo "-----"
     exit 1

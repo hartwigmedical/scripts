@@ -6,7 +6,7 @@ command -v hmf_api_get > /dev/null || die "Dependency not found [hmf_api_get]"
 
 [[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check flowcells from crunch/sts directly"
 
-servers=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
+servers=(crunch1.prod-1 sts1.prod-1 sts2.prod-1)
 
 main () {
     declare -a all_stdout
