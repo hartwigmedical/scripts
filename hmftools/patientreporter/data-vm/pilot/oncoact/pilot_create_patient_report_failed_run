@@ -51,6 +51,8 @@ else
 fi
 
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
+lilac_result_csv=$(locate_lilac_results ${run_dir})
+lilac_qc_csv=$(locate_lilac_qc ${run_dir})
 pipeline_version_file=${run_dir}/pipeline.version
 
 pilot_do_run_qc_fail_patient_reporter ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} ${fail_reason} ${ref_sample_mandatory} \
@@ -58,5 +60,7 @@ pilot_do_run_qc_fail_patient_reporter ${tumor_sample} ${tumor_sample_barcode} ${
   -output_dir_data ${output_dir_report} \
   -pipeline_version_file ${pipeline_version_file} \
   -peach_genotype_tsv ${peach_genotype_tsv} \
+  -lilac_result_csv ${lilac_result_csv} \
+  -lilac_qc_csv ${lilac_qc_csv} \
   -purple_purity_tsv ${purple_purity_tsv} \
   -purple_qc_file ${purple_qc_file} "$@"
