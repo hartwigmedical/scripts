@@ -36,7 +36,7 @@ fi
 ## Samples/barcodes that already exist in HMF API already have the use_existing flag
 ## but in case a barcode is re-used at the same register batch then manual adjustment is needed
 for dup_bc in $( cat "${JSONS_LOC}"/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
-   warn "Found duplicate barcode (${dup_bc}): make sure the use_existing flag is set correctly on second one:";
+   warn "Found duplicate barcode (${dup_bc}): make sure the use_existing_sample flag is set correctly on second one:";
    find "${JSONS_LOC}" -maxdepth 1 -name "*json" | while read -r ready_json; do
        if [[ $(grep -c "${dup_bc}" "${ready_json}") -gt 0 ]]; then
            warn "  ${ready_json}"
