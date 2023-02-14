@@ -33,7 +33,6 @@ info "Running ORANGE pilot panel on ${run_dir}"
 do_run_orange_pilot \
     ${run_dir} \
     ${output_dir} \
-    -experiment_type "PANEL" \
     ${pipeline_version_cmd} \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
