@@ -50,7 +50,7 @@ make_peach_reporting_summary_tsvs --input ${git_clone_dir}/peach/peach.json --ou
 
 info "Extracting gene transcript information to tsv file"
 Rscript generate_transript_oncoact.R
-#Rscript generate_transript_oncopanel.R
+Rscript generate_transript_oncopanel.R
 
 #files oncoact
 info "Collecting oncoAct data"
@@ -125,7 +125,6 @@ onco_panel_genes_tsv="${git_clone_dir}/gene_panel/38/DriverGenePanel.38.tsv"
 onco_panel_vcf_header_definitions="/data/resources/ops/report_resources/hmf_header_definitions.tsv"
 oncopanel_report_pdf="${report_resources_dir}/hmf_oncopanel_report.pdf"
 oncopanel_readme="/data/resources/ops/report_resources/oncopanel_readme.txt"
-#oncopanel_gene_transcripts="${archive_dir_oncopanel}/hmf_reportable_gene_transcripts.tsv"
 
 if [[ -z "${onco_panel_genes_tsv}" ]]; then
         error "Unable to locate onco panel genes tsv file."
@@ -143,9 +142,9 @@ if [[ -z "${oncopanel_readme}" ]]; then
         error "Unable to locate oncopanel readme file."
 fi
 
-#if [[ -z "${oncopanel_gene_transcripts}" ]]; then
-#        error "Unable to locate gene transcript file."
-#fi
+if [[ -z "${oncopanel_gene_transcripts}" ]]; then
+        error "Unable to locate gene transcript file."
+fi
 
 # Copy oncopanel data to the archive dir
 cp ${onco_panel_genes_tsv} "${archive_dir_oncopanel}/hmf_oncoact_gene_panel.tsv"

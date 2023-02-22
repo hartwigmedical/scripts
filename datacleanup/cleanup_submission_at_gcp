@@ -125,6 +125,17 @@ process_runs_for_sample() {
             bucket=${bucket/_/-} # fix for old API records
             run_status=$(echo "$run" | cut -f4)
             ini_name=$(echo "$run" | cut -f5)
+            context=$(echo "$run" | cut -f6)
+
+            if [[ "$context" == "RESEARCH" ]]; then
+                info "  Not processing run $run_id because is RESEARCH context ($run_name)" >> "$log_file"
+                continue
+            fi
+
+            if [[ "$ini_name" == "Rerun.ini" ]]; then
+                info "  Not processing run $run_id because is Rerun ini ($run_name)" >> "$log_file"
+                continue
+            fi
 
             id_present=$(echo "$processed_ids" | grep -c "ID:$run_id ")
             if [[ "$id_present" -gt 0 ]]; then
@@ -154,7 +165,7 @@ process_runs_for_sample() {
                 die "Run type is not pipeline/fastq/bcl (ini=$ini_name): inspect this one! ($run_info)"
             fi
             echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
-        done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
+        done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini,.context] | @tsv')
     done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
 
     echo "$processed_ids"
