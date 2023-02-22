@@ -126,6 +126,5 @@ def get_date_today() -> str:
     return datetime.datetime.today().strftime("%B %d, %Y")
 
 
-
 if __name__ == "__main__":
     main()
