@@ -82,6 +82,9 @@ class BaseRestClient(object):
                 logging.error("Maybe recoverable error for request: " + request_url + "\nerror: " + repr(e))
                 self._wait_time_owed += 5
                 return self.perform_rest_action(endpoint, headers, params)
+            elif e.code == 110:
+                logging.error("Maybe recoverable error for request: " + request_url + "\nerror: " + repr(e))
+                return self.perform_rest_action(endpoint, headers, params)
             else:
                 logging.error("Fatal error for request: " + request_url + "\nerror: " + repr(e))
                 raise ValueError(
@@ -303,7 +306,7 @@ class EnsemblRestClient(object):
                                 source_coordinate_system, target_coordinate_system, warning_collector
                             )
                             assert adjusted_target_start + offset == adjusted_target_end - offset, \
-                                "Second estimated translated start and end are different"
+                                "Third estimated translated start and end are different"
                             return adjusted_target_start + offset
                         except AssertionError as e:
                             warning_collector.add(str(e))
@@ -316,7 +319,7 @@ class EnsemblRestClient(object):
                                     source_coordinate_system, target_coordinate_system, warning_collector
                                 )
                                 assert adjusted_target_start + offset == adjusted_target_end - offset, \
-                                    "Second estimated translated start and end are different"
+                                    "Fourth estimated translated start and end are different"
                                 return adjusted_target_start + offset
                             except AssertionError as e:
                                 warning_collector.add(str(e))
@@ -467,7 +470,7 @@ def print_gene_id_and_name(species, symbols, output_file, version):
     if warnings:
         for warning in warnings:
             logging.error(warning)
-            raise RuntimeError(f"Errors detected: {warnings}")
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, version):
@@ -484,7 +487,7 @@ def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, v
     if warnings:
         for warning in warnings:
             logging.error(warning)
-            raise RuntimeError(f"Errors detected: {warnings}")
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_gene_ids_and_canonical_names(input_file, output_file, version):
@@ -527,7 +530,7 @@ def translate_coordinates(input_file, output_file, version):
     if warnings:
         for warning in warnings:
             logging.error(warning)
-            raise RuntimeError(f"Errors detected: {warnings}")
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_nm_transcript_ids(input_file, output_file, version):
