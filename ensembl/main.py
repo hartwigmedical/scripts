@@ -463,8 +463,11 @@ def print_gene_id_and_name(species, symbols, output_file, version):
             else:
                 out_f.write("\t".join([symbol, overview["id"], overview["external_name"]]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+            raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, version):
@@ -477,8 +480,11 @@ def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, v
         for gene_name, ensembl_id in gene_name_ensembl_id_tuples:
             out_f.write("\t".join([gene_name, ensembl_id, ";".join(ensembl_id_to_nm_transcript_names[ensembl_id])]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+            raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_gene_ids_and_canonical_names(input_file, output_file, version):
@@ -517,8 +523,11 @@ def translate_coordinates(input_file, output_file, version):
             translated_pos, source_seq, target_seq = translation
             out_f.write("\t".join([chrom, str(pos), str(translated_pos), source_seq, target_seq]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+            raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_nm_transcript_ids(input_file, output_file, version):
