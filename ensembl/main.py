@@ -7,7 +7,7 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from copy import deepcopy
 from threading import Lock
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -82,16 +82,15 @@ class BaseRestClient(object):
                 logging.error("Maybe recoverable error for request: " + request_url + "\nerror: " + repr(e))
                 self._wait_time_owed += 5
                 return self.perform_rest_action(endpoint, headers, params)
-            elif e.code == 110:
-                logging.error("Maybe recoverable error for request: " + request_url + "\nerror: " + repr(e))
-                return self.perform_rest_action(endpoint, headers, params)
             else:
                 logging.error("Fatal error for request: " + request_url + "\nerror: " + repr(e))
                 raise ValueError(
                     ('Request failed for {request_url}: Status code: {e.code} Reason: {e.reason},\n'
                      'Full error: {full_error}').format(request_url=request_url, e=e, full_error=repr(e))
                 )
-
+        except URLError as e:
+            logging.error("Maybe recoverable URL error for request: " + request_url + "\nerror: " + repr(e))
+            return self.perform_rest_action(endpoint, headers, params)
         return data
 
     def _do_rate_limiting(self):
