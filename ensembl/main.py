@@ -122,7 +122,7 @@ class EnsemblRestClient(object):
     def __init__(self, version: str, reqs_per_sec=15):
         if version == V38:
             self._rest_client = BaseRestClient('https://rest.ensembl.org', reqs_per_sec)
-        if version == V37:
+        elif version == V37:
             self._rest_client = BaseRestClient('https://grch37.rest.ensembl.org', reqs_per_sec)
         else:
             raise ValueError(f"Unrecognized ref genome version number: {version}")
