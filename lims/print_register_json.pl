@@ -196,7 +196,7 @@ sub processSample{
     my %sample_id_hash = %{ $sample_id_hash_ref };
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
-        sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
+        sayWarn("  RESULT: Sample not present in LIMS (lims.json) ($sample_id)");
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims_samples->{ $sample_id };
@@ -471,7 +471,7 @@ sub processSample{
         }
 
         if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $barcode_ref }) ){
-            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in samples to register or in API");
+            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in same samplesheet or in API");
         }
 
         sayInfo("  Set name constructed to $set");
