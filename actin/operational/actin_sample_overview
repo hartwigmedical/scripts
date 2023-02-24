@@ -28,12 +28,12 @@ main () {
     info "Querying API regarding diagnostic ACTIN runs"
     all_actin_runs=$(hmf_api_get "runs?submission=${actin_submission}")
     printf "#%s\t%s\t%s\t%s\n" set_name ini status bucket
-    jq -r '.[] | select(.bucket//"NA"|match("diagnostic")) | [.set.name,.ini,.status,.bucket] | join("\t")' <<< "$all_actin_runs"
+    jq -r '.[] | select(.bucket//"NA"|match("diagnostic")) | [.set.name,.ini,.status,.bucket] | join("\t")' <<< "$all_actin_runs" | tail -10
     echo ""
 
     info "Querying API regarding research ACTIN runs"
     printf "#%s\t%s\t%s\t%s\n" set_name ini status bucket
-    jq -r '.[] | select(.bucket//"NA"|match("research")) | [.set.name,.ini,.status,.bucket] | join("\t")' <<< "$all_actin_runs"
+    jq -r '.[] | select(.bucket//"NA"|match("research")) | [.set.name,.ini,.status,.bucket] | join("\t")' <<< "$all_actin_runs" | tail -10
 }
 
 shared_report_count_for_barcode () {
