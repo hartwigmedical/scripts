@@ -1,0 +1,191 @@
+#!/bin/bash
+# Loading bed file into DB
+
+
+# Using the following .bed file:
+# https://support.illumina.com/downloads/ampliseq-for-illumina-cancer-hotspot-panel-v2-files.html
+# Downloaded and extracted it
+# Upload to GCP
+# gcloud compute scp CancerHotSpot-v2.dna_manifest.20180509.bed   mbaksi@datarequest-vm-prod-2:~/scratch --zone europe-west4-a --project hmf-share
+# Received tso500 from peter and charles, side note: (there were built from the TSO-500 gene list and the Ensembl data cache for canonical transcripts)
+
+# Load into DB:
+source /data/repos/scripts/functions/database_functions
+credentials=$(prod_writer_sql_credentials)
+user=$(extract_database_user "${credentials}")
+password=$(extract_database_password "${credentials}")
+host=$(extract_database_host "${credentials}")
+port=$(extract_database_port "${credentials}")
+
+# Ampliseq
+echo "
+use silico_actionability;
+DROP TABLE AmpliSeq;
+CREATE TABLE AmpliSeq (
+chrom NVARCHAR(255),
+chromStart NVARCHAR(255),
+chromEnd NVARCHAR(255),
+target NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/CancerHotSpot-v2.dna_manifest.20180509.bed' INTO TABLE AmpliSeq;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+# Do the linkage for the reported
+echo "
+use silico_actionability;
+DROP TABLE AmpliSeqResults_reported;
+CREATE TABLE AmpliSeqResults_reported (
+id NVARCHAR(255),
+Ampliseq NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/Ampliseq_result.tsv' INTO TABLE AmpliSeqResults_reported;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+
+# ---------------------------------------------------------------------------------------------
+# TSO500; gained file from peter and charles
+echo "
+use silico_actionability;
+DROP TABLE TSO500;
+CREATE TABLE TSO500 (
+chrom NVARCHAR(255),
+chromStart NVARCHAR(255),
+chromEnd NVARCHAR(255),
+target NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/ActionableCodingPanel.tso500.37.bed' INTO TABLE TSO500;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+
+# Do the linkage for the reported
+echo "
+use silico_actionability;
+DROP TABLE TSO500Results_reported;
+CREATE TABLE TSO500Results_reported (
+id NVARCHAR(255),
+TSO500 NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/TSO500_result.tsv' INTO TABLE TSO500Results_reported;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+
+
+# ---------------------------------------------------------------------------------------------
+# Load in the moldx
+echo "
+use silico_actionability;
+DROP TABLE MolDx;
+CREATE TABLE MolDx(
+Event NVARCHAR(255),
+EventType NVARCHAR(255),
+DOID NVARCHAR(255),
+TumorType NVARCHAR(255),
+Routine NVARCHAR(255),
+ESCAT NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/MolDx_result.tsv' INTO TABLE MolDx;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+
+# Load in the protect collapsed:
+# execute_sql_on_prod "select sampleId,gene,event,level,onLabel,treatment,sourceEvent FROM hmfpatients.protect;" > protect.csv
+echo "
+use silico_actionability;
+DROP TABLE ProtectCollapsed;
+CREATE TABLE ProtectCollapsed(
+sampleId NVARCHAR(255),
+gene NVARCHAR(255),
+event NVARCHAR(255),
+sourceEvent NVARCHAR(255),
+onLabel NVARCHAR(255),
+level NVARCHAR(255));
+LOAD DATA LOCAL INFILE '/home/mbaksi/scratch/Protect_result.tsv' INTO TABLE ProtectCollapsed;
+" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+    < temp.sql --local-infile='true'
+
+
+# Create view
+echo "
+use silico_actionability;
+DROP VIEW IF EXISTS silico_actionability.Combined;
+CREATE VIEW Combined AS
+SELECT
+    somaticVariant.id,
+    somaticVariant.sampleId,
+    sample.ArrivalDate,
+    somaticVariant.gene,
+    somaticVariant.chromosome,
+    somaticVariant.position,
+    somaticVariant.filter,
+    somaticVariant.type,
+    somaticVariant.canonicalEffect,
+    somaticVariant.canonicalHgvsCodingImpact,
+    somaticVariant.canonicalHgvsProteinImpact,
+    protect.event,
+    protect.level,
+    protect.onLabel,
+    protect.treatment,
+    protect.sourceEvent,
+    somaticVariant.reported,
+    TSO500Results_reported.TSO500,
+    AmpliSeqResults_reported.AmpliSeq
+FROM
+    hmfpatients.somaticVariant
+        INNER JOIN
+    silico_actionability.TSO500Results_reported ON somaticVariant.id = TSO500Results_reported.id
+        INNER JOIN
+    silico_actionability.AmpliSeqResults_reported ON somaticVariant.id = AmpliSeqResults_reported.id
+        INNER JOIN
+    hmfpatients.sample ON somaticVariant.sampleId = sample.sampleId
+        LEFT JOIN
+    hmfpatients.protect ON somaticVariant.canonicalHgvsProteinImpact = protect.event AND somaticVariant.sampleId=protect.sampleId;" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+                       < temp.sql --local-infile='true'
+
+
+# Create view2
+echo "
+use silico_actionability;
+DROP VIEW IF EXISTS silico_actionability.CombinedCollapsed;
+CREATE VIEW CombinedCollapsed AS
+SELECT
+    somaticVariant.id,
+    somaticVariant.sampleId,
+    sample.ArrivalDate,
+    somaticVariant.gene,
+    somaticVariant.chromosome,
+    somaticVariant.position,
+    somaticVariant.filter,
+    somaticVariant.type,
+    somaticVariant.canonicalEffect,
+    somaticVariant.canonicalHgvsCodingImpact,
+    somaticVariant.canonicalHgvsProteinImpact,
+    ProtectCollapsed.Event,
+    ProtectCollapsed.level,
+    ProtectCollapsed.onLabel,
+    ProtectCollapsed.sourceEvent,
+    somaticVariant.reported,
+    TSO500Results_reported.TSO500,
+    AmpliSeqResults_reported.AmpliSeq
+FROM
+    hmfpatients.somaticVariant
+        INNER JOIN
+    silico_actionability.TSO500Results_reported ON somaticVariant.id = TSO500Results_reported.id
+        INNER JOIN
+    silico_actionability.AmpliSeqResults_reported ON somaticVariant.id = AmpliSeqResults_reported.id
+        INNER JOIN
+    hmfpatients.sample ON somaticVariant.sampleId = sample.sampleId
+        LEFT JOIN
+    silico_actionability.ProtectCollapsed ON somaticVariant.canonicalHgvsProteinImpact = ProtectCollapsed.Event AND somaticVariant.sampleId=ProtectCollapsed.sampleId AND somaticVariant.gene=ProtectCollapsed.gene;" > temp.sql
+mysql --user="${user}" --password="${password}" --host="${host}" --port="${port}" --database="${database_name}"  \
+                       < temp.sql --local-infile='true'
+
+# Clean
+rm temp.sql
+# rm temp.tsv
