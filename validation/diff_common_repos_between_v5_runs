@@ -42,8 +42,8 @@ main () {
     base_pip_vsn=$(cat "${base_pip_vsn_file}")
     test_pip_vsn=$(cat "${test_pip_vsn_file}")
 
-    base_img_tag_string=$( grep imageName "${base_log_file}" | grep -Po "pipeline5-.+-private")
-    test_img_tag_string=$( grep imageName "${test_log_file}" | grep -Po "pipeline5-.+-private")
+    base_img_tag_string=$(grep -oE 'imageName=[^,]+' "${base_log_file}" | cut -d"=" -f2)
+    test_img_tag_string=$(grep -oE 'imageName=[^,]+' "${test_log_file}" | cut -d"=" -f2)
 
     [[ -n "${base_img_tag_string}" ]] || die "Unable to parse out the imageName from file $base_log_file"
     [[ -n "${test_img_tag_string}" ]] || die "Unable to parse out the imageName from file $test_log_file"
@@ -99,16 +99,21 @@ diff_repo_by_tags () {
 extract_tag () {
     local string=$1 && shift
     local type=$1 && shift
+
+    # Possible hotfix part needs to be removed as these are manually added later and not part of git tag
+    # shellcheck disable=SC2001
+    string=$(sed 's/-hotfix-[0-9]//' <<< "${string}")
+
     local img_tag_regex="^(pipeline5-[0-9]+-[0-9]+)-([0-9]+)-([0-9]+)-private$"
 
     if [[ "${string}" =~ ${img_tag_regex} ]]; then
         pipeline_vsn="${BASH_REMATCH[1]}"
         public_date="${BASH_REMATCH[2]}"
+        private_date="${BASH_REMATCH[3]}"
         if [[ $type == "public" ]]; then
             echo "${pipeline_vsn}-${public_date}"
         elif [[ $type == "private" ]]; then
-            # complete string is the private tag
-            echo "${string}"
+            echo "${pipeline_vsn}-${public_date}-${private_date}-private"
         else
             die "Unknown type provided: should not happen (${type})"
             return 1
