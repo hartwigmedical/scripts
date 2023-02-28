@@ -358,13 +358,13 @@ sub addLamaSamplesToSamples{
         }
     }
 
-    # # TODO: remove once INC-194 (PGX DPYD bug) is solved
-    # sayInfo("Resetting reportPgx to false for INC-194");
-    # while ( my($barcode, $sample) = each %store ) {
-    #     next unless $sample->{analysis_type} eq 'Somatic_T';
-    #     next unless defined $sample->{report_pgx};
-    #     $sample->{report_pgx} = JSON::XS::false;
-    # }
+    # TODO: remove once INC-194 (PGX DPYD bug) is solved
+    sayInfo("Resetting reportPgx to false for INC-194");
+    while ( my($barcode, $sample) = each %store ) {
+        next unless $sample->{analysis_type} eq 'Somatic_T';
+        next unless defined $sample->{report_pgx};
+        $sample->{report_pgx} = JSON::XS::false;
+    }
 
     return \%store;
 }
