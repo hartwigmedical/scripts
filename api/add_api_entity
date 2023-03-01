@@ -22,4 +22,4 @@ if [[ ${add_db} != true && ${add_db} != false ]]; then
 fi
 
 info "Adding entity ${entity} to API"
-curl -H "Content-Type: application/json" -H "Accept: application/json" -X POST http://api.prod-1/hmf/v1/entities --data '{"name": "${entity}", "add_to_db": "${add_db}"}'
+curl -H "Content-Type: application/json" -H "Accept: application/json" -X POST http://api.prod-1/hmf/v1/entities --data '{"name": "${entity}", "add_to_db": ${add_db}}'
