@@ -1,0 +1,28 @@
+#!/bin/usr/env bash
+
+source message_functions || exit 1
+
+submission_id=$1
+
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Move fastq samples from fastq-input-prod-1 to hmf-crunch-innovation"
+    echo " Usage: $(basename $0) submission"
+    echo " Exmpl: $(basename $0) HMFregINN2207"
+    echo "---"
+    exit 1
+fi
+
+[ "${submission}" =~ ^HMFregINN[0-9]{4} ]] || die "Submission is expected to match HMFregINN[0-9]{4}"
+
+info "Get samples from submission ${submission_id}"
+sample_barcodes=$(hmf_api_get "samples?submission=${submission_id}" | jq '.[] | .barcode')
+
+if [[ ${sample_barcodes} == "" ]]; then
+    die "No samples in submission ${submission_id}"
+fi
+
+for barcode in ${sample_barcodes}; do
+    info "Moving sample ${barcode} from gs://fastq-input-prod-1/ to gs://hmf-crunch-innovation/fastq/${submission_id}"
+    gsutil -m cp 'gs://fastq-input-prod-1/${barcode}/*fastq.gz' gs://hmf-crunch-innovation/fastq/${submission_id}/
+done
