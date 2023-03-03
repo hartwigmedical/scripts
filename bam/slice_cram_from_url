@@ -18,7 +18,7 @@ ref_genome=$(locate_ref_genome_37_fasta_file)
 info "Creating slice using ${slicing_bed}"
 ${samtools} view -T ${ref_genome} \
     -M "${cram_url}" \
-    -X "${cram_url_index}" \
+    -X "${cram_index_url}" \
     -L "${slicing_bed}" \
     -o "${output_bam}"
 info "Done creating slice. Written output to ${output_bam}"
