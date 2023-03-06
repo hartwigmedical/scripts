@@ -70,8 +70,8 @@ my $FOR_002_PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 # Current LAMA files
 my $LAMA_ISOLATION_JSON = $LATEST_DIR . '/Isolations.json';
 my $LAMA_PATIENT_JSON = $LATEST_DIR . '/Patients.json';
-my $LAMA_LIBRARYPREP_JSON = $LATEST_DIR . '/LibraryPreps.json';
-my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/SampleStatus.json';
+my $LAMA_LIBRARYPREP_JSON = $LATEST_DIR . '/LibraryPreparations.json';
+my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/Statuses.json';
 
 # Files from previous years
 my $SUBM_TSV_2022 = $LATEST_DIR . '/2022_for001_submissions.tsv';
@@ -130,12 +130,13 @@ my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $lims_objs = {}; # will contain all sample objects
 
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
+# TODO: switch on old FOR-002 reading
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
+# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
@@ -146,16 +147,21 @@ $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2022'}, 'submission', 0
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
+# TODO: switch on old FOR-001 reading
+# $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
+# $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
+# $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
+# $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
+# $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 my $lama_status = parseLamaSampleStatus($LAMA_SAMPLESTATUS_JSON);
 my $lama_isolation = parseLamaIsolation($LAMA_ISOLATION_JSON);
 my $lama_sample = parseLamaPatients($LAMA_PATIENT_JSON);
+my @keys = keys %$lama_sample;
+print Dumper $lama_sample->{$keys[1]};
+print Dumper $lama_sample->{$keys[2]};
+die "Finished";
 my $lama_prep = parseLamaLibraryPreps($LAMA_LIBRARYPREP_JSON);
 
 checkContactInfo( $cont_objs );
@@ -492,23 +498,23 @@ sub parseLamaIsolation{
     foreach my $experiment (@$objects) {
 
         # When isolation experiment is Processing there are no frBarcodes yet so skip all isolates
-        next if $experiment->{status} eq "Processing";
+        next if $experiment->{status} eq "PROCESSING";
 
         foreach my $isolate (@{$experiment->{isolates}}) {
 
-            # Once a isolation experiment is no longer Processing there should be a frBarcode
-            unless ( exists $isolate->{frBarcode} ) {
+            # Once a isolation experiment is no longer processing there should be a an isolation barcode
+            unless ( exists $isolate->{isolationBarcode} ) {
                 print Dumper $isolate;
                 die "[ERROR] No frBarcode present for above isolate object";
             }
 
-            my $barcode = $isolate->{frBarcode};
+            my $barcode = $isolate->{isolationBarcode};
             my $new_status = $isolate->{status};
 
             if ( exists $store{$barcode} ) {
                 my $old_status = $store{$barcode}{'isolation_status'};
-                my $old_is_finished = $old_status eq 'Finished';
-                my $new_is_finished = $new_status eq 'Finished';
+                my $old_is_finished = $old_status eq 'FINISHED';
+                my $new_is_finished = $new_status eq 'FINISHED';
                 if ( $old_is_finished and $new_is_finished ){
                     sayWarn("SKIPPING isolate: encountered duplicate Finished isolate for $barcode (pls fix in LAMA)");
                     print Dumper $store{$barcode};
@@ -537,27 +543,33 @@ sub parseLamaSampleStatus{
 
     foreach my $object (@$objects){
 
-        my $sampleBarcodeDNA = $object->{frBarcodeDNA};
-        my $sampleBarcodeRNA = $object->{frBarcodeRNA};
+        if (! (exists $object->{sampleBarcode} && exists $object->{sampleId}) ){
+            print Dumper $object;
+            die "No sampleBarcode/sampleId in object!";
+        }
+
+        my $sampleBarcode = $object->{sampleBarcode};
         my $sampleId = $object->{sampleId};
+        my $infoTag = "Status:$sampleBarcode/$sampleId";
 
         # No DNA frBarcode means sample has not been isolated so skip
-        if ( not defined $sampleBarcodeDNA or $sampleBarcodeDNA eq "" ){
+        if (not defined $sampleBarcode or $sampleBarcode eq ""){
+            sayWarn("SKIPPING: No barcode for [$infoTag]");
             next;
         }
 
         # Collect all info into one object
         my %status = ();
-        my $info_tag = "samplestatus->$sampleBarcodeDNA";
-        copyFieldsFromObject($object, $info_tag, $name_dict->{lama_status_dict}, \%status);
-        copyFieldsFromObject($object->{cohort}, $info_tag, $name_dict->{lama_status_cohort_dict}, \%status);
+        copyFieldsFromObject($object, $infoTag, $name_dict->{lama_status_dict}, \%status);
 
         # Store
-        $status{'sample_id'} = $object->{frBarcodeDNA};
-        storeRecordByKey(\%status, $sampleBarcodeDNA, \%store, "samplestatus->$sampleBarcodeDNA");
-        if ( defined $sampleBarcodeRNA and $sampleBarcodeRNA ne "" ){
-            $status{'sample_id'} = $object->{frBarcodeRNA};
-            storeRecordByKey(\%status, $sampleBarcodeRNA, \%store, "samplestatus->$sampleBarcodeRNA");
+        foreach my $isolationBarcode (@{$object->{isolationBarcodes}}) {
+            if (not defined $isolationBarcode or $isolationBarcode eq ""){
+                sayWarn("SKIPPING isolation because undefined barcode [$infoTag]");
+                next;
+            }
+            $status{'sample_id'} = $isolationBarcode;
+            storeRecordByKey(\%status, $isolationBarcode, \%store, $infoTag);
         }
     }
     return \%store;
@@ -1294,13 +1306,13 @@ sub getFieldNameTranslations{
 
     my %lama_patient_tumor_sample_dict = (
         'legacySampleId'        => 'legacy_sample_name',
-        'refFrBarcode'          => 'ref_sample_id',
+        'refFrBarcode'          => 'ref_sample_id', # absent?
         'hospitalPaSampleId'    => 'hospital_pa_sample_id',
         'patientGermlineChoice' => 'report_germline_level',
         'primaryTumorType'      => 'ptum',
         'biopsySite'            => 'biopsy_site',
         'sopVersion'            => 'blood_registration_sop',
-        'collectionDate'        => 'sampling_date',
+        'samplingDate'          => 'sampling_date', # was collectionDate pre-lama-v2
         'isCUP'                 => 'is_cup',
         'arrivalHmf'            => 'arrival_date',
         'submissionNr'          => 'submission',
@@ -1317,11 +1329,12 @@ sub getFieldNameTranslations{
     );
 
     my %lama_isolation_isolate_dict = (
-        '_id'           => 'original_container_id',
-        'isolationNr'   => 'isolation_id',
-        'coupeBarcode'  => 'coupes_barcode',
-        'status'        => 'isolation_status',
-        'type'          => 'isolation_type', # currently Blood|RNA|Tissue
+        'sampleBarcode' => 'sample_barcode',
+        'isolationBarcode' => 'isolation_barcode',
+        'experimentNr'  => 'isolation_experiment_id', # was isolationNr pre-lama-v2
+        'coupeBarcode'  => 'coupes_barcode', # confirmed the same in lama-v2
+        'status'        => 'isolation_status', # confirmed the same in lama-v2
+        'resultType'    => 'isolation_type', # content change from Blood|RNA|Tissue to
         'concentration' => 'conc'
     );
 
@@ -1333,14 +1346,12 @@ sub getFieldNameTranslations{
     );
 
     my %lama_status_dict = (
-        '_id'                  => 'received_sample_id',
-        'prepStatus'           => 'lab_status',
-        'registrationDateTime' => 'registration_date_epoch',
+        '_id'                  => 'lama_object_id',
+        'libraryPrepStatus'    => 'lab_status',
+        'registrationDate'     => 'registration_date',
         'sampleId'             => 'sample_name',
-        'frBarcodeDNA'         => 'sample_id_dna',
-        'frBarcodeRNA'         => 'sample_id_rna',
-        'isTissue'             => 'is_tissue',
-        'isReportGenerated'    => 'is_report_generated'
+        'sampleBarcode'        => 'sample_barcode',
+        'type'                 => 'status_type'
     );
 
     my %lama_content_translations_by_field_name = (
