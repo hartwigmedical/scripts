@@ -18,9 +18,9 @@ print_usage() {
 TRUE="TRUE"
 FALSE="FALSE"
 
-HAPLOTYPES_TSV_FILE_NAME="hmf_pgx_haplotypes.tsv"
-VARIANTS_TSV_FILE_NAME="hmf_pgx_variants.tsv"
-DRUGS_TSV_FILE_NAME="hmf_pgx_drugs.tsv"
+HAPLOTYPES_TSV_FILE_NAME="oncoact_wgs_pgx_haplotypes.tsv"
+VARIANTS_TSV_FILE_NAME="oncoact_wgs_pgx_variants.tsv"
+DRUGS_TSV_FILE_NAME="oncoact_wgs_pgx_drugs.tsv"
 
 HAPLOTYPES_TSV_HEADER="Gene\tHaplotype\tAllele Functionality\tRsids of Variants\n"
 VARIANTS_TSV_HEADER="Gene\tRsid\tPart of Haplotypes\tChromosome GRCh37\tPosition GRCh37\tRef Allele GRCh37\tAlt Allele GRCh37\tChromosome GRCh38\tPosition GRCh38\tRef Allele GRCh38\tAlt Allele GRCh38\n"
