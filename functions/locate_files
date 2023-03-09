@@ -684,11 +684,11 @@ locate_cohort_percentiles_tsv() {
 }
 
 locate_isofox_gene_distribution_csv() {
-    echo "/data/experiments/rna/cohort/isofox.all_3444.gene_distribution.csv"
+    echo "/data/experiments/rna/cohort/isofox.hmf_3444.gene_distribution.csv"
 }
 
 locate_isofox_alt_sj_cohort_csv() {
-    echo "/data/experiments/rna/cohort/isofox.hmf_2766.alt_sj_cohort.csv"
+    echo "/data/experiments/rna/cohort/isofox.hmf_3444.alt_sj_cohort.csv"
 }
 
 locate_doid_json() {
