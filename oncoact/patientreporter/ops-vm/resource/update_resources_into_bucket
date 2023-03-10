@@ -60,7 +60,6 @@ virus_reporting_db_tsv="${git_clone_dir}/virus_interpreter/virus_reporting_db.ts
 oncoact_report_pdf="${report_resources_dir}/oncoact_wgs_report*.pdf"
 oncoact_report_xml="${report_resources_dir}/oncoact_wgs_xml*.xml"
 oncoact_report_json="${report_resources_dir}/oncoact_wgs_json*.json"
-taxonomy_db_tsv="${git_clone_dir}/virus_interpreter/taxonomy_db.tsv"
 #germline_reporting_tsv=$(locate_germline_reporting_prod)
 onocoact_readme="/data/resources/ops/report_resources/oncoact_wgs_readme.tsv"
 hmf_pgx_haplotypes="${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
@@ -89,10 +88,6 @@ fi
 
 if [[ -z "${oncoact_report_json}" ]]; then
         error "Unable to locate oncoact JSON file."
-fi
-
-if [[ -z "${taxonomy_db_tsv}" ]]; then
-        error "Unable to locate taxonomy db TSV file."
 fi
 
 # TODO: Taggle on when we start again with notification of germline finsings in patient report
@@ -127,7 +122,6 @@ cp ${virus_reporting_db_tsv} "${archive_dir_oncoact}/oncoact_wgs_virus_panel.tsv
 cp ${oncoact_report_pdf} "${archive_dir_oncoact}/oncoact_wgs_report.pdf"
 cp ${oncoact_report_xml} "${archive_dir_oncoact}/oncoact_wgs_oncoact.xml"
 cp ${oncoact_report_json} "${archive_dir_oncoact}/oncoact_wgs_oncoact.json"
-cp ${taxonomy_db_tsv} "${archive_dir_oncoact}/oncoact_wgs_virus_taxonomy.tsv"
 #cp ${germline_reporting_tsv} "${archive_dir_oncoact}/hmf_germline_reporting.tsv"
 cp ${onocoact_readme} "${archive_dir_oncoact}/oncoact_wgs_readme.txt"
 cp ${oncoact_gene_transcripts} "${archive_dir_oncoact}/oncoact_wgs_gene_transcripts.tsv"
