@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-source database_functions || exit 1
-
-do_recreate_actin_database "$(prod_writer_sql_credentials)" "actin_25"
