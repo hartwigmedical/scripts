@@ -8,6 +8,13 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
+sample=$(load_tumor_sample_from_metadata ${patient})
+
+actin_orange_interpreter_pilot ${sample}
+load_actin_molecular_pilot ${sample}
+
+echo ""
+
 actin_treatment_matcher_pilot ${patient}
 
 echo ""
