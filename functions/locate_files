@@ -465,7 +465,7 @@ locate_actin_platinum_directory_for_sample() {
     echo "$(locate_actin_molecular_directory)/${sample}"
 }
 
-locate_most_recent_actin_molecular_json() {
+locate_most_recent_actin_molecular_sample() {
     local patient=$1
     local sample=""
     local platinum_dir=""
@@ -480,6 +480,13 @@ locate_most_recent_actin_molecular_json() {
     if [[ ! -d "${platinum_dir}" ]]; then
         sample="${patient}T"
     fi
+
+    echo ${sample}
+}
+
+locate_most_recent_actin_molecular_json() {
+    local patient=$1
+    local sample=$(locate_most_recent_actin_molecular_sample ${patient})
 
     echo $(locate_actin_molecular_json ${sample})
 }
