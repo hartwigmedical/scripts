@@ -5,14 +5,21 @@ source locate_gcp_files || exit 1
 
 yymmdd=$(date +'%y%m%d')
 archive_file=$(locate_shallow_processed_runs_log_at_gcp) || die "Unable to locate processed runs log at GCP"
+masterlist_file=$(locate_shallow_masterlist_runs_log_at_gcp) || die "Unable to locate masterlist runs log at GCP"
 pipeline_version="5.29" # IVDR version of pipeline
 tmp_archive_file="/tmp/$(basename "$archive_file").tmp"
+tmp_masterlist_file="/tmp/$(basename "$masterlist_file").tmp"
+tmp_results_file="/tmp/shallowseq_results_${yymmdd}.tsv.tmp"
 
 info "Starting $(basename "$0")"
 
 # Retrieve archive log
 info "Retrieving file ${archive_file}"
 gsutil -q cp "${archive_file}" "${tmp_archive_file}" || die "Unable to retrieve file (${archive_file})"
+
+# Retrieve masterlist log
+info "Retrieving file ${masterlist_file}"
+gsutil -q cp "${masterlist_file}" "${tmp_masterlist_file}" || die "Unable to retrieve file (${masterlist_file})"
 
 # Waiting runs have no version in API so retrieve in second query
 info "Searching for shallow runs in API (v${pipeline_version} or higher)"
@@ -81,10 +88,17 @@ if [[ "${to_process_count}" -gt 0 ]]; then
       echo "set -e"
       echo "echo '[INFO] Running perform_shallow_qc_gcp...'"
       echo "  perform_shallow_qc_gcp ${to_process[*]}"
-      echo "echo '[INFO] Adding set names to log file in bucket...'"
+      echo "echo '[INFO] Adding set names to archive log file in bucket...'"
       echo "  gsutil cp '${tmp_archive_file}' '${archive_file}'"
-      echo "echo '[INFO] Removing tmp file...'"
+      echo "echo '[INFO] Adding results to masterlist log file in bucket...'"
+      echo "  cat '${tmp_results_file}' | tail -n +2 >> '${tmp_masterlist_file}'"
+      echo "  gsutil cp '${tmp_masterlist_file}' '${masterlist_file}'"
+      echo "echo '[INFO] Converting results to xlsx format, writing to home directory...'"
+      echo "  python3 convert_shallow_tsv_to_xlsx.py -i '${tmp_results_file}'"
+      echo "echo '[INFO] Removing tmp files...'"
       echo "  rm '${tmp_archive_file}'"
+      echo "  rm '${tmp_masterlist_file}'"
+      echo "  rm '${tmp_results_file}'"
     } > "${job_file}"
     chmod +x "${job_file}"
 

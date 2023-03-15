@@ -32,6 +32,10 @@ locate_shallow_processed_runs_log_at_gcp() {
     echo "gs://hmf-ops-status/already_processed_shallow_runs"
 }
 
+locate_shallow_masterlist_runs_log_at_gcp() {
+    echo "gs://hmf-ops-status/masterlist_processed_shallow_runs"
+}
+
 locate_snpcheck_vcfs_at_gcp() {
     echo "gs://snpcheck-prod-1/snpcheckvcfs"
 }
