@@ -4,7 +4,6 @@ source message_functions || exit 1
 source locate_files || exit 1
 source lims_functions || exit 1
 
-
 set=$1 && shift
 correction_comments=$1 && shift
 correction_extern=$1 && shift

@@ -7,7 +7,6 @@ source message_functions || exit 1
 tumor_sample=$1 && shift
 tumor_sample_barcode=$1 && shift
 
-
 if [[ -z "${tumor_sample}" || -z "${tumor_sample_barcode}" ]]; then
     error "No tumor information provided. Exiting"
 fi

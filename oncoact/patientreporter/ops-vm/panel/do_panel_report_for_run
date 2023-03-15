@@ -10,10 +10,6 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-if [[ -z "${sample}" || -z "${barcode}" ]]; then
-    error "No tumor information provided. Exiting"
-fi
-
 if [[   -z "${sample}" || -z "${barcode}" ]]; then
     warn "Incomplete information for reporter. Exiting"
     warn "  tumor_sample name: ${sample}"
