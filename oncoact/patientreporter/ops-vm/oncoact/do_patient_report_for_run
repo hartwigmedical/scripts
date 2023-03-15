@@ -37,21 +37,25 @@ purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
+purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
-molecular_tissue_origin_plot=$(locate_cuppa_chart_plot ${run_dir})
+cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 linx_svs_tsv=$(locate_linx_structural_variants ${run_dir})
+lilac_result_csv=$(locate_lilac_results ${run_dir})
+lilac_qc_csv=$(locate_lilac_qc ${run_dir})
+rose_tsv=$(locate_rose ${run_dir})
 
 germline_reporting_tsv=$(locate_germline_reporting_prod)
-sample_summary_tsv=$(locate_summary_patient_report_prod)
 sample_special_remark_tsv=$(locate_special_remark_patient_report_prod)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
@@ -66,19 +70,24 @@ do_run_base_patient_reporter \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+    -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
     -purple_circos_plot ${purple_circos_plot} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -linx_svs_tsv ${linx_svs_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
-    -molecular_tissue_origin_txt ${molecular_tissue_origin_txt} \
-    -molecular_tissue_origin_plot ${molecular_tissue_origin_plot} \
+    -cuppa_result_csv ${cuppa_result_csv} \
+    -cuppa_plot ${cuppa_plot} \
     -annotated_virus_tsv ${annotated_virus_tsv} \
     -peach_genotype_tsv ${peach_genotype_tsv} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
+    -lilac_result_csv ${lilac_result_csv} \
+    -lilac_qc_csv ${lilac_qc_csv} \
+    -add_rose \
+    -rose_tsv ${rose_tsv} \
+    -known_fusion_file ${known_fusion_file} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
-    -sample_summary_tsv ${sample_summary_tsv} \
     -sample_special_remark_tsv ${sample_special_remark_tsv} \
     -ref_genome_version 37 \
     "$@"

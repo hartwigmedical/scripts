@@ -35,15 +35,6 @@ fi
 
 set_url="gs://${bucket}/${set}"
 
-##TODO remove when v5.31 is in production
-# Check whether there was an error (potentially present in SAGE 3.0.1)
-sage_exception_count=$(gsutil cat ${set_url}/sage_somatic/run.log | grep "Exception in thread")
-if [[ ${sage_exception_count} -ge 1 ]]; then
-    warn "Exceptions found in SAGE run log!"
-else
-    info "No exceptions found in SAGE run log!"
-fi
-
 echo ""
 echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"
 if [[ ${correction_comments} != "" ]]; then
@@ -61,7 +52,6 @@ if [[ $( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep 
         exit 1
     fi
 fi
-
 
 ### Copy run data from bucket to local in vm
 temp_folder_path=$( pwd )"/temp_cp_${set}"
@@ -98,6 +88,12 @@ echo '[INPUT] Do you want to manually edit the PROTECT file? Please answer Y or 
 read answer_edit_protect
 if [[ $answer_edit_protect == 'Y' ]]; then
     vi $temp_folder_path/protect/${sample}.protect.tsv
+fi
+
+echo '[INPUT] Do you want to manually edit the ROSE file? Please answer Y or N.'
+read answer_edit_rose
+if [[ $answer_edit_rose == 'Y' ]]; then
+    vi $temp_folder_path/rose/${sample}.rose.tsv
 fi
 
 ### doid check (specifally important when rerun of protect)
