@@ -24,21 +24,6 @@ OR (sampleId IN (SELECT sampleId FROM germlineVariant WHERE gene = 'MUTYH' AND p
 OR (sampleId IN (SELECT sampleId FROM germlineVariant WHERE gene = 'NTHL1' AND pathogenic GROUP BY sampleId HAVING count(sampleId)>1))) \
 AND sampleId = '${sample_name}';" )
 
-somatic_germline_variants=$(execute_sql_on_diagnostic_prod "SELECT distinct \
-    somatic.gene as somaticGene, germline.gene as germlineGene, germline.ref as germlineRef, germline.position as germlineStartPosition, \
-    germline.position+CHAR_LENGTH(germline.ref)-1 as germlineEndPosition, somatic.ref as somaticRef, somatic.position as somaticStartPosition, \
-    somatic.position+CHAR_LENGTH(somatic.ref)-1 as somaticEndPosition \
-FROM (SELECT distinct gene, position, ref FROM hmfpatients.germlineVariant where sampleId = '${sample_name}' and filter='PASS') as germline \
-INNER JOIN \
-( \
-    SELECT distinct gene, position, ref  FROM hmfpatients.somaticVariant where sampleId = '${sample_name}' and filter='PASS' \
-    AND ( worstCodingEffect != 'NONE' OR tier = 'HOTSPOT' ) ) as somatic \
-ON somatic.gene=germline.gene \
-WHERE germline.position+CHAR_LENGTH(germline.ref)-1 > somatic.position-3 AND somatic.position+CHAR_LENGTH(somatic.ref)-1 > germline.position-3;")
-
-CDKN2A_germline=$(execute_sql_on_diagnostic_prod "select * from driverCatalog where gene='CDKN2A' and driver like '%GERMLINE%'
-and sampleid = '${sample_name}';")
-
 splice_variants_MET_TP53=$( execute_sql_on_diagnostic_prod  "select * from hmfpatients.somaticVariant \
 where ((chromosome = 7 and gene = 'MET' and position < 116411903 and position > 116411888 and reported =0) \
 or (chromosome = 7 and gene = 'MET' and position < 116412058 and position > 116412043 and reported =0) \
@@ -74,16 +59,6 @@ fi
 if [[  $( echo "${splice_variants_MET_TP53}" | wc -l ) > 1 ]]; then
     warn 'SQL query check showed relevant splice variants in MET en/of TP53. Please check:'
     echo ${splice_variants_MET_TP53}
-fi
-
-if [[  $( echo "${somatic_germline_variants}" | wc -l ) > 1 ]]; then
-    warn 'SQL query check showed mixed somatic/germline variants. Please check:'
-    echo ${somatic_germline_variants}
-fi
-
-if [[  $( echo "${CDKN2A_germline}" | wc -l ) > 1 ]]; then
-    warn 'SQL query check showed CDKN2A germline variant. Please check:'
-    echo ${CDKN2A_germline}
 fi
 
 virus_check=$( execute_sql_on_diagnostic_prod "select * from virusBreakend where coverage<10 and sampleId = '${sample_name}';")
