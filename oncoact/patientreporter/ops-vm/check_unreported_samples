@@ -32,7 +32,7 @@ function check_unreported_sample() {
     local sampleId=$1 && shift
 
     api_info=$(hmf_api_get "samples?name=${sampleId}&type=tumor")
-    lama_info=$(curl --silent "http://lama-preview.prod-1/api/statuses?sampleId=${sampleId}")
+    lama_info=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
     api_status=$(jq -r '.[-1].status' <<< "$api_info")
     finished_prep_count=$(jq -r '.[].libraryPrepStatus' <<< "$lama_info" | grep -c "$LAMA_FINISHED_STATUS")
     unreportable_count=$(grep -cE "^${sampleId}$" "$UNREPORTABLE_TSV")
