@@ -17,7 +17,7 @@ rna="${sample}_RNA"
 
 purple_dir="${run_dir}/purple"
 
-database="hmfpatients"
+database="hmfpatients_pilot"
 credentials="$(prod_writer_sql_credentials)"
 
 # Database details
