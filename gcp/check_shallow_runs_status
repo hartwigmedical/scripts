@@ -94,7 +94,7 @@ if [[ "${to_process_count}" -gt 0 ]]; then
       echo "  cat '${tmp_results_file}' | tail -n +2 >> '${tmp_masterlist_file}'"
       echo "  gsutil cp '${tmp_masterlist_file}' '${masterlist_file}'"
       echo "echo '[INFO] Converting results to xlsx format, writing to home directory...'"
-      echo "  python3 convert_shallow_tsv_to_xlsx.py -i '${tmp_results_file}'"
+      echo "  convert_shallow_tsv_to_xlsx.py -i '${tmp_results_file}'"
       echo "echo '[INFO] Removing tmp files...'"
       echo "  rm '${tmp_archive_file}'"
       echo "  rm '${tmp_masterlist_file}'"
