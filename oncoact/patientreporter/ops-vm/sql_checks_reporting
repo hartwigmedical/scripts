@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 sample_name=$1 && shift
 
-[[ -n '${sample_name}' ]] || die 'No sample_name provided. Exiting'
+[[ -n "${sample_name}" ]] || die 'No sample_name provided. Exiting'
 
 sample_present=$( execute_sql_on_diagnostic_prod "SELECT * FROM hmfpatients.purity \
 where sampleId = '${sample_name}';" )
