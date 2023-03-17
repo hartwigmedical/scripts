@@ -32,8 +32,11 @@ def generate_workbook(data: List[List[str]], outpath: str):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Sheet1"
-    for row in data:
-        ws.append(row[0:9])
+    for idx, row in enumerate(data):
+        if idx == 0:
+            ws.append(row[0:9])
+        else:
+            ws.append(row[0:6] + [float(row[6])]+ row[7:9])
     wb.save(outpath)
 
 def check_arg_input_file_exists(path_input_file: str):
