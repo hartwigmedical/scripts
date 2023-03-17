@@ -66,6 +66,8 @@ gsutil -m cp -r ${set_url}/virusbreakend/ $temp_folder_path/ &>> $temp_folder_pa
 gsutil -m cp -r ${set_url}/virusintrprtr/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/peach/ $temp_folder_path/  &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/protect/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/rose/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/lilac/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 
 if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
     warn "Making the copy gave errors (see below). Exiting."
