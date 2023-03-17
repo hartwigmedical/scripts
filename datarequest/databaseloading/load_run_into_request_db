@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+source metadata_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+patient_db_jar=/data/tools/patient-db/3.71/patient-db.jar
+database="request"
+credentials=$(prod_writer_sql_credentials)
+
+# Database details
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" ${database})
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
+
+amber_dir=$(locate_amber_directory ${run_dir})
+chord_prediction_file=$(locate_chord_prediction ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
+virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
+virus_annotation_tsv=$(locate_virus_annotation_tsv ${run_dir})
+sigs_dir=$(locate_sigs_dir ${run_dir})
+lilac_results=$(locate_lilac_results ${run_dir})
+lilac_qc=$(locate_lilac_qc ${run_dir})
+
+ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
+tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
+ref_flagstat_file=$(locate_flagstats ${run_dir} ${ref_sample})
+tumor_flagstat_file=$(locate_flagstats ${run_dir} ${tumor_sample})
+
+peach_prod_calls_tsv=$(locate_peach_prod_calls ${run_dir})
+peach_prod_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
+
+
+snp_vcf=$(find ${amber_dir} -name *.amber.snp.vcf.gz)
+reference_sample=$(basename ${snp_vcf} .amber.snp.vcf.gz)
+amber_snpcheck_vcf=$(locate_amber_snpcheck_37_vcf)
+info "Loading amber data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
+    -sample ${tumor_sample} \
+    -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
+    -snpcheck_vcf $amber_snpcheck_vcf \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading purple data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
+    -sample ${tumor_sample} \
+    -reference ${ref_sample} \
+    -purple_dir ${run_dir}/purple \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+function backwardsCompatibleDataType() {
+    case "$1" in
+     *3.72*) datatype_arg=-somatic_only ;;
+     *3.71*) datatype_arg=-somatic_only ;;
+     *) datatype_arg="-data_type \"somatic\"" ;;
+    esac
+}
+info "Loading linx somatic data for ${tumor_sample}"
+backwardsCompatibleDataType $patient_db_jar
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
+    -sample ${tumor_sample} \
+    -linx_dir ${run_dir}/linx \
+    ${datatype_arg} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+function backwardsCompatibleDataType() {
+    case "$1" in
+     *pilot*) datatype_arg=-germline_only ;;
+     *3.72*) datatype_arg=-germline_only ;;
+     *3.71*) datatype_arg=-germline_only ;;
+     *) datatype_arg="-data_type \"germline\"" ;;
+    esac
+}
+info "Loading linx germline data for ${tumor_sample}"
+backwardsCompatibleDataType ${patient_db_jar}
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
+    -sample ${tumor_sample} \
+    -linx_dir ${run_dir}/linx_germline \
+     ${datatype_arg} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading metrics data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadMetricsData \
+    -sample ${tumor_sample} \
+    -ref_metrics_file ${ref_metrics_file} \
+    -tumor_metrics_file ${tumor_metrics_file} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading flagstats data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
+    -sample ${tumor_sample} \
+    -ref_flagstat_file ${ref_flagstat_file} \
+    -tumor_flagstat_file ${tumor_flagstat_file} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading chord data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadChordData \
+    -sample ${tumor_sample} \
+    -prediction_file ${chord_prediction_file} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading PROTECT data for ${tumor_sample} to ${database}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadProtectData \
+    -sample ${tumor_sample} \
+    -protect_evidence_tsv ${protect_evidence_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading PEACH data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPeachData \
+    -sample ${tumor_sample} \
+    -peach_calls_txt ${peach_prod_calls_tsv} \
+    -peach_genotype_txt ${peach_prod_genotype_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading sigs data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSignatures \
+    -sample ${tumor_sample} \
+    -sample_dir ${sigs_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading CUPPA data for ${tumor_sample}"
+function backwardsCompatibleResultsArg() {
+    case "$1" in
+     *3.72*) cuppa_results_arg="-cuppa_results_csv ${molecular_tissue_origin_txt}" ;;
+     *) cuppa_results_arg="-cuppa_conclusion_txt ${molecular_tissue_origin_txt}" ;;
+    esac
+}
+backwardsCompatibleResultsArg $patient_db_jar
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadCuppa \
+    -sample ${tumor_sample} \
+    ${cuppa_results_arg} \ \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading VIRUSBreakend data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadVirusBreakendData \
+    -sample ${tumor_sample} \
+    -virus_breakend_tsv ${virus_breakend_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
+
+info "Loading Virus Interpreter data for ${tumor_sample}"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadVirusInterpreter \
+    -sample ${tumor_sample} \
+    -virus_annotation_tsv ${virus_annotation_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+
