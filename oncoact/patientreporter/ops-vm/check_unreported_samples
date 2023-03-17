@@ -10,7 +10,7 @@ LAMA_FINISHED_STATUS="FINISHED"
 
 info "Retrieving samples from LAMA with arrival date [$MIN_ARRIVAL_DATE] or later"
 info "  LAMA url: $LAMA_API_URL"
-samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/between?start-date=${MIN_ARRIVAL_DATE}")
+samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/arrival?start-date=${MIN_ARRIVAL_DATE}")
 sample_count=$(jq 'length' <<< "$samples")
 
 function main (){
