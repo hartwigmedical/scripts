@@ -92,6 +92,13 @@ if [[ $answer_edit_protect == 'Y' ]]; then
     vi $temp_folder_path/protect/${sample}.protect.tsv
 fi
 
+### rerun of rose (if applicable)
+echo '[INPUT] Do you want to rerun ROSE? Please answer Y or N.'
+read answer_rose
+if [[ $answer_rose == 'Y' ]]; then
+    vi $temp_folder_path/rose/${sample}.rose.tsv
+fi
+
 echo '[INPUT] Do you want to manually edit the ROSE file? Please answer Y or N.'
 read answer_edit_rose
 if [[ $answer_edit_rose == 'Y' ]]; then

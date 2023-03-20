@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+barcode=$1 && shift
+sample=$1 && shift
+
+echo "--- A ROSE summary will be created for ${sample}"
+
+run_rose_prod ${run_dir} &>> ${run_dir}/${sample}_${barcode}_rose_rerun.log
