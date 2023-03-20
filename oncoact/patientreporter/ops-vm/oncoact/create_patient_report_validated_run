@@ -96,7 +96,7 @@ fi
 echo '[INPUT] Do you want to rerun ROSE? Please answer Y or N.'
 read answer_rose
 if [[ $answer_rose == 'Y' ]]; then
-    vi $temp_folder_path/rose/${sample}.rose.tsv
+    create_rose_summary_for_reporting ${temp_folder_path} ${barcode} ${sample}
 fi
 
 echo '[INPUT] Do you want to manually edit the ROSE file? Please answer Y or N.'
