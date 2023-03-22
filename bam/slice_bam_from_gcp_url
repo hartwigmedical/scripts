@@ -14,7 +14,7 @@ fi
 key_file="/data/credentials/hmf-download"
 region="europe-west4"
 project="hmf-database"
-presign_seconds=172800
+presign_seconds=600
 samtools=/data/tools/samtools/1.10/samtools
 
 ref_genome=$(locate_ref_genome_37_fasta_file)
