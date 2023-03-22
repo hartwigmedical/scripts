@@ -31,5 +31,8 @@ ${samtools} view -T ${ref_genome} \
     -L "${slicing_bed}" \
     -o "${output_bam}" || die "Could not create sliced BAM"
 
+info "Create index file for ${output_bam}"
+${samtools} index -M "${output_bam}" || die "Could not create index file"
+
 info "Done creating slice. Written output to ${output_bam}"
 
