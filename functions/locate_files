@@ -318,6 +318,10 @@ extract_expected_pipeline_version_panel() {
 
 ############################## ACTIN Resources #################################
 
+locate_actin_clinical_data_feed_bucket() {
+    echo "gs://hmf-crunch-data/actin_clinical_data_feed"
+}
+
 locate_actin_evaluation_bucket() {
     echo "gs://hmf-crunch-data/actin_evaluation"
 }
