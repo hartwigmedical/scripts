@@ -29,7 +29,7 @@ ${samtools} view -T ${ref_genome} \
     -M "${signed_bam_url}" \
     -X "${signed_bai_url}" \
     -L "${slicing_bed}" \
-    -o "${output_bam}"
+    -o "${output_bam}" || die "Could not create sliced BAM"
 
 info "Done creating slice. Written output to ${output_bam}"
 
