@@ -8,19 +8,19 @@ source locate_files || exit 1
 source message_functions || exit 1
 source io_functions || exit 1
 
-if [[ -z "${earliest_date}" || -z "$patient_ids" ]]; then
+if [[ -z "${earliest_date}" || -z "${patient_ids}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-create_or_cleanup_dir $working_dir
-cd $working_dir
+create_or_cleanup_dir ${working_dir}
+cd ${working_dir}
 
-clinical_data_feed_bucket=$(locate_actin_clinical_data_feed_bucket)
-reference_string="$clinical_data_feed_bucket/$earliest_date/"
-echo "Will clean directories starting with $reference_string"
+clinical_data_feed_bucket="$(locate_actin_clinical_data_feed_bucket)"
+reference_string="${clinical_data_feed_bucket}/${earliest_date}/"
+echo "Will clean directories starting with ${reference_string}"
 dirs_to_clean=$(gsutil -u hmf-crunch ls $(locate_actin_clinical_data_feed_bucket) | while read dir; do
-   if [[ ! $dir < $reference_string ]]; then
-       echo $dir
+   if [[ ! $dir < ${reference_string} ]]; then
+       echo ${dir}
    fi
 done)
 
@@ -29,32 +29,32 @@ patient_id_sed_pattern=$(echo "(${patient_ids[@]})" | sed -e 's/ /\|/g')
 
 cloud_commands=""
 
-for dir in $dirs_to_clean; do
+for dir in ${dirs_to_clean}; do
     updated_tsv=0
-    gsutil -u hmf-crunch -m cp -r $dir $working_dir
-    echo $dir
-    local_dir=$(basename $dir)
-    cd $local_dir
-    backup_dir="../$local_dir.backup"
-    create_or_cleanup_dir $backup_dir
-    for questionnaire in $(ls | grep "$patient_id_grep_pattern"); do
-        echo "Moving $questionnaire to $backup_dir"
-        mv $questionnaire $backup_dir
-        cloud_commands="${cloud_commands}gsutil -u hmf-crunch rm $dir/$questionnaire\n"
+    gsutil -u hmf-crunch -m cp -r ${dir} ${working_dir}
+    echo ${dir}
+    local_dir=$(basename ${dir})
+    cd ${local_dir}
+    backup_dir="../${local_dir}.backup"
+    create_or_cleanup_dir ${backup_dir}
+    for questionnaire in $(ls | grep "${patient_id_grep_pattern}"); do
+        echo "Moving ${questionnaire} to ${backup_dir}"
+        mv ${questionnaire} ${backup_dir}
+        cloud_commands="${cloud_commands}gsutil -u hmf-crunch rm ${dir}/${questionnaire}\n"
     done
     for tsv in $(ls | grep -e '.tsv$'); do
-        mv $tsv $backup_dir
-        cat $backup_dir/$tsv | sed -r "/$patient_id_sed_pattern/d" > $tsv
-        num_deleted_lines=$(diff $backup_dir/$tsv $tsv | wc -l)
-        if [[ $num_deleted_lines -ne 0 ]]; then
-            echo "Removed $num_deleted_lines lines of patient data from $tsv"
+        mv ${tsv} ${backup_dir}
+        cat ${backup_dir}/${tsv} | sed -r "/${patient_id_sed_pattern}/d" > ${tsv}
+        num_deleted_lines=$(diff ${backup_dir}/${tsv} ${tsv} | wc -l)
+        if [[ ${num_deleted_lines} -ne 0 ]]; then
+            echo "Removed ${num_deleted_lines} lines of patient data from ${tsv}"
             updated_tsv=1
         fi
     done
     cd ..
-    if [[ $updated_tsv -eq 1 ]]; then
-        cloud_commands="${cloud_commands}gsutil -u hmf-crunch -m cp -r $local_dir $clinical_data_feed_bucket/\n"
+    if [[ ${updated_tsv} -eq 1 ]]; then
+        cloud_commands="${cloud_commands}gsutil -u hmf-crunch -m cp -r ${local_dir} ${clinical_data_feed_bucket}/\n"
     fi
 done
 
-echo -e "\nRun the following commands to update cloud storage:\n\n$cloud_commands"
+echo -e "\nRun the following commands to update cloud storage:\n\n${cloud_commands}"
