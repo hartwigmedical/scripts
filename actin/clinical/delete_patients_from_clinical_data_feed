@@ -48,7 +48,7 @@ for dir in ${dirs_to_clean}; do
         cat ${backup_dir}/${tsv} | sed -r "/${patient_id_sed_pattern}/d" > ${tsv}
         num_deleted_lines=$(diff ${backup_dir}/${tsv} ${tsv} | wc -l)
         if [[ ${num_deleted_lines} -ne 0 ]]; then
-            info "Removed ${num_deleted_lines} lines of patient data from ${pwd}/${tsv}"
+            info "Removed ${num_deleted_lines} lines of patient data from ${working_dir}/${local_dir}/${tsv}"
             updated_tsv=1
         fi
     done
@@ -58,4 +58,4 @@ for dir in ${dirs_to_clean}; do
     fi
 done
 
-info -e "\nRun the following commands to update cloud storage:\n\n${cloud_commands}"
+echo -e "\nRun the following commands to update cloud storage:\n\n${cloud_commands}"
