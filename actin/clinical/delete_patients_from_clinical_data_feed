@@ -6,7 +6,7 @@ source io_functions || exit 1
 
 earliest_date=$1 && shift
 patient_ids=$@
-working_dir="$(pwd)/delete_patients"
+working_dir="$(pwd)/delete_actin_clinical_data"
 
 if [[ -z "${earliest_date}" || -z "${patient_ids}" ]]; then
     error "Parameters missing. Exiting."
