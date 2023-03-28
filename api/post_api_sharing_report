@@ -4,6 +4,7 @@ source message_functions || exit 1
 source locate_reporting_api || exit 1
 
 sample_barcode=$1 && shift
+sample=$1 && shift
 report_type=$1 && shift
 report_source=$1 && shift
 sharedReportLocation=$1 && shift
@@ -13,7 +14,7 @@ sharedJsonLocation=$1 && shift
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
 cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
 
-if [[ ${cohort} == '"COREDB"' ]]; then
+if [[ ${cohort} == '"COREDB"' ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
   publish_to_portal="true"
 else
   publish_to_portal="false"

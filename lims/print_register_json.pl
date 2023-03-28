@@ -22,8 +22,11 @@ my $RNA_INI = "Rna.ini";
 my $BCL_INI = "BCL.ini";
 my $TAR_INI = "Targeted.ini";
 
+my $EXPERIMENT_ENTITY = 'HMF_EXPERIMENT';
+my $GIAB_VERIFICATION_SUBMISSION = 'HMFregGIAB';
+
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
-my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
+my $YIELD_FACTOR = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
 
 my $NO_PIPELINE_PRIO = 100;
 my $YES_PIPELINE_PRIO = 99;
@@ -74,7 +77,7 @@ my $HELP =<<HELP;
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
     -forceOutput       (write json even if sample already has a run in API)
     -noShallow         (do not create ShallowSeq run even if set in LIMS)
-    -experiment        (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
+    -experiment        (resets submission to HMFregVAL and entity to $EXPERIMENT_ENTITY)
 
 HELP
 
@@ -168,11 +171,8 @@ sub addSamplesFromSamplesheet{
                 die "[ERROR] No sample ID found in line: $line\n";
             }
 
-            ## VAL and GIAB samples are not present in LIMS so need manual work
+            ## VAL samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
-                sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
-            }
-            elsif ($submission eq "HMFregGIAB"){
                 sayWarn("  SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             elsif (exists $data{ $id }){
@@ -191,12 +191,38 @@ sub addSamplesFromSamplesheet{
     return( \@out );
 }
 
+sub setupGiabJson {
+    my ($barcode, $name, $submission, $json_data) = @_;
+    my $date = localtime->strftime('%y%m%d');
+    my $set = join( "_", $date, $submission, $barcode, $name );
+    my $use_existing_ref = 0;
+    my $skip_recalculating_yield_ref = 0;
+    my $reporting_id = '';
+
+    sayInfo("  SET: $set");
+    $json_data->{ 'ini' } = "$GER_INI";
+    $json_data->{ 'set_name' } = "$set";
+    $json_data->{ 'entity' } = $EXPERIMENT_ENTITY;
+    addSampleToJsonData(
+        $json_data,
+        $submission,
+        $barcode,
+        $name,
+        'ref',
+        75,
+        100 * $YIELD_FACTOR,
+        $use_existing_ref,
+        $skip_recalculating_yield_ref,
+        $reporting_id,
+    );
+}
+
 sub processSample{
     my ($sample_id, $lims_samples, $sample_id_hash_ref) = @_;
     my %sample_id_hash = %{ $sample_id_hash_ref };
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
-        sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
+        sayWarn("  RESULT: Sample not present in LIMS (lims.json) ($sample_id)");
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims_samples->{ $sample_id };
@@ -216,7 +242,7 @@ sub processSample{
     if ($yield_in_gbase !~ /^\d+$/ ){
         die "[ERROR] Yield found for sample ($name) is not an integer ($yield_in_gbase)\n";
     }
-    my $yield = $yield_in_gbase * $YIELD_F;
+    my $yield = $yield_in_gbase * $YIELD_FACTOR;
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
     }
@@ -229,7 +255,10 @@ sub processSample{
     ## this also makes sure output goes to experiment bucket via entity
     if ( $opt{'as_experiment'} ){
         $submission = 'HMFregVAL';
-        $entity = 'HMF_EXPERIMENT';
+        $entity = $EXPERIMENT_ENTITY;
+    }
+    elsif ( $submission eq $GIAB_VERIFICATION_SUBMISSION ) {
+        $entity = $EXPERIMENT_ENTITY;
     }
     
     my $use_existing_ref = $USE_EXISTING_REF;
@@ -239,11 +268,14 @@ sub processSample{
 
     ## not all samples have q30 field because this was added later to lims
     my $q30 = $Q30_LIM;
-    if ( defined $sample->{ 'q30' } ){
-        $q30 = $sample->{ 'q30' };
-    }
-    if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
-        die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
+    if ( defined $sample->{ 'q30' } and $sample->{ 'q30' } ne "" ){
+        my $configured_q30 = $sample->{ 'q30' };
+        if ( $configured_q30 =~ /^\d+$/ and $configured_q30 >= 0 and $configured_q30 < 100 ){
+            $q30 = $configured_q30;
+        }else{
+            sayWarn("Q30 field found for sample ($name) but not usable as-is ($configured_q30) so taking default ($Q30_LIM)");
+            $q30 = $Q30_LIM;
+        }
     }
 
     my $entity_count_in_api = `hmf_api_get 'entities?name=$entity' | jq 'length'`;
@@ -260,7 +292,10 @@ sub processSample{
     my $date = localtime->strftime('%y%m%d');
 
     ## Setup json content based on analysis type
-    if ( $analysis eq 'BCL' ){
+    if ( $submission eq $GIAB_VERIFICATION_SUBMISSION ){
+        setupGiabJson($barcode, $name, $submission, \%json_data);
+    }
+    elsif ( $analysis eq 'BCL' ){
         my $set = join("_", $date, $submission, $barcode, $name );
         sayInfo("  SET: $set");
         $json_data{ 'ini' } = "$BCL_INI";
@@ -376,7 +411,7 @@ sub processSample{
             sayWarn("  Check JSON for sample $name, since ref lab status is unexpected: lab_status_ref='$lab_status_ref'")
         }
 
-        $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
+        $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_FACTOR;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
         ## adjust content in case of ShallowSeq
@@ -396,7 +431,7 @@ sub processSample{
 
             if ( $run_status eq "" ){
                 say "[INFO]   No ShallowSeq run found in api for $match_string: going for ShallowSeq mode";
-                $yield = 35 * $YIELD_F;
+                $yield = 35 * $YIELD_FACTOR;
                 $yield_ref = $yield;
                 $entity = 'HMF_SHALLOWSEQ';
                 $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
@@ -468,7 +503,7 @@ sub processSample{
         }
 
         if ( $ref_exists eq "0" && not(exists $sample_id_hash{ $barcode_ref }) ){
-            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in samples to register or in API");
+            sayWarn("  Reference sample $name_ref with barcode $barcode_ref for $name not found in same samplesheet or in API");
         }
 
         sayInfo("  Set name constructed to $set");

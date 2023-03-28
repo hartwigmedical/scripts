@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 MIN_DAYS_CONVERTED=1
-SERVERS=(crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1)
+SERVERS=(crunch1.prod-1 sts1.prod-1 sts2.prod-1)
 CRUNCH_TYPE='crunch'
 
 [[ "$(hostname)" =~ ^crunch|sts ]] && die "Not supposed to check flowcells on crunch/sts directly"

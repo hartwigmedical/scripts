@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 patient=$1 && shift
 
 if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
+
+sample=$(locate_most_recent_actin_molecular_sample ${patient})
+
+actin_orange_interpreter_pilot ${sample}
+load_actin_molecular_pilot ${sample}
+
+echo ""
 
 actin_treatment_matcher_pilot ${patient}
 

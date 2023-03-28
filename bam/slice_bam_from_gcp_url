@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+gcp_bam_url=$1 && shift
+slicing_bed=$1 && shift
+output_bam=$1 && shift
+
+if [[ -z "${gcp_bam_url}" || -z "${slicing_bed}" || -z "${output_bam}" ]]; then
+    error "Not all input params provided. Exiting"
+fi
+
+key_file="/data/credentials/hmf-download"
+region="europe-west4"
+project="hmf-database"
+presign_seconds=600
+samtools=/data/tools/samtools/1.10/samtools
+
+ref_genome=$(locate_ref_genome_37_fasta_file)
+gcp_bai_url="${gcp_bam_url}.bai"
+
+info "Signing URL's"
+signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bam_url}" | grep -v 'Signed URL' | cut -f4) || die "Could not get signed bam url"
+signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bai_url}" | grep -v 'Signed URL' | cut -f4) || die "Could not get signed bai url"
+
+info "Creating slice using ${slicing_bed}"
+${samtools} view -T ${ref_genome} \
+    -M "${signed_bam_url}" \
+    -X "${signed_bai_url}" \
+    -L "${slicing_bed}" \
+    -o "${output_bam}" || die "Could not create sliced BAM"
+
+info "Create index file for ${output_bam}"
+${samtools} index "${output_bam}" || die "Could not create index file"
+
+info "Done creating slice. Written output to ${output_bam}"
+

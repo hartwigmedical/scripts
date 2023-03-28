@@ -8,14 +8,15 @@ CALC_YIELD_SCRIPT="${CODEDIR}/../utilityscripts/get_yield_from_read_count_and_ex
 
 REF_TARGET_YIELD=100
 TUM_TARGET_YIELD=300
-BASES_PER_READ=150
-BASES_PER_GBASE=1000000000
 
 ADD_YIELD_NOT_APPLICABLE="NA"
 NA="na"
 REF_COV_MINIMUM_REQUIREMENT=26
 
 ID_ARG="id"
+
+yymmdd=$(date +'%y%m%d')
+tmp_file="/tmp/shallowseq_results_${yymmdd}.tsv.tmp"
 
 main() {
   first_arg=$1
@@ -30,8 +31,9 @@ main() {
       exit 1
   fi
 
-  echo -e "#AddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
-  \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
+  info "Writing results to ${tmp_file}"
+  echo -e "#Seq?\tAddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+  \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup" > "${tmp_file}"
 
   for set_name in "${set_names[@]}"; do
       if [[ "${set_name}" == "${ID_ARG}" ]]; then
@@ -133,13 +135,31 @@ print_shallow_qc_for_run() {
     tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}") \
             || die "Could not determine TUM yield to add for run for set ${set_name}"
 
-    ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-        "${ref_add_yield}" "${tum_add_yield}" \
+    ## Determine full sequencing status
+    purity_check=$(echo "${purity} >= 0.2"| bc -l)
+    tum_cov_check=$(echo "${tum_cov} >= 8.0"| bc -l)
+    ref_cov_check=$(echo "${ref_cov} >= 8.0"| bc -l)
+    fails_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -v FAIL_NO_TUMOR | grep -c FAIL_)
+    if [[ ${amb_qc} != *"FAIL"* ]] && [[ ${qc_stat} != *"FAIL"* ]] && [[ ${purity_check} -eq 1 ]]; then
+        seq="yes"
+    elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 1 && ${ref_cov_check} -eq 1 ]]; then
+        seq="no"
+    elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 0 || ${ref_cov_check} -eq 0 ]]; then
+        warn "Sample needs investigating, likely additional sequencing needed"
+        seq="addseq"
+    else
+        warn "Sample needs investigating"
+        seq="else"
+    fi
+    echo "$seq"
+
+
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "${seq}" "${ref_add_yield}" "${tum_add_yield}" \
         "${set_name}" "${tum_sample}" "${qc_stat}" "${purity}" \
         "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
         "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
-        "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}"
+        "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}" >> "${tmp_file}"
 }
 
 get_add_yield() {

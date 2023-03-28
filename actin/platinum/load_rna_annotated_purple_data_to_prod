@@ -27,7 +27,7 @@ db_url=$(construct_database_url "${credentials}" ${database})
 
 patient_db_jar=$(locate_research_patient_db)
 
-info "Loading purple data with RNA for ${sample}"
+info "Loading purple data with RNA for ${sample} to ${database}"
 
 java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
     -sample ${sample} \

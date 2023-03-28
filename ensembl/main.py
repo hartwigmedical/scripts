@@ -7,7 +7,7 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from copy import deepcopy
 from threading import Lock
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -88,7 +88,9 @@ class BaseRestClient(object):
                     ('Request failed for {request_url}: Status code: {e.code} Reason: {e.reason},\n'
                      'Full error: {full_error}').format(request_url=request_url, e=e, full_error=repr(e))
                 )
-
+        except URLError as e:
+            logging.error("Maybe recoverable URL error for request: " + request_url + "\nerror: " + repr(e))
+            return self.perform_rest_action(endpoint, headers, params)
         return data
 
     def _do_rate_limiting(self):
@@ -122,7 +124,7 @@ class EnsemblRestClient(object):
     def __init__(self, version: str, reqs_per_sec=15):
         if version == V38:
             self._rest_client = BaseRestClient('https://rest.ensembl.org', reqs_per_sec)
-        if version == V37:
+        elif version == V37:
             self._rest_client = BaseRestClient('https://grch37.rest.ensembl.org', reqs_per_sec)
         else:
             raise ValueError(f"Unrecognized ref genome version number: {version}")
@@ -303,7 +305,7 @@ class EnsemblRestClient(object):
                                 source_coordinate_system, target_coordinate_system, warning_collector
                             )
                             assert adjusted_target_start + offset == adjusted_target_end - offset, \
-                                "Second estimated translated start and end are different"
+                                "Third estimated translated start and end are different"
                             return adjusted_target_start + offset
                         except AssertionError as e:
                             warning_collector.add(str(e))
@@ -316,7 +318,7 @@ class EnsemblRestClient(object):
                                     source_coordinate_system, target_coordinate_system, warning_collector
                                 )
                                 assert adjusted_target_start + offset == adjusted_target_end - offset, \
-                                    "Second estimated translated start and end are different"
+                                    "Fourth estimated translated start and end are different"
                                 return adjusted_target_start + offset
                             except AssertionError as e:
                                 warning_collector.add(str(e))
@@ -463,8 +465,11 @@ def print_gene_id_and_name(species, symbols, output_file, version):
             else:
                 out_f.write("\t".join([symbol, overview["id"], overview["external_name"]]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, version):
@@ -477,8 +482,11 @@ def print_nm_transcript_ids(species, gene_name_ensembl_id_tuples, output_file, v
         for gene_name, ensembl_id in gene_name_ensembl_id_tuples:
             out_f.write("\t".join([gene_name, ensembl_id, ";".join(ensembl_id_to_nm_transcript_names[ensembl_id])]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_gene_ids_and_canonical_names(input_file, output_file, version):
@@ -517,8 +525,11 @@ def translate_coordinates(input_file, output_file, version):
             translated_pos, source_seq, target_seq = translation
             out_f.write("\t".join([chrom, str(pos), str(translated_pos), source_seq, target_seq]) + "\n")
 
-    for warning in warning_collector.get_all():
-        print(warning)
+    warnings = warning_collector.get_all()
+    if warnings:
+        for warning in warnings:
+            logging.error(warning)
+        raise RuntimeError(f"Errors detected: {warnings}")
 
 
 def determine_nm_transcript_ids(input_file, output_file, version):

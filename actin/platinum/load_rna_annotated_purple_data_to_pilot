@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference=$(load_ref_sample_from_metadata ${run_dir})
+rna="${sample}_RNA"
+
+purple_dir="${run_dir}/purple"
+
+database="hmfpatients_pilot"
+credentials="$(prod_writer_sql_credentials)"
+
+# Database details
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" ${database})
+
+patient_db_jar=$(locate_research_patient_db)
+
+info "Loading purple data with RNA for ${sample} to ${database}"
+
+java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
+    -sample ${sample} \
+    -reference ${reference} \
+    -rna ${rna} \
+    -purple_dir ${purple_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

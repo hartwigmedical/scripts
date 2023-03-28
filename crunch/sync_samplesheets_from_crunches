@@ -10,7 +10,7 @@ samplesheets_bucket=$(locate_samplesheets_at_gcp) || die "Could not find samples
 
 switch_to_hmf_ops_service_account || die "Could not switch to hmf ops"
 
-for server in crunch1.prod-1 crunch2.prod-1 sts1.prod-1 sts2.prod-1; do
+for server in crunch1.prod-1 sts1.prod-1 sts2.prod-1; do
 
     info "Checking ${server} for samplesheets"
 

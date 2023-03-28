@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+tumor_sample=$1 && shift
+command=$1 && shift
+
+if [[ -z "${tumor_sample}" ]]; then
+    error "No tumor sample provided. Exiting"
+fi
+
+create_patient_report_pre_pipeline_fail ${tumor_sample} "insufficient_tcp_shallow_wgs" "${command}"

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+org_barcode=$1
+new_barcode=$2
+
+if [[ -z "$1" || -z "$2" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Move fastq samples from fastq-input-prod-1 to hmf-crunch-innovation"
+    echo " Usage: $(basename $0) original_barcode new_barcode"
+    echo " Exmpl: $(basename $0) FR12345678 FR12345678-c2f230212"
+    echo "---"
+    exit 1
+fi
+
+if [[ $(hmf_api_get "samples?barcode=${org_barcode}" | jq length) == 0 ]]; then
+    die "Original barcode is not in api"
+fi
+
+info "Moving newly generated fastq to fastq-input-prod-1 bucket"
+gsutil -m cp "gs://hmf-cram2fastq/${new_barcode}_FASTQ/*fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
+
+info "register new barcode fastq in api"
+manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode}_FASTQ" "${org_barcode}" || die "Could not register new fastq"
+
+info "Patching new barcode q30 and yield with original barcode values in api"
+patch_api_sample_q30_yld_from_source_sample "${org_barcode}" "${new_barcode}" || die "Could not patch api"
+
+info "Finding vcf file"
+org_vcf=$(find_snpcheck_vcf -r "${org_barcode}" | grep "gs://snpcheck-prod-1/snpcheckvcfs/" | head -n 1) || die "Could not find vcf"
+new_vcf="${org_vcf//${org_barcode}/${new_barcode}}"
+
+info "Copy original vcf to new vcf"
+gsutil cp "${org_vcf}" "${new_vcf}" || die "Could not copy vcf"

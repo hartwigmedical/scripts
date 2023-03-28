@@ -8,24 +8,28 @@ reports/created reports/shared datatypes)
 print_usage(){
     script=$(basename "$0")
     echo "---"
-    echo "Usage: $script [-j, -t] <class> [<filter-value> <filter-key>]"
+    echo "Usage: $script [-j, -t] <class> [<filter>]"
+    echo " Mode 1: $script <class> # no filter returns all records of class"
+    echo " Mode 2: $script <class> <contains-no-equal-sign> # filter by default 'name' key"
+    echo " Mode 3: $script <class> <filter-key=filter-value> # filter by specifying exact query (requires '=' in query)"
+    echo " Mode 4 [DEPRECATED]: $script <class> <filter-value> <filter-key> # filter by specifying key to filter on"
     echo "Examples:"
     echo " $script platforms"
-    echo " $script -e pilot platforms"
-    echo " $script -e pilot samples"
-    echo " $script flowcells | tail"
     echo " $script flowcells NS21-0064"
-    echo " $script samples CPCT02460007T"
-    echo " $script samples FR17455547 barcode"
-    echo " $script fastq 37510 sample_id"
-    echo " $script datasets 'CPCT02010325T'"
-    echo " $script -j datasets 'CPCT02010325T?pipeline_type=rna'"
-    echo " $script reports/created | tail"
+    echo " $script flowcells 'status=Converted'"
+    echo " $script samples 'flowcell_id=8233'"
+    echo " $script samples ACTN01020001T"
+    echo " $script samples 'barcode=FR30539000'"
+    echo " $script samples 'name=ACTN01020001T&type=tumor-rna'"
+    echo " $script runs 'ini=Somatic.ini&status=Validated&context=DIAGNOSTIC'"
+    echo " $script runs 'barcode=FR30539000'"
+    echo " $script sets 210824_HMFregACTN_FR30538995_FR30539000_ACTN01020001"
+    echo " $script -j datasets 'ACTN01020001T'"
     echo "Options:"
     echo " -j  Output raw api json content instead of TSV"
     echo " -t  Use testing/pilot environment instead of production"
     echo "Notes:"
-    echo " * Default filter-key is 'name'"
+    echo " * Default filter-key is [name]"
     echo " * Available classes: ${classes[*]}"
     echo " * Use script hmf_api_get instead for all scripted use"
     echo "---"
@@ -73,6 +77,8 @@ main(){
             json_result=$(hmf_api_get $additional_get_params "${class}/${filter_input}") || die "Unable to get result from API (selecting by id ${filter_input})"
             # In case one object is queried by id the result is not an array so wrap to allow downstream print
             json_result=$(jq '[.]' <<< "${json_result}")
+        elif [[ "${filter_input}" =~ = ]]; then
+            json_result=$(hmf_api_get $additional_get_params "${class}?${filter_input}") || die "Unable to get result from API (selecting ${class}?${filter_input})"
         else
             # shellcheck disable=SC2086
             json_result=$(hmf_api_get $additional_get_params "${class}?${filter_field}=${filter_input}") || die "Unable to get result from API (with filter on field ${filter_field})"
@@ -103,9 +109,9 @@ main(){
         jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.updateTime|.[:10]), .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "samples" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
-        jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
-        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30_req q30 yld_req yld status name type id
+        jq -r '.[] | [.submission, .barcode, .q30_req, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
+        | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.1f",$4); $5=int($5/1e9); $6=int($6/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status failure context bucket startDate endDate id
         jq -r '.[] | [.set.name,

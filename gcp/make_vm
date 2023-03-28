@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source message_functions || (echo "Make sure message_functions is on your PATH" && exit 1)
+source message_functions || exit 1
 
 CRUNCH_PROJECT="hmf-crunch"
 OPS_PROJECT="hmf-ops"

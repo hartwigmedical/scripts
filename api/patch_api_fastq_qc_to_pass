@@ -1,0 +1,18 @@
+#!/bin/bash
+
+source message_functions || exit 1
+
+fastq_oid=$1
+new_status="true"
+
+if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo "Descr: Patches fastq qc to ${new_status}"
+    echo "Usage: $(basename $0) \$fastq_oid"
+    echo "   Eg: $(basename $0) 123456"
+    echo "-----"
+    exit 1
+fi
+
+## Patch
+hmf_api_patch -c "fastq" -o "${fastq_oid}" -f "qc_pass" -v "${new_status}"

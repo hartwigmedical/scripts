@@ -2,10 +2,7 @@
 
 source locate_files || exit 1
 source metadata_functions || exit 1
-source api_functions || exit 1
 source message_functions || exit 1
-source io_functions || exit 1
-source actin_lama_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
@@ -14,43 +11,17 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
     error "Inputs missing. Exiting";
 fi
 
-create_or_cleanup_dir ${output_dir}
-
-orange_jar="$(locate_pilot_orange)"
-
-doid_json="$(locate_doid_json)"
-cohort_mapping_tsv="$(locate_cohort_mapping_tsv)"
-cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
-driver_gene_panel_tsv="$(locate_driver_gene_panel_37_tsv)"
-known_fusion_file="$(locate_known_fusion_data_37_csv)"
-ensembl_data_directory="$(locate_ensembl_data_dir_37)"
-
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-collection_date=$(collection_date_for_sample ${tumor_sample})
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
-fi
-reference_sample=$(load_ref_sample_from_metadata ${run_dir})
-
-if [[ ${tumor_sample} == "COLO"* ]]; then
-    primary_tumor_doids="8923"
-else
-    primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
-    if [[ -z "${primary_tumor_doids}" ]]; then
-        primary_tumor_doids="\"\""
-    fi
-fi
-
-ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
 if [[ -f "${pipeline_version_file}" ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
 ref_sample_flagstat_file="$(locate_flagstats ${run_dir} ${reference_sample})"
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_germline_gene_coverage_tsv="$(locate_sage_germline_gene_coverage ${run_dir})"
@@ -87,10 +58,12 @@ if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
     cuppa_result_csv="$(locate_cuppa_dna_rna_result_csv ${run_dir})"
     cuppa_summary_plot="$(locate_cuppa_dna_rna_summary_plot ${run_dir})"
     cuppa_feature_plot="$(locate_cuppa_dna_rna_feature_plot ${run_dir})"
+    cuppa_chart_plot="$(locate_cuppa_dna_rna_chart_plot ${run_dir})"
 else
     cuppa_result_csv="$(locate_cuppa_result_csv ${run_dir})"
     cuppa_summary_plot="$(locate_cuppa_summary_plot ${run_dir})"
     cuppa_feature_plot="$(locate_cuppa_feature_plot ${run_dir})"
+    cuppa_chart_plot="$(locate_cuppa_chart_plot ${run_dir})"
 fi
 
 cuppa_feature_plot_cmd=""
@@ -103,23 +76,13 @@ sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
 
 info "Running ORANGE pilot tumor-ref-rna on ${run_dir}"
 
-java -jar ${orange_jar} \
-    -tumor_sample_id ${tumor_sample} \
-    -reference_sample_id ${reference_sample} \
-    ${rna_sample_cmd} \
-    -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_date ${collection_date} \
-    -ref_genome_version ${ref_genome_version} \
-    -output_dir "${output_dir}" \
-    -doid_json "${doid_json}" \
-    -cohort_mapping_tsv "${cohort_mapping_tsv}" \
-    -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
-    -driver_gene_panel_tsv "${driver_gene_panel_tsv}" \
-    -known_fusion_file "${known_fusion_file}" \
-    -ensembl_data_directory "${ensembl_data_directory}" \
+do_run_orange_pilot \
+    ${run_dir} \
+    ${output_dir} \
     ${isofox_gene_distribution_cmd} \
     ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
+    -reference_sample_id ${reference_sample} \
     -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
     -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
@@ -143,6 +106,7 @@ java -jar ${orange_jar} \
     -cuppa_result_csv "${cuppa_result_csv}" \
     -cuppa_summary_plot "${cuppa_summary_plot}" \
     ${cuppa_feature_plot_cmd} \
+    -cuppa_chart_plot "${cuppa_chart_plot}" \
     -peach_genotype_tsv "${peach_genotype_tsv}" \
     -sigs_allocation_tsv "${sigs_allocation_tsv}" \
     "$@"

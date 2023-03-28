@@ -161,8 +161,6 @@ printHeader "Extra actions on ops VM"
 current_hostname=$(hostname) || die "Could not get hostname"
 if [[ "${current_hostname}" == "crunch001" ]]; then
   crunch_name="crunch1.prod-1"
-elif [[ "${current_hostname}" == "crunch002" ]]; then
-  crunch_name="crunch2.prod-1"
 else
   die "Unknown hostname: ${current_hostname}"
 fi

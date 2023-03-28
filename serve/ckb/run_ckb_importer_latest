@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+ckb_jar=$(locate_latest_ckb_importer)
+ckb_dir=$(locate_ckb_flex_data_latest_dir)
+
+do_run_ckb_importer ${ckb_jar} "ckb_latest" ${ckb_dir}

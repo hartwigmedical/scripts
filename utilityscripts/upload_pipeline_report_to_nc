@@ -15,10 +15,7 @@ runs_json=$(
   '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
-bucket=$( echo $runs_json | jq -r '.[].bucket' )
-pipeline_version=$( echo $runs_json | jq -r '.[].version' | cut -d"." -f1,2 )
 sample=$( echo $runs_json | jq -r '.[].set.tumor_sample' )
-barcode=$( hmf_api_get "sets?name=${set}" | jq -r '.[].samples[] | select(.name=="'${sample}'") | .barcode' | cut -d"_" -f1 )
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
@@ -29,17 +26,6 @@ fi
 
 report=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep dna_analysis_report.pdf )
 report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
-
-set_url="gs://${bucket}/${set}"
-
-##TODO remove when v5.31 is in production
-# Check whether there was an error (potentially present in SAGE 3.0.1)
-sage_exception_count=$(gsutil cat ${set_url}/sage_somatic/run.log | grep "Exception in thread")
-if [[ ${sage_exception_count} -ge 1 ]]; then
-    warn "Exceptions found in SAGE run log!"
-else
-    info "No exceptions found in SAGE run log!"
-fi
 
 ### upload report to NC
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $report &> /dev/null

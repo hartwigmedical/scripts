@@ -5,5 +5,15 @@ source message_functions || exit 1
 oncoact_pdf=$1 && shift
 oncopanel_pdf=$1 && shift
 
-gcloud -q --project hmf-ops compute scp $HOME/hmf/tmp/${oncoact_pdf} lieke@ops-vm-prod-2:/data/resources/report_resources/hmf_oncoact_report.pdf
-gcloud -q --project hmf-ops compute scp $HOME/hmf/tmp/${oncopanel_pdf} lieke@ops-vm-prod-2:/data/resources/report_resources/hmf_oncopanel_report.pdf
+vm="ops-vm-prod-1"
+remote_dir="/data/resources/report_resources/"
+[[ -n "${oncoact_pdf}" ]] || die "No file provided"
+[[ -f "${oncoact_pdf}" ]] || die "File does not exist (${oncoact_pdf})"
+
+[[ -n "${oncopanel_pdf}" ]] || die "No file provided"
+[[ -f "${oncopanel_pdf}" ]] || die "File does not exist (${oncopanel_pdf})"
+
+info "Copying file '${oncoact_pdf}' and '${oncopanel_pdf}' to ${vm}:${remote_dir}"
+gcloud -q --project hmf-ops compute scp "${oncoact_pdf}" "${vm}:${remote_dir}" || die "The scp failed"
+gcloud -q --project hmf-ops compute scp "${oncopanel_pdf}" "${vm}:${remote_dir}" || die "The scp failed"
+info "Finished copying file '${oncoact_pdf}' and '${oncopanel_pdf}' to ${vm}:${remote_dir}"

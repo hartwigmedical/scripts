@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="7.26"
+version="7.26.2"
 
 do_deploy_prod_oncoact_tool "patient-reporter" ${version}

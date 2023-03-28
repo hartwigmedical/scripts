@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+LAMA_API_URL="http://lama-preview.prod-1/api"
+OUTPUT_TSV="./from_lama.tsv"
+
+function main (){
+    info "Retrieving tumor samples from LAMA [$LAMA_API_URL]"
+    samples=$(curl --silent "${LAMA_API_URL}/tumor-samples")
+    sample_count=$(jq 'length' <<< "$samples")
+
+    info "Extracting tumorType info for ${sample_count} samples"
+
+    # Exact columns are for backwards compatibility with pre-lama curated_primary_tumor.tsv file
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+      "patientIdentifier" \
+      "location" \
+      "subLocation" \
+      "type" \
+      "subType" \
+      "extraDetails" \
+      "doids" \
+      "snomedConceptIds" \
+      "overridden"
+
+    jq -r 'sort_by(.patientId) | .[] | [
+      (.patientId | split("-") | join("")),
+      (if .tumorType then .tumorType.location else "NA" end),
+      "-", # sublocation
+      (if .tumorType then .tumorType.type + "[" + .tumorType.extra + "]" else "NA" end),
+      "-", # subtype
+      "-", # extraDetails
+      (if .tumorType then .tumorType.doids|join(",") else "NA" end),
+      "0", # snomedConceptIds
+      "false" # overridden
+    ] | @tsv' <<< "${samples}"
+
+    info "Finished with $0"
+}
+
+main
