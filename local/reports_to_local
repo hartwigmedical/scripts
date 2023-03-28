@@ -21,8 +21,8 @@ echo ""
 echo "Do you want to copy the final OncoAct report and json? y or n"
 read answer_report
 if [[ ${answer_report} == "y" ]]; then
-    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*report.pdf ~/
-    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*.json ~/
+    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*report*.pdf ~/
+    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*n.json ~/
 fi
 
 echo ""
