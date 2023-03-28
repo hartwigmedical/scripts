@@ -80,6 +80,12 @@ function main() {
     files_json=$(hmf_api_get "files?run_id=${oid}")
     file_count=$(jq 'length' <<< "${files_json}")
 
+    # Temporary way to use FASTQ entries instead of files for specific submission
+    # TODO: switch off once HMFreg1893 is finished
+    if [[ "${ini}" == "FastQ.ini" ]]; then
+        files_json=$(construct_files_json_from_fastqs "${set_name}")
+    fi
+
     # Virtual samples potentially have zero yield and therefore no files but other FASTQ runs are expected to always have files
     if [[ "${file_count}" -eq 0 && "${ini}" == "FastQ.ini" ]]; then
         if [[ "${set_name}" =~ VirtualSample[0-9]+ ]]; then
@@ -119,6 +125,29 @@ function main() {
     [[ $((url_count*5)) -eq $line_count ]] || die "Unexpected line count [$line_count with $url_count urls] in aria output!"
 
     info "Finished with ${script_name}"
+}
+
+construct_files_json_from_fastqs () {
+    local set_name=$1 && shift
+    local files=()
+    set_json=$(hmf_api_get "sets?name=${set_name}") || die "Unable to get set"
+    sample_oid=$(jq -r '.[-1].samples[-1].id' <<< "${set_json}")
+    fastq_json=$(hmf_api_get "fastq?sample_id=${sample_oid}" | jq  '[.[] | select(.qc_pass == true)]')
+    while read -r fastq_pair; do
+        bucket=$(jq -r '.bucket' <<< "${fastq_pair}")
+        [[ -n "${bucket}" ]] || continue
+        name_r1=$(jq -r '.name_r1' <<< "${fastq_pair}")
+        name_r2=$(jq -r '.name_r2' <<< "${fastq_pair}")
+        hash_r1=$(jq -r '.hash_r1' <<< "${fastq_pair}")
+        hash_r2=$(jq -r '.hash_r2' <<< "${fastq_pair}")
+        if [[ -n "${name_r1}" ]]; then
+            files+=("{\"filepath\": \"gs://${bucket}/${name_r1}\", \"filename\": \"${name_r1}\", \"hash\": \"${hash_r1}\"}")
+        fi
+        if [[ -n "${name_r2}" ]]; then
+            files+=("{\"filepath\": \"gs://${bucket}/${name_r2}\", \"filename\": \"${name_r2}\", \"hash\": \"${hash_r2}\"}")
+        fi
+    done < <(jq -c '.[]' <<< "${fastq_json}")
+    echo "[$(join_by "," "${files[@]}")]"
 }
 
 create_run_specific_files () {
@@ -343,5 +372,7 @@ determine_output_type_by_ini () {
         return 1
     fi
 }
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
 
 main
