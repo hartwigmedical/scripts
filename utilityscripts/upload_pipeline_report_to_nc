@@ -26,7 +26,11 @@ fi
 
 report=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep dna_analysis_report.pdf )
 report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
+xml=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep _oncoact.xml )
+xml=$( echo ${xml#"gs://patient-reporter-prod-1/"} )
+
 
 ### upload report to NC
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $report &> /dev/null
-info "The report $report is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $xml &> /dev/null
+info "The report $report en xml $xml is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
