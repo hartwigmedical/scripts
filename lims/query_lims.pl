@@ -30,8 +30,6 @@ my %OUT_FIELDS_PER_TYPE = (
   'dateTable'   => [qw(sample_name sampling_date arrival_date)],
 );
 my $available_types = join(", ", sort keys %OUT_FIELDS_PER_TYPE);
-my $last_update_epoch = (stat($LIMS_JSON))[9]; 
-my $last_update = strftime( "%Y-%m-%d %H:%M:%S", localtime($last_update_epoch));
 
 my $HELP_TEXT =<<HELP;
 
@@ -39,8 +37,6 @@ my $HELP_TEXT =<<HELP;
     Parses LIMS JSON file and prints information about the
     requested samples / submissions to screen. Uses regex
     matching of filters by default.
-
-  Updated: $last_update
     
   Usage
     $SCRIPT -type samples
@@ -89,7 +85,10 @@ die $HELP_TEXT . "\n" if $opt{'help'};
 die $HELP_TEXT . "\n[ERROR] Please provide type with -type\n" unless $TYPE;
 die $HELP_TEXT . "\n[ERROR] Type ($TYPE) is not supported\n" unless exists $OUT_FIELDS_PER_TYPE{ $TYPE };
 
-my $nonreportable = readNonReportableSamples( $NONREPORTABLE_TSV );
+my $nonreportable = \{};
+if (-f $NONREPORTABLE_TSV){
+    $nonreportable = readNonReportableSamples( $NONREPORTABLE_TSV );
+}
 my $lims = readJson( $opt{ lims_input } or $LIMS_JSON );
 my $out_fields = $OUT_FIELDS_PER_TYPE{ $TYPE };
 
@@ -230,16 +229,18 @@ sub readJson{
 sub readNonReportableSamples{
     my ($tsv_file) = @_;
     my %non_reportable_samples = ();
-    open IN, "<", $tsv_file or die "[ERROR] Unable to open file ($tsv_file): $!\n";
-    while ( my $sample = <IN> ){
-        chomp $sample;
-        next if $sample =~ /^#/;
-        if ( $sample =~ /\s/ ){
-            die "[ERROR] Whitespace detected in sample \"$sample\" (file: $tsv_file)\n";
+    if (-f $tsv_file){
+        open IN, "<", $tsv_file or die "[ERROR] Unable to open file ($tsv_file): $!\n";
+        while ( my $sample = <IN> ){
+            chomp $sample;
+            next if $sample =~ /^#/;
+            if ( $sample =~ /\s/ ){
+                die "[ERROR] Whitespace detected in sample \"$sample\" (file: $tsv_file)\n";
+            }
+            $non_reportable_samples{ $sample } = 1;
         }
-        $non_reportable_samples{ $sample } = 1;
+        close IN;
     }
-    close IN;
     return( \%non_reportable_samples );
 }
 
