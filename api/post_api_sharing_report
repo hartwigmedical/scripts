@@ -9,6 +9,7 @@ report_type=$1 && shift
 report_source=$1 && shift
 sharedReportLocation=$1 && shift
 sharedJsonLocation=$1 && shift
+sharedXmlLocation=$1 && shift
 
 ## extract correct report created id
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
@@ -24,9 +25,13 @@ pdfFile=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $3}')
 pdfBucket=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $2}')
 jsonFile=$(echo ${sharedJsonLocation} | tr "/" " " | awk '{print $3}')
 jsonBucket=$(echo ${sharedJsonLocation} | tr "/" " " | awk '{print $2}')
+xmlFile=$(echo ${sharedXmlLocation} | tr "/" " " | awk '{print $3}')
+xmlBucket=$(echo ${sharedXmlLocation} | tr "/" " " | awk '{print $2}')
+#
 reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${pdfBucket}" "path" "${pdfFile}")
 reportJson=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${jsonBucket}" "path" "${jsonFile}")
-data=$(echo -e "${reportPdf}\n${reportJson}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+reportXml=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${xmlBucket}" "path" "${xmlFile}")
+data=$(echo -e "${reportPdf}\n${reportJson}\n${reportXml}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
 echo ${data} | jq
 
 if [[ -z ${report_created_id} ]];then
