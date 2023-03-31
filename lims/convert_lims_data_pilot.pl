@@ -28,36 +28,41 @@ use constant INTEGER_FIELDS => qw(yield q30);
 my %WARN_IF_ABSENT_IN_LAMA_FIELDS = (_id=>1, status=>1);
 
 my $SCRIPT  = basename($0);
+my %opt = (
+    'center_tsv' => '/data/ops/lims/prod/center2entity.tsv'
+);
 my $HELP_TEXT = <<"HELP";
 
   Description
-    Parses LIMS text files (derived from excel and MS Access) and
-    writes to JSON output.
+    Converts the sample information from various LIMS sources (Excel forms and LAMA)
+    into one coherent JSON output file.
 
   Usage
     $SCRIPT -lims_dir /data/ops/lims/pilot -out_json /data/ops/lims/pilot/lims.json
 
-  Required params:
+  Required:
     -lims_dir <str>  Path to input dir (eg /data/ops/lims/pilot)
     -out_json <str>  Path to output json (eg /data/tmp/lims.json)
+
+  Optional:
+    -center_tsv <str>  Path to center dictionary input tsv [$opt{center_tsv}]
 
 HELP
 
 # Get input and setup all paths
-my %opt = ();
 GetOptions (
-    "lims_dir=s" => \$opt{ lims_dir },
-    "out_json=s" => \$opt{ out_json },
-    "center_tsv=s" => \$opt{ center_tsv },
-    "debug"      => \$opt{ debug },
-    "help|h"     => \$opt{ help },
+    "lims_dir=s"   => \$opt{lims_dir},
+    "out_json=s"   => \$opt{out_json},
+    "center_tsv=s" => \$opt{center_tsv},
+    "debug"        => \$opt{debug},
+    "help|h"       => \$opt{help},
 ) or die("Error in command line arguments\n");
 
-die $HELP_TEXT if $opt{ help };
-die $HELP_TEXT unless $opt{ lims_dir };
-die $HELP_TEXT unless $opt{ out_json };
+die $HELP_TEXT if $opt{help};
+die $HELP_TEXT unless $opt{lims_dir};
+die $HELP_TEXT unless $opt{out_json};
 
-my $CNTR_TSV = $opt{ center_tsv } || '/data/ops/lims/prod/center2entity.tsv';
+my $CNTR_TSV = $opt{center_tsv};
 my $LIMS_DIR = $opt{lims_dir};
 my $JSON_OUT = $opt{out_json};
 my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
@@ -97,7 +102,7 @@ my $SAMP_TSV_2018 = $LATEST_DIR . '/2018_samp';
 my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
 
 my $PROC_TSV_2017 = $LATEST_DIR . '/2017_proc';
-my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
+my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json';
 
 my @ALL_INPUT_FILES = (
     $LAMA_ISOLATION_JSON, $LAMA_PATIENT_JSON, $LAMA_LIBRARYPREP_JSON, $LAMA_SAMPLESTATUS_JSON,
@@ -187,7 +192,12 @@ sub addLamaSamples{
             sayWarn(sprintf "NOTIFY: SKIPPING LAMA sample because sample_barcode not present in status object [%s]", $isolate_barcode);
             next;
         }
+
         my $sample_barcode = $sample_to_store{sample_barcode};
+
+        # add fields for backwards compatibility
+        $sample_to_store{received_sample_id} = $sample_barcode;
+        $sample_to_store{report_germline_level} = NACHAR;
 
         # adding sample info
         if (exists $samples->{$sample_barcode}) {
@@ -1301,18 +1311,6 @@ sub getFieldNameTranslations{
         'Sop_tracking_code' => 'lab_sop_versions',
     );
     my %PROC_DICT = %PROC_DICT_2022;
-
-#    my %lama_status_cohort_dict = (
-#        '_id'                  => 'cohort',
-#        'cohortCode'           => 'cohort_code',
-#        'reportPGX'            => 'report_pgx',
-#        'reportViral'          => 'report_viral',
-#        'reportGermline'       => 'report_germline',
-#        'flagGermlineOnReport' => 'flag_germline_on_report',
-#        'reportConclusion'     => 'report_conclusion',
-#        'isShallowStandard'    => 'shallowseq',
-#        'sendPatientReport'    => 'send_patient_report'
-#    );
 
     my %lama_patient_dict = (
         '_id' => 'lama_patient_object_id',
