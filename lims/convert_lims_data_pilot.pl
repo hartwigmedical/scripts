@@ -27,7 +27,7 @@ use constant INTEGER_FIELDS => qw(yield q30);
 # Fields that will be required to exist in input if checked
 my %WARN_IF_ABSENT_IN_LAMA_FIELDS = (_id=>1, status=>1);
 
-my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
+my $SCRIPT  = basename($0);
 my $HELP_TEXT = <<"HELP";
 
   Description
@@ -121,7 +121,8 @@ foreach ( $JSON_OUT ){
     die "[ERROR] Output file exists and is not writable ($_)\n" if ( -f $_ and not -w $_ );
 }
 
-sayInfo("Starting with $SCRIPT");
+sayInfo(sprintf "Starting with %s", $SCRIPT);
+sayInfo(sprintf "Input dir: %s", $LATEST_DIR);
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
@@ -132,13 +133,12 @@ my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $lims_objs = {}; # will contain all sample objects
 
-# TODO: switch on old FOR-002 reading
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
-# $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
@@ -149,11 +149,10 @@ $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2022'}, 'submission', 0
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
-# TODO: switch on old FOR-001 reading
-#$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
-#$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
-#$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
-#$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
@@ -162,13 +161,6 @@ my $lama_isolation = parseLamaIsolation($LAMA_ISOLATION_JSON);
 my $lama_sample = parseLamaPatients($LAMA_PATIENT_JSON);
 my $lama_prep = parseLamaLibraryPreps($LAMA_LIBRARYPREP_JSON);
 my $lama_contracts = parseLamaContracts($LAMA_CONTRACTS_JSON);
-
-#print Dumper $lama_contracts;
-#my @keys = keys %$lama_sample;
-#print Dumper $lama_sample->{$keys[1]};
-#print Dumper $lama_sample->{'FB05312139'};
-#print join(",", @keys) . "\n";
-#die "Finished";
 
 checkContactInfo( $cont_objs );
 
@@ -180,7 +172,7 @@ $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 fixAddedDateFields( $lims_objs );
 checkDrupStage3Info( $subm_objs, $lims_objs );
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
-sayInfo("Finished with $SCRIPT");
+sayInfo(sprintf "Finished with %s", $SCRIPT);
 
 sub addLamaSamples{
     my ($lims, $statuses, $samples, $isolations, $preps, $contracts, $submissions, $centers_dict) = @_;
@@ -191,7 +183,10 @@ sub addLamaSamples{
     while (my ($isolate_barcode, $object) = each %$statuses) {
         my %sample_to_store = %{$object};
 
-        exists $sample_to_store{sample_barcode} or die "NEIN sample barcode!";
+        if (not exists $sample_to_store{sample_barcode}) {
+            sayWarn(sprintf "NOTIFY: SKIPPING LAMA sample because sample_barcode not present in status object [%s]", $isolate_barcode);
+            next;
+        }
         my $sample_barcode = $sample_to_store{sample_barcode};
 
         # adding sample info
@@ -227,7 +222,7 @@ sub addLamaSamples{
         if (exists $contracts->{$contract_code}) {
             addRecordFieldsToTargetRecord($contracts->{$contract_code}, \%sample_to_store, "merge of prep info for $isolate_barcode");
         }else{
-            sayWarn("Cannot locate contract [$contract_code] for sample [$sample_print_info]");
+            sayWarn("Unable to locate contract [$contract_code] for sample [$sample_print_info]");
         }
 
         # adding cohort info for backwards compatibility (the concept "cohort" does no longer exist since LAMA v2)
@@ -235,7 +230,6 @@ sub addLamaSamples{
             $sample_to_store{'cohort'} = $sample_to_store{'contract_display_name'};
             $sample_to_store{'cohort_code'} = $sample_to_store{'contract_sample_id_start'};
         }else{
-            sayWarn("Missing contract info so unable to set cohort for sample [$sample_print_info]");
             $sample_to_store{'cohort'} = NACHAR;
             $sample_to_store{'cohort_code'} = NACHAR;
         }
@@ -263,13 +257,13 @@ sub addLamaSamples{
         elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE') {
             $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
             # sanity check that we are indeed dealing with TO (tumor only)
-            my $expected_cohort = 'TARGTO';
+            my $expected_cohort = 'Panel';
             if (not exists $sample_to_store{cohort}){
-                sayWarn("NOTIFY: Found 'Tumor FFPE' but NO COHORT for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
+                sayWarn(sprintf "NOTIFY: Found FFPE sample but NO COHORT present for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
                 next;
-            }
-            if ($sample_to_store{cohort} ne $expected_cohort){
-                sayWarn("NOTIFY: Found 'Tumor FFPE' but cohort != $expected_cohort for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
+            }elsif ($sample_to_store{cohort} ne $expected_cohort){
+                sayWarn(sprintf "NOTIFY: Found FFPE sample but cohort [%s] is not [%s] pls check LAMA [%s]",
+                    $sample_to_store{cohort}, $expected_cohort, $sample_print_info);
                 next;
             }
             $final_target_yield = 50;
@@ -296,11 +290,8 @@ sub addLamaSamples{
         }
 
         if (not defined $original_submission or $original_submission eq '') {
-            if ($analysis_type eq 'Somatic_R') {
-                sayInfo("    No submission id yet for R sample [$sample_print_info]");
-            }
-            else{
-                sayWarn("NOTIFY: missing submission id [$sample_print_info]");
+            if ($analysis_type ne 'Somatic_R') {
+                sayWarn(sprintf "NOTIFY: missing submission id [%s]", $sample_print_info);
             }
             next;
         }
@@ -337,17 +328,6 @@ sub addLamaSamples{
         $sample_to_store{analysis_type} = $analysis_type;
         $sample_to_store{original_submission} = $original_submission;
         $sample_to_store{yield} = $final_target_yield;
-
-         # TODO: remove once finished
-#        # Add reporting ID
-#        if (defined $sample_to_store{cohort_code} and $sample_to_store{cohort_code} ne ""){
-#            my $cohort_code = $sample_to_store{cohort_code};
-#            if ($cohort_code =~ "^(CORE|GAYA|TARG)"){
-#                $sample_to_store{reporting_id} = $sample_to_store{hospital_patient_id};
-#            }else{
-#                $sample_to_store{reporting_id} = $sample_to_store{sample_name};
-#            }
-#        }
 
         # Fix various formats of date fields
         fixDateFields(\%sample_to_store);
@@ -422,7 +402,11 @@ sub copyFieldsFromObject{
 
     while (my ($src_key, $tgt_key) = each %$fieldsTranslationTable){
         if (exists $object->{$src_key}){
-            $store->{$tgt_key} = $object->{$src_key};
+            if (ref($object->{$src_key}) eq 'ARRAY'){
+                $store->{$tgt_key} = join(",", @{$object->{$src_key}});
+            }else{
+                $store->{$tgt_key} = $object->{$src_key};
+            }
         }
         elsif(exists $WARN_IF_ABSENT_IN_LAMA_FIELDS{$src_key}){
             sayWarn("No '$src_key' field in object ($info_tag)");
@@ -474,6 +458,7 @@ sub processSampleOfLamaPatient {
     my $info_tag = "patients->barcodes=" . join("|", @sampleBarcodes);
 
     copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
+    copyFieldsFromObject($patient->{tumorType}, $info_tag, $name_dict->{lama_patient_tumor_sample_tumor_type_dict}, \%info);
     copyFieldsFromObject($patient, $info_tag, $name_dict->{lama_patient_dict}, \%info);
 
     foreach my $sampleBarcode (@sampleBarcodes) {
@@ -610,7 +595,7 @@ sub parseTsvCsv{
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
 
-    sayInfo("  Parsing input CSV/TSV file $file");
+    sayInfo(sprintf "  Parsing CSV/TSV [%s]", basename($file));
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -682,7 +667,7 @@ sub selectAndRenameFields{
 
 sub readJson{
     my ($json_file) = @_;
-    sayInfo("  Parsing input json file $json_file");
+    sayInfo(sprintf "  Parsing JSON [%s]", basename($json_file));
     my $json_txt = read_file( $json_file );
     my $json_obj = decode_json( $json_txt );
     return( $json_obj );
@@ -727,7 +712,7 @@ sub addLabSopString{
 
 sub parseDictFile{
     my ($file, $fileType) = @_;
-    sayInfo("  Parsing input dictionary file $file");
+    sayInfo(sprintf "  Parsing DICTIONARY [%s]", basename($file));
     my %store = ();
 
     open my $dict_fh, "<", $file or die "$!: Unable to open file ($file)\n";
@@ -797,35 +782,35 @@ sub addContactInfoToSubmissions{
 
 sub checkDrupStage3Info{
     my ($submissions, $samples) = @_;
-    my $drup_stage3_count = 0;
-    my $expected_cohort = 'DRUP 3rd stage'; # was DRUPstage3 pre-lama-v2
+    my $counter = 0;
+    my $cohort = 'DRUP 3rd stage'; # was DRUPstage3 pre-lama-v2
 
-    sayInfo("  Checking $expected_cohort submissions");
+    sayInfo(sprintf "  Checking submissions of %s cohort", $cohort);
     while (my ($id,$obj) = each %$submissions){
         my $project_type = $obj->{'project_type'};
         my $project_name = $obj->{'project_name'};
 
-        next unless ($project_type eq 'Cohort' and $project_name =~ /DRUP/);
+        next unless ($project_type eq 'Cohort' and $project_name =~ /^DRUP/);
 
-        $drup_stage3_count++;
+        $counter++;
         my $patient_id = $project_name;
         $patient_id =~ tr/-//d;
         my $sample_name = $patient_id . "T";
         my $sample_count = 0;
         while (my($barcode,$sample) = each %$samples){
             next unless $sample->{'sample_name'} eq $sample_name;
-            # need to match case insensitive due to LAMA upper case but excel in lower case
             next unless $sample->{'original_submission'} =~ m/^$id$/i;
             next unless $sample->{'analysis_type'} eq 'Somatic_T';
-            my $cohort = $sample->{'cohort'};
-            if ( $cohort !~ m/^$expected_cohort$/i ){
-                sayWarn("    Found sample for submission $id with incorrect cohort (name:$sample_name id:$barcode cohort:$cohort)");
+            my $sample_cohort = $sample->{'cohort'};
+            if ( uc($sample_cohort) ne uc($cohort) ){
+                sayWarn(sprintf "Found sample [%s,%s] of submission [%s] with incorrect cohort [%s] instead of expected cohort [%s]",
+                  $sample_name, $barcode, $id, $sample_cohort, $cohort);
             }
             $sample_count++;
         }
-        sayWarn("    Found no samples for $expected_cohort submission $id!") if $sample_count < 1;
+        sayWarn(sprintf "Found no samples for %s submission %s!", $cohort, $id) if $sample_count < 1;
     }
-    sayInfo("    Summary: $drup_stage3_count submissions encountered and checked for $expected_cohort");
+    sayInfo(sprintf "Summary: %d submissions encountered and checked for %s", $counter, $cohort);
 }
 
 sub checkContactInfo{
@@ -1349,6 +1334,13 @@ sub getFieldNameTranslations{
         'arrivalHmf'            => 'arrival_date',
         'submissionNr'          => 'submission',
         'contractCode'          => 'contract_code'
+    );
+
+    my %lama_patient_tumor_sample_tumor_type_dict = (
+        'location' => 'tumor_location',
+        'type'  => 'tumor_type',
+        'extra' => 'tumor_extra',
+        'doids' => 'tumor_doids',
     );
 
     my %lama_patient_reference_sample_dict = (
