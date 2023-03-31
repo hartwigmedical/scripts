@@ -6,23 +6,20 @@ barcode=$1
 JSON1=${2:-"/data/ops/lims/prod/lims.json"}
 JSON2=${3:-"/data/ops/lims/pilot/lims.json"}
 ONLY_IMPORTANT_FIELDS=${4:-"false"}
-FAIL_FIELDS=(analysis_type arrival_date biopsy_site conc entity hospital_pa_sample_id hospital_patient_id is_cup
+FAIL_FIELDS=(analysis_type arrival_date biopsy_site cohort conc entity hospital_pa_sample_id hospital_patient_id is_cup
 isolation_id isolation_experiment_id isolation_status lab_sop_versions lab_status label
-patient prep_id prep_type project_name ptum ref_sample_id
-report_conclusion report_germline report_germline_level
-reporting_id sample_name sample_id sampling_date shallowseq submission yield
+patient prep_id prep_type project_name ptum received_sample_id ref_sample_id
+report_germline report_germline_level
+sample_name sample_id shallowseq submission yield tumor_perc
 )
 WARN_FIELDS=(
-report_pgx report_viral
+reporting_id report_pgx report_viral report_conclusion sampling_date
 )
 
 EMPTY="<empty>"
 
 main (){
-    info "Diffing one sample"
-    info "  LIMS json 1: ${JSON1}"
-    info "  LIMS json 2: ${JSON2}"
-    info "  Barcode: ${barcode}"
+    echo "# Barcode:$barcode json1:${JSON1} json2:${JSON2}"
     diff_barcode "${barcode}"
 }
 
@@ -47,30 +44,10 @@ partial_diff() {
     local json1=$1 && shift
     local json2=$1 && shift
     for key in "${FAIL_FIELDS[@]}"; do
-        val1=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json1}")
-        val2=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json2}")
-        outcome="NA"
-        [[ "${val1}" == "" ]] && val1="${EMPTY}";
-        [[ "${val2}" == "" ]] && val2="${EMPTY}";
-        if [[ "${val1}" == "${val2}" ]]; then
-            outcome="OK"
-        else
-            outcome="FAIL"
-        fi
-        printf "%s\t%s\t%s\t%s\n" "${outcome}" "${key}" "${val1}" "${val2}"
+        compare_two_values "$json1" "$json2" "FAIL" "${barcode}" "${key}"
     done
     for key in "${WARN_FIELDS[@]}"; do
-        val1=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json1}")
-        val2=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json2}")
-        outcome="NA"
-        [[ "${val1}" == "" ]] && val1="${EMPTY}";
-        [[ "${val2}" == "" ]] && val2="${EMPTY}";
-        if [[ "${val1}" == "${val2}" ]]; then
-            outcome="OK"
-        else
-            outcome="WARN"
-        fi
-        printf "%s\t%s\t%s\t%s\n" "${outcome}" "${key}" "${val1}" "${val2}"
+        compare_two_values "$json1" "$json2" "WARN" "${barcode}" "${key}"
     done
 }
 
@@ -85,6 +62,25 @@ complete_diff() {
         warn "  DIFF FAIL (${diff_count} diff for ${barcode})"
         diff <(jq -S <<< "${json1}") <(jq -S <<< "${json2}")
     fi
+}
+
+compare_two_values() {
+    local json1=$1 && shift
+    local json2=$1 && shift
+    local fail_string=$1 && shift
+    local barcode=$1 && shift
+    local key=$1 && shift
+    local outcome="NA"
+    val1=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json1}")
+    val2=$(jq -r --arg key "${key}" '.[-1][$key]' <<< "${json2}")
+    [[ "${val1}" == "" ]] && val1="${EMPTY}";
+    [[ "${val2}" == "" ]] && val2="${EMPTY}";
+    if [[ $(tr '[:lower:]' '[:upper:]' <<< "${val1}") == $(tr '[:lower:]' '[:upper:]' <<< "${val2}") ]]; then
+        outcome="OK"
+    else
+        outcome="${fail_string}"
+    fi
+    printf "%s\t%s\t%s\t%s\t%s\n" "${barcode}" "${outcome}" "${val1}" "${val2}" "${key}"
 }
 
 main
