@@ -28,15 +28,18 @@ NAS_FILES=(
   "${NAS_DIR}/${FOR_002_FILE_2022}"
 )
 
-LAMA_BUCKET="lama-export"
+LAMA_BUCKET="lama-export-preview"
 LAMA_FILES=(
-  "gs://${LAMA_BUCKET}/Cohorts.json"
+  "gs://${LAMA_BUCKET}/BiopsySites.json"
+  "gs://${LAMA_BUCKET}/ContactGroups.json"
+  "gs://${LAMA_BUCKET}/Contacts.json"
+  "gs://${LAMA_BUCKET}/Contracts.json"
   "gs://${LAMA_BUCKET}/Hospitals.json"
   "gs://${LAMA_BUCKET}/Isolations.json"
-  "gs://${LAMA_BUCKET}/LibraryPreps.json"
+  "gs://${LAMA_BUCKET}/LibraryPreparations.json"
   "gs://${LAMA_BUCKET}/Patients.json"
-  "gs://${LAMA_BUCKET}/SampleStatus.json"
-  "gs://${LAMA_BUCKET}/SnpChecks.json"
+  "gs://${LAMA_BUCKET}/Statuses.json"
+  "gs://${LAMA_BUCKET}/TumorTypes.json"
 )
 
 main() {
@@ -56,9 +59,7 @@ main() {
     done
 
     info "Retrieving LAMA input files from bucket (gs://${LAMA_BUCKET})"
-    for lama_json_file in "${LAMA_FILES[@]}"; do
-      gsutil cp "$lama_json_file" "${TMP_DIR}" || die "Unable to copy file ($lama_json_file)"
-    done
+    gsutil -m cp "${LAMA_FILES[@]}" || die "Error during LAMA file retrieval"
 
     for001_source="${TMP_DIR}/${FOR_001_FILE}"
     for002_source="${TMP_DIR}/${FOR_002_FILE}"
