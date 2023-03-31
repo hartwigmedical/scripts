@@ -12,6 +12,10 @@ CONTACT_GROUPS=(PT-003-102 EMC-003-103-PTO UMCU-003-101-PTO)
 
 main (){
     info "Verifying a selection of object between two JSONs"
+
+    [[ -f ${JSON1} ]] || die "Input file does not exist [${JSON1}]"
+    [[ -f ${JSON2} ]] || die "Input file does not exist [${JSON2}]"
+
     info "  LIMS json 1: ${JSON1}"
     info "  LIMS json 2: ${JSON2}"
 
