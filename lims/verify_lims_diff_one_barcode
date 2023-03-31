@@ -29,7 +29,17 @@ diff_barcode() {
     one=$(query_lims.pl -lims "${JSON1}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
       || die "Querying LIMS JSON 1 failed ($barcode)"
     two=$(query_lims.pl -lims "${JSON2}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
-          || die "Querying LIMS JSON 2 failed ($barcode)"
+      || die "Querying LIMS JSON 2 failed ($barcode)"
+
+    # Can only compare if we find exactly one sample
+    if [[ ! $(jq 'length' <<< "${one}") -eq 1 ]]; then
+        echo "# WARNING: Unable to compare ${barcode} (not present in ${JSON1})"
+        return 1
+    fi
+    if [[ ! $(jq 'length' <<< "${two}") -eq 1 ]]; then
+        echo "# WARNING: Unable to compare ${barcode} (not present in ${JSON2})"
+        return 1
+    fi
 
     if [[ "$ONLY_IMPORTANT_FIELDS" == "true" ]]; then
         partial_diff "$barcode" "$one" "$two"
