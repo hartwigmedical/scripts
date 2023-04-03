@@ -15,7 +15,7 @@ report_type=$(echo ${json_file} | jq .report_type)
 cohort=$(echo ${json_file} | jq .cohort)
 has_reliable_quality=$(echo ${json_file} | jq .has_reliable_quality)
 
-run_json=$(hmf_api_get "runs?sample_name=${sample_name}&context=DIAGNOSTIC" | jq '.[-1]')
+run_json=$(hmf_api_get "runs?sample_name=${sample_name}&context=DIAGNOSTIC" | jq '.[0]')
 run_ini=$(jq -r '.ini' <<< "${run_json}")
 
 if [[ ${run_ini} == "ShallowSeq.ini" || ${run_ini} == "Somatic.ini"  ]]; then
