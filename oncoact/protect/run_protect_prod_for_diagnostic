@@ -35,7 +35,7 @@ info "Rerunning protect for $set (only in VM; pipeline data will not be overwrit
 serve_actionability_dir="/data/resources/custom/common-resources-private/serve/37"
 info "Resources used for running protect from: ${serve_actionability_dir}"  &>> ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log
 
-do_run_protect ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log
+do_run_protect_latest ${run_dir} ${output_dir} ${serve_actionability_dir} ${protect_jar} &>> ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log
 
 #### check log file of rerunning protect
 if [[ $( cat ${run_dir}/new_report/${sample}_${barcode}_protect_rerun.log | grep "WARN\|Exception in thread\|Error:" | wc -l ) -lt 0 ]]; then
