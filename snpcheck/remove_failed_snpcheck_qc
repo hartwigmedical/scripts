@@ -7,7 +7,7 @@ plate=$1
 
 if [[ -z "${plate}" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $(basename "$0") plate"
+    echo " Usage: $(basename "$0") snpcheck_plate"
     echo "    Eg: $(basename "$0") S23-0012_20230324_084951_REJ07"
     echo "---"
     exit 1
