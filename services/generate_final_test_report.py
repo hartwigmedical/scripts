@@ -103,7 +103,12 @@ def place_sample_field_info(output_file: str, sample_info: List[List[str]]):
 
 def print_command_convert_html_to_pdf_report(output_file: str):
     out_file = os.path.abspath(output_file)
-    print(f' wkhtmltopdf --enable-local-file-access {out_file} {out_file.split(".")[0]}.pdf')
+    print("Convert html to pdf format")
+    print(f" wkhtmltopdf --enable-local-file-access {out_file} {out_file.split('.')[0]}.pdf")
+    print("")
+    print("And download the generated pdf report (Execute locally!)")
+    print(f" gcloud compute scp ops-vm-prod-2:~/{out_file.split('.')[0].split('/')[-1]}.pdf ~/")
+    print("")
 
 
 def parse_args() -> NamedTuple:

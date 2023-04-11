@@ -122,6 +122,10 @@ info "And/or print info for (PDF) report:"
 echo " cat ${repo_file}"
 echo ""
 
+info "And generate final test report (FILL IN your name!)"
+echo " generate_final_test_report.py -i ${repo_file} -o ~/ -n 'Name'"
+echo ""
+
 # Warn if not potentially complete
 if [[ ${hmf_count} -ne ${api_count} ]]; then
     warn "Not all samples have status Ready (so FASTQ might be missing)!"
