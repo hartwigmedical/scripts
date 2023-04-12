@@ -120,7 +120,7 @@ main(){
         .ini,
         .version,
         .status,
-        (if .failure then .failure.type//"NA" else "NA" end),
+        (if .failure then (.failure.type+"/"+.failure.source)//"NA" else "NA" end),
         .context,
         .bucket,
         (if .startTime then .startTime|.[:10] else "NA" end),
