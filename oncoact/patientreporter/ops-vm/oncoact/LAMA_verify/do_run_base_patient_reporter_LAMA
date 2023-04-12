@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+patient_reporter_jar=$(locate_prod_patient_reporter)
+
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor_LAMA.tsv
+lims_dir=/data/ops/lims/LAMA
+
+rva_logo=$(locate_rva_logo_prod)
+company_logo=$(locate_company_logo_oncoact_prod)
+signature=$(locate_signature_prod)
+
+expected_pipeline_version=$(extract_expected_pipeline_version)
+
+java -jar ${patient_reporter_jar} \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
+    -lims_dir ${lims_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -udi_di "(01)8720299486041(8012)v5.31" \
+    -require_pipeline_version_file \
+    -expected_pipeline_version ${expected_pipeline_version} \
+    "$@"

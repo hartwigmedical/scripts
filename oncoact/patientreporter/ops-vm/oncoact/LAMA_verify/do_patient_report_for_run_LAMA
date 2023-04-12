@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source lims_functions || exit 1
+source message_functions || exit 1
+source api_functions || exit 1
+
+run_dir=$1 && shift
+sample=$1 && shift
+barcode=$1 && shift
+ref_sample=$1 && shift
+ref_sample_barcode=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${sample}" || -z "${barcode}" ]]; then
+    error "No tumor/reference information provided. Exiting"
+fi
+
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${barcode}" ]]; then
+    warn "Incomplete information for reporter. Exiting"
+    warn "  ref_sample name: ${ref_sample}"
+    warn "  ref sample barcode: ${ref_sample_barcode}"
+    warn "  tumor_sample name: ${sample}"
+    warn "  tum sample barcode: ${barcode}"
+    exit 1;
+fi
+
+pipeline_version_file=${run_dir}/pipeline.version
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_somatic_driver_catalog_tsv=$(locate_purple_somatic_driver_catalog ${run_dir})
+purple_germline_driver_catalog_tsv=$(locate_purple_germline_driver_catalog ${run_dir})
+purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
+purple_somatic_copynumber_tsv=$(locate_purple_somatic_copynumber_tsv ${run_dir})
+purple_gene_copy_number_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
+linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
+linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
+linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
+cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
+annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
+peach_genotype_tsv=$(locate_peach_prod_genotype ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
+linx_svs_tsv=$(locate_linx_structural_variants ${run_dir})
+lilac_result_csv=$(locate_lilac_results ${run_dir})
+lilac_qc_csv=$(locate_lilac_qc ${run_dir})
+rose_tsv=$(locate_rose ${run_dir})
+
+germline_reporting_tsv=$(locate_germline_reporting_prod)
+sample_special_remark_tsv=$(locate_special_remark_patient_report_prod)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
+
+do_run_base_patient_reporter_LAMA \
+    -ref_sample_id ${ref_sample} \
+    -ref_sample_barcode ${ref_sample_barcode} \
+    -tumor_sample_id ${sample} \
+    -tumor_sample_barcode ${barcode} \
+    -pipeline_version_file ${pipeline_version_file} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+    -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
+    -purple_somatic_copynumber_tsv ${purple_somatic_copynumber_tsv} \
+    -purple_gene_copy_number_tsv ${purple_gene_copy_number_tsv} \
+    -purple_circos_plot ${purple_circos_plot} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_breakend_tsv ${linx_breakend_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
+    -linx_svs_tsv ${linx_svs_tsv} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -cuppa_result_csv ${cuppa_result_csv} \
+    -cuppa_plot ${cuppa_plot} \
+    -annotated_virus_tsv ${annotated_virus_tsv} \
+    -peach_genotype_tsv ${peach_genotype_tsv} \
+    -protect_evidence_tsv ${protect_evidence_tsv} \
+    -lilac_result_csv ${lilac_result_csv} \
+    -lilac_qc_csv ${lilac_qc_csv} \
+    -add_rose \
+    -rose_tsv ${rose_tsv} \
+    -known_fusion_file ${known_fusion_file} \
+    -germline_reporting_tsv ${germline_reporting_tsv} \
+    -sample_special_remark_tsv ${sample_special_remark_tsv} \
+    -ref_genome_version 37 \
+    "$@"
