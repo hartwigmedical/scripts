@@ -59,7 +59,7 @@ main() {
     done
 
     info "Retrieving LAMA input files from bucket (gs://${LAMA_BUCKET})"
-    gsutil -m cp "${LAMA_FILES[@]}" || die "Error during LAMA file retrieval"
+    gsutil -m cp "${LAMA_FILES[@]}" "${TMP_DIR}" || die "Error during LAMA file retrieval"
 
     for001_source="${TMP_DIR}/${FOR_001_FILE}"
     for002_source="${TMP_DIR}/${FOR_002_FILE}"
