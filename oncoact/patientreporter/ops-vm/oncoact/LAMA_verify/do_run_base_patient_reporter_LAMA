@@ -4,7 +4,7 @@ source locate_files || exit 1
 
 patient_reporter_jar=$(locate_prod_patient_reporter)
 
-primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor_LAMA.tsv
+primary_tumor_tsv=/data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv
 lims_dir=/data/ops/lims/LAMA
 
 rva_logo=$(locate_rva_logo_prod)
