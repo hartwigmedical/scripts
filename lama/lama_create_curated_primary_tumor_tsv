@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 LAMA_API_URL="http://lama-preview.prod-1/api"
-OUTPUT_TSV="./from_lama.tsv"
+OUTPUT_TSV=${1-"/data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv"}
 
 function main (){
     info "Retrieving tumor samples from LAMA [$LAMA_API_URL]"
@@ -22,19 +22,21 @@ function main (){
       "extraDetails" \
       "doids" \
       "snomedConceptIds" \
-      "overridden"
+      "overridden" > "$OUTPUT_TSV"
 
     jq -r 'sort_by(.patientId) | .[] | [
       (.patientId | split("-") | join("")),
-      (if .tumorType then .tumorType.location else "NA" end),
-      "-", # sublocation
-      (if .tumorType then .tumorType.type + "[" + .tumorType.extra + "]" else "NA" end),
-      "-", # subtype
-      "-", # extraDetails
-      (if .tumorType then .tumorType.doids|join(",") else "NA" end),
+      (if .tumorType then .tumorType.location else "" end),
+      "", # sublocation
+      (if .tumorType then .tumorType.type + "[" + .tumorType.extra + "]" else "" end),
+      "", # subtype
+      "", # extraDetails
+      (if .tumorType then .tumorType.doids|join(",") else "" end),
       "0", # snomedConceptIds
       "false" # overridden
-    ] | @tsv' <<< "${samples}"
+    ] | @tsv' <<< "${samples}" >> "$OUTPUT_TSV"
+
+    info "Written output to ${OUTPUT_TSV}"
 
     info "Finished with $0"
 }
