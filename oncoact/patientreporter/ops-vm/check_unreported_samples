@@ -31,18 +31,20 @@ function check_unreported_sample() {
     local sampleId=$1 && shift
 
     api_info=$(hmf_api_get "samples?name=${sampleId}&type=tumor")
-    lama_info=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
     api_sample_status=$(jq -r '.[-1].status' <<< "$api_info")
-    isolation_is_failed_and_final=$(jq '[.[] | select(.isolationStatus|contains("FAILED_FINAL"))] | length > 0' <<< "$lama_info")
-    libraryprep_is_finished=$(jq '[.[] | select(.libraryPrepStatus|contains("FINISHED"))] | length > 0' <<< "$lama_info")
+    lama_info=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
+    # LAMA API has no filter on type currently so need to use jq for now
+    lama_status=$(jq '[.[] | select(.type=="TUMOR_TISSUE")]' <<< "$lama_info")
+    isolation_failed=$(jq '[.[] | select(.isolationStatus=="FAILED_FINAL")] | length > 0' <<< "$lama_status")
+    libraryprep_finished=$(jq '[.[] | select(.libraryPrepStatus=="FINISHED")] | length > 0' <<< "$lama_status")
     unreportable_count=$(grep -cE "^${sampleId}$" "$UNREPORTABLE_TSV")
     info="$sampleId"
 
     if [[ "$unreportable_count" -gt 0 ]]; then
         info "SKIPPING: Sample is deemed un-reportable [$info]"
-    elif [[ "$isolation_is_failed_and_final" == "true" ]]; then
+    elif [[ "$isolation_failed" == "true" ]]; then
         warn "TO CHECK: Sample has final failed isolation [$info]"
-    elif [[ "$libraryprep_is_finished" == "false" ]]; then
+    elif [[ "$libraryprep_finished" == "false" ]]; then
         info "SKIPPING: Sample has no finished library prep (yet) [$info]"
     elif [[ "$api_sample_status" == "Expected" ]]; then
         info "SKIPPING: Sample has finished prep but ignorable api status $api_sample_status [$info]"
