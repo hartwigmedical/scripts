@@ -229,7 +229,7 @@ sub addLamaSamples{
         my $sample_name = $sample_to_store{sample_name};
         my $sample_id = $sample_to_store{sample_id};
         my $contract_code = $sample_to_store{contract_code};
-        my $sample_print_info = "barcode:$sample_id,name:$sample_name";
+        my $sample_print_info = "$sample_id,$sample_name,$contract_code";
 
         # adding contract info
         if (exists $contracts->{$contract_code}) {
@@ -265,6 +265,9 @@ sub addLamaSamples{
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
+        }
+        elsif ($sample_name =~ /^XXXXXX[0-9A-Z]{2}\d{4}R/ms) {
+            sayInfo("Ignoring LAMA ref sample with temporary XXXX name [$sample_print_info]");
         }
         else {
             sayWarn("NOTIFY: Unable to use LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
