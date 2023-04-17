@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+command -v yq >/dev/null 2>&1 || die "Missing dependency yq"
+
+groups=(
+"actin"
+"data-requests"
+"emc-production-support"
+"onboarding"
+"operations"
+"pipeline-developer"
+"privileged"
+"production-support"
+"report-manager"
+"researcher"
+"secret-manager"
+)
+
+# TODO groups I have no access to yet
+no_access_yet_groups=(
+"emc-sql-users"
+"portal-support"
+"silo-support"
+)
+
+declare -A membersByGroup
+declare -A groupsByMember
+
+info "Starting GCP groups check"
+
+for group in "${groups[@]}"; do
+    group_email="${group}@hartwigmedicalfoundation.nl"
+    info "  Processing group ${group_email}"
+    members=$(gcloud identity groups memberships list --group-email "${group_email}" | yq -c)
+    members_csv=$(jq -sr '[.[].preferredMemberKey.id|split("@")[0]] | sort | join(",")' <<< "${members}")
+    membersByGroup[$group]="$members_csv"
+    while read -r member; do
+        existing_groups=${groupsByMember[$member]}
+        if [[ "${existing_groups}" != "" ]]; then
+            groupsByMember["$member"]="${existing_groups},${group}"
+        else
+            groupsByMember["$member"]="${group}"
+        fi
+    done < <(jq -sr '.[].preferredMemberKey.id|split("@")[0]' <<< "${members}")
+done
+
+info "Printing members BY GROUP:"
+for group in "${!membersByGroup[@]}"; do
+    printf "%s: %s\n" "${group}" "${membersByGroup[$group]}"
+done | sort
+
+info "Printing groups BY MEMBER:"
+for member in "${!groupsByMember[@]}"; do
+    printf "%s: %s\n" "${member}" "${groupsByMember[$member]}"
+done | sort
