@@ -198,6 +198,9 @@ sub addLamaSamples{
         # add fields for backwards compatibility
         $sample_to_store{received_sample_id} = $sample_barcode;
         $sample_to_store{report_germline_level} = NACHAR;
+        $sample_to_store{report_viral} = JSON::XS::true;
+        $sample_to_store{report_pgx} = JSON::XS::true;
+        $sample_to_store{shallowseq} = JSON::XS::false if not exists $sample_to_store{shallowseq};
 
         # adding sample info
         if (exists $samples->{$sample_barcode}) {
@@ -242,6 +245,19 @@ sub addLamaSamples{
         }else{
             $sample_to_store{'cohort'} = NACHAR;
             $sample_to_store{'cohort_code'} = NACHAR;
+        }
+
+        # fix cohort distinction for COREDB vs CORE01 that are both called "CORE" since LAMA v2
+        if ($sample_to_store{'cohort'} eq 'CORE'){
+            if ($sample_name =~ /^COREDB01/){
+                $sample_to_store{'cohort'} = 'COREDB';
+            }
+            elsif($sample_name =~ /^COREDB08/){
+                  $sample_to_store{'cohort'} = 'COREDB08';
+            }
+            elsif($sample_name =~ /^COREDB11/){
+                  $sample_to_store{'cohort'} = 'COREDB11';
+            }
         }
 
         my ($patient_id, $study, $center, $tum_or_ref);

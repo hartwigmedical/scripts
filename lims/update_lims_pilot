@@ -28,3 +28,6 @@ ${code_dir}/convert_lims_data_pilot.pl \
     -lims_dir "${lims_dir}" \
     -out_json "${out_json}" \
     2>&1 | tee -a ${log_file}
+
+info "Copying LIMS json to LAMA dir for patient reporter testing"
+cp "${out_json}" "/data/ops/lims/LAMA/"
