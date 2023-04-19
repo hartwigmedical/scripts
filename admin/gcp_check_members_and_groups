@@ -28,8 +28,13 @@ no_access_yet_groups=(
 declare -A membersByGroup
 declare -A groupsByMember
 
-info "Starting GCP groups check"
+warn "These groups are currently inaccessible so need to be checked differently!"
+for group in "${no_access_yet_groups[@]}"; do
+    group_email="${group}@hartwigmedicalfoundation.nl"
+    warn "  ${group_email}"
+done
 
+info "Starting GCP groups check"
 for group in "${groups[@]}"; do
     group_email="${group}@hartwigmedicalfoundation.nl"
     info "  Processing group ${group_email}"
