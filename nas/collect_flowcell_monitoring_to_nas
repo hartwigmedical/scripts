@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+startDate=$1
+endDate=$2
+
+if [[ -z $1 || -z $2 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Gather flowcell monitoring data for SAV within a given date range"
+    echo " Usage: $(basename $0) startDate endDate"
+    echo " Exmpl: $(basename $0) 2022-12-10 2023-01-30"
+    echo "---"
+    exit 1
+fi
+
+data_dump_location="/tmp"
+data_final_location="/volume1/worksheets/ILLUMINA"
+
+today=$(date +%Y-%m-%d)
+[[ "${startDate}" =~ ^[0-9]{4}-[0-9]{2}-[0-3][0-9] ]] || die "startDate is expected to match ^[0-9]{4}-[0-9]{2}-[0-3][0-9]"
+[[ "${endDate}" =~ ^[0-9]{4}-[0-9]{2}-[0-3][0-9] ]] || die "endDate is expected to match ^[0-9]{4}-[0-9]{2}-[0-3][0-9]"
+[[ "${startDate}" < "${endDate}" ]] || die "startDate is greater than endDate"
+[[ "${endDate}" < "$today" ]] || die "date is greater than current date"
+
+info "Gathering flowcells within time range"
+flowcells=$(hmf_api_get 'flowcells' | jq -r --arg s ${startDate} --arg e ${endDate} '[($s, $e) |
+                                      strptime("%Y-%m-%d")[0:3]] as $r |
+                                      map(select((.createTime[:19] // "0001-01-01T00:00:00" |
+                                      strptime("%Y-%m-%dT%H:%M:%S")[0:3]) as $d |
+                                      $d >= $r[0] and $d <= $r[1])) |
+                                      .[] | [ {name: .flowcell_id, createdate: .createTime, index: .index, sequencer: .sequencer} ]')
+
+for name in $(jq '.[] | .name' <<< ${flowcells}); do
+    flow_info=$(jq -r --argjson f ${name} '.[] | select(.name==$f)' <<< ${flowcells})
+    name_id=$(jq -r '[.name] | .[]' <<< ${flow_info})
+    index=$(jq -r '[.index] | .[]' <<< ${flow_info})
+    sequencer=$(jq -r '[.sequencer] | .[]' <<< ${flow_info})
+    createdate=$(jq -r '[.createdate] | .[]' <<< ${flow_info})
+    formatted_date=$(echo ${createdate} | cut -d"T" -f1 | cut -c3- | sed s/-//g)
+
+    base_path="gs://bcl-forensics-prod-1/${formatted_date}_${sequencer}_${index}_[AB]${name_id}/input"
+
+    info "Copying data for flowcell ${name} to ${data_dump_location}/${name_id} on ops"
+    gsutil cp "${base_path}/RunInfo.xml" "${data_dump_location}/${name_id}/RunInfo.xml" || die "Could not copy RunInfo.xml"
+    gsutil cp "${base_path}/RunParameters.xml" "${data_dump_location}/${name_id}/Runparameters.xml" || die "Could not copy RunParameters.xml"
+    gsutil -m cp -r "${base_path}/InterOp/" "${data_dump_location}/${name_id}/" || die "Could not copy InterOp directory"
+
+    info "Copying data from ${data_dump_location}/${name_id} on ops to ${data_final_location}/${name_id} on NAS"
+    sync_dir_to_nas "${data_dump_location}/${name_id}/" "${data_final_location}/${name_id}/" || die "Could not move data to NAS"
+done
