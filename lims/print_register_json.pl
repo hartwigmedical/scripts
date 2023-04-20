@@ -236,13 +236,13 @@ sub processSample{
     my $priority = getPriorityForSample( $sample );
     my $yield_in_gbase = getValueByKey( $sample, 'yield' );
     my $lab_status = getValueByKey( $sample, 'lab_status' );
-    
+
+    ## floats are allowed for yield_in_gbase
+    ## flooring to whole numbers for yield (in bases) by converting to int
+    ##
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
     ## except for so-called "VirtualSample" samples (these index seqs should be absent)
-    if ($yield_in_gbase !~ /^\d+$/ ){
-        die "[ERROR] Yield found for sample ($name) is not an integer ($yield_in_gbase)\n";
-    }
-    my $yield = $yield_in_gbase * $YIELD_FACTOR;
+    my $yield = int($yield_in_gbase * $YIELD_FACTOR);
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
     }
