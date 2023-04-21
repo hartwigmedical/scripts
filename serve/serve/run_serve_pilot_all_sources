@@ -30,5 +30,4 @@ do_run_serve_pilot \
     -use_hartwig_curated_genes -hartwig_curated_gene_tsv ${hartwig_curated_gene_tsv} \
     -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
     -output_dir ${output_dir} \
-    -skip_hotspot_resolving \
     "$@"
