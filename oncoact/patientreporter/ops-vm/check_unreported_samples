@@ -7,21 +7,20 @@ LAMA_API_URL="http://lama-preview.prod-1/api"
 REPORT_SHARED_TSV="/data/ops/lims/prod/sharing_db_generated.tsv"
 UNREPORTABLE_TSV="/data/ops/lims/prod/samples_without_pdf_report.tsv"
 
-info "Retrieving samples from LAMA with arrival date [$MIN_ARRIVAL_DATE] or later"
-info "  LAMA url: $LAMA_API_URL"
+info "Retrieving samples from LAMA with arrival date [${MIN_ARRIVAL_DATE}] or later"
+info "  LAMA url: ${LAMA_API_URL}"
 samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/arrival?start-date=${MIN_ARRIVAL_DATE}")
-sample_count=$(jq 'length' <<< "$samples")
+sample_count=$(jq 'length' <<< "${samples}")
 
 function main (){
-    info "Starting unreported check for $sample_count samples"
+    info "Starting unreported check for ${sample_count} samples"
     counter=0
-    jq -c '.[]' <<< "$samples" | while read -r sample_info; do
+    jq -c '.[]' <<< "${samples}" | while read -r sample_info; do
         counter=$((counter+1))
-        sampleId=$(jq -r '.sampleId' <<< "$sample_info")
-        [[ $((counter%50)) == "0" ]] && info "At sample [$counter] of [$sample_count]"
-        report_count=$(grep -cE "${sampleId}\W+" "$REPORT_SHARED_TSV")
-        if [[ "$report_count" -lt 1 ]]; then
-            check_unreported_sample "$sampleId"
+        sampleId=$(jq -r '.sampleId' <<< "${sample_info}")
+        report_count=$(grep -cE "${sampleId}\W+" "${REPORT_SHARED_TSV}")
+        if [[ "${report_count}" -lt 1 ]]; then
+            check_unreported_sample "${sampleId}"
         fi
     done
     info "Finished with unreported check"
@@ -31,27 +30,43 @@ function check_unreported_sample() {
     local sampleId=$1 && shift
 
     api_info=$(hmf_api_get "samples?name=${sampleId}&type=tumor")
-    api_sample_status=$(jq -r '.[-1].status' <<< "$api_info")
-    lama_info=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
-    # LAMA API has no filter on type currently so need to use jq for now
-    lama_status=$(jq '[.[] | select(.type=="TUMOR_TISSUE")]' <<< "$lama_info")
-    isolation_failed=$(jq '[.[] | select(.isolationStatus=="FAILED_FINAL")] | length > 0' <<< "$lama_status")
-    libraryprep_finished=$(jq '[.[] | select(.libraryPrepStatus=="FINISHED")] | length > 0' <<< "$lama_status")
-    unreportable_count=$(grep -cE "^${sampleId}$" "$UNREPORTABLE_TSV")
-    info="$sampleId"
+    api_sample_status=$(jq -r '.[-1].status' <<< "${api_info}")
+    lama_all_statusus=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
 
-    if [[ "$unreportable_count" -gt 0 ]]; then
-        info "SKIPPING: Sample is deemed un-reportable [$info]"
-    elif [[ "$isolation_failed" == "true" ]]; then
-        warn "TO CHECK: Sample has final failed isolation [$info]"
-    elif [[ "$libraryprep_finished" == "false" ]]; then
-        info "SKIPPING: Sample has no finished library prep (yet) [$info]"
-    elif [[ "$api_sample_status" == "Expected" ]]; then
-        info "SKIPPING: Sample has finished prep but ignorable api status $api_sample_status [$info]"
+    # LAMA API has no filter on type currently so need to use jq for now
+    lama_status=$(jq '[.[] | select(.type|test("^TUMOR_TISSUE|TUMOR_DNA_EXTERNALLY_ISOLATED$"))]' <<< "${lama_all_statusus}")
+    sample_barcodes=$(jq -r '[.[].sampleBarcode] | join(",")' <<< "${lama_status}")
+    info="${sampleId},${sample_barcodes}"
+    total_count=$(jq 'length' <<< "${lama_status}")
+
+    # Create input required for checks
+    has_revoked_isolation=$(jq '[.[] | select(.isolationStatus=="REVOKED")] | length > 0' <<< "${lama_status}")
+    has_revoked_libraryprep=$(jq '[.[] | select(.libraryPrepStatus=="REVOKED")] | length > 0' <<< "${lama_status}")
+    isolation_in_process_count=$(jq '[.[] | select(.isolationStatus|test("^PROCESSING|PENDING|STORAGE|FAILED"))] | length' <<< "${lama_status}")
+    isolation_failed_count=$(jq '[.[] | select(.isolationStatus=="FAILED_FINAL")] | length' <<< "${lama_status}")
+    libraryprep_finished_count=$(jq '[.[] | select(.libraryPrepStatus|test("^PROCESSING|PENDING|STORAGE|FAILED$")|not)] | length' <<< "${lama_status}")
+    unreportable_count=$(grep -cE "^${sampleId}$" "${UNREPORTABLE_TSV}")
+
+    # Perform the checks
+    if [[ "${unreportable_count}" -gt 0 ]]; then
+        info "SKIPPING: Sample is deemed un-reportable [${info}]"
+    elif [[ "${has_revoked_isolation}" == "true" || "${has_revoked_libraryprep}" == "true" ]]; then
+        info "SKIPPING: Sample has been REVOKED [${info}]"
+    elif [[ "${isolation_in_process_count}" -gt 0 ]]; then
+        info "SKIPPING: Sample has been REVOKED [${info}]"
+    elif [[ "${isolation_failed_count}" -eq "${total_count}" ]]; then
+        warn "CHECK: All isolations [${total_count} in total] of sample have are FAILED_FINAL [${info}]"
+    elif [[ "${libraryprep_finished_count}" -eq 0 ]]; then
+        info "SKIPPING: All library preps are still in process [${info}]"
+    elif [[ "${api_sample_status}" == "Expected" ]]; then
+        info "SKIPPING: Sample has finished prep but ignorable API sample status ${api_sample_status} [${info}]"
+    elif [[ "${api_sample_status}" == "null" ]]; then
+        all_prep_status=$(jq -r '[.[].libraryPrepStatus]|join(",")' <<< "${lama_status}" )
+        warn "CHECK: Sample has a final prep [${all_prep_status}] but not sequenced [${info}]"
     else
         run_info=$(api -j runs "sample_name=${sampleId}" | jq -r '.[]|select(.context=="DIAGNOSTIC")|.set.name+" ("+.status+")"' | tail -1)
-        warn "TO CHECK: Sample has finished prep and non-ignorable api status $api_sample_status [$info]"
-        warn "  \_ Most recent run: $run_info"
+        warn "CHECK: Sample has finished prep and non-ignorable api status ${api_sample_status} [${info}]"
+        warn "  \_ Most recent run: ${run_info}"
     fi
 }
 
