@@ -7,12 +7,11 @@ LAMA_API_URL="http://lama-preview.prod-1/api"
 REPORT_SHARED_TSV="/data/ops/lims/prod/sharing_db_generated.tsv"
 UNREPORTABLE_TSV="/data/ops/lims/prod/samples_without_pdf_report.tsv"
 
-info "Retrieving samples from LAMA with arrival date [${MIN_ARRIVAL_DATE}] or later"
-info "  LAMA url: ${LAMA_API_URL}"
-samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/arrival?start-date=${MIN_ARRIVAL_DATE}")
-sample_count=$(jq 'length' <<< "${samples}")
-
 function main (){
+    info "Retrieving samples from LAMA with arrival date [${MIN_ARRIVAL_DATE}] or later"
+    info "  LAMA url: ${LAMA_API_URL}"
+    samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/arrival?start-date=${MIN_ARRIVAL_DATE}")
+    sample_count=$(jq 'length' <<< "${samples}")
     info "Starting unreported check for ${sample_count} samples"
     counter=0
     jq -c '.[]' <<< "${samples}" | while read -r sample_info; do
@@ -20,13 +19,13 @@ function main (){
         sampleId=$(jq -r '.sampleId' <<< "${sample_info}")
         report_count=$(grep -cE "${sampleId}\W+" "${REPORT_SHARED_TSV}")
         if [[ "${report_count}" -lt 1 ]]; then
-            check_unreported_sample "${sampleId}"
+            check_one_unreported_sample "${sampleId}"
         fi
     done
     info "Finished with unreported check"
 }
 
-function check_unreported_sample() {
+function check_one_unreported_sample() {
     local sampleId=$1 && shift
 
     api_info=$(hmf_api_get "samples?name=${sampleId}&type=tumor")
