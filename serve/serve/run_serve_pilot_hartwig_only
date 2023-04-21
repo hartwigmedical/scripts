@@ -6,8 +6,8 @@ source io_functions || exit 1
 output_dir="/data/output/pilot_output_hartwig_only"
 create_or_cleanup_dir ${output_dir}
 
-hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
-hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
+hartwig_cohort_tsv=$(locate_hartwig_cohort_hotspots_tsv)
+hartwig_curated_tsv=$(locate_hartwig_curated_hotspots_tsv)
 missing_doids_mapping_tsv=$(locate_public_missing_doids_mapping_tsv)
 
 do_run_serve_pilot \

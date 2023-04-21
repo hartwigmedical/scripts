@@ -775,12 +775,16 @@ locate_docm_tsv() {
     echo "/data/resources/crunch/serve/docm/docm_v3.2.tsv"
 }
 
-locate_hartwig_cohort_tsv() {
-    echo "/data/resources/crunch/serve/hartwig/hotspot/hartwig_cohort.tsv"
+locate_hartwig_cohort_hotspots_tsv() {
+    echo "/data/resources/crunch/serve/hartwig/hotspot/hartwig_cohort_hotspots.tsv"
 }
 
-locate_hartwig_curated_tsv() {
-    echo "/data/resources/crunch/serve/hartwig/hotspot/hartwig_curated.tsv"
+locate_hartwig_curated_hotspots_tsv() {
+    echo "/data/resources/crunch/serve/hartwig/hotspot/hartwig_curated_hotspots.tsv"
+}
+
+locate_hartwig_curated_genes_tsv() {
+    echo "/data/resources/crunch/serve/hartwig/gene/hartwig_curated_genes.tsv"
 }
 
 locate_ckb_flex_data_production_dir() {
