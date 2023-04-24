@@ -2,6 +2,6 @@
 
 source locate_files || exit 1
 
-serve_jar=$(locate_prod_serve)
+serve_jar="$(locate_prod_serve)"
 
 do_run_serve ${serve_jar} "$@"

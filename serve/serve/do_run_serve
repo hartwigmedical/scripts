@@ -9,18 +9,18 @@ if [[ -z ${serve_jar} ]]; then
     error "No SERVE jar provided. Exiting"
 fi
 
-ensembl_data_dir_37=$(locate_ensembl_data_dir_37)
-ensembl_data_dir_38=$(locate_ensembl_data_dir_38)
+ensembl_data_dir_37="$(locate_ensembl_data_dir_37)"
+ensembl_data_dir_38="$(locate_ensembl_data_dir_38)"
 
-ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
-ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
-ref_genome_37_to_38_chain=$(locate_ref_genome_37_to_38_chain)
-ref_genome_38_to_37_chain=$(locate_ref_genome_38_to_37_chain)
+ref_genome_37_fasta_file="$(locate_ref_genome_37_fasta_file)"
+ref_genome_38_fasta_file="$(locate_ref_genome_38_fasta_file)"
+ref_genome_37_to_38_chain="$(locate_ref_genome_37_to_38_chain)"
+ref_genome_38_to_37_chain="$(locate_ref_genome_38_to_37_chain)"
 
-driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
-driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
+driver_gene_37_tsv="$(locate_driver_gene_panel_37_tsv)"
+driver_gene_38_tsv="$(locate_driver_gene_panel_38_tsv)"
 
-#TODO move to repo file when serve 2.1 is released
+#TODO move to repo file when serve 2.1 is released. Current public repo file is no longer compatible.
 known_fusion_37_file="/data/resources/custom/fusions/37/known_fusion_data.37.csv"
 known_fusion_38_file="/data/resources/custom/fusions/38/known_fusion_data.38.csv"
 

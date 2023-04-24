@@ -6,16 +6,16 @@ source io_functions || exit 1
 output_dir="/data/output/prod_output_all_sources"
 create_or_cleanup_dir ${output_dir}
 
-ckb_dir=$(locate_ckb_flex_data_latest_dir)
-ckb_filter_tsv=$(locate_ckb_filter_pilot_tsv)
-ckb_drug_class_curation_tsv=$(locate_ckb_drug_class_curation_tsv)
-iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
-iclusion_filter_tsv=$(locate_iclusion_filter_tsv)
-vicc_json=$(locate_vicc_json)
-docm_tsv=$(locate_docm_tsv)
-hartwig_cohort_tsv=$(locate_hartwig_cohort_hotspots_tsv)
-hartwig_curated_tsv=$(locate_hartwig_curated_hotspots_tsv)
-missing_doids_mapping_tsv=/data/resources/crunch/serve/curation/all_doids_mapping.tsv
+ckb_dir="$(locate_ckb_flex_data_latest_dir)"
+ckb_filter_tsv="$(locate_ckb_filter_pilot_tsv)"
+ckb_drug_class_curation_tsv="$(locate_ckb_drug_class_curation_tsv)"
+iclusion_trial_tsv="$(locate_prod_iclusion_trial_tsv)"
+iclusion_filter_tsv="$(locate_iclusion_filter_tsv)"
+vicc_json="$(locate_vicc_json)"
+docm_tsv="$(locate_docm_tsv)"
+hartwig_cohort_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
+hartwig_curated_tsv="$(locate_hartwig_curated_hotspots_tsv)"
+missing_doids_mapping_tsv="/data/resources/crunch/serve/curation/all_doids_mapping.tsv"
 
 do_run_serve_prod \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \

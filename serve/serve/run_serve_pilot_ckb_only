@@ -6,10 +6,10 @@ source io_functions || exit 1
 output_dir="/data/output/pilot_output_ckb_only"
 create_or_cleanup_dir ${output_dir}
 
-ckb_dir=$(locate_ckb_flex_data_latest_dir)
-ckb_filter_tsv=$(locate_ckb_filter_pilot_tsv)
-ckb_drug_class_curation_tsv=$(locate_ckb_drug_class_curation_tsv)
-missing_doids_mapping_tsv=$(locate_private_missing_doids_mapping_tsv)
+ckb_dir="$(locate_ckb_flex_data_latest_dir)"
+ckb_filter_tsv="$(locate_ckb_filter_pilot_tsv)"
+ckb_drug_class_curation_tsv="$(locate_ckb_drug_class_curation_tsv)"
+missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
