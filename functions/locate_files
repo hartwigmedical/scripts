@@ -21,7 +21,7 @@ locate_prod_sage() {
 }
 
 locate_research_sage() {
-    echo "/data/tools/sage/3.2.4/sage.jar"
+    echo "/data/tools/sage/3.2.5/sage.jar"
 }
 
 locate_pilot_sage() {
@@ -44,12 +44,12 @@ locate_pilot_virus_interpreter() {
     echo "/data/experiments/pilot_tools/virus-interpreter/virus-interpreter.jar"
 }
 
-locate_research_lilac() {
-    echo "/data/tools/lilac/1.4.2/lilac.jar"
-}
-
 locate_prod_lilac() {
     echo "/data/tools/lilac/1.1/lilac.jar"
+}
+
+locate_research_lilac() {
+    echo "/data/tools/lilac/1.4.2/lilac.jar"
 }
 
 locate_pilot_lilac() {
@@ -57,15 +57,15 @@ locate_pilot_lilac() {
 }
 
 locate_research_cuppa_chart() {
-    echo "/data/tools/cuppa/1.7.1/cuppa-chart"
+    echo "/data/tools/cuppa/1.8/cuppa-chart"
 }
 
 locate_prod_cuppa_dna() {
-    echo "/data/actin/cuppa_1_7_2/cuppa.jar"
+    echo "/data/tools/cuppa/1.8/cuppa.jar"
 }
 
 locate_prod_cuppa_dna_rna() {
-    echo "/data/actin/cuppa_1_7_2/cuppa.jar"
+    echo "/data/tools/cuppa/1.8/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
@@ -97,18 +97,18 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.2.1/orange.jar"
+    echo "/data/tools/orange/2.3/orange.jar"
 }
 
 locate_pilot_orange() {
     echo "/data/experiments/pilot_tools/orange/orange.jar"
 }
 
-locate_research_patient_db() {
+locate_prod_patient_db() {
     echo "/data/tools/patient-db/3.72/patient-db.jar"
 }
 
-locate_prod_patient_db() {
+locate_research_patient_db() {
     echo "/data/tools/patient-db/3.72/patient-db.jar"
 }
 

@@ -16,9 +16,9 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-lilac_jar=$(locate_research_lilac)
+lilac_jar="$(locate_research_lilac)"
 
-ref_genome_fasta=$(locate_ref_genome_37_fasta_file)
+ref_genome_fasta="$(locate_ref_genome_37_fasta_file)"
 output_dir="${run_dir}/lilac"
 create_or_cleanup_dir ${output_dir}
 
