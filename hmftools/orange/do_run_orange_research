@@ -145,4 +145,5 @@ java -jar ${orange_jar} \
     ${cuppa_feature_plot_cmd} \
     -peach_genotype_tsv "${peach_genotype_tsv}" \
     -sigs_allocation_tsv "${sigs_allocation_tsv}" \
+    -add_disclaimer \
     "$@"
