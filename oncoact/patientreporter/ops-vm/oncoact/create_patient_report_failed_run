@@ -61,6 +61,7 @@ gsutil -m cp ${set_url}/pipeline.version $temp_folder_path/ &> $temp_folder_path
 gsutil -m cp ${set_url}/metadata.json $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/purple/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 gsutil -m cp -r ${set_url}/peach/ $temp_folder_path/ &>> $temp_folder_path/copy.log
+gsutil -m cp -r ${set_url}/lilac/ $temp_folder_path/ &>> $temp_folder_path/copy.log
 
 if [[ $( cat $temp_folder_path/copy.log | grep "CommandException:" | wc -l ) > 0 ]]; then
     warn "Making the copy gave errors (see below). Exiting."
