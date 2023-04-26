@@ -20,16 +20,19 @@ snpcheck_dir=$(locate_snpcheck_dir) || die "Could not find local snpcheck dir"
 # id: REJ07
 qc_log="${snpcheck_dir}/qc/${plate}.qc"
 id=$(echo "${plate}" | rev | cut -d"_" -f1 | rev)
-#passes=$(grep '\[PASS\]' "${qc_log}" | rev | cut -d":" -f1 | rev | cut -d")" -f1)
-fails=$(grep '\[FAIL\]' "${qc_log}" | rev | cut -d":" -f1 | rev | cut -d")" -f1)
+#passed_barcodes=$(grep '\[PASS\]' "${qc_log}" | rev | cut -d":" -f1 | rev | cut -d")" -f1)
 
-if [[ -z "${fails}" ]]; then
+failed_samples=$(grep '\[FAIL\]' "${qc_log}")
+
+if [[ -z "${failed_samples}" ]]; then
   info "All SNPcheck PASS qc"
 else
   info "SNPcheck failures found"
-  for failed_sample in ${fails}; do
-    info "Removing failed sample ${failed_sample}"
-    file_path="${snpcheck_dir}/gcp-sync/${plate}/${failed_sample}_${id}_OpenArrayCalls.vcf"
+  echo "${failed_samples}"
+  failed_barcodes=$(echo "${failed_samples}" | rev | cut -d":" -f1 | rev | cut -d")" -f1)
+  for failed_barcode in ${failed_barcodes}; do
+    info "Removing failed sample ${failed_barcode}"
+    file_path="${snpcheck_dir}/gcp-sync/${plate}/${failed_barcode}_${id}_OpenArrayCalls.vcf"
     rm "${file_path}"
   done
 fi
