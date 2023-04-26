@@ -43,7 +43,7 @@ retrieve_wrapper_api() {
       echo ${sample_object} | jq .[]
     elif [[ ${size_object} -gt 1 ]]; then
       ## if more entries and all are equals we assume last one is the one which is shared
-      echo ${sample_object} | jq .[]
+      echo ${sample_object} | jq .[-1]
     fi
 }
 
