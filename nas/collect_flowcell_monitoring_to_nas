@@ -14,8 +14,8 @@ if [[ -z $1 || -z $2 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-data_dump_location="/tmp"
-data_final_location="/volume1/worksheets/ILLUMINA"
+data_tmp_base_path="/tmp"
+data_final_base_path="/volume1/worksheets/ILLUMINA"
 
 today=$(date +%Y-%m-%d)
 [[ "${startDate}" =~ ^[0-9]{4}-[0-9]{2}-[0-3][0-9] ]] || die "startDate is expected to match ^[0-9]{4}-[0-9]{2}-[0-3][0-9]"
@@ -36,16 +36,21 @@ for name in $(jq '.[] | .name' <<< ${flowcells}); do
     name_id=$(jq -r '[.name] | .[]' <<< ${flow_info})
     index=$(jq -r '[.index] | .[]' <<< ${flow_info})
     sequencer=$(jq -r '[.sequencer] | .[]' <<< ${flow_info})
-    createdate=$(jq -r '[.createdate] | .[]' <<< ${flow_info})
-    formatted_date=$(echo ${createdate} | cut -d"T" -f1 | cut -c3- | sed s/-//g)
+    create_date=$(jq -r '[.createdate] | .[]' <<< ${flow_info})
+    formatted_date=$(echo ${create_date} | cut -d"T" -f1 | cut -c3- | sed s/-//g)
 
-    base_path="gs://bcl-forensics-prod-1/${formatted_date}_${sequencer}_${index}_[AB]${name_id}/input"
+    bcl_bucket_path="gs://bcl-forensics-prod-1/${formatted_date}_${sequencer}_${index}_[AB]${name_id}/input"
 
-    info "Copying data for flowcell ${name} to ${data_dump_location}/${name_id} on ops"
-    gsutil cp "${base_path}/RunInfo.xml" "${data_dump_location}/${name_id}/RunInfo.xml" || die "Could not copy RunInfo.xml"
-    gsutil cp "${base_path}/RunParameters.xml" "${data_dump_location}/${name_id}/Runparameters.xml" || die "Could not copy RunParameters.xml"
-    gsutil -m cp -r "${base_path}/InterOp/" "${data_dump_location}/${name_id}/" || die "Could not copy InterOp directory"
+    data_tmp_location="${data_tmp_base_path}/${name_id}"
+    info "Copying data for flowcell ${name} to ${data_tmp_location} on ops"
+    gsutil cp "${bcl_bucket_path}/RunInfo.xml" "${data_tmp_location}/RunInfo.xml" || die "Could not copy RunInfo.xml"
+    gsutil cp "${bcl_bucket_path}/RunParameters.xml" "${data_tmp_location}/Runparameters.xml" || die "Could not copy RunParameters.xml"
+    gsutil -m cp -r "${bcl_bucket_path}/InterOp/" "${data_tmp_location}/" || die "Could not copy InterOp directory"
 
-    info "Copying data from ${data_dump_location}/${name_id} on ops to ${data_final_location}/${name_id} on NAS"
-    sync_dir_to_nas "${data_dump_location}/${name_id}/" "${data_final_location}/${name_id}/" || die "Could not move data to NAS"
+    data_final_location="${data_final_base_path}/${name_id}"
+    info "Copying data from ${data_tmp_location} on ops to ${data_final_location} on NAS"
+    sync_dir_to_nas "${data_tmp_location}/" "${data_final_location}/" || die "Could not move data to NAS"
+
+    info "Removing temporary folder ${data_tmp_location}"
+    rm -r ${data_tmp_location} || die "Could not remove ${data_tmp_location}"
 done
