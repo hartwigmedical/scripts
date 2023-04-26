@@ -3,7 +3,11 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-serve_jar="$(locate_prod_serve)"
+serve_jar=$1 && shift
+
+if [[ -z ${serve_jar} ]]; then
+    error "No SERVE jar provided. Exiting"
+fi
 
 ensembl_data_dir_37="$(locate_ensembl_data_dir_37)"
 ensembl_data_dir_38="$(locate_ensembl_data_dir_38)"
@@ -19,6 +23,9 @@ driver_gene_38_tsv="$(locate_driver_gene_panel_38_tsv)"
 #TODO Switch to "do_run_serve" once prod is upgraded to > SERVE 2.1
 known_fusion_37_file="/data/resources/custom/fusions/37/known_fusion_data.37.csv"
 known_fusion_38_file="/data/resources/custom/fusions/38/known_fusion_data.38.csv"
+
+#known_fusion_37_file="$(locate_known_fusion_data_37_csv)"
+#known_fusion_38_file="$(locate_known_fusion_data_38_csv)"
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -ensembl_data_dir_37 ${ensembl_data_dir_37} \

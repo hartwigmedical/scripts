@@ -14,7 +14,7 @@ missing_doids_mapping_tsv="$(locate_public_missing_doids_mapping_tsv)"
 
 serve_jar="$(locate_research_serve)"
 
-do_run_serve ${serve_jar} \
+do_run_serve_research ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
     -use_docm -docm_tsv ${docm_tsv} \
