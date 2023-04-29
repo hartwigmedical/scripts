@@ -124,7 +124,6 @@ fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/ and remove temporary run folder
 gsutil -q cp -r ${temp_folder_path}/new_report/* ${outputDir}
-rm -r ${temp_folder_path}/ 2>&1
 info "The report and the related log + json file can be found in /data_report_LAMA on ops-vm"
 ls ${outputDir} | grep ${sample}
 reportShared=$( ls ${outputDir} | grep ${sample} | grep ".pdf" )
