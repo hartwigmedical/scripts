@@ -82,7 +82,8 @@ if [[ $answer_edit_protect == 'Y' ]]; then
 fi
 
 ### doid check (specifally important when rerun of protect)
-report_doid=$( cat /data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv | grep ${sample} | awk -F "\t" '{print $7}' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
+patientId=$(echo ${sample} | awk '{print substr($0,0,13)}')
+report_doid=$( cat /data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv | grep ${patientId} | awk -F "\t" '{print $7}' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 info "Checking primary tumor doid from protect vs that used in the report: " &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 if [[ ${protect_doid} == "" ]]; then
@@ -130,7 +131,7 @@ reportShared=$( ls ${outputDir} | grep ${sample} | grep ".pdf" )
 
 
 ### upload report to NC
-upload_file_to_nc_for_viewing ${reportShared} &> /dev/null
+upload_file_to_nc_for_viewing ${outputDir}/${reportShared} &> /dev/null
 info "reportShared is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 echo ""
