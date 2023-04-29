@@ -81,21 +81,8 @@ if [[ $answer_edit_protect == 'Y' ]]; then
     vi $temp_folder_path/protect/${sample}.protect.tsv
 fi
 
-### rerun of rose (if applicable)
-echo '[INPUT] Do you want to rerun ROSE? Please answer Y or N.'
-read answer_rose
-if [[ $answer_rose == 'Y' ]]; then
-    create_rose_summary_for_reporting ${temp_folder_path} ${barcode} ${sample}
-fi
-
-echo '[INPUT] Do you want to manually edit the ROSE file? Please answer Y or N.'
-read answer_edit_rose
-if [[ $answer_edit_rose == 'Y' ]]; then
-    vi $temp_folder_path/rose/${sample}.rose.tsv
-fi
-
 ### doid check (specifally important when rerun of protect)
-report_doid=$( cat /data/dbs/clinical_data/curated_primary_tumor.tsv | grep ${sample} | awk -F "\t" '{print $7}' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
+report_doid=$( cat /data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv | grep ${sample} | awk -F "\t" '{print $7}' | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//' )
 protect_doid=$( cat ${temp_folder_path}/protect/run.log | grep -w "initial tumor doids" | awk -F '[' '{print $NF}' | head -c -3 | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
 info "Checking primary tumor doid from protect vs that used in the report: " &> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 if [[ ${protect_doid} == "" ]]; then
@@ -117,7 +104,7 @@ do_patient_report_for_run_LAMA ${temp_folder_path} ${sample} ${barcode} ${ref_sa
 #check whether a report has been made
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
-    info "$report and $xml has been created"
+    info "$report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
     cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
@@ -139,10 +126,11 @@ gsutil -q cp -r ${temp_folder_path}/new_report/* ${outputDir}
 rm -r ${temp_folder_path}/ 2>&1
 info "The report and the related log + json file can be found in /data_report_LAMA on ops-vm"
 ls ${outputDir} | grep ${sample}
+reportShared=$( ls ${outputDir} | grep ${sample} | grep ".pdf" )
 
 
 ### upload report to NC
-upload_file_to_nc_new_reports_viewing ${outputDir} $report &> /dev/null
-info "$report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+upload_file_to_nc_for_viewing ${reportShared} &> /dev/null
+info "reportShared is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 echo ""
