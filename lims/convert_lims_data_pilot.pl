@@ -247,17 +247,9 @@ sub addLamaSamples{
             $sample_to_store{'cohort_code'} = NACHAR;
         }
 
-        # fix cohort distinction for COREDB vs CORE01 that are both called "CORE" since LAMA v2
+        # temporary fix for patient reporter to work for CORE-01 samples
         if ($sample_to_store{'cohort'} eq 'CORE'){
-            if ($sample_name =~ /^COREDB01/){
-                $sample_to_store{'cohort'} = 'COREDB';
-            }
-            elsif($sample_name =~ /^COREDB08/){
-                  $sample_to_store{'cohort'} = 'COREDB08';
-            }
-            elsif($sample_name =~ /^COREDB11/){
-                  $sample_to_store{'cohort'} = 'COREDB11';
-            }
+            $sample_to_store{'cohort'} = 'COREDB';
         }
 
         my ($patient_id, $study, $center, $tum_or_ref);
@@ -268,6 +260,7 @@ sub addLamaSamples{
         }
         elsif ($sample_name =~ /^XXXXXX[0-9A-Z]{2}\d{4}R/ms) {
             sayInfo("Ignoring LAMA ref sample with temporary XXXX name [$sample_print_info]");
+            next;
         }
         else {
             sayWarn("NOTIFY: Unable to use LAMA sample because name ($sample_name) does not fit regex $name_regex [$sample_print_info]");
@@ -319,10 +312,13 @@ sub addLamaSamples{
         }
 
         if (not defined $original_submission or $original_submission eq '') {
-            if ($analysis_type ne 'Somatic_R') {
-                sayWarn(sprintf "NOTIFY: missing submission id [%s]", $sample_print_info);
-            }
-            next;
+            # TODO: reset back to skipping once LAMA contains submission for all samples
+#            if ($analysis_type ne 'Somatic_R') {
+#                sayWarn(sprintf "NOTIFY: missing submission id [%s]", $sample_print_info);
+#            }
+#            next;
+            $original_submission = "SUBMISSION-MISSING";
+            $sample_to_store{submission} = $original_submission;
         }
 
         if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
@@ -429,6 +425,10 @@ sub addRecordFieldsToTargetRecord{
 sub copyFieldsFromObject{
     my ($object, $info_tag, $fieldsTranslationTable, $store) = @_;
 
+    if (scalar keys %$fieldsTranslationTable == 0){
+        die "[ERROR] No fields to translate ($info_tag)\n";
+    }
+
     while (my ($src_key, $tgt_key) = each %$fieldsTranslationTable){
         if (exists $object->{$src_key}){
             if (ref($object->{$src_key}) eq 'ARRAY'){
@@ -468,11 +468,19 @@ sub parseLamaPatients {
 sub processSampleOfLamaPatient {
     my ($patient, $sample, $sample_origin, $store) = @_;
     my $sample_field_translations;
+    my $patient_id = $patient->{patientId};
     my @sampleBarcodes;
+
+    my %info = ();
+    my $info_tag = "patients->" . $patient_id;
 
     if( $sample_origin eq 'tumor' ){
         $sample_field_translations = $name_dict->{lama_patient_tumor_sample_dict};
         @sampleBarcodes = @{$sample->{sampleBarcodes}};
+        copyFieldsFromObject($sample->{'tumorType'}, $info_tag, $name_dict->{lama_patient_tumor_sample_tumor_type_dict}, \%info);
+        copyFieldsFromObject($sample->{'biopsy'}, $info_tag, $name_dict->{lama_patient_tumor_sample_biopsy_dict}, \%info);
+        $info{'ptum'} = constructPrimaryTumorTypeField($sample);
+        $info{'biopsy_site'} = constructBiopsyField($sample);
     }
     elsif( $sample_origin eq 'reference' ){
         $sample_field_translations = $name_dict->{lama_patient_reference_sample_dict};
@@ -483,16 +491,38 @@ sub processSampleOfLamaPatient {
         die "[ERROR] Unknown sample origin provided to processSampleOfPatient ($sample_origin for $sample_barcode)\n";
     }
 
-    my %info = ();
-    my $info_tag = "patients->barcodes=" . join("|", @sampleBarcodes);
-
     copyFieldsFromObject($sample, $info_tag, $sample_field_translations, \%info);
-    copyFieldsFromObject($patient->{tumorType}, $info_tag, $name_dict->{lama_patient_tumor_sample_tumor_type_dict}, \%info);
     copyFieldsFromObject($patient, $info_tag, $name_dict->{lama_patient_dict}, \%info);
 
     foreach my $sampleBarcode (@sampleBarcodes) {
         storeRecordByKey(\%info, $sampleBarcode, $store, "patient_samples");
     }
+}
+
+sub constructPrimaryTumorTypeField{
+    my ($sample) = @_;
+    my $top_level_key = "tumorType";
+    my @sub_level_keys = qw(location type extra);
+    my @values = ();
+    foreach my $key (@sub_level_keys){
+        if (exists $sample->{$top_level_key}{$key} and $sample->{$top_level_key}{$key} ne ""){
+            push @values, $sample->{$top_level_key}{$key};
+        }
+    }
+    return join(" | ", @values);
+}
+
+sub constructBiopsyField{
+    my ($sample) = @_;
+    my $top_level_key = "biopsy";
+    my @sub_level_keys = qw(biopsyLocation biopsySubLocation lateralisation);
+    my @values = ();
+    foreach my $key (@sub_level_keys){
+        if (exists $sample->{$top_level_key}{$key} and $sample->{$top_level_key}{$key} ne ""){
+            push @values, $sample->{$top_level_key}{$key};
+        }
+    }
+    return join(" | ", @values);
 }
 
 sub parseLamaLibraryPreps{
@@ -572,7 +602,7 @@ sub parseLamaSampleStatus{
 
         if (! (exists $object->{sampleBarcode} && exists $object->{sampleId}) ){
             print Dumper $object;
-            die "No sampleBarcode/sampleId in object!";
+            die "[ERROR] No sampleBarcode/sampleId in object!";
         }
 
         my $sampleBarcode = $object->{sampleBarcode};
@@ -1360,6 +1390,12 @@ sub getFieldNameTranslations{
         'doids' => 'tumor_doids',
     );
 
+    my %lama_patient_tumor_sample_biopsy_dict = (
+        'biopsyLocation' => 'biopsy_location',
+        'biopsySubLocation'  => 'biopsy_sub_location',
+        'lateralisation' => 'biopsy_lateralisation',
+    );
+
     my %lama_patient_reference_sample_dict = (
         'legacySampleId'  => 'legacy_sample_name',
         'sopVersion'      => 'sop_version',
@@ -1448,6 +1484,8 @@ sub getFieldNameTranslations{
         'lama_content_translations_by_field_name' => \%lama_content_translations_by_field_name,
         'lama_patient_dict' => \%lama_patient_dict,
         'lama_patient_tumor_sample_dict' => \%lama_patient_tumor_sample_dict,
+        'lama_patient_tumor_sample_tumor_type_dict' => \%lama_patient_tumor_sample_tumor_type_dict,
+        'lama_patient_tumor_sample_biopsy_dict' => \%lama_patient_tumor_sample_biopsy_dict,
         'lama_patient_reference_sample_dict' => \%lama_patient_reference_sample_dict,
         'lama_isolation_isolate_dict' => \%lama_isolation_isolate_dict,
         'lama_libraryprep_library_dict' => \%lama_libraryprep_library_dict,
