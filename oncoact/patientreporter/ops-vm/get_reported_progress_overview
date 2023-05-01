@@ -26,4 +26,4 @@ while read -r report_info; do
     fi
 done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.id] | @tsv')
 
-#gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/reported_samples_list.tsv ~/reported_samples_list.tsv
+##gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/reported_samples_list.tsv ~/reported_samples_list.tsv
