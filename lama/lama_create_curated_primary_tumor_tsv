@@ -28,7 +28,9 @@ function main (){
       (.patientId | split("-") | join("")),
       (if .tumorType then .tumorType.location else "" end),
       "", # sublocation
-      (if .tumorType then .tumorType.type + "[" + .tumorType.extra + "]" else "" end),
+      (if .tumorType then
+        .tumorType.type + (if .tumorType.extra and .tumorType.extra != "" then "["+.tumorType.extra+"]" else "" end)
+      else "" end),
       "", # subtype
       "", # extraDetails
       (if .tumorType then .tumorType.doids|join(",") else "" end),
