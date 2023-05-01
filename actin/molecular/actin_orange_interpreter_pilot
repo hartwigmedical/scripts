@@ -17,7 +17,6 @@ serve_directory="$(locate_actin_serve_db)"
 external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 clinical_json="$(locate_actin_clinical_json_for_sample ${sample})"
 doid_json="$(locate_doid_json)"
-known_genes_tsv="$(locate_actin_known_genes_tsv)"
 
 output_directory="${platinum_dir}/actin"
 create_or_cleanup_dir ${output_directory}
@@ -32,7 +31,6 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplic
     -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
     -clinical_json "${clinical_json}" \
     -doid_json "${doid_json}" \
-    -known_genes_tsv "${known_genes_tsv}" \
     -output_directory "${output_directory}" \
     "$@"
 
