@@ -259,7 +259,7 @@ sub addLamaSamples{
             $sample_to_store{label} = $study;
         }
         elsif ($sample_name =~ /^XXXXXX[0-9A-Z]{2}\d{4}R/ms) {
-            sayInfo("Ignoring LAMA ref sample with temporary XXXX name [$sample_print_info]");
+            # These are reference samples with a temporary name until tumor sample arrives
             next;
         }
         else {
