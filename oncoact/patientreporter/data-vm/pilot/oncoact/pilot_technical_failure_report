@@ -2,7 +2,6 @@
 
 source message_functions || exit 1
 
-
 tumor_sample=$1 && shift
 
 if [[ -z "${tumor_sample}" ]]; then
