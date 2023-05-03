@@ -19,6 +19,7 @@ reporting_id report_pgx report_viral report_conclusion sampling_date
 EMPTY="<empty>"
 
 main (){
+    [[ -n "$barcode" ]] || die "$0 {barcode} [json1 json2 true/false]"
     echo "# Barcode:$barcode json1:${JSON1} json2:${JSON2}"
     diff_barcode "${barcode}"
 }
@@ -26,9 +27,9 @@ main (){
 diff_barcode() {
     local barcode=$1 && shift
 
-    one=$(query_lims.pl -lims "${JSON1}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
+    one=$(query_lims.pl -lims "${JSON1}" -type "samples" -filter "sample_id=${barcode}" -rna -exact -json) \
       || die "Querying LIMS JSON 1 failed ($barcode)"
-    two=$(query_lims.pl -lims "${JSON2}" -type "samples" -filter "sample_id=${barcode}" -exact -json) \
+    two=$(query_lims.pl -lims "${JSON2}" -type "samples" -filter "sample_id=${barcode}" -rna -exact -json) \
       || die "Querying LIMS JSON 2 failed ($barcode)"
 
     # Can only compare if we find exactly one sample
