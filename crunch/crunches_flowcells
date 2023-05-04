@@ -100,7 +100,7 @@ function retrieve_hmf_api_info () {
     response=$(hmf_api_get "flowcells?name=${name}")
     count=$(jq length <<< "${response}")
     if [[ $count -eq 1 ]]; then
-        jq -r '.[-1] | [.status, "(qc=", .undet_rds_p_pass//"NA", ")"] | join("")' <<< "${response}"
+        jq -r '.[-1] | [.status, "(qc=", if .undet_rds_p_pass != null then .undet_rds_p_pass else "NA" end, ")"] | join("")' <<< "${response}"
     elif [[ $count -eq 0 ]]; then
         echo "Unknown"
     else
