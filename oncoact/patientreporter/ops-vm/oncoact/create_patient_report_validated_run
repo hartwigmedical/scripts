@@ -119,7 +119,7 @@ fi
 
 rose_check=$(cat ${temp_folder_path}/purple/${sample}.driver.catalog.somatic.tsv | grep ERBB2 | grep AMP)
 if [[ $( echo "${rose_check}" | wc -l ) > 0 ]]; then
-  WARN "ROSE gave an incorrect conclusion for ERBB2 amplification"
+  warn "ROSE gave an incorrect conclusion for ERBB2 amplification"
 fi
 
 #### run patient reporter
