@@ -213,9 +213,9 @@ function process_samples () {
             ini=$(cut -f2 <<< "${api_run}")
             ini=${ini/.ini/}
             set_name=$(cut -f3 <<< "${api_run}")
-            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}\t${set_name}"
+            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}"
         fi
-        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
+        printf "%s\t%s\t%s\t%s\t%s\t%s\n" "${submission}" "${sample_id}" "${sample_nm}" "${ini}" "${status_info}" "${set_name}"
    done | sort -k1,1 -k3,3
 }
 
