@@ -347,7 +347,7 @@ locate_actin_external_trial_mapping_tsv() {
 }
 
 locate_actin_known_genes_tsv() {
-    echo "/data/resources/crunch/actin/molecular_interpretation/KnownGenes.SERVE.37.tsv"
+    echo "/data/resources/crunch/actin/serve_db/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_rna_sample_metadata_file() {
