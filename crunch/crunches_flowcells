@@ -89,30 +89,22 @@ function process_flowcell () {
     project_column_index=$(grep Sample_ID <<< "${sheet_samples}" | tr "," "\n" | grep -n Project | cut -d":" -f1)
     projects=$(echo "$sheet_samples" | grep -v Sample_ID | cut -d, -f"${project_column_index}" | sort | uniq | tr '\n' ',' | sed 's/,$//')
     projects="${projects//HMFreg/}"
-
-    # Print line that can be pasted directly into RunOverview sheet
-    query="flowcells?name=${exp_name}"
-    response=$(hmf_api_get "${query}")
-    gcp_info="Unknown"
-    if [[ $(echo "${response}" | jq length) -eq 1 ]]; then
-        gcp_status=$(echo "${response}" | jq -r '.[-1].status')
-        gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
-        gcp_info="${gcp_status}(qc=${gcp_qc})"
-    fi
-
+    gcp_info=$(retrieve_hmf_api_info "${exp_name}")
     run_date=$(echo "${run_name}" | cut -d"_" -f1)
+
     printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$run_date" "$exp_name" "$run_name" "$projects" "$server_short" "HMF=${run_status},GCP=${gcp_info}"
 }
 
-function retrieve_gcp_flowcell_info () {
-    local flowcell_name=$1 && shift
-    response=$(hmf_api_get "flowcells?name=${flowcell_name}")
-    if [[ $(echo "${response}" | jq length) -eq 1 ]]; then
-        gcp_status=$(echo "${response}" | jq -r '.[-1].status')
-        gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
-        echo "${gcp_status}(qc=${gcp_qc})"
-    else
+function retrieve_hmf_api_info () {
+    local name=$1 && shift
+    response=$(hmf_api_get "flowcells?name=${name}")
+    count=$(jq length <<< "${response}")
+    if [[ $count -eq 1 ]]; then
+        jq -r '.[-1] | [.status, "(qc=", .undet_rds_p_pass//"NA", ")"] | join("")' <<< "${response}"
+    elif [[ $count -eq 0 ]]; then
         echo "Unknown"
+    else
+        echo "Name not unique [${name}] in hmf api!"
     fi
 }
 
