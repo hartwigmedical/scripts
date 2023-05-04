@@ -198,6 +198,14 @@ main () {
                      error="reporting_summary_error"
                      reporter_error="summary"
                 fi
+
+                # error - incorrect rose summary ERBB2 amplification
+                rose_check=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set_name}/purple/${sample_name}.driver.catalog.somatic.tsv | grep ERBB2 | grep AMP)
+                if [[ $( echo "${rose_check}" | wc -l ) > 1 ]]; then
+                  error="reporting_error"
+                  reporter_error=${reporter_error}"_rose"
+                fi
+
                 # error - warn present?
                 if [[ "$reporter_log_error" != *"summary"* && "$reporter_log_error" == *"WARN"*  ]]; then
                      error="reporting_error"
