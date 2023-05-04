@@ -117,7 +117,7 @@ else
     warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
 
-rose_check=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set_name}/purple/${sample_name}.driver.catalog.somatic.tsv | grep ERBB2 | grep AMP)
+rose_check=$(cat ${temp_folder_path}/purple/${sample}.driver.catalog.somatic.tsv | grep ERBB2 | grep AMP)
 if [[ $( echo "${rose_check}" | wc -l ) > 1 ]]; then
   WARN "ROSE gave an incorrect conclusion for ERBB2 amplification"
 fi
