@@ -200,10 +200,10 @@ main () {
                 fi
 
                 # error - incorrect rose summary ERBB2 amplification
-                rose_check=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set_name}/purple/${sample_name}.driver.catalog.somatic.tsv | grep ERBB2 | grep AMP)
+                rose_check=$(gsutil cat gs://diagnostic-pipeline-output-prod-1/${set_name}/purple/${sample_name}.driver.catalog.somatic.tsv | awk '/ERBB2/{print}' | awk '/AMP/{print}')
                 if [[ $( echo "${rose_check}" | wc -l ) > 0 ]]; then
-                  error="reporting_error"
-                  reporter_error=${reporter_error}"_rose"
+                  error="reporting_summary_error"
+                  reporter_error=${reporter_error}"summary"
                 fi
 
                 # error - warn present?
@@ -280,7 +280,7 @@ main () {
 
     echo ""
     echo ""
-    echo "### VALIDATED RUNS WITHOUT WARNINGS BUT MISSING SUMMARY ( please solve! ):"
+    echo "### VALIDATED RUNS WITHOUT WARNINGS BUT MISSING/INCORRECT SUMMARY ( please solve! ):"
     counter=0
     while read -r run_info; do
         set_name=$(echo "${run_info}" | cut -f2)
