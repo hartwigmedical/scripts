@@ -210,7 +210,7 @@ main () {
                      reporter_error=${reporter_error}"_primtumloc"
                 fi
                 # error - reporter - doid
-                if [[ "$doid_error" == *"the doid of protect is not known"* || "$doid_error" == *"the doid is not equal of"* || "$reporter_log_error" == *"in list of primary tumors!"* ]]; then
+                if [[ "$doid_error" == *"the doid of protect  is not known"* || "$doid_error" == *"the doid is not equal of"* || "$reporter_log_error" == *"in list of primary tumors!"* ]]; then
                      error="reporting_error"
                      reporter_error=${reporter_error}"_doid"
                 fi
