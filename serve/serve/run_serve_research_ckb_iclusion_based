@@ -17,9 +17,7 @@ hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
-serve_jar="$(locate_research_serve)"
-
-do_run_serve_research ${serve_jar} \
+do_run_serve_research \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} -ckb_drug_curation_tsv ${ckb_drug_class_curation_tsv} \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \

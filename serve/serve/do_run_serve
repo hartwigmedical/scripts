@@ -20,10 +20,6 @@ ref_genome_38_to_37_chain="$(locate_ref_genome_38_to_37_chain)"
 driver_gene_37_tsv="$(locate_driver_gene_panel_37_tsv)"
 driver_gene_38_tsv="$(locate_driver_gene_panel_38_tsv)"
 
-#TODO (ACTIN-82) Will be fixed with 2.1.0
-#known_fusion_37_file="/data/resources/custom/fusions/37/known_fusion_data.37.csv"
-#known_fusion_38_file="/data/resources/custom/fusions/38/known_fusion_data.38.csv"
-
 known_fusion_37_file="$(locate_known_fusion_data_37_csv)"
 known_fusion_38_file="$(locate_known_fusion_data_38_csv)"
 

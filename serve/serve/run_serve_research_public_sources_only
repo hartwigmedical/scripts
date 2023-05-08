@@ -13,9 +13,7 @@ hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 missing_doids_mapping_tsv="$(locate_public_missing_doids_mapping_tsv)"
 
-serve_jar="$(locate_research_serve)"
-
-do_run_serve_research ${serve_jar} \
+do_run_serve_research \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
     -use_docm -docm_tsv ${docm_tsv} \
