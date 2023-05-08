@@ -7,7 +7,6 @@ failed_reports="dna_analysis_report_insufficient_tcp\|dna_analysis_report_insuff
 
 url_bucket_report_pipline="gs://patient-reporter-prod-1/"
 
-major_version="5.29"
 major_version="5.31"
 
 main () {
@@ -210,7 +209,7 @@ main () {
                      reporter_error=${reporter_error}"_primtumloc"
                 fi
                 # error - reporter - doid
-                if [[ "$doid_error" == *"the doid of protect  is not known"* || "$doid_error" == *"the doid is not equal of"* || "$reporter_log_error" == *"in list of primary tumors!"* ]]; then
+                if [[ "$doid_error" == *"the doid of protect is not known"* || "$doid_error" == *"the doid is not equal of"* || "$reporter_log_error" == *"in list of primary tumors!"* ]]; then
                      error="reporting_error"
                      reporter_error=${reporter_error}"_doid"
                 fi
