@@ -13,3 +13,8 @@ gcp_get_active_account() {
     echo $(gcloud auth list --filter=status:ACTIVE --format="value(account)")
 }
 
+gcp_show_project_info_for_bucket() {
+    local bucket_name=$1 && shift
+    projectNumber=$(gcloud storage buckets list "gs://${bucket_name}" --format json | jq -r '.[-1].projectNumber')
+    gcloud projects list --filter="projectNumber:${projectNumber}" --format json
+}
