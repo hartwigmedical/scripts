@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+query="SELECT patientId, otherMolecularPatientId, registrationDate FROM patient WHERE otherMolecularPatientId IS NOT NULL AND otherMolecularPatientId <> '';"
+
+info ""
+info "Checking for other molecular patient IDs that may exist for ACTIN patients"
+
+execute_sql_on_actin_pilot "${query}"
+
+info ""
+info "Done!"
