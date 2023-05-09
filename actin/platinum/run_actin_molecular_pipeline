@@ -10,7 +10,7 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-orig_run_dir="/data/actin/wgs_pipeline/${sample}"
+orig_run_dir="/data/datasets/${sample}"
 
 if [[ ! -d "${orig_run_dir}" ]]; then
     error "Run dir '${orig_run_dir}' not present. Probably not downloaded yet?"
