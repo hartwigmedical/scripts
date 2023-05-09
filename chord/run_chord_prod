@@ -13,9 +13,9 @@ fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-chord_dir=/data/tools/chord/2.0
+chord_dir="/data/tools/chord/2.02_1.14"
 working_dir="${run_dir}/chord"
-mkdir -p ${working_dir}
+mkdir -p "${working_dir}"
 
 somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
