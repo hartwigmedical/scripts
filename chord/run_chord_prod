@@ -17,8 +17,8 @@ chord_dir="/data/tools/chord/2.02_1.14"
 working_dir="${run_dir}/chord"
 mkdir -p "${working_dir}"
 
-somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
-structural_vcf=$(locate_purple_structural_variants ${run_dir})
+somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
+structural_vcf="$(locate_purple_structural_variants ${run_dir})"
 
 info "CHORD is using somatic vcf: ${somatic_vcf}"
 info "CHORD is using structural vcf: ${structural_vcf}"
