@@ -24,7 +24,7 @@ info "CHORD is using somatic vcf: ${somatic_vcf}"
 info "CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-extractSigPredictHRD_pilot.R \
+${chord_dir}/extractSigPredictHRD.R \
   "${chord_dir}" \
   "${working_dir}" \
   "${sample}" \
