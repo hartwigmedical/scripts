@@ -27,6 +27,8 @@ fi
 info "Copying ${orig_run_dir} to ${run_dir}"
 cp -r "${orig_run_dir}" "${run_dir}"
 
+mv ${run_dir}/virusintrprtr ${run_dir}/virus_interpreter
+
 # Post-process all DNA
 run_actin_dna_post_process ${run_dir}
 
