@@ -40,4 +40,4 @@ if [[ -z ${report_created_id} ]];then
 fi
 
 info "Adding entry to shared API"
-#api_curl_post "reports/shared" "${data}" "prod"
+api_curl_post "reports/shared" "${data}" "prod"
