@@ -2,8 +2,8 @@
 
 source message_functions || exit 1
 
-classes=(accounts biopsies datasets entities fastq lanes flowcells groups inis platforms runs samples sets sequencers
-reports/created reports/shared datatypes)
+classes=(accounts biopsies datasets datatypes entities fastq files flowcells groups inis lanes platforms runs samples sets sequencers
+reports/created reports/shared)
 
 print_usage(){
     script=$(basename "$0")
@@ -164,6 +164,9 @@ main(){
     elif [[ "${class}" == "datatypes" ]]; then
         printf "#%s\t%s\n" name id
         jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "files" ]]; then
+        printf "#%s\t%s\t%s\t%s\n" path run_id datatype id
+        jq -r '.[] | [.filepath, .run_id, .datatype, .id] | @tsv' <<< "${json_result}"
     else
         die "Table print for class ${class} is not supported"
     fi
