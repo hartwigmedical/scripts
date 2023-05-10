@@ -31,7 +31,7 @@ xmlBucket=$(echo ${sharedXmlLocation} | tr "/" " " | awk '{print $2}')
 reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${pdfBucket}" "path" "${pdfFile}")
 reportJson=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${jsonBucket}" "path" "${jsonFile}")
 reportXml=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${xmlBucket}" "path" "${xmlFile}")
-data=$(echo -e "${reportPdf}\n${reportJson}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+data=$(echo -e "${reportPdf}\n${reportJson}\n${reportXml}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
 echo ${data} | jq
 
 if [[ -z ${report_created_id} ]];then
