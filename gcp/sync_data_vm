@@ -25,4 +25,8 @@ java -jar ${dsync_jar} \
     --local_path ${local_path} \
     --threads 100
 rm ${credentials}
+
+info "Syncing ACTIN wgs pipeline output"
+gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" gs://actin-prod-wgs-pipeline-output /data/actin/wgs_pipeline
+
 info "Done"
