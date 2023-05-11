@@ -26,7 +26,7 @@ actin_jar="$(locate_pilot_actin)"
 
 info "Running ACTIN treatment matcher on ${patient}"
 
-java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
+java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
     -treatment_database_directory ${treatment_database_directory} \
