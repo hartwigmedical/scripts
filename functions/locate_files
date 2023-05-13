@@ -672,7 +672,7 @@ locate_cuppa_ref_dir_dna() {
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/crunch/actin/cuppa_ref_dna_rna_1_7"
+    echo "/data/resources/crunch/actin/cuppa_ref_dna_rna_1_8"
 }
 
 locate_cohort_mapping_tsv() {
