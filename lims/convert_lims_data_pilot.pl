@@ -1371,7 +1371,7 @@ sub getFieldNameTranslations{
     my %lama_patient_tumor_sample_dict = (
         'legacySampleId'        => 'legacy_sample_name',
         'refIsolationBarcode'   => 'ref_sample_id', # was refFrBarcode pre-lama-v2
-        'hospitalPaSampleId'    => 'hospital_pa_sample_id',
+        'pathologyNumber'       => 'hospital_pa_sample_id',
         'patientGermlineChoice' => 'report_germline_level',
         'primaryTumorType'      => 'ptum',
         'biopsySite'            => 'biopsy_site',
