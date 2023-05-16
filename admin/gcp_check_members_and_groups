@@ -8,33 +8,23 @@ groups=(
 "actin"
 "data-requests"
 "emc-production-support"
+"emc-sql-users"
 "onboarding"
 "operations"
 "pipeline-developer"
+"portal-support"
 "privileged"
 "production-support"
 "report-manager"
 "researcher"
 "secret-manager"
-)
-
-# TODO groups I have no access to yet
-no_access_yet_groups=(
-"emc-sql-users"
-"portal-support"
 "silo-support"
 )
 
 declare -A membersByGroup
 declare -A groupsByMember
 
-warn "These groups are currently inaccessible so need to be checked differently!"
-for group in "${no_access_yet_groups[@]}"; do
-    group_email="${group}@hartwigmedicalfoundation.nl"
-    warn "  ${group_email}"
-done
-
-info "Starting GCP groups check"
+info "Gathering members of all ${#groups[@]} GCP groups known to this script"
 for group in "${groups[@]}"; do
     group_email="${group}@hartwigmedicalfoundation.nl"
     info "  Processing group ${group_email}"
