@@ -11,7 +11,7 @@ UNREPORTABLE_TSV="/data/ops/lims/prod/samples_without_pdf_report.tsv"
 function main(){
     info "Retrieving samples from LAMA with arrival date [${MIN_ARRIVAL_DATE}] or later"
     info "  LAMA url: ${LAMA_API_URL}"
-    samples=$(curl --silent "${LAMA_API_URL}/tumor-samples/arrival?start-date=${MIN_ARRIVAL_DATE}")
+    samples=$(curl --silent "${LAMA_API_URL}/tumor-samples?start-date=${MIN_ARRIVAL_DATE}")
     sample_count=$(jq 'length' <<< "${samples}")
     info "Starting unreported check for ${sample_count} tumor-samples from LAMA"
     while read -r sample_info; do
@@ -33,7 +33,7 @@ function check_one_unreported_sample(){
 
     api_info=$(hmf_api_get "samples?name=${sampleId}&type=tumor")
     api_sample_status=$(jq -cr '.[-1].status' <<< "${api_info}")
-    lama_all_statusus=$(curl --silent "${LAMA_API_URL}/statuses?sampleId=${sampleId}")
+    lama_all_statusus=$(curl --silent "${LAMA_API_URL}/statuses/sample-id/${sampleId}")
 
     # LAMA API has no filter on type currently so need to use jq for now
     lama_status=$(jq '[.[] | select(.type|test("^TUMOR_TISSUE|TUMOR_DNA_EXTERNALLY_ISOLATED$"))]' <<< "${lama_all_statusus}")
