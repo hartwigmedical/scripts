@@ -70,16 +70,8 @@ output_dir_report=${temp_folder_path}/new_report
 output_dir_data_report=${temp_folder_path}/new_report
 
 ### rerun of protect (if applicable)
-echo '[INPUT] Do you want to rerun PROTECT (related to f.e. DOID error)? Please answer Y or N.'
-read answer_protect
-if [[ $answer_protect == 'Y' ]]; then
-    run_protect_prod_for_diagnostic_LAMA ${set} ${barcode} ${sample} ${temp_folder_path}
-fi
-echo '[INPUT] Do you want to manually edit the PROTECT file? Please answer Y or N.'
-read answer_edit_protect
-if [[ $answer_edit_protect == 'Y' ]]; then
-    vi $temp_folder_path/protect/${sample}.protect.tsv
-fi
+echo "Re-run protect"
+run_protect_prod_for_diagnostic_LAMA ${set} ${barcode} ${sample} ${temp_folder_path}
 
 ### doid check (specifally important when rerun of protect)
 patientId=$(echo ${sample} | awk '{print substr($0,0,13)}')
@@ -128,6 +120,8 @@ info "The report and the related log + json file can be found in /data_report_LA
 ls ${outputDir} | grep ${sample}
 reportShared=$( ls ${outputDir} | grep ${sample} | grep ".pdf" )
 
+echo "Removing temp dir"
+rm -r ${temp_folder_path}
 
 ### upload report to NC
 upload_file_to_nc_for_viewing ${outputDir}/${reportShared} &> /dev/null
