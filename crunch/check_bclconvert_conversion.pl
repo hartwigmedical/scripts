@@ -260,9 +260,9 @@ sub performQC{
         say "## FINAL QC RESULT: OK";
     }
     else{
-        $final_qc_result = "FAIL";
+        $final_qc_result = "WARNING";
         warn "## WARNING Some checks failed, inspect before proceeding (for $identifier)\n";
-        say "## FINAL QC RESULT: FAIL ($fails failures for $identifier)";
+        say "## FINAL QC RESULT: WARNING ($fails failures for $identifier)";
     }
     $stats->{flowcell_qc} = $final_qc_result;
 }
@@ -278,7 +278,7 @@ sub checkObjectField{
         my $value = 0;
         $value = $obj->{$field} if exists $obj->{$field};
         if ($value < $min){
-            warn "## WARNING $field for $name too low: $value < $min\n";
+            warn "## WARNING $field for $name lower than the configured minimum: $value < $min\n";
             $fails += 1;
         }
     }
