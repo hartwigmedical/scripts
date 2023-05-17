@@ -151,34 +151,35 @@ sharedReportLocation=(${url_bucket_report_final}${report})
 sharedJsonLocation=(${url_bucket_report_final}${json})
 sharedXmlLocation=(${url_bucket_report_final}${xml})
 
+echo $sharedXmlLocation}
 ## add reporting info to registration file
 
-if [[ ${report} == *"corrected"* ]]; then
-    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
-      info "A record has been added for ${sample} to sharing api"
-      post_api_sharing_report ${barcode} ${sample} ${report_type} ${report_source} ${sharedReportLocation} ${sharedJsonLocation} ${sharedXmlLocation}
-      info "Reports shared registration for ${sample}:"
-      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-      extract_object_shared ${reporting_id} "prod"
-    else
-      warn "The report ${report} is already in the sharing api"
-      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-      extract_object_shared ${reporting_id} "prod"
-      warn "No new record added."
-    fi
-else
-    if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
-         info "A record has been added for ${sample} to sharing api"
-         post_api_sharing_report ${barcode} ${sample} ${report_type} ${report_source} ${sharedReportLocation} ${sharedJsonLocation} ${sharedXmlLocation}
-         info "Reports shared registration for ${sample}:"
-         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-         extract_object_shared ${reporting_id} "prod"
-    else
-        warn "The report ${report} is already in the sharing api"
-        extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-        extract_object_shared ${reporting_id} "prod"
-        warn "No new record added."
-    fi
-fi
+#if [[ ${report} == *"corrected"* ]]; then
+#    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
+#      info "A record has been added for ${sample} to sharing api"
+#      post_api_sharing_report ${barcode} ${sample} ${report_type} ${report_source} ${sharedReportLocation} ${sharedJsonLocation} ${sharedXmlLocation}
+#      info "Reports shared registration for ${sample}:"
+#      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#      extract_object_shared ${reporting_id} "prod"
+#    else
+#      warn "The report ${report} is already in the sharing api"
+#      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#      extract_object_shared ${reporting_id} "prod"
+#      warn "No new record added."
+#    fi
+#else
+#    if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
+#         info "A record has been added for ${sample} to sharing api"
+#         post_api_sharing_report ${barcode} ${sample} ${report_type} ${report_source} ${sharedReportLocation} ${sharedJsonLocation} ${sharedXmlLocation}
+#         info "Reports shared registration for ${sample}:"
+#         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#         extract_object_shared ${reporting_id} "prod"
+#    else
+#        warn "The report ${report} is already in the sharing api"
+#        extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#        extract_object_shared ${reporting_id} "prod"
+#        warn "No new record added."
+#    fi
+#fi
 
 echo ""
