@@ -122,17 +122,17 @@ fi
 
 ## copy report from auto/manual bucket to final
 
-if [[ "${report_source}" == "automatic" ]]; then
-    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
-else
-    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
-fi
+#if [[ "${report_source}" == "automatic" ]]; then
+#    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
+#else
+#    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+#fi
 
 if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
     if [[ "${report_source}" == "automatic" ]]; then
