@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+# NOTES:
+#  1. Manually prepare the configs in the config_dir (update dates + pipeline images)
+#     - All available images for batch framework can be found via "gcloud container images list-tags eu.gcr.io/hmf-build/batch"
+#  2. Manually build the batch-operations repo (mvn clean package)
+#  3. Connect to VPN
+#  4. Run this script
+#  5. Manually apply the yaml files via kubectl apply -f ${yaml}, first star then isofox
+#  6. Get the pod via kubectl get pods and then track log via kubectl logs ${pod}
+#  7. Manually clean up the configmaps (via GCP website) + job-buckets (via gsutil) after successful running
+
+date=$1
+
+if [[ -z "${date}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+config_dir="${HOME}/hmf/rna_batch_jobs/${date}"
+
+if [[ ! -d ${config_dir} ]]; then
+    error "Could not locate config dir: ${config_dir}"
+fi
+
+batch_jar="${HOME}/hmf/repos/batch-operations/target/batch-operations-local-SNAPSHOT.jar"
+
+if [[ ! -f ${batch_jar} ]]; then
+    error "Could not locate batch jar: ${batch_jar}"
+fi
+
+make_bucket -p hmf-crunch -n sample-swap-rna-star-batch-${date} -c "rna"
+make_bucket -p hmf-crunch -n sample-swap-rna-isofox-batch-${date} -c "rna"
+
+kubectl create configmap sample-swap-rna-batch-inputs-${date} \
+    --from-file=star.csv=${config_dir}/sample_swap_rna_star_input.csv \
+    --from-file=isofox.csv=${config_dir}/sample_swap_rna_isofox_input.csv
+
+kubectl create configmap sample-swap-rna-batch-operations-${date} \
+    --from-file=batch-operations.jar=${batch_jar}
