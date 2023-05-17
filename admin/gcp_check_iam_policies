@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+
+account_email=$1
+project_id=$2
+
+[[ -n "${account_email}" ]] || die "Provide email address of account to check [${account_email}]"
+[[ -n "${project_id}" ]] || die "Provide project id [${project_id}]"
+[[ "${account_email}" =~ .*@.*\..* ]] || die "Input does not look like an email address [${account_email}]"
+
+function main() {
+    policies "$project_id" "$account_email"
+}
+
+function policies() {
+    local project_id=$1 && shift
+    local account_email=$1 && shift
+    info "Checking aim policies for [${account_email}] in project [${project_id}]"
+    output=$(gcloud asset search-all-iam-policies --scope="projects/${project_id}" --query="policy:${account_email}" --format=json \
+          | jq --arg u "${account_email}" --arg p "${project_id}" -r '.[] | [$u, $p, .policy.bindings[].role,.resource] | @tsv'
+}
+
+main
