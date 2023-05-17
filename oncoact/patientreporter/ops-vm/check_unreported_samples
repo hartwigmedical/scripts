@@ -59,8 +59,8 @@ function check_one_unreported_sample(){
         warn "CHECK: FAILED_FINAL status for all isolations [${info}]"
     elif [[ $(libraryprep_finished_count "${lama_status}") -eq 0 ]]; then
         info "SKIPPING: No finished library prep [${info}]"
-    elif [[ "${api_sample_status}" == "Expected" ]]; then
-        info "SKIPPING: Ignorable API sample status ${api_sample_status} [${info}]"
+#    elif [[ "${api_sample_status}" == "Expected" ]]; then
+#        info "SKIPPING: Ignorable API sample status ${api_sample_status} [${info}]"
     elif [[ $(is_already_reported "${lama_status}") == "true" ]]; then
         info "SKIPPING: Already REPORTED [${info}]"
     elif [[ "${api_sample_status}" == "null" ]]; then
