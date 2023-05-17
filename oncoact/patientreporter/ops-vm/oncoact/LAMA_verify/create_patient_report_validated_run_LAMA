@@ -70,7 +70,7 @@ output_dir_report=${temp_folder_path}/new_report
 output_dir_data_report=${temp_folder_path}/new_report
 
 ### rerun of protect (if applicable)
-echo "Re-run protect"
+info "Re-run protect"
 run_protect_prod_for_diagnostic_LAMA ${set} ${barcode} ${sample} ${temp_folder_path}
 
 ### doid check (specifally important when rerun of protect)
@@ -85,7 +85,6 @@ elif [[ ${protect_doid} == ${report_doid} ]]; then
 else
     warn "Checking primary tumor doid - the doid is not equal of protect ${protect_doid} and report ${report_doid}" &>> ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
 fi
-
 
 #### run patient reporter
 
@@ -120,7 +119,7 @@ info "The report and the related log + json file can be found in /data_report_LA
 ls ${outputDir} | grep ${sample}
 reportShared=$( ls ${outputDir} | grep ${sample} | grep ".pdf" )
 
-echo "Removing temp dir"
+info "Removing temp dir"
 rm -r ${temp_folder_path}
 
 ### upload report to NC
