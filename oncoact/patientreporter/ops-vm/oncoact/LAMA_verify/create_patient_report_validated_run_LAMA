@@ -32,7 +32,7 @@ if [[ ${run_count} == 0 ]]; then
 fi
 
 set_url="gs://${bucket}/${set}"
-outputDir="/data/report_LAMA"
+outputDir="/data/report_LAMA/pilot_lama"
 
 echo ""
 echo "--- A report will be created for ${sample} from run bucket gs://${bucket}/${set}/, pipeline version ${pipeline_version} ---"
