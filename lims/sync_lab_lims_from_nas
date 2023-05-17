@@ -50,15 +50,13 @@ main() {
     mkdir -p "${DAY_DIR}"
     mkdir -p "${TMP_DIR}"
 
-    info "Retrieving input files from NAS"
+    info "Retrieving input files from NAS (${NAS_DIR})"
     for nas_file_path in "${NAS_FILES[@]}"; do
       retrieve_file_from_nas "$nas_file_path" "${TMP_DIR}"
     done
 
     info "Retrieving LAMA input files from bucket (gs://${LAMA_BUCKET})"
-    for lama_json_file in "${LAMA_FILES[@]}"; do
-      gsutil cp "$lama_json_file" "${TMP_DIR}" || die "Unable to copy file ($lama_json_file)"
-    done
+    gsutil -m cp "${LAMA_FILES[@]}" "${TMP_DIR}" || die "Error during LAMA file retrieval"
 
     for001_source="${TMP_DIR}/${FOR_001_FILE}"
     for002_source="${TMP_DIR}/${FOR_002_FILE}"
