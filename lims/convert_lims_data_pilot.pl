@@ -515,7 +515,7 @@ sub constructPrimaryTumorTypeField{
 sub constructBiopsyField{
     my ($sample) = @_;
     my $top_level_key = "biopsy";
-    my @sub_level_keys = qw(biopsyLocation biopsySubLocation lateralisation);
+    my @sub_level_keys = qw(location subLocation lateralisation);
     my @values = ();
     foreach my $key (@sub_level_keys){
         if (exists $sample->{$top_level_key}{$key} and $sample->{$top_level_key}{$key} ne ""){
@@ -1374,7 +1374,7 @@ sub getFieldNameTranslations{
         'pathologyNumber'       => 'hospital_pa_sample_id',
         'patientGermlineChoice' => 'report_germline_level',
         'primaryTumorType'      => 'ptum',
-        'biopsySite'            => 'biopsy_site',
+        'biopsySite'            => 'lama_tumor_sample_biopsy_site',
         'sopVersion'            => 'sop_version',
         'samplingDate'          => 'sampling_date', # was collectionDate pre-lama-v2
         'isCUP'                 => 'is_cup',
