@@ -59,16 +59,14 @@ function check_one_unreported_sample(){
         warn "CHECK: FAILED_FINAL status for all isolations [${info}]"
     elif [[ $(libraryprep_finished_count "${lama_status}") -eq 0 ]]; then
         info "SKIPPING: No finished library prep [${info}]"
-#    elif [[ "${api_sample_status}" == "Expected" ]]; then
-#        info "SKIPPING: Ignorable API sample status ${api_sample_status} [${info}]"
     elif [[ $(is_already_reported "${lama_status}") == "true" ]]; then
         info "SKIPPING: Already REPORTED [${info}]"
     elif [[ "${api_sample_status}" == "null" ]]; then
         all_prep_status=$(jq -r '[.[].libraryPrepStatus]|join(",")' <<< "${lama_status}" )
         warn "CHECK: Final prep status [${all_prep_status}] but appears not yet sequenced [${info}]"
     else
-        run_info=$(api -j runs "sample_name=${sampleId}" | jq -r '.[]|select(.context=="DIAGNOSTIC")|.set.name+" ("+.status+")"' | tail -1)
-        warn "CHECK: Non-ignorable api status ${api_sample_status} [${info}]"
+        run_info=$(api -j runs "sample_name=${sampleId}" | jq -r '.[]|select(.context!="RESEARCH")|.set.name+" ("+.status+")"' | tail -1)
+        warn "CHECK: Sample has status ${api_sample_status} [${info}]"
         warn "  \_ Most recent run: ${run_info}"
     fi
 }
