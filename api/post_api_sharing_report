@@ -31,7 +31,13 @@ xmlBucket=$(echo ${sharedXmlLocation} | tr "/" " " | awk '{print $2}')
 reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${pdfBucket}" "path" "${pdfFile}")
 reportJson=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${jsonBucket}" "path" "${jsonFile}")
 reportXml=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${xmlBucket}" "path" "${xmlFile}")
-data=$(echo -e "${reportPdf}\n${reportJson}\n${reportXml}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+
+if [[ ${report_type} == "dna_analysis_report" || ${report_type} == "dna_analysis_report_insufficient_tcp" ]]; then
+  data=$(echo -e "${reportPdf}\n${reportJson}\n${reportXml}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+else
+  data=$(echo -e "${reportPdf}\n${reportJson}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+fi
+
 echo ${data} | jq
 
 if [[ -z ${report_created_id} ]];then
@@ -40,4 +46,4 @@ if [[ -z ${report_created_id} ]];then
 fi
 
 info "Adding entry to shared API"
-api_curl_post "reports/shared" "${data}" "prod"
+#api_curl_post "reports/shared" "${data}" "prod"
