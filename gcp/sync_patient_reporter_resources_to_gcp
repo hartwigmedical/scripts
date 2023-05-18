@@ -20,4 +20,7 @@ gsutil cp /data/resources/public/fusions/37/known_fusion_data.37.csv ${BUCKET}/k
 gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 cp /data/ops/lims/prod/*.tsv ${BUCKET}/lims/
 gsutil cp "${LIMS_LAMA_JSON}" ${BUCKET}/lims/lims.json
 gsutil cp /data/resources/ops/patient_report_images/* ${BUCKET}/
+# Override default logo in use by copying overtop as an alternative to accepting a different name via command-line arguments in
+# the application
+gsutil cp /data/resources/ops/patient_report_images/hartwig_logo.jpg ${BUCKET}/hartwig_oncoact_logo.jpg
 info "Done syncing patient-reporter resources"
