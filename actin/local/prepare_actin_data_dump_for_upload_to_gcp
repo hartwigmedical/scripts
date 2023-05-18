@@ -49,6 +49,7 @@ done
 (head -n 1 "${dir}/ACTIN_Data_Operatie2.tsv" && tail -n +2 "${dir}/ACTIN_Data_Operatie2.tsv" | sort) > "${dir}/encounter.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Allergie_bijwerking2.tsv" && tail -n +2 "${dir}/ACTIN_Data_Allergie_bijwerking2.tsv" | sort) > "${dir}/intolerance.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Gewicht.tsv" && tail -n +2 "${dir}/ACTIN_Data_Gewicht.tsv" | sort) > "${dir}/bodyweight.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Consulten.tsv" && tail -n +2 "${dir}/ACTIN_Data_Consulten.tsv" | sort) > "${dir}/manual_questionnaire.tsv"
 
 # Remove old files
 rm "${dir}/ACTIN_Data_"*tsv
