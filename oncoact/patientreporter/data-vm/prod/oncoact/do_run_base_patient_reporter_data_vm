@@ -20,6 +20,5 @@ java -jar ${patient_reporter_jar} \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -udi_di "(01)8720299486041(8012)v5.31" \
-    -require_pipeline_version_file \
     -expected_pipeline_version ${expected_pipeline_version} \
     "$@"
