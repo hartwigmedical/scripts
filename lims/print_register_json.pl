@@ -404,7 +404,7 @@ sub processSample{
         my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
         my $patient_ref = getValueByKey( $ref_obj, 'patient' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
-        my $submission_ref = getValueByKey( $ref_obj, 'submission' );
+        my $submission_ref = $submission;
         my $lab_status_ref = getValueByKey( $ref_obj, 'lab_status' );
 
         if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished"  and $lab_status ne "In process" ){
