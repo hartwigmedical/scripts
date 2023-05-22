@@ -33,7 +33,7 @@ function main (){
       else "" end),
       "", # subtype
       "", # extraDetails
-      (if .tumorType then .tumorType.doids|join(",") else "" end),
+      (if .tumorType then .tumorType.doids|join(";") else "" end),
       "0", # snomedConceptIds
       "false" # overridden
     ] | @tsv' <<< "${samples}" >> "$OUTPUT_TSV"
