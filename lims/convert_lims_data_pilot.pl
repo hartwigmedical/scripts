@@ -518,8 +518,10 @@ sub constructBiopsyField{
     my @sub_level_keys = qw(location subLocation lateralisation);
     my @values = ();
     foreach my $key (@sub_level_keys){
-        if (exists $sample->{$top_level_key}{$key} and $sample->{$top_level_key}{$key} ne ""){
-            push @values, $sample->{$top_level_key}{$key};
+        if (exists $sample->{$top_level_key}{$key}){
+            if ($sample->{$top_level_key}{$key} ne "" and $sample->{$top_level_key}{$key} ne "Other/unknown"){
+                push @values, $sample->{$top_level_key}{$key};
+            }
         }
     }
     return join(" | ", @values);
