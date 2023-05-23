@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 # PONDER: To think in detail, in this case: to extract data from COMPAR
 # Author: Teoman Deger
-# Version 0.3, 03-11-2022
+# Version 0.3, 23-05-2023
 # USE: Rscript PONDER.R COMPARoutput.csv
 # -----------------------./
 args = commandArgs(trailingOnly=TRUE)
@@ -14,11 +14,9 @@ if (length(args)==0) {
 }
 
 input <- read.csv(args[1])
-name <- substr(args[1],1,nchar(args[1])-4)
 
 analysisComparOutput <- function(x, export = FALSE){
   #Remove all VALUE-type 'mismatches' from DF
-  name <- deparse(substitute(x))
   noValue      <- x[x$MismatchType != "VALUE",]
   #from data-groups (NEW_ONLY, REF_ONLY, VALUE, SHARED)
   comparGroups <- noValue[!duplicated(noValue$MismatchType),colnames(noValue) == "MismatchType"]
@@ -56,14 +54,18 @@ analysisComparOutput <- function(x, export = FALSE){
   colnames(countsCN) <- groups_CN
   rownames(countsCN) <- comparGroups
   #make export-tables, totals
-  groups_total <-c("SomatVars","GermlineVars", "StrucVars", "GL-SVs", "CNs", "Driver")
+  GLcalls <- length(x$Category[x$Category == "GERMLINE_VARIANT"]) + length(x$Category[x$Category == "GERMLINE_SV"])
+  if (GLcalls == 0){
+    groups_total <-c("SomatVars", "StrucVars", "CNs", "Driver")
+  } else {
+    groups_total <-c("SomatVars","GermlineVars", "StrucVars", "GL-SVs", "CNs", "Driver")
+  }
   countsTotal  <- as.data.frame(matrix(nrow=length(comparGroups), ncol=length(groups_total)))
   colnames(countsTotal) <- groups_total
   rownames(countsTotal) <- comparGroups
   #for each data-group do:
   for (i in comparGroups){
     #extract data from group only
-    #i = "REF_ONLY"
     selection  <- noValue[noValue$MismatchType == i,]
     #extract Drivers only
     selectionDrivers <- nrow(selection[selection$Category == "DRIVER",])
@@ -74,13 +76,17 @@ analysisComparOutput <- function(x, export = FALSE){
     #group per SNP-type
     SNPtypes <- data.frame(do.call('rbind', strsplit(as.character(SNPgrep), " ", fixed=TRUE)))
     #combine rev-comp SNP-types
-    A_Csnp <- sum(SNPtypes[,2] == "A>C", SNPtypes[,2] == "T>G")
-    A_Gsnp <- sum(SNPtypes[,2] == "A>G", SNPtypes[,2] == "T>C")
-    A_Tsnp <- sum(SNPtypes[,2] == "A>T", SNPtypes[,2] == "T>A")
-    C_Gsnp <- sum(SNPtypes[,2] == "C>G", SNPtypes[,2] == "G>C")
-    C_Tsnp <- sum(SNPtypes[,2] == "C>T", SNPtypes[,2] == "G>A")
-    G_Tsnp <- sum(SNPtypes[,2] == "G>T", SNPtypes[,2] == "C>A")
-    countsSNP[i,] <- c(A_Csnp, A_Gsnp, A_Tsnp, C_Gsnp, C_Tsnp, G_Tsnp)
+    if (length(SNPtypes) > 0){
+      A_Csnp <- sum(SNPtypes[,2] == "A>C", SNPtypes[,2] == "T>G")
+      A_Gsnp <- sum(SNPtypes[,2] == "A>G", SNPtypes[,2] == "T>C")
+      A_Tsnp <- sum(SNPtypes[,2] == "A>T", SNPtypes[,2] == "T>A")
+      C_Gsnp <- sum(SNPtypes[,2] == "C>G", SNPtypes[,2] == "G>C")
+      C_Tsnp <- sum(SNPtypes[,2] == "C>T", SNPtypes[,2] == "G>A")
+      G_Tsnp <- sum(SNPtypes[,2] == "G>T", SNPtypes[,2] == "C>A")
+      countsSNP[i,] <- c(A_Csnp, A_Gsnp, A_Tsnp, C_Gsnp, C_Tsnp, G_Tsnp)
+    } else {
+      countsSNP[i,] <- c(0, 0, 0, 0, 0, 0)
+    }
     #extract MNPs only
     MNPgrep  <- selectionSomVars[grep("MNP",selectionSomVars$Key),colnames(selectionSomVars) == "Key"]
     #extract MNP-info only
@@ -137,14 +143,18 @@ analysisComparOutput <- function(x, export = FALSE){
     selection_SV     <- selection[selection$Category == "DISRUPTION",]
     selection_SV$Key <- as.character(selection_SV$Key)
     #get counts per event type
-    SV_BND       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "BND")
-    SV_DEL       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "DEL")
-    SV_DUP       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "DUP")
-    SV_INV       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INV")
-    SV_SGL       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "SGL")
-    SV_INS       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INS")
-    SV_INF       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INF")
-    countsSV[i,] <- c(SV_BND, SV_DEL, SV_DUP, SV_INV, SV_SGL, SV_INS, SV_INF)
+    if (nrow(selection_SV) > 0){
+      SV_BND       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "BND")
+      SV_DEL       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "DEL")
+      SV_DUP       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "DUP")
+      SV_INV       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INV")
+      SV_SGL       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "SGL")
+      SV_INS       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INS")
+      SV_INF       <- sum(do.call('rbind', strsplit(do.call('rbind', strsplit(selection_SV$Key, "_"))[,2], " "))[,1] == "INF")
+      countsSV[i,] <- c(SV_BND, SV_DEL, SV_DUP, SV_INV, SV_SGL, SV_INS, SV_INF)
+    } else {
+      countsSV[i,] <- c(0,0,0,0,0,0,0)
+    }
     #extract GLV-events only
     selection_GLV     <- selection[selection$Category == "GERMLINE_SV",]
     selection_GLV$Key <- as.character(selection_GLV$Key)
@@ -160,25 +170,39 @@ analysisComparOutput <- function(x, export = FALSE){
     #extract copynumbers only
     selectionCN  <- selectionSomVars <- selection[selection$Category == "COPY_NUMBER",]
     selectionCN$AllValues <- as.character(selectionCN$AllValues)
-    CNcounts     <- as.numeric(do.call('rbind', strsplit(do.call('rbind', strsplit(selectionCN$AllValues, ";"))[,1], "="))[,2])
-    CN_loss      <- sum(CNcounts <= 2)
-    CN_gain      <- sum(CNcounts > 2 & CNcounts <= 4)
-    CN_amp       <- sum(CNcounts > 4)
-    countsCN[i,] <- c(CN_loss, CN_gain, CN_amp)
+    #categorise CN-types
+    if (nrow(selectionCN) >= 1){
+      CNcounts     <- as.numeric(do.call('rbind', strsplit(do.call('rbind', strsplit(selectionCN$AllValues, ";"))[,1], "="))[,2])
+      CN_loss      <- sum(CNcounts <= 2)
+      CN_gain      <- sum(CNcounts > 2 & CNcounts <= 4)
+      CN_amp       <- sum(CNcounts > 4)
+      countsCN[i,] <- c(CN_loss, CN_gain, CN_amp)
+    } else {
+      countsCN[i,] <- c(0,0,0)
+    }
     #extract totals
     SomVars_Total   <- sum(as.integer(rowSums(countsSNP[i,])), MNP_2, MNP_3, MNP_more, INDELs)
     GLVars_Total    <- sum(as.integer(rowSums(countsSNP_GL[i,])), MNP_2_GL, MNP_3_GL, MNP_more_GL, INDELs_GL)
     SV_total        <- sum(as.integer(rowSums(countsSV[i,])))
     GLV_total       <- sum(as.integer(rowSums(countsGLV[i,])))
     CN_total        <- sum(as.integer(rowSums(countsCN[i,])))
-    countsTotal[i,] <- c(SomVars_Total, GLVars_Total,  SV_total, GLV_total, CN_total, selectionDrivers)
+    if (GLcalls == 0){
+      countsTotal[i,] <- c(SomVars_Total, SV_total, CN_total, selectionDrivers)
+    } else {
+      countsTotal[i,] <- c(SomVars_Total, GLVars_Total,  SV_total, GLV_total, CN_total, selectionDrivers)
+    }
   }
   #export all
-  outputList <- list(name,countsTotal,"Somatic",countsSNP,countsMNPINDEL,"Germline",countsSNP_GL,countsMNPINDEL_GL,countsCN,countsSV,countsGLV)
-  print(outputList)#, file = paste(deparse(substitute(x)),"_",i))
-  if (export == "EXPORT"){
-    outName <- sub(".cmp.ALL.combined.csv", "", args[1])
-    capture.output(outputList, file = paste0(outName,"_PONDER_Output"))
+  if (GLcalls == 0){
+    name <- "Totals (Tumor only)"
+    outputList <- list(name,countsTotal,countsSNP,countsMNPINDEL,countsCN,countsSV)
+  } else {
+    name <- "Totals"
+    outputList <- list(name,countsTotal,"Somatic",countsSNP,countsMNPINDEL,"Germline",countsSNP_GL,countsMNPINDEL_GL,countsCN,countsSV,countsGLV)
   }
+  print(outputList)#, file = paste(deparse(substitute(x)),"_",i))
+  #if (export == "EXPORT"){
+  #  capture.output(outputList, file = paste0(name,"_COMPARed_Output"))
+  #}
 }
 analysisComparOutput(input, args[2])
