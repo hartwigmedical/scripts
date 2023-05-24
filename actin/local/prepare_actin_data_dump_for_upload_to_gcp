@@ -41,13 +41,13 @@ for file in ${dir}/*.tsv; do
 done
 
 # Sort by first column and rename files
-(head -n 1 "${dir}/ACTIN_Data_Digitaal_dossier2.tsv" && tail -n +2 "${dir}/ACTIN_Data_Digitaal_dossier2.tsv" | sort) > "${dir}/questionnaire.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" && tail -n +2 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" | sort) > "${dir}/questionnaire.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Patient.tsv" && tail -n +2 "${dir}/ACTIN_Data_Patient.tsv" | sort) > "${dir}/patient.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Metingen.tsv" && tail -n +2 "${dir}/ACTIN_Data_Metingen.tsv" | sort) > "${dir}/vital_function.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Medicatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Medicatie.tsv" | sort) > "${dir}/medication.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Labwaarden.tsv" && tail -n +2 "${dir}/ACTIN_Data_Labwaarden.tsv" | sort) > "${dir}/lab.tsv"
-(head -n 1 "${dir}/ACTIN_Data_Operatie2.tsv" && tail -n +2 "${dir}/ACTIN_Data_Operatie2.tsv" | sort) > "${dir}/encounter.tsv"
-(head -n 1 "${dir}/ACTIN_Data_Allergie_bijwerking2.tsv" && tail -n +2 "${dir}/ACTIN_Data_Allergie_bijwerking2.tsv" | sort) > "${dir}/intolerance.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Operatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Operatie.tsv" | sort) > "${dir}/encounter.tsv"
+(head -n 1 "${dir}/ACTIN_Data_Allergie_bijwerking.tsv" && tail -n +2 "${dir}/ACTIN_Data_Allergie_bijwerking.tsv" | sort) > "${dir}/intolerance.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Gewicht.tsv" && tail -n +2 "${dir}/ACTIN_Data_Gewicht.tsv" | sort) > "${dir}/bodyweight.tsv"
 (head -n 1 "${dir}/ACTIN_Data_Consulten.tsv" && tail -n +2 "${dir}/ACTIN_Data_Consulten.tsv" | sort) > "${dir}/manual_questionnaire.tsv"
 
