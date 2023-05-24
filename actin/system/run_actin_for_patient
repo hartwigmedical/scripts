@@ -11,7 +11,7 @@ fi
 
 sample=$(locate_most_recent_actin_molecular_sample ${patient})
 
-actin_orange_interpreter_pilot ${sample}
+actin_orange_interpreter_pilot ${sample} "$@"
 load_actin_molecular_pilot ${sample}
 
 echo ""
