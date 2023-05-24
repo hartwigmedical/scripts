@@ -17,7 +17,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir1})
 sage_somatic_output1=$(locate_sage_filtered_somatic_variants ${run_dir1})
 sage_somatic_output2=$(locate_sage_filtered_somatic_variants ${run_dir2})
 
-sage_jar="$(locate_research_sage)"
+sage_jar="$(locate_pilot_sage)"
 
 info "Running SAGE compare VCFs between ${run_dir1} and ${run_dir2}"
 
