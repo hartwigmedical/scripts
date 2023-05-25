@@ -58,10 +58,6 @@ sample_special_remark_tsv=$(locate_special_remark_patient_report_pilot)
 known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 pilot_do_run_base_patient_reporter \
-    -ref_sample_id ${ref_sample} \
-    -ref_sample_barcode ${ref_sample_barcode} \
-    -tumor_sample_id ${sample} \
-    -tumor_sample_barcode ${barcode} \
     -pipeline_version_file ${pipeline_version_file} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
@@ -86,7 +82,6 @@ pilot_do_run_base_patient_reporter \
     -lilac_qc_csv ${lilac_qc_csv} \
     -add_rose \
     -rose_tsv ${rose_tsv} \
-    -known_fusion_file ${known_fusion_file} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_special_remark_tsv ${sample_special_remark_tsv} \
     -ref_genome_version 37 \
