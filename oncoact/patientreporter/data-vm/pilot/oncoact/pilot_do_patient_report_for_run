@@ -48,6 +48,5 @@ pilot_do_run_base_patient_reporter \
     -rose_tsv ${rose_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_special_remark_tsv ${sample_special_remark_tsv} \
-    -ref_genome_version 37 \
     -log_debug \
     "$@"
