@@ -5,7 +5,7 @@ command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
 
 set=$1 && shift
 
-include_inis="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini|Targeted.ini"
+include_inis="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini|Targeted.ini|ShallowSeq.ini"
 exclude_buckets="research-pipeline-output-prod"
 
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
