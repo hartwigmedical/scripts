@@ -644,8 +644,10 @@ sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
+    my $line_count = `wc -l < $file`;
+    chomp($line_count);
 
-    sayInfo(sprintf "  Parsing CSV/TSV [%s]", basename($file));
+    sayInfo(sprintf "  Parsing CSV/TSV %s lines [%s]", $line_count, basename($file));
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
