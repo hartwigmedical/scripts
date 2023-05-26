@@ -440,7 +440,7 @@ sub epochToDate{
 sub parseLamaPatients {
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $patient (@$objects) {
         foreach my $sample (@{$patient->{tumorSamples}}) {
@@ -518,7 +518,7 @@ sub constructBiopsyField{
 sub parseLamaLibraryPreps{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $experiment (@$objects) {
 
@@ -541,7 +541,7 @@ sub parseLamaLibraryPreps{
 sub parseLamaIsolation{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $experiment (@$objects) {
 
@@ -586,7 +586,7 @@ sub parseLamaIsolation{
 sub parseLamaSampleStatus{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $object (@$objects){
 
@@ -626,7 +626,7 @@ sub parseLamaSampleStatus{
 sub parseLamaContracts{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $object (@$objects) {
         my $store_key = $object->{'code'};
@@ -647,7 +647,7 @@ sub parseTsvCsv{
     my $line_count = `wc -l < $file`;
     chomp($line_count);
 
-    sayInfo(sprintf "  Parsing CSV/TSV %s lines [%s]", $line_count, basename($file));
+    sayInfo(sprintf "  Parsing CSV/TSV [%s,lineCount=%s]", basename($file), $line_count);
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -717,12 +717,12 @@ sub selectAndRenameFields{
     return \%obj_out;
 }
 
-sub readJson{
-    my ($json_file) = @_;
-    sayInfo(sprintf "  Parsing JSON [%s]", basename($json_file));
-    my $json_txt = read_file( $json_file );
-    my $json_obj = decode_json( $json_txt );
-    return( $json_obj );
+sub parseJson{
+    my ($file) = @_;
+    my $size = `du -shL $file | cut -f1`;
+    chomp($size);
+    sayInfo(sprintf "  Parsing JSON [%s,size=%s]", basename($file), $size);
+    return(decode_json(read_file($file)));
 }
 
 sub printLimsToJson{
