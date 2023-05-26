@@ -8,7 +8,6 @@ OUTPUT_TSV=${1-"/data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.
 function main (){
     info "Retrieving tumor samples from LAMA [$LAMA_API_URL]"
     patients=$(curl --silent "${LAMA_API_URL}/patients")
-#    patients=$(jq '.[10000:-1]' <<< "${patients}")
     patient_count=$(jq 'length' <<< "${patients}")
 
     info "Extracting tumorType info for ${patient_count} patients"
