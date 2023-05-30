@@ -7,7 +7,7 @@ trial_config_directory="$(locate_actin_trial_config_directory_actin_77)"
 ctc_config_directory="$(locate_actin_ctc_config_directory)"
 doid_json="$(locate_doid_json)"
 known_genes_tsv="$(locate_actin_known_genes_tsv)"
-output_directory="$(locate_actin_treatment_database_directory)"
+output_directory="$(locate_actin_treatment_database_directory_actin_77)"
 
 create_or_cleanup_dir "${output_directory}"
 

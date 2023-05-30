@@ -513,6 +513,11 @@ locate_actin_treatment_database_directory() {
     echo "/data/actin/treatment_database"
 }
 
+locate_actin_treatment_database_directory_actin_77() {
+    # TODO - Clean up once ACTIN-77 is wrapped up and merged to master
+    echo "/data/actin/treatment_database_actin_77"
+}
+
 locate_actin_treatment_match_directory() {
     echo "/data/actin/treatment_matches"
 }
