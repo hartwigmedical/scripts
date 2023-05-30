@@ -15,6 +15,7 @@ actin_jar="$(locate_pilot_actin)"
 
 java -cp ${actin_jar} com.hartwig.actin.treatment.TreatmentCreatorApplication \
     -trial_config_directory ${trial_config_directory} \
+    -ctc_config_directory ${ctc_config_directory} \
     -doid_json ${doid_json} \
     -known_genes_tsv ${known_genes_tsv} \
     -output_directory ${output_directory} \
