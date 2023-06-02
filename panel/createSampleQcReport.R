@@ -75,7 +75,7 @@ runSampleQcReport<-function()
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
 
-    cohortMedianDepthFile = paste0(runDir, "QC/hmf_panel_cohort_exon_median_depth.csv")
+    cohortMedianDepthFile = paste0(/data/resources/private/panel/hmf_panel_cohort_exon_median_depth.csv")
 #   cohortMedianDepthFile = 
 #    cobaltRegionsFile = paste0(runDir, "QC/target_regions_normalisation.38.tsv")
     cobaltRegionsFile = "/data/resources/public/target_regions/38/target_regions_normalisation.38.tsv"
@@ -320,7 +320,7 @@ runSampleQcReport<-function()
     par(mar = c(1, 1, 1, 1))
 
     # title = textGrob(paste0(sampleId, ' Gene Report'), gp = gpar(fontface = "bold", fontsize = 16))
-    title = textGrob(paste0(sampleId, ' ( TCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
 
     plotWidth=3
     gapWidth=0
