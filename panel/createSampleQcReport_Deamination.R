@@ -86,10 +86,10 @@ runSampleQcDeamination<-function()
 
     #sampleDataDir = paste0(runDir, "Test/")
 #    sampleDataDir = paste0(runDir, "230501-msi-valexp09-func-116/",sampleId,"/")
-    sampleExonCoverageFile = paste0(sampleDataDir,'sage_somatic/',sampleId,'.sage.exon.medians.tsv')
-    sampleGeneCnFile = paste0(sampleDataDir,'purple/',sampleId,'.purple.cnv.gene.tsv')
-    samplePurityFile = paste0(sampleDataDir,'purple/',sampleId,'.purple.purity.tsv')
-    sampleSomaticVcf = paste0(sampleDataDir,'purple/',sampleId,'.purple.somatic.vcf.gz')
+    sampleExonCoverageFile = paste0(sampleDataDir,'/sage_somatic/',sampleId,'.sage.exon.medians.tsv')
+    sampleGeneCnFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.cnv.gene.tsv')
+    samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
+    sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
 
 
 
