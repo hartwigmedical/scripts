@@ -89,7 +89,7 @@ runSampleQcReport<-function()
 
     #sampleDataDir = paste0(runDir, "Test/")
 # should come in as argument
-    sampleDataDir = paste0(runDir, "230519-532-test-prod-panel/",sampleId,"-panel-prod-test/") 
+    #sampleDataDir = paste0(runDir, "230519-532-test-prod-panel/",sampleId,"-panel-prod-test/") 
     sampleExonCoverageFile = paste0(sampleDataDir,'sage_somatic/',sampleId,'.sage.exon.medians.tsv')
     sampleGeneCnFile = paste0(sampleDataDir,'purple/',sampleId,'.purple.cnv.gene.tsv')
     samplePurityFile = paste0(sampleDataDir,'purple/',sampleId,'.purple.purity.tsv')
