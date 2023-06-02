@@ -75,7 +75,7 @@ runSampleQcReport<-function()
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
 
-    cohortMedianDepthFile = paste0("/data/resources/private/panel/hmf_panel_cohort_exon_median_depth.csv")
+    cohortMedianDepthFile = paste0("/data/resources/public/target_regions/target_regions_exon_relative_depth.38.csv")
 #   cohortMedianDepthFile = 
 #    cobaltRegionsFile = paste0(runDir, "QC/target_regions_normalisation.38.tsv")
     cobaltRegionsFile = "/data/resources/public/target_regions/38/target_regions_normalisation.38.tsv"
