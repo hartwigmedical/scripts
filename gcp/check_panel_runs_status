@@ -14,7 +14,9 @@ main () {
     # Create all required run collections
     echo "## Retrieving required information from API..."
     ##mapfile -t non_db_entities < <(hmf_api_get "entities" | jq -r '.[] | select(.add_to_db == false) | .name')
-    runs=$(hmf_api_get "runs?ini=Targeted.ini" | jq '[.[] | select(.context != "RESEARCH")]') | jq -s '.' || die "Unable to retrieve Somatic runs from API"
+    runs=$(hmf_api_get "runs?ini=Targeted.ini" | jq '[.[] | select(.context != "RESEARCH")]') || die "Unable to retrieve Somatic runs from API"
+    runs=$(jq '.[]' <(echo "runs") | jq -s '.') || die "Unable to sort Targeted ini runs"
+
 
     echo "## Creating run collections to check..."
     all_non_fini_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Pending" or .status == "Processing" or .status == "Failed" or .status == "Invalidated"  or .status == "Waiting")]')
