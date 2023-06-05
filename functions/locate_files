@@ -313,7 +313,7 @@ extract_expected_pipeline_version_research() {
 }
 
 extract_expected_pipeline_version_panel() {
-    echo "5.31"
+    echo "5.32"
 }
 
 ############################## ACTIN Resources #################################
