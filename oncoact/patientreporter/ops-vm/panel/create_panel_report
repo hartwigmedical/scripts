@@ -130,19 +130,5 @@ if [[ $answer == 'Y' ]]; then
   post_api_created_report ${api_update_json} ${sample}
 fi
 
-# Push report to final dest: copy_report_to_final_reports_gcp
-
-# TODO Push to portal: post_api_sharing_report, publish_to_portal="true"
-
-
-### The following files need to be shared in the portal to NKI:
-# - purple/*.driver.catalog.somatic.tsv
-# - purple/*.purple.purity.tsv
-# - purple/*.purple.somatic.vcf.gz
-# - purple/*.purple.sv.vcf.gz
-# - report/*_oncopanel_result_report.pdf
-# - reporting_vcf/*.reported.somatic.vcf > contains small variants that are reported in the driver catalog
-
-
 ### remove temporary folder
 rm -r ${temp_folder_path}/ 2>&1

@@ -1,0 +1,72 @@
+#!/bin/bash
+
+source message_functions || exit 1
+source locate_reporting_api || exit 1
+
+sample_barcode=$1 && shift
+sample=$1 && shift
+report_type=$1 && shift
+report_source=$1 && shift
+sharedReportLocation=$1 && shift
+purpleDriverCatalogLocation=$1 && shift
+purplePurityLocation=$1 && shift
+purpleSomaticVcfLocation=$1 && shift
+purpleSvVcfLocation=$1 && shift
+purpleReportedSomaticVcfLocation=$1 && shift
+sampleQcReport=$1 && shift
+sampleQcDeamination=$1 && shift
+
+## extract correct report created id
+report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
+cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
+
+if [[ ${cohort} == '"COREDB"' ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
+  publish_to_portal="true"
+else
+  publish_to_portal="false"
+fi
+
+purpleDriverCatalogFile=$(echo ${purpleDriverCatalogLocation} | tr "/" " " | awk '{print $3}')
+purpleDriverCatalogBucket=$(echo ${purpleDriverCatalogLocation} | tr "/" " " | awk '{print $2}')
+
+purplePurityFile=$(echo ${purplePurityLocation} | tr "/" " " | awk '{print $3}')
+purplePurityBucket=$(echo ${purplePurityLocation} | tr "/" " " | awk '{print $2}')
+
+purpleSomaticVcfFile=$(echo ${purpleSomaticVcfLocation} | tr "/" " " | awk '{print $3}')
+purpleSomaticVcfBucket=$(echo ${purpleSomaticVcfLocation} | tr "/" " " | awk '{print $2}')
+
+purpleSvVcfFile=$(echo ${purpleSvVcfLocation} | tr "/" " " | awk '{print $3}')
+purpleSvVcfBucket=$(echo ${purpleSvVcfLocation} | tr "/" " " | awk '{print $2}')
+
+reportFile=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $3}')
+reportBucket=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $2}')
+
+purpleReportedSomaticVcfFile=$(echo ${purpleReportedSomaticVcfLocation} | tr "/" " " | awk '{print $3}')
+purpleReportedSomaticVcfBucket=$(echo ${purpleReportedSomaticVcfLocation} | tr "/" " " | awk '{print $2}')
+
+sampleQcReportFile=$(echo ${sampleQcReport} | tr "/" " " | awk '{print $3}')
+sampleQcReportBucket=$(echo ${sampleQcReport} | tr "/" " " | awk '{print $2}')
+
+sampleQcDeaminationFile=$(echo ${sampleQcDeamination} | tr "/" " " | awk '{print $3}')
+sampleQcDeaminationBucket=$(echo ${sampleQcDeamination} | tr "/" " " | awk '{print $2}')
+
+#
+reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${reportBucket}" "path" "${reportFile}")
+reportPurpleDriverCatalog=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleDriverCatalogBucket}" "path" "${purpleDriverCatalogFile}" "folder" "RUO")
+reportPurplePurity=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purplePurityBucket}" "path" "${purplePurityFile}" "folder" "RUO")
+reportPurpleSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleSomaticVcfBucket}" "path" "${purpleSomaticVcfFile}" "folder" "RUO")
+reportPurpleSvVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleSvVcfBucket}" "path" "${purpleSvVcfFile}" "folder" "RUO")
+reportPurpleReportedSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleReportedSomaticVcfBucket}" "path" "${purpleReportedSomaticVcfFile}" "folder" "RUO")
+sampleQcReport=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcReportBucket}" "path" "${sampleQcReportFile}" "folder" "RUO")
+sampleQcDeamination=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucket}" "path" "${sampleQcDeaminationFile}" "folder" "RUO")
+
+data=$(echo -e "${reportPdf}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${sampleQcReport}\n${sampleQcDeamination}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
+echo ${data} | jq
+
+if [[ -z ${report_created_id} ]];then
+  error "No reporting created entry is present. Add entry first in created endpoint"
+  exit 1
+fi
+
+info "Adding entry to shared API"
+api_curl_post "reports/shared" "${data}" "prod"
