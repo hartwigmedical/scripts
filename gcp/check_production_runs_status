@@ -424,6 +424,8 @@ main () {
     done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
+
+    check_panel_runs_status
 }
 
 get_db_status_by_set_name () {
