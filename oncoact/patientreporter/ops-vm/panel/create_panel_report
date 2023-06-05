@@ -91,9 +91,9 @@ else
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/
-#gsutil -q cp -r ${temp_folder_path}/report/* gs://patient-reporter-manual-prod-1/
-#info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
-#gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+gsutil -q cp -r ${temp_folder_path}/report/* gs://patient-reporter-manual-prod-1/
+info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
+gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
 target_bucket="targeted-pipeline-output-prod-1"
 run_bucket="${target_bucket}/${set}"
@@ -101,11 +101,10 @@ run_bucket="${target_bucket}/${set}"
 ### Create coverage plots
 mkdir -p ${temp_folder_path}/coverage_plots
 Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
-
 Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
 
-#echo "Written coverage plots to target bucket of ${set}"
-#gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
+echo "Written coverage plots to target bucket of ${set}"
+gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
 
 ### Filter VCFs
 mkdir -p ${temp_folder_path}/reporting_vcf
@@ -117,21 +116,19 @@ else
     zcat ${temp_folder_path}"/purple/"${panel_vcf_name} | grep -E '^#|REPORTED' > ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf
     if [ ! -s ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf ]; then
         warn "[WARN] Reported VCF file is empty!"
+    else
+      echo "Written reported purple vcf to target bucket of ${set}"
+      gsutil cp -r ${temp_folder_path}/reporting_vcf/ ${run_bucket}
     fi
 fi
 
-#echo "Written reported purple vcf to target bucket of ${set}"
-#gsutil cp -r ${temp_folder_path}/reporting_vcf/ ${run_bucket}
-
 ### Patch reporting created endpoint
-#api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
-#echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
-#read answer
-#if [[ $answer == 'Y' ]]; then
-#  post_api_created_report ${api_update_json} ${sample}
-#fi
-
-
+api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
+echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+read answer
+if [[ $answer == 'Y' ]]; then
+  post_api_created_report ${api_update_json} ${sample}
+fi
 
 # Push report to final dest: copy_report_to_final_reports_gcp
 
@@ -148,12 +145,4 @@ fi
 
 
 ### remove temporary folder
-#rm -r ${temp_folder_path}/ 2>&1
-
-
-
-#echo '[INPUT] Do you want to also do the final processing (since the report has been shared) ? Please answer Y or N.'
-#read answer
-#if [[ $answer == 'Y' ]]; then
-#    copy_panel_report_to_final_reports_gcp ${set}
-#fi
+rm -r ${temp_folder_path}/ 2>&1
