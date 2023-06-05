@@ -95,43 +95,17 @@ fi
 #info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
 #gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
-
-#if [[ $( gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-#    warn 'A patient report for this sample has already been shared in gs://oncopanel-result-files-nki/:'
-#    gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-#    echo '[INPUT] Are you sure you want to continue sharing a new report and result files? (all data will be overwritten) Please answer Y or N.'
-#    read answer
-#    if [[ $answer != 'Y' ]]; then
-#        warn "Report and result files will not be shared. exiting"
-#        rm -r ${temp_folder_path}/ 2>&1
-#        exit 1
-#    fi
-#fi
-
-#### cp report to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
-#gsutil -q cp -r ${temp_folder_path}/report/*.pdf gs://oncopanel-result-files-nki/
-#### cp related data to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
-# create folder for tar
-#mkdir ${temp_folder_path}/report/tar
-#cp -r ${temp_folder_path}/purple/*.purple.somatic.vcf.gz ${temp_folder_path}/report/tar
-#cp -r ${temp_folder_path}/purple/*.purple.somatic.vcf.gz.tbi ${temp_folder_path}/report/tar
-#cp -r ${temp_folder_path}/purple/*.purple.cnv.gene.tsv ${temp_folder_path}/report/tar
-#cp -r ${temp_folder_path}/purple/*.purple.purity.tsv ${temp_folder_path}/report/tar
-#tar -czf ${temp_folder_path}/report/${sample}_${barcode}.tar.gz  -C ${temp_folder_path}/report/tar .
-#info "Tar file created of results. The results that will be shared are:"
-#tar -tvf ${temp_folder_path}/report/${sample}_${barcode}.tar.gz
-# cp
-#gsutil -q cp -r ${temp_folder_path}/report/${sample}_${barcode}.tar.gz gs://oncopanel-result-files-nki/
-#info "The report and the related tar with result files are shared in gs://oncopanel-result-files-nki/:"
-#gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-
+target_bucket="targeted-pipeline-output-prod-1"
+run_bucket="${target_bucket}/${set}"
 
 ### Create coverage plots
 mkdir -p ${temp_folder_path}/coverage_plots
-Rscript /data/repos/scripts/panel/createSampleQcReport.R ${barcode} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
+Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
 
-Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${barcode} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
+Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
 
+#echo "Written coverage plots to target bucket of ${set}"
+#gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
 
 ### Filter VCFs
 mkdir -p ${temp_folder_path}/reporting_vcf
@@ -140,15 +114,25 @@ if [ ! -f ${temp_folder_path}"/purple/"${panel_vcf_name} ]; then
     echo "VCF file not found!"
     exit 1
 else
-    zcat ${temp_folder_path}"/purple/"${panel_vcf_name} | grep -E '^#|REPORTED' > ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf
     if [ ! -s ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf ]; then
         warn "[WARN] Reported VCF file is empty!"
+    else
+      zcat ${temp_folder_path}"/purple/"${panel_vcf_name} | grep -E '^#|REPORTED' > ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf
     fi
 fi
 
-### Archive all created data
+#echo "Written reported purple vcf to target bucket of ${set}"
+#gsutil cp -r ${temp_folder_path}/reporting_vcf/ ${run_bucket}
 
-# Push back to bucket
+### Patch reporting created endpoint
+#api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
+#echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
+#read answer
+#if [[ $answer == 'Y' ]]; then
+#  post_api_created_report ${api_update_json} ${sample}
+#fi
+
+
 
 # Push report to final dest: copy_report_to_final_reports_gcp
 
@@ -167,13 +151,6 @@ fi
 ### remove temporary folder
 #rm -r ${temp_folder_path}/ 2>&1
 
-### Patch reporting created endpoint
-#api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json" | grep -v "report_without_conclusion")
-#echo '[INPUT] Do you want to update the reporting created endpoint? Please answer Y or N.'
-#read answer
-#if [[ $answer == 'Y' ]]; then
-#  post_api_created_report ${api_update_json} ${sample}
-#fi
 
 
 #echo '[INPUT] Do you want to also do the final processing (since the report has been shared) ? Please answer Y or N.'
