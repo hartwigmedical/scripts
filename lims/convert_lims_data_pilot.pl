@@ -270,6 +270,7 @@ sub addLamaSamples{
 
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
+        my $prep_type = $sample_to_store{prep_type} || NACHAR;
         my $analysis_type = $sample_to_store{isolation_type};
         my $final_target_yield = NACHAR;
 
@@ -277,7 +278,7 @@ sub addLamaSamples{
             sayWarn("NOTIFY: LAMA sample has no isolation type defined for $isolate_barcode [$sample_print_info]");
             next;
         }
-        elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE') {
+        elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE' or $prep_type eq "PANEL") {
             $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
             # sanity check that we are indeed dealing with TO (tumor only)
             my $expected_cohort = 'Panel';
