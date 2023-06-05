@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_reporting_api || exit 1
 
-major_version="5.28"
+major_version="5.32"
 
 ###########
 
