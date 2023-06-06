@@ -100,14 +100,14 @@ target_bucket="gs://targeted-pipeline-output-prod-1"
 run_bucket="${target_bucket}/${set}"
 
 ### Create coverage plots
-coverage_plot_path="${temp_folder_path}/panel_data/coverage_plot"
+coverage_plot_path="${temp_folder_path}/reporting/qc_plot"
 mkdir -p ${coverage_plot_path}
 
-Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${coverage_plot_path}
-Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${coverage_plot_path}
+Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${coverage_plot_path} > "${coverage_plot_path}/createSampleQcReport.log"
+Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${coverage_plot_path} > "${coverage_plot_path}/createSampleQcReport_Deamination.log"
 
 ### Filter VCFs
-reporting_vcf_path="${temp_folder_path}/panel_data/reporting_vcf"
+reporting_vcf_path="${temp_folder_path}/reporting/vcf"
 mkdir -p ${reporting_vcf_path}
 panel_vcf_name=$(locate_purple_somatic_variants_panel ${temp_folder_path})
 if [ ! -f ${temp_folder_path}"/purple/"${panel_vcf_name} ]; then
@@ -121,9 +121,6 @@ else
 fi
 
 echo "Written coverage plots to target bucket of ${set}"
-gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
-gsutil cp -r ${temp_folder_path}/panel_data/reporting_vcf/ ${run_bucket}
-
 gsutil rsync -r -n "${temp_folder_path}/panel_data/" "${run_bucket}/panel_data/"
 
 ### upload report to NC
