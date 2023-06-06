@@ -72,7 +72,7 @@ do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
 
 if [[ $( ls ${temp_folder_path}/report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/report | grep ".pdf" )
-    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
+    json=$( ls ${temp_folder_path}/report | grep ".json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
@@ -96,32 +96,35 @@ gsutil -q cp -r ${temp_folder_path}/report/* gs://patient-reporter-manual-prod-1
 info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
 gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
-target_bucket="targeted-pipeline-output-prod-1"
+target_bucket="gs://targeted-pipeline-output-prod-1"
 run_bucket="${target_bucket}/${set}"
 
 ### Create coverage plots
-mkdir -p ${temp_folder_path}/coverage_plots
-Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
-Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${temp_folder_path}/coverage_plots/
+coverage_plot_path="${temp_folder_path}/panel_data/coverage_plot"
+mkdir -p ${coverage_plot_path}
 
-echo "Written coverage plots to target bucket of ${set}"
-gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
+Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} ${coverage_plot_path}
+Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} ${coverage_plot_path}
 
 ### Filter VCFs
-mkdir -p ${temp_folder_path}/reporting_vcf
+reporting_vcf_path="${temp_folder_path}/panel_data/reporting_vcf"
+mkdir -p ${reporting_vcf_path}
 panel_vcf_name=$(locate_purple_somatic_variants_panel ${temp_folder_path})
 if [ ! -f ${temp_folder_path}"/purple/"${panel_vcf_name} ]; then
     echo "VCF file not found!"
     exit 1
 else
-    zcat ${temp_folder_path}"/purple/"${panel_vcf_name} | grep -E '^#|REPORTED' > ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf
-    if [ ! -s ${temp_folder_path}/reporting_vcf/${sample}.reported.somatic.vcf ]; then
+    zcat ${temp_folder_path}"/purple/"${panel_vcf_name} | grep -E '^#|REPORTED' > "${reporting_vcf_path}/${sample}.reported.somatic.vcf"
+    if [ ! -s "${reporting_vcf_path}/${sample}.reported.somatic.vcf" ]; then
         warn "[WARN] Reported VCF file is empty!"
-    else
-      echo "Written reported purple vcf to target bucket of ${set}"
-      gsutil cp -r ${temp_folder_path}/reporting_vcf/ ${run_bucket}
     fi
 fi
+
+echo "Written coverage plots to target bucket of ${set}"
+gsutil cp -r ${temp_folder_path}/coverage_plots/ ${run_bucket}
+gsutil cp -r ${temp_folder_path}/panel_data/reporting_vcf/ ${run_bucket}
+
+gsutil rsync -r -n "${temp_folder_path}/panel_data/" "${run_bucket}/panel_data/"
 
 ### upload report to NC
 
