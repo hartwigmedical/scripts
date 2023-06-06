@@ -127,8 +127,8 @@ gsutil rsync -r -n "${temp_folder_path}/reporting/" ${run_bucket}
 
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
-upload_file_to_nc_new_reports_viewing "${coverage_plot_path}/sampleQcDeamination/${sample}.sampleQcDeamination.pdf" &> /dev/null
-upload_file_to_nc_new_reports_viewing "${coverage_plot_path}/sampleQcReports/${sample}.sampleQcReport.pdf" &> /dev/null
+upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcDeamination/${sample}.sampleQcDeamination.pdf" &> /dev/null
+upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcReports/${sample}.sampleQcReport.pdf" &> /dev/null
 info "Files are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 ### Patch reporting created endpoint
