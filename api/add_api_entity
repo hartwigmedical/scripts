@@ -23,4 +23,4 @@ fi
 
 info "Adding entity ${entity} to API"
 data_string=$(printf '{"name": "%s", "add_to_db": %s}' ${entity} ${add_db})
-curl -H "Content-Type: application/json" -H "Accept: application/json" -X POST http://api.prod-1/hmf/v1/entities --data ${data_string}
+curl -H "Content-Type: application/json" -H "Accept: application/json" -X POST http://api.prod-1/hmf/v1/entities --data "${data_string}"
