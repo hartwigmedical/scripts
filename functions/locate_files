@@ -129,7 +129,7 @@ locate_prod_patient_reporter() {
 }
 
 locate_panel_patient_reporter() {
-    echo "/data/tools/patient-reporter/7.26/patient-reporter.jar"
+    echo "/data/experiments/panel_report/patient-reporter.jar"
 }
 
 locate_pilot_patient_reporter() {
