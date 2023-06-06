@@ -72,6 +72,7 @@ do_panel_report_for_run ${temp_folder_path} ${sample} ${barcode}  \
 
 if [[ $( ls ${temp_folder_path}/report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/report | grep ".pdf" )
+    json=$( ls ${temp_folder_path}/new_report | grep ".json" )
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
@@ -121,6 +122,14 @@ else
       gsutil cp -r ${temp_folder_path}/reporting_vcf/ ${run_bucket}
     fi
 fi
+
+### upload report to NC
+
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
+upload_file_to_nc_new_reports_viewing "${run_bucket}/coverage_plots/sampleQcDeamination/${sample}.sampleQcDeamination.pdf" &> /dev/null
+upload_file_to_nc_new_reports_viewing "${run_bucket}/coverage_plots/sampleQcReports/${sample}.sampleQcReport.pdf" &> /dev/null
+info "Files are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 ### Patch reporting created endpoint
 api_update_json=$( gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep "api-update.json")
