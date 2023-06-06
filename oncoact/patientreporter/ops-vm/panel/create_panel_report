@@ -140,4 +140,4 @@ if [[ $answer == 'Y' ]]; then
 fi
 
 ### remove temporary folder
-rm -r ${temp_folder_path}/ 2>&1
+#rm -r ${temp_folder_path}/ 2>&1
