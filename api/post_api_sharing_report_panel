@@ -50,7 +50,7 @@ sampleQcReportBucket=$(echo ${sampleQcReport} | tr "/" " " | awk '{print $2}')
 sampleQcDeaminationFile=$(echo ${sampleQcDeamination} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 sampleQcDeaminationBucket=$(echo ${sampleQcDeamination} | tr "/" " " | awk '{print $2}')
 
-#
+#portal files
 reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${reportBucket}" "path" "${reportFile}")
 reportPurpleDriverCatalog=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleDriverCatalogBucket}" "path" "${purpleDriverCatalogFile}" "folder" "RUO")
 reportPurplePurity=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purplePurityBucket}" "path" "${purplePurityFile}" "folder" "RUO")
