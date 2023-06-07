@@ -69,18 +69,18 @@ if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | w
 fi
 
 ## copy report from manual bucket to final
-#gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
-#gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
-#gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
+gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
 
-#if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-#    info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
-#    info "Final reports + report jsons + api jsons stored for ${sample}:"
-#    gsutil ls ${url_bucket_report_final} | grep "${sample}"
-#else
-#    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
-#    exit 1
-#fi
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
+    info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
+    info "Final reports + report jsons + api jsons stored for ${sample}:"
+    gsutil ls ${url_bucket_report_final} | grep "${sample}"
+else
+    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
+    exit 1
+fi
 
 bucket="gs://targeted-pipeline-output-prod-1/${set}"
 reportPdf=(${url_bucket_report_final}${report})
