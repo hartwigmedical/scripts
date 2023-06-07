@@ -33,7 +33,7 @@ purplePurityFile=$(echo ${purplePurityLocation} | awk -F 'targeted-pipeline-outp
 purplePurityBucket=$(echo ${purplePurityLocation} | tr "/" " " | awk '{print $2}')
 
 purpleSomaticVcfFile=$(echo ${purpleSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
-purpleSomaticVcfBucket=$(echo ${purpleSomaticVcfLocation} | ttr "/" " " | awk '{print $2}')
+purpleSomaticVcfBucket=$(echo ${purpleSomaticVcfLocation} | tr "/" " " | awk '{print $2}')
 
 purpleSvVcfFile=$(echo ${purpleSvVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleSvVcfBucket=$(echo ${purpleSvVcfLocation} | tr "/" " " | awk '{print $2}')
