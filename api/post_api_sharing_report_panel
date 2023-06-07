@@ -26,28 +26,28 @@ else
   publish_to_portal="false"
 fi
 
-purpleDriverCatalogFile=$(echo ${purpleDriverCatalogLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+purpleDriverCatalogFile=$(echo ${purpleDriverCatalogLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleDriverCatalogBucket=$(echo ${purpleDriverCatalogLocation} | tr "/" " " | awk '{print $2}')
 
-purplePurityFile=$(echo ${purplePurityLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+purplePurityFile=$(echo ${purplePurityLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purplePurityBucket=$(echo ${purplePurityLocation} | tr "/" " " | awk '{print $2}')
 
-purpleSomaticVcfFile=$(echo ${purpleSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+purpleSomaticVcfFile=$(echo ${purpleSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleSomaticVcfBucket=$(echo ${purpleSomaticVcfLocation} | ttr "/" " " | awk '{print $2}')
 
-purpleSvVcfFile=$(echo ${purpleSvVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+purpleSvVcfFile=$(echo ${purpleSvVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleSvVcfBucket=$(echo ${purpleSvVcfLocation} | tr "/" " " | awk '{print $2}')
 
 reportFile=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $3}')
 reportBucket=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $2}')
 
-purpleReportedSomaticVcfFile=$(echo ${purpleReportedSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+purpleReportedSomaticVcfFile=$(echo ${purpleReportedSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleReportedSomaticVcfBucket=$(echo ${purpleReportedSomaticVcfLocation} | tr "/" " " | awk '{print $2}')
 
-sampleQcReportFile=$(echo ${sampleQcReport} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+sampleQcReportFile=$(echo ${sampleQcReport} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 sampleQcReportBucket=$(echo ${sampleQcReport} | tr "/" " " | awk '{print $2}')
 
-sampleQcDeaminationFile=$(echo ${sampleQcDeamination} | awk -F 'targeted-pipeline-output-prod-1/' '{print $1}')
+sampleQcDeaminationFile=$(echo ${sampleQcDeamination} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 sampleQcDeaminationBucket=$(echo ${sampleQcDeamination} | tr "/" " " | awk '{print $2}')
 
 #
