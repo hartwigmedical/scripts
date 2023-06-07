@@ -84,6 +84,7 @@ fi
 
 bucket="gs://targeted-pipeline-output-prod-1/${set}"
 reportPdf=(${url_bucket_report_final}${report})
+reportJson=(${url_bucket_report_final}${json})
 reportPurpleDriverCatalog=("${bucket}/purple/${sample}.driver.catalog.somatic.tsv")
 reportPurplePurity=("${bucket}/purple/${sample}.purple.purity.tsv")
 reportPurpleSomaticVcf=("${bucket}/purple/${sample}.purple.somatic.vcf.gz")
@@ -95,7 +96,7 @@ sampleQcDeamination=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.
 ## add reporting info to registration file
 if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
   info "A record has been added for ${sample} to sharing api"
-  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleReportedSomaticVcf} ${sampleQcReport} ${sampleQcDeamination}
+  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleReportedSomaticVcf} ${sampleQcReport} ${sampleQcDeamination}
   info "Reports shared registration for ${sample}:"
   extract_object_created ${barcode} ${report_type} ${report_source} "prod"
   extract_object_shared ${reporting_id} "prod"
