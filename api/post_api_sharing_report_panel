@@ -74,10 +74,10 @@ share_standard_files="false"
 data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${sampleQcReport}\n${sampleQcDeamination}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
 echo ${data} | jq
 
-#if [[ -z ${report_created_id} ]];then
-#  error "No reporting created entry is present. Add entry first in created endpoint"
-#  exit 1
-#fi
-#
+if [[ -z ${report_created_id} ]];then
+  error "No reporting created entry is present. Add entry first in created endpoint"
+  exit 1
+fi
+
 info "Adding entry to shared API"
 api_curl_post "reports/shared" "${data}" "prod"
