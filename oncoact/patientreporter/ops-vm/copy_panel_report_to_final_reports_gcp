@@ -59,28 +59,28 @@ report_source="manual"
 report_type=$( echo ${report_type:1:-1})
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} ${report_source} "prod")
 
-## check wether report already exists in final bucket
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
-  warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-  warn "See also the record in sharing api:"
-  extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-  extract_object_shared ${reporting_id} "prod"
-  exit 1
-fi
-
-## copy report from manual bucket to final
-gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
-gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
-gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
-
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-    info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
-    info "Final reports + report jsons + api jsons stored for ${sample}:"
-    gsutil ls ${url_bucket_report_final} | grep "${sample}"
-else
-    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
-    exit 1
-fi
+### check wether report already exists in final bucket
+#if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
+#  warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+#  warn "See also the record in sharing api:"
+#  extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#  extract_object_shared ${reporting_id} "prod"
+#  exit 1
+#fi
+#
+### copy report from manual bucket to final
+#gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+#gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
+#gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+#
+#if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
+#    info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
+#    info "Final reports + report jsons + api jsons stored for ${sample}:"
+#    gsutil ls ${url_bucket_report_final} | grep "${sample}"
+#else
+#    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
+#    exit 1
+#fi
 
 bucket="gs://targeted-pipeline-output-prod-1/${set}"
 reportPdf=(${url_bucket_report_final}${report})
@@ -89,6 +89,7 @@ reportPurpleDriverCatalog=("${bucket}/purple/${sample}.driver.catalog.somatic.ts
 reportPurplePurity=("${bucket}/purple/${sample}.purple.purity.tsv")
 reportPurpleSomaticVcf=("${bucket}/purple/${sample}.purple.somatic.vcf.gz")
 reportPurpleSvVcf=("${bucket}/purple/${sample}.purple.sv.vcf.gz")
+reportPurpleCnvGene=("${bucket}/purple/${sample}.purple.cnv.gene.tsv")
 reportPurpleReportedSomaticVcf=("${bucket}/reporting/vcf/${sample}.reported.somatic.vcf")
 sampleQcReport=("${bucket}/reporting/qc_plot/sampleQcReports/${sample}.sampleQcReport.pdf")
 sampleQcDeamination=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.sampleQcDeamination.pdf")
@@ -96,7 +97,7 @@ sampleQcDeamination=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.
 ## add reporting info to registration file
 if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
   info "A record has been added for ${sample} to sharing api"
-  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleReportedSomaticVcf} ${sampleQcReport} ${sampleQcDeamination}
+  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleCnvGene} ${reportPurpleReportedSomaticVcf} ${sampleQcReport} ${sampleQcDeamination}
   info "Reports shared registration for ${sample}:"
   extract_object_created ${barcode} ${report_type} ${report_source} "prod"
   extract_object_shared ${reporting_id} "prod"

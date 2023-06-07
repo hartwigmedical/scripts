@@ -13,6 +13,7 @@ purpleDriverCatalogLocation=$1 && shift
 purplePurityLocation=$1 && shift
 purpleSomaticVcfLocation=$1 && shift
 purpleSvVcfLocation=$1 && shift
+reportPurpleCnvGeneLocation=$1 && shift
 purpleReportedSomaticVcfLocation=$1 && shift
 sampleQcReport=$1 && shift
 sampleQcDeamination=$1 && shift
@@ -39,6 +40,9 @@ purpleSomaticVcfBucket=$(echo ${purpleSomaticVcfLocation} | tr "/" " " | awk '{p
 purpleSvVcfFile=$(echo ${purpleSvVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleSvVcfBucket=$(echo ${purpleSvVcfLocation} | tr "/" " " | awk '{print $2}')
 
+purpleCnvGeneFile=$(echo ${reportPurpleCnvGeneLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
+purpleCnvGeneBucket=$(echo ${reportPurpleCnvGeneLocation} | tr "/" " " | awk '{print $2}')
+
 reportFile=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $3}')
 reportBucket=$(echo ${sharedReportLocation} | tr "/" " " | awk '{print $2}')
 
@@ -60,19 +64,20 @@ reportJson=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${jsonBucket}" "path" "
 reportPurpleDriverCatalog=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleDriverCatalogBucket}" "path" "${purpleDriverCatalogFile}" "folder" "RUO")
 reportPurplePurity=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purplePurityBucket}" "path" "${purplePurityFile}" "folder" "RUO")
 reportPurpleSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleSomaticVcfBucket}" "path" "${purpleSomaticVcfFile}" "folder" "RUO")
+reportPurpleCnvGene=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleCnvGeneBucket}" "path" "${purpleCnvGeneFile}" "folder" "RUO")
 reportPurpleSvVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleSvVcfBucket}" "path" "${purpleSvVcfFile}" "folder" "RUO")
 reportPurpleReportedSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleReportedSomaticVcfBucket}" "path" "${purpleReportedSomaticVcfFile}" "folder" "RUO")
 sampleQcReport=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcReportBucket}" "path" "${sampleQcReportFile}" "folder" "RUO")
 sampleQcDeamination=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucket}" "path" "${sampleQcDeaminationFile}" "folder" "RUO")
 
 share_standard_files="false"
-data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${sampleQcReport}\n${sampleQcDeamination}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
+data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${sampleQcReport}\n${sampleQcDeamination}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
 echo ${data} | jq
 
-if [[ -z ${report_created_id} ]];then
-  error "No reporting created entry is present. Add entry first in created endpoint"
-  exit 1
-fi
-
-info "Adding entry to shared API"
-api_curl_post "reports/shared" "${data}" "prod"
+#if [[ -z ${report_created_id} ]];then
+#  error "No reporting created entry is present. Add entry first in created endpoint"
+#  exit 1
+#fi
+#
+#info "Adding entry to shared API"
+#api_curl_post "reports/shared" "${data}" "prod"
