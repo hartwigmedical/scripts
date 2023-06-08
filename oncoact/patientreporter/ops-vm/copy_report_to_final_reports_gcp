@@ -102,23 +102,23 @@ report_type=$( echo ${report_type:1:-1})
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} ${report_source} "prod")
 
 ## check wether report already exists in final bucket
-if [[ ${report} == *"corrected"* ]]; then
-    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
-        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-        warn "See also the record in sharing api:"
-        extract_object_created ${barcode}  ${report_type} ${report_source} "prod"
-        extract_object_shared ${reporting_id} "prod"
-        exit 1
-    fi
-else
-    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
-         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-         warn "See also the record in sharing api:"
-         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-         extract_object_shared ${reporting_id} "prod"
-         exit 1
-    fi
-fi
+#if [[ ${report} == *"corrected"* ]]; then
+#    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+#        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+#        warn "See also the record in sharing api:"
+#        extract_object_created ${barcode}  ${report_type} ${report_source} "prod"
+#        extract_object_shared ${reporting_id} "prod"
+#        exit 1
+#    fi
+#else
+#    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
+#         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+#         warn "See also the record in sharing api:"
+#         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#         extract_object_shared ${reporting_id} "prod"
+#         exit 1
+#    fi
+#fi
 
 ## copy report from auto/manual bucket to final
 
