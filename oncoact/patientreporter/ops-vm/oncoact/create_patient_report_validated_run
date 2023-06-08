@@ -159,6 +159,7 @@ fi
 if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
     report=$( ls ${temp_folder_path}/new_report | grep ".pdf" )
     xml=$( ls ${temp_folder_path}/new_report | grep ".xml" )
+    json=$( ls ${temp_folder_path}/new_report | grep "_oncoact.json" )
     info "$report and $xml has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
@@ -183,11 +184,6 @@ info "The report and the related log + json file can be found in gs://patient-re
 gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
 
-### upload report to NC
-upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
-upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $xml &> /dev/null
-info "$report and $xml are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
-
 ### Patch reporting created endpoint
 if [[ ${correction_comments} != "" ]]; then
     api_update_json=$(gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample} | grep -v "report_without_conclusion" | grep "api-update.json" | grep "corrected" )
@@ -199,6 +195,16 @@ echo '[INPUT] Do you want to update the reporting created endpoint? Please answe
 read answer
 if [[ $answer == 'Y' ]]; then
   post_api_created_report ${api_update_json} ${sample}
+fi
+
+### upload report to NC
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $report &> /dev/null
+upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $xml &> /dev/null
+info "$report and $xml are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+
+if [[ ${sample} == "GLOW0144"* || ${sample} == "GLOW0109"* ]]; then
+  upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $json &> /dev/null
+  info "$json is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 fi
 
 echo ""
