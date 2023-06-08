@@ -122,36 +122,35 @@ fi
 
 ## copy report from auto/manual bucket to final
 
-if [[ "${report_source}" == "automatic" ]]; then
-    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
-else
-    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
-    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
-fi
+#if [[ "${report_source}" == "automatic" ]]; then
+#    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
+#else
+#    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
+#    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+#fi
 
-if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-    if [[ "${report_source}" == "automatic" ]]; then
-        info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
-    else
-        info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
-    fi
-    info "Final reports + related files stored for ${sample}:"
-    gsutil ls ${url_bucket_report_final} | grep "${sample}"
-else
-    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
-    exit 1
-fi
+#if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
+#    if [[ "${report_source}" == "automatic" ]]; then
+#        info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
+#    else
+#        info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
+#    fi
+#    info "Final reports + related files stored for ${sample}:"
+#    gsutil ls ${url_bucket_report_final} | grep "${sample}"
+#else
+#    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
+#    exit 1
+#fi
 
 sharedReportLocation=(${url_bucket_report_final}${report})
 sharedJsonLocation=(${url_bucket_report_final}${json})
 sharedXmlLocation=(${url_bucket_report_final}${xml})
 
-echo $sharedXmlLocation}
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then

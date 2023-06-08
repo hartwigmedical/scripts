@@ -32,7 +32,7 @@ reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${pdfBucket}" "path" "${
 reportJson=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${jsonBucket}" "path" "${jsonFile}")
 reportXml=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${xmlBucket}" "path" "${xmlFile}")
 
-if [[ ${report_type} == "dna_analysis_report" || ${report_type} == "dna_analysis_report_insufficient_tcp" ]]; then
+if [[ ${report_type} == "dna_analysis_report*" || ${report_type} == "dna_analysis_report_insufficient_tcp*" ]]; then
   data=$(echo -e "${reportPdf}\n${reportJson}\n${reportXml}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
 else
   data=$(echo -e "${reportPdf}\n${reportJson}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "report_files": .}')
@@ -40,10 +40,10 @@ fi
 
 echo ${data} | jq
 
-if [[ -z ${report_created_id} ]];then
-  error "No reporting created entry is present. Add entry first in created endpoint"
-  exit 1
-fi
-
-info "Adding entry to shared API"
-api_curl_post "reports/shared" "${data}" "prod"
+#if [[ -z ${report_created_id} ]];then
+#  error "No reporting created entry is present. Add entry first in created endpoint"
+#  exit 1
+#fi
+#
+#info "Adding entry to shared API"
+#api_curl_post "reports/shared" "${data}" "prod"
