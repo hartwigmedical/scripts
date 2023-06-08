@@ -45,5 +45,5 @@ echo ${data} | jq
 #  exit 1
 #fi
 #
-#info "Adding entry to shared API"
-#api_curl_post "reports/shared" "${data}" "prod"
+info "Adding entry to shared API"
+api_curl_post "reports/shared" "${data}" "prod"
