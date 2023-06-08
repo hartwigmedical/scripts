@@ -102,50 +102,50 @@ report_type=$( echo ${report_type:1:-1})
 reporting_id=$(extract_reporting_id ${barcode} ${report_type} ${report_source} "prod")
 
 ## check wether report already exists in final bucket
-#if [[ ${report} == *"corrected"* ]]; then
-#    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
-#        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-#        warn "See also the record in sharing api:"
-#        extract_object_created ${barcode}  ${report_type} ${report_source} "prod"
-#        extract_object_shared ${reporting_id} "prod"
-#        exit 1
-#    fi
-#else
-#    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
-#         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
-#         warn "See also the record in sharing api:"
-#         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-#         extract_object_shared ${reporting_id} "prod"
-#         exit 1
-#    fi
-#fi
+if [[ ${report} == *"corrected"* ]]; then
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | grep corrected | wc -l ) > 0 ]]; then
+        warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+        warn "See also the record in sharing api:"
+        extract_object_created ${barcode}  ${report_type} ${report_source} "prod"
+        extract_object_shared ${reporting_id} "prod"
+        exit 1
+    fi
+else
+    if [[ $( gsutil ls ${url_bucket_report_final} | grep "${sample}" | grep .pdf | wc -l ) > 0  ]]; then
+         warn "Report already exists in ${url_bucket_report_final} on gcp so probably is already shared. Please check. Exiting"
+         warn "See also the record in sharing api:"
+         extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+         extract_object_shared ${reporting_id} "prod"
+         exit 1
+    fi
+fi
 
 ## copy report from auto/manual bucket to final
 
-#if [[ "${report_source}" == "automatic" ]]; then
-#    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
-#else
-#    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
-#    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
-#fi
+if [[ "${report_source}" == "automatic" ]]; then
+    gsutil -q cp ${url_bucket_report_auto}${report} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_auto}${json} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_auto}${xml} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_auto}${api} ${url_bucket_report_final}
+else
+    gsutil -q cp ${url_bucket_report_manual}${report} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_manual}${json} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_manual}${xml} ${url_bucket_report_final}
+    gsutil -q cp ${url_bucket_report_manual}${api} ${url_bucket_report_final}
+fi
 
-#if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
-#    if [[ "${report_source}" == "automatic" ]]; then
-#        info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
-#    else
-#        info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
-#    fi
-#    info "Final reports + related files stored for ${sample}:"
-#    gsutil ls ${url_bucket_report_final} | grep "${sample}"
-#else
-#    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
-#    exit 1
-#fi
+if [[ $( gsutil ls ${url_bucket_report_final} | grep "${report}" | wc -l ) > 0 ]]; then
+    if [[ "${report_source}" == "automatic" ]]; then
+        info "Report copied from ${url_bucket_report_auto}${report} to final archive ${url_bucket_report_final} on gcp."
+    else
+        info "Report copied from ${url_bucket_report_manual}${report} to final archive ${url_bucket_report_final} on gcp."
+    fi
+    info "Final reports + related files stored for ${sample}:"
+    gsutil ls ${url_bucket_report_final} | grep "${sample}"
+else
+    warn "Report not correctly moved to final archive ${url_bucket_report_final}. Please check what went wrong. Exiting. "
+    exit 1
+fi
 
 sharedReportLocation=(${url_bucket_report_final}${report})
 sharedJsonLocation=(${url_bucket_report_final}${json})
@@ -154,18 +154,18 @@ sharedXmlLocation=(${url_bucket_report_final}${xml})
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then
-#    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
+    if [[ $(extract_object_shared ${reporting_id}  "prod" | wc -l)  == 0 ]]; then
       info "A record has been added for ${sample} to sharing api"
       post_api_sharing_report ${barcode} ${sample} ${report_type} ${report_source} ${sharedReportLocation} ${sharedJsonLocation} ${sharedXmlLocation}
       info "Reports shared registration for ${sample}:"
       extract_object_created ${barcode} ${report_type} ${report_source} "prod"
       extract_object_shared ${reporting_id} "prod"
-#    else
-#      warn "The report ${report} is already in the sharing api"
-#      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-#      extract_object_shared ${reporting_id} "prod"
-#      warn "No new record added."
-#    fi
+    else
+      warn "The report ${report} is already in the sharing api"
+      extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+      extract_object_shared ${reporting_id} "prod"
+      warn "No new record added."
+    fi
 else
     if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
          info "A record has been added for ${sample} to sharing api"

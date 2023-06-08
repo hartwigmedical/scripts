@@ -40,10 +40,10 @@ fi
 
 echo ${data} | jq
 
-#if [[ -z ${report_created_id} ]];then
-#  error "No reporting created entry is present. Add entry first in created endpoint"
-#  exit 1
-#fi
-#
+if [[ -z ${report_created_id} ]];then
+  error "No reporting created entry is present. Add entry first in created endpoint"
+  exit 1
+fi
+
 info "Adding entry to shared API"
 api_curl_post "reports/shared" "${data}" "prod"
