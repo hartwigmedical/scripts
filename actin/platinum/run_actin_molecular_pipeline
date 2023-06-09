@@ -27,8 +27,5 @@ fi
 info "Copying ${orig_run_dir} to ${run_dir}"
 cp -r "${orig_run_dir}" "${run_dir}"
 
-# Post-process all DNA
-run_actin_dna_post_process ${run_dir}
-
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
