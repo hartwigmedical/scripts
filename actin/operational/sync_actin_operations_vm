@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source locate_gcp_files || exit 1
+
+set -e
+
+info "Syncing ACTIN wgs pipeline output"
+gsutil -m rsync -r -x ".*[^h]la\.bam$|.*\.cram$" gs://actin-prod-wgs-pipeline-output /data/actin/wgs_pipeline
+
+info "Done"
