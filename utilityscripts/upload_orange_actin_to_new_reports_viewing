@@ -21,7 +21,7 @@ orange_pdf=$( ls $temp_path_orange | grep pdf)
 
 
 info "Uploading orange data to Nextcloud for viewing."
-do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "temp_path_orange/${orange_json}"
-do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "temp_path_orange/${orange_pdf}"
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_path_orange/${orange_json}"
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_path_orange/${orange_pdf}"
 
 rm -r $temp_folder_path_file
