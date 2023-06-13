@@ -29,5 +29,8 @@ cp -r "${orig_run_dir}" "${run_dir}"
 
 mv "${run_dir}/virusintrprtr" "${run_dir}/virus_interpreter"
 
+# Post-process DNA results
+run_actin_dna_post_process ${run_dir}
+
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
