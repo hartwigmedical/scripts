@@ -8,6 +8,6 @@ pull_actin_changes_in_crunch_repo
 
 do_update_actin_ctc_config_file "${dir}/${prefix} - CTC unmapped cohorts.tsv" "${dir}/unmapped_cohorts.tsv"
 do_update_actin_ctc_config_file "${dir}/${prefix} - CTC ignore studies.tsv" "${dir}/ignore_studies.tsv"
-do_update_actin_ctc_config_file "${dir}/${prefix} - 230510 CTC.tsv" "${dir}/ctc_database.tsv"
+do_update_actin_ctc_config_file "${dir}/${prefix} - 230614 CTC.tsv" "${dir}/ctc_database.tsv"
 
 push_actin_changes_in_crunch_repo
