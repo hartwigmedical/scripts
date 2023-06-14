@@ -352,7 +352,7 @@ locate_actin_serve_db() {
 }
 
 locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
+    echo "/data/resources/crunch/actin/evidence_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_known_genes_tsv() {
