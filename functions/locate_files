@@ -81,7 +81,7 @@ locate_prod_linx() {
 }
 
 locate_pilot_linx() {
-    echo "/data/experiments/pilot_tools/linx/linx.jar"
+    echo "/data/experiments/tools/linx.jar"
 }
 
 locate_prod_sigs() {
@@ -97,7 +97,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.4.1/orange.jar"
+    echo "/data/tools/orange/2.5.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -352,7 +352,7 @@ locate_actin_serve_db() {
 }
 
 locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
+    echo "/data/resources/crunch/actin/evidence_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_known_genes_tsv() {
