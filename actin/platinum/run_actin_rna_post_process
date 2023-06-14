@@ -20,7 +20,6 @@ fi
 download_isofox_to_run_dir ${run_dir}
 if [[ -d "${run_dir}/isofox" ]]; then
     # Make sure sample is present in the sample metadata file for RNA!
-    load_isofox_data_to_prod ${run_dir}
 
     run_cuppa_dna_rna_prod ${run_dir}
     generate_cup_dna_rna_report ${run_dir}
