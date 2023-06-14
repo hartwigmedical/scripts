@@ -81,7 +81,7 @@ locate_prod_linx() {
 }
 
 locate_pilot_linx() {
-    echo "/data/experiments/pilot_tools/linx/linx.jar"
+    echo "/data/experiments/tools/linx.jar"
 }
 
 locate_prod_sigs() {
