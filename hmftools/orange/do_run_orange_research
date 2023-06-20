@@ -14,6 +14,19 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
     error "Inputs missing. Exiting";
 fi
 
+orange_json_path="${run_dir}/orange/${tumor_sample}.orange.json"
+if [[ ${tumor_sample} == "COLO"* ]]; then
+    primary_tumor_doids="8923"
+else
+    primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json_path} | jq -r '[.[] | .doid] | join(";")')
+    if [[ -z "${primary_tumor_doids}" ]]; then
+        primary_tumor_doids="\"\""
+    fi
+fi
+collection_date=$(jq -r '.experimentDate' ${orange_json_path} | jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[0:2] | if (length < 2) then "0" + . else . end)\(.day | tostring | .[0:2] | if (length < 2) then "0" + . else . end)"')
+
+create_or_cleanup_dir ${output_dir}
+
 orange_jar="$(locate_research_orange)"
 
 doid_json="$(locate_doid_json)"
@@ -24,21 +37,11 @@ known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_directory="$(locate_ensembl_data_dir_37)"
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-collection_date=$(jq -r '.sample.experimentDate' "${run_dir}/orange/${tumor_sample}.orange.json")
 if [[ -z "${collection_date}" ]]; then
     warn "No collection date found for ${tumor_sample}"
     collection_date="NA"
 fi
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
-
-if [[ ${tumor_sample} == "COLO"* ]]; then
-    primary_tumor_doids="8923"
-else
-    primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${tumor_sample}.orange.json | jq -r '[.[] | .doid] | join(";")')
-    if [[ -z "${primary_tumor_doids}" ]]; then
-        primary_tumor_doids="\"\""
-    fi
-fi
 
 ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
