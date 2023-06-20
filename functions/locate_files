@@ -392,10 +392,6 @@ locate_actin_cohort_treatment_match_directory() {
     echo "/data/experiments/actin_cohort/treatment_matches"
 }
 
-locate_tmp_actin_cohort_serve_bridge_tsv() {
-    echo "/data/experiments/actin_cohort/serve_bridge/actin_knowledgebase.tsv"
-}
-
 ############################### ACTIN Buckets ##################################
 
 locate_actin_clinical_data_feed_bucket() {
@@ -408,6 +404,10 @@ locate_actin_evaluation_bucket() {
 
 locate_actin_shared_reports_bucket() {
     echo "gs://hmf-crunch-data/actin_shared_reports"
+}
+
+locate_actin_backup_bucket() {
+    echo "gs://hmf-crunch-actin-backups"
 }
 
 ################################# ACTIN Data ###################################

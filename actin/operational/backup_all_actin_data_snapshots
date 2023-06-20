@@ -9,7 +9,7 @@ info "Running ACTIN data snaphots backup"
 # -e = exclude symlinks to go to GS
 # -r = Recursive
 gsutil_cmd="gsutil -m rsync -d -r -e"
-backup_bucket="gs://hmf-crunch-actin-backups"
+backup_bucket="$(locate_actin_backup_bucket)"
 
 shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
 
