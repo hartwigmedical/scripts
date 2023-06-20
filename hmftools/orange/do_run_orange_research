@@ -14,8 +14,6 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
     error "Inputs missing. Exiting";
 fi
 
-create_or_cleanup_dir ${output_dir}
-
 orange_jar="$(locate_research_orange)"
 
 doid_json="$(locate_doid_json)"
