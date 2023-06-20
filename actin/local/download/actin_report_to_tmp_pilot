@@ -9,7 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-vm="$(production_vm)"
-project="$(production_project)"
+vm="$(pilot_actin_vm)"
+project="$(pilot_actin_project)"
 
-do_download_actin_evaluation_summary_to_tmp ${patient} ${vm} ${project}
+do_download_actin_report_to_tmp ${patient} ${vm} ${project}

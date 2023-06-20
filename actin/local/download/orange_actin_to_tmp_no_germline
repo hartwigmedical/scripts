@@ -14,7 +14,7 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-vm="$(pilot_vm)"
-project="$(pilot_project)"
+vm="$(production_actin_vm)"
+project="$(production_actin_project)"
 
 do_download_orange_actin_to_tmp_no_germline ${sample} ${vm} ${project}
