@@ -24,7 +24,7 @@ else
         primary_tumor_doids="\"\""
     fi
 fi
-collection_date=$(jq -r '.experimentDate' ${orange_json_path} | jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[0:2] | if (length < 2) then "0" + . else . end)\(.day | tostring | .[0:2] | if (length < 2) then "0" + . else . end)"')
+collection_date=$(jq -r '.experimentDate' ${orange_json_path} | jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
 
 create_or_cleanup_dir ${output_dir}
 
