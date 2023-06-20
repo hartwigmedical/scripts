@@ -9,12 +9,12 @@ if [[ -z "${sample}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-local_dir="${HOME}/hmf/tmp/orange_no_germline"
+local_dir="${HOME}/hmf/tmp/orange_germline"
 if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-vm="$(production_vm)"
-project="$(production_project)"
+vm="$(pilot_vm)"
+project="$(pilot_project)"
 
-do_download_orange_actin_to_tmp_no_germline ${sample} ${vm} ${project}
+do_download_orange_actin_to_tmp ${sample} ${vm} ${project}

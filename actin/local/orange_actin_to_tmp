@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source locate_files || exit 1
+source actin_config || exit 1
 
 sample=$1 && shift
 
@@ -14,4 +14,7 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-gcloud compute scp data-vm-prod-2:$(locate_actin_molecular_directory)/*${sample}*/orange/*.pdf ${local_dir}/
+vm="$(production_vm)"
+project="$(production_project)"
+
+do_download_orange_actin_to_tmp ${sample} ${vm} ${project}
