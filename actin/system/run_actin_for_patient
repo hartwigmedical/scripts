@@ -25,7 +25,3 @@ create_actin_evaluation_data_for_patient ${patient}
 echo ""
 
 actin_reporter_pilot ${patient}
-
-echo ""
-
-load_actin_treatment_match_pilot ${patient}
