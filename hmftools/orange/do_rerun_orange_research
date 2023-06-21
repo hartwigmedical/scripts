@@ -16,14 +16,11 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 orange_json_path="${run_dir}/orange/${tumor_sample}.orange.json"
-if [[ ${tumor_sample} == "COLO"* ]]; then
-    primary_tumor_doids="8923"
-else
-    primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json_path} | jq -r '[.[] | .doid] | join(";")')
-    if [[ -z "${primary_tumor_doids}" ]]; then
-        primary_tumor_doids="\"\""
-    fi
+primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json_path} | jq -r '[.[] | .doid] | join(";")')
+if [[ -z "${primary_tumor_doids}" ]]; then
+    primary_tumor_doids="\"\""
 fi
+
 collection_date=$(jq -r '.experimentDate' ${orange_json_path} | jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
 
 create_or_cleanup_dir ${output_dir}
