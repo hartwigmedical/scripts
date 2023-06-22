@@ -8,15 +8,15 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-# Rerun standard ORANGE in research
-rerun_orange_pilot ${run_dir}
+# Run standard ORANGE in research
+run_orange_pilot ${run_dir}
 
 # Converted-germline is generated to be able to share externally with people who do not wish to see germline.
-rerun_orange_pilot_no_germline ${run_dir}
+run_orange_pilot_no_germline ${run_dir}
 
 # Tumor-only is run just for testing
-rerun_orange_pilot_tumor_only ${run_dir}
+run_orange_pilot_tumor_only ${run_dir}
 
 # Panel is also run just for testing
-rerun_orange_pilot_panel ${run_dir}
+run_orange_pilot_panel ${run_dir}
 
