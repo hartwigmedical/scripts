@@ -12,8 +12,9 @@ extract_configured_primary_tumor() {
 
 extract_experiment_date() {
     local orange_json=$1
+
     experiment_date=$(jq -r '.experimentDate' ${orange_json} | \
-        jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
+        jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[0:2] | if (length < 2) then "0" + . else . end)\(.day | tostring | .[0:2] | if (length < 2) then "0" + . else . end)"')
 
     if [[ -z "${experiment_date}" ]]; then
         warn "No experiment date found for ${tumor_sample}"
