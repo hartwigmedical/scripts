@@ -11,12 +11,15 @@ fi
 
 match_run=""
 for run in $(locate_actin_wgs_pipeline_output_directory); do
+    echo "Evaluating ${run}"
     sample_match_count=$(ls ${run} | grep -c ${sample})
+    echo "Found ${sample_match_count} matches"
     if [[ ${sample_match_count} -gt 0 ]]; then
         if [[ ! -z "${match_run}" ]]; then
             error "Found multiple WGS runs for sample '${sample}'!"
         fi
-        match_run=${run}
+        echo "Recording match_run as ${run}"
+        match_run="${run}"
     fi
 done
 
