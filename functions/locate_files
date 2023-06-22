@@ -410,6 +410,10 @@ locate_actin_backup_bucket() {
     echo "gs://actin-prod-backups"
 }
 
+locate_actin_wgs_pipeline_bucket() {
+    echo "gs://actin-prod-wgs-pipeline-output"
+}
+
 ################################# ACTIN Data ###################################
 
 locate_actin_clinical_input_feed_directory() {
@@ -455,6 +459,10 @@ locate_actin_clinical_json_for_sample() {
 
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
+}
+
+locate_actin_wgs_pipeline_output_directory() {
+    echo "/data/actin/wgs_pipeline_output"
 }
 
 locate_actin_platinum_directory_for_sample() {

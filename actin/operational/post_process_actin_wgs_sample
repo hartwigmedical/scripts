@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+
