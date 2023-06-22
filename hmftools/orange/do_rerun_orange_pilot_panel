@@ -30,7 +30,7 @@ lilac_qc_csv="$(locate_lilac_qc ${run_dir})"
 
 info "Running ORANGE pilot panel on ${run_dir}"
 
-do_rerun_orange_pilot_38 \
+do_rerun_orange_pilot \
     ${run_dir} \
     ${output_dir} \
     ${pipeline_version_cmd} \
