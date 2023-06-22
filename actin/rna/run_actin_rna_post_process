@@ -60,9 +60,6 @@ if [[ -d "${rna_bam_dir}" ]]; then
     # Rerun LILAC to produce data on DNA/RNA combined.
     run_lilac_for_actin_dna_rna_run ${run_dir}
 
-    # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
-    run_orange_in_actin_mode ${run_dir}
-
     # Clean up RNA bam
     rm -r ${rna_bam_dir}
 fi
