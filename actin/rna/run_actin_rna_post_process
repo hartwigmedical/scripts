@@ -60,7 +60,7 @@ if [[ -d "${rna_bam_dir}" ]]; then
     slice_rna_bam_for_hla ${run_dir}
 
     # Rerun LILAC to produce data on DNA/RNA combined.
-    run_lilac_for_actin_run ${run_dir}
+    run_lilac_for_actin_dna_rna_run ${run_dir}
 
     # Rerunning ORANGE to pick up CUPPA DNA-RNA and LILAC RNA
     run_orange_in_actin_mode ${run_dir}
