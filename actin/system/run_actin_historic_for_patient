@@ -18,7 +18,3 @@ actin_orange_interpreter_pilot ${sample}
 echo ""
 
 actin_treatment_matcher_pilot ${patient} -run_historically
-
-echo ""
-
-load_actin_treatment_match_pilot ${patient}
