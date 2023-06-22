@@ -54,8 +54,6 @@ if [[ -d "${rna_bam_dir}" ]]; then
         cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
     fi
 
-    load_rna_annotated_purple_data_to_prod ${run_dir}
-
     # Extract the HLA regions for the RNA BAM
     slice_rna_bam_for_hla ${run_dir}
 
