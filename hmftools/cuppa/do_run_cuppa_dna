@@ -24,12 +24,12 @@ tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
-cp -r "${run_dir}/purple/*" "${tmp_sample_data_dir}/"
-cp -r "${run_dir}/linx/*" "${tmp_sample_data_dir}/"
-if [[ -d "${run_dir}/virus_interpreter" ]]; then
-    cp -r "${run_dir}/virus_interpreter/*" "${tmp_sample_data_dir}/"
+cp -r ${run_dir}/purple/* ${tmp_sample_data_dir}/
+cp -r ${run_dir}/linx/* ${tmp_sample_data_dir}/
+if [[ -d ${run_dir}/virus_interpreter ]]; then
+    cp -r ${run_dir}/virus_interpreter/* ${tmp_sample_data_dir}/
 else
-    cp -r "${run_dir}/virusintrprtr/*" "${tmp_sample_data_dir}/"
+    cp -r ${run_dir}/virusintrprtr/* ${tmp_sample_data_dir}/
 fi
 
 info "Running Cuppa DNA on ${run_dir}"
