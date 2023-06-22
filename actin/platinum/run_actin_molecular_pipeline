@@ -18,7 +18,7 @@ fi
 sample=$(load_tumor_sample_from_actin_metadata ${orig_run_dir})
 info "Running ACTIN molecular pipeline on ${sample}"
 
-run_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
+run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
     rm -r "${run_dir}"

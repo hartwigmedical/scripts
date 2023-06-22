@@ -465,7 +465,7 @@ locate_actin_wgs_pipeline_output_directory() {
     echo "/data/actin/wgs_pipeline_output"
 }
 
-locate_actin_platinum_directory_for_sample() {
+locate_actin_molecular_directory_for_sample() {
     local sample=$1 && shift
 
     if [[ -z "${sample}" ]]; then
@@ -478,16 +478,16 @@ locate_actin_platinum_directory_for_sample() {
 locate_most_recent_actin_molecular_sample() {
     local patient=$1
     local sample=""
-    local platinum_dir=""
+    local molecular_dir=""
     for i in {9..1}; do
         sample="${patient}T${i}"
-        platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
-        if [[ -d "${platinum_dir}" ]]; then
+        molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+        if [[ -d "${molecular_dir}" ]]; then
             break
         fi
     done
 
-    if [[ ! -d "${platinum_dir}" ]]; then
+    if [[ ! -d "${molecular_dir}" ]]; then
         sample="${patient}T"
     fi
 
@@ -503,13 +503,13 @@ locate_most_recent_actin_molecular_json() {
 
 locate_actin_molecular_json() {
     local sample=$1
-    local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
+    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
 
-    if [[ ! -d "${platinum_dir}" ]]; then
-        error "Unable to locate ACTIN platinum directory '${platinum_dir}'"
+    if [[ ! -d "${molecular_dir}" ]]; then
+        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
     fi
 
-    local molecular_json="${platinum_dir}/actin/${sample}.molecular.json"
+    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
     if [[ ! -f ${molecular_json} ]]; then
         error "Could not locate molecular json for sample '${sample}'"
     fi
@@ -1659,10 +1659,9 @@ locate_virus_annotation_tsv_pilot() {
 locate_virus_annotation_tsv() {
     local run_dir=$1
 
-    # TODO Sort out which convention to retain
-    if [[ -d ${run_dir}/virus_interpreter/ ]]; then
+    if [[ -d "${run_dir}/virus_interpreter/" ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virus_interpreter/ -type f -name "*.virus.annotated.tsv")
-    elif [[ -d ${run_dir}/virusintrprtr/ ]]; then
+    elif [[ -d "${run_dir}/virusintrprtr/" ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
     fi
 
