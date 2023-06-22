@@ -10,7 +10,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 match_run=""
-for run in $(locate_actin_wgs_pipeline_output_directory); do
+for run in $(locate_actin_wgs_pipeline_output_directory)/*; do
     echo "Evaluating ${run}"
     sample_match_count=$(ls ${run} | grep -c ${sample})
     echo "Found ${sample_match_count} matches"
