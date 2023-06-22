@@ -15,14 +15,20 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-orange_json="$(locate_orange_json ${run_dir})"
-
-if [[ ! -f "${orange_json}" ]]; then
-    error "Could not locate existing ORANGE json in ${run_dir}!"
+collection_date=$(collection_date_for_sample ${tumor_sample})
+if [[ -z "${collection_date}" ]]; then
+    warn "No collection date found for ${tumor_sample}"
+    collection_date="NA"
 fi
 
-primary_tumor_doids=$(extract_primary_tumor_doids ${orange_json})
-experiment_date=$(extract_experiment_date ${orange_json})
+if [[ ${tumor_sample} == "COLO"* ]]; then
+    primary_tumor_doids="8923"
+else
+    primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
+    if [[ -z "${primary_tumor_doids}" ]]; then
+        primary_tumor_doids="\"\""
+    fi
+fi
 
 create_or_cleanup_dir ${output_dir}
 
@@ -96,7 +102,7 @@ fi
 peach_genotype_tsv="$(locate_peach_prod_genotype ${run_dir})"
 sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
 
-info "Rerunning ORANGE research tumor-ref-rna on ${run_dir}"
+info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
