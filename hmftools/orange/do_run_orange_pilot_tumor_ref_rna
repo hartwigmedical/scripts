@@ -76,7 +76,7 @@ sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
 
 info "Running ORANGE pilot tumor-ref-rna on ${run_dir}"
 
-do_rerun_orange_pilot \
+do_run_orange_pilot \
     ${run_dir} \
     ${output_dir} \
     ${isofox_gene_distribution_cmd} \

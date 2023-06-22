@@ -10,6 +10,7 @@ extract_configured_primary_tumor() {
     echo "${primary_tumor_doids}"
 }
 
+
 extract_experiment_date() {
     local orange_json=$1
     experiment_date=$(jq -r '.experimentDate' ${orange_json} | \

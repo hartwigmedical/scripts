@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source secrets_functions || exit 1
+
+collection_date_for_sample() {
+    sample=$1 && shift
+
+    collection_date=$(lama -j patients/tumorsamples ${sample} | jq -r '.collectionDate')
+
+    # Convert format dd-mm-yyyy to yymmdd
+    echo "${collection_date:8:2}${collection_date:3:2}${collection_date:0:2}"
+}
