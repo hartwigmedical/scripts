@@ -8,9 +8,9 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-# Run standard ORANGE in research
-run_orange_research ${run_dir}
+# Rerun standard ORANGE in research
+rerun_orange_research ${run_dir}
 
 # Converted-germline is generated to be able to share externally with people who do not wish to see germline.
-run_orange_research_no_germline ${run_dir}
+rerun_orange_research_no_germline ${run_dir}
 

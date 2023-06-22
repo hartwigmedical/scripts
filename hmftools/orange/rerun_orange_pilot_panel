@@ -8,6 +8,6 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting";
 fi
 
-output_dir="${run_dir}/orange_pilot_tumor_only"
+output_dir="${run_dir}/orange_pilot_panel"
 
-do_run_orange_pilot_tumor_only ${run_dir} ${output_dir} "$@"
+do_rerun_orange_pilot_panel ${run_dir} ${output_dir} "$@"

@@ -11,4 +11,4 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 # Run ORANGE to pick up all latest versions
-# run_orange_in_actin_mode ${run_dir}
+# rerun_orange_in_actin_mode ${run_dir}

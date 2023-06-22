@@ -5,7 +5,6 @@ source metadata_functions || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
 source io_functions || exit 1
-source actin_lama_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
@@ -15,13 +14,24 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-orange_json_path="${run_dir}/orange/${tumor_sample}.orange.json"
+orange_json_path="$(locate_orange_json ${run_dir})"
+
+if [[ ! -f "${orange_json_path}" ]]; then
+    error "Could not locate existing ORANGE json in ${run_dir}!"
+fi
+
 primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json_path} | jq -r '[.[] | .doid] | join(";")')
 if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
-collection_date=$(jq -r '.experimentDate' ${orange_json_path} | jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
+collection_date=$(jq -r '.experimentDate' ${orange_json_path} | \
+    jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
+
+if [[ -z "${collection_date}" ]]; then
+    warn "No collection date found for ${tumor_sample}"
+    collection_date="NA"
+fi
 
 create_or_cleanup_dir ${output_dir}
 
@@ -34,10 +44,6 @@ driver_gene_panel_tsv="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_directory="$(locate_ensembl_data_dir_37)"
 
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
-fi
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 ref_genome_version="37"
