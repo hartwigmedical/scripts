@@ -21,7 +21,7 @@ if [[ ! -f "${orange_json}" ]]; then
     error "Could not locate existing ORANGE json in ${run_dir}!"
 fi
 
-primary_tumor_doids=$(extract_primary_tumor_doids ${orange_json})
+primary_tumor_doids=$(extract_configured_primary_tumor ${orange_json})
 experiment_date=$(extract_experiment_date ${orange_json})
 
 create_or_cleanup_dir ${output_dir}
