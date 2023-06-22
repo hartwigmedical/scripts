@@ -119,8 +119,8 @@ fi
 
 
 ### EXTRA: upload report to NC
-upload_file_to_nc_new_reports_viewing  gs://patient-reporter-manual-prod-1/ $report &> /dev/null
-upload_file_to_nc_new_reports_viewing  gs://patient-reporter-manual-prod-1/ $json &> /dev/null
+upload_file_to_nc_new_reports_viewing  ${temp_folder_path}/new_report/ $report &> /dev/null
+upload_file_to_nc_new_reports_viewing  ${temp_folder_path}/new_report/ $json &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
 
 ### remove temporary folder
