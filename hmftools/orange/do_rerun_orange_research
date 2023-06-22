@@ -5,6 +5,7 @@ source metadata_functions || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
 source io_functions || exit 1
+source orange_extraction_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
@@ -14,24 +15,14 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-orange_json_path="$(locate_orange_json ${run_dir})"
+orange_json="$(locate_orange_json ${run_dir})"
 
-if [[ ! -f "${orange_json_path}" ]]; then
+if [[ ! -f "${orange_json}" ]]; then
     error "Could not locate existing ORANGE json in ${run_dir}!"
 fi
 
-primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json_path} | jq -r '[.[] | .doid] | join(";")')
-if [[ -z "${primary_tumor_doids}" ]]; then
-    primary_tumor_doids="\"\""
-fi
-
-collection_date=$(jq -r '.experimentDate' ${orange_json_path} | \
-    jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[-2:])\(.day | tostring | .[-2:])"')
-
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
-fi
+primary_tumor_doids=$(extract_primary_tumor_doids ${orange_json})
+experiment_date=$(extract_experiment_date ${orange_json})
 
 create_or_cleanup_dir ${output_dir}
 
@@ -112,7 +103,7 @@ java -jar ${orange_jar} \
     -reference_sample_id ${reference_sample} \
     ${rna_sample_cmd} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_date ${collection_date} \
+    -experiment_date ${experiment_date} \
     -ref_genome_version ${ref_genome_version} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
