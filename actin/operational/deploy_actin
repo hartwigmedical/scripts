@@ -8,5 +8,8 @@ if [[ -z "${version}" ]]; then
     error "Version missing. Exiting.";
 fi
 
-curl --oauth2-bearer "$(gcloud auth print-access-token)"  -o /data/actin/system/actin.jar -L \
-  https://europe-west4-maven.pkg.dev/actin-build/build-registry-maven/com/hmf/actin/system/${version}/system-${version}-jar-with-dependencies.jar
+mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get \
+    -DremoteRepositories=artifactregistry://europe-west4-maven.pkg.dev/hmf-build/hmf-maven \
+    -Dartifact=com.hartwig.actin:actin:${version} \
+    -Dtransitive=false \
+    -Ddest=/data/actin/system/
