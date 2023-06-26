@@ -4,6 +4,6 @@ for d in $(find /data/repos/scripts/* -type d | grep -v '.git'); do
     export PATH="${PATH}:$d"
 done
 
-mkdir -p ~/.m2
-cp /data/repos/scripts/mvn/extensions.xml ~/.m2/
+mkdir -p ~/.mvn
+cp /data/repos/scripts/mvn/extensions.xml ~/.mvn/
 
