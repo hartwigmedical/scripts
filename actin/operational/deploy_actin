@@ -9,4 +9,4 @@ if [[ -z "${version}" ]]; then
 fi
 
 curl --oauth2-bearer "$(gcloud auth print-access-token)"  -o /data/actin/system/actin.jar -L \
-  https://europe-west4-maven.pkg.dev/actin-build/build-registry-maven/com/hmf/actin/system/${version}/system-${version}.jar
+  https://europe-west4-maven.pkg.dev/actin-build/build-registry-maven/com/hmf/actin/system/${version}/system-${version}-jar-with-dependencies.jar
