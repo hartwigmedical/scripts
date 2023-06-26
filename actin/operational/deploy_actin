@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source message_functions || exit 1
+
 version=$1 && shift
 
 if [[ -z "${version}" ]]; then
