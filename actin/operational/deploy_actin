@@ -1,0 +1,16 @@
+#!/bin/bash
+
+version=$1 && shift
+
+if [[ -z "${version}" ]]; then
+    error "Version missing. Exiting.";
+fi
+
+PROJECT_ID="actin-build"
+REGION="europe-west-4"
+REPO_NAME="build-registry-maven"
+ARTIFACT_NAME="actin"
+ARTIFACT_VERSION=version
+OUTPUT_PATH="/data/actin/system/actin.jar"
+
+gsutil cp "gs://$PROJECT_ID.appspot.com/artifacts/$REGION/repositories/$REPO_NAME/content/$ARTIFACT_NAME/$ARTIFACT_VERSION/$ARTIFACT_NAME-$ARTIFACT_VERSION.jar" "$OUTPUT_PATH"
