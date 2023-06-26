@@ -11,7 +11,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:p:c:a' flag; do
+while getopts ':n:p:c:b' flag; do
     case "${flag}" in
         b) backup_only=true ;;
         c) cost_center=${OPTARG} ;;
