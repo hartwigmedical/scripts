@@ -37,22 +37,22 @@ if [[ -d "${rna_bam_dir}" ]]; then
     annotate_somatic_variants_with_rna ${run_dir}
 
     annotated_somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
-#    if [[ -f "${annotated_somatic_vcf}" ]]; then
-#        info "Replacing purple somatic VCF with RNA-annotated version"
-#        original_somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
-#        cp "${annotated_somatic_vcf}" "${original_somatic_vcf}"
-#        cp "${annotated_somatic_vcf}.tbi" "${original_somatic_vcf}.tbi"
-#    fi
+    if [[ -f "${annotated_somatic_vcf}" ]]; then
+        info "Replacing purple somatic VCF with RNA-annotated version"
+        original_somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
+        cp "${annotated_somatic_vcf}" "${original_somatic_vcf}"
+        cp "${annotated_somatic_vcf}.tbi" "${original_somatic_vcf}.tbi"
+    fi
 
     annotate_germline_variants_with_rna ${run_dir}
 
     annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
-#    if [[ -f "${annotated_germline_vcf}" ]]; then
-#        info "Replacing purple germline VCF with RNA-annotated version"
-#        original_germline_vcf="$(locate_purple_germline_variants ${run_dir})"
-#        cp "${annotated_germline_vcf}" "${original_germline_vcf}"
-#        cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
-#    fi
+    if [[ -f "${annotated_germline_vcf}" ]]; then
+        info "Replacing purple germline VCF with RNA-annotated version"
+        original_germline_vcf="$(locate_purple_germline_variants ${run_dir})"
+        cp "${annotated_germline_vcf}" "${original_germline_vcf}"
+        cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
+    fi
 
     # Extract the HLA regions for the RNA BAM
     slice_rna_bam_for_hla ${run_dir}
@@ -61,5 +61,5 @@ if [[ -d "${rna_bam_dir}" ]]; then
     run_lilac_for_actin_dna_rna_run ${run_dir}
 
     # Clean up RNA bam
-    #rm -r ${rna_bam_dir}
+    rm -r ${rna_bam_dir}
 fi
