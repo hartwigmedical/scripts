@@ -5,10 +5,12 @@ source message_functions || exit 1
 command -v yq >/dev/null 2>&1 || die "Missing dependency yq"
 
 groups=(
+"2faexempt"
 "actin"
 "data-requests"
 "emc-production-support"
 "emc-sql-users"
+"hmftools_users"
 "onboarding"
 "operations"
 "pipeline-developer"
@@ -38,7 +40,7 @@ for group in "${groups[@]}"; do
         else
             groupsByMember["$member"]="${group}"
         fi
-    done < <(jq -sr '.[].preferredMemberKey.id|split("@")[0]' <<< "${members}")
+    done < <(jq -sr '.[].preferredMemberKey.id|sub("@hartwigmedicalfoundation.nl";"";"i")' <<< "${members}")
 done
 
 info "Printing members BY GROUP:"
