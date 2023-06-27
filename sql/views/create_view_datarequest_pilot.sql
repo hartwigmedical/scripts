@@ -12,7 +12,5 @@ WHERE
 	AND purpleQC = 'PASS'
 	AND metric.sufficientCoverage = 1
 	AND snpcheck.isPass = 1
-	AND inHMFDatabase =1
-	AND outsideEU =1
 	AND consentsLAMA.allowExternalUseWithoutCheck = 'true'
 	;

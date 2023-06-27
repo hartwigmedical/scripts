@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+source actin_config || exit 1
+
+vm="$(production_actin_vm)"
+project="$(production_actin_project)"
+
+do_deploy_actin_jar ${vm} ${project}

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+info "Running ACTIN WGS post process for ${sample}"
+
+match_run=""
+for run in $(locate_actin_wgs_pipeline_output_directory)/*; do
+    sample_match_count=$(ls ${run} | grep -c ${sample})
+    if [[ ${sample_match_count} -gt 0 ]]; then
+        if [[ ! -z "${match_run}" ]]; then
+            error "Found multiple WGS runs for sample '${sample}'!"
+        fi
+        match_run="${run}"
+    fi
+done
+
+if [[ -z "${match_run}" ]]; then
+    error "Could not find matching run for sample '${sample}' in WGS pipeline output"
+fi
+
+run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+if [[ -d "${run_dir}" ]]; then
+    info "Cleaning up ${run_dir}"
+    rm -r "${run_dir}"
+fi
+
+info "Copying ${match_run} to ${run_dir}"
+cp -r "${match_run}" "${run_dir}"
+
+info "Done!"
+

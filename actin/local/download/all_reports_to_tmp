@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+actin_report_to_tmp ${patient}
+orange_actin_to_tmp ${patient}
+orange_actin_to_tmp_no_germline ${patient}

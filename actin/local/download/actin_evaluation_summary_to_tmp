@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+vm="$(production_actin_vm)"
+project="$(production_actin_project)"
+
+do_download_actin_evaluation_summary_to_tmp ${patient} ${vm} ${project}

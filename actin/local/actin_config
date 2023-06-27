@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+production_actin_project() {
+    echo "actin-prod"
+}
+
+pilot_actin_project() {
+    echo "hmf-crunch"
+}
+
+production_actin_vm() {
+    echo "prod-vm-operations"
+}
+
+pilot_actin_vm() {
+    echo "data-vm-prod-2"
+}

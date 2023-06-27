@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+extract_configured_primary_tumor() {
+    local orange_json=$1
+    primary_tumor_doids=$(jq -r '.configuredPrimaryTumor' ${orange_json} | jq -r '[.[] | .doid] | join(";")')
+    if [[ -z "${primary_tumor_doids}" ]]; then
+        warn "No primary tumor doids found in ${orange_json}"
+        primary_tumor_doids="\"\""
+    fi
+
+    echo "${primary_tumor_doids}"
+}
+
+extract_experiment_date() {
+    local orange_json=$1
+
+    experiment_date=$(jq -r '.experimentDate' ${orange_json} | \
+        jq -r '"\(.year % 100 | tostring)\(.month | tostring | .[0:2] | if (length < 2) then "0" + . else . end)\(.day | tostring | .[0:2] | if (length < 2) then "0" + . else . end)"')
+
+    if [[ -z "${experiment_date}" ]]; then
+        warn "No experiment date found in ${orange_json}"
+        experiment_date="NA"
+    fi
+
+    echo "${experiment_date}"
+}

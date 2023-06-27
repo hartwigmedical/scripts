@@ -28,9 +28,15 @@ report=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep dna_an
 report=$( echo ${report#"gs://patient-reporter-prod-1/"} )
 xml=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep _oncoact.xml )
 xml=$( echo ${xml#"gs://patient-reporter-prod-1/"} )
-
+json=$( gsutil ls gs://patient-reporter-prod-1/ | grep ${sample} | grep _oncoact.json )
+json=$( echo ${json#"gs://patient-reporter-prod-1/"} )
 
 ### upload report to NC
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $report &> /dev/null
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $xml &> /dev/null
 info "$report and $xml are uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+
+if [[ ${sample} == "GLOW0144"* || ${sample} == "GLOW0109"* || ${sample} == "GAYA0143"* ]]; then
+  upload_file_to_nc_new_reports_viewing gs://patient-reporter-prod-1/ $json &> /dev/null
+  info "$json is uploaded from gs://patient-reporter-prod-1/ to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
+fi

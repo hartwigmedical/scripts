@@ -14,7 +14,7 @@ info "Running ACTIN Clinical on ${feed_directory}"
 
 create_or_cleanup_dir "${output_directory}"
 
-java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplication \
+java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt \
     -feed_directory ${feed_directory} \
     -curation_directory ${curation_directory} \
     -doid_json ${doid_json} \

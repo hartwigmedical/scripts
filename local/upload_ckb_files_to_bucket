@@ -2,9 +2,9 @@
 
 source message_functions || exit 1
 
-ckb_zip_file=${HOME}/Downloads/json_file_format/*.zip
+ckb_zip_file=$(find -L "${HOME}/Downloads/json_file_format" -type f -name "*.zip")
 
-if [ ! -f ${ckb_zip_file} ]; then
+if [ ! -f "${ckb_zip_file}" ]; then
     error "Could not locate ckb zip file!"
 fi
 

@@ -41,7 +41,7 @@ output_dir="${HOME}/reports/pilot"
 
 info "Running patient-reporter pilot on ${run_dir}"
 
-pilot_do_patient_report_for_run ${run_dir} \
+pilot_do_patient_report_for_run_new ${run_dir} \
     ${tumor_sample} ${tumor_sample_barcode} ${ref_sample} ${ref_sample_barcode} \
     -output_dir_report ${output_dir} \
     -output_dir_data ${output_dir} "$@"

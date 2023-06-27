@@ -138,6 +138,7 @@ main () {
     echo "### FINISHED RUNS THAT ALREADY HAVE BEEN REPORTED ( no action required ):"
     counter=0
     while read -r run_info; do
+        echo "begin"
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
         barcode=$(echo "${set_name}" | cut -d'_' -f4)
@@ -147,7 +148,7 @@ main () {
         has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
         has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
-
+         echo "midden"
         reporting_id=$(extract_most_recent_reporting_id_on_barcode ${barcode} "prod")
         shared_count=$(extract_object_shared "${reporting_id}" "prod" | wc -l)
 
@@ -157,6 +158,8 @@ main () {
             echo "-${counter}- ${set_name} has Finished but has been reported before:         # db_status:diagnostic=${db_status}/research=${research_db_status}"
             get_reported_info_sample ${sample_name}
         fi
+      echo "eind"
+
     done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.db_status//"NA"] | @tsv')
 
 
@@ -424,6 +427,8 @@ main () {
     done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
+
+    check_panel_runs_status
 }
 
 get_db_status_by_set_name () {

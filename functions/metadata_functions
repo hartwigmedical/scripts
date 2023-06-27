@@ -30,13 +30,6 @@ load_tumor_sample_from_metadata() {
     echo "${tumor_sample}"
 }
 
-load_tumor_sample_from_actin_metadata() {
-    local run_dir=$1
-    local metadata="${run_dir}/metadata.json"
-    local tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
-    echo "${tumor_sample}"
-}
-
 load_tumor_sample_barcode_from_metadata() {
     local run_dir=$1
     local tumor_sample_barcode=""

@@ -18,8 +18,8 @@ function main() {
 function policies() {
     local project_id=$1 && shift
     local account_email=$1 && shift
-    info "Checking aim policies for [${account_email}] in project [${project_id}]"
-    output=$(gcloud asset search-all-iam-policies --scope="projects/${project_id}" --query="policy:${account_email}" --format=json \
+    info "Checking iam policies for [${account_email}] in project [${project_id}]"
+    gcloud asset search-all-iam-policies --scope="projects/${project_id}" --query="policy:${account_email}" --format=json \
           | jq --arg u "${account_email}" --arg p "${project_id}" -r '.[] | [$u, $p, .policy.bindings[].role,.resource] | @tsv'
 }
 

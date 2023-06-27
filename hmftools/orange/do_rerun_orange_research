@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source api_functions || exit 1
+source message_functions || exit 1
+source io_functions || exit 1
+source orange_extraction_functions || exit 1
+
+run_dir=$1 && shift
+output_dir=$1 && shift
+
+if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
+    error "Inputs missing. Exiting";
+fi
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+orange_json="$(locate_orange_json ${run_dir})"
+
+if [[ ! -f "${orange_json}" ]]; then
+    error "Could not locate existing ORANGE json in ${run_dir}!"
+fi
+
+primary_tumor_doids=$(extract_configured_primary_tumor ${orange_json})
+experiment_date=$(extract_experiment_date ${orange_json})
+
+create_or_cleanup_dir ${output_dir}
+
+orange_jar="$(locate_research_orange)"
+
+doid_json="$(locate_doid_json)"
+cohort_mapping_tsv="$(locate_cohort_mapping_tsv)"
+cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
+driver_gene_panel_tsv="$(locate_driver_gene_panel_37_tsv)"
+known_fusion_file="$(locate_known_fusion_data_37_csv)"
+ensembl_data_directory="$(locate_ensembl_data_dir_37)"
+
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+
+ref_genome_version="37"
+pipeline_version_file="${run_dir}/pipeline.version"
+pipeline_version_cmd=""
+if [[ -f "${pipeline_version_file}" ]]; then
+    pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
+fi
+
+ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
+ref_sample_flagstat_file="$(locate_flagstats ${run_dir} ${reference_sample})"
+tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
+tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
+sage_germline_gene_coverage_tsv="$(locate_sage_germline_gene_coverage ${run_dir})"
+sage_somatic_ref_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${reference_sample})"
+sage_somatic_tumor_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})"
+purple_data_directory="$(locate_purple_data_directory ${run_dir})"
+purple_plot_directory="$(locate_purple_plot_directory ${run_dir})"
+linx_somatic_data_directory="$(locate_linx_somatic_data_directory ${run_dir})"
+linx_germline_data_directory="$(locate_linx_germline_data_directory ${run_dir})"
+linx_plot_directory="$(locate_linx_plot_directory ${run_dir})"
+lilac_result_csv="$(locate_lilac_results ${run_dir})"
+lilac_qc_csv="$(locate_lilac_qc ${run_dir})"
+
+rna_sample_cmd=""
+isofox_gene_distribution_cmd=""
+isofox_alt_sj_cohort_cmd=""
+isofox_summary_cmd=""
+isofox_gene_data_cmd=""
+isofox_fusion_cmd=""
+isofox_alt_splice_junction_cmd=""
+if [[ -d "${run_dir}/isofox" ]]; then
+    rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
+    isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
+    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
+    isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
+    isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
+    isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
+    isofox_alt_splice_junction_cmd="-isofox_alt_splice_junction_csv $(locate_isofox_alt_splice_junctions ${run_dir})"
+fi
+
+annotated_virus_tsv="$(locate_virus_annotation_tsv ${run_dir})"
+chord_prediction_txt="$(locate_chord_prediction ${run_dir})"
+if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
+    cuppa_result_csv="$(locate_cuppa_dna_rna_result_csv ${run_dir})"
+    cuppa_summary_plot="$(locate_cuppa_dna_rna_summary_plot ${run_dir})"
+    cuppa_feature_plot="$(locate_cuppa_dna_rna_feature_plot ${run_dir})"
+else
+    cuppa_result_csv="$(locate_cuppa_result_csv ${run_dir})"
+    cuppa_summary_plot="$(locate_cuppa_summary_plot ${run_dir})"
+    cuppa_feature_plot="$(locate_cuppa_feature_plot ${run_dir})"
+fi
+
+cuppa_feature_plot_cmd=""
+if [[ ! -z ${cuppa_feature_plot} ]]; then
+    cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
+fi
+
+peach_genotype_tsv="$(locate_peach_prod_genotype ${run_dir})"
+sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
+
+info "Rerunning ORANGE research tumor-ref-rna on ${run_dir}"
+
+java -jar ${orange_jar} \
+    -tumor_sample_id ${tumor_sample} \
+    -reference_sample_id ${reference_sample} \
+    ${rna_sample_cmd} \
+    -primary_tumor_doids ${primary_tumor_doids} \
+    -experiment_date ${experiment_date} \
+    -ref_genome_version ${ref_genome_version} \
+    -output_dir "${output_dir}" \
+    -doid_json "${doid_json}" \
+    -cohort_mapping_tsv "${cohort_mapping_tsv}" \
+    -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
+    -driver_gene_panel_tsv "${driver_gene_panel_tsv}" \
+    -known_fusion_file "${known_fusion_file}" \
+    -ensembl_data_directory "${ensembl_data_directory}" \
+    ${isofox_gene_distribution_cmd} \
+    ${isofox_alt_sj_cohort_cmd} \
+    ${pipeline_version_cmd} \
+    -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
+    -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
+    -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
+    -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
+    -sage_germline_gene_coverage_tsv "${sage_germline_gene_coverage_tsv}" \
+    -sage_somatic_ref_sample_bqr_plot "${sage_somatic_ref_sample_bqr_plot}" \
+    -sage_somatic_tumor_sample_bqr_plot "${sage_somatic_tumor_sample_bqr_plot}" \
+    -purple_data_directory "${purple_data_directory}" \
+    -purple_plot_directory "${purple_plot_directory}" \
+    -linx_somatic_data_directory "${linx_somatic_data_directory}" \
+    -linx_germline_data_directory "${linx_germline_data_directory}" \
+    -linx_plot_directory "${linx_plot_directory}" \
+    -lilac_result_csv "${lilac_result_csv}" \
+    -lilac_qc_csv "${lilac_qc_csv}" \
+    ${isofox_summary_cmd} \
+    ${isofox_gene_data_cmd} \
+    ${isofox_fusion_cmd} \
+    ${isofox_alt_splice_junction_cmd} \
+    -annotated_virus_tsv "${annotated_virus_tsv}" \
+    -chord_prediction_txt "${chord_prediction_txt}" \
+    -cuppa_result_csv "${cuppa_result_csv}" \
+    -cuppa_summary_plot "${cuppa_summary_plot}" \
+    ${cuppa_feature_plot_cmd} \
+    -peach_genotype_tsv "${peach_genotype_tsv}" \
+    -sigs_allocation_tsv "${sigs_allocation_tsv}" \
+    -add_disclaimer \
+    "$@"

@@ -240,6 +240,7 @@ sub addLamaSamples{
 
         # adding cohort info for backwards compatibility (the concept "cohort" does no longer exist since LAMA v2)
         if (exists $sample_to_store{contract_display_name} and exists $sample_to_store{contract_sample_id_start}){
+            $sample_to_store{'contract_sample_id_start'} = $sample_to_store{'contract_sample_id_start'};
             $sample_to_store{'cohort'} = $sample_to_store{'contract_display_name'};
             $sample_to_store{'cohort_code'} = $sample_to_store{'contract_sample_id_start'};
         }else{
@@ -269,6 +270,7 @@ sub addLamaSamples{
 
         my $original_submission = $sample_to_store{submission};
         my $isolation_type = $sample_to_store{isolation_type};
+        my $prep_type = $sample_to_store{prep_type} || NACHAR;
         my $analysis_type = $sample_to_store{isolation_type};
         my $final_target_yield = NACHAR;
 
@@ -276,7 +278,7 @@ sub addLamaSamples{
             sayWarn("NOTIFY: LAMA sample has no isolation type defined for $isolate_barcode [$sample_print_info]");
             next;
         }
-        elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE') {
+        elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE' or $prep_type eq "PANEL") {
             $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
             # sanity check that we are indeed dealing with TO (tumor only)
             my $expected_cohort = 'Panel';
@@ -312,41 +314,28 @@ sub addLamaSamples{
         }
 
         if (not defined $original_submission or $original_submission eq '') {
-            # TODO: reset back to skipping once LAMA contains submission for all samples
-#            if ($analysis_type ne 'Somatic_R') {
-#                sayWarn(sprintf "NOTIFY: missing submission id [%s]", $sample_print_info);
-#            }
-#            next;
-            $original_submission = "SUBMISSION-MISSING";
-            $sample_to_store{submission} = $original_submission;
-        }
-
-        if ($study eq 'CORE' and $sample_name !~ /^COREDB/) {
-            $sample_to_store{ 'entity' } = ONCOACT_ENTITY;
-            $sample_to_store{ 'project_name' } = $original_submission;
-
-            # Set the analysis type for CORE submissions to align with Excel LIMS samples
-            if (exists $submissions->{ $original_submission }) {
-                my $submission_object = $submissions->{ $original_submission };
-                my $project_name = $submission_object->{ 'project_name' };
-                $sample_to_store{project_name} = $project_name; # Reset project name for sample (from submission)
-                $submission_object->{analysis_type} = "OncoAct"; # Add an analysis type to submission
-            }
-            else {
-                sayWarn("NOTIFY: submission ID [$original_submission] not found in submissions [$sample_print_info]");
+            if ($analysis_type eq 'Somatic_R') {
+                # Blood/reference samples do not have a submission in LAMA v2 so need to construct somehow
+                $original_submission = "HMFreg" . $sample_to_store{label};
+                sayInfo(sprintf "No submission for R sample so configured to %s [%s]", $original_submission, $sample_print_info);
+            }else{
+                sayWarn(sprintf "NOTIFY: SKIPPING non-ref sample due to missing submission id [%s]", $sample_print_info);
+                next;
             }
         }
-        elsif (exists $centers_dict->{ $center }) {
+
+        $sample_to_store{original_submission} = $original_submission;
+        $sample_to_store{submission} = $original_submission;
+        $sample_to_store{project_name} = $original_submission;
+
+        if (exists $centers_dict->{ $center } and $sample_name !~ /^CORE01/) {
             # All meant-for-database should by from a known center
             my $centername = $centers_dict->{ $center };
-            $sample_to_store{original_submission} = $original_submission;
-            $sample_to_store{submission} = $original_submission;
-            $sample_to_store{project_name} = $original_submission;
             $sample_to_store{entity} = join("_", $study, $centername);
         }
         else {
-            sayWarn("NOTIFY: encountered unknown center ID [$center] for non-CORE sample [$sample_print_info]");
-            next;
+#            sayInfo(sprintf "Unknown center [%s] or CORE01 so configured [%s] as entity [%s]", $center, ONCOACT_ENTITY, $sample_print_info);
+            $sample_to_store{entity} = ONCOACT_ENTITY;
         }
 
         # Add the missing fields and store final
@@ -452,7 +441,7 @@ sub epochToDate{
 sub parseLamaPatients {
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $patient (@$objects) {
         foreach my $sample (@{$patient->{tumorSamples}}) {
@@ -518,8 +507,10 @@ sub constructBiopsyField{
     my @sub_level_keys = qw(location subLocation lateralisation);
     my @values = ();
     foreach my $key (@sub_level_keys){
-        if (exists $sample->{$top_level_key}{$key} and $sample->{$top_level_key}{$key} ne ""){
-            push @values, $sample->{$top_level_key}{$key};
+        if (exists $sample->{$top_level_key}{$key}){
+            if ($sample->{$top_level_key}{$key} ne "" and $sample->{$top_level_key}{$key} ne "Other/unknown"){
+                push @values, $sample->{$top_level_key}{$key};
+            }
         }
     }
     return join(" | ", @values);
@@ -528,7 +519,7 @@ sub constructBiopsyField{
 sub parseLamaLibraryPreps{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $experiment (@$objects) {
 
@@ -551,7 +542,7 @@ sub parseLamaLibraryPreps{
 sub parseLamaIsolation{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $experiment (@$objects) {
 
@@ -596,7 +587,7 @@ sub parseLamaIsolation{
 sub parseLamaSampleStatus{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $object (@$objects){
 
@@ -618,6 +609,7 @@ sub parseLamaSampleStatus{
         # Collect all info into one object
         my %status = ();
         copyFieldsFromObject($object, $infoTag, $name_dict->{lama_status_dict}, \%status);
+        copyFieldsFromObject($object->{labWorkflow}, $infoTag, $name_dict->{lama_status_labworkflow_dict}, \%status);
 
         # Store
         foreach my $isolationBarcode (@{$object->{isolationBarcodes}}) {
@@ -635,7 +627,7 @@ sub parseLamaSampleStatus{
 sub parseLamaContracts{
     my ($inputJsonFile) = @_;
     my %store = ();
-    my $objects = readJson($inputJsonFile);
+    my $objects = parseJson($inputJsonFile);
 
     foreach my $object (@$objects) {
         my $store_key = $object->{'code'};
@@ -653,8 +645,10 @@ sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
+    my $line_count = `wc -l < $file`;
+    chomp($line_count);
 
-    sayInfo(sprintf "  Parsing CSV/TSV [%s]", basename($file));
+    sayInfo(sprintf "  Parsing CSV/TSV [%s,lineCount=%s]", basename($file), $line_count);
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -724,12 +718,12 @@ sub selectAndRenameFields{
     return \%obj_out;
 }
 
-sub readJson{
-    my ($json_file) = @_;
-    sayInfo(sprintf "  Parsing JSON [%s]", basename($json_file));
-    my $json_txt = read_file( $json_file );
-    my $json_obj = decode_json( $json_txt );
-    return( $json_obj );
+sub parseJson{
+    my ($file) = @_;
+    my $size = `du -shL $file | cut -f1`;
+    chomp($size);
+    sayInfo(sprintf "  Parsing JSON [%s,size=%s]", basename($file), $size);
+    return(decode_json(read_file($file)));
 }
 
 sub printLimsToJson{
@@ -1418,7 +1412,6 @@ sub getFieldNameTranslations{
     );
 
     my %lama_libraryprep_library_dict = (
-        'isShallowSeq' => 'shallowseq',
         'prepType'     => 'prep_type',
         'experimentNr' => 'prep_id', # was prepNr pre-lama-v2
         'status'       => 'prep_status',
@@ -1434,6 +1427,12 @@ sub getFieldNameTranslations{
         'sampleId'             => 'sample_name',
         'sampleBarcode'        => 'sample_barcode',
         'type'                 => 'status_type'
+    );
+
+    my %lama_status_labworkflow_dict = (
+        'doShallow'    => 'shallowseq',
+        'isTumorPanel' => 'is_tumor_panel',
+        'isTumorOnly'  => 'is_tumor_only'
     );
 
     my %lama_contracts_dict = (
@@ -1490,6 +1489,7 @@ sub getFieldNameTranslations{
         'lama_isolation_isolate_dict' => \%lama_isolation_isolate_dict,
         'lama_libraryprep_library_dict' => \%lama_libraryprep_library_dict,
         'lama_status_dict' => \%lama_status_dict,
+        'lama_status_labworkflow_dict' => \%lama_status_labworkflow_dict,
         'lama_contracts_dict' => \%lama_contracts_dict,
         'lama_contracts_report_dict' => \%lama_contracts_report_dict,
     );

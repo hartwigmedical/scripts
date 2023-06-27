@@ -5,7 +5,7 @@ source metadata_functions || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
 source io_functions || exit 1
-source actin_lama_functions || exit 1
+source orange_lama_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift

@@ -25,4 +25,4 @@ cp -r "${orig_run_dir}" "${run_dir}"
 
 run_virus_interpreter_prod ${run_dir}
 run_protect_research ${run_dir}
-run_orange_research_no_germline ${run_dir} -max_evidence_level C
+#rerun_orange_research_no_germline ${run_dir} -max_evidence_level C

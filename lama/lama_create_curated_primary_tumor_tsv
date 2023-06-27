@@ -7,10 +7,10 @@ OUTPUT_TSV=${1-"/data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.
 
 function main (){
     info "Retrieving tumor samples from LAMA [$LAMA_API_URL]"
-    samples=$(curl --silent "${LAMA_API_URL}/tumor-samples")
-    sample_count=$(jq 'length' <<< "$samples")
+    patients=$(curl --silent "${LAMA_API_URL}/patients")
+    patient_count=$(jq 'length' <<< "${patients}")
 
-    info "Extracting tumorType info for ${sample_count} samples"
+    info "Extracting tumorType info for ${patient_count} patients"
 
     # Exact columns are for backwards compatibility with pre-lama curated_primary_tumor.tsv file
     printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
@@ -24,7 +24,36 @@ function main (){
       "snomedConceptIds" \
       "overridden" > "$OUTPUT_TSV"
 
-    jq -r 'sort_by(.patientId) | .[] | [
+    counter=0
+    while read -r patient; do
+        counter=$((counter+1))
+        if [[ $((counter % 500)) -eq 0 ]]; then
+            info "At patient ${counter} of ${patient_count}"
+        fi
+        process_one_patient "${patient}"
+    done < <(jq -c '.[]' <<< "${patients}")
+
+    info "Written output to ${OUTPUT_TSV}"
+    info "Finished with $0"
+}
+
+function process_one_patient() {
+    local patient=$1 && shift
+
+    # Ignore samples that have no tumorType info at all
+    samples=$(jq -c '[.tumorSamples[] | select(has("tumorType") and .tumorType != null)]' <<< "${patient}")
+    [[ "${samples}" == "[]" ]] && return 1
+
+    # Extract most recent sample because downstream tools expect one record per patient
+    sample=$(jq -c 'sort_by(.arrivalHmf) | .[-1]' <<< "${samples}")
+
+    process_one_sample "${sample}"
+}
+
+function process_one_sample() {
+    local sample=$1 && shift
+
+    jq -r '[
       (.patientId | split("-") | join("")),
       (if .tumorType then .tumorType.location else "" end),
       "", # sublocation
@@ -36,11 +65,7 @@ function main (){
       (if .tumorType then .tumorType.doids|join(";") else "" end),
       "0", # snomedConceptIds
       "false" # overridden
-    ] | @tsv' <<< "${samples}" >> "$OUTPUT_TSV"
-
-    info "Written output to ${OUTPUT_TSV}"
-
-    info "Finished with $0"
+    ] | @tsv' <<< "${sample}" >> "$OUTPUT_TSV"
 }
 
 main

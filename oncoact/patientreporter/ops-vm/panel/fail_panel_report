@@ -97,7 +97,7 @@ if [[ $( ls ${temp_folder_path}/new_report/ | grep ${sample} | grep .pdf | wc -l
     info "The report $report has been created"
 else
     warn "No report has been created. Please see below the warnings/errors in the panel reporter log:"
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN\|ERROR\|Exception in thread"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
     rm -r ${temp_folder_path}/ 2>&1
     warn "The script will end here. Exiting"
     exit 1
@@ -105,38 +105,21 @@ fi
 
 
 #### check log file of making the report
-if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
+if [[ $( cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN \|Exception in thread" | grep -v "has already been reported" |  wc -l ) > 0 ]]; then
     warn "Running the patient reporter gave warnings/errors, please check using: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
 else
-    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_panelreporter.log | grep 'WARN ' | grep "has already been reported"
+    cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep 'WARN ' | grep "has already been reported"
     info "No warnings/errors (except possibly already reported) in running the patient reporter. If you still want to inspect the log file you can run: gsutil cat gs://patient-reporter-manual-prod-1/${sample}_${barcode}_manual_panelreporter.log"
 fi
 
 #### cp report to gs://patient-reporter-manual-prod-1/
-gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
-info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
-gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
+#gsutil -q cp -r ${temp_folder_path}/new_report/* gs://patient-reporter-manual-prod-1/
+#info "The report and the related json + log file can be found in gs://patient-reporter-manual-prod-1/:"
+#gsutil ls gs://patient-reporter-manual-prod-1/ | grep ${sample}
 
-
-if [[ $( gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample} | grep .pdf | wc -l ) > 0 ]]; then
-    warn 'A patient report for this sample has already been shared in gs://oncopanel-result-files-nki/:'
-    gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-    echo '[INPUT] Are you sure you want to continue sharing a new report and result files? (all data will be overwritten) Please answer Y or N.'
-    read answer
-    if [[ $answer != 'Y' ]]; then
-        warn "Report and result files will not be shared. exiting"
-        rm -r ${temp_folder_path}/ 2>&1
-        exit 1
-    fi
-fi
-
-#### cp report to sharing bucket (gs://oncopanel-result-files-nki/ in hmf-share)
-gsutil -q cp -r ${temp_folder_path}/new_report/*.pdf gs://oncopanel-result-files-nki/
-info "The report is shared in gs://oncopanel-result-files-nki/:"
-gsutil ls gs://oncopanel-result-files-nki/ | grep ${sample}
-
-### EXTRA: upload report + tar to NC
-upload_file_to_nc_new_reports_viewing  gs://oncopanel-result-files-nki/ $report &> /dev/null
+### EXTRA: upload report to NC
+upload_file_to_nc_new_reports_viewing  ${temp_folder_path}/new_report/ $report &> /dev/null
+upload_file_to_nc_new_reports_viewing  ${temp_folder_path}/new_report/ $json &> /dev/null
 info "The report $report is uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing."
 
 ### remove temporary folder
@@ -149,12 +132,3 @@ read answer
 if [[ $answer == 'Y' ]]; then
   post_api_created_report ${api_update_json} ${sample}
 fi
-
-
-echo '[INPUT] Do you want to also do the final processing (since the report has been shared) ? Please answer Y or N.'
-read answer
-if [[ $answer == 'Y' ]]; then
-    copy_panel_report_to_final_reports_gcp ${set}
-fi
-
-echo ""

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+local_dir="${HOME}/hmf/tmp/orange_pilot_no_germline"
+if [[ ! -d "${local_dir}" ]]; then
+    mkdir -p "${local_dir}"
+fi
+
+vm="$(pilot_actin_vm)"
+project="$(pilot_actin_project)"
+
+do_download_orange_actin_pilot_to_tmp_no_germline ${sample} ${vm} ${project}

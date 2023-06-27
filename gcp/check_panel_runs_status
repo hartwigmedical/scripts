@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_reporting_api || exit 1
 
-major_version="5.28"
+major_version="5.32"
 
 ###########
 
@@ -14,8 +14,8 @@ main () {
     # Create all required run collections
     echo "## Retrieving required information from API..."
     ##mapfile -t non_db_entities < <(hmf_api_get "entities" | jq -r '.[] | select(.add_to_db == false) | .name')
-    all_runs=$(hmf_api_get "runs") || die "Unable to retrieve runs from API"
-    runs=$(echo "${all_runs}" | jq '[.[] | select(.ini == "Targeted.ini")]') || die "Unable to select runs by ini"
+    all_target_runs=$(hmf_api_get "runs?ini=Targeted.ini" | jq '[.[] | select(.context != "RESEARCH")]') || die "Unable to retrieve Somatic runs from API"
+    runs=$(jq '.[]' <(echo "${all_target_runs}") | jq -s '.') || die "Unable to sort Targeted ini runs"
 
 
     echo "## Creating run collections to check..."

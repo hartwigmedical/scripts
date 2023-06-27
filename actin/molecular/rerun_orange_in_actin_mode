@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+# Rerun standard ORANGE in research
+rerun_orange_research ${run_dir}
+
+# Converted-germline is generated to be able to share externally with people who do not wish to see germline.
+rerun_orange_research_no_germline ${run_dir}
+

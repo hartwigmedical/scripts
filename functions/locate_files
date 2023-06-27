@@ -81,7 +81,7 @@ locate_prod_linx() {
 }
 
 locate_pilot_linx() {
-    echo "/data/experiments/pilot_tools/linx/linx.jar"
+    echo "/data/experiments/tools/linx.jar"
 }
 
 locate_prod_sigs() {
@@ -97,7 +97,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.4.1/orange.jar"
+    echo "/data/tools/orange/2.5.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -129,7 +129,7 @@ locate_prod_patient_reporter() {
 }
 
 locate_panel_patient_reporter() {
-    echo "/data/tools/patient-reporter/7.26/patient-reporter.jar"
+    echo "/data/experiments/panel_report/patient-reporter.jar"
 }
 
 locate_pilot_patient_reporter() {
@@ -313,7 +313,7 @@ extract_expected_pipeline_version_research() {
 }
 
 extract_expected_pipeline_version_panel() {
-    echo "5.31"
+    echo "5.32.f8c17c0"
 }
 
 ############################## ACTIN Resources #################################
@@ -334,6 +334,15 @@ locate_actin_trial_config_directory() {
     echo "/data/resources/crunch/actin/trial_config"
 }
 
+locate_actin_trial_config_directory_actin_77() {
+    # TODO - Remove once ACTIN-77 is wrapped up and merged into master
+    echo "/data/resources/crunch/actin/trial_config_actin_77"
+}
+
+locate_actin_ctc_config_directory() {
+    echo "/data/resources/crunch/actin/ctc_config"
+}
+
 locate_actin_minimal_molecular_json() {
     echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
@@ -343,7 +352,7 @@ locate_actin_serve_db() {
 }
 
 locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/crunch/actin/orange_curation/external_trial_mapping.tsv"
+    echo "/data/resources/crunch/actin/evidence_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_known_genes_tsv() {
@@ -383,22 +392,26 @@ locate_actin_cohort_treatment_match_directory() {
     echo "/data/experiments/actin_cohort/treatment_matches"
 }
 
-locate_tmp_actin_cohort_serve_bridge_tsv() {
-    echo "/data/experiments/actin_cohort/serve_bridge/actin_knowledgebase.tsv"
-}
-
 ############################### ACTIN Buckets ##################################
 
 locate_actin_clinical_data_feed_bucket() {
-    echo "gs://hmf-crunch-data/actin_clinical_data_feed"
+    echo "gs://actin-prod-clinical-data-feed"
 }
 
 locate_actin_evaluation_bucket() {
-    echo "gs://hmf-crunch-data/actin_evaluation"
+    echo "gs://actin-prod-evaluation"
 }
 
 locate_actin_shared_reports_bucket() {
-    echo "gs://hmf-crunch-data/actin_shared_reports"
+    echo "gs://actin-prod-shared-reports"
+}
+
+locate_actin_backup_bucket() {
+    echo "gs://actin-prod-backups"
+}
+
+locate_actin_wgs_pipeline_bucket() {
+    echo "gs://actin-prod-wgs-pipeline-output"
 }
 
 ################################# ACTIN Data ###################################
@@ -444,11 +457,15 @@ locate_actin_clinical_json_for_sample() {
     echo "${clinical_json}"
 }
 
+locate_actin_wgs_pipeline_output_directory() {
+    echo "/data/actin/wgs_pipeline_output"
+}
+
 locate_actin_molecular_directory() {
     echo "/data/actin/molecular"
 }
 
-locate_actin_platinum_directory_for_sample() {
+locate_actin_molecular_directory_for_sample() {
     local sample=$1 && shift
 
     if [[ -z "${sample}" ]]; then
@@ -461,16 +478,16 @@ locate_actin_platinum_directory_for_sample() {
 locate_most_recent_actin_molecular_sample() {
     local patient=$1
     local sample=""
-    local platinum_dir=""
+    local molecular_dir=""
     for i in {9..1}; do
         sample="${patient}T${i}"
-        platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
-        if [[ -d "${platinum_dir}" ]]; then
+        molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+        if [[ -d "${molecular_dir}" ]]; then
             break
         fi
     done
 
-    if [[ ! -d "${platinum_dir}" ]]; then
+    if [[ ! -d "${molecular_dir}" ]]; then
         sample="${patient}T"
     fi
 
@@ -486,13 +503,13 @@ locate_most_recent_actin_molecular_json() {
 
 locate_actin_molecular_json() {
     local sample=$1
-    local platinum_dir=$(locate_actin_platinum_directory_for_sample ${sample})
+    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
 
-    if [[ ! -d "${platinum_dir}" ]]; then
-        error "Unable to locate ACTIN platinum directory '${platinum_dir}'"
+    if [[ ! -d "${molecular_dir}" ]]; then
+        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
     fi
 
-    local molecular_json="${platinum_dir}/actin/${sample}.molecular.json"
+    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
     if [[ ! -f ${molecular_json} ]]; then
         error "Could not locate molecular json for sample '${sample}'"
     fi
@@ -502,6 +519,11 @@ locate_actin_molecular_json() {
 
 locate_actin_treatment_database_directory() {
     echo "/data/actin/treatment_database"
+}
+
+locate_actin_treatment_database_directory_actin_77() {
+    # TODO - Clean up once ACTIN-77 is wrapped up and merged to master
+    echo "/data/actin/treatment_database_actin_77"
 }
 
 locate_actin_treatment_match_directory() {
@@ -684,11 +706,11 @@ locate_cohort_percentiles_tsv() {
 }
 
 locate_isofox_gene_distribution_csv() {
-    echo "/data/experiments/rna/cohort/isofox.hmf_3444.gene_distribution.csv"
+    echo "/data/resources/crunch/actin/rna_reference_database/isofox.hmf_3444.gene_distribution.37.csv"
 }
 
 locate_isofox_alt_sj_cohort_csv() {
-    echo "/data/experiments/rna/cohort/isofox.hmf_3444.alt_sj_cohort.csv"
+    echo "/data/resources/crunch/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
 }
 
 locate_doid_json() {
@@ -1637,10 +1659,9 @@ locate_virus_annotation_tsv_pilot() {
 locate_virus_annotation_tsv() {
     local run_dir=$1
 
-    # TODO Sort out which convention to retain
-    if [[ -d ${run_dir}/virus_interpreter/ ]]; then
+    if [[ -d "${run_dir}/virus_interpreter/" ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virus_interpreter/ -type f -name "*.virus.annotated.tsv")
-    elif [[ -d ${run_dir}/virusintrprtr/ ]]; then
+    elif [[ -d "${run_dir}/virusintrprtr/" ]]; then
         local virus_annotation_tsv=$(find -L ${run_dir}/virusintrprtr/ -type f -name "*.virus.annotated.tsv")
     fi
 
