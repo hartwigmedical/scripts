@@ -10,7 +10,7 @@ slicing_bed=$1 && shift
 output_bam=$1 && shift
 
 if [[ -z "${gcp_bam_url}" || -z "${slicing_bed}" || -z "${output_bam}" ]]; then
-    error "Not all input params provided. Exiting"
+    error "Not all input params provided. Needs gcp_bam_url, slicing_bed, and output_bam. Exiting"
 fi
 
 key_file="/data/credentials/hmf-download"
