@@ -10,7 +10,7 @@ KEY_FILE="/data/credentials/hmf-download"
 
 print_usage(){
     echo "-----"
-    echo " Descr: Prints presigned BAM and BAI URLs for loading them into IGV."
+    echo " Descr: Prints presigned BAM and BAI or CRAM and CRAI URLs for loading them into IGV."
     echo " Usage: ${SCRIPT_NAME} \${bam-url} \${duration}"
     echo "        ${SCRIPT_NAME} gs://some/path/to.bam 2h"
     echo "        ${SCRIPT_NAME} gs://some/path/to/other.bam 2d"
@@ -29,11 +29,21 @@ main() {
     print_usage
   fi
 
-  info "Bam file:"
-  sign_url "${bam_url}" "${duration}"
+  if [[ "${bam_url}" == *.bam ]]; then
+    info "Bam file:"
+    sign_url "${bam_url}" "${duration}"
 
-  info "Bai file:"
-  sign_url "${bam_url}.bai" "${duration}"
+    info "Bai file:"
+    sign_url "${bam_url}.bai" "${duration}"
+  elif [[ "${bam_url}" == *.cram ]]; then
+    info "Cram file:"
+    sign_url "${bam_url}" "${duration}"
+
+    info "Crai file:"
+    sign_url "${bam_url}.crai" "${duration}"
+  else
+    die "Unrecognized file ending"
+  fi
 
   info "Finished ${SCRIPT_NAME}"
 }

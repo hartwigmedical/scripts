@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+actin_submission="HMFregACTN"
+
+info "Querying API regarding ACTIN RNA samples"
+actin_samples=$(hmf_api_get "samples?submission=${actin_submission}")
+non_deleted_actin_samples=$(jq '[.[] | select(.status != "Deleted")]' <<< "${actin_samples}")
+
+printf "#%s\t%s\t%s\t%s\n" barcode name type status
+
+jq -c '.[]' <<< "${non_deleted_actin_samples}" | while read -r sample_info; do
+    type=$(jq -r '.type' <<< "${sample_info}")
+    if [[ ${type} == "tumor-rna" ]]; then
+        jq -r '[.barcode,.name,.type,.status] | join("\t")' <<< "${sample_info}"
+    fi
+done | sort -k2

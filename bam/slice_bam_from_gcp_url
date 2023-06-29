@@ -3,12 +3,14 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
+# also works on crams
+
 gcp_bam_url=$1 && shift
 slicing_bed=$1 && shift
 output_bam=$1 && shift
 
 if [[ -z "${gcp_bam_url}" || -z "${slicing_bed}" || -z "${output_bam}" ]]; then
-    error "Not all input params provided. Exiting"
+    error "Not all input params provided. Needs gcp_bam_url, slicing_bed, and output_bam. Exiting"
 fi
 
 key_file="/data/credentials/hmf-download"
@@ -18,11 +20,23 @@ presign_seconds=28800  # 8 hours
 samtools=/data/tools/samtools/1.10/samtools
 
 ref_genome=$(locate_ref_genome_37_fasta_file)
-gcp_bai_url="${gcp_bam_url}.bai"
+if [[ "${gcp_bam_url}" == *.bam ]]; then
+  gcp_bai_url="${gcp_bam_url}.bai"
+elif [[ "${gcp_bam_url}" == *.cram ]]; then
+  gcp_bai_url="${gcp_bam_url}.crai"
+else
+  die "Unrecognized file ending. Should be .bam or .cram: ${gcp_bam_url}"
+fi
+
 
 info "Signing URL's"
-signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bam_url}" | grep -v 'Signed URL' | cut -f4) || die "Could not get signed bam url"
-signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bai_url}" | grep -v 'Signed URL' | cut -f4) || die "Could not get signed bai url"
+signed_bam_url=$( \
+  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bam_url}" | grep -v 'Signed URL' | cut -f4 \
+) || die "Could not get signed bam url"
+
+signed_bai_url=$( \
+  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bai_url}" | grep -v 'Signed URL' | cut -f4 \
+) || die "Could not get signed bai url"
 
 info "Creating slice using ${slicing_bed}"
 ${samtools} view -T ${ref_genome} \

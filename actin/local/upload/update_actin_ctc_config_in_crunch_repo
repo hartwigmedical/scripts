@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+dir="${HOME}/Downloads"
+
+prefix="EMC Trial Database"
+
+ctc_database=$(find -L "${dir}/" -type f -name "*CTC.tsv")
+if [ ! -f "${ctc_database}" ]; then
+    error "Could not locate CTC database tsv file!"
+fi
+
+pull_actin_changes_in_crunch_repo
+
+do_update_actin_ctc_config_file "${dir}/${prefix} - CTC unmapped cohorts.tsv" "${dir}/unmapped_cohorts.tsv"
+do_update_actin_ctc_config_file "${dir}/${prefix} - CTC ignore studies.tsv" "${dir}/ignore_studies.tsv"
+
+do_update_actin_ctc_config_file "${ctc_database}" "${dir}/ctc_database.tsv"
+
+push_actin_changes_in_crunch_repo

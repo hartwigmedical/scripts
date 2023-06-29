@@ -11,8 +11,8 @@ fi
 
 shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
 
-platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
-orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${platinum_dir})"
+molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${molecular_dir})"
 
 if [[ -z "${orange_no_germline_pdf}" ]]; then
     error "Missing ORANGE report for ${sample}"

@@ -4,7 +4,6 @@
 .Rproj.user
 .RData
 .Rhistory
-/analysisscripts/germlineTIs/candidates
 # Ignore files from opening dir in macOS
 *.DS_Store
 # Ignore CPython .pyc files

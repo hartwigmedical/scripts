@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+pull_actin_changes_in_crunch_repo
+
+dir="${HOME}/Downloads"
+
+source_file="${dir}/EMC Trial Database - EMC - iClusion mapping.tsv"
+target_file="${dir}/external_trial_mapping.tsv"
+target_dir="$(locate_actin_local_crunch_repo)/evidence_curation"
+
+do_update_actin_resource_file "${source_file}" "${target_file}" "${target_dir}"
+
+push_actin_changes_in_crunch_repo

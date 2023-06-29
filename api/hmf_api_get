@@ -4,6 +4,7 @@ source message_functions || exit 1
 
 environment='prod'
 source='hmfapi'
+api_host_url=''
 
 print_usage(){
     self=$(basename "$0")
@@ -13,34 +14,34 @@ print_usage(){
     echo "Examples:"
     echo "  $self 'samples?name=GIAB12878'"
     echo "  $self 'samples?barcode=FR12345678'"
-    echo "  $self 'samples?name=name&type=tumor'"
     echo "  $self 'runs/63961'"
     echo "  $self 'runs?set_name_contains=COREDB'"
     echo "  $self 'sets?name=YYMMDD_HMFregXXXX_FR1_FR2_Sample'"
     echo "  $self 'runs?barcode=FR12345678'"
     echo "  $self 'runs?ini=ShallowSeq.ini'"
-    echo "  $self 'flowcells?flowcell_id=HJKMYALXX'"
-    echo "  $self -e pilot 'platforms'"
     echo "Options:"
     echo "  -t  Use testing/pilot environment instead of production"
+    echo "  -u  Provide url to host (eg http://api.pilot-1/hmf/v1)"
     echo "Remarks:"
-    echo "  * Can also query LAMA api via script lama_api_get."
-    echo "  * Options need to be placed before any other parameters."
+    echo "  Options need to be placed before any other parameters."
     echo ""
     exit 1
 }
 
-while getopts ':tl' flag; do
+while getopts ':tlu:' flag; do
     case "${flag}" in
         t) environment="pilot";;
         l) source="lama";;
+        u) api_host_url=$OPTARG;;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
 query=${*:$OPTIND:1} && shift
 
-if [[ "${source}" == "hmfapi" && "${environment}" == "prod" ]]; then
+if [[ -n "${api_host_url}" ]]; then
+    api_url="${api_host_url}"
+elif [[ "${source}" == "hmfapi" && "${environment}" == "prod" ]]; then
     api_url="http://api.prod-1/hmf/v1"
 elif [[ "${source}" == "hmfapi" && "${environment}" == "pilot" ]]; then
     api_url="http://api.pilot-1/hmf/v1"

@@ -151,7 +151,6 @@ sharedReportLocation=(${url_bucket_report_final}${report})
 sharedJsonLocation=(${url_bucket_report_final}${json})
 sharedXmlLocation=(${url_bucket_report_final}${xml})
 
-echo $sharedXmlLocation}
 ## add reporting info to registration file
 
 if [[ ${report} == *"corrected"* ]]; then

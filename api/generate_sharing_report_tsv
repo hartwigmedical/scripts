@@ -15,7 +15,7 @@ ${CURL}/reports/created > created.json
 printf "tumorBarcode\tsampleId\tcohort\tshareDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\tcreateDate\n" > $OUT
 jq '.[].id' shared.json | while read shared_id; do
     shared_record="$(jq --arg id "$shared_id" '.[] | select(.id == ($id|tonumber))' shared.json)"
-    created_id=$(echo "$shared_record" | jq '.report_created_id')
+    created_id=$(echo "$shared_record" | jq '.report_created.id')
     created_record=$(jq --arg id "$created_id" '.[] | select(.id == ($id|tonumber))' created.json) 
     barcode=$(echo "${created_record}" | jq -r '.barcode' | sed 's#^null$#N/A#')
     sample_name=$(echo "${created_record}" | jq -r '.sample_name' | sed 's#^null$#N/A#')

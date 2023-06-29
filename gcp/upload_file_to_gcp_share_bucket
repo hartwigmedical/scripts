@@ -9,8 +9,5 @@ bucket='hmf-share-services'
 [[ -n "${file_to_upload}" ]] || die "No file provided to upload"
 [[ -f "${file_to_upload}" ]] || die "Not a file: (${file_to_upload})"
 
-info "Switching to hmf ops service account"
-switch_to_hmf_ops_service_account || die "Could not switch to hmf ops service account"
-
 info "Uploading file (${file_to_upload}) to GCP bucket ${bucket}"
 gsutil cp -n "${file_to_upload}" "gs://${bucket}/"

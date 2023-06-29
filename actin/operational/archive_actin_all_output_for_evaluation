@@ -35,9 +35,9 @@ if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_repor
     error "Missing ACTIN data, report or evaluation details for ${sample}"
 fi
 
-platinum_dir="$(locate_actin_platinum_directory_for_sample ${sample})"
-orange_json="$(locate_orange_json ${platinum_dir})"
-orange_pdf="$(locate_orange_pdf ${platinum_dir})"
+molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+orange_json="$(locate_orange_json ${molecular_dir})"
+orange_pdf="$(locate_orange_pdf ${molecular_dir})"
 molecular_json="$(locate_actin_molecular_json ${sample})"
 
 if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then
