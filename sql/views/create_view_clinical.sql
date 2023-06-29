@@ -31,5 +31,5 @@ FROM sample
         FROM drug INNER JOIN treatment ON drug.treatmentId = treatment.id GROUP BY biopsyId)
         biopsyDrugs ON biopsy.id = biopsyDrugs.biopsyId
     LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId
-    INNER JOIN consentsLAMA ON SUBSTRING_INDEX(SUBSTRING_INDEX(sample.setName, '_', - 2), '_', 1)=consentsLAMA.barcode
+    INNER JOIN consentsLAMA ON sample.sampleId=consentsLAMA.sampleId
  WHERE consentsLAMA.allowInternalUse = 'true'

@@ -6,7 +6,7 @@ FROM
 	clinical_purity
 	INNER JOIN metric ON metric.sampleId = clinical_purity.sampleId
     INNER JOIN snpcheck ON snpcheck.sampleId = clinical_purity.sampleId
-    INNER JOIN consentsLAMA ON SUBSTRING_INDEX(SUBSTRING_INDEX(clinical_purity.setName, '_', - 2), '_', 1)=consentsLAMA.barcode
+    INNER JOIN consentsLAMA ON clinical_purity.sampleId=consentsLAMA.sampleId
 WHERE
 	blacklisted = 0
 	AND purpleQC = 'PASS'
