@@ -29,13 +29,13 @@ main() {
     print_usage
   fi
 
-  if [[ "${bam_url}" == *.bam ]]
+  if [[ "${bam_url}" == *.bam ]]; then
     info "Bam file:"
     sign_url "${bam_url}" "${duration}"
 
     info "Bai file:"
     sign_url "${bam_url}.bai" "${duration}"
-  elif [[ "${bam_url}" == *.cram ]]
+  elif [[ "${bam_url}" == *.cram ]]; then
     info "Cram file:"
     sign_url "${bam_url}" "${duration}"
 
