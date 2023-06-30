@@ -22,6 +22,7 @@ database_exists=$(mysql -u "$db_user" -p"$db_pass" -h "$db_host" -e "SHOW DATABA
 
 if [ -z "$database_exists" ]; then
   echo "Database '$db_name' does not exist. Loading SQL script..."
+  mysql -u "$db_user" -p"$db_pass" -h "$db_host" "$db_name" < "CREATE DATABASE $db_name;"
   mysql -u "$db_user" -p"$db_pass" -h "$db_host" "$db_name" < $actin_database_sql
 
 else
