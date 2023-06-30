@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+source locate_files || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "This script takes a patient as an argument"
+fi
+
+actin_database_sql="$(locate_actin_database_sql_script)"
+
+db_host="actin-sql.prod"
+db_port=3306
+db_user="writer"
+db_pass=$(gcloud secrets versions access latest --secret="prod-sql-writer-password")
+db_name=actin_operations
+
+database_exists=$(mysql -u "$db_user" -p"$db_pass" -h "$db_host" -e "SHOW DATABASES LIKE '${db_name}';" | grep "$db_name")
+
+if [ -z "$database_exists" ]; then
+  echo "Database '$db_name' does not exist. Loading SQL script..."
+  mysql -u "$db_user" -p"$db_pass" -h "$db_host" "$db_name" < $actin_database_sql
+
+else
+  echo "Database '$DATABASE_NAME' already exists."
+fi
+
+treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
+
+java -cp /data/system/actin.jar com.hartwig.actin.database.algo.TreatmentMatchLoaderApplication \
+    -treatment_match_json ${treatment_match_json} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url "mysql://${db_host}:${db_port}/${db_name}"
