@@ -11,6 +11,7 @@ if [[ -z "${patient}" ]]; then
 fi
 
 actin_database_sql="$(locate_actin_database_sql_script)"
+actin_database_views_sql="$(locate_actin_database_views_sql_script)"
 
 db_host="actin-sql.prod"
 db_port=3306

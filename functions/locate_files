@@ -326,6 +326,10 @@ locate_actin_database_sql_script() {
     echo "/data/resources/crunch/actin/sql_database/generate_database.sql"
 }
 
+locate_actin_database_views_sql_script() {
+    echo "/data/resources/crunch/actin/sql_database/generate_views.sql"
+}
+
 locate_actin_clinical_curation_directory() {
     echo "/data/resources/crunch/actin/clinical_curation"
 }
