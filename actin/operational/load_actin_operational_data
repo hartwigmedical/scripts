@@ -31,6 +31,6 @@ fi
 
 treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
 
-java -cp /data/system/actin.jar com.hartwig.actin.database.algo.TreatmentMatchLoaderApplication \
+java -cp /data/actin/system/actin.jar com.hartwig.actin.database.algo.TreatmentMatchLoaderApplication \
     -treatment_match_json ${treatment_match_json} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url "mysql://${db_host}:${db_port}/${db_name}"
