@@ -283,17 +283,24 @@ runSampleQcDeamination<-function()
          theme(legend.title = element_text(size = 12), legend.text = element_text(size = 12), legend.position='bottom') +
          labs(title=sampleTitle, y='VAF',x='Coverage (log10)', plot.title=element_text(hjust=0.5))
 
-    # PDF creation
+    # CREATE PLOTS
     outputDir = paste0(runDir, "sampleQcDeamination/")
     if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
+    # PDF creation
     outputFile = paste0(outputDir, sampleId, '.sampleQcDeamination.pdf')
     print(paste0("writing output to pdf file: ", outputFile))
-
     pdf(file = outputFile, height = 7, width = 10)
     par(mar = c(1, 1, 1, 1))
     print(variantPlot)
+    dev.off()
 
+    # PNG creation
+    outputPNG = paste0(outputDir, sampleId, '.sampleQcDeamination.png')
+    print(paste0("writing output to png file: ", outputPNG))
+    png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
+    par(mar = c(1, 1, 1, 1))
+    print(variantPlot)
     dev.off()
 
 }
