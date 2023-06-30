@@ -308,20 +308,17 @@ runSampleQcReport<-function()
     # theme(legend.position='none') +
     # theme(legend.position=c(0.1, 0.1))
 
-    # PDF creation
+    # CREATE PLOTS
+
     outputDir = paste0(runDir, "sampleQcReports/")
-    #outputDir = paste0(runDir, "TEST/")
     if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
+    # PDF creation
     outputFile = paste0(outputDir, sampleId, '.sampleQcReport.pdf')
     print(paste0("writing output to pdf file: ", outputFile))
-
     pdf(file = outputFile, height = 14, width = 20)
     par(mar = c(1, 1, 1, 1))
-
-    # title = textGrob(paste0(sampleId, ' Gene Report'), gp = gpar(fontface = "bold", fontsize = 16))
     title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
-
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
@@ -329,10 +326,22 @@ runSampleQcReport<-function()
                            NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
-
     dev.off()
 
-
+    # PNG creation
+    outputPNG = paste0(outputDir, sampleId, '.sampleQcReport.png')
+    print(paste0("writing output to png file: ", outputPNG))
+    png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
+    par(mar = c(1, 1, 1, 1))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
+    plotWidth=3
+    gapWidth=0
+    grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
+                           variantPlot,NULL,exonMedianPlot,NULL,exonNormPlot,NULL,geneCnPlot,NULL,
+                           NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,
+                           ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
+                           rel_heights=c(1,20,1),align='v',axis='l'))
+    dev.off()
 
     #grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
     #                       variantPlot,NULL,exonMedianPlot,NULL,exonNormPlot,NULL,geneCnPlot,NULL,
