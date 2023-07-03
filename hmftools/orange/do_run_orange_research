@@ -16,6 +16,8 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
+echo $#
+
 if [[ $# -gt 2 ]]; then
     collection_date=$1 && shift
     info "Collection date has been manually configured as '${collection_date}'"
