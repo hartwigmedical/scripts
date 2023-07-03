@@ -18,6 +18,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 if [[ $# -gt 2 ]]; then
     collection_date=$1 && shift
+    info "Collection date has been manually configured as '${collection_date}'"
 else
     collection_date=$(collection_date_for_sample ${tumor_sample})
 fi
@@ -29,6 +30,7 @@ fi
 
 if [[ $# -gt 3 ]]; then
     primary_tumor_doids=$1 && shift
+    info "Primary tumor doids have been manually configured as '${primary_tumor_doids}'"
 elif [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
