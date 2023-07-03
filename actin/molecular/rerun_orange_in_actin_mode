@@ -9,8 +9,8 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 # Rerun standard ORANGE in research
-rerun_orange_research ${run_dir}
+rerun_orange_research ${run_dir} "$@"
 
 # Converted-germline is generated to be able to share externally with people who do not wish to see germline.
-rerun_orange_research_no_germline ${run_dir}
+rerun_orange_research_no_germline ${run_dir} "$@"
 

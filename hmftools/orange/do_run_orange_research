@@ -15,19 +15,28 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-collection_date=$(collection_date_for_sample ${tumor_sample})
+
+if [[ $# -gt 2 ]]; then
+    collection_date=$1 && shift
+else
+    collection_date=$(collection_date_for_sample ${tumor_sample})
+fi
+
 if [[ -z "${collection_date}" ]]; then
     warn "No collection date found for ${tumor_sample}"
     collection_date="NA"
 fi
 
-if [[ ${tumor_sample} == "COLO"* ]]; then
+if [[ $# -gt 3 ]]; then
+    primary_tumor_doids=$1 && shift
+elif [[ ${tumor_sample} == "COLO"* ]]; then
     primary_tumor_doids="8923"
 else
     primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
-    if [[ -z "${primary_tumor_doids}" ]]; then
-        primary_tumor_doids="\"\""
-    fi
+fi
+
+if [[ -z "${primary_tumor_doids}" ]]; then
+    primary_tumor_doids="\"\""
 fi
 
 create_or_cleanup_dir ${output_dir}
