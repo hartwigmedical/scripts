@@ -10,4 +10,4 @@ fi
 
 output_dir="${run_dir}/orange_no_germline"
 
-do_run_orange_research ${run_dir} ${output_dir} -convert_germline_to_somatic "$@"
+do_run_orange_research ${run_dir} ${output_dir} "$@" -convert_germline_to_somatic
