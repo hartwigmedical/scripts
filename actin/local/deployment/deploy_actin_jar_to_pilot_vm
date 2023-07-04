@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-source actin_config || exit 1
-
-vm="$(pilot_actin_vm)"
-project="$(pilot_actin_project)"
-
-do_deploy_actin_jar ${vm} ${project}
