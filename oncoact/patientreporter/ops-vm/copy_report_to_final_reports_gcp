@@ -41,7 +41,7 @@ url_bucket_report_manual="gs://patient-reporter-manual-prod-1/"
 url_bucket_report_final="gs://patient-reporter-final-prod-1/"
 
 echo ""
-echo "--- Report for ${sample} has been shared (again; in case of correction) - final processing will start: ---"
+echo "--- Report for ${sample} will be share (again; in case of correction) - final processing will start: ---"
 
 report_source="none"
 
