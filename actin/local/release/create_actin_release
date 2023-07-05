@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+release=$1 && shift
+
+if [[ -z "${release}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+# NOTE: Only run this script inside local ACTIN repo!
+
+git tag ${release}
+git push origin ${release}
