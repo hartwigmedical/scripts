@@ -12,4 +12,4 @@ git pull
 git commit -m "Updated ACTIN resource files" actin
 git push
 
-cd "${work_path}"
+cd "${current_path}"

@@ -8,4 +8,4 @@ cd "$HOME/hmf/repos/crunch-resources-private"
 
 git pull
 
-cd "${work_path}"
+cd "${current_path}"

@@ -8,7 +8,13 @@ if [[ -z "${release}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-# NOTE: Only run this script inside local ACTIN repo!
+current_path=$(pwd)
+
+cd "$HOME/hmf/repos/actin"
+
+info "Making release '${release} in ACTIN repo"
 
 git tag ${release}
 git push origin ${release}
+
+cd "${current_path}"
