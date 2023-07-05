@@ -5,6 +5,7 @@ source io_functions || exit 1
 
 feed_directory="$(locate_actin_clinical_input_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 output_directory="$(locate_actin_curated_clinical_directory)"
 
@@ -17,6 +18,7 @@ create_or_cleanup_dir "${output_directory}"
 java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt \
     -feed_directory ${feed_directory} \
     -curation_directory ${curation_directory} \
+    -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
     -output_directory ${output_directory} \
     "$@"

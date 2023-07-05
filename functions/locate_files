@@ -330,6 +330,10 @@ locate_actin_clinical_curation_directory() {
     echo "/data/resources/crunch/actin/clinical_curation"
 }
 
+locate_actin_treatment_db_directory() {
+    echo "/data/resources/crunch/actin/treatment_db"
+}
+
 locate_actin_trial_config_directory() {
     echo "/data/resources/crunch/actin/trial_config"
 }
