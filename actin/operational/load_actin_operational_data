@@ -13,16 +13,16 @@ fi
 actin_jar="$(locate_pilot_actin)"
 
 db_host="actin-sql.prod"
-db_port=3306
+db_port="3306"
 db_user="writer"
 db_pass=$(gcloud secrets versions access latest --secret="prod-sql-writer-password")
-db_name=actin_operations
+db_name="actin_operations"
 
 database_exists=$(mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" -e "SHOW DATABASES LIKE '${db_name}';" | grep "${db_name}")
 
 if [ -z "$database_exists" ]; then
     echo "Database '${db_name}' does not exist. Loading SQL script..."
-    mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" -e "CREATE DATABASE $db_name;"
+    mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" -e "CREATE DATABASE ${db_name};"
     mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}" < unzip -p ${actin_jar} generate_database.sql
     mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}" < unzip -p ${actin_jar} generate_views.sql
 else
