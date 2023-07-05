@@ -23,8 +23,8 @@ database_exists=$(mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" -e "SHOW 
 if [ -z "$database_exists" ]; then
     echo "Database '${db_name}' does not exist. Loading SQL script..."
     mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" -e "CREATE DATABASE ${db_name};"
-    mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}" < unzip -p "${actin_jar}" generate_database.sql
-    mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}" < unzip -p "${actin_jar}" generate_views.sql
+    unzip -p "${actin_jar}" generate_database.sql | mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}"
+    unzip -p "${actin_jar}" generate_views.sql | mysql -u "${db_user}" -p"${db_pass}" -h "${db_host}" "${db_name}"
 else
     echo "Database '${db_name}' already exists."
 fi
