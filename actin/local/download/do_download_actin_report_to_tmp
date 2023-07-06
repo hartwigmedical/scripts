@@ -11,6 +11,5 @@ if [[ -z "${patient}" || -z "${vm}" || -z "${project}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-
 info "Downloading ACTIN report for ${patient} from ${vm}"
 gcloud compute --project ${project} scp ${vm}:$(locate_actin_reports_directory)/*${patient}*.actin.pdf ~/hmf/tmp/
