@@ -31,6 +31,8 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
     -enable_extended_mode 1 \
     "$@"
 
+echo ""
+
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplication \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
