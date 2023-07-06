@@ -12,4 +12,4 @@ fi
 vm="$(production_actin_vm)"
 project="$(production_actin_project)"
 
-do_download_extended_actin_report_to_tmp ${patient} ${vm} ${project}
+do_download_actin_extended_report_to_tmp ${patient} ${vm} ${project}
