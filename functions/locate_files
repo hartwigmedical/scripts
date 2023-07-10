@@ -69,7 +69,7 @@ locate_prod_cuppa_dna_rna() {
 }
 
 locate_pilot_cuppa() {
-    echo "/data/experiments/pilot_tools/cuppa/cuppa.jar"
+    echo " /data/tools/cuppa/1.8.1.rc1/cuppa.jar"
 }
 
 locate_prod_paddle() {

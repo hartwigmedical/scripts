@@ -13,4 +13,4 @@ ref_dir="$(locate_cuppa_ref_dir_dna_rna)"
 cuppa_jar="$(locate_pilot_cuppa)"
 cuppa_dir="${run_dir}/cuppa_dna_rna_pilot"
 
-do_run_cuppa_dna_rna ${run_dir} ${ref_dir} ${cuppa_jar} ${cuppa_dir} "$@"
+do_run_cuppa_dna_rna_pilot ${run_dir} ${ref_dir} ${cuppa_jar} ${cuppa_dir} "$@"
