@@ -20,7 +20,7 @@ if [[ ! -d "${cuppa_dir}" ]]; then
     mkdir -p "${cuppa_dir}"
 fi
 
-tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna_rna"
+tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna_rna_pilot"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
@@ -33,7 +33,7 @@ else
 fi
 cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 
-info "Running Cuppa DNA-RNA on ${run_dir}"
+info "Running Cuppa pilot DNA-RNA on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
     -categories ALL \
     -ref_data_dir ${ref_data_dir} \
