@@ -35,7 +35,7 @@ cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 
 info "Running Cuppa pilot DNA-RNA on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
-    -categories ALL \
+    -categories ALT_SJ \
     -ref_data_dir ${ref_data_dir} \
     -sample ${tumor_sample} \
     -sample_data_dir ${tmp_sample_data_dir} \
