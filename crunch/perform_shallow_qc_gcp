@@ -32,7 +32,7 @@ main() {
   fi
 
   info "Writing results to ${tmp_file}"
-  echo -e "#Seq?\tAddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
+  echo -e "Seq?\tAddR\tAddT\tSetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
   \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup" > "${tmp_file}"
 
   for set_name in "${set_names[@]}"; do
@@ -141,21 +141,21 @@ print_shallow_qc_for_run() {
     ref_cov_check=$(echo "${ref_cov} >= 8.0"| bc -l)
     fails_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -v FAIL_NO_TUMOR | grep -c FAIL_)
     if [[ ${amb_qc} != *"FAIL"* ]] && [[ ${qc_stat} != *"FAIL"* ]] && [[ ${purity_check} -eq 1 ]]; then
-        seq="yes"
+        to_seq="yes"
     elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 1 && ${ref_cov_check} -eq 1 ]]; then
-        seq="no"
+        to_seq="no"
     elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 0 || ${ref_cov_check} -eq 0 ]]; then
-        warn "Sample needs investigating, likely additional sequencing needed"
-        seq="addseq"
+        warn "Sample set ${set_name} needs investigating, likely additional sequencing needed"
+        to_seq="addseq"
     else
-        warn "Sample needs investigating"
-        seq="else"
+        warn "Sample set ${set_name} needs investigating"
+        to_seq="else"
     fi
-    echo "$seq"
 
+    echo "${set_name} ${to_seq} ${amb_qc}"
 
     printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-        "${seq}" "${ref_add_yield}" "${tum_add_yield}" \
+        "${to_seq}" "${ref_add_yield}" "${tum_add_yield}" \
         "${set_name}" "${tum_sample}" "${qc_stat}" "${purity}" \
         "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
         "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
