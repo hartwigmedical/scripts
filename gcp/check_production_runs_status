@@ -65,7 +65,7 @@ main () {
             echo "---------"
             echo "-${counter}- ${set_name}  has failed. healthchecker issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             inspect_healthchecker_log_at_gcp ${set_name} | grep 'INFO\|WARN\|ERROR\|Health checker log from'
-            Rscript determine_tat_for_barcode.R ${barcode}
+            Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
             echo "**"
             echo " Action - inspect the error above and solve if possible with lab (extra sequencing for coverage and/or second biopt)... "
             echo " ...  ONLY if solving is not possible, proceed to the next steps: .."
@@ -126,7 +126,7 @@ main () {
             echo "---------"
             echo "-${counter}- ${set_name} has been finished but not validated. snpcheck issue? (see below) # db_status:diagnostic=${db_status}/research=${research_db_status}"
             perform_snpcheck_run ${set_name}
-            Rscript determine_tat_for_barcode.R ${barcode}
+            Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
             echo "**"
             echo " Action - if snpcheck is FAIL - research the fail (follow sop)"
             echo " Action - if snpcheck is OK - update the api using the script: patch_api_run_validate ${set_name}"
@@ -269,7 +269,7 @@ main () {
 
                 sql_checks_reporting ${sample_name}
                 barcode=$(echo "${set_name}" | cut -d'_' -f4)
-                Rscript determine_tat_for_barcode.R ${barcode}
+                Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
                 echo "**"
                 echo " Action - upload the report for final checking and sharing to nc using the script: upload_pipeline_report_to_nc ${set_name}"
                 #echo " Action 2 - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${set_name}"
@@ -300,7 +300,7 @@ main () {
 
                 sql_checks_reporting ${sample_name}
                 barcode=$(echo "${set_name}" | cut -d'_' -f4)
-                Rscript determine_tat_for_barcode.R ${barcode}
+                Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
                 echo "**"
                 echo " Action (temporary) - make ROSE summary using the script: create_rose_summary ${set_name}"
                 echo " Action (temporary) - Update ROSE summary manually with sentence 'possible indication for ERBB2 (mAb) inhibitors' of ERRB2 amplification"
@@ -338,7 +338,7 @@ main () {
 
                 sql_checks_reporting ${sample_name}
                 barcode=$(echo "${set_name}" | cut -d'_' -f4)
-                Rscript determine_tat_for_barcode.R ${barcode}
+                Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
                 echo "**"
                 echo " Action when lims information warning - ask lab to update lims, thereafter update the API using the script: update_lims"
                 echo " Action when doid/clinical curation warning - solve the clinical curation (follow sop), thereafter update using the script: update_clinical_curation"
@@ -369,7 +369,7 @@ main () {
                 sql_checks_reporting ${sample_name}
                 warn "No report found in the bucket ${url_bucket_report_pipline}"
                 barcode=$(echo "${set_name}" | cut -d'_' -f4)
-                Rscript determine_tat_for_barcode.R ${barcode}
+                Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
                 echo "**"
                 echo " Action - create a report and upload it to nc for final checking and sharing using the script: create_patient_report_validated_run ${set_name} "
                 #echo " Action - when shared, move the report to the final archive using the script: copy_report_to_final_reports_gcp ${set_name}"
@@ -396,7 +396,7 @@ main () {
                 health_check_validated_run ${set_name}
                 sql_checks_reporting ${sample_name}
                 barcode=$(echo "${set_name}" | cut -d'_' -f4)
-                Rscript determine_tat_for_barcode.R ${barcode}
+                Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
              fi
          fi
     done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.set.tumor_sample,.set.name,.entity,.db_status//"NA"] | @tsv')
@@ -413,7 +413,7 @@ main () {
         barcode=$(echo "${set_name}" | cut -d'_' -f4)
         sample_name=$( hmf_api_get 'sets?name='${set_name}'' | jq -r '.[].samples[].name' | grep T )
         echo "# -${counter}- ${set_name} is ${status}"
-        Rscript determine_tat_for_barcode.R ${barcode}
+        Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
     done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
 
@@ -427,7 +427,7 @@ main () {
         barcode=$(echo "${set_name}" | cut -d'_' -f4)
         sample_name=$( hmf_api_get 'sets?name='${set_name}'' | jq -r '.[].samples[].name' | grep T )
         echo "# -${counter}- ${set_name} is ${status}"
-        Rscript determine_tat_for_barcode.R ${barcode}
+        Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/determine_tat_for_barcode.R ${barcode}
     done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.set.name,.status] | @tsv')
 
     echo ""
