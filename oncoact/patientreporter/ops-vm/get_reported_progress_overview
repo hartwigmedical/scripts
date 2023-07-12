@@ -13,7 +13,6 @@ while read -r report_info; do
     report_type=$(echo "${report_info}" | cut -f2)
     report_created_id=$(echo "${report_info}" | cut -f3)
     barcode=$(echo "${report_info}" | cut -f4)
-    barcode
     #
     if [[ $( hmf_api_get reports/shared?report_created_id=${report_created_id} | jq -r .[] | wc -l ) -gt 0 ]]; then
          if [[ $( cat reported_samples_list.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
