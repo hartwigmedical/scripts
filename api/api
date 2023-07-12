@@ -95,8 +95,17 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" barcode sample_name cohort report_type source create_time run_id id
         jq -r '.[] | [.barcode, .sample_name, .cohort, .report_type, .source, .create_time, .run_id, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "reports/shared" ]]; then
-        printf "#%s\t%s\t%s\n" share_time report_created_id id
-        jq -r '.[] | [.share_time, .report_created.id, .id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" barcode sample_name cohort report_type source create_time run_id share_time report_created_id id
+        jq -r '.[] | [.report_created.barcode,
+        .report_created.sample_name,
+        .report_created.cohort,
+        .report_created.report_type,
+        .report_created.source,
+        .report_created.create_time,
+        .report_created.run_id,
+        .share_time,
+        .report_created.id,
+        .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "fastq" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name_r1 name_r2 q30 yld sample_id qc_pass bucket id
         jq -r '.[] | [.name_r1, .name_r2, .q30, .yld, .sample_id, .qc_pass, .bucket, .id] | @tsv' <<< "${json_result}" \
