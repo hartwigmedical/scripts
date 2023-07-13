@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 set -e
 
-OUT_FILE=sharing_db_generated_api.tsv
+OUT_FILE=sharing_db_generated.tsv
 DESTINATION="/data/ops/lims/prod"
 NA_CHAR="N/A"
 wd="$(mktemp -d)"
