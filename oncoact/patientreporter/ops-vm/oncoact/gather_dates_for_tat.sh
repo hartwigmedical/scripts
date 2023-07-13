@@ -8,12 +8,12 @@ barcode=$1
 
 sampleId=$( find_name_for_barcode ${barcode} )
 
-temp_nr=$( lama patients/tumorsamples ${sampleId} | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
-tumor_arrival=$( lama patients/tumorsamples ${sampleId} | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
+temp_nr=$( lama tumor-sample sample-id/${sampleId} | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
+tumor_arrival=$( lama tumor-sample sample-id/${sampleId} | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
 sampleId_ref=$( echo $(echo ${sampleId} | cut -c1-12)R )
-temp_nr=$( lama patients/bloodsamples ${sampleId_ref} | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
-ref_arrival=$( lama patients/bloodsamples ${sampleId_ref} | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
+temp_nr=$( lama reference-sample sample-id/${sampleId_ref} | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
+ref_arrival=$( lama reference-sample sample-id/${sampleId_ref} | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
 
 
 if [ $(echo ${tumor_arrival} | wc -w) == 0 ]; then
