@@ -30,13 +30,16 @@ NAS_FILES=(
 
 LAMA_BUCKET="lama-export"
 LAMA_FILES=(
-  "gs://${LAMA_BUCKET}/Cohorts.json"
+  "gs://${LAMA_BUCKET}/BiopsySites.json"
+  "gs://${LAMA_BUCKET}/ContactGroups.json"
+  "gs://${LAMA_BUCKET}/Contacts.json"
+  "gs://${LAMA_BUCKET}/Contracts.json"
   "gs://${LAMA_BUCKET}/Hospitals.json"
   "gs://${LAMA_BUCKET}/Isolations.json"
-  "gs://${LAMA_BUCKET}/LibraryPreps.json"
+  "gs://${LAMA_BUCKET}/LibraryPreparations.json"
   "gs://${LAMA_BUCKET}/Patients.json"
-  "gs://${LAMA_BUCKET}/SampleStatus.json"
-  "gs://${LAMA_BUCKET}/SnpChecks.json"
+  "gs://${LAMA_BUCKET}/Statuses.json"
+  "gs://${LAMA_BUCKET}/TumorTypes.json"
 )
 
 main() {
