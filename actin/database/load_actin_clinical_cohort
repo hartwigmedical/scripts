@@ -13,7 +13,6 @@ actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
 actin_database_name="actin_cohort"
 
-patient=${sample:0:12}
-treatment_match_json="/data/experiments/charlotte_emc_actionability/database/${sample}/actin/${patient}.treatment_match.json"
+clinical_directory="/data/experiments/charlotte_emc_actionability/database/${sample}/clinical/"
 
-do_load_actin_treatment_match ${treatment_match_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}
+do_load_actin_clinical ${clinical_directory} "${actin_credentials}" ${actin_jar} ${actin_database_name}

@@ -4,27 +4,30 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
+if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-sample_cohort_dir="$(locate_actin_cohort_molecular_directory ${run_dir})"
+sample_dir="/data/experiments/charlotte_emc_actionability/database/${sample}"
 
-orange_json="$(locate_orange_json ${sample_cohort_dir})"
-external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
+orange_json="${sample_dir}/${sample}.orange.json"
+serve_directory="/data/resources/crunch/actin/cohort_analysis/serve_db"
 
-output_directory="${sample_cohort_dir}/actin"
+doid_json="$(locate_doid_json)"
+
+output_directory="${sample_dir}/actin"
 create_or_cleanup_dir ${output_directory}
 
-actin_jar="$(locate_cohort_actin)"
+actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
 
 info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
-    -orange_json ${orange_json} \
-    -external_trial_mapping_tsv ${external_trial_mapping_tsv} \
-    -output_directory ${output_directory} \
+    -orange_json "${orange_json}" \
+    -serve_directory "${serve_directory}" \
+    -doid_json "${doid_json}" \
+    -output_directory "${output_directory}" \
     "$@"
 

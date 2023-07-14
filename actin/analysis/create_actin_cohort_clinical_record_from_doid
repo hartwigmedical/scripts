@@ -5,13 +5,14 @@ source metadata_functions || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
+if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-sample=$(load_tumor_sample_from_metadata ${run_dir})
+sample_dir="/data/experiments/charlotte_emc_actionability/database/${sample}"
+
 primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${sample})
 if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
@@ -19,9 +20,9 @@ fi
 
 patient=${sample:0:12}
 
-output_directory="$(locate_actin_cohort_clinical_directory)"
+output_directory="${sample_dir}/actin"
 
-actin_jar="$(locate_cohort_actin)"
+actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
 
 info "Running ACTIN Build Clinical From Doids Only on ${patient}"
 

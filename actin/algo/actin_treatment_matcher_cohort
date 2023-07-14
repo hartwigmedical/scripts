@@ -3,27 +3,25 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-run_dir=$1 && shift
+sample=$1 && shift
 
-if [[ -z "${run_dir}" ]]; then
+if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-sample=$(basename ${run_dir})
-patient=${sample:0:12}
-clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
-molecular_json="$(locate_actin_cohort_molecular_directory ${run_dir})/actin/${sample}.molecular.json"
+sample_dir="/data/experiments/charlotte_emc_actionability/database/${sample}"
 
-treatment_database_directory="$(locate_actin_cohort_treatment_database_directory)"
+clinical_json="${sample_dir}/actin/${sample}.clinical.json"
+molecular_json="${sample_dir}/${sample}.orange.json"
+treatment_database_directory="/data/resources/crunch/actin/cohort_analysis/trial_config"
 doid_json="$(locate_doid_json)"
+output_directory="${sample_dir}/actin"
 
-output_directory="$(locate_actin_cohort_treatment_match_directory)"
+actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
 
-actin_jar="$(locate_cohort_actin)"
+info "Running ACTIN treatment matcher on ${sample}"
 
-info "Running ACTIN cohort treatment matcher on ${patient} for sample ${sample}"
-
-java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplication \
+java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
     -treatment_database_directory ${treatment_database_directory} \
