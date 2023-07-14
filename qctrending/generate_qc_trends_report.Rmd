@@ -98,7 +98,7 @@ diagnostic_flowcell_qc_info <- diagnostic_sample_qc_info[!duplicated(diagnostic_
 nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondiagnostic_sample_qc_info$flowcell),]
 
 # GIAB QC Info
-giab_info <- as.data.frame(t(read.csv("HMF-FOR-096 SEQUENCING SYSTEMS VERIFICATIONS v2.0.csv", sep=",", header=F, na.strings=c("", "NA", "N/A"))))
+giab_info <- as.data.frame(t(read.csv("/tmp/HMF-FOR-096.csv", sep=",", header=F, na.strings=c("", "NA", "N/A"))))
 giab_info <- giab_info[,c(2,4,9,12,20,25)]
 giab_info <- giab_info[-1,]
 colnames(giab_info) <- c("Machine", "SetName", "Q30", "Mapped", "Duplicates", "Excluded")
