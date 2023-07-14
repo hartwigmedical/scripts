@@ -112,6 +112,15 @@ main(){
     elif [[ "${class}" =~ ^reference-sample ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf sampleBarcode
         jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" =~ ^patient ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" patientId reportingId tumBarcodes tumSampleIds refBarcodes refSampleIds
+        jq -r '.[] | [.patientId,
+            .reportingId//"N/A",
+            ([.tumorSamples[].sampleId//"N/A"]|join(",")),
+            ([.tumorSamples[].sampleBarcode//"N/A"]|join(",")),
+            ([.referenceSamples[].sampleId//"N/A"]|join(",")),
+            ([.referenceSamples[].sampleBarcode//"N/A"]|join(","))
+        ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^report ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" isolationBarcode sampleId reportDate reportType contractCode
         jq -r '.[] | [.isolationBarcode, .sampleId, .reportDate, .reportType, .contractCode] | @tsv' <<< "${json_result}"
