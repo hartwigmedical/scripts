@@ -12,7 +12,10 @@ print_usage(){
 }
 [[ $# -gt 0 ]] || print_usage
 
-doid_file="/data/dbs/clinical_data/curated_primary_tumor.tsv"
+# With LAMA v2 we move to LAMA for DOID source instead of manually curated file
+#doid_file="/data/dbs/clinical_data/curated_primary_tumor.tsv"
+
+doid_file="/data/dbs/clinical_data/curated_primary_tumor_from_lama.tsv"
 status_file="/data/dbs/clinical_data/patient_tumor_curation_status.tsv"
 field_idx='7'
 
@@ -27,6 +30,9 @@ done
 
 main () {
     info "Starting with $(basename "$0")"
+
+    info "Updating DOID file"
+    lama_create_curated_primary_tumor_tsv
 
     [[ -f "${doid_file}" ]] || die "Missing file (${doid_file})"
     [[ -f "${status_file}" ]] || die "Missing file (${status_file})"
