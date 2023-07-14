@@ -716,7 +716,7 @@ locate_doid_json() {
 }
 
 locate_atc_tsv() {
-    echo "/data/resources/crunch/actin/atc_config/act_tree.tsv"
+    echo "/data/resources/crunch/actin/atc_config/atc_tree.tsv"
 }
 
 locate_driver_gene_panel_37_tsv() {
