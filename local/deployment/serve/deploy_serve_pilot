@@ -4,7 +4,7 @@ source io_functions || exit 1
 
 version="local-SNAPSHOT"
 
-source_path="$HOME/hmf/repos/serve/algo/target"
+source_path="$HOME/hmf/repos/serve/algo"
 target_path="$HOME/hmf/repos/serve/serve"
 
 create_or_cleanup_dir ${target_path}
