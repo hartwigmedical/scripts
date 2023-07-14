@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+startDate=$1
+endDate=$2
+outDir=$3
+
+if [[ -z $1 || -z $2 || -z $3 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Generate RETORT report from data in specified time range"
+    echo " Usage: $(basename $0) startDate endDate outDir"
+    echo " Exmpl: $(basename $0) 2022-12-10 2023-01-30 ~/Documents/retort_rapports/"
+    echo "---"
+    exit 1
+fi
+
+today=$(date +%Y-%m-%d)
+[[ "${startDate}" =~ ^[0-9]{4}-[0-9]{2}-[0-3][0-9] ]] || die "startDate is expected to match ^[0-9]{4}-[0-9]{2}-[0-3][0-9]"
+[[ "${endDate}" =~ ^[0-9]{4}-[0-9]{2}-[0-3][0-9] ]] || die "endDate is expected to match ^[0-9]{4}-[0-9]{2}-[0-3][0-9]"
+[[ "${startDate}" < "${endDate}" ]] || die "startDate is greater than endDate"
+[[ "${endDate}" < "${today}" ]] || die "endDate is greater than current date"
+
+[[ -d ${outDir} ]] || die "Path does not exist"
+
+outDataFile=${outDir}RETORT_data_${startDate}_${endDate}_${today}
+outReportFile="${outDir}RETORT_report_${startDate}_${endDate}_${today}.html"
+
+info "Gather data"
+python3 gather_flowcell_sample_data.py -s ${startDate} -e ${endDate} -o ${outDataFile} || die "Could not gather data"
+info "Generate report"
+Rscript -e "rmarkdown::render('generate_qc_trends_report.Rmd', output_file='${outReportFile}', params=list(data_file='${outDataFile}'))" || die "Could not generate report"
+
