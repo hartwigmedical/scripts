@@ -89,8 +89,8 @@ main(){
         printf "#%s\t%s\n" code displayName
         jq -r '.[] | [.code, .displayName] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^hospital ]]; then
-        printf "#%s\t%s\t%s\n" name code officialName
-        jq -r '.[] | [.name, .code, .officialName] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\n" code name city
+        jq -r '.[] | [.code, .name, .city] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^status ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
         sampleId sampleBarcode isolationBarcodes type isolationStatus prepStatus
