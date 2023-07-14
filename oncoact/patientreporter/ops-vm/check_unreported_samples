@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 MIN_ARRIVAL_DATE="2021-01-01"
-LAMA_API_URL="http://lama-preview.prod-1/api"
+LAMA_API_URL="http://lama.prod-1/api"
 REPORT_SHARED_TSV="/data/ops/lims/prod/sharing_db_generated.tsv"
 UNREPORTABLE_TSV="/data/ops/lims/prod/samples_without_pdf_report.tsv"
 #IN_PROCESS_STATUS="PROCESSING|PENDING|FAILED"
