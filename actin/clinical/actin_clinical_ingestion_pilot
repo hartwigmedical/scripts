@@ -7,6 +7,7 @@ feed_directory="$(locate_actin_clinical_input_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
+atc_tsv="$(locate_atc_tsv)"
 output_directory="$(locate_actin_curated_clinical_directory)"
 
 actin_jar="$(locate_pilot_actin)"
