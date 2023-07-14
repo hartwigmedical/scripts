@@ -3,7 +3,8 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(contract hospitals status statuses patient tumor-sample reference-sample queries/consents queries/patient-reporter)
+classes=(contact-group contract hospitals patient report status statuses tumor-sample reference-sample
+queries/consents queries/database-loader queries/patient-reporter queries/registration)
 
 print_usage(){
     script=$(basename "$0")
@@ -12,6 +13,7 @@ print_usage(){
     echo "Examples:"
     echo " $script hospitals"
     echo " $script tumor-samples"
+    echo " $script reports"
     echo " $script queries/consents"
     echo " $script statuses | grep ACTN01020001"
     echo " $script tumor-sample sample-id/ACTN01020001T"
@@ -85,6 +87,9 @@ main(){
             .allowExternalUseWithoutCheck,
             .allowExternalUseWithCheck
         ] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" =~ ^contact-group ]]; then
+        printf "#%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail
+        jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contract ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" code displayName sampleIdStart type startDate endDate
         jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
@@ -107,8 +112,11 @@ main(){
     elif [[ "${class}" =~ ^reference-sample ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf sampleBarcode
         jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" =~ ^report ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\n" isolationBarcode sampleId reportDate reportType contractCode
+        jq -r '.[] | [.isolationBarcode, .sampleId, .reportDate, .reportType, .contractCode] | @tsv' <<< "${json_result}"
     else
-        die "Table print for class ${class} is not supported"
+        die "Table format for class ${class} is not supported (use -j before other params to receive JSON format)"
     fi
 }
 
