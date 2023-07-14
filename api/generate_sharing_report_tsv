@@ -1,35 +1,37 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 set -e
 
+OUT_FILE=sharing_db_generated.tsv
+DESTINATION="/data/ops/lims/prod"
+NA_CHAR="N/A"
 wd="$(mktemp -d)"
-CURL="curl -q --fail http://api.prod-1/hmf/v1"
-OUT=sharing_db_generated.tsv
 
-echo "Generating sharing DB TSV in $wd" >&2
-pushd . >/dev/null
-cd $wd
-${CURL}/reports/shared > shared.json
-${CURL}/reports/created > created.json
+info "Generating sharing DB TSV in tmp dir [$wd]"
+cd "$wd"
 
-printf "tumorBarcode\tsampleId\tcohort\tshareDate\treportType\tpurity\thasReliableQuality\thasReliablePurity\tcreateDate\n" > $OUT
-jq '.[].id' shared.json | while read shared_id; do
-    shared_record="$(jq --arg id "$shared_id" '.[] | select(.id == ($id|tonumber))' shared.json)"
-    created_id=$(echo "$shared_record" | jq '.report_created.id')
-    created_record=$(jq --arg id "$created_id" '.[] | select(.id == ($id|tonumber))' created.json) 
-    barcode=$(echo "${created_record}" | jq -r '.barcode' | sed 's#^null$#N/A#')
-    sample_name=$(echo "${created_record}" | jq -r '.sample_name' | sed 's#^null$#N/A#')
-    cohort=$(echo "${created_record}" | jq -r '.cohort' | sed 's#^null$#N/A#')
-    create_date=$(date "+%d-%b-%Y" --date="$(echo "$created_record" | jq -r '.create_time')")
-    share_date=$(date "+%d-%b-%Y" --date="$(echo "$shared_record" | jq -r '.share_time')")
-    report_type="$(echo "${created_record}" | jq -r '.report_type')"
-    purity="$(echo "${created_record}" | jq -r '.purity' | sed 's#^null$#N/A#')"
-    rel_q="$(echo "${created_record}" | jq -r '.has_reliable_quality' | sed 's#^null$#N/A#')"
-    rel_p="$(echo "${created_record}" | jq -r '.has_reliable_purity' | sed 's#^null$#N/A#')"
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $barcode $sample_name $cohort $share_date $report_type $purity $rel_q $rel_p $create_date
-done >> $OUT
-cp $OUT /data/ops/lims/prod
+info "Retrieving reports/shared info from API"
+shared_reports=$(hmf_api_get "reports/shared")
 
-popd >/dev/null
-rm -r $wd
+printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+   tumorBarcode sampleId cohort shareDate reportType purity hasReliableQuality hasReliablePurity createDate > "$OUT_FILE"
+jq --arg na "$NA_CHAR" -r '.[] | [
+    .report_created.barcode//$na,
+    .report_created.sample_name//$na,
+    .report_created.cohort//$na,
+    (.share_time|strptime("%Y-%m-%dT%H:%M:%S")|strftime("%d-%b-%Y"))//$na,
+    .report_created.report_type//$na,
+    .report_created.purity//$na,
+    (if .report_created.has_reliable_quality != null then .report_created.has_reliable_quality else $na end),
+    (if .report_created.has_reliable_purity != null then .report_created.has_reliable_purity else $na end),
+    (.report_created.create_time|strptime("%Y-%m-%dT%H:%M:%S")|strftime("%d-%b-%Y"))//$na
+] | @tsv' <<< "${shared_reports}" >> "$OUT_FILE"
+info "Done generating sharing DB TSV [$OUT_FILE]"
 
+info "Copying output file to final destination [$DESTINATION]"
+cp "$OUT_FILE" "$DESTINATION"
+
+info "Removing tmp dir [$wd]"
+rm -r "$wd"

@@ -1,0 +1,548 @@
+---
+title: "RETORT Rapport"
+author: "Hartwig Medical Foundation"
+date: "Generated on: `r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: united
+params:
+  data_file: ""
+---
+<style type="text/css">
+   .main-container {max-width: 80%;}
+   .row {display: flex;}
+   .column {flex: 50%;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+library(dplyr) # Functionality (%>%, filter, select, etc)
+library(tidyr) # Table/data frame manipulation
+library(ggplot2) # Plotting
+library(plotly) # Interactive plots
+library(DT) # Interactive tables
+library(zoo) # For moving average/median calculations
+```
+
+```{r functions, include=FALSE}
+calculate_moving_median <- function(dataset, y, coloring) {
+  moving_median <- data.frame(matrix(ncol=4, nrow=0))
+  sets <- dataset %>% group_split(!!as.name(coloring))
+  for (fct_set in sets) {
+    fct_set <- fct_set %>% group_by(date, !!as.name(coloring)) %>% summarise(med = median(!!as.name(y))) %>% ungroup()
+    mm7_set = as.data.frame(fct_set %>% rollmedian(med, k=7, fill=NA))
+    fct_set <- fct_set %>% mutate(mm7 = as.numeric(mm7_set$med))
+    moving_median <- rbind(moving_median, fct_set)
+  }
+  colnames(moving_median) <- c("date", coloring, "med", "mm7")
+  return(moving_median)
+}
+
+basic_plot <- function(dataset, y, lab_y, lim_y, title, limits_x, coloring) {
+  plt <- ggplot(dataset, aes(date, !!as.name(y), color=!!as.name(coloring))) +
+    geom_point() +
+    ylim(0, lim_y) +
+    labs(y=lab_y, x="Date/Time", color=coloring, title=title) +
+    scale_x_date(date_labels="%m-%Y") +
+    xlim(as.Date(limits_x, format="%Y-%m-%d")) +
+    theme_minimal() +
+    theme(legend.position="right", axis.text.x=element_text(size=6)) +
+    stat_smooth(method="lm", se=FALSE, size=0.5) +
+    geom_line(data=calculate_moving_median(dataset, y, coloring), aes(date, mm7, color=!!as.name(coloring)))
+  return(plt)
+}
+
+basic_table <- function(dataset) {
+tbl <- datatable(dataset, selection="multiple", escape=FALSE, rownames=FALSE,
+                 options=list(dom='t', pageLength=50, lengthChange=FALSE,
+                              columnDefs=list(list(className='dt-center', targets=0:1))))
+return(tbl)
+}
+
+coefficients_annotation <- function(dataset, x, y, coloring) {
+  lm_formula <- paste(y, "~", x)
+  annotation <- data.frame(matrix(ncol=2, nrow=0))
+  dataset <- dataset[,c(x,y,coloring)]
+  for (value in sort(unique(dataset[,coloring]))) {
+    reg_data <- dataset %>% filter(!!as.name(coloring) == value)
+    regression <- lm(lm_formula, data = reg_data)
+    regression <- round(regression$coefficients[-1], 3)
+    annotation <- rbind(annotation, c(value, regression))
+  }
+  colnames(annotation) <- c(coloring, "regression")
+  return(annotation)
+}
+```
+
+```{r load_data, include=FALSE}
+# QC Info on Sample level
+sample_qc_info <- read.table(params$data_file, sep = '\t', header = TRUE) %>%
+                  filter(grepl('^A', sequencer))
+
+sample_qc_info$sequencer <- as.factor(sample_qc_info$sequencer)
+sample_qc_info["type"][sample_qc_info["type"] == ''] <- "NA"
+sample_qc_info$type <- as.factor(sample_qc_info$type)
+sample_qc_info$date <- as.Date(sample_qc_info$date, format = '%Y-%m-%dT%H:%M:%S')
+sample_qc_info$flowcell_yield <- sample_qc_info$flowcell_yield / 1000000000
+sample_qc_info$sample_yield <- sample_qc_info$sample_yield / 1000000000
+sample_qc_info$undetermined_percentage <- sample_qc_info$undetermined_percentage / 100
+
+diagnostic_sample_qc_info <- sample_qc_info %>% filter(context == "DIAGNOSTIC", ini == "Somatic.ini")
+nondiagnostic_sample_qc_info <- sample_qc_info %>% filter(!(context == "DIAGNOSTIC"), !(ini == "Somatic.ini"))
+
+# QC info on Flowcell level
+flowcell_qc_info <- sample_qc_info[!duplicated(sample_qc_info$flowcell),]
+diagnostic_flowcell_qc_info <- diagnostic_sample_qc_info[!duplicated(diagnostic_sample_qc_info$flowcell),]
+nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondiagnostic_sample_qc_info$flowcell),]
+
+# GIAB QC Info
+giab_info <- as.data.frame(t(read.csv("/tmp/HMF-FOR-096.csv", sep=",", header=F, na.strings=c("", "NA", "N/A"))))
+giab_info <- giab_info[,c(2,4,9,12,20,25)]
+giab_info <- giab_info[-1,]
+colnames(giab_info) <- c("Machine", "SetName", "Q30", "Mapped", "Duplicates", "Excluded")
+
+dates <- as.Date(substr(giab_info[,"SetName"], 1, 6), format='%y%m%d')
+giab_info[,"date"] <- dates
+giab_info[,"Mapped"] <- as.numeric(gsub("%","",giab_info[,"Mapped"]))
+giab_info[,"Duplicates"] <- as.numeric(gsub("%","",giab_info[,"Duplicates"]))
+giab_info[,"Excluded"] <- as.numeric(gsub("%","",giab_info[,"Excluded"]))
+giab_info[,"Q30"] <- as.numeric(substr(giab_info[,"Q30"], 1, 4))
+giab_info$Q30[is.na(giab_info$Q30)] <- 0
+
+giab_info <- giab_info %>% filter(!(is.na(Machine)))
+# Date ranges for plotting
+qc_date_range <- c(min(flowcell_qc_info$date, na.rm=T), max(flowcell_qc_info$date, na.rm=T))
+giab_date_range <- c(min(giab_info$date, na.rm=T), max(giab_info$date, na.rm=T))
+```
+
+
+# Flowcell
+### Q30
+<div class = "row">
+<div class = "column">
+```{r diagnostic_flowcell_q30, echo=FALSE}
+diag_q30_plot <- basic_plot(
+                   diagnostic_flowcell_qc_info,
+                   "flowcell_q30",
+                   "% Q30",
+                   100,
+                   "Diagnostic",
+                   qc_date_range,
+                   "sequencer"
+                 ) +
+                 geom_hline(yintercept=85, linetype="dashed")
+ggplotly(diag_q30_plot)
+
+basic_table(coefficients_annotation(diagnostic_flowcell_qc_info, "date", "flowcell_q30", "sequencer"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_flowcell_q30, echo=FALSE}
+nondiagnostic_q30_plot <- basic_plot(
+                flowcell_qc_info,
+                "flowcell_q30",
+                "% Q30",
+                100,
+                "Non-Diagnostic",
+                qc_date_range,
+                "sequencer"
+            ) +
+            geom_hline(yintercept=85, linetype="dashed")
+ggplotly(nondiagnostic_q30_plot)
+
+basic_table(coefficients_annotation(flowcell_qc_info, "date", "flowcell_q30", "sequencer"))
+```
+</div>
+</div>
+
+### Yield
+<div class = "row">
+<div class = "column">
+```{r diagnostic_flowcell_yield, echo=FALSE}
+yield_plot <- basic_plot(
+                diagnostic_flowcell_qc_info,
+                "flowcell_yield",
+                "GBase Yield",
+                NA,
+                "Diagnostic",
+                qc_date_range,
+                "sequencer"
+              )
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(diagnostic_flowcell_qc_info, "date", "flowcell_yield", "sequencer"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_flowcell_yield, echo=FALSE}
+yield_plot <- basic_plot(
+                flowcell_qc_info,
+                "flowcell_yield",
+                "GBase Yield",
+                NA,
+                "Non-Diagnostic",
+                qc_date_range,
+                "sequencer"
+              )
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(flowcell_qc_info, "date", "flowcell_yield", "sequencer"))
+```
+</div>
+</div>
+
+### % Undetermined
+<div class = "row">
+<div class = "column">
+```{r diagnostic_flowcell_undetermined, echo=FALSE}
+undetermined_plot <- basic_plot(
+                       diagnostic_flowcell_qc_info,
+                       "undetermined_percentage",
+                       "% Undetermined",
+                       100,
+                       "Diagnostic",
+                       qc_date_range,
+                       "sequencer"
+                     ) +
+                     geom_hline(yintercept=8, linetype="dashed")
+ggplotly(undetermined_plot)
+
+basic_table(coefficients_annotation(diagnostic_flowcell_qc_info, "date", "undetermined_percentage", "sequencer"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_flowcell_undetermined, echo=FALSE}
+undetermined_plot <- basic_plot(
+                       flowcell_qc_info,
+                       "undetermined_percentage",
+                       "% Undetermined",
+                       100,
+                       "Non-Diagnostic",
+                       qc_date_range,
+                       "sequencer"
+                     ) +
+                     geom_hline(yintercept=8, linetype="dashed")
+ggplotly(undetermined_plot)
+
+basic_table(coefficients_annotation(flowcell_qc_info, "date", "undetermined_percentage", "sequencer"))
+```
+</div>
+</div>
+
+
+# Sample
+### Q30
+<div class = "row">
+<div class = "column">
+```{r diagnostic_sample_q30_sequencer, echo=FALSE}
+q30_plot <- basic_plot(
+              diagnostic_sample_qc_info,
+              "sample_q30",
+              "% Q30",
+              100,
+              "Diagnostic",
+              qc_date_range,
+              "sequencer"
+            ) +
+            geom_hline(yintercept=75, linetype="dashed")
+ggplotly(q30_plot)
+
+basic_table(coefficients_annotation(diagnostic_sample_qc_info, "date", "sample_q30", "sequencer"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_sample_q30_sequencer, echo=FALSE}
+q30_plot <- basic_plot(
+              sample_qc_info,
+              "sample_q30",
+              "% Q30",
+              100,
+              "Non-Diagnostic",
+              qc_date_range,
+              "sequencer"
+            ) +
+            geom_hline(yintercept=75, linetype="dashed")
+ggplotly(q30_plot)
+
+basic_table(coefficients_annotation(sample_qc_info, "date", "sample_q30", "sequencer"))
+```
+</div>
+</div>
+
+<div class = "row">
+<div class = "column">
+```{r diagnostic_sample_q30_type, echo=FALSE}
+q30_plot <- basic_plot(
+              diagnostic_sample_qc_info,
+              "sample_q30",
+              "% Q30",
+              100,
+              "Diagnostic",
+              qc_date_range,
+              "type"
+            ) +
+            geom_hline(yintercept=75, linetype="dashed")
+ggplotly(q30_plot)
+
+basic_table(coefficients_annotation(diagnostic_sample_qc_info, "date", "sample_q30", "type"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_sample_q30_type, echo=FALSE}
+q30_plot <- basic_plot(
+              sample_qc_info,
+              "sample_q30",
+              "% Q30",
+              100,
+              "Non-Diagnostic",
+              qc_date_range,
+              "type"
+            ) +
+            geom_hline(yintercept=75, linetype="dashed")
+ggplotly(q30_plot)
+
+basic_table(coefficients_annotation(sample_qc_info, "date", "sample_q30", "type"))
+```
+</div>
+</div>
+
+### Yield
+<div class = "row">
+<div class = "column">
+```{r diagnostic_sample_yield_sequencer, echo=FALSE}
+yield_plot <- basic_plot(
+                diagnostic_sample_qc_info,
+                "sample_yield",
+                "GBase Yield",
+                NA,
+                "Diagnostic",
+                qc_date_range,
+                "sequencer"
+              ) +
+              geom_hline(yintercept=1, linetype="dashed")
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(diagnostic_sample_qc_info, "date", "sample_yield", "sequencer"))
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_sample_yield_sequencer, echo=FALSE}
+yield_plot <- basic_plot(
+                nondiagnostic_sample_qc_info,
+                "sample_yield",
+                "GBase Yield",
+                NA,
+                "Non-Diagnostic",
+                qc_date_range,
+                "sequencer"
+              ) +
+             geom_hline(yintercept=1, linetype="dashed")
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(nondiagnostic_sample_qc_info, "date", "sample_yield", "sequencer"))
+```
+</div>
+</div>
+
+<div class = "row">
+<div class = "column">
+```{r diagnostic_sample_yield_type, echo=FALSE}
+yield_plot <- basic_plot(
+                diagnostic_sample_qc_info,
+                "sample_yield",
+                "GBase Yield",
+                NA,
+                "Diagnostic",
+                qc_date_range,
+                "type"
+              )  +
+              geom_hline(yintercept=1, linetype="dashed")
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(diagnostic_sample_qc_info, "date", "sample_yield", "type"))
+
+```
+</div>
+<div class = "column">
+```{r nondiagnostic_sample_yield_type, echo=FALSE}
+yield_plot <- basic_plot(
+                nondiagnostic_sample_qc_info,
+                "sample_yield",
+                "GBase Yield",
+                NA,
+                "Non-Diagnostic",
+                qc_date_range,
+                "type"
+              ) +
+              geom_hline(yintercept=1, linetype="dashed")
+ggplotly(yield_plot)
+
+basic_table(coefficients_annotation(nondiagnostic_sample_qc_info, "date", "sample_yield", "type"))
+```
+</div>
+</div>
+
+# Stats
+
+Number of flowcells: `r nrow(flowcell_qc_info)`   
+Number of flowcells with diagnostic data: `r nrow(diagnostic_flowcell_qc_info)`   
+
+Number of samples: `r nrow(sample_qc_info)`  
+Number of diagnostic samples: `r nrow(diagnostic_sample_qc_info)`   
+
+### Numbers per Submission/Study (Diagnostics)
+```{r stats_numbers, echo=FALSE}
+submission_numbers <- diagnostic_sample_qc_info %>%
+                      count(submission, type, sort = TRUE) %>%
+                      pivot_wider(names_from = type, values_from = n) %>%
+                      mutate(total=tumor+ref)
+basic_table(submission_numbers)
+```
+
+### Distribution Flowcells
+<div class = "row">
+<div class = "column">
+```{r stats_diagnostic_flowcells, echo=FALSE}
+samples_plot <- ggplot(diagnostic_flowcell_qc_info, aes(date, fill=sequencer)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", fill="sequencer", title="Diagnostic") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+<div class = "column">
+```{r stats_nondiagnostic_flowcells, echo=FALSE}
+samples_plot <- ggplot(nondiagnostic_flowcell_qc_info, aes(date, fill=sequencer)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", fill="sequencer", title="Non-Diagnostic") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+</div>
+
+### Distribution Diagnostic Samples
+<div class = "row">
+<div class = "column">
+```{r stats_samples_sequencer, echo=FALSE}
+samples_plot <- ggplot(diagnostic_sample_qc_info, aes(date, fill=sequencer)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", fill="sequencer", title="Diagnostic") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+<div class = "column">
+```{r stats_samples_type, echo=FALSE}
+samples_plot <- ggplot(diagnostic_sample_qc_info, aes(date, fill=type)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", fill="type", title="Diagnostic") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+</div>
+
+
+# GIAB
+<div class = "row">
+<div class = "column">
+```{r giab_q30, echo=FALSE}
+q30_plot <- basic_plot(
+              giab_info,
+              "Q30",
+              "% Q30",
+              100,
+              "Q30",
+              giab_date_range,
+              "Machine"
+            )
+ggplotly(q30_plot)
+
+basic_table(coefficients_annotation(giab_info, "date", "Q30", "Machine"))
+```
+</div>
+<div class = "column">
+```{r giab_mapped, echo=FALSE}
+snv_plot <- basic_plot(
+              giab_info,
+              "Mapped",
+              "Mapped %",
+              100,
+              "Mapped",
+              giab_date_range,
+              "Machine"
+            )
+ggplotly(snv_plot)
+
+basic_table(coefficients_annotation(giab_info, "date", "Mapped", "Machine"))
+```
+</div>
+</div>
+
+<div class = "row">
+<div class = "column">
+```{r giab_excluded, echo=FALSE}
+excluded_plot <- basic_plot(
+                   giab_info,
+                   "Excluded",
+                   "Total Excluded %",
+                   100,
+                   "Total Excluded",
+                   giab_date_range,
+                   "Machine"
+                 )
+ggplotly(excluded_plot)
+
+basic_table(coefficients_annotation(giab_info, "date", "Excluded", "Machine"))
+```
+</div>
+<div class = "column">
+```{r giab_duplicates, echo=FALSE}
+snv_plot <- basic_plot(
+              giab_info,
+              "Duplicates",
+              "Duplicates Excluded Duplicates %",
+              100,
+              "Duplicates Excluded",
+              giab_date_range,
+              "Machine"
+            )
+ggplotly(snv_plot)
+
+basic_table(coefficients_annotation(giab_info, "date", "Duplicates", "Machine"))
+```
+</div>
+</div>
+
+# Data
+### GIAB
+GIAB data can be found in `HMF-FOR-096 SEQUENCING SYSTEMS VERIFICATIONS v2.0.xlsx`.
+
+### Flowcell QC Info
+Flowcell QC info data is an aggregation of `Sample QC Info` on the column `flowcell`.
+
+### Sample QC Info
+```{r data_sample, echo=FALSE}
+datatable(sample_qc_info,
+          selection="multiple",
+          escape=FALSE,
+          extensions='Buttons',
+          rownames=TRUE,
+          options = list(dom='Bfrtip', buttons=c('csv', 'excel'), pageLength=15, lengthChange=FALSE)
+          )
+```

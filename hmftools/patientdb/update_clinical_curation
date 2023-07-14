@@ -8,8 +8,8 @@ update_lims
 
 echo ""
 echo "-- UPDATE CLINICAL CURATION FILES -- "
-# updates the files curated_primary_tumor.tsv & patient_tumor_curation_status.tsv
-run_clinical_patient_db_prod
+# updates the files curated_primary_tumor_from_lama.tsv
+lama_create_curated_primary_tumor_tsv
 
 echo ""
 echo "-- UPDATE DOID IN API -- "

@@ -2,8 +2,8 @@
 
 source message_functions || exit 1
 
-LAMA_API_URL="http://lama-preview.prod-1/api"
-OUTPUT_TSV=${1-"/data/dbs/clinical_data/curated_primary_tumor_from_lama_preview.tsv"}
+LAMA_API_URL="http://lama.prod-1/api"
+OUTPUT_TSV=${1-"/data/dbs/clinical_data/curated_primary_tumor_from_lama.tsv"}
 
 function main (){
     info "Retrieving tumor samples from LAMA [$LAMA_API_URL]"

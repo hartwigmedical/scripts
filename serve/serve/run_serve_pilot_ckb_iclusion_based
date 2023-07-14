@@ -29,4 +29,5 @@ do_run_serve ${serve_jar} \
     -use_hartwig_driver_genes \
     -use_hartwig_curated_genes -hartwig_curated_gene_tsv ${hartwig_curated_gene_tsv} \
     -output_dir ${output_dir} \
+    -skip_hotspot_resolving \
     "$@"
