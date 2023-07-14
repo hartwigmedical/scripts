@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir provided. Exiting"
+fi
+
+cuppa_dir="${run_dir}/cuppa_dna_rna_pilot"
+
+do_generate_cup_report ${run_dir} ${cuppa_dir}
