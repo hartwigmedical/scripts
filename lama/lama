@@ -86,8 +86,8 @@ main(){
             .allowExternalUseWithCheck
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contract ]]; then
-        printf "#%s\t%s\n" code displayName
-        jq -r '.[] | [.code, .displayName] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" code displayName sampleIdStart type startDate endDate
+        jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^hospital ]]; then
         printf "#%s\t%s\t%s\n" code name city
         jq -r '.[] | [.code, .name, .city] | @tsv' <<< "${json_result}"
