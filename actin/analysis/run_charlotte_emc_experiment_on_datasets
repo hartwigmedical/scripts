@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 for run_dir in /data/datasets/ACTN01020004*; do
     info "Running EMC experiment for ${run}"
