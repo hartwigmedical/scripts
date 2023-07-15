@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 sample=$1 && shift
 
@@ -11,6 +12,7 @@ fi
 
 molecular_dir="$(locate_actin_cohort_molecular_directory ${sample})"
 output_directory="${molecular_dir}/actin"
+create_or_cleanup_dir ${output_directory}
 
 orange_json="${molecular_dir}/orange_no_germline/${sample}.orange.json"
 serve_directory="/data/resources/crunch/actin/cohort_analysis/serve_db"
