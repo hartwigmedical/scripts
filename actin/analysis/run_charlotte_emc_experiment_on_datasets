@@ -13,8 +13,8 @@ for run_dir in /data/datasets/ACTN01020004*; do
     molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
     create_or_cleanup_dir ${molecular_dir}
 
-    info "Copying ORANGE output from ${run_dir}"
-    cp "${run_dir}/orange/${sample}.orange.json" ${molecular_dir}/
+    cp -r "${run_dir}/*" ${molecular_dir}/
+    run_orange_research_no_germline ${molecular_dir}
 
     actin_orange_interpreter_cohort ${sample}
 done
