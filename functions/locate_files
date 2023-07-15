@@ -372,6 +372,12 @@ locate_cohort_actin() {
     echo "/data/experiments/charlotte_emc_actionability/system/actin.jar"
 }
 
+locate_actin_cohort_pipeline_directory() {
+    sample=$1
+
+    echo "/data/experiments/charlotte_emc_actionability/pipelines/${sample}"
+}
+
 locate_actin_cohort_molecular_directory() {
     sample=$1
 

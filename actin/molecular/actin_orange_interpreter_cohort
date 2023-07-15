@@ -11,10 +11,8 @@ if [[ -z "${sample}" ]]; then
 fi
 
 molecular_dir="$(locate_actin_cohort_molecular_directory ${sample})"
-output_directory="${molecular_dir}/actin"
-create_or_cleanup_dir ${output_directory}
 
-orange_json="${molecular_dir}/orange_no_germline/${sample}.orange.json"
+orange_json="${molecular_dir}/${sample}.orange.json"
 serve_directory="/data/resources/crunch/actin/cohort_analysis/serve_db"
 external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
@@ -32,6 +30,6 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplic
     -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
     -clinical_json "${clinical_json}" \
     -doid_json "${doid_json}" \
-    -output_directory "${output_directory}" \
+    -output_directory "${molecular_dir}" \
     "$@"
 
