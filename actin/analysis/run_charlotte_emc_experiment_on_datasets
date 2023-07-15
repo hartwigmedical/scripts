@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+for run_dir in /data/datasets/*; do
+    info "Running EMC experiment for ${run}"
+    sample=$(basename ${run_dir})
+
+    create_actin_cohort_clinical_record_from_doid ${sample}
+
+    molecular_dir=$(locate_actin_cohort_sample_data_directory ${sample})
+
+    info "Copying ORANGE output from ${run_dir}"
+    cp "${run}/orange/${sample}.orange.json" ${molecular_dir}/
+
+    actin_orange_interpreter_cohort ${sample}
+done

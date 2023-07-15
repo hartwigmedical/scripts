@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
-source metadata_functions || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
 
@@ -11,16 +10,14 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-sample_dir="/data/experiments/charlotte_emc_actionability/database/${sample}"
-
 primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${sample})
 if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
-patient=${sample:0:12}
+patient=$(echo ${sample} | head -c 12)
 
-output_directory="${sample_dir}/actin"
+output_directory=$(locate_actin_cohort_clinical_directory)
 
 actin_jar="$(locate_cohort_actin)"
 

@@ -13,6 +13,6 @@ actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="$(locate_actin_cohort)"
 actin_database_name="actin_cohort"
 
-molecular_json="/data/experiments/charlotte_emc_actionability/database/${sample}/actin/${sample}.molecular.json"
+molecular_json="$(locate_actin_cohort_molecular_directory)/${sample}/${sample}.molecular.json"
 
 do_load_actin_molecular ${molecular_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}

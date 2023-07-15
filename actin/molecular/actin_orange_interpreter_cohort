@@ -10,14 +10,16 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-sample_dir="/data/experiments/charlotte_emc_actionability/database/${sample}"
+molecular_dir="$(locate_actin_cohort_molecular_directory ${sample})"
 
-orange_json="${sample_dir}/${sample}.orange.json"
+orange_json="${molecular_dir}/${sample}.orange.json"
 serve_directory="/data/resources/crunch/actin/cohort_analysis/serve_db"
+external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
+patient=$(echo ${sample} | head -c 12)
+clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
 doid_json="$(locate_doid_json)"
 
-output_directory="${sample_dir}/actin"
 create_or_cleanup_dir ${output_directory}
 
 actin_jar="$(locate_actin_cohort)"
@@ -27,7 +29,9 @@ info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
+    -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
+    -clinical_json "${clinical_json}" \
     -doid_json "${doid_json}" \
-    -output_directory "${output_directory}" \
+    -output_directory "${molecular_dir}" \
     "$@"
 

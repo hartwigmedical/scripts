@@ -373,10 +373,9 @@ locate_cohort_actin() {
 }
 
 locate_actin_cohort_molecular_directory() {
-    run_dir=$1
-    sample=$(basename ${run_dir})
+    sample=$1
 
-    echo "/data/experiments/actin_cohort/molecular/${sample}"
+    echo "/data/experiments/charlotte_emc_actionability/molecular/${sample}"
 }
 
 locate_actin_cohort_clinical_directory() {
