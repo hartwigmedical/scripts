@@ -23,7 +23,7 @@ actin_jar="$(locate_cohort_actin)"
 
 info "Running ACTIN Build Clinical From Doids Only on ${patient}"
 
-java -cp ${actin_jar} com.hartwig.actin.clinical.BuildClinicalFromDoidsOnly \
+java -cp ${actin_jar} com.hartwig.actin.clinical.BuildClinicalFromDoidsOnlyKt \
     -patient ${patient} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_directory ${output_directory} \
