@@ -2,7 +2,6 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
-source io_functions || exit 1
 
 sample=$1 && shift
 
@@ -20,9 +19,7 @@ patient=$(echo ${sample} | head -c 12)
 clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
 doid_json="$(locate_doid_json)"
 
-create_or_cleanup_dir ${output_directory}
-
-actin_jar="$(locate_actin_cohort)"
+actin_jar="$(locate_cohort_actin)"
 
 info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 

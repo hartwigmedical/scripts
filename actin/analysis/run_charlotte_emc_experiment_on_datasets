@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 for run_dir in /data/datasets/ACTN01020004*; do
     info "Running EMC experiment for ${run}"
@@ -10,6 +11,7 @@ for run_dir in /data/datasets/ACTN01020004*; do
     create_actin_cohort_clinical_record_from_doid ${sample}
 
     molecular_dir=$(locate_actin_cohort_sample_data_directory ${sample})
+    create_or_cleanup_dir ${molecular_dir}
 
     info "Copying ORANGE output from ${run_dir}"
     cp "${run}/orange/${sample}.orange.json" ${molecular_dir}/
