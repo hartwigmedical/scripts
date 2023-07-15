@@ -22,7 +22,7 @@ patient=${sample:0:12}
 
 output_directory="${sample_dir}/actin"
 
-actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
+actin_jar="$(locate_cohort_actin)"
 
 info "Running ACTIN Build Clinical From Doids Only on ${patient}"
 

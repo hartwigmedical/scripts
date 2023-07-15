@@ -20,7 +20,7 @@ doid_json="$(locate_doid_json)"
 output_directory="${sample_dir}/actin"
 create_or_cleanup_dir ${output_directory}
 
-actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
+actin_jar="$(locate_actin_cohort)"
 
 info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 

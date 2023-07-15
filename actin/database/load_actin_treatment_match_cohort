@@ -10,7 +10,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 actin_credentials="$(prod_writer_sql_credentials)"
-actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
+actin_jar="$(locate_actin_cohort)"
 actin_database_name="actin_cohort"
 
 patient=${sample:0:12}

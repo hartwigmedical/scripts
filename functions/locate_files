@@ -369,7 +369,7 @@ locate_actin_rna_sample_metadata_file() {
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {
-    echo "/data/experiments/actin_cohort/system/actin.jar"
+    echo "/data/experiments/charlotte_emc_actionability/system/actin.jar"
 }
 
 locate_actin_cohort_molecular_directory() {

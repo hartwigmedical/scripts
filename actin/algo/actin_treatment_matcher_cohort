@@ -17,7 +17,7 @@ treatment_database_directory="/data/resources/crunch/actin/cohort_analysis/trial
 doid_json="$(locate_doid_json)"
 output_directory="${sample_dir}/actin"
 
-actin_jar="/data/experiments/charlotte_emc_actionability/actin.jar"
+actin_jar="$(locate_actin_cohort)"
 
 info "Running ACTIN treatment matcher on ${sample}"
 
