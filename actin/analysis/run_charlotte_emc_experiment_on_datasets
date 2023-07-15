@@ -13,6 +13,7 @@ for run_dir in /data/datasets/ACTN01020004*; do
     molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
     rm -rf ${molecular_dir}
 
+    info "Copying ${run_dir} to ${molecular_dir}"
     cp -r "${run_dir}" "${molecular_dir}"
     run_orange_research_no_germline ${molecular_dir}
 
