@@ -4,7 +4,7 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-for run_dir in /data/datasets/ACTN01020004*; do
+for run_dir in /data/datasets/ACTN01020010*; do
     info "Running EMC experiment for ${run_dir}"
     sample=$(basename ${run_dir})
 
@@ -18,4 +18,5 @@ for run_dir in /data/datasets/ACTN01020004*; do
     run_orange_research_no_germline ${molecular_dir}
 
     actin_orange_interpreter_cohort ${sample}
+    load_actin_molecular_cohort ${sample}
 done
