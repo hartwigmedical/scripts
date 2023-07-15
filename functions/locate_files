@@ -387,10 +387,12 @@ locate_actin_cohort_trial_config_directory() {
 }
 
 locate_actin_cohort_treatment_database_directory() {
+    # TODO Not used anymore, consider cleanup
     echo "/data/experiments/actin_cohort/treatment_database"
 }
 
 locate_actin_cohort_treatment_match_directory() {
+    # TODO Not used anymore, consider cleanup
     echo "/data/experiments/actin_cohort/treatment_matches"
 }
 
