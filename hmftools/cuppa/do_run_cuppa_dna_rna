@@ -37,7 +37,7 @@ info "Running Cuppa DNA-RNA on ${run_dir}"
 java -Xmx4G -jar ${cuppa_jar} \
     -categories ALL \
     -ref_data_dir ${ref_data_dir} \
-    -sample_data ${tumor_sample} \
+    -sample ${tumor_sample} \
     -sample_data_dir ${tmp_sample_data_dir} \
     -output_dir ${cuppa_dir} \
     "$@"
