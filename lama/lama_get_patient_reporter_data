@@ -8,6 +8,4 @@ if [[ -z "${tumor_barcode}" ]]; then
     error "No tumor barcode ID passed to function. Exiting"
 fi
 
-curl -X 'GET' \
-  'http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode}' \
-  -H 'accept: */*'
+curl http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode} -L | jq .
