@@ -64,6 +64,7 @@ do_run_orange_pilot \
     ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
     -reference_sample_id ${reference_sample} \
+    ${rna_sample_cmd} \
     -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
     -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
