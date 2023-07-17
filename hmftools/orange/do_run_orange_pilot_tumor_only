@@ -50,7 +50,7 @@ do_run_orange_pilot \
     -linx_dir "${linx_somatic_dir}" \
     -linx_plot_dir "${linx_somatic_plot_dir}" \
     -lilac_dir "${lilac_dir}" \
-    -virus_interpreter_dir "${virus_interpreter_dir}" \
+    -virus_dir "${virus_interpreter_dir}" \
     -chord_dir "${chord_dir}" \
     -cuppa_dir "${cuppa_dir}" \
     -sigs_dir "${sigs_dir}" \
