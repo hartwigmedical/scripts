@@ -417,6 +417,10 @@ locate_actin_wgs_pipeline_bucket() {
     echo "gs://actin-prod-wgs-pipeline-output"
 }
 
+locate_actin_prod_data_bucket() {
+    echo "gs://actin-prod-patient-data"
+}
+
 ################################# ACTIN Data ###################################
 
 locate_actin_clinical_input_feed_directory() {
