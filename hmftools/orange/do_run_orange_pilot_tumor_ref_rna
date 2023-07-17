@@ -41,7 +41,7 @@ if [[ -d "${run_dir}/isofox" ]]; then
     rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
     isofox_gene_distribution_cmd="-isofox_gene_distribution $(locate_isofox_gene_distribution_csv)"
     isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort $(locate_isofox_alt_sj_cohort_csv)"
-    isofox_dir_cmd="-isofox $(locate_isofox_data_directory ${run_dir})"
+    isofox_dir_cmd="-isofox_dir $(locate_isofox_data_directory ${run_dir})"
 fi
 
 virus_interpreter_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
@@ -68,18 +68,18 @@ do_run_orange_pilot \
     -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-    -sage "${sage_somatic_dir}" \
-    -sage_germline "${sage_germline_dir}" \
-    -purple "${purple_dir}" \
-    -purple_plot "${purple_plot_dir}" \
-    -linx "${linx_somatic_dir}" \
-    -linx_plot "${linx_somatic_plot_dir}" \
-    -linx_germline "${linx_germline_dir}" \
-    -lilac "${lilac_dir}" \
-    -virus_interpreter "${virus_interpreter_dir}" \
-    -chord "${chord_dir}" \
-    -cuppa "${cuppa_dir}" \
-    -sigs "${sigs_dir}" \
+    -sage_dir "${sage_somatic_dir}" \
+    -sage_germline_dir "${sage_germline_dir}" \
+    -purple_dir "${purple_dir}" \
+    -purple_plot_dir "${purple_plot_dir}" \
+    -linx_dir "${linx_somatic_dir}" \
+    -linx_plot_dir "${linx_somatic_plot_dir}" \
+    -linx_germline_dir "${linx_germline_dir}" \
+    -lilac_dir "${lilac_dir}" \
+    -virus_interpreter_dir "${virus_interpreter_dir}" \
+    -chord_dir "${chord_dir}" \
+    -cuppa_dir "${cuppa_dir}" \
+    -sigs_dir "${sigs_dir}" \
     ${isofox_dir_cmd} \
-    -peach "${peach_dir}" \
+    -peach_dir "${peach_dir}" \
     "$@"
