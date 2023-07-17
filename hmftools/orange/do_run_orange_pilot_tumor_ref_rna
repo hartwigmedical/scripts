@@ -39,8 +39,8 @@ isofox_alt_sj_cohort_cmd=""
 isofox_dir_cmd=""
 if [[ -d "${run_dir}/isofox" ]]; then
     rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
-    isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
-    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
+    isofox_gene_distribution_cmd="-isofox_gene_distribution $(locate_isofox_gene_distribution_csv)"
+    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort $(locate_isofox_alt_sj_cohort_csv)"
     isofox_dir_cmd="-isofox $(locate_isofox_data_directory ${run_dir})"
 fi
 
