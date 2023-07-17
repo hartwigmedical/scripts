@@ -949,6 +949,19 @@ locate_amber_directory() {
 
 ###################################### SAGE ####################################
 
+locate_sage_somatic_data_directory() {
+    local run_dir=$1
+    local sage_somatic_dir=""
+
+    if [[ -d "${run_dir}/sage_somatic" ]]; then
+        sage_somatic_dir="${run_dir}/sage_somatic"
+    elif [[ -d "${run_dir}/sage" ]]; then
+        sage_somatic_dir="${run_dir}/sage"
+    fi
+
+    echo "${sage_somatic_dir}"
+}
+
 locate_sage_filtered_somatic_variants() {
     local run_dir=$1
     local sage_dir_old=${run_dir}/sage
@@ -1027,6 +1040,12 @@ locate_sage_bqr_plot() {
     echo ${bqr_plot}
 }
 
+locate_sage_germline_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/sage_germline"
+}
+
 locate_sage_germline_gene_coverage() {
     local run_dir=$1 && shift
 
@@ -1045,6 +1064,28 @@ locate_sage_germline_gene_coverage() {
 }
 
 ##################################### PURPLE ###################################
+
+locate_purple_data_directory() {
+    local run_dir=$1
+
+    local purple_data_dir="${run_dir}/purple"
+    if [[ ! -d "${purple_data_dir}" ]]; then
+        error "Unable to locate purple data directory in ${run_dir}."
+    fi
+
+    echo "${purple_data_dir}"
+}
+
+locate_purple_plot_directory() {
+    local run_dir=$1
+
+    local purple_plot_dir="${run_dir}/purple/plot"
+    if [[ ! -d "${purple_plot_dir}" ]]; then
+        error "Unable to locate purple plot directory in ${run_dir}."
+    fi
+
+    echo "${purple_plot_dir}"
+}
 
 locate_purple_purity() {
     local run_dir=$1
@@ -1153,24 +1194,6 @@ locate_purple_pilot_somatic_variants() {
     fi
 
     echo ${somatic_vcf}
-}
-
-locate_purple_data_directory() {
-    local run_dir=$1
-    local purple_data_dir="${run_dir}/purple"
-    if [[ ! -d "${purple_data_dir}" ]]; then
-        error "Unable to locate purple data directory in ${run_dir}."
-    fi
-    echo ${purple_data_dir}
-}
-
-locate_purple_plot_directory() {
-    local run_dir=$1
-    local purple_plot_dir="${run_dir}/purple/plot"
-    if [[ ! -d "${purple_plot_dir}" ]]; then
-        error "Unable to locate purple plot directory in ${run_dir}."
-    fi
-    echo ${purple_plot_dir}
 }
 
 locate_purple_circos_plot() {
@@ -1306,6 +1329,23 @@ locate_gripss_recovery_candidates() {
 
 ##################################### LINX #####################################
 
+locate_linx_somatic_data_directory() {
+    local run_dir=$1
+
+    local linx_somatic_data_directory="${run_dir}/linx"
+    if [[ ! -d "${linx_somatic_data_directory}" ]]; then
+        error "Unable to locate linx somatic data directory in ${run_dir}."
+    fi
+    echo "${linx_somatic_data_directory}"
+}
+
+locate_linx_plot_directory() {
+    local run_dir=$1
+
+    local linx_plot_dir="${run_dir}/linx/plot"
+    echo "${linx_plot_dir}"
+}
+
 locate_linx_fusions() {
     local run_dir=$1
     local fusion_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.fusion.tsv")
@@ -1342,21 +1382,6 @@ locate_linx_drivers() {
     echo ${driver_tsv}
 }
 
-locate_linx_somatic_data_directory() {
-    local run_dir=$1
-    local linx_somatic_data_directory="${run_dir}/linx"
-    if [[ ! -d "${linx_somatic_data_directory}" ]]; then
-        error "Unable to locate linx somatic data directory in ${run_dir}."
-    fi
-    echo ${linx_somatic_data_directory}
-}
-
-locate_linx_plot_directory() {
-    local run_dir=$1
-    local linx_plot_dir="${run_dir}/linx/plot"
-    echo ${linx_plot_dir}
-}
-
 locate_linx_structural_variants() {
     local run_dir=$1
     local structural_variant_tsv=$(find -L ${run_dir}/linx/ -type f -name "*.linx.svs.tsv")
@@ -1387,6 +1412,12 @@ locate_linx_germline_disruptions() {
 }
 
 ##################################### LILAC ####################################
+
+locate_lilac_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/lilac"
+}
 
 locate_lilac_results() {
     local run_dir=$1
@@ -1440,6 +1471,12 @@ locate_rose() {
 
 #################################### ISOFOX ####################################
 
+locate_isofox_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/isofox"
+}
+
 locate_isofox_summary() {
     local run_dir=$1
     local summary_csv=$(find -L ${run_dir}/isofox/ -type f -name "*.isf.summary.csv")
@@ -1478,7 +1515,7 @@ locate_isofox_alt_splice_junctions() {
 
 ##################################### Sigs #####################################
 
-locate_sigs_dir() {
+locate_sigs_data_directory() {
     local run_dir=$1
     if [[ ! -d ${run_dir} ]]; then
         error "Run dir is not a directory: ${run_dir}"
@@ -1538,6 +1575,7 @@ locate_peach_requirements() {
 
 locate_peach_pilot_output_dir() {
     local run_dir=$1
+
     echo "${run_dir}/peach_pilot"
 }
 
@@ -1577,6 +1615,7 @@ locate_peach_pilot_genotype() {
 
 locate_peach_prod_output_dir() {
     local run_dir=$1
+
     echo "${run_dir}/peach"
 }
 
@@ -1616,6 +1655,12 @@ locate_peach_prod_genotype() {
 
 #################################### CHORD #####################################
 
+locate_chord_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/chord"
+}
+
 locate_chord_prediction() {
     local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord/ -type f -name "*_chord_prediction.txt")
@@ -1646,6 +1691,12 @@ locate_virus_breakend_tsv() {
 }
 
 ################################ VIRUS Interpreter #################################
+
+locate_virus_interpreter_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/virus_interpreter"
+}
 
 locate_virus_annotation_tsv_pilot() {
     local run_dir=$1
@@ -1690,6 +1741,18 @@ locate_latest_iclusion_importer_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_latest.tsv"
 }
 ################################## CUPPA #######################################
+
+locate_cuppa_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/cuppa"
+}
+
+locate_cuppa_dna_rna_data_directory() {
+    local run_dir=$1
+
+    echo "${run_dir}/cuppa_dna_rna"
+}
 
 locate_cuppa_result_csv() {
     local run_dir=$1

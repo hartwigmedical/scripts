@@ -20,13 +20,12 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
-sage_somatic_tumor_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})"
-purple_data_directory="$(locate_purple_data_directory ${run_dir})"
-purple_plot_directory="$(locate_purple_plot_directory ${run_dir})"
-linx_somatic_data_directory="$(locate_linx_somatic_data_directory ${run_dir})"
-linx_plot_directory="$(locate_linx_plot_directory ${run_dir})"
-lilac_result_csv="$(locate_lilac_results ${run_dir})"
-lilac_qc_csv="$(locate_lilac_qc ${run_dir})"
+sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
+purple_dir="$(locate_purple_data_directory ${run_dir})"
+purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
+linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
+linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
+lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
 info "Running ORANGE pilot panel on ${run_dir}"
 
@@ -36,11 +35,10 @@ do_run_orange_pilot \
     ${pipeline_version_cmd} \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-    -sage_somatic_tumor_sample_bqr_plot "${sage_somatic_tumor_sample_bqr_plot}" \
-    -purple_data_directory "${purple_data_directory}" \
-    -purple_plot_directory "${purple_plot_directory}" \
-    -linx_somatic_data_directory "${linx_somatic_data_directory}" \
-    -linx_plot_directory "${linx_plot_directory}" \
-    -lilac_result_csv "${lilac_result_csv}" \
-    -lilac_qc_csv "${lilac_qc_csv}" \
+    -sage "${sage_somatic_dir}" \
+    -purple "${purple_dir}" \
+    -purple_plot "${purple_plot_dir}" \
+    -linx "${linx_somatic_dir}" \
+    -linx_plot "${linx_somatic_plot_dir}" \
+    -lilac "${lilac_dir}" \
     "$@"
