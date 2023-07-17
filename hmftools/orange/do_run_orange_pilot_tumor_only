@@ -27,7 +27,7 @@ linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
-virus_interpreter_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
+virus_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
 chord_dir="$(locate_chord_data_directory ${run_dir})"
 cuppa_dir="$(locate_cuppa_dna_rna_data_directory ${run_dir})"
 if [[ ! -d "${cuppa_dir}" ]]; then
@@ -50,7 +50,7 @@ do_run_orange_pilot \
     -linx_dir "${linx_somatic_dir}" \
     -linx_plot_dir "${linx_somatic_plot_dir}" \
     -lilac_dir "${lilac_dir}" \
-    -virus_dir "${virus_interpreter_dir}" \
+    -virus_dir "${virus_dir}" \
     -chord_dir "${chord_dir}" \
     -cuppa_dir "${cuppa_dir}" \
     -sigs_dir "${sigs_dir}" \
