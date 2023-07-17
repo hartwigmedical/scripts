@@ -15,12 +15,10 @@ echo "--TAT information for sample ${sampleId}--"
 
 #### Last material arrival date ###
 
-temp_nr=$( lama tumor-sample sample-id/$sampleId | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
-tumor_arrival=$( lama tumor-sample sample-id/$sampleId | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
+tumor_arrival=$( lama_api_get tumor-sample/sample-id/${sampleId} 2> /dev/null | jq -r '.arrivalHmf' )
 
 sampleId_ref=$( echo $(echo ${sampleId} | cut -c1-12)R )
-temp_nr=$( lama reference-sample sample-id/$sampleId_ref | head -n1 | grep -o '^.*arrivalHmf' | wc -w )
-ref_arrival=$( lama reference-sample sample-id/$sampleId_ref | awk '{ print $'${temp_nr}' }' | grep -v arrivalHmf )
+ref_arrival=$( lama_api_get reference-sample/sample-id/${sampleId_ref} 2> /dev/null | jq -r '.arrivalHmf' )
 
 if [ $(echo $tumor_arrival | wc -w) == 0 ]; then
 	echo "Tumor_material_not_yet_arrived"
