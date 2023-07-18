@@ -60,7 +60,7 @@ main(){
     json_result=""
     if [[ -n "${filter_input}" ]]; then
         # shellcheck disable=SC2086
-        json_result=$($get_script $additional_get_params "${class}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
+        json_result=$($get_script $additional_get_params "${class}/${filter_field}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
     else
         # shellcheck disable=SC2086
         json_result=$($get_script $additional_get_params "${class}") || die "Unable to get result (without filter)"
