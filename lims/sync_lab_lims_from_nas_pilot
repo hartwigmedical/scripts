@@ -28,7 +28,9 @@ NAS_FILES=(
   "${NAS_DIR}/${FOR_002_FILE_2022}"
 )
 
-LAMA_BUCKET="lama-export-preview"
+#LAMA_BUCKET="lama-export-preview"
+LAMA_BUCKET="lama-export"
+
 LAMA_FILES=(
   "gs://${LAMA_BUCKET}/BiopsySites.json"
   "gs://${LAMA_BUCKET}/ContactGroups.json"
