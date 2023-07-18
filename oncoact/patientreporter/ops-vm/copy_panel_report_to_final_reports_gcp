@@ -91,13 +91,15 @@ reportPurpleSomaticVcf=("${bucket}/purple/${sample}.purple.somatic.vcf.gz")
 reportPurpleSvVcf=("${bucket}/purple/${sample}.purple.sv.vcf.gz")
 reportPurpleCnvGene=("${bucket}/purple/${sample}.purple.cnv.gene.tsv")
 reportPurpleReportedSomaticVcf=("${bucket}/reporting/vcf/${sample}.reported.somatic.vcf")
-sampleQcReport=("${bucket}/reporting/qc_plot/sampleQcReports/${sample}.sampleQcReport.pdf")
-sampleQcDeamination=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.sampleQcDeamination.pdf")
+sampleQcReportPdf=("${bucket}/reporting/qc_plot/sampleQcReports/${sample}.sampleQcReport.pdf")
+sampleQcReportPng=("${bucket}/reporting/qc_plot/sampleQcReports/${sample}.sampleQcReport.png")
+sampleQcDeaminationPdf=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.sampleQcDeamination.pdf")
+sampleQcDeaminationPng=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.sampleQcDeamination.png")
 
 ## add reporting info to registration file
 if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
   info "A record has been added for ${sample} to sharing api"
-  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleCnvGene} ${reportPurpleReportedSomaticVcf} ${sampleQcReport} ${sampleQcDeamination}
+  post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleCnvGene} ${reportPurpleReportedSomaticVcf} ${sampleQcReportPdf} ${sampleQcReportPng} ${sampleQcDeaminationPdf} ${sampleQcDeaminationPng}
   info "Reports shared registration for ${sample}:"
   extract_object_created ${barcode} ${report_type} ${report_source} "prod"
   extract_object_shared ${reporting_id} "prod"

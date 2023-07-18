@@ -15,14 +15,16 @@ purpleSomaticVcfLocation=$1 && shift
 purpleSvVcfLocation=$1 && shift
 reportPurpleCnvGeneLocation=$1 && shift
 purpleReportedSomaticVcfLocation=$1 && shift
-sampleQcReport=$1 && shift
-sampleQcDeamination=$1 && shift
+sampleQcReportPdf=$1 && shift
+sampleQcReportPng=$1 && shift
+sampleQcDeaminationPdf=$1 && shift
+sampleQcDeaminationPng=$1 && shift
 
 ## extract correct report created id
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
 cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
 
-if [[ ${cohort} == '"COREDB"' || ${cohort} == '"TARGTO"' ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
+if [[ (${cohort} == '"COREDB"' && ${sample} == "COREDB01"*) || ${cohort} == '"TARGTO"' ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
   publish_to_portal="true"
 else
   publish_to_portal="false"
@@ -52,11 +54,17 @@ jsonBucket=$(echo ${sharedJsonLocation} | tr "/" " " | awk '{print $2}')
 purpleReportedSomaticVcfFile=$(echo ${purpleReportedSomaticVcfLocation} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
 purpleReportedSomaticVcfBucket=$(echo ${purpleReportedSomaticVcfLocation} | tr "/" " " | awk '{print $2}')
 
-sampleQcReportFile=$(echo ${sampleQcReport} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
-sampleQcReportBucket=$(echo ${sampleQcReport} | tr "/" " " | awk '{print $2}')
+sampleQcReportFilePdf=$(echo ${sampleQcReportPdf} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
+sampleQcReportBucketPdf=$(echo ${sampleQcReportPdf} | tr "/" " " | awk '{print $2}')
 
-sampleQcDeaminationFile=$(echo ${sampleQcDeamination} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
-sampleQcDeaminationBucket=$(echo ${sampleQcDeamination} | tr "/" " " | awk '{print $2}')
+sampleQcReportFilePng=$(echo ${sampleQcReportPng} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
+sampleQcReportBucketPng=$(echo ${sampleQcReportPng} | tr "/" " " | awk '{print $2}')
+
+sampleQcDeaminationFilePdf=$(echo ${sampleQcDeaminationPdf} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
+sampleQcDeaminationBucketPdf=$(echo ${sampleQcDeaminationPdf} | tr "/" " " | awk '{print $2}')
+
+sampleQcDeaminationFilePng=$(echo ${sampleQcDeaminationPng} | awk -F 'targeted-pipeline-output-prod-1/' '{print $2}')
+sampleQcDeaminationBucketPng=$(echo ${sampleQcDeaminationPng} | tr "/" " " | awk '{print $2}')
 
 #portal files
 reportPdf=$(printf '{"%s": "%s", "%s": "%s"}' "bucket" "${reportBucket}" "path" "${reportFile}")
@@ -67,11 +75,13 @@ reportPurpleSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" 
 reportPurpleCnvGene=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleCnvGeneBucket}" "path" "${purpleCnvGeneFile}" "folder" "RUO")
 reportPurpleSvVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleSvVcfBucket}" "path" "${purpleSvVcfFile}" "folder" "RUO")
 reportPurpleReportedSomaticVcf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${purpleReportedSomaticVcfBucket}" "path" "${purpleReportedSomaticVcfFile}" "folder" "RUO")
-sampleQcReport=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcReportBucket}" "path" "${sampleQcReportFile}" "folder" "RUO")
-sampleQcDeamination=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucket}" "path" "${sampleQcDeaminationFile}" "folder" "RUO")
+reportSampleQcReportPdf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcReportBucketPdf}" "path" "${sampleQcReportFilePdf}" "folder" "RUO")
+reportSampleQcReportPng=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcReportBucketPng}" "path" "${sampleQcReportFilePng}" "folder" "RUO")
+reportSampleQcDeaminationPdf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucketPdf}" "path" "${sampleQcDeaminationFilePdf}" "folder" "RUO")
+reportSampleQcDeaminationPng=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucketPng}" "path" "${sampleQcDeaminationFilePng}" "folder" "RUO")
 
 share_standard_files="false"
-data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${sampleQcReport}\n${sampleQcDeamination}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
+data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${reportSampleQcReportPdf}\n${reportSampleQcReportPng}\n${reportSampleQcDeaminationPdf}\n${reportSampleQcDeaminationPng}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
 echo ${data} | jq
 
 if [[ -z ${report_created_id} ]];then

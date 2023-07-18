@@ -15,7 +15,7 @@ sharedXmlLocation=$1 && shift
 report_created_id=$(extract_reporting_id "${sample_barcode}" "${report_type}" ${report_source} "prod")
 cohort=$(extract_cohort_on_created_object "${sample_barcode}" "${report_type}" ${report_source} "prod")
 
-if [[ ${cohort} == '"COREDB"' ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
+if [[ (${cohort} == '"COREDB"' && ${sample} == "COREDB01"* ||  (${cohort} == '"GENAYA"' && ${sample} == "GAYA0101"*) ]]; then
   publish_to_portal="true"
 else
   publish_to_portal="false"
