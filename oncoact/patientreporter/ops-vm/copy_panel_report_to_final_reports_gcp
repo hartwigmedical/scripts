@@ -97,15 +97,15 @@ sampleQcDeaminationPdf=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sampl
 sampleQcDeaminationPng=("${bucket}/reporting/qc_plot/sampleQcDeamination/${sample}.sampleQcDeamination.png")
 
 ## add reporting info to registration file
-if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
+#if [[ $(extract_object_shared ${reporting_id} "prod" | wc -l)  == 0 ]]; then
   info "A record has been added for ${sample} to sharing api"
   post_api_sharing_report_panel ${barcode} ${sample} ${report_type} ${report_source} ${reportPdf} ${reportJson} ${reportPurpleDriverCatalog} ${reportPurplePurity} ${reportPurpleSomaticVcf} ${reportPurpleSvVcf} ${reportPurpleCnvGene} ${reportPurpleReportedSomaticVcf} ${sampleQcReportPdf} ${sampleQcReportPng} ${sampleQcDeaminationPdf} ${sampleQcDeaminationPng}
   info "Reports shared registration for ${sample}:"
   extract_object_created ${barcode} ${report_type} ${report_source} "prod"
   extract_object_shared ${reporting_id} "prod"
-else
-  warn "The report ${report} is already in the sharing api"
-  extract_object_created ${barcode} ${report_type} ${report_source} "prod"
-  extract_object_shared ${reporting_id} "prod"
-  warn "No new record added."
-fi
+#else
+#  warn "The report ${report} is already in the sharing api"
+#  extract_object_created ${barcode} ${report_type} ${report_source} "prod"
+#  extract_object_shared ${reporting_id} "prod"
+#  warn "No new record added."
+#fi
