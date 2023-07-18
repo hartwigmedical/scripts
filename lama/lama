@@ -9,40 +9,44 @@ queries/consents queries/database-loader queries/patient-reporter queries/regist
 print_usage(){
     script=$(basename "$0")
     echo "---"
-    echo "Usage: $script [-j] <class> [<filter-value> <filter-key>]"
+    echo "Usage: $script [-j] <class> [<filter>]"
     echo "Examples:"
     echo " $script hospitals"
     echo " $script tumor-samples"
-    echo " $script reports"
+    echo " $script statuses"
+    echo " $script statuses ACTN01020001T"
+    echo " $script status ACTN01020001T"
     echo " $script queries/consents"
-    echo " $script statuses | grep ACTN01020001"
-    echo " $script tumor-sample sample-id/ACTN01020001T"
-    echo " $script reference-sample sample-id/ACTN01020001R"
-    echo " $script queries/consents sample-id/ACTN01020001T"
+    echo " $script tumor-sample ACTN01020001T"
+    echo " $script -j queries/registration isolation-barcode/FR30539000 | jq"
+    echo " $script -j queries/patient-reporter isolation-barcode/FR30539000 | jq"
+    echo " $script status isolation-barcode/FR30539000"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV table"
     echo "  -t  Use testing/pilot environment as source instead of production"
     echo "Notes:"
-    echo "  * Available classes: ${classes[*]}"
-    echo "  * Use script ${get_script} instead for all non-interactive use!"
+    echo "  - Available classes: ${classes[*]}"
+    echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
+    echo "  - For all endpoints see http://lama.prod-1/api/ui"
     echo "---"
     exit 1
 }
 
 output_json='FALSE'
+print_debug='FALSE'
 additional_get_params=""
 
-while getopts ':jt' flag; do
+while getopts ':jtd' flag; do
     case "${flag}" in
         j) output_json='TRUE' ;;
+        d) print_debug='TRUE' ;;
         t) additional_get_params="-t";;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
 class=${*:$OPTIND:1} && shift # obligatory
-filter_input=${*:$OPTIND:1} && shift # optional
-filter_field=${*:$OPTIND:1} && shift # optional but required if searching by any field other than the "sample-id" of object
+filter=${*:$OPTIND:1} && shift # optional
 
 if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
     print_usage >&2
@@ -51,20 +55,30 @@ fi
 main(){
     contains "${class}" "${classes[@]}" || die "Unknown class '${class}' provided."
 
-    if [[ -n "${filter_field}" ]]; then
-        filter_field="${filter_field}"
+    if [[ -n "${filter}" && "${filter}" =~ \/ ]]; then
+        filter="${filter}"
+    elif [[ -n "${filter}" ]]; then
+        filter="sample-id/${filter}"
     else
-        filter_field="sample-id"
+        filter=""
+    fi
+
+    if [[ "${print_debug}" == "TRUE" ]]; then
+        debug "Class: $class [$0]"
+        debug "Filter: $filter [$0]"
     fi
 
     json_result=""
-    if [[ -n "${filter_input}" ]]; then
+    if [[ -n "${filter}" ]]; then
         # shellcheck disable=SC2086
-        json_result=$($get_script $additional_get_params "${class}/${filter_field}/${filter_input}") || die "Unable to get result (filter input: ${filter_input})"
+        json_result=$($get_script $additional_get_params "${class}/${filter}") || die "Unable to get result (filter input: ${filter})"
     else
         # shellcheck disable=SC2086
         json_result=$($get_script $additional_get_params "${class}") || die "Unable to get result (without filter)"
     fi
+
+    # in case LAMA fails it sometimes returns HTML and no fail exit code so need to check content
+    [[ $( head -1 <<< "${json_result}") == "<!doctype html>" ]] && die "Query failed (response body is HTML instead of JSON)"
 
     if [[ "${output_json}" == "TRUE" ]]; then
         echo "${json_result}"
