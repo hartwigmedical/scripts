@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 get_script="lama_api_get"
-classes=(contact-group contract hospitals patient report status statuses tumor-sample reference-sample
+classes_with_table_support=(contact-group contract hospitals isolate libraries patient report status statuses tumor-sample reference-sample
 queries/consents queries/database-loader queries/patient-reporter queries/registration)
 
 print_usage(){
@@ -15,7 +15,7 @@ print_usage(){
     echo " $script tumor-samples"
     echo " $script statuses"
     echo " $script statuses ACTN01020001T"
-    echo " $script status ACTN01020001T"
+    echo " $script status isolation-barcode/FR30539000"
     echo " $script queries/consents"
     echo " $script tumor-sample ACTN01020001T"
     echo " $script -j queries/registration isolation-barcode/FR30539000 | jq"
@@ -25,7 +25,7 @@ print_usage(){
     echo "  -j  Output raw api json content instead of TSV table"
     echo "  -t  Use testing/pilot environment as source instead of production"
     echo "Notes:"
-    echo "  - Available classes: ${classes[*]}"
+    echo "  - Classes with table print support: ${classes_with_table_support[*]}"
     echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
     echo "  - For all endpoints see http://lama.prod-1/api/ui"
     echo "---"
@@ -53,8 +53,6 @@ if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 main(){
-    contains "${class}" "${classes[@]}" || die "Unknown class '${class}' provided."
-
     if [[ -n "${filter}" && "${filter}" =~ \/ ]]; then
         filter="${filter}"
     elif [[ -n "${filter}" ]]; then
@@ -110,6 +108,17 @@ main(){
     elif [[ "${class}" =~ ^hospital ]]; then
         printf "#%s\t%s\t%s\n" code name city
         jq -r '.[] | [.code, .name, .city] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" =~ ^isolate ]]; then
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId sampleBarcode coupeBarcode isolationBarcode inputType resultType experimentNr status
+        jq -r '.[] | [.sampleId,
+            .isolationBarcode,
+            .coupeBarcode,
+            .sampleBarcode,
+            .inputType,
+            .resultType,
+            .experimentNr,
+            .status
+        ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^status ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
         sampleId sampleBarcode isolationBarcodes type isolationStatus prepStatus
@@ -139,7 +148,7 @@ main(){
         printf "#%s\t%s\t%s\t%s\t%s\n" isolationBarcode sampleId reportDate reportType contractCode
         jq -r '.[] | [.isolationBarcode, .sampleId, .reportDate, .reportType, .contractCode] | @tsv' <<< "${json_result}"
     else
-        die "Table format for class ${class} is not supported (use -j before other params to receive JSON format)"
+        die "Table format for class ${class} is not supported (add -j before other params to get result in JSON format)"
     fi
 }
 
