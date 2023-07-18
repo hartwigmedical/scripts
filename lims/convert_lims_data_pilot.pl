@@ -241,16 +241,11 @@ sub addLamaSamples{
         # adding cohort info for backwards compatibility (the concept "cohort" does no longer exist since LAMA v2)
         if (exists $sample_to_store{contract_display_name} and exists $sample_to_store{contract_sample_id_start}){
             $sample_to_store{'contract_sample_id_start'} = $sample_to_store{'contract_sample_id_start'};
-            $sample_to_store{'cohort'} = $sample_to_store{'contract_display_name'};
+            $sample_to_store{'cohort'} = contractToCohort($sample_to_store{'contract_display_name'});
             $sample_to_store{'cohort_code'} = $sample_to_store{'contract_sample_id_start'};
         }else{
             $sample_to_store{'cohort'} = NACHAR;
             $sample_to_store{'cohort_code'} = NACHAR;
-        }
-
-        # temporary fix for patient reporter to work for CORE-01 samples
-        if ($sample_to_store{'cohort'} eq 'CORE'){
-            $sample_to_store{'cohort'} = 'COREDB';
         }
 
         my ($patient_id, $study, $center, $tum_or_ref);
@@ -281,7 +276,7 @@ sub addLamaSamples{
         elsif ($isolation_type eq 'TUMOR_FFPE_DNA_ISOLATE' or $isolation_type eq 'Tumor FFPE' or $prep_type eq "PANEL") {
             $analysis_type = 'Targeted_Tumor_Only'; # DNA from tumor tissue
             # sanity check that we are indeed dealing with TO (tumor only)
-            my $expected_cohort = 'Panel';
+            my $expected_cohort = 'TARGTO';
             if (not exists $sample_to_store{cohort}){
                 sayWarn(sprintf "NOTIFY: Found FFPE sample but NO COHORT present for $isolate_barcode (pls fix in LAMA) [$sample_print_info]");
                 next;
@@ -313,15 +308,9 @@ sub addLamaSamples{
             next
         }
 
+        # The submission is no longer set in LAMAv2 but is required for registration so added
         if (not defined $original_submission or $original_submission eq '') {
-            if ($analysis_type eq 'Somatic_R') {
-                # Blood/reference samples do not have a submission in LAMA v2 so need to construct somehow
-                $original_submission = "HMFreg" . $sample_to_store{label};
-                sayInfo(sprintf "No submission for R sample so configured to %s [%s]", $original_submission, $sample_print_info);
-            }else{
-                sayWarn(sprintf "NOTIFY: SKIPPING non-ref sample due to missing submission id [%s]", $sample_print_info);
-                next;
-            }
+            $original_submission = "HMFreg" . $sample_to_store{label};
         }
 
         $sample_to_store{original_submission} = $original_submission;
@@ -381,6 +370,26 @@ sub addLamaSamples{
         }
     }
     return \%store;
+}
+
+sub contractToCohort{
+    my ($contract_contract_display_name) = @_;
+    # Note: Granularity within CORE does not exist in LAMAv2
+    # So CORE COREDB COREDB08 COREDB11 CORELR02 CORELR11 CORERI02 CORESC11 are all configured to COREDB
+    my %translation = (
+        'CORE' => 'COREDB',
+        'CPCT' => 'CPCT',
+        'CPCT Blinc' => 'CPCTBLINC',
+        'CPCT Pegasus' => 'CPCTpancreas',
+        'DRUP 3rd stage' => 'DRUPstage3',
+        'Panel' => 'TARGTO' # Targeted Tumor Only
+    );
+    if (exists $translation{$contract_contract_display_name}){
+        return $translation{$contract_contract_display_name};
+    }
+    else {
+        return $contract_contract_display_name;
+    }
 }
 
 sub fixFieldContents{
@@ -836,7 +845,7 @@ sub addContactInfoToSubmissions{
 sub checkDrupStage3Info{
     my ($submissions, $samples) = @_;
     my $counter = 0;
-    my $cohort = 'DRUP 3rd stage'; # was DRUPstage3 pre-lama-v2
+    my $cohort = 'DRUPstage3';
 
     sayInfo(sprintf "  Checking submissions of %s cohort", $cohort);
     while (my ($id,$obj) = each %$submissions){
