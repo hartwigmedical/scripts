@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+
+bucket_reports="gs://protect-difference-reports-pilot-1/"
+
+#recent_report_folder=$( gsutil ls ${bucket_reports} | cut -d'/' -f4 | sort | tail -n1 )
+recent_report_folder=20230707-0000
+
+
+echo ""
+echo "[START] Create report for ${recent_report_folder}: $(date +"%y%m%d (%T)")"
+echo ""
+
+echo "[INFO] Date SERVE comparison:"
+gsutil cat ${bucket_reports}${recent_report_folder}"/summary.json" | jq -r .timestamp
+echo "[INFO] Bucket with reports:"
+echo ${bucket_reports}${recent_report_folder}
+
+echo "[INFO] Current image:"
+gsutil cat ${bucket_reports}${recent_report_folder}"/summary.json" | jq -r .truthImage
+echo "[INFO] Target image:"
+gsutil cat ${bucket_reports}${recent_report_folder}"/summary.json" | jq -r .targetImage
+
+echo "[INFO] Number of samples used for check:"
+gsutil cat ${bucket_reports}${recent_report_folder}"/summary.json" | jq '.samples | length'
+
+count=0
+count_changed_lines=0
+count_deleted_lines=0
+count_inserted_lines=0
+touch changed_lines.tsv
+touch deleted_lines.tsv
+touch inserted_lines.tsv
+for file in $( gsutil ls ${bucket_reports}${recent_report_folder} | grep -v summary ); do
+	let count=count+1
+	echo $count
+	#Calculate counts
+	if [[ $( gsutil cat ${file} | jq .[].left.type | sort | uniq | grep "CHANGE" | wc -l | xargs ) > 0 ]]; then
+		let count_changed_lines=count_changed_lines+1
+	fi
+	if [[ $( gsutil cat ${file} | jq .[].left.type | sort | uniq | grep "INSERT" | wc -l | xargs ) > 0 ]]; then
+		let count_deleted_lines=count_deleted_lines+1
+	fi
+	if [[ $( gsutil cat ${file} | jq .[].right.type | sort | uniq | grep "INSERT" | wc -l | xargs ) > 0 ]]; then
+		let count_inserted_lines=count_inserted_lines+1
+	fi
+	#Create changed lines file
+	gsutil cat ${file} | jq -c '.[].left | select( .type | contains("CHANGE")) | .contents' | jq -r '@csv' | tr -d '"' > change_left.tsv
+	gsutil cat ${file} | jq -c '.[].right | select( .type | contains("CHANGE")) | .contents' | jq -r '@csv' | tr -d '"'  > change_right.tsv
+	paste -d, change_left.tsv change_right.tsv >> changed_lines.tsv
+	sort -t $'\t' -k2,9 changed_lines.tsv > changed_lines_sorted.tsv && mv changed_lines_sorted.tsv changed_lines.tsv
+	#Create deleted lines file
+	gsutil cat ${file} | jq -c '.[].left | select( .type | contains("INSERT")) | .contents' | jq -r '@csv' | tr -d '"' | tr , '\n' >> deleted_lines.tsv
+	sort -t $'\t' -k2,9 deleted_lines.tsv > deleted_lines_sorted.tsv && mv deleted_lines_sorted.tsv deleted_lines.tsv
+	#Create inserted lines file
+	gsutil cat ${file} | jq -c '.[].right | select( .type | contains("INSERT")) | .contents' | jq -r '@csv' | tr -d '"' | tr , '\n' >> inserted_lines.tsv
+	sort -t $'\t' -k2,9 inserted_lines.tsv > inserted_lines_sorted.tsv && mv inserted_lines_sorted.tsv inserted_lines.tsv
+	rm change_left.tsv
+	rm change_right.tsv
+done
+echo "[INFO] Number of samples with changed lines:"
+echo ${count_changed_lines}
+echo "[INFO] Number of samples with deleted lines:"
+echo ${count_deleted_lines}
+echo "[INFO] Number of samples with inserted lines:"
+echo ${count_inserted_lines}
+
+awk -F"/t" '{a[$1 FS $2]++; next} END{for(i in a) print i a[i]}' changed_lines.tsv | sed 's/\/t/\t/g' | sort -t $'\t' -k2,9  > changed_lines_agg.tsv
+cat changed_lines_agg.tsv | sed -e 's/^/Original_line\t/' > changed_lines_temp.tsv && mv changed_lines_temp.tsv changed_lines_agg.tsv
+awk -F"/t" '{a[$1 FS $2]++; next} END{for(i in a) print i a[i]}' deleted_lines.tsv | sed 's/\/t/\t/g' | sort -t $'\t' -k2,9 > deleted_lines_agg.tsv
+cat deleted_lines_agg.tsv | sed -e 's/^/Deleted_line\t/' > deleted_lines_temp.tsv && mv deleted_lines_temp.tsv deleted_lines_agg.tsv
+awk -F"/t" '{a[$1 FS $2]++; next} END{for(i in a) print i a[i]}' inserted_lines.tsv | sed 's/\/t/\t/g' | sort -t $'\t' -k2,9 > inserted_lines_agg.tsv
+cat inserted_lines_agg.tsv | sed -e 's/^/Inserted_line\t/' > inserted_lines_temp.tsv && mv inserted_lines_temp.tsv inserted_lines_agg.tsv
+#
+cat changed_lines_agg.tsv > comparison_report.tsv
+cat deleted_lines_agg.tsv >> comparison_report.tsv
+cat inserted_lines_agg.tsv >> comparison_report.tsv
+cat comparison_report.tsv | sort -t $'\t' -k2,9 -k1,1 | sed 's/,/\n>Updated_line\t/g' > comparison_report_temp.tsv && mv comparison_report_temp.tsv comparison_report.tsv
+(echo "line_type\tgene\ttranscript\tisCanonical\tevent\teventIsHighDriver\tgermline\treported\ttreatment\tonLabel\tlevel\tdirection\tsource\tfrequency" && cat comparison_report.tsv) > comparison_report_temp.tsv && mv comparison_report_temp.tsv comparison_report.tsv
+#
+rm -r changed_lines.tsv
+rm -r changed_lines_agg.tsv
+rm -r deleted_lines.tsv
+rm -r deleted_lines_agg.tsv
+rm -r inserted_lines.tsv
+rm -r inserted_lines_agg.tsv
