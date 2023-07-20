@@ -724,6 +724,10 @@ locate_doid_json() {
     echo "/data/resources/public/disease_ontology/doid.json"
 }
 
+locate_atc_tsv() {
+    echo "/data/resources/crunch/actin/atc_config/atc_tree.tsv"
+}
+
 locate_driver_gene_panel_37_tsv() {
     echo "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv"
 }
