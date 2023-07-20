@@ -9,7 +9,8 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_cohort_clinical_directory)/${sample}.clinical.json"
+patient=$(echo ${sample} | head -c 12)
+clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
 molecular_json="$(locate_actin_cohort_molecular_directory ${sample})/${sample}.molecular.json"
 treatment_database_directory="$(locate_actin_cohort_treatment_database_directory)"
 doid_json="$(locate_doid_json)"
