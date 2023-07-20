@@ -13,7 +13,7 @@ create_or_cleanup_dir "${output_directory}"
 
 actin_jar="$(locate_cohort_actin)"
 
-java -cp ${actin_jar} com.hartwig.actin.treatment.TreatmentCreatorApplication \
+java -cp ${actin_jar} com.hartwig.actin.treatment.TreatmentCreatorApplicationKt \
     -trial_config_directory ${trial_config_directory} \
     -ctc_config_directory ${ctc_config_directory} \
     -doid_json ${doid_json} \
