@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+info "Running EMC experiment for ${run_dir}"
+sample=$(basename ${run_dir})
+
+create_actin_cohort_clinical_record_from_doid ${sample}
+
+pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample})
+rm -rf ${pipeline_dir}
+
+info "Copying ${run_dir} to ${pipeline_dir}"
+cp -r "${run_dir}" "${pipeline_dir}"
+run_orange_research_no_germline ${pipeline_dir}
+
+molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
+create_or_cleanup_dir ${molecular_dir}
+cp "${pipeline_dir}/orange_no_germline/${sample}.orange.json" "${molecular_dir}/"
+rm -rf ${pipeline_dir}
+
+actin_orange_interpreter_cohort ${sample}
+load_actin_molecular_cohort ${sample}
