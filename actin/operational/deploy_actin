@@ -1,18 +1,32 @@
 #!/bin/bash
 
-source message_functions || exit 1
-
 version=$1 && shift
+vm_name=$1 && shift
+vm_project=$1 && shift
+vm_zone=$1 && shift
 
 if [[ -z "${version}" ]]; then
-    error "Version missing. Exiting.";
+    echo "Version missing. Exiting.";
+    exit 1
 fi
 
-mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:get \
-    -DremoteRepositories=artifactregistry://europe-west4-maven.pkg.dev/actin-build/build-registry-maven \
-    -Dartifact=com.hartwig.actin:system:${version} \
-    -Dtransitive=false
+deployed_by=$USER
 
-cp ~/.m2/repository/com/hartwig/actin/system/${version}/system-${version}.jar /data/actin/system/actin.jar
+build_id=$(gcloud builds triggers run "08e2aa2d-33ce-4199-bd3b-3ccf06518483" --project="actin-build" --region="europe-west4" \
+    --substitutions="_VERSION=${version},_TARGET_VM_NAME=${vm_name},_TARGET_VM_NAME=${vm_name},_TARGET_VM_PROJECT=${vm_project},_TARGET_VM_ZONE=${vm_zone},_DEPLOYED_BY=${deployed_by}" \
+    --format="value(metadata.build.id)" --branch="ACTIN-235")
 
-echo "[$(id -un)] deployed [${version}] on [$(date)]" >> /data/actin/system/deployment.history
+while true; do
+    build_status=$(gcloud builds describe "${build_id}" --project="actin-build" --region="europe-west4" --format="value(status)")
+
+    if [ "${build_status}" == "SUCCESS" ]; then
+        echo "Deployment of ${version} to ${vm_name} succeeded."
+        break
+    elif [ "${build_status}" == "FAILURE" ]; then
+        echo "Deployment of ${version} to ${vm_name} failed."
+        break
+    else
+        echo "Deployment ${version} to ${vm_name} is still in progress..."
+        sleep 30
+    fi
+done
