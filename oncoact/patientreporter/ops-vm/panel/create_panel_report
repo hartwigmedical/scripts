@@ -129,6 +129,8 @@ upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $repo
 upload_file_to_nc_new_reports_viewing gs://patient-reporter-manual-prod-1/ $json &> /dev/null
 upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcDeamination/${sample}.sampleQcDeamination.pdf" &> /dev/null
 upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcReports/${sample}.sampleQcReport.pdf" &> /dev/null
+upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcDeamination/${sample}.sampleQcDeamination.png" &> /dev/null
+upload_file_to_nc_for_viewing "${coverage_plot_path}/sampleQcReports/${sample}.sampleQcReport.png" &> /dev/null
 info "Files are uploaded to nextcloud STAGING/New-Reports-Viewing for visual inspection and further processing"
 
 ### Patch reporting created endpoint
