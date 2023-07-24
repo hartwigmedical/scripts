@@ -10,11 +10,12 @@ if [[ -z "${version}" ]]; then
     exit 1
 fi
 
+trigger_id="08e2aa2d-33ce-4199-bd3b-3ccf06518483"
 deployed_by=$USER
 
-build_id=$(gcloud builds triggers run "08e2aa2d-33ce-4199-bd3b-3ccf06518483" --project="actin-build" --region="europe-west4" \
+build_id=$(gcloud builds triggers run ${trigger_id} --project="actin-build" --region="europe-west4" \
     --substitutions="_VERSION=${version},_TARGET_VM_NAME=${vm_name},_TARGET_VM_NAME=${vm_name},_TARGET_VM_PROJECT=${vm_project},_TARGET_VM_ZONE=${vm_zone},_DEPLOYED_BY=${deployed_by}" \
-    --format="value(metadata.build.id)" --branch="ACTIN-235")
+    --format="value(metadata.build.id)" --branch="master")
 
 while true; do
     build_status=$(gcloud builds describe "${build_id}" --project="actin-build" --region="europe-west4" --format="value(status)")
