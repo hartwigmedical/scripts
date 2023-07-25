@@ -81,8 +81,6 @@ reportSampleQcDeaminationPdf=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bu
 reportSampleQcDeaminationPng=$(printf '{"%s": "%s", "%s": "%s", "%s": "%s"}' "bucket" "${sampleQcDeaminationBucketPng}" "path" "${sampleQcDeaminationFilePng}" "folder" "RUO")
 
 share_standard_files="false"
-data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${reportSampleQcReportPdf}\n${reportSampleQcReportPng}\n${reportSampleQcDeaminationPdf}\n${reportSampleQcDeaminationPng}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
-echo ${data} | jq
 
 if [[ ${report_type} == "oncopanel_result_report"* ]]; then
   data=$(echo -e "${reportPdf}\n${reportJson}\n${reportPurpleDriverCatalog}\n${reportPurplePurity}\n${reportPurpleSomaticVcf}\n${reportPurpleCnvGene}\n${reportPurpleSvVcf}\n${reportPurpleReportedSomaticVcf}\n${reportSampleQcReportPdf}\n${reportSampleQcReportPng}\n${reportSampleQcDeaminationPdf}\n${reportSampleQcDeaminationPng}" | jq -s '{"report_created_id":'${report_created_id}', "publish_to_portal":"'${publish_to_portal}'", "share_standard_files":"'${share_standard_files}'", "report_files": .}')
