@@ -7,6 +7,7 @@ command -v yq >/dev/null 2>&1 || die "Missing dependency yq"
 groups=(
 "2faexempt"
 "actin"
+"data-exchanger"
 "data-requests"
 "emc-production-support"
 "emc-sql-users"
@@ -22,6 +23,10 @@ groups=(
 "secret-manager"
 "silo-support"
 )
+
+if [[ -n $1 ]]; then
+    groups=("$1")
+fi
 
 declare -A membersByGroup
 declare -A groupsByMember
