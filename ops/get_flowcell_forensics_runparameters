@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Getting list of 50 most recent novaseq flowcells"
+mapfile -t xml_urls < <(gsutil ls gs://bcl-forensics-prod-1 | grep -E "A00624|A00725|A00260" | sort | tail -50 | sed 's/\/$//')
+
+main() {
+    info "Getting flowcell stats"
+    printf "%s\t%s\t%s\t%s\t%s\n" "RunName" "FlowCellSerialBarcode" "FlowCellPartNumber" "FlowCellLotNumber" "FlowCellExpirationdate"
+    for url in "${xml_urls[@]}"; do
+        get_flowcell_info "$url"
+    done
+}
+
+get_flowcell_info() {
+    local flowcell_url=$1 && shift
+    local run_param_xml="${flowcell_url}/input/RunParameters.xml"
+
+    # get relevant xml
+    rfidsinfo=$(gsutil cat "${run_param_xml}" | xmllint --xpath '//RunParameters/RfidsInfo' -)
+
+    # get data
+    FlowCellSerialBarcode=$(xmllint --xpath 'RfidsInfo/FlowCellSerialBarcode/text()' - <<< "${rfidsinfo}")
+    FlowCellPartNumber=$(xmllint --xpath 'RfidsInfo/FlowCellPartNumber/text()' - <<< "${rfidsinfo}")
+    FlowCellLotNumber=$(xmllint --xpath 'RfidsInfo/FlowCellLotNumber/text()' - <<< "${rfidsinfo}")
+    FlowCellExpirationdate=$(xmllint --xpath 'RfidsInfo/FlowCellExpirationdate/text()' - <<< "${rfidsinfo}")
+
+    printf "%s\t%s\t%s\t%s\t%s\n" "$(basename "${flowcell_url}")" "${FlowCellSerialBarcode}" "${FlowCellPartNumber}" "${FlowCellLotNumber}" "${FlowCellExpirationdate}"
+}
+
+main
