@@ -2,31 +2,87 @@
 
 source message_functions || exit 1
 
-info "Getting list of 50 most recent novaseq flowcells"
-mapfile -t xml_urls < <(gsutil ls gs://bcl-forensics-prod-1 | grep -E "A00624|A00725|A00260" | sort | tail -50 | sed 's/\/$//')
+BUCKET="bcl-forensics-prod-1"
+NOVASEQ_IDS="A00624|A00725|A00260"
+NA="N/A"
+NUMBER_OF_FLOWCELLS=50
+OUTPUT_FILE=${1:-"run_parameters.tsv"}
+[[ -n "${OUTPUT_FILE}" ]] || die "Provide path to output file"
+[[ -f "${OUTPUT_FILE}" ]] && die "Output file already exists [${OUTPUT_FILE}]"
+
+info "Getting ${NUMBER_OF_FLOWCELLS} most recent novaseq flowcells"
+mapfile -t xml_urls < <(gsutil ls "gs://${BUCKET}" | grep -E "${NOVASEQ_IDS}" | sort | tail -"${NUMBER_OF_FLOWCELLS}" | sed 's/\/$//')
 
 main() {
-    info "Getting flowcell stats"
-    printf "%s\t%s\t%s\t%s\t%s\n" "RunName" "FlowCellSerialBarcode" "FlowCellPartNumber" "FlowCellLotNumber" "FlowCellExpirationdate"
+    info "Start processing run parameter info"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "RunId" "InstrumentName" "ExperimentName" "RtaVersion" "RecipeVersion" \
+        "FlowCellSerialBarcode" "FlowCellPartNumber" "FlowCellLotNumber" "FlowCellExpirationdate" \
+        "BufferSerialBarcode" "BufferPartNumber" "BufferLotNumber" "BufferExpirationdate" \
+        "ClusterSerialBarcode" "ClusterPartNumber" "ClusterLotNumber" "ClusterExpirationdate" \
+        "SbsSerialBarcode" "SbsPartNumber" "SbsLotNumber" "SbsExpirationdate" > "${OUTPUT_FILE}"
     for url in "${xml_urls[@]}"; do
         get_flowcell_info "$url"
     done
+    info "Finished with processing. Output in [${OUTPUT_FILE}]"
 }
 
 get_flowcell_info() {
     local flowcell_url=$1 && shift
-    local run_param_xml="${flowcell_url}/input/RunParameters.xml"
+    local run_param_xml_url="${flowcell_url}/input/RunParameters.xml"
+    info "Processing ${run_param_xml_url}"
 
-    # get relevant xml
-    rfidsinfo=$(gsutil cat "${run_param_xml}" | xmllint --xpath '//RunParameters/RfidsInfo' -)
+    all_xml=$(gsutil cat "${run_param_xml_url}")
+    rfids_xml=$(xmllint --xpath 'RunParameters/RfidsInfo' - <<< "${all_xml}")
 
-    # get data
-    FlowCellSerialBarcode=$(xmllint --xpath 'RfidsInfo/FlowCellSerialBarcode/text()' - <<< "${rfidsinfo}")
-    FlowCellPartNumber=$(xmllint --xpath 'RfidsInfo/FlowCellPartNumber/text()' - <<< "${rfidsinfo}")
-    FlowCellLotNumber=$(xmllint --xpath 'RfidsInfo/FlowCellLotNumber/text()' - <<< "${rfidsinfo}")
-    FlowCellExpirationdate=$(xmllint --xpath 'RfidsInfo/FlowCellExpirationdate/text()' - <<< "${rfidsinfo}")
+    InstrumentName=$(get_xml_field "${all_xml}" 'RunParameters/InstrumentName')
+    ExperimentName=$(get_xml_field "${all_xml}" 'RunParameters/ExperimentName')
+    RtaVersion=$(get_xml_field "${all_xml}" 'RunParameters/RtaVersion')
+    RecipeVersion=$(get_xml_field "${all_xml}" 'RunParameters/RecipeVersion')
 
-    printf "%s\t%s\t%s\t%s\t%s\n" "$(basename "${flowcell_url}")" "${FlowCellSerialBarcode}" "${FlowCellPartNumber}" "${FlowCellLotNumber}" "${FlowCellExpirationdate}"
+    FlowCellSerialBarcode=$(get_rfids_field "${rfids_xml}" 'FlowCellSerialBarcode')
+    FlowCellPartNumber=$(get_rfids_field "${rfids_xml}" 'FlowCellPartNumber')
+    FlowCellLotNumber=$(get_rfids_field "${rfids_xml}" 'FlowCellLotNumber')
+    FlowCellExpirationdate=$(get_rfids_field "${rfids_xml}" 'FlowCellExpirationdate')
+
+    BufferSerialBarcode=$(get_rfids_field "${rfids_xml}" 'BufferSerialBarcode')
+    BufferPartNumber=$(get_rfids_field "${rfids_xml}" 'BufferPartNumber')
+    BufferLotNumber=$(get_rfids_field "${rfids_xml}" 'BufferLotNumber')
+    BufferExpirationdate=$(get_rfids_field "${rfids_xml}" 'BufferExpirationdate')
+
+    ClusterSerialBarcode=$(get_rfids_field "${rfids_xml}" 'ClusterSerialBarcode')
+    ClusterPartNumber=$(get_rfids_field "${rfids_xml}" 'ClusterPartNumber')
+    ClusterLotNumber=$(get_rfids_field "${rfids_xml}" 'ClusterLotNumber')
+    ClusterExpirationdate=$(get_rfids_field "${rfids_xml}" 'ClusterExpirationdate')
+
+    SbsSerialBarcode=$(get_rfids_field "${rfids_xml}" 'SbsSerialBarcode')
+    SbsPartNumber=$(get_rfids_field "${rfids_xml}" 'SbsPartNumber')
+    SbsLotNumber=$(get_rfids_field "${rfids_xml}" 'SbsLotNumber')
+    SbsExpirationdate=$(get_rfids_field "${rfids_xml}" 'SbsExpirationdate')
+
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "$(basename "${flowcell_url}")" "${InstrumentName}" "${ExperimentName}" "${RtaVersion}" "${RecipeVersion}" \
+        "${FlowCellSerialBarcode}" "${FlowCellPartNumber}" "${FlowCellLotNumber}" "${FlowCellExpirationdate}" \
+        "${BufferSerialBarcode}" "${BufferPartNumber}" "${BufferLotNumber}" "${BufferExpirationdate}" \
+        "${ClusterSerialBarcode}" "${ClusterPartNumber}" "${ClusterLotNumber}" "${ClusterExpirationdate}" \
+        "${SbsSerialBarcode}" "${SbsPartNumber}" "${SbsLotNumber}" "${SbsExpirationdate}" \
+        >> "${OUTPUT_FILE}"
+}
+
+get_rfids_field() {
+    local xml=$1 && shift
+    local field=$1 && shift
+    get_xml_field "${xml}" "RfidsInfo/${field}"
+}
+
+get_xml_field() {
+    local xml=$1 && shift
+    local path=$1 && shift
+    output=$(xmllint --xpath "${path}/text()" - <<< "${xml}")
+    if [[ "${output}" == "" ]]; then
+        output="$NA"
+    fi
+    echo "${output}"
 }
 
 main
