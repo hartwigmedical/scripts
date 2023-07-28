@@ -1,0 +1,5 @@
+#!/bin/bash
+
+version=$1 && shift
+
+deploy_actin ${version} data-vm-prod-2 hmf-crunch europe-west4-a
