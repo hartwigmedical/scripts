@@ -185,7 +185,7 @@ sub addLamaSamples{
     my %dna_reference_samples_by_name = ();
     sayInfo("  Adding LAMA samples");
 
-    while (my ($isolate_barcode, $object) = each %$statuses) {
+    SAMPLESTATUS: while (my ($isolate_barcode, $object) = each %$statuses) {
         my %sample_to_store = %{$object};
 
         if (not exists $sample_to_store{sample_barcode}) {
@@ -224,8 +224,12 @@ sub addLamaSamples{
         # by now we require certain fields to be present
         my @required_fields = qw(sample_name sample_id contract_code);
         foreach my $field (@required_fields){
-            exists $sample_to_store{$field} or die "Sample [$sample_barcode] misses required field [$field]!";
+            unless (exists $sample_to_store{$field}){
+                sayWarn(sprintf "NOTIFY: SKIPPING LAMA status because field [%s] not present [%s,%s]", $field, $sample_barcode, $isolate_barcode);
+                next SAMPLESTATUS;
+            }
         }
+
         my $sample_name = $sample_to_store{sample_name};
         my $sample_id = $sample_to_store{sample_id};
         my $contract_code = $sample_to_store{contract_code};
