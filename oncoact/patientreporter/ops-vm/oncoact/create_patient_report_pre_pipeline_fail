@@ -101,7 +101,7 @@ else
     warn "No report has been created. Please see below the warnings/errors in the patient reporter log:"
     cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log
     cat ${temp_folder_path}/new_report/${sample}_${barcode}_manual_patientreporter.log | grep "WARN\|ERROR\|Exception in thread"
-    rm -r ${temp_folder_path}/ 2>&1
+#    rm -r ${temp_folder_path}/ 2>&1
     warn "The script will end here. Exiting"
     exit 1
 fi
