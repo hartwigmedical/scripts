@@ -1427,20 +1427,22 @@ locate_lilac_data_directory() {
 
 locate_lilac_results() {
     local run_dir=$1
-    local result_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.csv")
-    if [[ -z "${result_csv}" ]]; then
-        error "Unable to locate lilac result csv in ${run_dir}."
+    local results_file=""
+    results_file=$(find -L "${run_dir}/lilac/" -type f -name "*.lilac.csv" -or -name "*.lilac.tsv")
+    if [[ -z "${results_file}" ]]; then
+        error "Unable to locate lilac result csv/tsv in ${run_dir}."
     fi
-    echo ${result_csv}
+    echo "${results_file}"
 }
 
 locate_lilac_qc() {
     local run_dir=$1
-    local qc_csv=$(find -L ${run_dir}/lilac/ -type f -name "*.lilac.qc.csv")
-    if [[ -z "${qc_csv}" ]]; then
-        error "Unable to locate lilac qc csv in ${run_dir}."
+    local qc_file=""
+    qc_file=$(find -L "${run_dir}/lilac/" -type f -name "*.lilac.qc.csv" -or -name "*.lilac.qc.tsv")
+    if [[ -z "${qc_file}" ]]; then
+        error "Unable to locate lilac qc csv/tsv in ${run_dir}."
     fi
-    echo ${qc_csv}
+    echo "${qc_file}"
 }
 
 locate_lilac_hla_bam_for_sample() {
