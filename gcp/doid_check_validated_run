@@ -29,7 +29,7 @@ fi
 
 ####
 
-report_tumorlocation=$( get_tumorlocation_for_biopsy ${sample_name} | awk 'BEGIN { FS=" " } { print $1 }' )
+report_tumorlocation=$( get_tumorlocation_for_biopsy ${sample_name} )
 if [[ "${report_tumorlocation}" == "Unknown" ]]; then
   warn "The primary tumor location provided is ${report_tumorlocation} (and it is no CUP)"
 elif [[ "${report_tumorlocation}" == *"Unknown primary (e.g. CUP)"* ]]; then

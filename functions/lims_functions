@@ -56,7 +56,7 @@ get_tumorlocation_for_biopsy() {
     name_regex='^((CPCT|DRUP|WIDE|CORE|ACTN|SHRP|GAYA|OPTC|OMIC|GLOW)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX0-9]*$'
     [[ "${biopsy}" =~ ${name_regex} ]] || die "Provided biopsy ${biopsy} does not match regex ($name_regex)"
     patient="${BASH_REMATCH[1]}"
-    tumorLocation=$(cat "${doid_file}" | grep -P "^${patient}" | awk 'BEGIN {FS="\t"}; {print $2, $3, $4, $5, $6, $7}')
+    tumorLocation=$(cat "${doid_file}" | grep -P "^${patient}" | awk 'BEGIN {FS="\t"}; {print $2}')
     echo "${tumorLocation}"
 }
 
