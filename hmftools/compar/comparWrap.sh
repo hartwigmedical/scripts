@@ -63,18 +63,15 @@ else
  list=$runCats; fi
 
 #extract folder-structure and file-names
-filesource=\"REF\;sample_dir=$refdir\,NEW\;sample_dir=${newdir}\"
-metaR=$(cat ${refdir}metadata.json)
-metaN=$(cat ${newdir}metadata.json)
-IFS='"' read -r -a arrayref <<< ${metaR}
-IFS='"' read -r -a arraynew <<< ${metaN}
+Rname=$(cat ${refdir}metadata.json | jq -r '.tumor.sampleName')
+Nname=$(cat ${newdir}metadata.json | jq -r '.tumor.sampleName')
 #variable run-name, or default (COMPAR_DATE)
 if [[ -z "${expName}" ]]; then
 expName=$(date +'%y%m%d').COMPAR; fi
 echo "SampleId,RefSampleId,NewSampleId" > temp_sampID.csv; \
-echo "${expName},${arrayref[29]},${arraynew[29]}" >> temp_sampID.csv
+echo "${expName},${Rname},${Nname}" >> temp_sampID.csv
 #outputname
-outid=${expName}_${arrayref[29]}"_vs_"${arraynew[29]}
+outid=${expName}_${Rname}"_vs_"${Nname}
 
 for VALUE in "${list[@]}"
 do
@@ -83,12 +80,15 @@ do
   java -jar ${comparLoc}\
        -sample_id_file ./temp_sampID.csv\
        -categories ${VALUE}\
+       -driver_gene_panel "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv" \
+       -liftover_mapping "/data/experiments/cup/hg38/hg37_38_mapping.tsv" \
        -match_level ${level}\
-       -file_sources ${filesource}\
+       -file_source_ref "sample_dir=${refdir}"\
+       -file_source_new "sample_dir=${newdir}"\
        -output_dir ${outputDir}\
        -output_id ${VALUE} -log_debug
-sed -i -e "s/REF_ONLY/${arrayref[29]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
-sed -i -e "s/NEW_ONLY/${arraynew[29]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.tsv
+sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.tsv
 done
 
 if [[ ${runCats} == ALL ]] && [[ ${sepOutput} == "TRUE" ]]
@@ -102,14 +102,17 @@ java -jar ${comparLoc}\
      -file_sources ${filesource}\
      -output_dir ${outputDir}\
      -output_id ${VALUE} -log_debug
-sed -i -e "s/REF_ONLY/${arrayref[$((rlen-1))]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
-sed -i -e "s/NEW_ONLY/${arraynew[$((nlen-1))]}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
 fi
 
 if [[ ${level} == REPORTABLE ]]
 then
   echo -e "\n"
   cat ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+  echo -e "\n\n"
+  echo "Output reported, no file saved"
+  rm ${outputDir}${expName}.cmp.${VALUE}.combined.csv
 fi
 
 rm temp_sampID.csv
