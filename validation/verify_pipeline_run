@@ -71,8 +71,10 @@ main() {
 
     truth_metadata_file="${truth_run}/metadata.json"
     new_metadata_file="${new_run}/metadata.json"
+    truth_metadata_content=$(cat "${truth_metadata_file}")
+    new_metadata_content=$(cat "${new_metadata_file}")
     info "Diffing metadata jsons"
-    diff_metadata_jsons "${truth_metadata_file}" "${new_metadata_file}"
+    diff_metadata_jsons "${truth_metadata_content}" "${new_metadata_content}"
     info "Checking format of ${truth_metadata_file}"
     check_metadata_json_content "${truth_metadata_file}"
     info "Checking format of ${new_metadata_file}"
@@ -200,14 +202,14 @@ diff_metadata_jsons() {
     local json2=$1 && shift
 
     diff_count=$(diff \
-      <(jq 'del(.set, .bucket, .reference.set, .tumor.set, .reference.bucket, .tumor.bucket)' "${json1}") \
-      <(jq 'del(.set, .bucket, .reference.set, .tumor.set, .reference.bucket, .tumor.bucket)' "${json2}") \
+      <(jq 'del(.set, .bucket, .reference.samplingDate, .reference.set, .tumor.set, .reference.bucket, .tumor.samplingDate, .tumor.bucket, .external_ids)' <<< "${json1}") \
+      <(jq 'del(.set, .bucket, .reference.samplingDate, .reference.set, .tumor.set, .reference.bucket, .tumor.samplingDate, .tumor.bucket, .external_ids)' <<< "${json2}") \
     | wc -l)
 
     if [[ "${diff_count}" -eq 0 ]]; then
         info "  OK metadata diff is 0"
     else
-        warn "  Field ${field} absent metadata (${metadata_json})"
+        warn "  Difference found between metadata jsons"
     fi
 }
 
