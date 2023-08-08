@@ -109,10 +109,10 @@ fi
 if [[ ${level} == REPORTABLE ]]
 then
   echo -e "\n"
-  cat ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+  cat ${outputDir}${expName}.cmp.${VALUE}.csv
   echo -e "\n\n"
   echo "Output reported, no file saved"
-  rm ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+  rm ${outputDir}${expName}.cmp.${VALUE}.csv
 fi
 
 rm temp_sampID.csv
