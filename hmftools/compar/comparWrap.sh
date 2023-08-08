@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Author: Teoman Deger
-# Version 0.5, 15-11-2022
+# Version 0.6, 08-08-2023
 # -----------------------
 
 source message_functions || exit 1
