@@ -272,12 +272,13 @@ check_tool_versions_from_run_log () {
         tool_versions["${tool_name}_BASE"]="${tool_vsn}"
     done < <(awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
+    # Pv5.33 changes the run.log conventions (HMF tool versions)
     while read -r name_vsn_str; do
         tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
         tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
         tool_names["${tool_name}"]="true"
         tool_versions["${tool_name}_TEST"]="${tool_vsn}"
-    done < <(awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
+    done < <(awk '/HMF tool versions:/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
     for tool_name in "${!tool_names[@]}"; do
         base_vsn=${tool_versions["${tool_name}_BASE"]}
