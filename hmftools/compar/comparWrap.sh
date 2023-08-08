@@ -102,8 +102,8 @@ java -jar ${comparLoc}\
      -file_sources ${filesource}\
      -output_dir ${outputDir}\
      -output_id ${VALUE} -log_debug
-sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
-sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.combined.csv
+sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.csv
+sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.csv
 fi
 
 if [[ ${level} == REPORTABLE ]]
