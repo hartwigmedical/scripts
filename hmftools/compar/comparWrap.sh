@@ -98,21 +98,24 @@ echo ALL COMBINED
 java -jar ${comparLoc}\
      -sample_id_file ./temp_sampID.csv\
      -categories $runCats\
+     -driver_gene_panel "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv" \
+     -liftover_mapping "/data/experiments/cup/hg38/hg37_38_mapping.tsv" \
      -match_level ${level}\
-     -file_sources ${filesource}\
+     -file_source_ref "sample_dir=${refdir}"\
+     -file_source_new "sample_dir=${newdir}"\
      -output_dir ${outputDir}\
      -output_id ${VALUE} -log_debug
-sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.csv
-sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.csv
+sed -i -e "s/REF_ONLY/${Rname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.tsv
+sed -i -e "s/NEW_ONLY/${Nname}_only/g" ${outputDir}${expName}.cmp.${VALUE}.tsv
 fi
 
 if [[ ${level} == REPORTABLE ]]
 then
   echo -e "\n"
-  cat ${outputDir}${expName}.cmp.${VALUE}.csv
+  cat ${outputDir}${expName}.cmp.${VALUE}.tsv
   echo -e "\n\n"
   echo "Output reported, no file saved"
-  rm ${outputDir}${expName}.cmp.${VALUE}.csv
+  rm ${outputDir}${expName}.cmp.${VALUE}.tsv
 fi
 
-rm temp_sampID.csv
+rm temp_sampID.tsv
