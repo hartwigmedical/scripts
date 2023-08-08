@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+echo  > Readcounts.txt
+for i in *L001_R1_001.fastq.gz
+do
+   j=${i::-20}
+   echo ${j}
+   bwa mem -t 2 ~/data/Homo_sapiens.GRCh37.GATK.illumina.fasta ${j}L001_R1_001.fastq.gz ${j}L001_R2_001.fastq.gz ${j}L002_R1_001.fastq.gz  ${j}L001_R2_001.fastq.gz > ${j}.sam
+   echo converting sam-file to sorted bam-file with index file
+   samtools sort ${j}.sam > ${j}sorted.bam
+   samtools index ${j}sorted.bam ${j}sorted.bam.bai
+   samtools view -Sb  ${j}.sam  >  ${j}.bam
+   rm -f ${j}.sam
+   #zcat ${j}R1_001.fastq.g | printf "\n$i\t$((`wc -l`/4))"  >> Readcounts.txt
+done
+
+bwa mem -t 2 ~/data/Homo_sapiens.GRCh37.GATK.illumina.fasta INN23587143_HY5N2DRXY_S1_L001_R1_001.fastq.gz INN23587143_HY5N2DRXY_S1_L001_R1_001.fastq.gz > INN23587143.sam
