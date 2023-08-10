@@ -858,6 +858,10 @@ locate_actionability_database_tsv() {
     echo "/data/resources/private/rose/actionability.tsv"
 }
 
+locate_actionability_database_tsv_pilot() {
+    echo "/data/resources/crunch/rose/actionability.tsv"
+}
+
 #################################### Repos #####################################
 
 locate_repo_dir() {
