@@ -14,7 +14,6 @@ if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${actionability_database_tsv}
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-patient_id=$(echo ${tumor_sample} | cut -c1-12)
 orange_json="$(locate_orange_json ${run_dir})"
 
 driver_gene_tsv=$(locate_driver_gene_panel_37_tsv)
@@ -22,7 +21,6 @@ driver_gene_tsv=$(locate_driver_gene_panel_37_tsv)
 info "Running ROSE pilot on ${run_dir}"
 
 java -Xms2G -Xmx8G -jar ${rose_jar} \
-    -patient_id ${patient_id} \
     -orange_json ${orange_json} \
     -output_dir ${output_dir} \
     -actionability_database_tsv ${actionability_database_tsv} \
