@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+TARGETED_PIPELINE_OUTPUT_BUCKET="gs://targeted-pipeline-output-prod-1"
+FASTQ_INPUT_BUCKET="gs://fastq-input-prod-1"
+BACKUP_FASTQ_BUCKET_DIR="gs://hmf-crunch-targeted/data/PROD/fastq"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  info "Get backed up FASTQ paths"
+  mapfile -t backed_up_fastq_paths < <(gsutil ls "${BACKUP_FASTQ_BUCKET_DIR}/**") || die "Could not get backed up FASTQ paths"
+
+  info "Backup files if necessary"
+  for metadata_json_path in $(gsutil ls "${TARGETED_PIPELINE_OUTPUT_BUCKET}/*/metadata.json"); do
+    metadata_json_text=$(gsutil cat "${metadata_json_path}") || die "Could not get the text of ${metadata_json_path}"
+    barcode=$(echo "${metadata_json_text}" | jq -r .tumor.barcode) || die "Could not get tumor barcode from ${metadata_json_path}"
+    sample_name=$(echo "${metadata_json_text}" | jq -r .tumor.sampleName) || die "Could not get tumor barcode from ${metadata_json_path}"
+    biopsy_name="${sample_name::-1}"
+    for source_fastq_path in $(gsutil ls "${FASTQ_INPUT_BUCKET}/${barcode}*"); do
+      fastq_file_name=$(basename "${source_fastq_path}") || die "Could not get filename of ${source_fastq_path}"
+      backup_fastq_path="${BACKUP_FASTQ_BUCKET_DIR}/${biopsy_name}/${fastq_file_name}"
+      if printf '%s\0' "${backed_up_fastq_paths[@]}" | grep -Fxqz -- "${backup_fastq_path}"; then
+        info "${backup_fastq_path} exists"
+      else
+        info "Backing up ${source_fastq_path} to ${backup_fastq_path}"
+        gsutil -m cp "${source_fastq_path}" "${backup_fastq_path}" || die "Could not copy FASTQ ${source_fastq_path} to ${backup_fastq_path}"
+      fi
+    done
+  done
+  
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"
