@@ -4,8 +4,6 @@ source locate_files || exit 1
 
 patient_reporter_jar="$(locate_pilot_patient_reporter)"
 
-lama_json="${HOME}/reports/pilot/lama.json"
-
 rva_logo="$(locate_rva_logo_prod)"
 company_logo="$(locate_company_logo_oncoact_prod)"
 signature="$(locate_signature_prod)"
@@ -13,7 +11,6 @@ signature="$(locate_signature_prod)"
 expected_pipeline_version="$(extract_expected_pipeline_version_research)"
 
 java -jar ${patient_reporter_jar} \
-    -lama_json ${lama_json} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
