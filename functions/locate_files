@@ -1465,7 +1465,7 @@ locate_lilac_hla_bam_for_sample() {
 
 locate_rose_pilot() {
     local run_dir=$1
-    local rose_tsv=$(find -L ${run_dir}/rose/ -type f -name "*.rose.tsv")
+    local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
     if [[ -z "${rose_tsv}" ]]; then
         error "Unable to locate rose pilot tsv in ${run_dir}."
     fi
