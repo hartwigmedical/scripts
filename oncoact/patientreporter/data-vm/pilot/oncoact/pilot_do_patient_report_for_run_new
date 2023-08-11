@@ -22,7 +22,8 @@ purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 
 # TODO Switch to PROD once ROSE v2.0 has become production version
-rose_tsv="$(locate_rose_pilot ${run_dir})"
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+rose_tsv="/home/lschoenmaker/dataset_copy/${tumor_sample}/rose_pilot/${tumor_sample}.rose.tsv"
 
 germline_reporting_tsv="$(locate_germline_reporting_prod)"
 sample_special_remark_tsv="$(locate_special_remark_patient_report_pilot)"
