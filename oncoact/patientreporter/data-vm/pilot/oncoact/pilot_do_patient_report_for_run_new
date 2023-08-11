@@ -18,6 +18,8 @@ lama_json="/home/lschoenmaker/dataset_copy/lama.json"
 diagnostic_silo_json="/home/lschoenmaker/dataset_copy/silo.json"
 
 protect_evidence_tsv="$(locate_protect_evidence_pilot ${run_dir})"
+purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
+cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 
 # TODO Switch to PROD once ROSE v2.0 has become production version
 rose_tsv="$(locate_rose_pilot ${run_dir})"
