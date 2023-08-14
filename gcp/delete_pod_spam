@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e
+
+kubectl get pods -o wide | awk '/NodeAffinity/{print $1}' | xargs -I {} kubectl delete pod {}
+kubectl get pods -o wide | awk '/Error/{print $1}' | xargs -I {} kubectl delete pod {}
+kubectl get pods -o wide | awk '/ContainerStatusUnknown/{print $1}' | xargs -I {} kubectl delete pod {}
+kubectl get pods -o wide | awk '/Completed/{print $1}' | xargs -I {} kubectl delete pod {}
