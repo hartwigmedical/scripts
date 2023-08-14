@@ -264,6 +264,10 @@ locate_germline_reporting_prod() {
     echo "/data/resources/ops/germline_reporting/germline_reporting.tsv"
 }
 
+locate_clinical_transcripts_prod() {
+    echo "/data/resources/ops/clinical_transcripts/clinical_transcripts.tsv"
+}
+
 locate_summary_patient_report_prod() {
     echo "/data/resources/ops/summary_patient_report/summary_samples.tsv"
 }
