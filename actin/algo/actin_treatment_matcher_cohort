@@ -12,7 +12,8 @@ fi
 patient=$(echo ${sample} | head -c 12)
 clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
 molecular_json="$(locate_actin_cohort_molecular_directory ${sample})/${sample}.molecular.json"
-treatment_database_directory="$(locate_actin_cohort_treatment_database_directory)"
+trial_database_directory="$(locate_actin_cohort_treatment_database_directory)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 output_directory="/data/experiments/charlotte_emc_actionability/treatment_matches"
 
@@ -23,7 +24,8 @@ info "Running ACTIN treatment matcher on ${sample}"
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -clinical_json ${clinical_json} \
     -molecular_json ${molecular_json} \
-    -treatment_database_directory ${treatment_database_directory} \
+    -trial_database_directory ${trial_database_directory} \
+    -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
     -output_directory ${output_directory} \
     "$@"
