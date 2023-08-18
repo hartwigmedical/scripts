@@ -29,6 +29,7 @@ fi
 
 doid_json="$(locate_doid_json)"
 driver_gene_tsv="$(locate_driver_gene_panel_37_tsv)"
+clinical_transcripts_tsv="$(locate_clinical_transcripts_prod)"
 
 orange_json="$(locate_orange_json ${run_dir})"
 
@@ -36,6 +37,7 @@ info "Running PROTECT pilot on ${run_dir}"
 
 java -Xms2G -Xmx8G -jar ${protect_jar} \
     -orange_json ${orange_json} \
+    -clinical_transcripts_tsv ${clinical_transcripts_tsv} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
     -serve_actionability_dir ${serve_actionability_dir} \
