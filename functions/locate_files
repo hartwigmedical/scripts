@@ -418,10 +418,6 @@ locate_actin_shared_reports_bucket() {
     echo "gs://actin-prod-shared-reports"
 }
 
-locate_actin_backup_bucket() {
-    echo "gs://actin-prod-backups"
-}
-
 locate_actin_wgs_pipeline_bucket() {
     echo "gs://actin-prod-wgs-pipeline-output"
 }
