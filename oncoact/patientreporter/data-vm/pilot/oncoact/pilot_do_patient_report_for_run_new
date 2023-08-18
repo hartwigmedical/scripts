@@ -39,6 +39,7 @@ pilot_do_run_base_patient_reporter \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -rose_tsv ${rose_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
+    -clinical_transcripts_tsv ${clinical_transcripts_tsv} \˚
     -is_diagnostic \
     -log_debug \
     "$@"
