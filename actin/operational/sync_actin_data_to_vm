@@ -3,7 +3,8 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-if [[ "${current_hostname}" == "prod-vm-operations" ]]; then
+curr_host=$(hostname)
+if [[ "${curr_host}" == "prod-vm-operations" ]]; then
     error "ACTIN data is not supposed to synced to the prod VM"
 fi
 
