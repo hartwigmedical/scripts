@@ -2,4 +2,4 @@
 
 version=$1 && shift
 
-deploy_actin ${version} prod-vm-operations actin-prod europe-west4-a
+do_deploy_actin ${version} prod-vm-operations actin-prod europe-west4-a
