@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+if [[ "${current_hostname}" == "prod-vm-operations" ]]; then
+    error "ACTIN data is not supposed to synced to the prod VM"
+fi
+
+info "Syncing ACTIN patient data to local VM"
+gsutil -m rsync -r $(locate_actin_prod_data_bucket)/clinical/ $(locate_actin_curated_clinical_directory)
+gsutil -m rsync -r $(locate_actin_prod_data_bucket)/treatment_match/ $(locate_actin_treatment_match_directory)
+
+info "Done"
