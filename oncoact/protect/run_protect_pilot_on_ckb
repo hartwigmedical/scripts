@@ -9,7 +9,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-serve_actionability_dir="/home/lschoenmaker/tmp/reports/serve_pilot"
+serve_actionability_dir="/data/resources/ops/serve/37"
 
 output_dir="${run_dir}/protect_pilot_ckb"
 protect_jar=$(locate_pilot_protect)

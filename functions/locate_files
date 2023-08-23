@@ -855,7 +855,7 @@ locate_private_missing_doids_mapping_tsv() {
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
-    echo "/data/resources/private/rose/actionability.tsv"
+    echo "/data/resources/ops/rose/actionability.tsv"
 }
 
 locate_actionability_database_tsv_pilot() {
