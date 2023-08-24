@@ -110,7 +110,7 @@ java -jar ${orange_jar} \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
     -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
-    -driver_gene_panel_tsv "${driver_gene_panel_tsv}" \
+    -driver_gene_panel "${driver_gene_panel_tsv}" \
     -known_fusion_file "${known_fusion_file}" \
     -ensembl_data_directory "${ensembl_data_directory}" \
     ${isofox_gene_distribution_cmd} \
