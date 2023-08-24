@@ -52,8 +52,6 @@ driver_gene_panel_tsv="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_directory="$(locate_ensembl_data_dir_37)"
 
-reference_sample=$(load_ref_sample_from_metadata ${run_dir})
-
 ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
@@ -61,57 +59,43 @@ if [[ -f "${pipeline_version_file}" ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
 ref_sample_flagstat_file="$(locate_flagstats ${run_dir} ${reference_sample})"
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
-sage_germline_gene_coverage_tsv="$(locate_sage_germline_gene_coverage ${run_dir})"
-sage_somatic_ref_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${reference_sample})"
-sage_somatic_tumor_sample_bqr_plot="$(locate_sage_bqr_plot ${run_dir} ${tumor_sample})"
-purple_data_directory="$(locate_purple_data_directory ${run_dir})"
-purple_plot_directory="$(locate_purple_plot_directory ${run_dir})"
-linx_somatic_data_directory="$(locate_linx_somatic_data_directory ${run_dir})"
-linx_germline_data_directory="$(locate_linx_germline_data_directory ${run_dir})"
-linx_plot_directory="$(locate_linx_plot_directory ${run_dir})"
-lilac_result_csv="$(locate_lilac_results ${run_dir})"
-lilac_qc_csv="$(locate_lilac_qc ${run_dir})"
+sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
+sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
+purple_dir="$(locate_purple_data_directory ${run_dir})"
+purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
+linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
+linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
+linx_germline_dir="$(locate_linx_germline_data_directory ${run_dir})"
+lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
 rna_sample_cmd=""
 isofox_gene_distribution_cmd=""
 isofox_alt_sj_cohort_cmd=""
-isofox_summary_cmd=""
-isofox_gene_data_cmd=""
-isofox_fusion_cmd=""
-isofox_alt_splice_junction_cmd=""
+isofox_dir_cmd=""
 if [[ -d "${run_dir}/isofox" ]]; then
     rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
-    isofox_gene_distribution_cmd="-isofox_gene_distribution_csv $(locate_isofox_gene_distribution_csv)"
-    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort_csv $(locate_isofox_alt_sj_cohort_csv)"
-    isofox_summary_cmd="-isofox_summary_csv $(locate_isofox_summary ${run_dir})"
-    isofox_gene_data_cmd="-isofox_gene_data_csv $(locate_isofox_gene_data ${run_dir})"
-    isofox_fusion_cmd="-isofox_fusion_csv $(locate_isofox_pass_fusions ${run_dir})"
-    isofox_alt_splice_junction_cmd="-isofox_alt_splice_junction_csv $(locate_isofox_alt_splice_junctions ${run_dir})"
+    isofox_gene_distribution_cmd="-isofox_gene_distribution $(locate_isofox_gene_distribution_csv)"
+    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort $(locate_isofox_alt_sj_cohort_csv)"
+    isofox_dir_cmd="-isofox_dir $(locate_isofox_data_directory ${run_dir})"
 fi
 
-annotated_virus_tsv="$(locate_virus_annotation_tsv ${run_dir})"
-chord_prediction_txt="$(locate_chord_prediction ${run_dir})"
-if [[ -d "${run_dir}/cuppa_dna_rna" ]]; then
-    cuppa_result_csv="$(locate_cuppa_dna_rna_result_csv ${run_dir})"
-    cuppa_summary_plot="$(locate_cuppa_dna_rna_summary_plot ${run_dir})"
-    cuppa_feature_plot="$(locate_cuppa_dna_rna_feature_plot ${run_dir})"
-else
-    cuppa_result_csv="$(locate_cuppa_result_csv ${run_dir})"
-    cuppa_summary_plot="$(locate_cuppa_summary_plot ${run_dir})"
-    cuppa_feature_plot="$(locate_cuppa_feature_plot ${run_dir})"
+virus_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
+chord_dir="$(locate_chord_data_directory ${run_dir})"
+cuppa_dir="$(locate_cuppa_dna_rna_data_directory ${run_dir})"
+if [[ ! -d "${cuppa_dir}" ]]; then
+    cuppa_dir="$(locate_cuppa_data_directory ${run_dir})"
 fi
 
-cuppa_feature_plot_cmd=""
-if [[ ! -z ${cuppa_feature_plot} ]]; then
-    cuppa_feature_plot_cmd="-cuppa_feature_plot ${cuppa_feature_plot}"
-fi
+sigs_dir="$(locate_sigs_data_directory ${run_dir})"
 
-peach_genotype_tsv="$(locate_peach_prod_genotype ${run_dir})"
-sigs_allocation_tsv="$(locate_sigs_allocation_tsv ${run_dir})"
+peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
@@ -136,26 +120,19 @@ java -jar ${orange_jar} \
     -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-    -sage_germline_gene_coverage_tsv "${sage_germline_gene_coverage_tsv}" \
-    -sage_somatic_ref_sample_bqr_plot "${sage_somatic_ref_sample_bqr_plot}" \
-    -sage_somatic_tumor_sample_bqr_plot "${sage_somatic_tumor_sample_bqr_plot}" \
-    -purple_data_directory "${purple_data_directory}" \
-    -purple_plot_directory "${purple_plot_directory}" \
-    -linx_somatic_data_directory "${linx_somatic_data_directory}" \
-    -linx_germline_data_directory "${linx_germline_data_directory}" \
-    -linx_plot_directory "${linx_plot_directory}" \
-    -lilac_result_csv "${lilac_result_csv}" \
-    -lilac_qc_csv "${lilac_qc_csv}" \
-    ${isofox_summary_cmd} \
-    ${isofox_gene_data_cmd} \
-    ${isofox_fusion_cmd} \
-    ${isofox_alt_splice_junction_cmd} \
-    -annotated_virus_tsv "${annotated_virus_tsv}" \
-    -chord_prediction_txt "${chord_prediction_txt}" \
-    -cuppa_result_csv "${cuppa_result_csv}" \
-    -cuppa_summary_plot "${cuppa_summary_plot}" \
-    ${cuppa_feature_plot_cmd} \
-    -peach_genotype_tsv "${peach_genotype_tsv}" \
-    -sigs_allocation_tsv "${sigs_allocation_tsv}" \
+    -sage_dir "${sage_somatic_dir}" \
+    -sage_germline_dir "${sage_germline_dir}" \
+    -purple_dir "${purple_dir}" \
+    -purple_plot_dir "${purple_plot_dir}" \
+    -linx_dir "${linx_somatic_dir}" \
+    -linx_plot_dir "${linx_somatic_plot_dir}" \
+    -linx_germline_dir "${linx_germline_dir}" \
+    -lilac_dir "${lilac_dir}" \
+    -virus_dir "${virus_dir}" \
+    -chord_dir "${chord_dir}" \
+    -cuppa_dir "${cuppa_dir}" \
+    -sigs_dir "${sigs_dir}" \
+    ${isofox_dir_cmd} \
+    -peach_dir "${peach_dir}" \
     -add_disclaimer \
     "$@"
