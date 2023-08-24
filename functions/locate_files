@@ -1708,7 +1708,12 @@ locate_virus_breakend_tsv() {
 locate_virus_interpreter_data_directory() {
     local run_dir=$1
 
-    echo "${run_dir}/virus_interpreter"
+    virus_dir="${run_dir}/virus_interpreter"
+    if [[ ! -d ${virus_dir} ]]; then
+        virus_dir="${run_dir}/virusintrprtr"
+    fi
+
+    echo ${virus_dir}
 }
 
 locate_virus_annotation_tsv_pilot() {
