@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+serve_jar="/data/experiments/pilot_tools/serve_prod_2_4_0/serve.jar"
+
+do_run_serve ${serve_jar} "$@"

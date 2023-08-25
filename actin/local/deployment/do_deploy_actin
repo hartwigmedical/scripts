@@ -5,8 +5,8 @@ vm_name=$1 && shift
 vm_project=$1 && shift
 vm_zone=$1 && shift
 
-if [[ -z "${version}" ]]; then
-    echo "Version missing. Exiting.";
+if [[ -z "${version}" || -z "${vm_name}" || -z "${vm_project}" || -z "${vm_zone}" ]]; then
+    echo "Parameters missing. Exiting.";
     exit 1
 fi
 

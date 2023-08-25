@@ -97,7 +97,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.5.0/orange.jar"
+    echo "/data/tools/orange/2.6.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -264,6 +264,10 @@ locate_germline_reporting_prod() {
     echo "/data/resources/ops/germline_reporting/germline_reporting.tsv"
 }
 
+locate_clinical_transcripts_prod() {
+    echo "/data/resources/ops/clinical_transcripts/clinical_transcripts.tsv"
+}
+
 locate_summary_patient_report_prod() {
     echo "/data/resources/ops/summary_patient_report/summary_samples.tsv"
 }
@@ -412,10 +416,6 @@ locate_actin_evaluation_bucket() {
 
 locate_actin_shared_reports_bucket() {
     echo "gs://actin-prod-shared-reports"
-}
-
-locate_actin_backup_bucket() {
-    echo "gs://actin-prod-backups"
 }
 
 locate_actin_wgs_pipeline_bucket() {
@@ -855,7 +855,11 @@ locate_private_missing_doids_mapping_tsv() {
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
-    echo "/data/resources/private/rose/actionability.tsv"
+    echo "/data/resources/ops/rose/actionability.tsv"
+}
+
+locate_actionability_database_tsv_pilot() {
+    echo "/data/resources/crunch/rose/actionability.tsv"
 }
 
 #################################### Repos #####################################
@@ -1461,7 +1465,8 @@ locate_lilac_hla_bam_for_sample() {
 
 locate_rose_pilot() {
     local run_dir=$1
-    local rose_tsv=$(find -L ${run_dir}/rose/ -type f -name "*.rose.tsv")
+    local rose_tsv=$(find -L ${run_dir}/rose_pilot/ -type f -name "*.rose.tsv")
+    echo $rose_tsv
     if [[ -z "${rose_tsv}" ]]; then
         error "Unable to locate rose pilot tsv in ${run_dir}."
     fi
@@ -1703,7 +1708,12 @@ locate_virus_breakend_tsv() {
 locate_virus_interpreter_data_directory() {
     local run_dir=$1
 
-    echo "${run_dir}/virus_interpreter"
+    virus_dir="${run_dir}/virus_interpreter"
+    if [[ ! -d ${virus_dir} ]]; then
+        virus_dir="${run_dir}/virusintrprtr"
+    fi
+
+    echo ${virus_dir}
 }
 
 locate_virus_annotation_tsv_pilot() {
@@ -1861,7 +1871,7 @@ locate_protect_evidence_old() {
 
 locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}."
     fi

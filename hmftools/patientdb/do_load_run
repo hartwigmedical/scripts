@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+source metadata_functions || exit 1
+source locate_files || exit 1
+
+ALL_LOADERS_CSV="amber,chord,cuppa,flagstat,linx_germline,linx_somatic,metrics,peach,purple,signatures,virusbreakend,virusintrprtr"
+
+patient_db_jar=$1 && shift
+database_name=$1 && shift
+secret_name=$1 && shift
+run_dir=$1 && shift
+pipeline_version=${1:-533} && shift
+loaders_csv=${1:-"${ALL_LOADERS_CSV}"} && shift
+IFS=',' read -r -a LOADERS <<< "${loaders_csv}"
+
+[[ -n "${run_dir}" && -n "${patient_db_jar}" && -n "${database_name}" && -n "${secret_name}" ]] \
+    || die "Run with: <patient_db_jar> <database_name> <secret_name> <run_dir> [531|533] [$ALL_LOADERS_CSV]"
+
+[[ "${pipeline_version}" == "531" || "${pipeline_version}" == "533" ]] \
+    || die "Unsupported pipeline version [${pipeline_version}]"
+
+credentials=$(gcloud secrets versions access "latest" --secret="${secret_name}" --project=hmf-secrets)
+reference_sample=$(load_ref_sample_from_metadata "${run_dir}")
+tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
+tumor_barcode=$(load_tumor_sample_barcode_from_metadata "${run_dir}")
+
+db_user=$(extract_database_user "${credentials}")
+db_pass=$(extract_database_password "${credentials}")
+db_url=$(construct_database_url "${credentials}" "${database_name}")
+
+[[ -n "${reference_sample}" && -n "${tumor_sample}" && -n "${tumor_barcode}" && -n "${db_user}" && -n "${db_pass}" && -n "${db_url}" ]] \
+    || die "At least one constructed variable has no content"
+
+main () {
+    info "START load for tumor sample [${tumor_sample}]"
+    info "  Tumor barcode: ${tumor_barcode}"
+    info "  Reference name: ${reference_sample}"
+    info "  Patient-db jar: ${patient_db_jar}"
+    info "  Database url: ${db_url}"
+    info "  Pipeline version: ${pipeline_version}"
+    info "  Loaders: ${loaders_csv}"
+
+    for loader in "${LOADERS[@]}"; do
+        load_function="load_${loader}"
+        $load_function || die "Error running loader [${load_function}]"
+    done
+    info "FINISHED load for tumor sample [${tumor_sample}]"
+}
+
+function load_virusintrprtr () {
+    info "Loading VIRUS INTERPRETER"
+    local annotation_tsv="${run_dir}/virusintrprtr/${tumor_sample}.virus.annotated.tsv"
+    [[ -f "${annotation_tsv}" ]] || return 1
+    run_patient_db LoadVirusInterpreter \
+        -sample "${tumor_sample}" \
+        -virus_annotation_tsv "${annotation_tsv}"
+}
+
+function load_virusbreakend () {
+    info "Loading VIRUS BREAKEND"
+    local breakend_tsv="${run_dir}/virusbreakend/${tumor_sample}.virusbreakend.vcf.summary.tsv"
+    [[ -f "${breakend_tsv}" ]] || return 1
+    run_patient_db LoadVirusBreakendData \
+        -sample "${tumor_sample}" \
+        -virus_breakend_tsv "${breakend_tsv}"
+}
+
+function load_cuppa () {
+    info "Loading CUPPA [version:${pipeline_version}]"
+    if [[ "${pipeline_version}" == "531" ]]; then
+        local conclusions_txt="${run_dir}/cuppa/${tumor_sample}.cuppa.conclusion.txt"
+        [[ -f "${conclusions_txt}" ]] || return 1
+        run_patient_db LoadCuppa \
+            -sample "${tumor_sample}" \
+            -cuppa_conclusion_txt "${conclusions_txt}"
+    elif [[ "${pipeline_version}" == "533" ]]; then
+        local results_csv="${run_dir}/cuppa/${tumor_sample}.cup.data.csv"
+        [[ -f "${results_csv}" ]] || return 1
+        run_patient_db LoadCuppa \
+            -sample "${tumor_sample}" \
+            -cuppa_results_csv "${results_csv}"
+    else
+        die "Unsupported version"
+    fi
+}
+
+function load_signatures () {
+    info "Loading SIGNATURES"
+    local input_dir="${run_dir}/sigs"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadSignatures \
+        -sample "${tumor_sample}" \
+        -sample_dir "${input_dir}"
+}
+
+function load_peach () {
+    info "Loading PEACH"
+    local calls_tsv="${run_dir}/peach/${tumor_sample}.peach.calls.tsv"
+    local genotype_tsv="${run_dir}/peach/${tumor_sample}.peach.genotype.tsv"
+    [[ -f "${calls_tsv}" ]] || return 1
+    [[ -f "${genotype_tsv}" ]] || return 1
+    run_patient_db LoadPeachData \
+        -sample "${tumor_sample}" \
+        -peach_calls_txt "${calls_tsv}" \
+        -peach_genotype_txt "${genotype_tsv}"
+}
+
+function load_chord () {
+    info "Loading CHORD"
+    local prediction_file="${run_dir}/chord/${tumor_sample}_chord_prediction.txt"
+    [[ -f "${prediction_file}" ]] || return 1
+    run_patient_db LoadChordData \
+        -sample "${tumor_sample}" \
+        -prediction_file "${prediction_file}"
+}
+
+function load_flagstat () {
+    info "Loading FLAGSTAT"
+    local ref_file="${run_dir}/${reference_sample}/flagstat/${reference_sample}.flagstat"
+    local tum_file="${run_dir}/${tumor_sample}/flagstat/${tumor_sample}.flagstat"
+    [[ -f "${ref_file}" ]] || return 1
+    [[ -f "${tum_file}" ]] || return 1
+    run_patient_db LoadFlagstatData \
+        -sample "${tumor_sample}" \
+        -ref_flagstat_file "${ref_file}" \
+        -tumor_flagstat_file "${tum_file}"
+}
+
+function load_metrics () {
+    info "Loading BAMMETRICS"
+    local ref_file="${run_dir}/${reference_sample}/bam_metrics/${reference_sample}.wgsmetrics"
+    local tum_file="${run_dir}/${tumor_sample}/bam_metrics/${tumor_sample}.wgsmetrics"
+    [[ -f "${ref_file}" ]] || return 1
+    [[ -f "${tum_file}" ]] || return 1
+    run_patient_db LoadMetricsData \
+        -sample "${tumor_sample}" \
+        -ref_metrics_file "${ref_file}" \
+        -tumor_metrics_file "${tum_file}"
+}
+
+function load_linx_somatic () {
+    info "Loading LINX somatic"
+    local input_dir="${run_dir}/linx"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadLinxData \
+        -sample "${tumor_sample}" \
+        -linx_dir "${input_dir}" \
+        -somatic_only
+}
+
+function load_linx_germline () {
+    info "Loading LINX germline"
+    local input_dir="${run_dir}/linx_germline"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadLinxData \
+        -sample "${tumor_sample}" \
+        -linx_dir "${input_dir}" \
+        -germline_only
+}
+
+function load_purple () {
+    info "Loading PURPLE"
+    local input_dir="${run_dir}/purple"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadPurpleData \
+        -sample "${tumor_sample}" \
+        -reference "${reference_sample}" \
+        -purple_dir "${input_dir}"
+}
+
+function load_amber () {
+    info "Loading AMBER"
+    snpcheck_vcf=$(locate_amber_snpcheck_37_vcf)
+    snp_vcf="${run_dir}/amber/${reference_sample}.amber.snp.vcf.gz"
+    [[ -f "${snpcheck_vcf}" ]] || return 1
+    [[ -f "${snp_vcf}" ]] || return 1
+    run_patient_db LoadAmberData \
+        -sample "${tumor_sample}" \
+        -amber_snp_vcf "${snp_vcf}" \
+        -snpcheck_vcf "${snpcheck_vcf}"
+}
+
+function run_patient_db () {
+    class=$1 && shift
+    [[ -f "${patient_db_jar}" ]] || die "Unable to find patient db jar [${patient_db_jar}]"
+    java -cp "${patient_db_jar}" "com.hartwig.hmftools.patientdb.${class}" \
+        -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}" \
+        "$@"
+}
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+main

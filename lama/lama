@@ -133,8 +133,17 @@ main(){
             .snpCheckStatus
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^tumor-sample ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf contractCode sampleBarcodes
-        jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .contractCode, (.sampleBarcodes|join(","))] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf ptumInfo biopsyInfo contractCode sampleBarcodes
+        jq -r '.[] | [.sampleId,
+            .patientId,
+            .submissionNr,
+            .samplingDate,
+            .arrivalHmf,
+            if .tumorType then .tumorType.location|split(" ")[0]|split("/")[0] else "NA" end,
+            if .biopsy then .biopsy.location|split(" ")[0]|split("/")[0] else "NA" end,
+            .contractCode,
+            (.sampleBarcodes|join(","))
+        ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^reference-sample ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf sampleBarcode
         jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"

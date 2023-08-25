@@ -23,7 +23,7 @@ my $TYPE;
 my $MUST_MATCH_EXACT;
 
 my %OUT_FIELDS_PER_TYPE = (
-  'samples'     => [qw(submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status)],
+  'samples'     => [qw(submission sample_id sample_name arrival_date label cohort analysis_type project_name lab_sop_versions lab_status)],
   'submissions' => [qw(submission project_name project_type analysis_type sample_count has_lab_finished)],
   'contact_groups' => [qw(group_id report_contact_email data_contact_email lab_contact_email client_contact_email)],
   'unreported'  => [qw(sample_name lab_status lab_ref_status sample_id ref_sample_id sampling_date arrival_date api_info)],

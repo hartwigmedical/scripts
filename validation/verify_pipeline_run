@@ -111,7 +111,6 @@ main() {
         "diff_germlineVariant.sql"
         "diff_peachCalls.sql"
         "diff_peachGenotype.sql"
-        "diff_protect.sql"
         "diff_somaticVariant.sql"
         "diff_structuralVariant.sql"
         "diff_svBreakend.sql"

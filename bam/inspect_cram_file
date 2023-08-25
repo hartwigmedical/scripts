@@ -4,7 +4,7 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 cram=$1 && shift
-samtools=/data/tools/samtools/1.10/samtools
+samtools="/data/tools/samtools/1.18/samtools"
 ref_genome=$(locate_ref_genome_37_fasta_file)
 
 if [[ "${cram}" == "" || "${cram}" == "-h" ]]; then
