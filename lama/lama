@@ -56,6 +56,8 @@ fi
 main(){
     if [[ -n "${filter}" && "${filter}" =~ \/ ]]; then
         filter="${filter}"
+    elif [[ -n "${filter}" && "${class}" == "contract" ]]; then
+        filter="code/${filter}"
     elif [[ -n "${filter}" ]]; then
         filter="sample-id/${filter}"
     else
