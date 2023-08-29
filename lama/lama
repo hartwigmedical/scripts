@@ -66,8 +66,9 @@ main(){
     fi
 
     if [[ "${print_debug}" == "TRUE" ]]; then
-        debug "Class: $class [$0]"
-        debug "Filter: $filter [$0]"
+        debug "Script: $0"
+        debug " Class: $class"
+        debug "Filter: $filter"
     fi
 
     json_result=""
