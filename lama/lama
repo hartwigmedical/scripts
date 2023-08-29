@@ -25,6 +25,7 @@ print_usage(){
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV table"
     echo "  -t  Use testing/pilot environment as source instead of production"
+    echo "  -d  Debug mode (print final class/filter before execution)"
     echo "Notes:"
     echo "  - Classes with table print support: ${classes_with_table_support[*]}"
     echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
