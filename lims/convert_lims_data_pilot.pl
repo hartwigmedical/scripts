@@ -382,6 +382,8 @@ sub contractToCohort{
     # So CORE COREDB COREDB08 COREDB11 CORELR02 CORELR11 CORERI02 CORESC11 are all configured to COREDB
     my %translation = (
         'CORE' => 'COREDB',
+        'Last Resort' => 'COREDB',
+        'Radium Insight' => 'COREDB',
         'CPCT' => 'CPCT',
         'CPCT Blinc' => 'CPCTBLINC',
         'CPCT Pegasus' => 'CPCTpancreas',
