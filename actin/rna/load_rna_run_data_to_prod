@@ -7,7 +7,6 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 if [[ -d "${run_dir}/isofox" ]]; then
-
     load_isofox_data_to_prod ${run_dir}
 
     load_rna_annotated_purple_data_to_prod ${run_dir}
