@@ -24,5 +24,4 @@ do_run_serve_prod \
     -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
     -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
     -output_dir ${output_dir} \
-    -skip_hotspot_resolving \
     "$@"
