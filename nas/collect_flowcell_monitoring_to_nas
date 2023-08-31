@@ -43,13 +43,13 @@ for name in $(jq '.[] | .name' <<< ${flowcells}); do
 
     data_tmp_location="${data_tmp_base_path}/${name_id}"
     info "Copying data for flowcell ${name} to ${data_tmp_location} on ops"
-    gsutil cp "${bcl_bucket_path}/RunInfo.xml" "${data_tmp_location}/RunInfo.xml" || die "Could not copy RunInfo.xml"
-    gsutil cp "${bcl_bucket_path}/RunParameters.xml" "${data_tmp_location}/Runparameters.xml" || die "Could not copy RunParameters.xml"
-    gsutil -m cp -r "${bcl_bucket_path}/InterOp/" "${data_tmp_location}/" || die "Could not copy InterOp directory"
+    gsutil cp "${bcl_bucket_path}/RunInfo.xml" "${data_tmp_location}/RunInfo.xml" || warn "Could not copy RunInfo.xml"
+    gsutil cp "${bcl_bucket_path}/RunParameters.xml" "${data_tmp_location}/Runparameters.xml" || warn "Could not copy RunParameters.xml"
+    gsutil -m cp -r "${bcl_bucket_path}/InterOp/" "${data_tmp_location}/" || warn "Could not copy InterOp directory"
 
     data_final_location="${data_final_base_path}/${name_id}"
     info "Copying data from ${data_tmp_location} on ops to ${data_final_location} on NAS"
-    sync_dir_to_nas "${data_tmp_location}/" "${data_final_location}/" || die "Could not move data to NAS"
+    sync_dir_to_nas "${data_tmp_location}/" "${data_final_location}/" || warn "Could not move data to NAS"
 
     info "Removing temporary folder ${data_tmp_location}"
     rm -r ${data_tmp_location} || die "Could not remove ${data_tmp_location}"
