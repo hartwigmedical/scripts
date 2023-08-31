@@ -52,5 +52,5 @@ for name in $(jq '.[] | .name' <<< ${flowcells}); do
     sync_dir_to_nas "${data_tmp_location}/" "${data_final_location}/" || warn "Could not move data to NAS"
 
     info "Removing temporary folder ${data_tmp_location}"
-    rm -r ${data_tmp_location} || die "Could not remove ${data_tmp_location}"
+    rm -r ${data_tmp_location} || warn "Could not remove ${data_tmp_location}"
 done
