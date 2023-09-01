@@ -94,7 +94,7 @@ function isolation_failed_count(){
 
 function isolation_in_process_count(){
     local input=$1 && shift
-    jq '[.[] | select(.isolationStatus|test("^PROCESSING|PENDING|FAILED"))] | length' <<< "${lama_status}"
+    jq '[.[] | select(.isolationStatus|test("^PROCESSING|PENDING|FAILED$"))] | length' <<< "${lama_status}"
 }
 
 function has_revoked_isolation(){
