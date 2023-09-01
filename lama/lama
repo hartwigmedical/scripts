@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 
+set -o pipefail
+
 source message_functions || exit 1
 
+NA="N/A"
+
 get_script="lama_api_get"
-classes_with_table_support=(contact-group contract hospitals isolate libraries patient report status statuses tumor-sample reference-sample
-queries/consents queries/database-loader queries/patient-reporter queries/registration)
+classes_with_table_support=(contact-group contract hospitals isolates patient report status statuses tumor-sample reference-sample
+queries/consents queries/database-loader queries/patient-reporter queries/registration TUMOR_INFO)
 
 print_usage(){
     script=$(basename "$0")
@@ -13,20 +17,20 @@ print_usage(){
     echo "Examples:"
     echo " $script hospitals"
     echo " $script tumor-samples"
+    echo " $script tumor-sample ACTN01020001T"
     echo " $script statuses"
     echo " $script statuses ACTN01020001T"
     echo " $script status isolation-barcode/FR30539000"
     echo " $script queries/consents"
-    echo " $script tumor-sample ACTN01020001T"
     echo " $script -j queries/registration isolation-barcode/FR30539000 | jq"
     echo " $script -j queries/patient-reporter isolation-barcode/FR30539000 | jq"
     echo " $script -j queries/database-loader isolation-barcode/FR30539000 | jq"
-    echo " $script status isolation-barcode/FR30539000"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV table"
     echo "  -t  Use testing/pilot environment as source instead of production"
+    echo "  -d  Debug mode (print final class/filter before execution)"
     echo "Notes:"
-    echo "  - Classes with table print support: ${classes_with_table_support[*]}"
+    echo "  - Classes with TSV table print support: ${classes_with_table_support[*]}"
     echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
     echo "  - For all endpoints see http://lama.prod-1/api/ui"
     echo "---"
@@ -54,32 +58,42 @@ if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 main(){
-    if [[ -n "${filter}" && "${filter}" =~ \/ ]]; then
-        filter="${filter}"
-    elif [[ -n "${filter}" ]]; then
-        filter="sample-id/${filter}"
-    else
-        filter=""
+    api_class="${class}"
+    api_filter="${filter}"
+
+    # Reset class if needed
+    if [[ "${class}" == "TUMOR_INFO" ]]; then
+        api_class="tumor-samples"
     fi
+
+    # Construct filter
+    if [[ -n "${filter}" && "${filter}" =~ \/ ]]; then
+        api_filter="/${filter}"
+    elif [[ -n "${filter}" && "${class}" == "contract" ]]; then
+        api_filter="/code/${filter}"
+    elif [[ -n "${filter}" && "${class}" == "patient" ]]; then
+            api_filter="/patient-id/${filter}"
+    elif [[ -n "${filter}" ]]; then
+        api_filter="/sample-id/${filter}"
+    fi
+
+    # Construct query path
+    api_query="${api_class}${api_filter}"
 
     if [[ "${print_debug}" == "TRUE" ]]; then
-        debug "Class: $class [$0]"
-        debug "Filter: $filter [$0]"
+        debug "Script path: $0"
+        debug "Input class: ${class}"
+        debug "Input filter: ${filter}"
+        debug "Api query: ${api_query}"
     fi
 
-    json_result=""
-    if [[ -n "${filter}" ]]; then
-        # shellcheck disable=SC2086
-        json_result=$($get_script $additional_get_params "${class}/${filter}") || die "Unable to get result (filter input: ${filter})"
-    else
-        # shellcheck disable=SC2086
-        json_result=$($get_script $additional_get_params "${class}") || die "Unable to get result (without filter)"
-    fi
+    json_result=$($get_script $additional_get_params "${api_query}") || die "Unable to get result for path [${api_query}]"
 
     # in case LAMA fails it sometimes returns HTML and no fail exit code so need to check content
-    [[ $( head -1 <<< "${json_result}") == "<!doctype html>" ]] && die "Query failed (response body is HTML instead of JSON)"
-
-    if [[ "${output_json}" == "TRUE" ]]; then
+    if [[ $( head -1 <<< "${json_result}") == "<!doctype html>" ]]; then
+        die "Query failed (response body is HTML instead of JSON)"
+        exit 1
+    elif [[ "${output_json}" == "TRUE" ]]; then
         echo "${json_result}"
         exit 0
     fi
@@ -133,33 +147,54 @@ main(){
             .snpCheckStatus
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^tumor-sample ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf contractCode sampleBarcodes
-        jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .contractCode, (.sampleBarcodes|join(","))] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf ptumInfo biopsyInfo contractCode sampleBarcodes
+        jq -r '.[] | [.sampleId,
+            .patientId,
+            .submissionNr,
+            .samplingDate,
+            .arrivalHmf,
+            if .tumorType then .tumorType.location|split(" ")[0]|split("/")[0] else "NA" end,
+            if .biopsy then .biopsy.location|split(" ")[0]|split("/")[0] else "NA" end,
+            .contractCode,
+            (.sampleBarcodes|join(","))
+        ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^reference-sample ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId patientId submissionNr samplingDate arrivalHmf sampleBarcode
-        jq -r '.[] | [.sampleId, .patientId, .submissionNr, .samplingDate, .arrivalHmf, .sampleBarcode] | @tsv' <<< "${json_result}"
+        jq --arg na "$NA" -r '.[] | [
+            .sampleId//$na,
+            .patientId//$na,
+            .submissionNr//$na,
+            .samplingDate//$na,
+            .arrivalHmf//$na,
+            .sampleBarcode//$na
+        ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^patient ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" patientId reportingId tumBarcodes tumSampleIds refBarcodes refSampleIds
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" patientId reportingId tumSampleIds tumBarcodes refSampleIds refBarcodes
         jq -r '.[] | [.patientId,
             .reportingId//"N/A",
             ([.tumorSamples[].sampleId//"N/A"]|join(",")),
-            ([.tumorSamples[].sampleBarcode//"N/A"]|join(",")),
+            ([.tumorSamples[].sampleBarcodes[]//"N/A"]|join(",")),
             ([.referenceSamples[].sampleId//"N/A"]|join(",")),
             ([.referenceSamples[].sampleBarcode//"N/A"]|join(","))
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^report ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" isolationBarcode sampleId reportDate reportType contractCode
         jq -r '.[] | [.isolationBarcode, .sampleId, .reportDate, .reportType, .contractCode] | @tsv' <<< "${json_result}"
+    elif [[ "${class}" == "TUMOR_INFO" ]]; then
+            printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId tumLocation tumType tumExtra tumDoids biospyLocation biospySubLocation biospyPalgaCode
+            jq -r --arg na "$NA" '.[] | select(.tumorType != null) | [
+                .sampleId//$na,
+                .tumorType.location//$na,
+                .tumorType.type//$na,
+                .tumorType.extra//$na,
+                (.tumorType.doids|join(";"))//$na,
+                .biopsy.location//$na,
+                .biopsy.subLocation//$na,
+                .biopsy.locationPalgaCode//$na
+            ] | @tsv' <<< "${json_result}"
     else
         die "Table format for class ${class} is not supported (add -j before other params to get result in JSON format)"
     fi
-}
-
-contains(){
-    local e match="$1"
-    shift
-    for e; do [[ "${e}" == "$match" || "${e}s" == "$match" ]] && return 0; done
-    return 1
 }
 
 main

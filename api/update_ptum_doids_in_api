@@ -12,11 +12,7 @@ print_usage(){
 }
 [[ $# -gt 0 ]] || print_usage
 
-# With LAMA v2 we move to LAMA for DOID source instead of manually curated file
-#doid_file="/data/dbs/clinical_data/curated_primary_tumor.tsv"
-
 doid_file="/data/dbs/clinical_data/curated_primary_tumor_from_lama.tsv"
-status_file="/data/dbs/clinical_data/patient_tumor_curation_status.tsv"
 field_idx='7'
 
 mode='undefined'
@@ -35,12 +31,10 @@ main () {
     lama_create_curated_primary_tumor_tsv
 
     [[ -f "${doid_file}" ]] || die "Missing file (${doid_file})"
-    [[ -f "${status_file}" ]] || die "Missing file (${status_file})"
     [[ "${mode}" =~ ^(dryrun|patch)$ ]] || die "Unknown mode (${mode})"
     doid_file_is_ok || die "Something wrong with ${doid_file}"
 
     info "Using input file: ${doid_file}"
-    info "Using input file: ${status_file}"
 
     total_considered=0
     total_updated=0
@@ -70,8 +64,7 @@ main () {
         total_considered=$((total_considered+1))
         patient=${api_name:0:12}
         count=$(grep -cP "^${patient}" "${doid_file}")
-        curation_status=$(grep -P "^${patient}" "${status_file}" | cut -f2 | tail -1)
-        sample_info="${api_barcode} (name:${api_name} id:${api_id} status:${curation_status})"
+        sample_info="${api_barcode} (name:${api_name} id:${api_id})"
 
         if [[ "${count}" -eq 0 ]]; then
             warn "SKIPPING: patient ID missing in doid file for ${sample_info}"

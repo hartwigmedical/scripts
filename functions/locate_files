@@ -97,7 +97,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.5.0/orange.jar"
+    echo "/data/tools/orange/2.7.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -109,7 +109,7 @@ locate_prod_patient_db() {
 }
 
 locate_research_patient_db() {
-    echo "/data/tools/patient-db/5.32/patient-db.jar"
+    echo "/data/tools/patient-db/5.33/patient-db.jar"
 }
 
 locate_prod_clinical_patient_db() {
@@ -416,10 +416,6 @@ locate_actin_evaluation_bucket() {
 
 locate_actin_shared_reports_bucket() {
     echo "gs://actin-prod-shared-reports"
-}
-
-locate_actin_backup_bucket() {
-    echo "gs://actin-prod-backups"
 }
 
 locate_actin_wgs_pipeline_bucket() {
@@ -859,7 +855,7 @@ locate_private_missing_doids_mapping_tsv() {
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
-    echo "/data/resources/private/rose/actionability.tsv"
+    echo "/data/resources/ops/rose/actionability.tsv"
 }
 
 locate_actionability_database_tsv_pilot() {
@@ -1712,7 +1708,12 @@ locate_virus_breakend_tsv() {
 locate_virus_interpreter_data_directory() {
     local run_dir=$1
 
-    echo "${run_dir}/virus_interpreter"
+    virus_dir="${run_dir}/virus_interpreter"
+    if [[ ! -d ${virus_dir} ]]; then
+        virus_dir="${run_dir}/virusintrprtr"
+    fi
+
+    echo ${virus_dir}
 }
 
 locate_virus_annotation_tsv_pilot() {
@@ -1870,7 +1871,7 @@ locate_protect_evidence_old() {
 
 locate_protect_evidence_pilot() {
     local run_dir=$1
-    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot_ckb/ -type f -name "protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}."
     fi

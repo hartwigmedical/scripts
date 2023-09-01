@@ -17,7 +17,7 @@ db_url=$(construct_database_url "${credentials}" "hmfpatients")
 java -cp ${orange_jar} com.hartwig.hmftools.orange.cohort.application.OrangeCohortDataGenerator \
     -doid_json ${doid_json} \
     -cohort_mapping_tsv ${cohort_mapping_tsv} \
-    -output_directory ${output_directory} \
+    -output_dir ${output_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"

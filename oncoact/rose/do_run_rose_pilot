@@ -17,11 +17,13 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 orange_json="$(locate_orange_json ${run_dir})"
 
 driver_gene_tsv=$(locate_driver_gene_panel_37_tsv)
+clinical_transcripts_tsv="$(locate_clinical_transcripts_prod)"
 
 info "Running ROSE pilot on ${run_dir}"
 
 java -Xms2G -Xmx8G -jar ${rose_jar} \
     -orange_json ${orange_json} \
+    -clinical_transcripts_tsv ${clinical_transcripts_tsv} \
     -output_dir ${output_dir} \
     -actionability_database_tsv ${actionability_database_tsv} \
     -driver_gene_tsv ${driver_gene_tsv} \

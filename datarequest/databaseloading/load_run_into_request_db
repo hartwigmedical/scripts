@@ -11,7 +11,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-patient_db_jar=/data/tools/patient-db/3.71/patient-db.jar
+patient_db_jar=/data/tools/patient-db/5.32/patient-db.jar
 database="request"
 credentials=$(prod_writer_sql_credentials)
 
@@ -30,7 +30,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 virus_annotation_tsv=$(locate_virus_annotation_tsv ${run_dir})
-sigs_dir=$(locate_sigs_dir ${run_dir})
+sigs_dir=$(locate_sigs_data_directory ${run_dir})
 #lilac_results=$(locate_lilac_results ${run_dir})
 #lilac_qc=$(locate_lilac_qc ${run_dir})
 
@@ -68,6 +68,7 @@ function backwardsCompatibleDataType() {
     case "$1" in
      *3.72*) datatype_arg=-somatic_only ;;
      *3.71*) datatype_arg=-somatic_only ;;
+     *5.32*) datatype_arg=-somatic_only ;;
      *) datatype_arg="-data_type \"somatic\"" ;;
     esac
 }
@@ -85,17 +86,18 @@ function backwardsCompatibleDataType() {
      *pilot*) datatype_arg=-germline_only ;;
      *3.72*) datatype_arg=-germline_only ;;
      *3.71*) datatype_arg=-germline_only ;;
+     *5.32*) datatype_arg=-germline_only ;;
      *) datatype_arg="-data_type \"germline\"" ;;
     esac
 }
-info "Loading linx germline data for ${tumor_sample}"
-backwardsCompatibleDataType ${patient_db_jar}
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
-    -sample ${tumor_sample} \
-    -linx_dir ${run_dir}/linx_germline \
-     ${datatype_arg} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    "$@"
+# info "Loading linx germline data for ${tumor_sample}"
+# backwardsCompatibleDataType ${patient_db_jar}
+# java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
+#     -sample ${tumor_sample} \
+#     -linx_dir ${run_dir}/linx_germline \
+#      ${datatype_arg} \
+#     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+#     "$@"
 
 
 info "Loading metrics data for ${tumor_sample}"
@@ -153,6 +155,7 @@ info "Loading CUPPA data for ${tumor_sample}"
 function backwardsCompatibleResultsArg() {
     case "$1" in
      *3.72*) cuppa_results_arg="-cuppa_results_csv ${molecular_tissue_origin_txt}" ;;
+     *5.32*) cuppa_results_arg="-cuppa_results_csv ${molecular_tissue_origin_txt}" ;;
      *) cuppa_results_arg="-cuppa_conclusion_txt ${molecular_tissue_origin_txt}" ;;
     esac
 }

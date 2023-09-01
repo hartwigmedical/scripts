@@ -6,7 +6,7 @@ source message_functions || exit 1
 cram=$1 && shift
 region=$1 && shift
 
-samtools_path="/data/tools/samtools/1.10"
+samtools_path="/data/tools/samtools/1.18"
 region_regex="^[^:-]+:[^:-]+-[^:-]+$"
 
 if [[ ! $(command -v samtools &> /dev/null) ]]; then

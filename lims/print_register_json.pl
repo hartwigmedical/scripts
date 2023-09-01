@@ -247,10 +247,6 @@ sub processSample{
         $yield = 1;
     }
 
-    if ( $lab_status ne "Finished" and $lab_status ne "finished" and $lab_status ne "In process" and $name !~ /^VirtualSample\d+/){
-        sayWarn("  Check JSON for sample $name, since lab status is unexpected: lab_status='$lab_status'")
-    }
-
     ## overwrite submission and entity in case of experiment
     ## this also makes sure output goes to experiment bucket via entity
     if ( $opt{'as_experiment'} ){

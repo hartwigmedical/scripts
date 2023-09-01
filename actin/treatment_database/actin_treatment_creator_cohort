@@ -5,6 +5,7 @@ source io_functions || exit 1
 
 trial_config_directory="$(locate_actin_cohort_trial_config_directory)"
 ctc_config_directory="$(locate_actin_ctc_config_directory)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 known_genes_tsv="$(locate_actin_known_genes_tsv)"
 output_directory="$(locate_actin_cohort_treatment_database_directory)"
@@ -16,6 +17,7 @@ actin_jar="$(locate_cohort_actin)"
 java -cp ${actin_jar} com.hartwig.actin.treatment.TreatmentCreatorApplicationKt \
     -trial_config_directory ${trial_config_directory} \
     -ctc_config_directory ${ctc_config_directory} \
+    -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
     -known_genes_tsv ${known_genes_tsv} \
     -output_directory ${output_directory} \
