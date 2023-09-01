@@ -1,48 +1,110 @@
 #!/usr/bin/env bash
 
 source locate_files || exit 1
+source database_functions || exit 1
 
 patient_db_jar=$(locate_pilot_patient_db)
-create_run_contexts_json
-runs_json=./run_contexts.json
-pipeline_version_file="pipeline.version"
-reporting_db_tsv=$(locate_reporting_db_generate_tsv)
-lims_dir=/data/ops/lims/pilot
+database_name="hmfpatients_pilot"
 
-tumor_location_mapping_tsv=$(locate_tumor_location_mapping_pilot)
-tumor_location_overrides_tsv=$(locate_tumor_location_overrides_pilot)
-treatment_mapping_tsv=$(locate_treatment_mapping_pilot)
+lims_dir=/data/ops/lims/prod
+reporting_db_tsv=$(locate_reporting_db_generate_tsv)
+tumor_location_mapping_tsv=$(locate_tumor_location_mapping_prod)
+tumor_location_overrides_tsv=$(locate_tumor_location_overrides_prod)
+treatment_mapping_tsv=$(locate_treatment_mapping_prod)
 biopsy_mapping_tsv=$(locate_biopsy_site_mapping_prod)
 doid_file=$(locate_doid_json)
+cpct_ecrf_xml="/data/ecrf/cpct_ecrf.xml"
+cpct_form_status_csv="/data/ecrf/cpct_form_status.csv"
+drup_ecrf_xml="/data/ecrf/drup_ecrf.xml"
+wide_pre_avl_treatment_csv="/data/ecrf/wide_pre_avl_treatments.csv"
+wide_biopsies_csv="/data/ecrf/wide_biopsies.csv"
+wide_avl_treatment_csv="/data/ecrf/wide_avl_treatments.csv"
+wide_avl_responses_csv="/data/ecrf/wide_responses.csv"
+wide_five_days_csv="/data/ecrf/wide_five_days.csv"
+consents_config_tsv="/data/resources/ops/informed_consent/informed_consents_config.tsv"
+curated_primary_tumor_tsv="/data/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
+patient_tumor_curation_status_tsv="/data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv"
+pipeline_version_file="pipeline.version"
+run_contexts_json="./run_contexts.json"
 
+input_files=("${patient_db_jar}" "${reporting_db_tsv}" "${tumor_location_mapping_tsv}" "${tumor_location_overrides_tsv}"
+"${treatment_mapping_tsv}" "${biopsy_mapping_tsv}" "${doid_file}" "${cpct_ecrf_xml}" "${cpct_form_status_csv}" "${drup_ecrf_xml}"
+"${wide_pre_avl_treatment_csv}" "${wide_biopsies_csv}" "${wide_avl_treatment_csv}" "${wide_avl_responses_csv}" "${wide_five_days_csv}"
+"${consents_config_tsv}" "${curated_primary_tumor_tsv}" "${patient_tumor_curation_status_tsv}")
 
-# Force UTF-8 to deal with non-standard characters, see DEV-275
-# Note that we should only "do_process_wide_clinical_data" in case of pilot.
+# Set to true if you want clinical loading to SQL db
+do_load_clinical_data="true"
 
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
-    -jar ${patient_db_jar} \
-    -runs_json ${runs_json} \
-    -pipeline_version_file ${pipeline_version_file} \
-    -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
-    -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
-    -drup_ecrf /data/ecrf/drup_ecrf.xml \
-    -do_process_wide_clinical_data \
-    -wide_pre_avl_treatment_csv /data/ecrf/wide_pre_avl_treatments.csv \
-    -wide_biopsy_csv /data/ecrf/wide_biopsies.csv \
-    -wide_avl_treatment_csv /data/ecrf/wide_avl_treatments.csv \
-    -wide_response_csv /data/ecrf/wide_responses.csv \
-    -wide_five_days_csv /data/ecrf/wide_five_days.csv \
-    -consent_config_tsv /data/dbs/informed_consents/informed_consents_config.tsv \
-    -lims_dir ${lims_dir} \
-    -curated_primary_tumor_tsv /data/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
-    -patient_tumor_curation_status_tsv /data/dbs/clinical_data/pilot_patient_tumor_curation_status.tsv \
-    -doid_json ${doid_file} \
-    -tumor_location_mapping_tsv ${tumor_location_mapping_tsv} \
-    -tumor_location_overrides_tsv ${tumor_location_overrides_tsv} \
-    -treatment_mapping_tsv ${treatment_mapping_tsv} \
-    -biopsy_mapping_tsv ${biopsy_mapping_tsv} \
-    -reporting_db_tsv ${reporting_db_tsv} \
-    "$@"
+# Set to true if you want wide clinical processing (ONLY FOR PILOT)
+# This currently will not work though because WIDE specific work needs to be added to patient-db
+do_process_wide_clinical_data="false"
 
-rm ./run_contexts.json
-rm ./run.log
+info "Checking input files for existence"
+for input_file in "${input_files[@]}"; do
+    [[ -f "${input_file}" ]] || die "Input file missing [${input_file}]"
+done
+
+info "Checking runs json existence"
+if [[ -f "${run_contexts_json}" ]]; then
+    info "Re-using existing runs json [${run_contexts_json}]"
+else
+    create_run_contexts_json
+fi
+
+java_args=(
+    "-Dorg.jooq.no-logo=true"
+     "-Xmx8G" "-Xms2G" "-Dfile.encoding=UTF-8"
+    "-jar" "${patient_db_jar}"
+)
+
+patientdb_args=(
+    "-runs_json" "${runs_json}"
+    "-pipeline_version_file" "${pipeline_version_file}"
+    "-cpct_ecrf" "${cpct_ecrf_xml}"
+    "-cpct_form_status_csv" "${cpct_form_status_csv}"
+    "-drup_ecrf" "${drup_ecrf_xml}"
+    "-lims_dir" "${lims_dir}"
+    "-consent_config_tsv" "${consents_config_tsv}"
+    "-curated_primary_tumor_tsv" "${curated_primary_tumor_tsv}"
+    "-patient_tumor_curation_status_tsv" "${patient_tumor_curation_status_tsv}"
+    "-doid_json" "${doid_file}"
+    "-tumor_location_mapping_tsv" "${tumor_location_mapping_tsv}"
+    "-tumor_location_overrides_tsv" "${tumor_location_overrides_tsv}"
+    "-treatment_mapping_tsv" "${treatment_mapping_tsv}"
+    "-biopsy_mapping_tsv" "${biopsy_mapping_tsv}"
+    "-reporting_db_tsv" "${reporting_db_tsv}"
+)
+
+database_args=()
+wide_args=()
+
+if [[ "${do_load_clinical_data}" == "true" ]]; then
+    credentials=$(prod_writer_sql_credentials)
+    db_user=$(extract_database_user "${credentials}")
+    db_password=$(extract_database_password "${credentials}")
+    db_url=$(construct_database_url "${credentials}" "${database_name}")
+    info "Adding database loading [${db_url}]"
+    database_args=("-do_load_clinical_data"
+        "-db_user" "${db_user}"
+        "-db_pass" "${db_password}"
+        "-db_url" "${db_url}")
+fi
+
+if [[ "${do_process_wide_clinical_data}" == "true" ]]; then
+    info "Adding WIDE processing"
+    wide_args=("-do_process_wide_clinical_data"
+        "-wide_pre_avl_treatment_csv" "${wide_pre_avl_treatment_csv}"
+        "-wide_biopsy_csv" "${wide_biopsies_csv}"
+        "-wide_avl_treatment_csv" "${wide_avl_treatment_csv}"
+        "-wide_response_csv" "${wide_avl_responses_csv}"
+        "-wide_five_days_csv" "${wide_five_days_csv}")
+fi
+
+# Database args contain a password so are not logged
+info "Start running patient-db (args: ${java_args[*]} ${patientdb_args[*]})"
+java "${java_args[@]}" "${patientdb_args[@]}" "${wide_args[@]}" "${database_args[@]}"
+
+info "Removing temporary files"
+rm "${run_contexts_json}" ./run.log
+
+info "Finished with running patient-db"
