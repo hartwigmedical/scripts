@@ -58,7 +58,7 @@ java_args=(
 )
 
 patientdb_args=(
-    "-runs_json" "${runs_json}"
+    "-runs_json" "${run_contexts_json}"
     "-pipeline_version_file" "${pipeline_version_file}"
     "-cpct_ecrf" "${cpct_ecrf_xml}"
     "-cpct_form_status_csv" "${cpct_form_status_csv}"
