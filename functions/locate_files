@@ -161,7 +161,7 @@ locate_prod_ckb_importer() {
 }
 
 locate_latest_ckb_importer() {
-    echo "/data/tools/ckb-importer/2.1/ckb-importer.jar"
+    echo "/data/tools/ckb-importer/2.2.0/ckb-importer.jar"
 }
 
 locate_pilot_ckb_importer() {
