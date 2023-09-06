@@ -97,7 +97,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/2.6.0/orange.jar"
+    echo "/data/tools/orange/2.7.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -109,7 +109,7 @@ locate_prod_patient_db() {
 }
 
 locate_research_patient_db() {
-    echo "/data/tools/patient-db/5.32/patient-db.jar"
+    echo "/data/tools/patient-db/5.33/patient-db.jar"
 }
 
 locate_prod_clinical_patient_db() {
@@ -161,7 +161,7 @@ locate_prod_ckb_importer() {
 }
 
 locate_latest_ckb_importer() {
-    echo "/data/tools/ckb-importer/2.1/ckb-importer.jar"
+    echo "/data/tools/ckb-importer/2.2.0/ckb-importer.jar"
 }
 
 locate_pilot_ckb_importer() {
@@ -173,7 +173,7 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/2.3.0/serve.jar"
+    echo "/data/tools/serve/2.5.0/serve.jar"
 }
 
 locate_pilot_serve() {

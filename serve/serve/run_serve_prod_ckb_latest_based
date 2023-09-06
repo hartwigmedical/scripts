@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir="/data/output/prod_output_ckb_latest_based"
+output_dir="/data/output/prod_output_ckb_latest_based_not_verified"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
@@ -24,5 +24,4 @@ do_run_serve_prod \
     -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
     -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
     -output_dir ${output_dir} \
-    -skip_hotspot_resolving \
     "$@"
