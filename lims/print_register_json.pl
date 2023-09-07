@@ -235,7 +235,6 @@ sub processSample{
     my $entity = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $priority = getPriorityForSample( $sample );
     my $yield_in_gbase = getValueByKey( $sample, 'yield' );
-    my $lab_status = getValueByKey( $sample, 'lab_status' );
 
     ## floats are allowed for yield_in_gbase
     ## flooring to whole numbers for yield (in bases) by converting to int
@@ -401,11 +400,7 @@ sub processSample{
         my $patient_ref = getValueByKey( $ref_obj, 'patient' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
         my $submission_ref = $submission;
-        my $lab_status_ref = getValueByKey( $ref_obj, 'lab_status' );
 
-        if ( $lab_status_ref ne "Finished" and $lab_status_ref ne "finished"  and $lab_status ne "In process" ){
-            sayWarn("  Check JSON for sample $name, since ref lab status is unexpected: lab_status_ref='$lab_status_ref'")
-        }
 
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_FACTOR;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
