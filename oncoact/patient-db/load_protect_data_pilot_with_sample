@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+source message_functions || exit 1
+source database_functions || exit 1
+
+run_dir=$1 && shift
+sample_database=$1 && shift
+sample_protect=$1 && shift
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+if [[ -z "${sample_database}" ]]; then
+    error "No sample ID for database passed. Exiting"
+fi
+
+if [[ -z "${sample_protect}" ]]; then
+    error "No sample ID for protect passed. Exiting"
+fi
+
+protect_evidence_tsv_prod=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/prod_version_7_26/protect -type f -name "${sample_protect}.protect.tsv")
+protect_evidence_tsv_pilot=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/runs_23-09-07/${run_dir}/protect -type f -name "protect.tsv")
+
+database="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+do_load_protect_data ${sample_protect} ${protect_evidence_tsv_prod} ${database} "${credentials}" ${patient_db_jar}
+do_load_protect_data ${sample_database} ${protect_evidence_tsv_pilot} ${database} "${credentials}" ${patient_db_jar}
+
