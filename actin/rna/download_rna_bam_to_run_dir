@@ -12,16 +12,25 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
 
-rna_analysis_bucket=$(locate_rna_analysis_bucket ${tumor_sample})
-if [[ ! -z "${rna_analysis_bucket}" ]]; then
-    rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
+rna_pipeline_output_dir="$(locate_actin_wts_pipeline_output_directory)/${tumor_sample}"
+if [[ -d "${rna_pipeline_output_dir}" ]]; then
+    info "Copying BAM file from ${rna_pipeline_output_dir} to ${rna_bam_directory}"
+
     create_or_cleanup_dir ${rna_bam_directory}
-
-    info "Downloading RNA bam to ${rna_bam_directory}"
-    # First download BAM, then BAI to avoid BAI being newer than BAM.
-    gsutil -m cp -r "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam" "${rna_bam_directory}/"
-    gsutil -m cp -r "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam.bai" "${rna_bam_directory}/"
+    cp "${rna_pipeline_output_dir}/star/${tumor_sample}.sorted.dups.bam" "${rna_bam_directory}/"
+    cp "${rna_pipeline_output_dir}/star/${tumor_sample}.sorted.dups.bam.bai" "${rna_bam_directory}/"
 else
-    warn "Could not locate RNA analysis bucket for ${tumor_sample}. Skipping downloading of RNA BAM."
+    rna_analysis_bucket=$(locate_rna_analysis_bucket ${tumor_sample})
+    if [[ ! -z "${rna_analysis_bucket}" ]]; then
+        create_or_cleanup_dir ${rna_bam_directory}
+
+        info "Downloading RNA bam to ${rna_bam_directory}"
+        # First download BAM, then BAI to avoid BAI being newer than BAM.
+        gsutil -m cp "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam" "${rna_bam_directory}/"
+        gsutil -m cp "${rna_analysis_bucket}/${tumor_sample}.sorted.dups.bam.bai" "${rna_bam_directory}/"
+    else
+        warn "Could not locate either RNA pipeline output or analysis bucket for ${tumor_sample}. Skipping downloading of RNA BAM."
+    fi
 fi
