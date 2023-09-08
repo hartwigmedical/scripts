@@ -35,5 +35,10 @@ fi
 info "Copying ${match_run} to ${run_dir}"
 cp -r "${match_run}" "${run_dir}"
 
+if [[ ! -d "${run_dir}/linx/plot" ]]; then
+    warn "No linx plot directory present! Creating an empty plot dir but please verify!"
+    mkdir "${run_dir}/linx/plot"
+fi
+
 info "Done!"
 
