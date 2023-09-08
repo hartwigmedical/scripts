@@ -8,7 +8,7 @@ set -e
 info "Syncing ACTIN wgs pipeline output"
 gsutil -m rsync -r -x ".*[^h]la\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket) $(locate_actin_wgs_pipeline_output_directory)
 gsutil -m rsync -r -x ".*[^h]la\.bam$|.*\.bam$" gs://actin-prod-wgs-pipeline-output-diagnostic/ /data/actin/wgs_pipeline_output_diagnostic
-gsutil -m rsync -r -x ".*\.bam$|.*\.fastq\.gz" gs://rna-pipeline-output-prod-1/ /data/actin/wts_pipeline_output/
+gsutil -m rsync -r -x ".*\.fastq\.gz" gs://rna-pipeline-output-prod-1/ /data/actin/wts_pipeline_output/
 find /data/actin/wts_pipeline_output/ -type f -not -path "*ACTN*" -exec rm -f {} \;
 
 info "Syncing ACTIN patient data"
