@@ -673,10 +673,18 @@ locate_rna_analysis_bucket() {
     local sample=$1 && shift
     local rna_analysis_bucket=""
 
-    # Assume the Log.out always exists in case of RNA pipeline performed.
+    # Check if there is a Log.out for this sample in the bucket
     gsutil -q stat "gs://hmf-rna-analysis/samples/${sample}/Log.out"
     if [[ $? == 0 ]]; then
         rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
+    fi
+
+    # If it does not exist, try again with another file (run.log):
+    if [[ -z ${rna_analysis_bucket} ]]; then
+        gsutil -q stat "gs://hmf-rna-analysis/samples/${sample}/run.log"
+        if [[ $? == 0 ]]; then
+            rna_analysis_bucket="gs://hmf-rna-analysis/samples/${sample}"
+        fi
     fi
 
     echo "${rna_analysis_bucket}"
