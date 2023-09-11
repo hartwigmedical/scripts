@@ -5,21 +5,16 @@ source metadata_functions || exit 1
 source message_functions || exit 1
 source database_functions || exit 1
 
-run=$1 && shift
 sample=$1 && shift
-
-if [[ -z "${run}" ]]; then
-    error "No run passed. Exiting"
-fi
 
 if [[ -z "${sample}" ]]; then
     error "No sample passed. Exiting"
 fi
-protect_evidence_tsv=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/runs_23-09-07/${run}/protect -type f -name "protect.tsv")
+protect_evidence_tsv=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/prod_version_7_26/protect -type f -name "${sample}.protect.tsv")
 
 
 database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar="/home/lschoenmaker/tmp/database-jar-with-dependencies.jar"
+patient_db_jar="/data/tools/patient-db/3.72/patient-db.jar"
 
 do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
