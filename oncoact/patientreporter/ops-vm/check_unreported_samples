@@ -65,7 +65,7 @@ function check_one_unreported_sample(){
         all_prep_status=$(jq -r '[.[].libraryPrepStatus]|join(",")' <<< "${lama_status}" )
         warn "CHECK: Final prep status [${all_prep_status}] but appears not yet sequenced [${info}]"
     else
-        run_info=$(api -j runs "sample_name=${sampleId}" | jq -r '.[]|select(.context!="RESEARCH")|.set.name+" ("+.status+")"' | tail -1)
+        run_info=$(api -j runs "sample_name=${sampleId}" | jq -r '.[]|select(.context=="DIAGNOSTIC")|.set.name+" ("+.status+")"' | tail -1)
         warn "CHECK: Sample has status ${api_sample_status} [${info}]"
         warn "  \_ Most recent run: ${run_info}"
     fi
