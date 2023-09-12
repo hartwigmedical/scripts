@@ -5,7 +5,7 @@ round(medianTpmCancer,2) AS "Median TPM for cancer type", round(percentileCancer
 round(medianTpmCohort,2) AS "Median TPM for database", round(percentileCohort,2) AS "Percentile for database",
 IF(percentileCancer>=0.5,1,0) AS "Top 50% for cancer type?"
 FROM geneExpression g
-INNER JOIN sample s ON s.sampleID=g.sampleId
+INNER JOIN sample s ON s.sampleId=g.sampleId
 LEFT JOIN baseline b ON s.patientId=b.patientId
 INNER JOIN rnaStatistics r ON g.sampleId=r.sampleId
 INNER JOIN purity p ON g.sampleId=p.sampleId
