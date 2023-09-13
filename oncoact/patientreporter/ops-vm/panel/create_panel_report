@@ -103,8 +103,8 @@ run_bucket="${target_bucket}/${set}"
 coverage_plot_path="${temp_folder_path}/reporting/qc_plot"
 mkdir -p ${coverage_plot_path}
 
-sudo Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} "${coverage_plot_path}/" > "${coverage_plot_path}/createSampleQcReport.log"
-sudo Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} "${coverage_plot_path}/" > "${coverage_plot_path}/createSampleQcReport_Deamination.log"
+/usr/bin/Rscript /data/repos/scripts/panel/createSampleQcReport.R ${sample} ${temp_folder_path} "${coverage_plot_path}/" > "${coverage_plot_path}/createSampleQcReport.log"
+/usr/bin/Rscript Rscript /data/repos/scripts/panel/createSampleQcReport_Deamination.R ${sample} ${temp_folder_path} "${coverage_plot_path}/" > "${coverage_plot_path}/createSampleQcReport_Deamination.log"
 
 ### Filter VCFs
 reporting_vcf_path="${temp_folder_path}/reporting/vcf"
