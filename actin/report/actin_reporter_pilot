@@ -28,7 +28,6 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -molecular_json ${molecular_json} \
     -treatment_match_json ${treatment_match_json} \
     -output_directory ${output_directory} \
-    -enable_extended_mode \
     "$@"
 
 echo ""
@@ -38,5 +37,5 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -molecular_json ${molecular_json} \
     -treatment_match_json ${treatment_match_json} \
     -output_directory ${output_directory} \
+    -enable_extended_mode \
     "$@"
-
