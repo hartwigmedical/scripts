@@ -5,6 +5,8 @@ source database_functions || exit 1
 
 function backwardsCompatibleDataType() {
     case "$1" in
+     *pilot*) datatype_arg=-somatic_only ;;
+     *5.*) datatype_arg=-somatic_only ;;
      *3.72*) datatype_arg=-somatic_only ;;
      *3.71*) datatype_arg=-somatic_only ;;
      *) datatype_arg="-data_type \"somatic\"" ;;
