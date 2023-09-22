@@ -5,6 +5,10 @@ import subprocess
 
 
 def main():
+    """
+    Goes through all the production runs and will give a summary in different categories which
+    will be printed to the stdout.
+    """
     print('Retrieving all non-research somatic and CPCT runs from the API...')
     all_non_research_runs = get_all_runs_from_api()
 
@@ -22,20 +26,20 @@ def main():
     tumor_samples_with_processing_runs = get_sample_names_from_runs(proc_runs)
     tumor_samples_with_waiting_runs = get_sample_names_from_runs(wait_runs)
 
-    handle_failed_runs(fail_runs, tumor_samples_with_validated_runs, tumor_sample_with_finished_runs,
-                       tumor_samples_with_processing_runs, tumor_samples_with_waiting_runs)
-    handle_finished_runs(fini_runs, tumor_samples_with_validated_runs, tumor_samples_with_processing_runs,
-                         tumor_samples_with_waiting_runs)
-    handle_validated_runs(validated_runs)
-    handle_processing_runs(proc_runs)
-    handle_waiting_runs(wait_runs)
+    _handle_failed_runs(fail_runs, tumor_samples_with_validated_runs, tumor_sample_with_finished_runs,
+                        tumor_samples_with_processing_runs, tumor_samples_with_waiting_runs)
+    _handle_finished_runs(fini_runs, tumor_samples_with_validated_runs, tumor_samples_with_processing_runs,
+                          tumor_samples_with_waiting_runs)
+    _handle_validated_runs(validated_runs)
+    _handle_processing_runs(proc_runs)
+    _handle_waiting_runs(wait_runs)
 
     print("All done ʕっ•ᴥ•ʔっ♪♬ !")
     exit(0)
 
 
-def handle_failed_runs(failed_runs, tumor_samples_with_validated_runs, tumor_sample_with_finished_runs,
-                       tumor_samples_with_processing_runs, tumor_samples_with_waiting_runs):
+def _handle_failed_runs(failed_runs, tumor_samples_with_validated_runs, tumor_sample_with_finished_runs,
+                        tumor_samples_with_processing_runs, tumor_samples_with_waiting_runs):
     failed_but_not_reported = []
     failed_but_already_reported = []
     for run in failed_runs:
@@ -76,17 +80,19 @@ def handle_failed_runs(failed_runs, tumor_samples_with_validated_runs, tumor_sam
     print("### FAILED RUNS THAT ALREADY HAVE BEEN REPORTED ( no action required ):")
     for i, run in enumerate(failed_but_already_reported):
         set_name = get_set_name_from_run(run)
+        db_status = get_db_status(run)
+        research_db_status = get_research_db_status(run)
         print(
-            # TODO this is not complete yet
             f"""
             ---------
             -${i}- ${set_name} has Failed but has been reported before
-            {get_current_tat(run)}
+            # db_status:diagnostic={db_status}/research={research_db_status}"
+            {get_reported_info_sample(run)}
             """)
 
 
-def handle_finished_runs(finished_runs, tumor_samples_with_validated_runs, tumor_samples_with_processing_runs,
-                         tumor_samples_with_waiting_runs):
+def _handle_finished_runs(finished_runs, tumor_samples_with_validated_runs, tumor_samples_with_processing_runs,
+                          tumor_samples_with_waiting_runs):
     finished_but_not_reported = []
     finished_but_already_reported = []
     for run in finished_runs:
@@ -111,15 +117,12 @@ def handle_finished_runs(finished_runs, tumor_samples_with_validated_runs, tumor
         get_current_tat(run)
         db_status = get_db_status(run)
         research_db_status = get_research_db_status(run)
-        print(  # TODO this is not complete yet
+        print(  # TODO this is not complete yet does snpcheck have to run?
             f"""
             ---------
             -{i}- {set_name} has been finished but not validated. snpcheck issue (see below)?
             {get_current_tat(run)}
             db_status:diagnostic={db_status}/research={research_db_status}
-            **
-            Action - if snpcheck is FAIL - research the fail (follow sop)
-            Action - if snpcheck is OK - update the api using the script: patch_api_run_validate ${set_name}
             """)
 
     print('### FINISHED RUNS THAT HAVE ALREADY BEEN REPORTED ( no action required ):')
@@ -129,12 +132,13 @@ def handle_finished_runs(finished_runs, tumor_samples_with_validated_runs, tumor
         research_db_status = get_research_db_status(run)
         print(f"""
         ---------
-        -{i}- -{set_name}- has Finished but has been reported before: # db_status:diagnostic={db_status}/research={research_db_status}"
+        -{i}- -{set_name}- has Finished but has been reported before:
+        # db_status:diagnostic={db_status}/research={research_db_status}"
         {get_reported_info_sample(run)}
         """)
 
 
-def handle_validated_runs(validated_runs):
+def _handle_validated_runs(validated_runs):
     validated_runs_incorrect_summary = []
     validated_runs_with_warnings = []
     validated_runs_no_report = []
@@ -184,11 +188,12 @@ def handle_validated_runs(validated_runs):
         research_db_status = get_research_db_status(run)
         print(f"""
             -{i}- ${set_name} is validated, there were no information warnings while creating the report but the summary is missing
+            # db_status:diagnostic={db_status}/research={research_db_status}
             {get_current_tat(run)}
             """)
 
 
-def handle_processing_runs(processing_runs):
+def _handle_processing_runs(processing_runs):
     print('### PROCESSING/UPLOADING/DOWNLOADING RUNS ( no action required ):')
     for i, run in enumerate(processing_runs):
         set_name = get_set_name_from_run(run)
@@ -199,7 +204,7 @@ def handle_processing_runs(processing_runs):
         """)
 
 
-def handle_waiting_runs(waiting_runs):
+def _handle_waiting_runs(waiting_runs):
     print('### WAITING RUNS ( no action required ):')
     for i, run in enumerate(waiting_runs):
         set_name = get_set_name_from_run(run)
@@ -291,7 +296,8 @@ def get_samples_from_run(run) -> {str: json}:
     Gets the samples from the set information.
 
     :param run: the run to get the samples for.
-    :return: A dictionary where the key is the sample type ('ref', 'tumor', etc.) and the value is the sample json.
+    :return: A dictionary where the key is the sample type ('ref', 'tumor', etc.) and the value is the sample json
+    if samples are found, `None` otherwise
     """
     set_id = run['set']['id']
     response = requests.get("http://api.prod-1/hmf/v1/sets", params={'sample_id': set_id})
@@ -319,8 +325,14 @@ def get_shared_count(reporting_id: str) -> int:
     return len(words)
 
 
-def get_reporting_id(run: json):
-    isolation_barcode = get_isolation_barcode(run)
+def get_reporting_id(run: json) -> str:
+    """
+    Get the reporting_id for a given run
+
+    :param run: the run to get the reporting_id for
+    :return: the reporting_id if found, `None` otherwise
+    """
+    isolation_barcode = get_tumor_barcode(run)
     if isolation_barcode:
         reporting_id = subprocess.check_output(
             ['bash', '-c', 'source locate_reporting_api; extract_most_recent_reporting_id_on_barcode',
@@ -340,20 +352,33 @@ def get_health_error(set_name: str) -> str:
 
 
 def is_rose_error(set_name: str, sample_name: str):
+    """
+    Finds whether there is a error with the 'rose' tool for a given set and sample
+
+    :param set_name: the set to check for
+    :param sample_name: the sample to check for within the set
+    :return: true if a 'rose' error was found, else false
+    """
     res = subprocess.check_output(['gsutil', 'cat',
                                    f'gs://diagnostic-pipeline-output-prod-1/{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv']).decode()
     return res.find('AMP') > 0
 
 
-def get_db_status(run):
+def get_db_status(run: json) -> str:
     return run['db_status']
 
 
-def get_run_status(run):
+def get_run_status(run: json) -> str:
     return run['status']
 
 
 def get_research_db_status(run):
+    """
+    Gets the research db status of a given run.
+
+    :param run: the run.
+    :return: the research db status if found, else `None`.
+    """
     set_name = get_set_name_from_run(run)
     response = requests.get('http://api.prod-1/hmf/v1/runs',
                             params={'set_name': set_name, 'bucket': 'research-pipeline-output-prod-1'})
@@ -365,13 +390,23 @@ def get_research_db_status(run):
     return response.json()[-1]['db_status']
 
 
-def get_isolation_barcode(run):
+def get_tumor_barcode(run: json) -> str:
+    """
+    Gets the tumor barcode of a given run
+    :param run: the run to get the tumor barcode for
+    :return: the tumor barcode
+    """
     samples = get_samples_from_run(run)
     if samples and 'tumor' in samples and 'barcode' in samples['tumor']:
         return samples['tumor']['barcode']
 
 
-def get_current_tat(run):
+def get_current_tat(run: json) -> str:
+    """
+    Get the current tat for a run (TODO: not sure what this is?)
+    :param run: the run to get the tat for
+    :return: the tat if it is there, else an empty string
+    """
     samples = get_samples_from_run(run)
     if samples and 'tumor' in samples:
         sample_name = samples['tumor']['name']
@@ -382,7 +417,12 @@ def get_current_tat(run):
     return ''
 
 
-def get_reported_info_sample(run):
+def get_reported_info_sample(run: json) -> str:
+    """
+    Gets the reported info for a given run (TODO: not sure what this is?)
+    :param run: the run to get the reported info for
+    :return: the reported info if any, else an empty string
+    """
     sample_name = get_sample_name_from_run(run)
     res = subprocess.check_output(
         ['bash', '-c', f'../oncoact/patientreporter/ops-vm/get_reported_info_sample {sample_name}']).decode()
