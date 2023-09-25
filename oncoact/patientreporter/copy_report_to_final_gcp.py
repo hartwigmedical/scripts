@@ -2,7 +2,6 @@ import requests
 import re
 import argparse
 from api_util import get_report_created, API_BASE_URL
-
 from google.cloud import storage
 
 # Constants
