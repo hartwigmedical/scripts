@@ -2,6 +2,10 @@ import subprocess
 import os
 import argparse
 from api_util import get_report_created, get_set
+from gsutil import get_bucket_and_blob_from_gs_path
+from google.cloud.storage import Bucket, Client
+
+PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1'
 
 
 def main(sample_barcode):
@@ -15,23 +19,31 @@ def main(sample_barcode):
 
     temp_dir_path = '~/temp'
     os.mkdir(temp_dir_path)
+
+    client = Client()
+
     upload_report_json = input('Do you want to upload the final OncoAct report (PDF and json)? y or n')
     if upload_report_json.lower() == 'y':
         for report in reports:
             path = report['path']
-            subprocess.run(['gsutil', 'cp', path, temp_dir_path])
+            (bucket_name, blob) = get_bucket_and_blob_from_gs_path(path)
+            remote_bucket: Bucket = client.bucket(bucket_name)
+            destination_file_name = f'{temp_dir_path}/{blob}'
+            remote_bucket.blob(blob).download_to_file(destination_file_name)
 
     upload_orange_report = input("Do you want to upload the ORANGE report? y or n")
     if upload_orange_report == 'y':
-        subprocess.run(
-            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/orange/{sample_name}.orange.pdf',
-             temp_dir_path])
+        bucket: Bucket = client.bucket(PIPELINE_OUTPUT_BUCKET)
+        blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
+        destination_file_name = f'{temp_dir_path}/{blob_name}'
+        bucket.blob(blob_name).download_to_file(destination_file_name)
 
     upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n')
     if upload_cuppa == 'y':
-        subprocess.run(
-            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/cuppa/{sample_name}_cup_report.pdf',
-             temp_dir_path])
+        bucket: Bucket = client.bucket(PIPELINE_OUTPUT_BUCKET)
+        blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
+        destination_file_name = f'{temp_dir_path}/{blob_name}'
+        bucket.blob(blob_name).download_to_file(destination_file_name)
 
     upload_to_nextcloud(temp_dir_path)
     os.removedirs(temp_dir_path)
