@@ -1,17 +1,16 @@
 import subprocess
 import os
 import argparse
-from api_util import get_report_created, get_sample_set
+from api_util import ApiUtil
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Client
 
-PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1'
 
-
-def main(sample_barcode):
-    report_created = get_report_created(sample_barcode)
+def main(sample_barcode, profile):
+    api_util = ApiUtil(profile)
+    report_created = api_util.get_report_created(sample_barcode)
     sample_name = report_created['sample_name']
-    sample_set = get_sample_set(sample_name)
+    sample_set = api_util.get_sample_set(sample_name)
     set_name = sample_set['name']
 
     reports = [report_file for report_file in report_created['report_files'] if
@@ -66,5 +65,16 @@ def upload_to_nextcloud(path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Uploads the relevant report files to NC')
     parser.add_argument('sample_barcode')
+    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
-    main(sample_barcode=args.sample_barcode)
+
+    if args.profile == 'prod':
+        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
+        if prod_warn.lower() != 'y':
+            print('Program aborted')
+            exit(1)
+
+    PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1' if args.profile == 'prod' \
+        else 'diagnostic-pipeline-output-pilot-1'
+
+    main(sample_barcode=args.sample_barcode, profile=args.profile)

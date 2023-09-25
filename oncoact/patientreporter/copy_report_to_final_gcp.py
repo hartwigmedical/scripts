@@ -1,16 +1,13 @@
 import requests
 import argparse
-from api_util import get_report_created, API_BASE_URL, get_sample_set
+from api_util import ApiUtil
 from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_from_gs_path
 
+
 # Constants
-PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1'
-FINAL_BUCKET_NAME = "patient-reporter-final-prod-1"
-PORTAL_BUCKET_NAME = 'hmf-customer-portal-report-shared-prod'
 
-
-def main(sample_barcode):
+def main(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket):
     """
     This program does the following:
 
@@ -18,15 +15,20 @@ def main(sample_barcode):
     - Copy the relevant report files from the run bucket to the portal bucket.
     - Update shared status of the report in the HMF API.
 
+    :param profile: the profile to run this program in (pilot, prod, etc.).
+    :param portal_bucket: the name of the portal bucket.
+    :param final_bucket: the name of the final bucket for internal quality purposes.
+    :param pipeline_output_bucket: the bucket where the pipeline output is stored.
     :param sample_barcode: The sample_barcode whose run to process.
     """
-    report_created = get_report_created(sample_barcode)
+    api_util = ApiUtil(profile)
+    report_created = api_util.get_report_created(sample_barcode)
     report_files = report_created["report_files"]
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
     storage_client = Client()
-    target_bucket_portal: Bucket = storage_client.bucket(PORTAL_BUCKET_NAME)
-    target_bucket_final: Bucket = storage_client.bucket(FINAL_BUCKET_NAME)
+    target_bucket_portal: Bucket = storage_client.bucket(portal_bucket)
+    target_bucket_final: Bucket = storage_client.bucket(final_bucket)
 
     for report in reports:
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
@@ -35,7 +37,7 @@ def main(sample_barcode):
         copy_and_log(bucket_instance, target_bucket_final, blob)
 
     sample_name = report_created['sample_name']
-    sample_set = get_sample_set(sample_name)
+    sample_set = api_util.get_sample_set(sample_name)
     set_name = sample_set['name']
 
     orange_pdf = f'{set_name}/orange/{sample_name}.orange.pdf'
@@ -45,7 +47,7 @@ def main(sample_barcode):
     linx_fusion = f'{set_name}/linx/{sample_name}.linx.fusion.tsv'
     linx_catalog = f'{set_name}/linx/{sample_name}.linx.driver.catalog.tsv'
 
-    pipline_output_bucket: Bucket = storage_client.bucket(PIPELINE_OUTPUT_BUCKET)
+    pipline_output_bucket: Bucket = storage_client.bucket(pipeline_output_bucket)
     for blob in [orange_pdf, purple_sv_vcf, purple_somatic_vcf, purple_catalog, linx_fusion, linx_catalog]:
         copy_and_log(pipline_output_bucket, target_bucket_portal, blob)
 
@@ -55,7 +57,7 @@ def main(sample_barcode):
         'notify_users': False,
         'publish_to_portal': True
     }
-    requests.post(f'{API_BASE_URL}/hmf/v1/reports/2/shared', params=params)
+    requests.post(f'{api_util.api_base_url()}/hmf/v1/reports/2/shared', params=params)
     print('API updated!')
     print('All done (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ !')
     exit(0)
@@ -70,5 +72,25 @@ def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('sample_barcode')
+    argument_parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = argument_parser.parse_args()
-    main(args.sample_barcode)
+
+    profile = args.profile
+    if profile == 'prod':
+        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
+        if prod_warn.lower() != 'y':
+            print('Program aborted')
+            exit(1)
+
+    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' \
+        else 'diagnostic-pipeline-output-pilot-1'
+    final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
+        else 'patient-reporter-final-pilot-1'
+    portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
+        else 'hmf-customer-portal-report-shared-pilot'
+
+    main(args.sample_barcode,
+         profile,
+         pipeline_output_bucket=pipeline_output_bucket,
+         final_bucket=final_bucket,
+         portal_bucket=portal_bucket)
