@@ -24,13 +24,13 @@ def main(sample_barcode):
     upload_orange_report = input("Do you want to upload the ORANGE report? y or n")
     if upload_orange_report == 'y':
         subprocess.run(
-            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/orange/{sample_name}*.orange.pdf',
+            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/orange/{sample_name}.orange.pdf',
              temp_dir_path])
 
     upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n')
     if upload_cuppa == 'y':
         subprocess.run(
-            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/cuppa/{sample_name}*_cup_report.pdf',
+            ['gsutil', 'cp', f'gs://diagnostic-pipeline-output-prod-1/{set_name}/cuppa/{sample_name}_cup_report.pdf',
              temp_dir_path])
 
     upload_to_nextcloud(temp_dir_path)
