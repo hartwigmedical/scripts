@@ -49,18 +49,16 @@ def get_all_reports_shared() -> list[json]:
     return json_response
 
 
-def get_set(sample_id: str) -> json:
+def get_set(sample_name: str) -> json:
     """
-    Queries the 'sets' endpoint with the given sample id.
+    Queries the 'sets' endpoint with the given sample id and returns the first entry.
 
-    :param sample_id: the sample_id to query for
+    :param sample_name: the sample_name to query for
     :return: the query result.
-    :raises ValueError: If the response returned a non 2XX status code or if the query returned more than 1 result.
+    :raises ValueError: If the response returned a non 2XX status code.
     """
-    response = requests.get(url=f"{API_BASE_URL}/hmf/v1/sets", params={'sample_id': sample_id})
+    response = requests.get(url=f"{API_BASE_URL}/hmf/v1/sets", params={'tumor_sample': sample_name})
     if not response.ok:
         raise ValueError(f"Response was not ok: {response.status_code}")
     response_json = response.json()
-    if len(response_json) > 1:
-        raise ValueError(f"Query returned more than one result: '{len(response_json)}'")
     return response_json[0]
