@@ -7,7 +7,7 @@ def main():
     all_shared_reports = {report['run_id'] for report in get_all_reports_shared()}
     reports_not_shared = [report for report in all_reports if report['run_id'] not in all_shared_reports]
 
-    print("The following reports are created but not shared:")
+    print('The following reports are created but not shared:')
     print(json.dumps(reports_not_shared, indent=2))
 
 

@@ -13,7 +13,7 @@ def get_all_reports_created() -> list[json]:
     """
     response = requests.get(f'{API_BASE_URL}/hmf/v1/reports/2/created')
     if not response.ok:
-        raise ValueError(f"Response was not ok: {response.status_code}")
+        raise ValueError(f"Response was not ok: '{response.status_code}'")
     json_response = response.json()
     return json_response
 
@@ -26,9 +26,9 @@ def get_report_created(sample_barcode: str) -> json:
     :return: The query result.
     :raises ValueError: If the response returned a non 2XX status code or if the query returned more than 1 result.
     """
-    response = requests.get(url=f"{API_BASE_URL}/hmf/v1/reports/2/created", params={'sample_barcode': sample_barcode})
+    response = requests.get(url=f'{API_BASE_URL}/hmf/v1/reports/2/created', params={'sample_barcode': sample_barcode})
     if not response.ok:
-        raise ValueError(f"Response was not ok: {response.status_code}")
+        raise ValueError(f"Response was not ok: '{response.status_code}'")
     response_json = response.json()
     if len(response_json) > 1:
         raise ValueError(f"Query returned more than one result: '{len(response_json)}'")
@@ -44,7 +44,7 @@ def get_all_reports_shared() -> list[json]:
     """
     response = requests.get(f'{API_BASE_URL}/hmf/v1/reports/2/shared')
     if not response.ok:
-        raise ValueError(f"Response was not ok: {response.status_code}")
+        raise ValueError(f"Response was not ok: '{response.status_code}'")
     json_response = response.json()
     return json_response
 
@@ -57,8 +57,8 @@ def get_set(sample_name: str) -> json:
     :return: the query result.
     :raises ValueError: If the response returned a non 2XX status code.
     """
-    response = requests.get(url=f"{API_BASE_URL}/hmf/v1/sets", params={'tumor_sample': sample_name})
+    response = requests.get(url=f'{API_BASE_URL}/hmf/v1/sets', params={'tumor_sample': sample_name})
     if not response.ok:
-        raise ValueError(f"Response was not ok: {response.status_code}")
+        raise ValueError(f"Response was not ok: '{response.status_code}'")
     response_json = response.json()
     return response_json[0]

@@ -52,7 +52,7 @@ def upload_to_nextcloud(path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Uploads the relevant report files to NC")
+    parser = argparse.ArgumentParser(description='Uploads the relevant report files to NC')
     parser.add_argument('sample_barcode')
     args = parser.parse_args()
     main(sample_barcode=args.sample_barcode)

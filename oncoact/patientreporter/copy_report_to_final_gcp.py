@@ -7,7 +7,7 @@ from google.cloud import storage
 # Constants
 PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1'
 FINAL_BUCKET_NAME = "patient-reporter-final-prod-1"
-PORTAL_BUCKET_NAME = "hmf-customer-portal-report-shared-prod"
+PORTAL_BUCKET_NAME = 'hmf-customer-portal-report-shared-prod'
 
 # Regex for gs file locations: gs:://<bucket-name>/<blob-name>
 GS_PATH_REGEX = re.compile(r'^gs://([a-z0-9._-]+)((?:/[a-zA-Z0-9_.-]+)*)$')
@@ -60,7 +60,7 @@ def main(sample_barcode):
     }
     requests.post(f'{API_BASE_URL}/hmf/v1/reports/2/shared', params=params)
     print('API updated!')
-    print('all Done (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ !')
+    print('All done (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ !')
     exit(0)
 
 
@@ -79,7 +79,7 @@ def get_bucket_and_blob_from_gs_path(gs_path: str) -> (str, str):
     """
     match = GS_PATH_REGEX.match(gs_path)
     if not match:
-        raise ValueError("No match!")
+        raise ValueError(f"'{gs_path}' is not a valid path!")
 
     groups = match.groups()
     bucket = groups[0]
