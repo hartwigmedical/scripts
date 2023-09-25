@@ -2,16 +2,17 @@ import argparse
 import json
 from google.cloud import pubsub
 
-TOPIC = ''
+TOPIC = 'foo'
 
 
-def main(tumor_isolation_barcode):
+def main(tumor_isolation_barcode, topic):
     special_remark = input('Enter a special remark...')
     remark_is_external = input('Is remark external? y/n') == 'y' or 'Y'
     rose_override = input('Enter rose override...')
     comments = input('Enter comments...')
 
     emit_correction_event(pubsub.PublisherClient(),
+                          topic,
                           tumor_isolation_barcode,
                           special_remark,
                           remark_is_external,
@@ -23,6 +24,7 @@ def main(tumor_isolation_barcode):
 
 
 def emit_correction_event(client: pubsub.PublisherClient,
+                          topic: str,
                           tumor_isolation_barcode: str,
                           special_remark: str,
                           remark_is_external: bool,
@@ -40,11 +42,13 @@ def emit_correction_event(client: pubsub.PublisherClient,
     json_data = json.dumps(data)
     encoded_message = json_data.encode(encoding='utf-8')
 
-    client.publish(topic=TOPIC, data=encoded_message, subject='report', event='override')
+    client.publish(topic=topic, data=encoded_message, subject='report', event='override')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emit a override event for a given report')
     parser.add_argument('tumor_isolation_barcode')
+    parser.add_argument('--topic', default=TOPIC)
     args = parser.parse_args()
-    main(args.tumor_isolation_barcode)
+
+    main(args.tumor_isolation_barcode, args.topic)
