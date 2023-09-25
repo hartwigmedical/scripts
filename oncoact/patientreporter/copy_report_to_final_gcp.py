@@ -22,23 +22,21 @@ def main(sample_barcode):
 
     :param sample_barcode: The sample_barcode whose run to process.
     """
-    created_reports = get_created_reports_from_api(sample_barcode)
-    report_files = created_reports["report_files"]
+    report_created = get_report_created(sample_barcode)
+    report_files = report_created["report_files"]
 
-    reports = next(file for file in report_files if file['datatype'] in ['report_pdf', 'report_xml', 'report_json'])
-    driver_catalog = next(file for file in report_files if file['path'].endswith('Driver.catalog.somatic.tsv'))
-    purple_somatic = next(file for file in report_files if file['path'].endswith('purple.somatic.vcf'))
-    purple_sv = next(file for file in report_files if file['path'].endswith('purple.sv.vcf'))
-    orange = next(file for file in report_files if file['path'].endswith('Orange.pdf'))
+    reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
+    # driver_catalog = next(file for file in report_files if file['path'].endswith('Driver.catalog.somatic.tsv'))
+    # purple_somatic = next(file for file in report_files if file['path'].endswith('purple.somatic.vcf'))
+    # purple_sv = next(file for file in report_files if file['path'].endswith('purple.sv.vcf'))
+    # orange = next(file for file in report_files if file['path'].endswith('Orange.pdf'))
     # TODO we also need Linx fusion output. Unfortunately, I do not know the file name
 
     storage_client = storage.Client()
     target_bucket_portal: storage.Bucket = storage_client.bucket(PORTAL_BUCKET_NAME)
     target_bucket_final: storage.Bucket = storage_client.bucket(FINAL_BUCKET_NAME)
 
-    for file in [*reports, driver_catalog, purple_somatic, purple_sv, orange]:
-        if not file:
-            continue
+    for file in reports:
         (bucket, blob) = get_bucket_and_blob_from_gs_path(file['path'])
         bucket_instance: storage.Bucket = storage_client.bucket(bucket)
         print(f"Copying '{file}' to '{target_bucket_portal}'...")
@@ -47,9 +45,13 @@ def main(sample_barcode):
         bucket_instance.copy_blob(blob, target_bucket_final)
 
     print('Updating report shared status in the API...')
-
-    requests.post(f'{API_BASE_URL}/hmf/v1/reports/2/shared')  # TODO
-
+    params = {
+        'report_created_id': report_created['id'],
+        'notify_users': False,
+        'publish_to_portal': True
+    }
+    requests.post(f'{API_BASE_URL}/hmf/v1/reports/2/shared', params=params)
+    print('API updated!')
     print('all Done (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ !')
     exit(0)
 
@@ -64,7 +66,7 @@ def get_args_as_dictionary(args):
     return {k: (v[0] if len(v) == 1 else v) for (k, v) in args.__dict__.items() if v is not None}
 
 
-def get_created_reports_from_api(sample_barcode: str) -> json:
+def get_report_created(sample_barcode: str) -> json:
     """
     Queries the 'reports/2/created' endpoint with the given sample_barcode.
 
