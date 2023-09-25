@@ -1,10 +1,12 @@
-import json
 import requests
-from google.cloud import storage
 import re
+import argparse
+from api_util import get_report_created, API_BASE_URL
+
+from google.cloud import storage
 
 # Constants
-API_BASE_URL = "http://api.prod-1"
+
 FINAL_BUCKET_NAME = "patient-reporter-final-prod-1"
 PORTAL_BUCKET_NAME = ""
 
@@ -56,33 +58,6 @@ def main(sample_barcode):
     exit(0)
 
 
-def get_args_as_dictionary(args):
-    """
-    Transforms the given command line arguments to a dictionary, skipping optional arguments that were not set.
-
-    :param args: the command line arguments.
-    :return: a dictionary the key is the argument name and the value is the argument value.
-    """
-    return {k: (v[0] if len(v) == 1 else v) for (k, v) in args.__dict__.items() if v is not None}
-
-
-def get_report_created(sample_barcode: str) -> json:
-    """
-    Queries the 'reports/2/created' endpoint with the given sample_barcode.
-
-    :param sample_barcode: the sample_barcode to query for.
-    :return: The query result.
-    :raises ValueError: If the response returned a non 2XX status code or if the query returned more than 1 sample.
-    """
-    response = requests.get(url=f"{API_BASE_URL}/hmf/v1/reports/2/created", params={'sample_barcode': sample_barcode})
-    if not response.ok:
-        raise ValueError(f"Response was not ok: {response.status_code}")
-    response_json = response.json()
-    if len(response_json) > 1:
-        raise ValueError(f"Query returned more than one sample: '{len(response_json)}'")
-    return response_json[0]
-
-
 def get_bucket_and_blob_from_gs_path(gs_path: str) -> (str, str):
     """
     Returns the bucket name and the blob name from a given google storage path.
@@ -102,4 +77,7 @@ def get_bucket_and_blob_from_gs_path(gs_path: str) -> (str, str):
 
 
 if __name__ == "__main__":
-    print(get_bucket_and_blob_from_gs_path("gs://jwfijewf/wjfwepijf/wjfipewjfwep/wfjiwe"))
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument('sample_barcode')
+    args = argument_parser.parse_args()
+    main(args.sample_barcode)
