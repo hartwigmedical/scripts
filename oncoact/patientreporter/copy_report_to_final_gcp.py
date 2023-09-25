@@ -1,6 +1,6 @@
 import requests
 import argparse
-from api_util import get_report_created, API_BASE_URL, get_set
+from api_util import get_report_created, API_BASE_URL, get_sample_set
 from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_from_gs_path
 
@@ -35,7 +35,7 @@ def main(sample_barcode):
         copy_and_log(bucket_instance, target_bucket_final, blob)
 
     sample_name = report_created['sample_name']
-    sample_set = get_set(sample_name)
+    sample_set = get_sample_set(sample_name)
     set_name = sample_set['name']
 
     orange_pdf = f'{set_name}/orange/{sample_name}.orange.pdf'

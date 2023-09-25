@@ -1,7 +1,7 @@
 import subprocess
 import os
 import argparse
-from api_util import get_report_created, get_set
+from api_util import get_report_created, get_sample_set
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Client
 
@@ -11,7 +11,7 @@ PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1'
 def main(sample_barcode):
     report_created = get_report_created(sample_barcode)
     sample_name = report_created['sample_name']
-    sample_set = get_set(sample_name)
+    sample_set = get_sample_set(sample_name)
     set_name = sample_set['name']
 
     reports = [report_file for report_file in report_created['report_files'] if

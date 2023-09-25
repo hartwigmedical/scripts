@@ -49,7 +49,7 @@ def get_all_reports_shared() -> list[json]:
     return json_response
 
 
-def get_set(sample_name: str) -> json:
+def get_sample_set(sample_name: str) -> json:
     """
     Queries the 'sets' endpoint with the given sample id and returns the first entry.
 
