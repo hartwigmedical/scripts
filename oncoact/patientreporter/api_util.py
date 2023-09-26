@@ -6,7 +6,7 @@ import requests
 
 class ApiUtil:
 
-    def __init__(self, profile: str):
+    def __init__(self, profile):
         self._profile = profile
 
     def api_base_url(self):
@@ -17,7 +17,7 @@ class ApiUtil:
         else:
             raise ValueError(f"Unknown profile: '{self._profile}'")
 
-    def get_all_reports_created(self) -> List[json]:
+    def get_all_reports_created(self):
         """
         Queries the 'reports/2/created' endpoint and returns all results.
 
@@ -30,7 +30,7 @@ class ApiUtil:
         json_response = response.json()
         return json_response
 
-    def get_report_created(self, sample_barcode: str) -> json:
+    def get_report_created(self, sample_barcode):
         """
         Queries the 'reports/2/created' endpoint with the given sample_barcode.
 
@@ -47,7 +47,7 @@ class ApiUtil:
             raise ValueError(f"Query returned more than one result: '{len(response_json)}'")
         return response_json[0]
 
-    def get_all_reports_shared(self) -> List[json]:
+    def get_all_reports_shared(self):
         """
         Queries the 'reports/2/shared' endpoint and returns all results.
 
@@ -61,7 +61,7 @@ class ApiUtil:
         json_response = response.json()
         return json_response
 
-    def get_sample_set(self, sample_name: str) -> json:
+    def get_sample_set(self, sample_name):
         """
         Queries the 'sets' endpoint with the given sample id and returns the first entry.
 
