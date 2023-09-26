@@ -23,7 +23,7 @@ def main():
     final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
         else 'temp_portal_bucket_test' # TODO set this back to the correct value please
     portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
-        else 'hmf-customer-portal-report-shared-pilot'
+        else 'temp_portal_bucket_test' # TODO set this back to the correct value please
 
     copy_report_to_final_gcp(args.sample_barcode,
                              profile,
