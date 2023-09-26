@@ -52,6 +52,13 @@ main () {
 function load_virusintrprtr () {
     info "Loading VIRUS INTERPRETER"
     local annotation_tsv="${run_dir}/virusintrprtr/${tumor_sample}.virus.annotated.tsv"
+
+    # Naming convention on data-vm differs
+    local annotation_tsv2="${run_dir}/virus_interpreter/${tumor_sample}.virus.annotated.tsv"
+    if [[ ! -f "${annotation_tsv}" ]]; then
+        annotation_tsv="${annotation_tsv2}"
+    fi
+
     [[ -f "${annotation_tsv}" ]] || return 1
     run_patient_db LoadVirusInterpreter \
         -sample "${tumor_sample}" \
