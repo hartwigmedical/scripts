@@ -10,12 +10,13 @@ class ApiUtil:
         self._profile = profile
 
     def api_base_url(self):
-        if self._profile == 'pilot':
-            return "http://api.pilot-1"
-        if self._profile == 'prod':
-            return "http://api.prod-1"
-        else:
-            raise ValueError(f"Unknown profile: '{self._profile}'")
+        return "http://api.prod-1" # TODO change this when pilot api is up
+        # if self._profile == 'pilot':
+        #     return "http://api.pilot-1"
+        # if self._profile == 'prod':
+        #     return "http://api.prod-1"
+        # else:
+        #     raise ValueError(f"Unknown profile: '{self._profile}'")
 
     def get_all_reports_created(self):
         """
