@@ -18,8 +18,8 @@ def main():
             print('Program aborted')
             exit(1)
 
-    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' \
-        else 'diagnostic-pipeline-output-pilot-1'
+    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'  # if profile == 'prod' \
+    # else 'diagnostic-pipeline-output-pilot-1'
     final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
         else 'patient-reporter-final-pilot-1'
     portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
@@ -59,7 +59,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
         bucket_instance: Bucket = storage_client.bucket(bucket)
         copy_and_log(bucket_instance, target_bucket_portal, blob)
-        copy_and_log(bucket_instance, target_bucket_final, blob)
+        # copy_and_log(bucket_instance, target_bucket_final, blob)
 
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set(sample_name)
