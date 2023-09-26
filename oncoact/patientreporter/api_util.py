@@ -1,4 +1,6 @@
 import json
+from typing import List
+
 import requests
 
 
@@ -15,7 +17,7 @@ class ApiUtil:
         else:
             raise ValueError(f"Unknown profile: '{self._profile}'")
 
-    def get_all_reports_created(self) -> list[json]:
+    def get_all_reports_created(self) -> List[json]:
         """
         Queries the 'reports/2/created' endpoint and returns all results.
 
@@ -45,7 +47,7 @@ class ApiUtil:
             raise ValueError(f"Query returned more than one result: '{len(response_json)}'")
         return response_json[0]
 
-    def get_all_reports_shared(self) -> list[json]:
+    def get_all_reports_shared(self) -> List[json]:
         """
         Queries the 'reports/2/shared' endpoint and returns all results.
 
