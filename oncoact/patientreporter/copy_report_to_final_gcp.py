@@ -5,9 +5,34 @@ from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_from_gs_path
 
 
-# Constants
+def main():
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument('sample_barcode')
+    argument_parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    args = argument_parser.parse_args()
 
-def main(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket):
+    profile = args.profile
+    if profile == 'prod':
+        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
+        if prod_warn.lower() != 'y':
+            print('Program aborted')
+            exit(1)
+
+    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' \
+        else 'diagnostic-pipeline-output-pilot-1'
+    final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
+        else 'patient-reporter-final-pilot-1'
+    portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
+        else 'hmf-customer-portal-report-shared-pilot'
+
+    copy_report_to_final_gcp(args.sample_barcode,
+                             profile,
+                             pipeline_output_bucket=pipeline_output_bucket,
+                             final_bucket=final_bucket,
+                             portal_bucket=portal_bucket)
+
+
+def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket):
     """
     This program does the following:
 
@@ -70,27 +95,4 @@ def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser()
-    argument_parser.add_argument('sample_barcode')
-    argument_parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
-    args = argument_parser.parse_args()
-
-    profile = args.profile
-    if profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
-
-    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' \
-        else 'diagnostic-pipeline-output-pilot-1'
-    final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
-        else 'patient-reporter-final-pilot-1'
-    portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
-        else 'hmf-customer-portal-report-shared-pilot'
-
-    main(args.sample_barcode,
-         profile,
-         pipeline_output_bucket=pipeline_output_bucket,
-         final_bucket=final_bucket,
-         portal_bucket=portal_bucket)
+    main()
