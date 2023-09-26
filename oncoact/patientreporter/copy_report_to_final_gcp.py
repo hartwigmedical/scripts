@@ -52,7 +52,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
     storage_client = Client()
-    target_bucket_portal: Bucket = storage_client.bucket(portal_bucket)
+    target_bucket_portal: Bucket = storage_client.bucket(portal_bucket, user_project='hmf-customer-portal')
     target_bucket_final: Bucket = storage_client.bucket(final_bucket)
 
     for report in reports:
