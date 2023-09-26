@@ -1,6 +1,7 @@
 import argparse
 import json
 from google.cloud import pubsub
+from cli_util import perform_prod_test
 
 TOPIC = 'foo'
 
@@ -14,11 +15,7 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    if args.profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
+    perform_prod_test(args.profile)
 
     project = 'hmf-pipeline-development'  # TODO set dynamically
     assemble_and_emit_event(args.tumor_sample_barcode, project)

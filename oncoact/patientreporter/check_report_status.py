@@ -1,10 +1,10 @@
 import json
 import argparse
 from api_util import ApiUtil
+from cli_util import perform_prod_test
 
 
 def main(profile: str):
-    print(profile)
     api_util = ApiUtil(profile)
     all_reports = api_util.get_all_reports_created()
     all_shared_reports = {report['run_id'] for report in api_util.get_all_reports_shared()}
@@ -19,10 +19,5 @@ if __name__ == '__main__':
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    if args.profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
-
+    perform_prod_test(args.profile)
     main(args.profile)

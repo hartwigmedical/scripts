@@ -3,6 +3,7 @@ import argparse
 from api_util import ApiUtil
 from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_from_gs_path
+from cli_util import perform_prod_test
 
 
 def main():
@@ -12,11 +13,7 @@ def main():
     args = argument_parser.parse_args()
 
     profile = args.profile
-    if profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
+    perform_prod_test(profile)
 
     pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'  # if profile == 'prod' \
     # else 'diagnostic-pipeline-output-pilot-1'
@@ -93,9 +90,6 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
 
 def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
     print(f"Copying '{blob_name}' to '{target_bucket}'...")
-    tst = input('correct?')
-    if tst != 'y':  # TODO REMOVE THIS
-        exit(1)
     blob = Blob(blob_name, source_bucket)
     source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket)
 

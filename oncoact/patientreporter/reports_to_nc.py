@@ -4,6 +4,7 @@ import argparse
 from api_util import ApiUtil
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Client
+from cli_util import perform_prod_test
 
 
 def main():
@@ -12,11 +13,7 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    if args.profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
+    perform_prod_test(args.profile)
 
     pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if args.profile == 'prod' \
         else 'diagnostic-pipeline-output-pilot-1'
@@ -40,7 +37,7 @@ def reports_to_nc(sample_barcode, profile, pipeline_output_bucket):
 
     client = Client()
 
-    upload_report_json = input('Do you want to upload the final OncoAct report (PDF and json)? y or n')
+    upload_report_json = input('Do you want to upload the final OncoAct report (PDF and json)? y or n\n')
     if upload_report_json.lower() == 'y':
         for report in reports:
             path = report['path']
@@ -49,14 +46,14 @@ def reports_to_nc(sample_barcode, profile, pipeline_output_bucket):
             destination_file_name = f'{temp_dir_path}/{blob}'
             remote_bucket.blob(blob).download_to_file(destination_file_name)
 
-    upload_orange_report = input("Do you want to upload the ORANGE report? y or n")
+    upload_orange_report = input("Do you want to upload the ORANGE report? y or n\n")
     if upload_orange_report == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
         destination_file_name = f'{temp_dir_path}/{blob_name}'
         bucket.blob(blob_name).download_to_file(destination_file_name)
 
-    upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n')
+    upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n\n')
     if upload_cuppa == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
