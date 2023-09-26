@@ -77,12 +77,12 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         copy_and_log(pipline_output_bucket, target_bucket_portal, blob)
 
     print('Updating report shared status in the API...')
-    params = {
+    body = {
         'report_created_id': report_created['id'],
         'notify_users': 'false',
         'publish_to_portal': 'true'
     }
-    response = requests.post(f'{api_util.api_base_url()}/hmf/v1/reports/2/shared', params=params)
+    response = requests.post(f'{api_util.api_base_url()}/hmf/v1/reports/2/shared', json=body)
     if not response.ok:
         print(f'API update failed: {response.status_code}')
         exit(1)
