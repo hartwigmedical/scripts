@@ -4,6 +4,7 @@ from api_util import ApiUtil
 
 
 def main(profile: str):
+    print(profile)
     api_util = ApiUtil(profile)
     all_reports = api_util.get_all_reports_created()
     all_shared_reports = {report['run_id'] for report in api_util.get_all_reports_shared()}

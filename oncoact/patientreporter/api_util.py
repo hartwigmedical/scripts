@@ -13,7 +13,7 @@ class ApiUtil:
         if self._profile == 'pilot':
             return "http://api.pilot-1"
         if self._profile == 'prod':
-            "http://api.prod-1"
+            return "http://api.prod-1"
         else:
             raise ValueError(f"Unknown profile: '{self._profile}'")
 
