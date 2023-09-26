@@ -6,7 +6,26 @@ from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Client
 
 
-def main(sample_barcode, profile):
+def main():
+    parser = argparse.ArgumentParser(description='Uploads the relevant report files to NC')
+    parser.add_argument('sample_barcode')
+    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    args = parser.parse_args()
+
+    if args.profile == 'prod':
+        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
+        if prod_warn.lower() != 'y':
+            print('Program aborted')
+            exit(1)
+
+    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if args.profile == 'prod' \
+        else 'diagnostic-pipeline-output-pilot-1'
+
+    reports_to_nc(sample_barcode=args.sample_barcode, profile=args.profile,
+                  pipeline_output_bucket=pipeline_output_bucket)
+
+
+def reports_to_nc(sample_barcode, profile, pipeline_output_bucket):
     api_util = ApiUtil(profile)
     report_created = api_util.get_report_created(sample_barcode)
     sample_name = report_created['sample_name']
@@ -32,14 +51,14 @@ def main(sample_barcode, profile):
 
     upload_orange_report = input("Do you want to upload the ORANGE report? y or n")
     if upload_orange_report == 'y':
-        bucket: Bucket = client.bucket(PIPELINE_OUTPUT_BUCKET)
+        bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
         destination_file_name = f'{temp_dir_path}/{blob_name}'
         bucket.blob(blob_name).download_to_file(destination_file_name)
 
     upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n')
     if upload_cuppa == 'y':
-        bucket: Bucket = client.bucket(PIPELINE_OUTPUT_BUCKET)
+        bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
         destination_file_name = f'{temp_dir_path}/{blob_name}'
         bucket.blob(blob_name).download_to_file(destination_file_name)
@@ -63,18 +82,4 @@ def upload_to_nextcloud(path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Uploads the relevant report files to NC')
-    parser.add_argument('sample_barcode')
-    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
-    args = parser.parse_args()
-
-    if args.profile == 'prod':
-        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
-        if prod_warn.lower() != 'y':
-            print('Program aborted')
-            exit(1)
-
-    PIPELINE_OUTPUT_BUCKET = 'diagnostic-pipeline-output-prod-1' if args.profile == 'prod' \
-        else 'diagnostic-pipeline-output-pilot-1'
-
-    main(sample_barcode=args.sample_barcode, profile=args.profile)
+    main()
