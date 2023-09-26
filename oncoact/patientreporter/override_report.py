@@ -5,50 +5,62 @@ from google.cloud import pubsub
 TOPIC = 'foo'
 
 
-def main(tumor_isolation_barcode, topic):
-    special_remark = input('Enter a special remark...')
-    remark_is_external = input('Is remark external? y/n') == 'y' or 'Y'
-    rose_override = input('Enter rose override...')
-    comments = input('Enter comments...')
+def main():
+    parser = argparse.ArgumentParser(description='Emit a override event for a given report')
+    parser.add_argument('tumor_sample_barcode')
+    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    args = parser.parse_args()
 
-    emit_correction_event(pubsub.PublisherClient(),
-                          topic,
-                          tumor_isolation_barcode,
-                          special_remark,
-                          remark_is_external,
-                          rose_override,
-                          comments)
+    if args.profile == 'prod':
+        prod_warn = input("Warning: you are running in prod. Type 'y' to continue.")
+        if prod_warn.lower() != 'y':
+            print('Program aborted')
+            exit(1)
 
-    print('Event emitted!')
+    project = 'hmf-pipeline-development'  # TODO set dynamically
+    assemble_event(args.tumor_sample_barcode, project)
+
+
+def assemble_event(tumor_sample_barcode, project):
+    special_remark = input('Enter a special remark...\n')
+    remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
+    rose_override = input('Enter rose override...\n')
+    comments = input('Enter comments...\n')
+
+    client = pubsub.PublisherClient()
+    topic_path = client.topic_path(project=project, topic='report.override')
+
+    res = emit_correction_event(client,
+                                topic_path,
+                                tumor_sample_barcode,
+                                special_remark,
+                                remark_is_external,
+                                rose_override,
+                                comments)
+
+    print(f'Event emitted! (message id: {res})')
     exit(0)
 
 
 def emit_correction_event(client: pubsub.PublisherClient,
-                          topic: str,
-                          tumor_isolation_barcode: str,
+                          topic_path: str,
+                          tumor_sample_barcode: str,
                           special_remark: str,
                           remark_is_external: bool,
                           rose_override: str,
-                          comments: str) -> None:
+                          comments: str) -> str:
     data = {
-        'ReportOverride': {
-            'tumorIsolationBarcode': tumor_isolation_barcode,
-            'specialRemark': special_remark,
-            'remarkIsExternal': remark_is_external,
-            'roseOverride': rose_override,
-            'comments': comments
-        }
+        'tumorSampleBarcode': tumor_sample_barcode,
+        'specialRemark': special_remark,
+        'remarkIsExternal': remark_is_external,
+        'roseOverride': rose_override,
+        'comments': comments
     }
     json_data = json.dumps(data)
     encoded_message = json_data.encode(encoding='utf-8')
 
-    client.publish(topic=topic, data=encoded_message, subject='report', event='override')
+    return client.publish(topic=topic_path, data=encoded_message).result()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Emit a override event for a given report')
-    parser.add_argument('tumor_isolation_barcode')
-    parser.add_argument('--topic', default=TOPIC)
-    args = parser.parse_args()
-
-    main(args.tumor_isolation_barcode, args.topic)
+    main()
