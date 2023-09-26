@@ -89,8 +89,11 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
 
 
 def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
-    blob = Blob(blob_name, source_bucket)
     print(f"Copying '{blob_name}' to '{target_bucket}'...")
+    tst = input('correct?')
+    if tst != 'y':  # TODO REMOVE THIS
+        exit(1)
+    blob = Blob(blob_name, source_bucket)
     source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket)
 
 
