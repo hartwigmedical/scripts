@@ -4,26 +4,21 @@ import argparse
 from api_util import ApiUtil
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Client
-from cli_util import perform_prod_test
 
 
 def main():
     parser = argparse.ArgumentParser(description='Uploads the relevant report files to NC')
     parser.add_argument('sample_barcode')
-    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+
     args = parser.parse_args()
 
-    perform_prod_test(args.profile)
-
-    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1' if args.profile == 'prod' \
-        else 'diagnostic-pipeline-output-pilot-1'
-
-    reports_to_nc(sample_barcode=args.sample_barcode, profile=args.profile,
+    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'
+    reports_to_nc(sample_barcode=args.sample_barcode,
                   pipeline_output_bucket=pipeline_output_bucket)
 
 
-def reports_to_nc(sample_barcode, profile, pipeline_output_bucket):
-    api_util = ApiUtil(profile)
+def reports_to_nc(sample_barcode, pipeline_output_bucket):
+    api_util = ApiUtil(profile='prod')
     report_created = api_util.get_report_created(sample_barcode)
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set(sample_name)
