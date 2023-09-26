@@ -42,14 +42,14 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
             remote_bucket.blob(blob).download_to_file(destination_file_name)
 
     upload_orange_report = input("Do you want to upload the ORANGE report? y or n\n")
-    if upload_orange_report == 'y':
+    if upload_orange_report.lower() == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
         destination_file_name = f'{temp_dir_path}/{blob_name}'
         bucket.blob(blob_name).download_to_file(destination_file_name)
 
     upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n\n')
-    if upload_cuppa == 'y':
+    if upload_cuppa.lower() == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
         destination_file_name = f'{temp_dir_path}/{blob_name}'
