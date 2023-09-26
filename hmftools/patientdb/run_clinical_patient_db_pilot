@@ -102,7 +102,7 @@ fi
 
 # Database args contain a password so are not logged
 info "Start running patient-db (args: ${java_args[*]} ${patientdb_args[*]})"
-java "${java_args[@]}" "${patientdb_args[@]}" "${wide_args[@]}" "${database_args[@]}"
+java "${java_args[@]}" "${patientdb_args[@]}" "${wide_args[@]}" "${database_args[@]}" || die "Running of patient-db failed"
 
 info "Removing temporary files"
 rm "${run_contexts_json}" ./run.log
