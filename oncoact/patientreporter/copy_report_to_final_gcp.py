@@ -18,9 +18,9 @@ def main():
     pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'  # if profile == 'prod' \
     # else 'diagnostic-pipeline-output-pilot-1'
     final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
-        else 'temp_portal_bucket_test' # TODO set this back to the correct value please
+        else 'temp_portal_bucket_test'  # TODO set this back to the correct value please
     portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
-        else 'temp_portal_bucket_test' # TODO set this back to the correct value please
+        else 'temp_portal_bucket_test'  # TODO set this back to the correct value please
 
     copy_report_to_final_gcp(args.sample_barcode,
                              profile,
@@ -49,7 +49,8 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
     storage_client = Client()
-    target_bucket_portal: Bucket = storage_client.bucket(portal_bucket, user_project='hmf-ops') # TODO set back user project
+    target_bucket_portal: Bucket = storage_client.bucket(portal_bucket,
+                                                         user_project='hmf-ops')  # TODO set back user project
     target_bucket_final: Bucket = storage_client.bucket(final_bucket)
 
     for report in reports:
@@ -89,6 +90,12 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
 
 
 def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
+    """
+    Copies the blob from the source bucket to the target bucket and prints this in the stdout.
+    :param source_bucket: the bucket to copy from
+    :param target_bucket: the bucket to copy to
+    :param blob_name: the name of the blob
+    """
     print(f"Copying '{blob_name}' to '{target_bucket}'...")
     blob = Blob(blob_name, source_bucket)
     source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket)
