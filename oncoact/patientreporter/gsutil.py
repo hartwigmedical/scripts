@@ -20,3 +20,14 @@ def get_bucket_and_blob_from_gs_path(gs_path: str) -> (str, str):
     blob = groups[1][1:] if groups[1] else None  # the [1:] is to remove the leading slash from the blob name
 
     return bucket, blob
+
+
+def get_file_name_from_blob(blob_name: str) -> str:
+    """
+    Given a blob, it will treat it as a traditional file path and return the file name (the name after the last "/").
+
+    :param blob_name: the full blob name, including (pseudo) subdirectories
+    :return: the blobs file name
+    """
+    split = blob_name.split('/')
+    return split[-1]
