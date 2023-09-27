@@ -46,6 +46,19 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     api_util = ApiUtil(profile)
     report_created = api_util.get_report_created(sample_barcode)
     report_files = report_created["report_files"]
+    run_id = report_created['run_id']
+    run = api_util.get_run(run_id)
+    if not run:
+        cont = input(
+            f"No associate run found for tumor barcode '{sample_barcode}'. Are you sure you want to continue? (y/n)\n")
+        if cont.lower() != 'y':
+            exit(1)
+    if run['status'] != 'Validated':
+        cont = input(f"Run status for tumor barcode '{sample_barcode}' is not yet 'Validated' "
+                     f"(actual status: {run['status']}). Are you sure you want to continue? (y/n) ")
+        if cont.lower() != 'y':
+            exit(1)
+
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
     storage_client = Client()
