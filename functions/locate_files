@@ -113,7 +113,7 @@ locate_research_patient_db() {
 }
 
 locate_prod_clinical_patient_db() {
-    echo "/data/tools/patient-db/3.72/patient-db.jar"
+    echo "/data/tools/patient-db/5.33.2/patient-db.jar"
 }
 
 locate_diagnostic_patient_db() {
