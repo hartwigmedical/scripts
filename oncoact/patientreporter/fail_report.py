@@ -24,6 +24,8 @@ def assemble_and_emit_event(tumor_sample_barcode, project):
     """
     Gather all the input information needed to emit the report failed event.
 
+    This method will prompt the user for the relevant information.
+
     :param tumor_sample_barcode: the tumor sample barcode of the report to emit the event for
     :param project: the gcp project to emit this event to.
     """
@@ -52,6 +54,8 @@ def emit_fail_report(client: pubsub.PublisherClient,
                      tumor_sample_barcode: str,
                      reason: str) -> str:
     """
+    Emits a report failed event.
+
     :param client: the pubsub client.
     :param topic_path: the topic path (which includes both project and topic).
     :param tumor_sample_barcode: the tumor sample barcode to emit the event for.
