@@ -76,9 +76,8 @@ class ApiUtil:
         response_json = response.json()
         return response_json[0]
 
-    def get_sample_set_by_id(self,
-                             set_id):  # TODO, this is currently not possible! sets endpoint does not allow filter by id
-        response = requests.get(url=f'{self.api_base_url()}/hmf/v1/sets', params={'id': set_id})
+    def get_sample_set_by_set_name(self, set_name):
+        response = requests.get(url=f'{self.api_base_url()}/hmf/v1/sets', params={'name': set_name})
         if not response.ok:
             raise ValueError(f"Response was not ok: '{response.status_code}' reason: '{response.reason}'")
         response_json = response.json()
