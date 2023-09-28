@@ -14,7 +14,7 @@ if [[ -z $1 || -z $2 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-data_tmp_base_path="/tmp"
+data_tmp_base_path="/data/tmp"
 data_final_base_path="/volume1/worksheets/ILLUMINA"
 
 today=$(date +%Y-%m-%d)
