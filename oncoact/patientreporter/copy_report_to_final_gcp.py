@@ -73,7 +73,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         # copy_and_log(bucket_instance, target_bucket_final, blob)
 
     sample_name = report_created['sample_name']
-    sample_set = api_util.get_sample_set(sample_name)
+    sample_set = api_util.get_sample_set_by_sample_name(sample_name)
     set_name = sample_set['name']
 
     orange_pdf = f'{set_name}/orange/{sample_name}.orange.pdf'
