@@ -60,7 +60,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
                                                          user_project='hmf-customer-portal')
     target_bucket_final: Bucket = storage_client.bucket(final_bucket)
 
-    # delete_old_report(target_bucket_portal, sample_barcode)
+    delete_old_report(target_bucket_portal, sample_barcode)
 
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
@@ -68,7 +68,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
         bucket_instance: Bucket = storage_client.bucket(bucket)
         copy_and_print(bucket_instance, target_bucket_portal, blob, blob)
-        copy_and_print(bucket_instance, target_bucket_final, blob, blob)
+        # copy_and_print(bucket_instance, target_bucket_final, blob, blob)
 
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set_by_sample_name(sample_name)
