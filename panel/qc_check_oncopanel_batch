@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+TARGETED_PIPELINE_OUTPUT_BUCKET="gs://targeted-pipeline-output-prod-1"
+
+print_usage() {
+    self=$(basename "$0")
+    echo ""
+    echo "Description: Run qc_check_oncopanel_run.py script on a batch of OncoPanel runs"
+    echo "Usage: $self \${sample_name} \${local_working_directory}"
+    echo "Examples:"
+    echo "  $self 230929 ~/tmp"
+    echo "  $self 230929_HMFregTARG_FR12345678 ~/some/nested/dir"
+    echo ""
+    exit 1
+}
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  run_id_start=$1 && shift
+  local_working_directory=$1 && shift
+
+  if [[ -z ${local_working_directory} ]]; then
+    info "Missing arguments"
+    print_usage
+  fi
+
+  driver_gene_panel=$(locate_driver_gene_panel_38_tsv) || die "Could not find driver gene panel file"
+
+  for targeted_run_url in $(gsutil ls "${TARGETED_PIPELINE_OUTPUT_BUCKET}" | sort -t_ -k4); do
+    targeted_run_url_without_end_slash="${targeted_run_url::-1}"
+    run_id="${targeted_run_url_without_end_slash##*/}"
+    if [[ ${run_id} = ${run_id_start}* ]]; then
+      qc_check_oncopanel_run.py \
+        --gcp-run-url "${targeted_run_url}" \
+        --working-directory "${local_working_directory}" \
+        --driver-gene-panel "${driver_gene_panel}" \
+          || die "Could not run QC check script for ${run_id}"
+    fi
+  done
+
+  info "Copy plots to local with command similar to: gcloud compute scp 'data-vm-prod-2:${local_working_directory}/*/plot/*' ~/Downloads/tmp/"
+  
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"
