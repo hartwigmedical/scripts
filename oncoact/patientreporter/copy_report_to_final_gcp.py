@@ -15,7 +15,8 @@ def main():
     profile = args.profile
     perform_prod_test(profile)
 
-    pipeline_output_bucket = f'diagnostic-pipeline-output-{profile}-1'
+    # pipeline_output_bucket = f'diagnostic-pipeline-output-{profile}-1'
+    pipeline_output_bucket = f'diagnostic-pipeline-output-prod-1'
     final_bucket = f"patient-reporter-final-{profile}-1"
     portal_bucket = f'hmf-customer-portal-report-shared-{profile}'
 
