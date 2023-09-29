@@ -123,13 +123,13 @@ def delete_old_report(portal_bucket: Bucket, sample_barcode):
     :param portal_bucket: the portal bucket where all the report artifacts are copied to.
     :param sample_barcode: the sample barcode for this report.
     """
-    blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode.lower())
-    if blobs_old_run.num_results > 0:
+    blobs_old_run = list(portal_bucket.list_blobs(prefix=sample_barcode.lower()))
+    if len(blobs_old_run) > 0:
         print(f"Old report artifacts found for report '{sample_barcode}':", [blob.name for blob in blobs_old_run])
         delete = input(f"Do you want to delete these? If you choose 'n' the program will exit now (y/n)\n")
         if delete.lower() != 'y':
             exit(1)
-        portal_bucket.delete_blobs(blobs=list(blobs_old_run))
+        portal_bucket.delete_blobs(blobs=blobs_old_run)
 
 
 if __name__ == "__main__":
