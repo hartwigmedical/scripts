@@ -2,7 +2,7 @@ import requests
 import argparse
 from api_util import ApiUtil
 from google.cloud.storage import Bucket, Blob, Client
-from gsutil import get_bucket_and_blob_from_gs_path
+from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob
 from cli_util import perform_prod_test
 
 
@@ -67,8 +67,9 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
 
     for report in reports:
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
+        file_name = get_file_name_from_blob(blob)
         bucket_instance: Bucket = storage_client.bucket(bucket)
-        copy_and_print(bucket_instance, target_bucket_portal, blob, blob)
+        copy_and_print(bucket_instance, target_bucket_portal, blob, f'{sample_barcode}/{file_name}')
         # copy_and_print(bucket_instance, target_bucket_final, blob, blob)
 
     sample_name = report_created['sample_name']
@@ -85,7 +86,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     pipline_output_bucket: Bucket = storage_client.bucket(pipeline_output_bucket)
     for blob in [orange_pdf, purple_sv_vcf, purple_somatic_vcf, purple_catalog, linx_fusion, linx_catalog]:
         # Replace the set_name prefix with sample_barcode
-        new_blob_name = f'{sample_barcode.lower()}{blob[len(set_name):]}'
+        new_blob_name = f'{sample_barcode}{blob[len(set_name):]}'
         copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
 
     print('Updating report shared status in the API...')
