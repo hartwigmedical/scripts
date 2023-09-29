@@ -15,12 +15,9 @@ def main():
     profile = args.profile
     perform_prod_test(profile)
 
-    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'  # if profile == 'prod' \
-    # else 'diagnostic-pipeline-output-pilot-1'
-    final_bucket = "patient-reporter-final-prod-1" if profile == 'prod' \
-        else 'temp_portal_bucket_test'  # TODO set this back to the correct value please
-    portal_bucket = 'hmf-customer-portal-report-shared-prod' if profile == 'prod' \
-        else 'temp_portal_bucket_test'  # TODO set this back to the correct value please
+    pipeline_output_bucket = f'diagnostic-pipeline-output-{profile}-1'
+    final_bucket = f"patient-reporter-final-{profile}-1"
+    portal_bucket = f'hmf-customer-portal-report-shared-{profile}'
 
     copy_report_to_final_gcp(args.sample_barcode,
                              profile,
@@ -55,22 +52,23 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
             exit(1)
     if run['status'] != 'Validated':
         cont = input(f"Run status for tumor barcode '{sample_barcode}' is not yet 'Validated' "
-                     f"(actual status: {run['status']}). Are you sure you want to continue? (y/n) ")
+                     f"(actual status: {run['status']}). Are you sure you want to continue? (y/n)\n")
         if cont.lower() != 'y':
             exit(1)
-
-    reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
-
     storage_client = Client()
     target_bucket_portal: Bucket = storage_client.bucket(portal_bucket,
-                                                         user_project='hmf-ops')  # TODO set back user project
+                                                         user_project='hmf-customer-portal')
     target_bucket_final: Bucket = storage_client.bucket(final_bucket)
+
+    delete_old_report(target_bucket_portal, sample_barcode)
+
+    reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
     for report in reports:
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
         bucket_instance: Bucket = storage_client.bucket(bucket)
-        copy_and_log(bucket_instance, target_bucket_portal, blob)
-        # copy_and_log(bucket_instance, target_bucket_final, blob)
+        copy_and_print(bucket_instance, target_bucket_portal, blob, blob)
+        copy_and_print(bucket_instance, target_bucket_final, blob, blob)
 
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set_by_sample_name(sample_name)
@@ -85,7 +83,9 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
 
     pipline_output_bucket: Bucket = storage_client.bucket(pipeline_output_bucket)
     for blob in [orange_pdf, purple_sv_vcf, purple_somatic_vcf, purple_catalog, linx_fusion, linx_catalog]:
-        copy_and_log(pipline_output_bucket, target_bucket_portal, blob)
+        # Replace the set_name prefix with sample_barcode
+        new_blob_name = f'{sample_barcode}{blob.removeprefix(set_name)}'
+        copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
 
     print('Updating report shared status in the API...')
     body = {
@@ -95,23 +95,41 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     }
     response = requests.post(f'{api_util.api_base_url()}/hmf/v1/reports/2/shared', json=body)
     if not response.ok:
-        print(f'API update failed: {response.status_code}')
+        print(f"API update failed: '{response.status_code}' reason: '{response.reason}")
         exit(1)
     print('API updated!')
-    print('All done (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ !')
+    print('All done・ﾟ✧ !')
     exit(0)
 
 
-def copy_and_log(source_bucket: Bucket, target_bucket: Bucket, blob_name: str):
+def copy_and_print(source_bucket: Bucket, target_bucket: Bucket, blob_name: str, new_blob_name: str):
     """
     Copies the blob from the source bucket to the target bucket and prints this in the stdout.
-    :param source_bucket: the bucket to copy from
-    :param target_bucket: the bucket to copy to
-    :param blob_name: the name of the blob
+
+    :param source_bucket: the bucket to copy from.
+    :param target_bucket: the bucket to copy to.
+    :param blob_name: the name of the blob.
+    :param new_blob_name: the new name of the blob within the target bucket.
     """
-    print(f"Copying '{blob_name}' to '{target_bucket}'...")
+    print(f"Copying '{blob_name}' from '{source_bucket}' to '{target_bucket}'...")
     blob = Blob(blob_name, source_bucket)
-    source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket)
+    source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket, new_name=new_blob_name)
+
+
+def delete_old_report(portal_bucket: Bucket, sample_barcode):
+    """
+    Prompts the user if they want to delete any old report artifacts for the same sample_barcode.
+    
+    :param portal_bucket: the portal bucket where all the report artifacts are copied to. 
+    :param sample_barcode: the sample barcode for this report.
+    """
+    blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode)
+
+    print(f"Old report artifacts found for report '{sample_barcode}':", [blob.name for blob in blobs_old_run])
+    delete = input(f"Do you want to delete these? If you choose 'n' the program will exit now (y/n)\n")
+    if delete.lower != 'y':
+        exit(1)
+    portal_bucket.delete_blobs(blobs=list(blobs_old_run))
 
 
 if __name__ == "__main__":
