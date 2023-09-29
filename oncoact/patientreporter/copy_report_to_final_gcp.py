@@ -84,7 +84,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     pipline_output_bucket: Bucket = storage_client.bucket(pipeline_output_bucket)
     for blob in [orange_pdf, purple_sv_vcf, purple_somatic_vcf, purple_catalog, linx_fusion, linx_catalog]:
         # Replace the set_name prefix with sample_barcode
-        new_blob_name = f'{sample_barcode}{blob.removeprefix(set_name)}'
+        new_blob_name = f'{sample_barcode}{blob[len(set_name):]}'
         copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
 
     print('Updating report shared status in the API...')
@@ -123,7 +123,7 @@ def delete_old_report(portal_bucket: Bucket, sample_barcode):
     :param portal_bucket: the portal bucket where all the report artifacts are copied to.
     :param sample_barcode: the sample barcode for this report.
     """
-    blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode)
+    blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode.lower())
     if blobs_old_run.num_results > 0:
         print(f"Old report artifacts found for report '{sample_barcode}':", [blob.name for blob in blobs_old_run])
         delete = input(f"Do you want to delete these? If you choose 'n' the program will exit now (y/n)\n")
