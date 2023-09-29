@@ -60,7 +60,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
                                                          user_project='hmf-customer-portal')
     target_bucket_final: Bucket = storage_client.bucket(final_bucket)
 
-    delete_old_report(target_bucket_portal, sample_barcode)
+    # delete_old_report(target_bucket_portal, sample_barcode)
 
     reports = [file for file in report_files if file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
 
@@ -116,20 +116,20 @@ def copy_and_print(source_bucket: Bucket, target_bucket: Bucket, blob_name: str,
     source_bucket.copy_blob(blob=blob, destination_bucket=target_bucket, new_name=new_blob_name)
 
 
-def delete_old_report(portal_bucket: Bucket, sample_barcode):
-    """
-    Prompts the user if they want to delete any old report artifacts for the same sample_barcode.
-    
-    :param portal_bucket: the portal bucket where all the report artifacts are copied to. 
-    :param sample_barcode: the sample barcode for this report.
-    """
-    blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode)
-
-    print(f"Old report artifacts found for report '{sample_barcode}':", [blob.name for blob in blobs_old_run])
-    delete = input(f"Do you want to delete these? If you choose 'n' the program will exit now (y/n)\n")
-    if delete.lower != 'y':
-        exit(1)
-    portal_bucket.delete_blobs(blobs=list(blobs_old_run))
+# def delete_old_report(portal_bucket: Bucket, sample_barcode):
+#     """
+#     Prompts the user if they want to delete any old report artifacts for the same sample_barcode.
+#
+#     :param portal_bucket: the portal bucket where all the report artifacts are copied to.
+#     :param sample_barcode: the sample barcode for this report.
+#     """
+#     blobs_old_run = portal_bucket.list_blobs(prefix=sample_barcode)
+#
+#     print(f"Old report artifacts found for report '{sample_barcode}':", [blob.name for blob in blobs_old_run])
+#     delete = input(f"Do you want to delete these? If you choose 'n' the program will exit now (y/n)\n")
+#     if delete.lower != 'y':
+#         exit(1)
+#     portal_bucket.delete_blobs(blobs=list(blobs_old_run))
 
 
 if __name__ == "__main__":
