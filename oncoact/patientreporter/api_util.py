@@ -99,7 +99,7 @@ class ApiUtil:
         return res
 
     def get_run(self, run_id):
-        response = requests.get(url=f'{self.api_base_url()}/hmf/v1/runs', params={'id': run_id})
+        response = requests.get(url=f'{self.api_base_url()}/hmf/v1/run/{run_id}')
         if not response.ok:
             raise ValueError(f"Response was not ok: '{response.status_code}' reason: '{response.reason}'")
         return response.json()[0]
