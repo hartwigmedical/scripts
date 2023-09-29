@@ -68,7 +68,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         (bucket, blob) = get_bucket_and_blob_from_gs_path(report['path'])
         bucket_instance: Bucket = storage_client.bucket(bucket)
         copy_and_print(bucket_instance, target_bucket_portal, blob, blob)
-        copy_and_print(bucket_instance, target_bucket_final, blob, blob)
+        # copy_and_print(bucket_instance, target_bucket_final, blob, blob)
 
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set_by_sample_name(sample_name)
