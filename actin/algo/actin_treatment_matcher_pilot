@@ -34,6 +34,6 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -trial_database_directory ${trial_database_directory} \
     -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
+    -atc_tsv ${atc_tsv} \
     -output_directory ${output_directory} \
-    -atc_tsv ${atc_tsv}
     "$@"
