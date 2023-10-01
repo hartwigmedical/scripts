@@ -40,7 +40,7 @@ colnames(LR_CUP) <- names
 total_nr_biopsies <- sum(LR_CUP)
 total_nr_biopsies_LR <- sum(LR_CUP[1,])
 total_nr_biopsies_CUP <- sum(LR_CUP[2,])
-total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1], select = X) 
+total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1], select = X)
 total_nr_patients_value <- length(unique(total_nr_patients$X))
 
 pdf(file= paste0(wd,"LR_CUP.pdf"), width = 10, height = 7)
@@ -60,7 +60,7 @@ for (x in quartiles){
   nonsuf <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
   suff_cells[1,i] <- suf/(suf+nonsuf)*100
   suff_cells[2,i] <- nonsuf/(suf+nonsuf)*100
-  
+
   i <- i+1
 }
 colnames(suff_cells) <- names
@@ -85,7 +85,7 @@ for (x in quartiles){
   nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & (benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
   suff_cells_LR[1,i] <- suf/(suf+nonsuf)*100
   suff_cells_LR[2,i] <- nonsuf/(suf+nonsuf)*100
-  
+
   i <- i+1
 }
 colnames(suff_cells_LR) <- names
@@ -111,7 +111,7 @@ for (x in quartiles){
   nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & (benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
   suff_cells_CUP[1,i] <- suf/(suf+nonsuf)*100
   suff_cells_CUP[2,i] <- nonsuf/(suf+nonsuf)*100
-  
+
   i <- i+1
 }
 colnames(suff_cells_CUP) <- names
@@ -184,13 +184,13 @@ dev.off()
 # WGS impact category (MIGHT NEED ADJUSTMENTS IF NEW CATEGORIES ARE ADDED)  ----------------------------------------------
 impact_category <- data.frame()
 
-no_slots <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "No slots available for WGS-informed treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-non_WGS_pref <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Non-WGS-informed treatment considered preferred" | benefit_tracking_WGS$WGS.impact.category == "Non-WGS-informed treatment considered preferred (screen failure)") & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-not_meet_req <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient did not meet non-WGS study requirements" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-not_fit <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-not_willing <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Patient not willing to take treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want experimental treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want to start experimental treatment / not fit enough" | benefit_tracking_WGS$WGS.impact.category == "Patient did not want to receive treatment based off unravelled tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-soc_new_diag <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for uncovered tumor type" | benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for new diagnosis based off WGS" | benefit_tracking_WGS$WGS.impact.category == "Treased using SOC for uncovered tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
-not_effective <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "WGS-informed treatment not expected to be effective" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes", ])
+no_slots <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "No slots available for WGS-informed treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+non_WGS_pref <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Non-WGS-informed treatment considered preferred" | benefit_tracking_WGS$WGS.impact.category == "Non-WGS-informed treatment considered preferred (screen failure)") & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+not_meet_req <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient did not meet non-WGS study requirements" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+not_fit <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+not_willing <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Patient not willing to take treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want experimental treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want to start experimental treatment / not fit enough" | benefit_tracking_WGS$WGS.impact.category == "Patient did not want to receive treatment based off unravelled tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+soc_new_diag <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for uncovered tumor type" | benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for new diagnosis based off WGS" | benefit_tracking_WGS$WGS.impact.category == "Treased using SOC for uncovered tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+not_effective <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "WGS-informed treatment not expected to be effective" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 
 impact_category[1,1] <- no_slots
 impact_category[1,2] <- non_WGS_pref
@@ -275,6 +275,6 @@ dev.off()
 WTS_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes", ])
 WTS_not_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "No", ])
 WTS_succeeded_perc <- (WTS_succeeded / (WTS_not_succeeded + WTS_succeeded))*100
-WTS_hypoth_benefit <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes") , ]) / WTS_succeeded * 100
+WTS_hypoth_benefit <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" ) , ]) / WTS_succeeded * 100
 
 
