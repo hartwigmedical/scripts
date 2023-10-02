@@ -31,8 +31,8 @@ LR_CUP <- data.frame()
 i <- 1
 
 for (x in quartiles) {
-  LR_CUP[1,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1], ])-1
-  LR_CUP[2,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1], ])
+  LR_CUP[1,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
+  LR_CUP[2,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
   i <- i+1
 }
 colnames(LR_CUP) <- names
@@ -40,7 +40,7 @@ colnames(LR_CUP) <- names
 total_nr_biopsies <- sum(LR_CUP)
 total_nr_biopsies_LR <- sum(LR_CUP[1,])
 total_nr_biopsies_CUP <- sum(LR_CUP[2,])
-total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1], select = X)
+total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1] & !is.nan(benefit_tracking_WGS$WGS.report.date), select = X)
 total_nr_patients_value <- length(unique(total_nr_patients$X))
 
 pdf(file= paste0(wd,"LR_CUP.pdf"), width = 10, height = 7)
@@ -56,8 +56,8 @@ suff_cells <- data.frame()
 i <- 1
 
 for (x in quartiles){
-  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
-  nonsuf <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
+  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
+  nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "No" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
   suff_cells[1,i] <- suf/(suf+nonsuf)*100
   suff_cells[2,i] <- nonsuf/(suf+nonsuf)*100
 
@@ -81,8 +81,8 @@ suff_cells_LR <- data.frame()
 i <- 1
 
 for (x in quartiles){
-  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
-  nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & (benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
+  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
+  nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.performed.successfully. == "No"  & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
   suff_cells_LR[1,i] <- suf/(suf+nonsuf)*100
   suff_cells_LR[2,i] <- nonsuf/(suf+nonsuf)*100
 
@@ -107,8 +107,8 @@ suff_cells_CUP <- data.frame()
 i <- 1
 
 for (x in quartiles){
-  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
-  nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & (benefit_tracking_WGS$WGS.performed.successfully. == "No" | benefit_tracking_WGS$WGS.report.date == "")  & benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], ])
+  suf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
+  nonsuf <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.performed.successfully. == "No" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), ])
   suff_cells_CUP[1,i] <- suf/(suf+nonsuf)*100
   suff_cells_CUP[2,i] <- nonsuf/(suf+nonsuf)*100
 
@@ -132,7 +132,7 @@ tat_calender <- data.frame()
 i <- 1
 
 for (x in quartiles) {
-  tat <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date < x[2] & benefit_tracking_WGS$WGS.report.date > x[1], select=TAT...calendar.days.)
+  tat <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), select=TAT...calendar.days.)
   tat_calender[1,i] <- mean(tat$TAT...calendar.days.)
   i <- i+1
 }
@@ -286,4 +286,3 @@ WTS_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.pr
 noquote(paste0("WTS found potentially actionable biomarker for LR percentage: ", round(WTS_LR_potentially_actionable_perc,1)))
 noquote(paste0("WTS LR+CUP succeeded percentage: ", round(WTS_succeeded_perc,1)))
 noquote(paste0("WTS LR+CUP hypothetical benefit percentage: ", round(WTS_hypoth_benefit_perc,1)))
-
