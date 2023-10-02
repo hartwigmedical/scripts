@@ -31,7 +31,7 @@ LR_CUP <- data.frame()
 i <- 1
 
 for (x in quartiles) {
-  LR_CUP[1,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1], ])
+  LR_CUP[1,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1], ])-1
   LR_CUP[2,i] <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1], ])
   i <- i+1
 }
