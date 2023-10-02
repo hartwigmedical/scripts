@@ -32,7 +32,7 @@ if [[ -f "${pipeline_version_file}" ]]; then
     rm "${pipeline_version_file}"
 fi
 
-version="5.32"
+version="5.33"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
