@@ -28,4 +28,4 @@ do_update_actin_clinical_curation_file "${dir}/${prefix} - Dosage Unit Translati
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Period Between Unit Interpretation.tsv" "${dir}/period_between_unit_interpretation.tsv"
 do_update_actin_clinical_curation_file "${dir}/${prefix} - Blood Transfusion Translation.tsv" "${dir}/blood_transfusion_translation.tsv"
 
-push_actin_changes_in_crunch_repo
+push_actin_changes_in_crunch_repo "Updated ACTIN clinical curation files"

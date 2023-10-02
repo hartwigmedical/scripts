@@ -13,4 +13,4 @@ pull_actin_changes_in_crunch_repo
 
 cp "${database_sql}" "$(locate_actin_local_crunch_repo)/sql_database"
 
-push_actin_changes_in_crunch_repo
+push_actin_changes_in_crunch_repo "Updated ACTIN sql database schema"

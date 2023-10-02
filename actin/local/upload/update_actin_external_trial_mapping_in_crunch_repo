@@ -12,4 +12,4 @@ target_dir="$(locate_actin_local_crunch_repo)/evidence_curation"
 
 do_update_actin_resource_file "${source_file}" "${target_file}" "${target_dir}"
 
-push_actin_changes_in_crunch_repo
+push_actin_changes_in_crunch_repo "Updated ACTIN external trial mapping"

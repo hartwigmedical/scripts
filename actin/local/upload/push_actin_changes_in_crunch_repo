@@ -2,6 +2,11 @@
 
 source message_functions || exit 1
 
+commit_message=$1 && shift
+if [[ -z ${commit_message} ]]; then
+    commit_message="Updated ACTIN resource files"
+fi
+
 current_path=$(pwd)
 
 info "Committing and pushing changes in actin crunch resources"
@@ -9,7 +14,7 @@ info "Committing and pushing changes in actin crunch resources"
 cd "$HOME/hmf/repos/crunch-resources-private"
 
 git pull
-git commit -m "Updated ACTIN resource files" actin
+git commit -m "${commit_message}" actin
 git push
 
 cd "${current_path}"
