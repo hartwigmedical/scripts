@@ -48,7 +48,7 @@ par(mar=c(5,5,5,5),mfrow=c(1,1))
 barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)), main = paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "))
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)), main = paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "), add=TRUE)
-dev.off()
+invisible(dev.off())
 
 
 # Sufficient tumor cells --------------------------------------------------
@@ -73,7 +73,7 @@ barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, hori
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, main = paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGTS analysis"), add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-dev.off()
+invisible(dev.off())
 
 
 # Sufficient tumor cells LR --------------------------------------------------
@@ -99,7 +99,7 @@ barplot(as.matrix(suff_cells_LR,1), xlim = c(0,100), col=c("blue","red"), las=1,
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(suff_cells_LR,1), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, main = "LR", add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-dev.off()
+invisible(dev.off())
 
 
 # Sufficient tumor cells CUP --------------------------------------------------
@@ -124,7 +124,7 @@ barplot(as.matrix(suff_cells_CUP,1), xlim = c(0,100), col=c("blue","red"), las=1
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(suff_cells_CUP,1), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, main = "CUP", add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-dev.off()
+invisible(dev.off())
 
 
 # TAT in calender days ---------------------------------------------------------------------
@@ -144,7 +144,7 @@ pdf(file= paste0(wd,"TAT_calender_days.pdf"), width = 10, height = 7)
 barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", main = paste0("Average TAT (turnaround-time) in calendar days for WGS is ", average_tat, " days"))
 grid(nx=NA,ny=NULL,lty=1,col="gray",lwd=1)
 barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", main = paste0("Average TAT (turnaround-time) in calendar days for WGS is ", average_tat, " days"), add=TRUE)
-dev.off()
+invisible(dev.off())
 
 tat_calender_this_quartile <- tat_calender[1, 1]
 
@@ -161,7 +161,7 @@ lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"WGS_allowed_therapy.pdf"), width = 10, height = 7)
 pie(slices, labels = lbls, col=c("red","blue"),main="Count of WGS allowed therapy?")
-dev.off()
+invisible(dev.off())
 
 
 # Patient got treated based on WGS biomarker ----------------------------------------------
@@ -178,7 +178,7 @@ lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"treated_based_on_WGS.pdf"), width = 10, height = 7)
 pie(slices,labels = lbls, col=c("lightgreen","blue","orange","red"),main="Patient got treated based on WGS biomarker?")
-dev.off()
+invisible(dev.off())
 
 
 # WGS impact category (MIGHT NEED ADJUSTMENTS IF NEW CATEGORIES ARE ADDED)  ----------------------------------------------
@@ -207,7 +207,7 @@ par(mar=c(5,25,5,5))
 barplot(as.matrix(rev(impact_category)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker")
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(rev(impact_category)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker", add=TRUE)
-dev.off()
+invisible(dev.off())
 
 lr_with_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 lr_with_biomarker_not_treat <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No", ])
@@ -236,7 +236,7 @@ lbls <- paste0(lbls,"%")
 pdf(file= paste0(wd,"WGS_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,7,5,5))
 pie(slices,labels = lbls, col=c("orange","blue","red"),main = paste0("For ", nr_confirmation_or_diagnosis, "% CUP patients WGS led to confirmation (", nr_confirmation, "%) or actual diagnosis (", nr_actual_diagnosis, "%)"))
-dev.off()
+invisible(dev.off())
 
 
 # WTS CUP ----------------------------------------------
@@ -253,7 +253,7 @@ barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), main = "CUPs where WTS leads to high confidence CUPPA prediction", add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-dev.off()
+invisible(dev.off())
 
 WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
 
@@ -273,7 +273,7 @@ barplot(as.matrix(WTS_LR), col=c("blue","red"), las=1, horiz = TRUE, legend = c(
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
 barplot(as.matrix(WTS_LR), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), main = "LR patients with potential additional biomarker from WTS", add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-dev.off()
+invisible(dev.off())
 
 WTS_LR_potentially_actionable_perc <- WTS_LR_potential_actionable / nr_of_lr * 100
 
