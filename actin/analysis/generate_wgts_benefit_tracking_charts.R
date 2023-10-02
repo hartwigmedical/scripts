@@ -255,6 +255,9 @@ barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 dev.off()
 
+WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
+
+noquote(paste0("WTS improved prediction for CUP percentage: ", round(WTS_CUP_improved_prediction_perc,1)))
 
 # WTS LR ----------------------------------------------
 WTS_LR_potential_actionable <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
@@ -272,9 +275,15 @@ barplot(as.matrix(WTS_LR), col=c("blue","red"), las=1, horiz = TRUE, legend = c(
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 dev.off()
 
+WTS_LR_potentially_actionable_perc <- WTS_LR_potential_actionable / nr_of_lr * 100
+
 WTS_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes", ])
 WTS_not_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "No", ])
 WTS_succeeded_perc <- (WTS_succeeded / (WTS_not_succeeded + WTS_succeeded))*100
-WTS_hypoth_benefit <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" ) , ]) / WTS_succeeded * 100
 
+WTS_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" ) , ]) / WTS_succeeded * 100
+
+noquote(paste0("WTS found potentially actionable biomarker for LR percentage: ", round(WTS_LR_potentially_actionable_perc,1)))
+noquote(paste0("WTS LR+CUP succeeded percentage: ", round(WTS_succeeded_perc,1)))
+noquote(paste0("WTS LR+CUP hypothetical benefit percentage: ", round(WTS_hypoth_benefit_perc,1)))
 
