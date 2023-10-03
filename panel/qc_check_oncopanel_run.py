@@ -693,8 +693,8 @@ def gsutil_cat(gcp_url: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="qc_check_oncopanel_run.py", description="Perform QC checks for OncoPanel run")
-    parser.add_argument("--gcp_run_url", "-u", type=str, required=True, help="GCP path to run directory")
-    parser.add_argument("--working_directory", "-w", type=Path, required=True, help="Local working directory")
+    parser.add_argument("--gcp-run-url", "-u", type=str, required=True, help="GCP path to run directory")
+    parser.add_argument("--working-directory", "-w", type=Path, required=True, help="Local working directory")
     parser.add_argument("--driver-gene-panel", "-d", type=Path, required=True, help="Driver gene panel")
     parser.add_argument("--output-file", "-o", type=Path, help="Output file with summary of qc check results")
     return parser.parse_args()
