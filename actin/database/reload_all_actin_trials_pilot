@@ -7,6 +7,6 @@ actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="$(locate_pilot_actin)"
 actin_database_name="actin_pilot"
 
-treatment_database_directory="$(locate_actin_treatment_database_directory)"
+trial_database_directory="$(locate_actin_trial_database_directory)"
 
-do_load_actin_treatments ${treatment_database_directory} "${actin_credentials}" ${actin_jar} ${actin_database_name}
+do_load_actin_trials ${trial_database_directory} "${actin_credentials}" ${actin_jar} ${actin_database_name}

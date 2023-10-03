@@ -396,8 +396,8 @@ locate_actin_cohort_trial_config_directory() {
     echo "/data/resources/crunch/actin/cohort_analysis/trial_config"
 }
 
-locate_actin_cohort_treatment_database_directory() {
-    echo "/data/experiments/charlotte_emc_actionability/treatment_database"
+locate_actin_cohort_trial_database_directory() {
+    echo "/data/experiments/charlotte_emc_actionability/trial_database"
 }
 
 locate_actin_cohort_treatment_match_directory() {
@@ -533,8 +533,8 @@ locate_actin_molecular_json() {
     echo "${molecular_json}"
 }
 
-locate_actin_treatment_database_directory() {
-    echo "/data/actin/treatment_database"
+locate_actin_trial_database_directory() {
+    echo "/data/actin/trial_database"
 }
 
 locate_actin_treatment_match_directory() {
