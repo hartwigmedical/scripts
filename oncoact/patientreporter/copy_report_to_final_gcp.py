@@ -1,4 +1,3 @@
-import requests
 import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Blob, Client
@@ -41,11 +40,11 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     :param pipeline_output_bucket: the bucket where the pipeline output is stored.
     :param sample_barcode: The sample_barcode whose run to process.
     """
-    api_util = RestClient(profile)
-    report_created = api_util.get_report_created(sample_barcode)
+    rest_client = RestClient(profile)
+    report_created = rest_client.get_report_created(sample_barcode)
     report_files = report_created["report_files"]
     run_id = report_created['run_id']
-    run = api_util.get_run(run_id)
+    run = rest_client.get_run(run_id)
     if not run:
         cont = input(
             f"No associated run found for tumor barcode '{sample_barcode}'. Are you sure you want to continue? (y/n)\n")
@@ -73,7 +72,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         # copy_and_print(bucket_instance, target_bucket_final, blob, blob)
 
     sample_name = report_created['sample_name']
-    sample_set = api_util.get_sample_set_by_sample_name(sample_name)
+    sample_set = rest_client.get_sample_set_by_sample_name(sample_name)
     set_name = sample_set['name']
 
     orange_pdf = f'{set_name}/orange/{sample_name}.orange.pdf'
@@ -90,15 +89,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
 
     print('Updating report shared status in the API...')
-    body = {
-        'report_created_id': report_created['id'],
-        'notify_users': 'false',
-        'publish_to_portal': 'true'
-    }
-    response = requests.post(f'{api_util._api_base_url()}/hmf/v1/reports/2/shared', json=body)
-    if not response.ok:
-        print(f"API update failed: '{response.status_code}' reason: '{response.reason}")
-        exit(1)
+    rest_client.post_report_shared(report_created_id=report_created['id'], publish_to_portal=True, notify_users=False)
     print('API updated!')
     print('All done・ﾟ✧ !')
     exit(0)

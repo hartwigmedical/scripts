@@ -90,11 +90,21 @@ class RestClient:
         return res
 
     def get_run(self, run_id):
+        """
+        Gets the run by id.
+        :param run_id: the id of the run to get.
+        :return: the run json.
+        """
         response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs/{run_id}')
         response.raise_for_status()
         return response.json()
 
     def get_failed_executions(self):
+        """
+        Gets the failed executions from the reporting-pipeline.
+
+        :return: a dictionary `{run_id: stage_states}` where the value contains the stage information.
+        """
         response = requests.get(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
         response.raise_for_status()
 
@@ -110,11 +120,24 @@ class RestClient:
         return res
 
     def get_tumor_sample_barcode(self, tumor_isolation_barcode):
+        """
+        Gets the tumor sample barcode from the tumor isolation barcode.
+
+        This method does not rely on the existence of a report. It uses Lama to retrieve the tumor sample barcode.
+        :param tumor_isolation_barcode: the tumor isolation barcode.
+        :return: the tumor sample barcode.
+        """
         response = requests.get(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')
         response.raise_for_status()
         return response.json()['sampleBarcode']
 
     def get_tumor_sample_barcode_from_run_id(self, run_id):
+        """
+        For a given run_id, return the tumor sample barcode.
+
+        :param run_id: the run_id.
+        :return: the associated tumor sample barcode.
+        """
         run = self.get_run(run_id)
         sample_set = self.get_sample_set_by_id(run['set']['id'])
         samples = sample_set['samples']
@@ -125,3 +148,20 @@ class RestClient:
         tumor_isolation_barcode = tumor_sample['barcode']
 
         self.get_tumor_sample_barcode(tumor_isolation_barcode)
+
+    def post_report_shared(self, report_created_id, notify_users, publish_to_portal):
+        """
+        Set a report as shared in the API.
+
+        :param report_created_id: the reports created ID found at the created endpoint of the api.
+        :param notify_users: boolean value that determines whether to notify the users that the report has been shared.
+        :param publish_to_portal: boolean value that determines whether the report should be published to the portal.
+        """
+
+        body = {
+            'report_created_id': report_created_id,
+            'notify_users': notify_users,
+            'publish_to_portal': publish_to_portal
+        }
+        response = requests.post(f'{self._api_base_url}/hmf/v1/reports/2/shared', json=body)
+        response.raise_for_status()
