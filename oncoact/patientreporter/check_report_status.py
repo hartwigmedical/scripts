@@ -2,7 +2,9 @@ import argparse
 import pandas as pd
 import subprocess
 
-from api_util import ApiUtil
+import requests
+
+from rest_util import RestClient
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Blob, Client
 
@@ -18,22 +20,22 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    client = Client(project='hmf-pipeline-prod')
-    check_report_status(client, args.profile)
+    storage_client = Client(project='hmf-pipeline-prod')
+    check_report_status(storage_client, args.profile)
 
 
-def check_report_status(client: Client, profile: str):
-    api_util = ApiUtil(profile)
+def check_report_status(storage_client: Client, profile: str):
+    rest_client = RestClient(profile)
 
-    all_reports = pd.DataFrame(api_util.get_all_reports_created())
+    all_reports = pd.DataFrame(rest_client.get_all_reports_created())
     # these if checks are to ensure that if the dataframe is empty,
     # it still has the required columns to prevent KeyErrors.
     if len(all_reports) == 0:
         all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
-    all_shared_reports = pd.DataFrame([shared['report_created'] for shared in api_util.get_all_reports_shared()])
+    all_shared_reports = pd.DataFrame([shared['report_created'] for shared in rest_client.get_all_reports_shared()])
     if len(all_shared_reports) == 0:
         all_shared_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
-    all_runs = pd.DataFrame(api_util.get_runs())
+    all_runs = pd.DataFrame(rest_client.get_runs())
     if len(all_runs) == 0:
         all_runs = pd.DataFrame(columns=['status', 'id'])
 
@@ -49,7 +51,7 @@ def check_report_status(client: Client, profile: str):
     validated_reports_and_shared = all_shared_reports[all_shared_reports['run_id'].isin(validated_runs['id'])].iloc[:5]
     validated_reports_but_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(validated_runs['id'])].iloc[
                                        :5]
-    validated_warnings_and_errors = check_errors_for_validated_reports(client, pd.concat(
+    validated_warnings_and_errors = check_errors_for_validated_reports(storage_client, pd.concat(
         [validated_reports_and_shared, validated_reports_but_not_shared], ignore_index=True),
                                                                        validated_runs, profile)
 
@@ -59,6 +61,10 @@ def check_report_status(client: Client, profile: str):
 
     runs_without_report = all_runs[~all_runs['id'].isin(all_reports['run_id'])]
     reports_without_runs = all_reports[~all_reports['run_id'].isin(all_runs['id'])]
+
+    failed_executions = rest_client.get_failed_executions()
+    failed_sample_barcodes_with_reason = {rest_client.get_tumor_sample_barcode_from_run_id(run_id): errors for
+                                          (run_id, errors) in failed_executions.items()}
 
     print('----------')
     print("Failed reports that have not yet been shared:\n")
@@ -96,18 +102,15 @@ def check_report_status(client: Client, profile: str):
             print(f"\tWarnings: {validated_warnings_and_errors[report_id]}")
 
     print('----------')
-    print("Validated reports that have already been shared but still have warnings:\n")
-    for i, report in validated_reports_and_shared.iterrows():
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tset name: {get_set_name_from_report(report, validated_runs)}")
-        report_id = report['id']
-        if validated_warnings_and_errors[report_id]:
-            print(f"\tWarnings: {validated_warnings_and_errors[report_id]}")
-
-    print('----------')
     print("Reports without a run:\n")
     for i, report in enumerate(reports_without_runs['sample_barcode']):
         print(f"{i + 1} - {report}")
+
+    # Runs that failed in the patient reporter:
+    print('----------')
+    print("Runs whose execution failed in the reporting pipeline")
+    for i, (tumor_barcode, errors) in enumerate(failed_sample_barcodes_with_reason):
+        print(f"{i+1} - {tumor_barcode} : {errors}")
 
 
 def check_errors_for_validated_reports(client: Client, validated_reports: pd.DataFrame,

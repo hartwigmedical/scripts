@@ -2,7 +2,7 @@ import subprocess
 import os
 import shutil
 import argparse
-from api_util import ApiUtil
+from rest_util import RestClient
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob
 from google.cloud.storage import Bucket, Client
 
@@ -28,7 +28,7 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     :param sample_barcode: the sample barcode of the report to upload the artifacts for.
     :param pipeline_output_bucket: the output bucket of the pipeline. This is where the artifacts are located.
     """
-    api_util = ApiUtil(profile='prod')
+    api_util = RestClient(profile='prod')
     report_created = api_util.get_report_created(sample_barcode)
     sample_name = report_created['sample_name']
     sample_set = api_util.get_sample_set_by_sample_name(sample_name)

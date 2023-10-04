@@ -1,6 +1,6 @@
 import requests
 import argparse
-from api_util import ApiUtil
+from rest_util import RestClient
 from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob
 from cli_util import perform_prod_test
@@ -41,7 +41,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     :param pipeline_output_bucket: the bucket where the pipeline output is stored.
     :param sample_barcode: The sample_barcode whose run to process.
     """
-    api_util = ApiUtil(profile)
+    api_util = RestClient(profile)
     report_created = api_util.get_report_created(sample_barcode)
     report_files = report_created["report_files"]
     run_id = report_created['run_id']
@@ -95,7 +95,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         'notify_users': 'false',
         'publish_to_portal': 'true'
     }
-    response = requests.post(f'{api_util.api_base_url()}/hmf/v1/reports/2/shared', json=body)
+    response = requests.post(f'{api_util._api_base_url()}/hmf/v1/reports/2/shared', json=body)
     if not response.ok:
         print(f"API update failed: '{response.status_code}' reason: '{response.reason}")
         exit(1)
