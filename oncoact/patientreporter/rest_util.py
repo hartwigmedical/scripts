@@ -25,18 +25,24 @@ class RestClient:
 
     def get_report_created(self, sample_barcode):
         """
-        Queries the 'reports/2/created' endpoint with the given sample_barcode.
+        Queries the 'reports/2/created' endpoint for the given sample_barcode.
 
         :param sample_barcode: the sample_barcode to query for.
         :return: The query result.
-        :raises ValueError: If the response returned a non 2XX status code or if the query returned more than 1 result.
+        :raises ValueError: If the response returned a non 2XX status code.
         """
         response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/2/created',
                                 params={'sample_barcode': sample_barcode})
         response.raise_for_status()
         response_json = response.json()
         if len(response_json) > 1:
-            raise ValueError(f"Query returned more than one result: '{len(response_json)}'")
+            print(f"Query returned more than one result: '{len(response_json)}'")
+            print('#', 'create_time', sep='\t')
+            for i, created in enumerate(response_json):
+                print(i, created, sep='\t')
+            to_return = input("Which one do you want to return? Please enter the #\n")
+            return response_json[to_return]
+
         return response_json[0]
 
     def get_all_reports_shared(self):
