@@ -2,18 +2,19 @@
 
 source message_functions || exit 1
 
+vm=$1 && shift
+project=$1 && shift
 tool=$1 && shift
 
-if [[ -z ${tool} ]]; then
+if [[ -z "${vm}" || -z "${project}" || -z "${tool}" ]]; then
     error "Not enough parameters provided. Exiting"
 fi
 
-vm="serve-vm-prod-1"
 tool_jar=$(find -L "${HOME}/hmf/repos/serve/${tool}/target" -type f -name "*-jar-with-dependencies.jar")
 
 if [[ ! -f "${tool_jar}" ]]; then
     error "Could not locate ${tool} jar!"
 fi
 
-info "Copying ${tool_jar} to ${vm}"
-gcloud compute scp ${tool_jar} ${vm}:/data/experiments/pilot_tools/${tool}/${tool}.jar
+info "Copying ${tool_jar} to '${vm}' on project '${project}'"
+gcloud compute --project ${project} scp ${tool_jar} ${vm}:/data/experiments/pilot_tools/${tool}/${tool}.jar

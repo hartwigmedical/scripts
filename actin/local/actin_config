@@ -8,8 +8,12 @@ pilot_actin_project() {
     echo "hmf-crunch"
 }
 
-production_actin_vm() {
+production_actin_ops_vm() {
     echo "prod-vm-operations"
+}
+
+production_actin_serve_vm() {
+    echo "prod-vm-serve"
 }
 
 pilot_actin_vm() {

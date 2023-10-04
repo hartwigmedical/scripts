@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source io_functions || exit 1
+source actin_config || exit 1
 
 version="local-SNAPSHOT"
 
@@ -12,4 +13,7 @@ cp -r "${source_path}" "${target_path}"
 
 mv "${target_path}/target/algo-${version}-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
 
-do_deploy_pilot_serve_tool "serve"
+vm="$(production_actin_serve_vm)"
+project="$(production_actin_project)"
+
+do_deploy_pilot_serve_tool ${vm} ${project} "serve"

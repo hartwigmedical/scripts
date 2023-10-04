@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-do_deploy_pilot_serve_tool "ckb-importer"
