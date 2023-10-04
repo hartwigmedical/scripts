@@ -43,7 +43,6 @@ class RestClient:
         """
         Queries the 'reports/2/shared' endpoint and returns all results.
 
-        :param profile which profile to run this in (pilot/prod etc.)
         :return: the query result.
         :raises ValueError: If the response returned a non 2XX status code.
         """

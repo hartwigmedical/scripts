@@ -2,17 +2,9 @@ import argparse
 import pandas as pd
 import subprocess
 
-import requests
-
 from rest_util import RestClient
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Bucket, Blob, Client
-
-
-class ReportWithStatus:
-    def __init__(self, report, status):
-        self.report = report
-        self.status = status
 
 
 def main():
@@ -162,11 +154,11 @@ def get_health_error_validated_run(set_name: str) -> str:
     return subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
 
 
-def has_rose_error(client: Client, set_name: str, sample_name: str, profile: str):
+def has_rose_error(storage_client: Client, set_name: str, sample_name: str, profile: str):
     """
     Finds whether there is an error with the 'rose' tool for a given set and sample.
 
-    :param client: the gcp storage client to access the rose log.
+    :param storage_client: the gcp storage client to access the rose log.
     :param set_name: the set to check for.
     :param sample_name: the sample to check for within the set.
     :param profile: the profile to run this script in (pilot/prod/etc).
@@ -174,7 +166,7 @@ def has_rose_error(client: Client, set_name: str, sample_name: str, profile: str
     """
     bucket_name = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' else 'diagnostic-pipeline-output-pilot-1'
 
-    bucket: Bucket = client.bucket(bucket_name)
+    bucket: Bucket = storage_client.bucket(bucket_name)
     blob: Blob = bucket.get_blob(f'{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv')
 
     content = blob.download_as_string().decode()

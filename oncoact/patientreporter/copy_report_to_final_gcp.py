@@ -48,7 +48,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     run = api_util.get_run(run_id)
     if not run:
         cont = input(
-            f"No associate run found for tumor barcode '{sample_barcode}'. Are you sure you want to continue? (y/n)\n")
+            f"No associated run found for tumor barcode '{sample_barcode}'. Are you sure you want to continue? (y/n)\n")
         if cont.lower() != 'y':
             exit(1)
     if run['status'] != 'Validated':
