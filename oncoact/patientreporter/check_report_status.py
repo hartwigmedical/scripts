@@ -110,7 +110,14 @@ def check_report_status(storage_client: Client, profile: str):
     print('----------')
     print("Runs whose execution failed in the reporting pipeline")
     for i, (tumor_barcode, errors) in enumerate(failed_sample_barcodes_with_reason):
-        print(f"{i+1} - {tumor_barcode} : {errors}")
+        print(f"{i + 1} - {tumor_barcode} : {errors}")
+
+    print('----------')
+    print('Runs without a report')
+    for i, run_id in enumerate(runs_without_report):
+        sample_barcode = rest_client.get_tumor_sample_barcode_from_run_id(run_id)
+        print(f'{i + 1} - {sample_barcode}')
+        print(f'\trun_id: {run_id}')
 
 
 def check_errors_for_validated_reports(client: Client, validated_reports: pd.DataFrame,
@@ -141,7 +148,8 @@ def check_errors_for_validated_reports(client: Client, validated_reports: pd.Dat
             errors.append("Summary was incorrect (rose error)")
         if "WARN" in log_content:
             errors.append("Warn was present in log file")
-        if "Consent" in log_content or "Mismatching ref sample name" in log_content or "do not match" in log_content or "Missing or invalid hospital" in log_content:
+        if (
+                "Consent" in log_content or "Mismatching ref sample name" in log_content or "do not match" in log_content or "Missing or invalid hospital" in log_content):
             errors.append("Lims error")
         if "WARN" in health_error:
             errors.append("Health check error")
