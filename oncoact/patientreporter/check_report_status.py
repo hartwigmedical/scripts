@@ -202,8 +202,18 @@ def get_rose_location_as_gs_string(profile, set_name, sample_name):
     return f'gs://{bucket_name}/{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv'
 
 
-def get_set_name_from_report(report, runs):
-    return runs[runs['id'] == report['run_id']].iloc[:1]['set'].values[0]['name']
+def get_set_name_from_report(report, all_runs):
+    """
+    Given a report (as found in the report created endpoint), this method tries to find the
+    sample set name associated with the report.
+
+    In order to do this, it needs a list of runs to get the SOP string from.
+
+    :param report: the report
+    :param all_runs: all the runs
+    :return: the sample_set name
+    """
+    return all_runs[all_runs['id'] == report['run_id']].iloc[:1]['set'].values[0]['name']
 
 
 if __name__ == '__main__':
