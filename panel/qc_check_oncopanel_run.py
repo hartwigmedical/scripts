@@ -16,6 +16,11 @@ TSV_SEPARATOR = "\t"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
 DEL_MIN_PURITY_THRESHOLD = Decimal("0.30")
+AMP_MIN_PURITY_THRESHOLD = Decimal("0.20")
+TMB_MIN_PURITY_THRESHOLD = Decimal("0.10")
+MSI_MIN_PURITY_THRESHOLD = Decimal("0.10")
+SOMATIC_VARIANT_MIN_PURITY_THRESHOLD = Decimal("0.10")
+
 DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
 RECURRENT_PARTIAL_DEL_GENES = {"BRCA2", "PTEN", "RASA1", "RB1"}
 
@@ -275,7 +280,10 @@ def get_qc_check_output_text(
     lines.append(f"Percent excluded capped: {wgs_metrics.percent_excluded_capped}")
     lines.append(f"Percent excluded total: {wgs_metrics.percent_excluded_total}")
     lines.append(f"")
-
+    if purple_qc.qc_status != "PASS":
+        lines.append(f"WARN: Non-PASS Purple QC status: {purple_qc.qc_status}")
+    else:
+        lines.append(f"Purple QC status: {purple_qc.qc_status}")
     driver_panel_genes = {entry.gene for entry in driver_gene_panel_entries}
     min_copy_numbers_in_driver_genes = [
         gene_cn.min_copy_number for gene_cn in gene_copy_numbers
@@ -289,23 +297,51 @@ def get_qc_check_output_text(
         f"{negative_min_copy_numbers_in_driver_genes_count} of {len(driver_gene_panel_entries)}"
     )
     lines.append(f"Lowest minCN in driver panel genes: {min(min_copy_numbers_in_driver_genes)}")
-    if purple_qc.qc_status != "PASS":
-        lines.append(f"WARN: Non-PASS Purple QC status: {purple_qc.qc_status}")
-    amp_drivers_needing_manual_curation = [
-        driver for driver in drivers
-        if (driver.driver_type == DriverType.AMP or driver.driver_type == DriverType.PARTIAL_AMP) and
-           driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD
-    ]
-    if amp_drivers_needing_manual_curation:
-        driver_string = "\n".join([str(driver) for driver in amp_drivers_needing_manual_curation])
-        lines.append(f"WARN: AMP driver needs manual curation:\n{driver_string}")
+    lines.append("")
+
+    if purple_qc.purity < TMB_MIN_PURITY_THRESHOLD:
+        lines.append(
+            f"WARN: TMB unreliable due to purity {purple_qc.purity} < {TMB_MIN_PURITY_THRESHOLD}"
+        )
+    if purple_qc.purity < MSI_MIN_PURITY_THRESHOLD:
+        lines.append(
+            f"WARN: MSI unreliable due to purity {purple_qc.purity} < {MSI_MIN_PURITY_THRESHOLD}"
+        )
+    if purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
+        mutation_drivers = [driver for driver in drivers if driver.driver_type == DriverType.MUTATION]
+        if mutation_drivers:
+            gene_name_string = ", ".join([driver.gene_name for driver in mutation_drivers])
+            lines.append(
+                f"WARN: MUTATION drivers unreliable due to purity {purple_qc.purity} < {SOMATIC_VARIANT_MIN_PURITY_THRESHOLD}: {gene_name_string}"
+            )
     if purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
         del_drivers = [driver for driver in drivers if driver.driver_type == DriverType.DEL]
         if del_drivers:
-            driver_string = "\n".join([str(driver) for driver in del_drivers])
+            gene_name_string = ", ".join([driver.gene_name for driver in del_drivers])
             lines.append(
-                f"WARN: DEL driver unreliable due to purity {purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}:\n{driver_string}"
+                f"WARN: DEL drivers unreliable due to purity {purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
+    if purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
+        amp_drivers = [driver for driver in drivers if driver.driver_type == DriverType.AMP]
+        if amp_drivers:
+            gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers])
+            lines.append(
+                f"WARN: AMP drivers unreliable due to purity {purple_qc.purity} < {AMP_MIN_PURITY_THRESHOLD}: {gene_name_string}"
+            )
+    lines.append("")
+
+    partial_amp_drivers = [driver for driver in drivers if driver.driver_type == DriverType.PARTIAL_AMP]
+    if partial_amp_drivers:
+        gene_name_string = ", ".join([driver.gene_name for driver in partial_amp_drivers])
+        lines.append(f"WARN: Partial AMP drivers called, but haven't been validated: {gene_name_string}")
+    amp_drivers_needing_manual_curation = [
+        driver for driver in drivers
+        if (driver.driver_type == DriverType.AMP) and
+           driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD
+    ]
+    if amp_drivers_needing_manual_curation:
+        gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers_needing_manual_curation])
+        lines.append(f"WARN: AMP drivers need manual curation: {gene_name_string}")
     suspicious_partial_dels = [
         driver for driver in drivers
         if driver.driver_type == DriverType.DEL
@@ -325,9 +361,15 @@ def get_qc_check_output_text(
             ]
             for exon_coverage in sorted(relevant_exon_coverages, key=lambda x: x.exon_rank):
                 deletion_status = get_deletion_status(exon_coverage, somatic_copy_numbers)
-                per_driver_lines.append("\t".join(
-                    [exon_coverage.gene_name, str(exon_coverage.exon_rank), deletion_status,
-                     str(exon_coverage.median_depth)]))
+                line = "\t".join(
+                    [
+                        exon_coverage.gene_name,
+                        str(exon_coverage.exon_rank),
+                        deletion_status,
+                        str(exon_coverage.median_depth)
+                    ]
+                )
+                per_driver_lines.append(line)
         driver_string = "\n".join(per_driver_lines)
         lines.append(f"WARN: Partial del called in suspicious gene:\n{driver_string}")
     dels_in_suspicious_partial_del_gene = [
@@ -337,10 +379,15 @@ def get_qc_check_output_text(
            and driver.max_copy_number < DELETION_COPY_NUMBER_THRESHOLD
     ]
     if dels_in_suspicious_partial_del_gene:
-        driver_string = "\n".join([str(driver) for driver in dels_in_suspicious_partial_del_gene])
-        lines.append(f"WARN: Full deletion called in gene suspicious for partial DELs:\n{driver_string}")
+        gene_name_string = ", ".join([driver.gene_name for driver in dels_in_suspicious_partial_del_gene])
+        lines.append(f"WARN: Full deletion called in gene suspicious for partial DELs: {gene_name_string}")
 
-    return "\n".join(lines)
+    lines.append("")
+    lines.append("Driver catalog:")
+    for driver in drivers:
+        lines.append(str(driver))
+
+    return "\n".join(lines) + "\n"
 
 
 def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers: List[SomaticCopyNumber]) -> str:
