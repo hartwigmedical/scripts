@@ -32,7 +32,7 @@ print_usage(){
     echo "Notes:"
     echo "  - Classes with TSV table print support: ${classes_with_table_support[*]}"
     echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
-    echo "  - For all endpoints see http://lama.prod-1/api/ui"
+    echo "  - For all endpoints see http://lama.prod-1/api/ui (or http://lama.pilot-1/api/ui)"
     echo "---"
     exit 1
 }
