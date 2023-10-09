@@ -36,6 +36,12 @@ version="5.33"
 info "Setting pipeline version to ${version} in ${run_dir}"
 echo ${version} >> ${pipeline_version_file}
 
+# Create a plot directory linx if it doesn't exist (TODO: Remove upon upgrade to ORANGE v2.8.0)
+if [[ ! -d "${run_dir}/linx/plot" ]]; then
+    warn "No linx plot directory present! Creating an empty plot dir but please verify!"
+    mkdir "${run_dir}/linx/plot"
+fi
+
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
 

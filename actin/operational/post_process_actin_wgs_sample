@@ -35,6 +35,7 @@ fi
 info "Copying ${match_run} to ${run_dir}"
 cp -r "${match_run}" "${run_dir}"
 
+# Create a plot directory linx if it doesn't exist (TODO: Remove upon upgrade to ORANGE v2.8.0)
 if [[ ! -d "${run_dir}/linx/plot" ]]; then
     warn "No linx plot directory present! Creating an empty plot dir but please verify!"
     mkdir "${run_dir}/linx/plot"
