@@ -46,7 +46,7 @@ ref_genome_version="37"
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_date ${collection_date} \
+    -sampling_date ${collection_date} \
     -ref_genome_version ${ref_genome_version} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
