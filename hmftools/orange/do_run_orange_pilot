@@ -41,7 +41,7 @@ else
     fi
 fi
 
-ref_genome_version="37"
+ref_genome_version="38"
 
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
