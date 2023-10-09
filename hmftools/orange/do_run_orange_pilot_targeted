@@ -27,7 +27,7 @@ linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
-info "Running ORANGE pilot panel on ${run_dir}"
+info "Running ORANGE pilot in targeted-mode on ${run_dir}"
 
 do_run_orange_pilot \
     ${run_dir} \
