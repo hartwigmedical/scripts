@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+gsutil cp /data/actin/clinical/input_feed_test/latest/*.tsv gs://actin-dev-clinical-feed-input/
+gsutil cp /data/actin/clinical/input_feed_test/latest/upload.complete gs://actin-dev-clinical-feed-input/
