@@ -4,8 +4,9 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 colo_log_file=$1 && shift #eg. gs://verification-pipeline-output-pilot-1/results/5_29_2_rc_1_v_5_29_3_rc_1/COLO829v003T/forensics/runs/COLO829v003T-target/run.log
+ops_image=$1 && shift
 
-echo '[INPUT] Do you have updated the oncoAct tumor WGS PDF/XML report and oncoAct tumor panel NGS result PDF report? Please answer Y or N.'
+echo '[INPUT] Do you have updated the oncoAct tumor WGS PDF/XML/JSON report and oncoAct tumor panel NGS result PDF report? Please answer Y or N.'
 read answer_protect
 if [[ $answer_protect == 'N' ]]; then
     exit
@@ -22,8 +23,8 @@ info "Starting to generate the oncoAct tumor WGS and oncoAct tumor panel NGS res
 currentDate=$(date +'%Y%m%d')
 report_resources_dir="/data/resources/report_resources"
 achive_dir="${report_resources_dir}/${currentDate}_patient_report_resources"
-archive_dir_oncoact="${achive_dir}/oncoact"
-archive_dir_oncopanel="${achive_dir}/oncopanel"
+archive_dir_oncoact="${achive_dir}/oncoact_tumor_wgs"
+archive_dir_oncopanel="${achive_dir}/oncoact_tumor_ngs_panel"
 mkdir ${achive_dir}
 mkdir ${archive_dir_oncoact}
 mkdir ${archive_dir_oncopanel}
@@ -43,6 +44,13 @@ git -C ${git_clone_dir} checkout "${answer_image}"
 echo "The working branch is: "
 git -C ${git_clone_dir} branch -l
 info "Pipeline image data of ${answer_image} is extracted"
+
+git_clone_dir_ops="${report_resources_dir}/ops-resources-private"
+gcloud --project "hmf-ops" source repos clone ops-resources-private ${git_clone_dir_ops}
+git -C ${git_clone_dir_ops} checkout "${ops_image}"
+echo "The working branch is: "
+git -C ${git_clone_dir_ops} branch -l
+info "Pipeline image data of ${ops_image} is extracted"
 
 info "Extracting peach information to tsv files"
 # names of pgx files can be found in the make peach script
@@ -66,6 +74,7 @@ hmf_pgx_haplotypes="${archive_dir_oncoact}/hmf_pgx_haplotypes.tsv"
 hmf_pgx_variants_tsv="${archive_dir_oncoact}/hmf_pgx_variants.tsv"
 hmf_pgx_drugs_tsv="${archive_dir_oncoact}/hmf_pgx_drugs.tsv"
 oncoact_gene_transcripts="${report_resources_dir}/oncoact_wgs_gene_transcripts.tsv"
+clinical_gene_transcripts="${git_clone_dir_ops}/clinical_transcripts.tsv"
 
 if [[ -z "${hmf_funsion_panel_csv}" ]]; then
         error "Unable to locate fusion panel CSV file."
@@ -111,6 +120,10 @@ if [[ -z "${oncoact_gene_transcripts}" ]]; then
         error "Unable to locate gene transcripts TSV file."
 fi
 
+if [[ -z "${clinical_gene_transcripts}" ]]; then
+        error "Unable to locate clinical gene transcripts TSV file."
+fi
+
 if [[ -z "${onocoact_readme}" ]]; then
         error "Unable to locate oncoact wgs readme TXT file."
 fi
@@ -125,6 +138,7 @@ cp ${oncoact_report_json} "${archive_dir_oncoact}/oncoact_wgs_oncoact.json"
 #cp ${germline_reporting_tsv} "${archive_dir_oncoact}/hmf_germline_reporting.tsv"
 cp ${onocoact_readme} "${archive_dir_oncoact}/oncoact_wgs_readme.txt"
 cp ${oncoact_gene_transcripts} "${archive_dir_oncoact}/oncoact_wgs_gene_transcripts.tsv"
+cp ${clinical_gene_transcripts} "${archive_dir_oncoact}/oncoact_wgs_clinical_gene_transcripts.tsv"
 
 #files onocpanel
 info "Collecting oncoAct tumor NGS result data"
