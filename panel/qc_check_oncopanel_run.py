@@ -103,6 +103,7 @@ class PurpleQc:
     copy_number_segments: int
     unsupported_copy_number_segments: int
     purity: Decimal
+    ploidy: Decimal
     amber_gender: str
     cobalt_gender: str
     deleted_genes: int
@@ -264,6 +265,8 @@ def get_qc_check_output_text(
 ) -> str:
     lines = []
     lines.append(f"Sample name: {tumor_name}")
+    lines.append(f"Purity: {purple_qc.purity}")
+    lines.append(f"Ploidy: {purple_qc.ploidy}")
     lines.append(f"Amber gender: {purple_qc.amber_gender}")
     lines.append(f"Cobalt gender: {purple_qc.cobalt_gender}")
     lines.append(f"AMBER mean depth: {purple_qc.amber_mean_depth}")
@@ -601,10 +604,11 @@ def get_gene_copy_number_from_line(line: str, header: str) -> GeneCopyNumber:
 
 def load_purple_qc(local_directory: Path, tumor_name: str) -> PurpleQc:
     purple_qc_path = local_directory / f"{tumor_name}.purple.qc"
-    return load_purple_qc_from_file(purple_qc_path)
+    purple_purity_path = local_directory / f"{tumor_name}.purple.purity.tsv"
+    return load_purple_qc_from_file(purple_qc_path, purple_purity_path)
 
 
-def load_purple_qc_from_file(purple_qc_path: Path) -> PurpleQc:
+def load_purple_qc_from_file(purple_qc_path: Path, purple_purity_path: Path) -> PurpleQc:
     field_to_string_value = {}
     with open(purple_qc_path, "r") as in_f:
         for line in in_f:
@@ -620,17 +624,26 @@ def load_purple_qc_from_file(purple_qc_path: Path) -> PurpleQc:
         deleted_genes = int(field_to_string_value["DeletedGenes"])
         amber_mean_depth = int(field_to_string_value["AmberMeanDepth"])
 
-        purple_qc = PurpleQc(
-            qc_status,
-            copy_number_segments,
-            unsupported_copy_number_segments,
-            purity,
-            amber_gender,
-            cobalt_gender,
-            deleted_genes,
-            amber_mean_depth,
-        )
-        return purple_qc
+    with open(purple_purity_path, "r") as in_f:
+        header = next(in_f)
+        line = next(in_f)
+        split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+        split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+
+        ploidy = Decimal(split_line[split_header.index("ploidy")])
+
+    purple_qc = PurpleQc(
+        qc_status,
+        copy_number_segments,
+        unsupported_copy_number_segments,
+        purity,
+        ploidy,
+        amber_gender,
+        cobalt_gender,
+        deleted_genes,
+        amber_mean_depth,
+    )
+    return purple_qc
 
 
 def load_drivers(local_directory: Path, tumor_name: str) -> List[Driver]:
@@ -652,7 +665,6 @@ def load_drivers_from_file(driver_catalog_path: Path) -> List[Driver]:
 
 def get_driver_from_line(line: str, header: str) -> Driver:
     split_header = header.replace("\n", "").split(TSV_SEPARATOR)
-
     split_line = line.replace("\n", "").split(TSV_SEPARATOR)
 
     chromosome = split_line[split_header.index("chromosome")]
