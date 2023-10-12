@@ -2,7 +2,6 @@ import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Blob, Client
 from gsutil import get_bucket_and_blob_names_from_gs_path, get_file_name_from_blob
-from cli_util import perform_prod_test
 
 
 def main():
@@ -14,8 +13,6 @@ def main():
     argument_parser.add_argument('--notify-users', default=False, action='store_true',
                                  help='whether to notify the users of the share event')
     args = argument_parser.parse_args()
-    profile = args.profile
-    perform_prod_test(profile)
 
     ReportShare(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
                                                                                        notify_users=args.notify_users)
@@ -111,8 +108,7 @@ class ReportShare:
         run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
         result = []
         for file in run_files_to_upload:
-            blob = self._get_blob_from_gs_path_and_project(gs_path=file['filepath'],
-                                                           user_project='hmf-pipeline-prod')
+            blob = self._get_blob_from_gs_path(gs_path=file['filepath'])
             result.append(blob)
         return result
 
@@ -122,13 +118,13 @@ class ReportShare:
                                   file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
         result = []
         for file in report_files_to_upload:
-            blob = self._get_blob_from_gs_path_and_project(gs_path=file['path'], user_project='hmf-ops')
+            blob = self._get_blob_from_gs_path(gs_path=file['path'])
             result.append(blob)
         return result
 
-    def _get_blob_from_gs_path_and_project(self, gs_path, user_project):
+    def _get_blob_from_gs_path(self, gs_path):
         bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(gs_path)
-        bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name, user_project=user_project)
+        bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name)
         return bucket.get_blob(blob_name)
 
 
