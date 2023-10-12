@@ -99,6 +99,8 @@ class ReportShare:
                                 new_name=file_name)
 
     def _get_run_files_as_blobs(self):
+        if self.run_id is None:  # if there is no associated run there are also no report files to return.
+            return []
         all_run_files = self.rest_client.get_run_files(self.run_id)
         run_file_types = {'purple_somatic_driver_catalog',
                           'linx_driver_catalog',
