@@ -165,3 +165,8 @@ class RestClient:
         }
         response = requests.post(f'{self._api_base_url}/hmf/v1/reports/2/shared', json=body)
         response.raise_for_status()
+
+    def get_run_files(self, run_id):
+        response = requests.get(f'{self._api_base_url}/files', params={'run_id': run_id})
+        response.raise_for_status()
+        return response.json()

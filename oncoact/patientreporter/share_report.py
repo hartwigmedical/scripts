@@ -18,8 +18,6 @@ def main():
     profile = args.profile
     perform_prod_test(profile)
 
-    # pipeline_output_bucket = f'diagnostic-pipeline-output-{profile}-1'
-    pipeline_output_bucket = f'diagnostic-pipeline-output-prod-1'
     final_bucket = f"patient-reporter-final-{profile}-1"
     portal_bucket = f'hmf-customer-portal-report-shared-{profile}'
 
@@ -27,12 +25,11 @@ def main():
                              profile=profile,
                              final_bucket=final_bucket,
                              portal_bucket=portal_bucket,
-                             pipeline_output_bucket=pipeline_output_bucket,
                              publish_to_portal=args.publish,
                              notify_users=args.notify_users)
 
 
-def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket,
+def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucket,
                              publish_to_portal, notify_users):
     """
     This program does the following:
@@ -76,18 +73,21 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     sample_set = rest_client.get_sample_set_by_sample_name(sample_name)
     set_name = sample_set['name']
 
-    orange_pdf = f'{set_name}/orange/{sample_name}.orange.pdf'
-    purple_sv_vcf = f'{set_name}/purple/{sample_name}.purple.sv.vcf.gz'
-    purple_somatic_vcf = f'{set_name}/purple/{sample_name}.purple.somatic.vcf.gz'
-    purple_catalog = f'{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv'
-    linx_fusion = f'{set_name}/linx/{sample_name}.linx.fusion.tsv'
-    linx_catalog = f'{set_name}/linx/{sample_name}.linx.driver.catalog.tsv'
+    run_files = rest_client.get_run_files(run_id)
+    run_file_types_to_upload = {'purple_somatic_driver_catalog',
+                                'linx_driver_catalog',
+                                'somatic_variants_purple',
+                                'structural_variants_purple',
+                                'linx_fusions',
+                                'orange_output_pdf'}
 
-    pipline_output_bucket: Bucket = storage_client.bucket(pipeline_output_bucket)
-    for blob in [orange_pdf, purple_sv_vcf, purple_somatic_vcf, purple_catalog, linx_fusion, linx_catalog]:
-        # Replace the set_name prefix with sample_barcode
-        new_blob_name = f'{sample_barcode}{blob[len(set_name):]}'
-        copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
+    relevant_run_files = [file for file in run_files if file['datatype'] in run_file_types_to_upload]
+
+    for file in relevant_run_files:
+        source_bucket: Bucket = storage_client.bucket(file['bucket'])
+        file_blob: Blob = source_bucket.get_blob(blob_name=f'{file["directory"]}/{file["filename"]}')
+        new_blob_name = f'{sample_barcode}{file["filename"]}'
+        source_bucket.copy_blob(blob=file_blob, destination_bucket=target_bucket_portal, new_name=new_blob_name)
 
     print('Updating report shared status in the API...')
     rest_client.post_report_shared(report_created_id=report_created['id'], publish_to_portal=publish_to_portal,
