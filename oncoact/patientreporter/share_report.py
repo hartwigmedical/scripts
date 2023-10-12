@@ -109,7 +109,7 @@ class ReportShare:
         run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
         result = []
         for file in run_files_to_upload:
-            blob = self._get_blob_from_gs_path_and_project(gs_path=self.storage_client.bucket(file['filepath']),
+            blob = self._get_blob_from_gs_path_and_project(gs_path=file['filepath'],
                                                            user_project='hmf-pipeline-prod')
             result.append(blob)
         return result
