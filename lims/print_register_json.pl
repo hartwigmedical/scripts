@@ -197,7 +197,7 @@ sub setupGiabJson {
     my $set = join( "_", $date, $submission, $barcode, $name );
     my $use_existing_ref = 0;
     my $skip_recalculating_yield_ref = 0;
-    my $reporting_id = '';
+    my $reporting_id = 'GIAB12878';
 
     sayInfo("  SET: $set");
     $json_data->{ 'ini' } = "$GER_INI";
@@ -306,7 +306,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            '',
+            $name,
         );
     }
     elsif ( $analysis eq 'FASTQ' or $submission =~ /^HMFregINN/ ){
@@ -326,7 +326,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            '',
+            $name,
         );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
@@ -345,7 +345,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            '',
+            $name,
         );
     }
     elsif ( $analysis eq 'RNAanalysis' ){
@@ -367,12 +367,13 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            '',
+            $name,
         );
     }
     elsif ( $analysis eq 'Somatic_T' ){
 
         my $reporting_id = getValueByKey( $sample, 'reporting_id' );
+        my $ref_reporting_id = $reporting_id . "-ref";
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
@@ -512,7 +513,7 @@ sub processSample{
             $yield_ref,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            '',
+            $ref_reporting_id,
         );
         addSampleToJsonData(
             \%json_data,
@@ -553,7 +554,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
-            '',
+            $reporting_id,
         );
 
     }
