@@ -82,7 +82,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
     for file in relevant_run_files:
         source_bucket: Bucket = storage_client.bucket(file['bucket'])
         file_blob: Blob = source_bucket.get_blob(blob_name=f'{file["directory"]}/{file["filename"]}')
-        new_blob_name = f'{sample_barcode}{file["filename"]}'
+        new_blob_name = f'{sample_barcode}/RUO/{file["filename"]}'
         source_bucket.copy_blob(blob=file_blob, destination_bucket=target_bucket_portal, new_name=new_blob_name)
 
     print('Updating report shared status in the API...')
