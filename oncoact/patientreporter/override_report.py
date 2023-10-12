@@ -20,16 +20,26 @@ def main():
 
 def assemble_and_emit_correction_event(tumor_sample_barcode: str, project: str):
     special_remark = input('Enter a special remark...\n')
-    remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
     rose_override = input('Enter rose override...\n')
+    remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
     comments = input('Enter comments...\n')
+
+    special_remark = special_remark if special_remark else None
+    rose_override = rose_override if rose_override else None
+
+    if comments:
+        correction = {
+            comments: comments,
+            remark_is_external: remark_is_external
+        }
+    else:
+        correction = None
 
     data = {
         'tumorSampleBarcode': tumor_sample_barcode,
         'specialRemark': special_remark,
-        'remarkIsExternal': remark_is_external,
+        'correction': correction,
         'roseOverride': rose_override,
-        'comments': comments
     }
     json_data = json.dumps(data)
     encoded_message = json_data.encode(encoding='utf-8')
