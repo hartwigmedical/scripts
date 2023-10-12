@@ -48,7 +48,7 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
             f"No associated run found for tumor barcode '{sample_barcode}'. Are you sure you want to continue? (y/n)\n")
         if cont.lower() != 'y':
             exit(1)
-    if run['status'] != 'Validated':
+    if run and run['status'] != 'Validated':
         cont = input(f"Run status for tumor barcode '{sample_barcode}' is not yet 'Validated' "
                      f"(actual status: {run['status']}). Are you sure you want to continue? (y/n)\n")
         if cont.lower() != 'y':
