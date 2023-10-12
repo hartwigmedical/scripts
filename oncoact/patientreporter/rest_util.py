@@ -14,9 +14,6 @@ class RestClient:
     def get_all_reports_created(self):
         """
         Queries the 'reports/2/created' endpoint and returns all results.
-
-        :return: the query result.
-        :raises ValueError: If the response returned a non 2XX status code.
         """
         response = requests.get(f'{self._api_base_url}/hmf/v1/reports/2/created')
         response.raise_for_status()
@@ -28,8 +25,6 @@ class RestClient:
         Queries the 'reports/2/created' endpoint for the given sample_barcode.
 
         :param sample_barcode: the sample_barcode to query for.
-        :return: The query result.
-        :raises ValueError: If the response returned a non 2XX status code.
         """
         response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/2/created',
                                 params={'sample_barcode': sample_barcode})
@@ -49,8 +44,6 @@ class RestClient:
         """
         Queries the 'reports/2/shared' endpoint and returns all results.
 
-        :return: the query result.
-        :raises ValueError: If the response returned a non 2XX status code.
         """
         response = requests.get(f'{self._api_base_url}/hmf/v1/reports/2/shared')
         response.raise_for_status()
@@ -61,9 +54,7 @@ class RestClient:
         """
         Queries the 'sets' endpoint with the given tumor sample name and returns the first entry.
 
-        :param sample_name: the sample_name to query for
-        :return: the first entry of the query result.
-        :raises ValueError: If the response returned a non 2XX status code.
+        :param sample_name: the sample_name to query for.
         """
         response = requests.get(url=f'{self._api_base_url}/hmf/v1/sets', params={'tumor_sample': sample_name})
         response.raise_for_status()
@@ -78,9 +69,6 @@ class RestClient:
     def get_runs(self):
         """
         Queries the 'runs' endpoint and returns somatic and CPCT inis
-
-        :return The query result
-        :raises ValueError: If the response returned a non 2XX status code.
         """
         res = []
         for ini_type in ['CPCT', 'Somatic']:
@@ -92,8 +80,6 @@ class RestClient:
     def get_run(self, run_id):
         """
         Gets the run by id.
-        :param run_id: the id of the run to get.
-        :return: the run json.
         """
         response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs/{run_id}')
         response.raise_for_status()
@@ -124,8 +110,6 @@ class RestClient:
         Gets the tumor sample barcode from the tumor isolation barcode.
 
         This method does not rely on the existence of a report. It uses Lama to retrieve the tumor sample barcode.
-        :param tumor_isolation_barcode: the tumor isolation barcode.
-        :return: the tumor sample barcode.
         """
         response = requests.get(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')
         response.raise_for_status()
@@ -135,8 +119,6 @@ class RestClient:
         """
         For a given run_id, return the tumor sample barcode.
 
-        :param run_id: the run_id.
-        :return: the associated tumor sample barcode.
         """
         run = self.get_run(run_id)
         sample_set = self.get_sample_set_by_id(run['set']['id'])
