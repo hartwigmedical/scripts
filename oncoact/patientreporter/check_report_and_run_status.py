@@ -41,9 +41,8 @@ def check_report_and_run_status(storage_client: Client, profile: str):
     not_validated_reports_but_shared = all_shared_reports[all_shared_reports['run_id'].isin(finished_runs)]
     failed_report_shared = all_shared_reports[all_shared_reports['run_id'].isin(failed_runs)]
 
-    validated_reports_and_shared = all_shared_reports[all_shared_reports['run_id'].isin(validated_runs['id'])].iloc[:5]
-    validated_reports_but_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(validated_runs['id'])].iloc[
-                                       :5]
+    validated_reports_and_shared = all_shared_reports[all_shared_reports['run_id'].isin(validated_runs['id'])]
+    validated_reports_but_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(validated_runs['id'])]
     validated_warnings_and_errors = check_warnings_for_validated_reports(storage_client, pd.concat(
         [validated_reports_and_shared, validated_reports_but_not_shared], ignore_index=True),
                                                                          validated_runs, profile)

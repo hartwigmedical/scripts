@@ -13,7 +13,13 @@ def main():
     args = parser.parse_args()
 
     tumor_sample_barcode = args.tumor_sample_barcode
-    project = 'hmf-pipeline-development'
+
+    project = None
+    if args.profile == 'pilot':
+        project = 'hmf-pipeline-development'
+    elif args.profile == 'prod':
+        project = 'hmf-pipeline-prod'
+
     assemble_and_emit_qc_fail_event(tumor_sample_barcode, project)
 
 
@@ -30,15 +36,14 @@ def assemble_and_emit_qc_fail_event(tumor_sample_barcode: str,
         comments = input('Enter comments...\n')
         correction = {
             'comments': comments,
-            'remark_is_external': remark_is_external
+            'remarkIsExternal': remark_is_external
         }
 
     data = {
         'tumorSampleBarcode': tumor_sample_barcode,
         'reason': reason,
-        'fail_reason_comment': fail_reason_comment,
+        'failReasonComment': fail_reason_comment,
         'correction': correction
-
     }
     json_data = json.dumps(data)
     encoded_message = json_data.encode('utf-8')
@@ -59,7 +64,7 @@ def _prompt_user_for_reason():
     if reason not in choices:
         print("not a valid option\n")
         return _prompt_user_for_reason()
-    return reason
+    return reason.upper()
 
 
 if __name__ == '__main__':

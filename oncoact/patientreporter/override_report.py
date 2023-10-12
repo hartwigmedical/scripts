@@ -2,8 +2,6 @@ import argparse
 import json
 from google.cloud import pubsub
 
-TOPIC = 'foo'
-
 
 def main():
     """
