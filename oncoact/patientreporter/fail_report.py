@@ -14,15 +14,31 @@ def main():
 
     tumor_sample_barcode = args.tumor_sample_barcode
     project = 'hmf-pipeline-development'
-    assemble_and_emit_fail_report(tumor_sample_barcode, project)
+    assemble_and_emit_qc_fail_event(tumor_sample_barcode, project)
 
 
-def assemble_and_emit_fail_report(tumor_sample_barcode: str,
-                                  project: str):
+def assemble_and_emit_qc_fail_event(tumor_sample_barcode: str,
+                                    project: str):
     reason = _prompt_user_for_reason()
+    fail_reason_comment = input("Please add an optional fail reason comment\n")
+    fail_reason_comment = fail_reason_comment if fail_reason_comment else None
+
+    add_correction = input('Add correction? y/n\n').lower() == 'y'
+    correction = None
+    if add_correction:
+        remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
+        comments = input('Enter comments...\n')
+        correction = {
+            'comments': comments,
+            'remark_is_external': remark_is_external
+        }
+
     data = {
+        'tumorSampleBarcode': tumor_sample_barcode,
         'reason': reason,
-        'tumorSampleBarcode': tumor_sample_barcode
+        'fail_reason_comment': fail_reason_comment,
+        'correction': correction
+
     }
     json_data = json.dumps(data)
     encoded_message = json_data.encode('utf-8')
@@ -41,11 +57,8 @@ def _prompt_user_for_reason():
     print('\n'.join(choices))
     reason = input()
     if reason not in choices:
-        cont = input(
-            f"'{reason}' is not recognized as a valid reason, are you sure you want to proceed?"
-            f" This might cause an exception (y/n)")
-        if cont.lower() != 'y':
-            exit(1)
+        print("not a valid option\n")
+        return _prompt_user_for_reason()
     return reason
 
 

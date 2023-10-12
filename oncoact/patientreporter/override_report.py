@@ -19,21 +19,20 @@ def main():
 
 
 def assemble_and_emit_correction_event(tumor_sample_barcode: str, project: str):
-    special_remark = input('Enter a special remark...\n')
-    rose_override = input('Enter rose override...\n')
-    remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
-    comments = input('Enter comments...\n')
-
+    special_remark = input('Enter an optional special remark...\n')
     special_remark = special_remark if special_remark else None
+    rose_override = input('Enter an optional rose override...\n')
     rose_override = rose_override if rose_override else None
 
-    if comments:
+    correction = None
+    add_correction = input('Add correction? y/n\n').lower() == 'y'
+    if add_correction:
+        remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
+        comments = input('Enter comments...\n')
         correction = {
-            comments: comments,
-            remark_is_external: remark_is_external
+            'comments': comments,
+            'remark_is_external': remark_is_external
         }
-    else:
-        correction = None
 
     data = {
         'tumorSampleBarcode': tumor_sample_barcode,

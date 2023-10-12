@@ -44,7 +44,7 @@ class ReportShare:
         elif self.run['status'] != 'Validated':
             self._prompt_user_non_validated_run()
 
-        self._delete_old_artifacts_in_portal()
+        self._delete_old_artifacts_in_portal_bucket()
         self._copy_files_to_remote_buckets()
 
         self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
@@ -64,7 +64,7 @@ class ReportShare:
         if cont.lower() != 'y':
             exit(1)
 
-    def _delete_old_artifacts_in_portal(self):
+    def _delete_old_artifacts_in_portal_bucket(self):
         blobs_old_run = list(self.portal_bucket.list_blobs(prefix=self.sample_barcode))
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
@@ -73,20 +73,20 @@ class ReportShare:
         report_blobs = self._get_report_files_as_blobs()
 
         for blob in run_blobs:
-            self._copy_blob_to_portal_bucket(blob=blob, target_folder='RUO')
+            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO')
 
         for blob in report_blobs:
-            self._copy_blob_to_portal_bucket(blob=blob, target_folder='')
+            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
             self._copy_blob_to_archive_bucket(blob=blob)
 
-    def _copy_blob_to_portal_bucket(self, blob, target_folder):
-        if target_folder != '' and target_folder[-1] != '/':
-            target_folder += '/'
+    def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
+        if target_sub_folder != '' and target_sub_folder[-1] != '/':
+            target_sub_folder += '/'
         file_name = get_file_name_from_blob(blob)
         source_bucket = blob.bucket
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.portal_bucket,
-                                new_name=f'{self.sample_barcode}/{target_folder}{file_name}')
+                                new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
 
     def _copy_blob_to_archive_bucket(self, blob):
         file_name = get_file_name_from_blob(blob.name)
