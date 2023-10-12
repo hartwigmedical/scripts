@@ -9,6 +9,10 @@ def main():
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('sample_barcode')
     argument_parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    argument_parser.add_argument('--publish', default=False, action='store_true',
+                                 help='whether to publish to portal or not')
+    argument_parser.add_argument('--notify-users', default=False, action='store_true',
+                                 help='whether to notify the users of the share event')
     args = argument_parser.parse_args()
 
     profile = args.profile
@@ -19,26 +23,23 @@ def main():
     final_bucket = f"patient-reporter-final-{profile}-1"
     portal_bucket = f'hmf-customer-portal-report-shared-{profile}'
 
-    copy_report_to_final_gcp(args.sample_barcode,
-                             profile,
-                             pipeline_output_bucket=pipeline_output_bucket,
+    copy_report_to_final_gcp(sample_barcode=args.sample_barcode,
+                             profile=profile,
                              final_bucket=final_bucket,
-                             portal_bucket=portal_bucket)
+                             portal_bucket=portal_bucket,
+                             pipeline_output_bucket=pipeline_output_bucket,
+                             publish_to_portal=args.publish,
+                             notify_users=args.notify_users)
 
 
-def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket):
+def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucket, pipeline_output_bucket,
+                             publish_to_portal, notify_users):
     """
     This program does the following:
 
     - Copy the relevant report files from the run bucket to the final bucket.
     - Copy the relevant report files from the run bucket to the portal bucket.
     - Update shared status of the report in the HMF API.
-
-    :param profile: the profile to run this program in (pilot, prod, etc.).
-    :param portal_bucket: the name of the portal bucket.
-    :param final_bucket: the name of the final bucket for internal quality purposes.
-    :param pipeline_output_bucket: the bucket where the pipeline output is stored.
-    :param sample_barcode: The sample_barcode whose run to process.
     """
     rest_client = RestClient(profile)
     report_created = rest_client.get_report_created(sample_barcode)
@@ -89,7 +90,8 @@ def copy_report_to_final_gcp(sample_barcode, profile, portal_bucket, final_bucke
         copy_and_print(pipline_output_bucket, target_bucket_portal, blob, new_blob_name)
 
     print('Updating report shared status in the API...')
-    rest_client.post_report_shared(report_created_id=report_created['id'], publish_to_portal=True, notify_users=False)
+    rest_client.post_report_shared(report_created_id=report_created['id'], publish_to_portal=publish_to_portal,
+                                   notify_users=notify_users)
     print('API updated!')
     print('All done・ﾟ✧ !')
     exit(0)
