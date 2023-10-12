@@ -1,7 +1,7 @@
 import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Blob, Client
-from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob
+from gsutil import get_bucket_and_blob_names_from_gs_path, get_file_name_from_blob
 from cli_util import perform_prod_test
 
 
@@ -125,7 +125,7 @@ class ReportShare:
         return result
 
     def _get_blob_from_gs_path_and_project(self, gs_path, user_project):
-        bucket_name, blob_name = get_bucket_and_blob_from_gs_path(gs_path)
+        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(gs_path)
         bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name, user_project=user_project)
         return bucket.get_blob(blob_name)
 

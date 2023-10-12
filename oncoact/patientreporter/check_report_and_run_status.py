@@ -3,7 +3,7 @@ import pandas as pd
 import subprocess
 
 from rest_util import RestClient
-from gsutil import get_bucket_and_blob_from_gs_path
+from gsutil import get_bucket_and_blob_names_from_gs_path
 from google.cloud.storage import Bucket, Blob, Client
 
 
@@ -146,7 +146,7 @@ def check_warnings_for_validated_reports(client: Client, validated_reports: pd.D
         log = next((file for file in report_files if file['datatype'] == 'report_log'), None)
         if not log:
             continue
-        (bucket_name, blob_name) = get_bucket_and_blob_from_gs_path(log['path'])
+        (bucket_name, blob_name) = get_bucket_and_blob_names_from_gs_path(log['path'])
 
         bucket: Bucket = client.bucket(bucket_name)
         blob: Blob = bucket.get_blob(blob_name=blob_name)

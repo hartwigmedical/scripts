@@ -4,7 +4,7 @@ import re
 GS_PATH_REGEX = re.compile(r'^gs://([a-z0-9._-]+)((?:/[a-zA-Z0-9_.-]+)*)$')
 
 
-def get_bucket_and_blob_from_gs_path(gs_path: str) -> (str, str):
+def get_bucket_and_blob_names_from_gs_path(gs_path: str) -> (str, str):
     """
     Returns the bucket name and the blob name from a given google storage path.
 
