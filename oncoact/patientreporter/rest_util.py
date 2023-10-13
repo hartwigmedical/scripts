@@ -7,45 +7,51 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        self._api_base_url = 'http://api.prod-1'
+        self._api_base_url = 'http://localhost:5002'
+
         self._reporting_pipeline_url = ""
-        self._lama_url = "http://lama.prod-1"
+        self._lama_url = "http://lama.pilot-1"
 
     def get_all_reports_created(self):
         """
-        Queries the 'reports/2/created' endpoint and returns all results.
+        Queries the 'reports/created' endpoint and returns all results.
         """
-        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/2/created')
+        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/created')
         response.raise_for_status()
         json_response = response.json()
         return json_response
 
     def get_report_created(self, sample_barcode):
         """
-        Queries the 'reports/2/created' endpoint for the given sample_barcode.
+        Queries the 'reports/created' endpoint for the given sample_barcode.
 
         :param sample_barcode: the sample_barcode to query for.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/2/created',
+        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/created',
                                 params={'sample_barcode': sample_barcode})
         response.raise_for_status()
         response_json = response.json()
         if len(response_json) > 1:
-            print(f"Query returned more than one result: '{len(response_json)}'")
-            print('#', 'create_time', sep='\t')
+            print(f"Query returned more than one result")
+            print('#', 'summary', sep='\t')
             for i, created in enumerate(response_json):
-                print(i, created, sep='\t')
+                print(i + 1, {
+                    'id': created['id'],
+                    'type': created['report_type'],
+                    'create_time': created['create_time']
+                }, sep='\t')
             to_return = input("Which one do you want to return? Please enter the #\n")
-            return response_json[to_return]
-
+            return response_json[int(to_return) - 1]
+        if len(response_json == 0):
+            raise ValueError(f"No report created records found for '{sample_barcode}'")
         return response_json[0]
 
     def get_all_reports_shared(self):
         """
-        Queries the 'reports/2/shared' endpoint and returns all results.
+        Queries the 'reports/shared' endpoint and returns all results.
 
         """
-        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/2/shared')
+        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/shared')
         response.raise_for_status()
         json_response = response.json()
         return json_response
@@ -145,10 +151,10 @@ class RestClient:
             'notify_users': notify_users,
             'publish_to_portal': publish_to_portal
         }
-        response = requests.post(f'{self._api_base_url}/hmf/v1/reports/2/shared', json=body)
+        response = requests.post(f'{self._api_base_url}/hmf/v1/reports/shared', json=body)
         response.raise_for_status()
 
     def get_run_files(self, run_id):
-        response = requests.get(f'{self._api_base_url}/files', params={'run_id': run_id})
+        response = requests.get(f'{self._api_base_url}/hmf/v1/files', params={'run_id': run_id})
         response.raise_for_status()
         return response.json()

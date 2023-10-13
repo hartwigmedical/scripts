@@ -47,9 +47,12 @@ class ReportShare:
         self._delete_old_artifacts_in_portal_bucket()
         self._copy_files_to_remote_buckets()
 
+        print('Updating api')
         self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
                                             publish_to_portal=publish_to_portal,
                                             notify_users=notify_users)
+        print("Done :)")
+
 
     def _prompt_user_no_run(self):
         cont = input(
@@ -65,16 +68,20 @@ class ReportShare:
             exit(1)
 
     def _delete_old_artifacts_in_portal_bucket(self):
+        print(f"deleting old artifacts from bucket '{self.portal_bucket.name}'")
         blobs_old_run = list(self.portal_bucket.list_blobs(prefix=self.sample_barcode))
+        print(*[blob.name for blob in blobs_old_run], sep='\n')
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
     def _copy_files_to_remote_buckets(self):
         run_blobs = self._get_run_files_as_blobs()
         report_blobs = self._get_report_files_as_blobs()
 
+        print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
         for blob in run_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO')
 
+        print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
         for blob in report_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
             self._copy_blob_to_archive_bucket(blob=blob)
@@ -82,8 +89,9 @@ class ReportShare:
     def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
         if target_sub_folder != '' and target_sub_folder[-1] != '/':
             target_sub_folder += '/'
-        file_name = get_file_name_from_blob(blob)
+        file_name = get_file_name_from_blob(blob.name)
         source_bucket = blob.bucket
+        print(f"{blob.name} ---> {self.portal_bucket.name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.portal_bucket,
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
@@ -91,6 +99,7 @@ class ReportShare:
     def _copy_blob_to_archive_bucket(self, blob):
         file_name = get_file_name_from_blob(blob.name)
         source_bucket = blob.bucket
+        print(f"{blob.name} ---> {self.archive_bucket.name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.archive_bucket,
                                 new_name=file_name)
