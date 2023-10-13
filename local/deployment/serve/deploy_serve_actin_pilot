@@ -14,6 +14,6 @@ cp -r "${source_path}" "${target_path}"
 mv "${target_path}/target/algo-${version}-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
 
 vm="$(production_actin_serve_vm)"
-project="$(production_actin_project)"
+project="$(production_actin_serve_project)"
 
 do_deploy_pilot_serve_tool ${vm} ${project} "serve"

@@ -13,7 +13,11 @@ production_actin_ops_vm() {
 }
 
 production_actin_serve_vm() {
-    echo "prod-vm-serve"
+    echo "serve-vm-actin-1"
+}
+
+production_actin_serve_project() {
+    echo "hmf-crunch"
 }
 
 pilot_actin_vm() {
