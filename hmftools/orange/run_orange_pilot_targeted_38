@@ -11,4 +11,4 @@ fi
 output_dir="${run_dir}/orange_pilot_targeted"
 ref_genome_version="38"
 
-do_run_orange_pilot_targeted ${run_dir} ${output_dir} ${ref_genome_verion} "$@"
+do_run_orange_pilot_targeted ${run_dir} ${output_dir} ${ref_genome_version} "$@"

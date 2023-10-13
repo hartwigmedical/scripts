@@ -42,6 +42,7 @@ do_run_orange_pilot \
     ${run_dir} \
     ${output_dir} \
     ${pipeline_version_cmd} \
+    -ref_genome_version "37" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
     -sage_dir "${sage_somatic_dir}" \
