@@ -7,9 +7,8 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        self._api_base_url = 'http://localhost:5002'
-
-        self._reporting_pipeline_url = ""
+        self._api_base_url = 'http://api.pilot-1'
+        self._reporting_pipeline_url = "http://lama.pilot-1"
         self._lama_url = "http://lama.pilot-1"
 
     def get_all_reports_created(self):

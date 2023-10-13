@@ -12,208 +12,216 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    storage_client = Client(project='hmf-pipeline-prod')
-    check_report_and_run_status(storage_client, args.profile)
+    StatusChecker(profile=args.profile).print_report_and_run_summary()
 
 
-def check_report_and_run_status(storage_client: Client, profile: str):
-    rest_client = RestClient(profile)
+class StatusChecker:
 
-    print("Fetching reports and runs...")
-    all_reports = pd.DataFrame(rest_client.get_all_reports_created())
-    # these if checks are to ensure that if the dataframe is empty,
-    # it still has the required columns to prevent KeyErrors.
-    if len(all_reports) == 0:
-        all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
-    all_shared_reports = pd.DataFrame([shared['report_created'] for shared in rest_client.get_all_reports_shared()])
-    if len(all_shared_reports) == 0:
-        all_shared_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
-    all_runs = pd.DataFrame(rest_client.get_runs())
-    if len(all_runs) == 0:
-        all_runs = pd.DataFrame(columns=['status', 'id'])
+    def __init__(self, profile):
+        self.rest_client = RestClient(profile)
+        self.storage_client = Client()
 
-    validated_runs = all_runs[all_runs['status'] == 'Validated']
-    finished_runs = all_runs[all_runs['status'] == 'Finished']
-    failed_runs = all_runs[all_runs['status'] == 'Failed']
+        self.all_reports = pd.DataFrame(self.rest_client.get_all_reports_created())
+        # these if checks are to ensure that if the dataframe is empty,
+        # it still has the required columns to prevent KeyErrors.
+        if len(self.all_reports) == 0:
+            self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
 
-    reports_not_shared = all_reports[~all_reports['sample_barcode'].isin(all_shared_reports['sample_barcode'])]
+        self.shared_reports = pd.DataFrame([shared['report_created']
+                                            for shared in self.rest_client.get_all_reports_shared()])
+        if len(self.shared_reports) == 0:
+            self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
+        self.not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
 
-    not_validated_reports_but_shared = all_shared_reports[all_shared_reports['run_id'].isin(finished_runs)]
-    failed_report_shared = all_shared_reports[all_shared_reports['run_id'].isin(failed_runs)]
+        self.all_runs = pd.DataFrame(self.rest_client.get_runs())
+        if len(self.all_runs) == 0:
+            self.all_runs = pd.DataFrame(columns=['status', 'id'])
 
-    validated_reports_and_shared = all_shared_reports[all_shared_reports['run_id'].isin(validated_runs['id'])]
-    validated_reports_but_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(validated_runs['id'])]
-    validated_warnings_and_errors = check_warnings_for_validated_reports(storage_client, pd.concat(
-        [validated_reports_and_shared, validated_reports_but_not_shared], ignore_index=True),
-                                                                         validated_runs, profile)
+        self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
+        self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
+        self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
+        self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports['run_id'])]
 
-    finished_reports_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(finished_runs)]
-    failed_report_but_not_shared = reports_not_shared[reports_not_shared['run_id'].isin(failed_runs)]
+    def print_report_and_run_summary(self):
+        def print_break():
+            print('\n-----------\n')
 
-    runs_without_report = all_runs[~all_runs['id'].isin(all_reports['run_id'])]
-    reports_without_runs = all_reports[~all_reports['run_id'].isin(all_runs['id'])]
+        print("REPORT AND RUN SUMMARY")
+        print_break()
+        self._handle_failed_runs_whose_report_is_not_shared()
+        print_break()
+        self._handle_failed_runs_whose_report_is_shared()
+        print_break()
+        self._handle_finished_runs_whose_report_is_not_shared()
+        print_break()
+        self._handle_finished_runs_whose_report_is_shared()
+        print_break()
+        self._handle_validated_runs_whose_report_is_not_shared()
+        print_break()
+        self._handle_runs_without_a_report()
 
-    failed_executions = rest_client.get_failed_executions()
+    def _handle_failed_runs_whose_report_is_not_shared(self):
+        not_shared_failed_reports = self.not_shared_reports[
+            self.not_shared_reports['run_id'].isin(self.failed_runs['id'])]
+        print("** FAILED RUNS WHOSE REPORT HAS NOT BEEN SHARED YET **")
+        print("Consider generating a fail report for these entries, or investigating the failure.")
+        for i, report_record in not_shared_failed_reports.iterrows():
+            self._print_failed_report(index=i + 1, report_record=report_record)
 
-    failed_reports_with_errors = {}
-    for run_id, errors in failed_executions:
-        sample_barcode = rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-        failed_reports_with_errors[sample_barcode] = errors
+    def _handle_failed_runs_whose_report_is_shared(self):
+        shared_failed_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.failed_runs['id'])]
+        print("** FAILED RUNS WHOSE REPORTS HAVE BEEN SHARED **")
+        print("Typically, the API status for these kind of runs is set to validated. Here, this is not yet the case")
+        for i, report_record in shared_failed_reports.iterrows():
+            self._print_failed_report(index=i + 1, report_record=report_record)
 
-    print('----------')
-    print("Failed reports that have not yet been shared:\n")
-    for i, report in failed_report_but_not_shared.iterrows():
-        # fail_type = failed_runs[failed_runs['id'] == report['sample_barcode']['run_id']]['failure']['type']
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tSet name: {get_set_name_from_report(report, failed_runs)}")
+    def _print_failed_report(self, index, report_record):
+        associated_run = self.failed_runs[self.failed_runs['id'] == report_record['run_id']]
+        fail_reason = _get_fail_reason(associated_run)
 
-    print('----------')
-    print("Failed reports that have been shared:\n")
-    for i, report in failed_report_shared.iterrows():
-        # fail_type = failed_runs[failed_runs['id'] == report['sample_barcode']['run_id']]['failure']['type']
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tset name: {get_set_name_from_report(report, failed_runs)}")
+        StatusChecker._print_entry(index, {'sample barcode': report_record['sample_barcode'],
+                                           'isolation barcode': report_record['barcode'],
+                                           'failure source': fail_reason['source'],
+                                           'failure type': fail_reason['type']})
 
-    print('----------')
-    print("Finished reports that have not yet been shared:\n")
-    for i, report in finished_reports_not_shared.iterrows():
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tset name: {get_set_name_from_report(report, finished_runs)}")
+    def _handle_finished_runs_whose_report_is_not_shared(self):
+        not_shared_finished_reports = self.not_shared_reports[
+            self.not_shared_reports['run_id'].isin(self.finished_runs['id'])]
+        print('** FINISHED RUNS WHOSE REPORTS HAVE NOT BEEN SHARED **')
+        print('Typically, these runs have not been validated yet by the snp-check. '
+              'Hence no action has to be performed.')
+        for i, report_record in not_shared_finished_reports.iterrows():
+            self._print_finished_report(index=i + 1, report_record=report_record)
 
-    print('----------')
-    print("Finished reports that have already been shared (BUT NOT VALIDATED YET!):\n")
-    for i, report in not_validated_reports_but_shared.iterrows():
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tset name: {get_set_name_from_report(report, finished_runs)}")
+    def _handle_finished_runs_whose_report_is_shared(self):
+        shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.finished_runs['id'])]
+        print('** FINISHED RUNS WHOSE REPORTS HAVE ALREADY BEEN SHARED **')
+        print('WARNING: these reports have not been validated yet, but have already been shared!')
+        for i, report_record in shared_finished_reports.iterrows():
+            self._print_finished_report(index=i + 1, report_record=report_record)
 
-    print('----------')
-    print("Validated reports that have not yet been shared:\n")
-    for i, report in validated_reports_but_not_shared.iterrows():
-        print(f"{i + 1} - {report['sample_barcode']}")
-        print(f"\tset name: {get_set_name_from_report(report, validated_runs)}")
-        report_id = report['id']
-        print("\tWarnings:")
-        if validated_warnings_and_errors[report_id]:
-            for warning in validated_warnings_and_errors[report_id]:
-                print(f'\t{warning}')
-        else:
-            print("\t\tNone, Ready for sharing :)!")
+    @staticmethod
+    def _print_finished_report(index, report_record):
+        StatusChecker._print_entry(index + 1, {'sample barcode': report_record["sample_barcode"],
+                                               'isolation barcode': report_record["barcode"]})
 
-    print('----------')
-    print("Reports without a run:\n")
-    for i, report in enumerate(reports_without_runs['sample_barcode']):
-        print(f"{i + 1} - {report}")
+    def _handle_validated_runs_whose_report_is_not_shared(self):
+        not_shared_validated_reports = self.not_shared_reports[
+            self.not_shared_reports['run_id'].isin(self.validated_runs['id'])]
 
-    # Runs that failed in the patient reporter:
-    print('----------')
-    print("Runs whose execution failed in the reporting pipeline")
-    for i, (tumor_barcode, errors) in enumerate(failed_reports_with_errors):
-        print(f"{i + 1} - {tumor_barcode} : {errors}")
+        print('** VALIDATED RUNS WHOSE REPORT IS HAS NOT YET BEEN SHARED **')
+        print('These reports are almost ready to be shared, any pending warnings are displayed below.')
+        for i, report_record in not_shared_validated_reports.iterrows():
+            self._print_validated_report(index=i + 1, report_record=report_record)
 
-    print('----------')
-    print('Runs without a report')
-    for i, run_id in enumerate(runs_without_report):
-        sample_barcode = rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-        print(f'{i + 1} - {sample_barcode}')
-        print(f'\trun_id: {run_id}')
+    def _print_validated_report(self, index, report_record):
+        warnings = self._get_all_report_associated_warnings(report_record)
+        StatusChecker._print_entry(index + 1, {'sample barcode': report_record['sample_barcode'],
+                                               'isolation barcode': report_record['barcode'],
+                                               'warnings': warnings})
 
+    def _get_all_report_associated_warnings(self, report_record):
+        return (self._get_patient_reporter_log_related_warnings(report_record) +
+                # self._get_health_checker_related_warnings(report_record) +
+                self._get_rose_related_warnings(report_record))
 
-class Warning:
-    def __init__(self, warning, action):
-        self._warning = warning
-        self._action = action
-
-    def __str__(self):
-        return f"""
-        -----
-        Warning: {self._warning}
-        Recommended action: 
-            - {self._action}
-        -----
-        """
-
-
-def check_warnings_for_validated_reports(client: Client, validated_reports: pd.DataFrame,
-                                         validated_runs: pd.DataFrame, profile):
-    res = {}
-    for i, report in validated_reports.iterrows():
-        print('Checking errors and warnings for validated runs...', i, '/', len(validated_reports))
-        run = validated_runs[validated_runs['id'] == report['run_id']].iloc[:1]
-        if run.empty:
-            continue
-
-        report_files = report['report_files']
-        log = next((file for file in report_files if file['datatype'] == 'report_log'), None)
-        if not log:
-            continue
-        (bucket_name, blob_name) = get_bucket_and_blob_names_from_gs_path(log['path'])
-
-        bucket: Bucket = client.bucket(bucket_name)
-        blob: Blob = bucket.get_blob(blob_name=blob_name)
-        log_content = blob.download_as_string().decode()
-
-        set_name = run['set'].values[0]['name']
-        health_error = get_health_error_validated_run(set_name)
-
+    def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
 
-        if has_rose_error(client, set_name, report['sample_name'], profile):
-            rose_location = get_rose_location_as_gs_string(profile, set_name, report['sample_name'])
-            warnings.append(
-                Warning('Summary was incorrect (rose error).', f"Check for errors 'gsutil cat {rose_location}'"))
-        if "WARN" in log_content:
-            warnings.append(
-                Warning('Warn was present in log file.', f"Check for warns 'gsutil cat {log['path']} | grep WARN'"))
-        if (
-                "Consent" in log_content or "Mismatching ref sample name" in log_content or "do not match" in log_content or "Missing or invalid hospital" in log_content):
-            warnings.append(Warning('Lims error.', f"Check for lims problems 'gsutil cat {log['path']}'"))
-        if "WARN" in health_error:
-            warnings.append(Warning(f'Health check error.', f"Hint: [{health_error}]"))
+        report_files = report_record['report_files']
+        log_file = next((file for file in report_files if file['datatype'] == 'report_log'), None)
+        if not log_file:
+            return warnings
+        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(log_file['path'])
+        log_content = self.storage_client.get_bucket(bucket_name).get_blob(blob_name).download_as_string().decode()
+        if 'WARN' in log_content:
+            warnings.append('A warning was found in the patient-reporter log. '
+                            f"Try running 'gsutil cat {log_file}' | grep WARN' to find out more.")
 
-        res[report['id']] = warnings
-    return res
+        if ("Consent" in log_content or
+                "Mismatching ref sample name" in log_content or
+                "do not match" in log_content or
+                "Missing or invalid hospital" in log_content):
+            warnings.append('A lims error was found in the patient-reporter log. '
+                            f"Check for lims problems 'gsutil cat {log_file}'.")
+
+        return warnings
+
+    def _get_health_checker_related_warnings(self, report_record):
+        warnings = []
+        associated_set_name = self._get_set_name_from_report(report_record)
+        health_checker_log = _get_health_error_validated_run(associated_set_name)
+        if 'WARN' in health_checker_log:
+            warnings.append('A warning was found in the health checker log. '
+                            f'See: {health_checker_log}')
+        return warnings
+
+    def _get_rose_related_warnings(self, report_record):
+        warnings = []
+        associated_run = self._get_associated_run(report_record=report_record)
+        run_files = self.rest_client.get_run_files(run_id=associated_run['id'])
+
+        purple_driver_catalog_file = next(
+            (file for file in run_files if file['datatype'] == 'purple_somatic_driver_catalog'), None)
+        if not purple_driver_catalog_file:
+            return warnings
+        path = purple_driver_catalog_file['filepath']
+        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(path)
+        content = self.storage_client.bucket(bucket_name).get_blob(blob_name).download_as_string().decode()
+        if content.find('AMP'):
+            warnings.append(f"A rose related warning was found. Try running 'gsutil cat {path}'")
+        return warnings
+
+    def _get_associated_run(self, report_record):
+        return self.all_runs[self.all_runs['id'] == report_record['run_id']]
+
+    def _get_set_name_from_report(self, report_record):
+        associated_run = self.all_runs[self.all_runs['id'] == report_record['run_id']]
+        if len(associated_run) == 0:
+            return None
+        return associated_run.iloc[:1]['set'].values[0]['name']
+
+    def _handle_runs_without_a_report(self):
+        failed_executions = self.rest_client.get_failed_executions()
+        self._handle_runs_without_a_report_due_to_reporting_pipeline_failure(failed_executions)
+
+        failed_execution_run_ids = [e[0] for e in failed_executions]  # it's a tuple where the first index is run_id
+
+        failed_runs_with_other_reasons = self.failed_runs[~self.failed_runs['id'].isin(failed_execution_run_ids)]
+        self._handle_runs_without_a_report_due_to_other_reasons(runs=failed_runs_with_other_reasons)
+
+    def _handle_runs_without_a_report_due_to_reporting_pipeline_failure(self, failed_executions):
+        print("** RUNS WITH A PATIENT REPORTER FAIL **")
+        print("For these runs there is no report due to a patient report failure.")
+        for i, (run_id, failure) in enumerate(failed_executions):
+            if run_id in self.all_reports['run_id']:
+                continue
+            sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
+            StatusChecker._print_entry(i + 1, {'sample_barcode': sample_barcode,
+                                               'failure': failure})
+
+    @staticmethod
+    def _handle_runs_without_a_report_due_to_other_reasons(runs):
+        print("** RUNS WITHOUT A REPORT FOR OTHER REASONS **")
+        print("For these runs there is no report for a variety of reasons"
+              " (is the patient reporter still processing it?)")
+        for i, run_record in runs.iterrows():
+            StatusChecker._print_entry(i + 1, {'run id': run_record['id']})
+
+    @staticmethod
+    def _print_entry(index, body: dict):
+        print('',
+              f'\t{index}.',
+              *[f'\t{k}: {v}' for (k, v) in body.items()],
+              sep='\n')
 
 
-def get_health_error_validated_run(set_name: str) -> str:
+def _get_fail_reason(run_record):
+    return run_record['failure'].array[0]
+
+
+def _get_health_error_validated_run(set_name: str) -> str:
     return subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
-
-
-def has_rose_error(storage_client: Client, set_name: str, sample_name: str, profile: str):
-    """
-    Finds whether there is an error with the 'rose' tool for a given set and sample.
-
-    :param storage_client: the gcp storage client to access the rose log.
-    :param set_name: the set to check for.
-    :param sample_name: the sample to check for within the set.
-    :param profile: the profile to run this script in (pilot/prod/etc).
-    :return: true if a 'rose' error was found, else false.
-    """
-    bucket_name = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' else 'diagnostic-pipeline-output-pilot-1'
-
-    bucket: Bucket = storage_client.bucket(bucket_name)
-    blob: Blob = bucket.get_blob(f'{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv')
-
-    content = blob.download_as_string().decode()
-    return content.find('AMP') > 0
-
-
-def get_rose_location_as_gs_string(profile, set_name, sample_name):
-    bucket_name = 'diagnostic-pipeline-output-prod-1' if profile == 'prod' else 'diagnostic-pipeline-output-pilot-1'
-    return f'gs://{bucket_name}/{set_name}/purple/{sample_name}.driver.catalog.somatic.tsv'
-
-
-def get_set_name_from_report(report, all_runs):
-    """
-    Given a report (as found in the report created endpoint), this method tries to find the
-    sample set name associated with the report.
-
-    In order to do this, it needs a list of runs to get the SOP string from.
-
-    :param report: the report
-    :param all_runs: all the runs
-    :return: the sample_set name
-    """
-    return all_runs[all_runs['id'] == report['run_id']].iloc[:1]['set'].values[0]['name']
 
 
 if __name__ == '__main__':
