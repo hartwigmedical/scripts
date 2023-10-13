@@ -29,7 +29,7 @@ def assemble_and_emit_correction_event(tumor_sample_barcode: str, project: str):
         comments = input('Enter comments...\n')
         correction = {
             'comments': comments,
-            'remark_is_external': remark_is_external
+            'remarkIsExternal': remark_is_external
         }
 
     data = {
