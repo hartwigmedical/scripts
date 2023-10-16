@@ -53,7 +53,6 @@ class ReportShare:
                                             notify_users=notify_users)
         print("Done :)")
 
-
     def _prompt_user_no_run(self):
         cont = input(
             f"No associated run found for tumor barcode '{self.sample_barcode}'. "
@@ -108,18 +107,27 @@ class ReportShare:
         if self.run_id is None:  # if there is no associated run there are also no report files to return.
             return []
         all_run_files = self.rest_client.get_run_files(self.run_id)
-        run_file_types = {'purple_somatic_driver_catalog',
-                          'linx_driver_catalog',
-                          'somatic_variants_purple',
-                          'structural_variants_purple',
-                          'linx_fusions',
-                          'orange_output_pdf'}
+        run_file_types = self._determine_run_files_to_be_shared()
         run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
         result = []
         for file in run_files_to_upload:
             blob = self._get_blob_from_gs_path(gs_path=file['filepath'])
             result.append(blob)
         return result
+
+    def _determine_run_files_to_be_shared(self):
+        if self.report_created_record['report_type'] in {'panel_result_report', 'panel_result_report_fail'}:
+            return {'purple_somatic_driver_catalog',
+                    'purple_purity',
+                    'somatic_variants_purple',
+                    'structural_variants_purple'}
+        else:  # Oncoact wgs report -- the default case
+            return {'purple_somatic_driver_catalog',
+                    'linx_driver_catalog',
+                    'somatic_variants_purple',
+                    'structural_variants_purple',
+                    'linx_fusions',
+                    'orange_output_pdf'}
 
     def _get_report_files_as_blobs(self):
         all_report_files = self.report_created_record["report_files"]
