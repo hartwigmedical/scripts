@@ -24,9 +24,9 @@ class ArtifactGenerator:
 
     def generate_artifacts(self):
         output_folder = self.generate_output_folder()
-        print(f"Running R scripts. Output is stored at '{output_folder}'.")
+        print(f"Running R scripts.")
         self.run_scripts(output_folder=output_folder)
-        print('The scripts have finished.')
+        print(f"The scripts have finished. Output is stored at '{output_folder}'")
 
     def generate_output_folder(self):
         path = f'~/tmp/{self._sample_barcode}/panel_artifacts'
