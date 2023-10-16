@@ -114,7 +114,7 @@ main(){
             .allowExternalUseWithoutCheck,
             .allowExternalUseWithCheck
         ] | @tsv' <<< "${json_result}"
-    elif [[ "${class}" =~ ^contact-groups ]]; then
+    elif [[ "${class}" =~ ^contact-group ]]; then
         printf "#%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail
         jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email, ([.recipients[].name]|join(";")),
         ([.recipients[].email]|join(";"))] | @tsv' <<< "${json_result}"
