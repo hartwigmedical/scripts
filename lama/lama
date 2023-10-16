@@ -7,7 +7,7 @@ source message_functions || exit 1
 NA="N/A"
 
 get_script="lama_api_get"
-classes_with_table_support=(contact-group contract hospitals isolates patient report status statuses tumor-sample reference-sample
+classes_with_table_support=(contact-groups contract hospitals isolates patient report status statuses tumor-sample reference-sample
 queries/consents queries/database-loader queries/patient-reporter queries/registration TUMOR_INFO)
 
 print_usage(){
@@ -114,9 +114,10 @@ main(){
             .allowExternalUseWithoutCheck,
             .allowExternalUseWithCheck
         ] | @tsv' <<< "${json_result}"
-    elif [[ "${class}" =~ ^contact-group ]]; then
+    elif [[ "${class}" =~ ^contact-groups ]]; then
         printf "#%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail
-        jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email] | @tsv' <<< "${json_result}"
+        jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email, ([.recipients[].name]|join(";")),
+        ([.recipients[].email]|join(";"))] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contract ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" code displayName sampleIdStart type startDate endDate
         jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
