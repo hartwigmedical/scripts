@@ -7,7 +7,7 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        self._api_base_url = 'http://api.pilot-1'
+        self._api_base_url = 'http://api.prod-1'
         self._reporting_pipeline_url = "http://lama.pilot-1"
         self._lama_url = "http://lama.pilot-1"
 
@@ -26,7 +26,7 @@ class RestClient:
 
         :param sample_barcode: the sample_barcode to query for.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/created',
+        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/2/created',
                                 params={'sample_barcode': sample_barcode})
         response.raise_for_status()
         response_json = response.json()
@@ -41,7 +41,7 @@ class RestClient:
                 }, sep='\t')
             to_return = input("Which one do you want to return? Please enter the #\n")
             return response_json[int(to_return) - 1]
-        if len(response_json == 0):
+        if len(response_json) == 0:
             raise ValueError(f"No report created records found for '{sample_barcode}'")
         return response_json[0]
 
