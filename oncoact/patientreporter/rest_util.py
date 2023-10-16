@@ -7,8 +7,8 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        self._api_base_url = 'http://api.prod-1'
-        self._reporting_pipeline_url = "http://lama.pilot-1"
+        self._api_base_url = 'http://api.pilot-1'
+        self._reporting_pipeline_url = "http://reporting-pipeline-launcher.pilot-1"
         self._lama_url = "http://lama.pilot-1"
 
     def get_all_reports_created(self):
@@ -26,7 +26,7 @@ class RestClient:
 
         :param sample_barcode: the sample_barcode to query for.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/2/created',
+        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/created',
                                 params={'sample_barcode': sample_barcode})
         response.raise_for_status()
         response_json = response.json()

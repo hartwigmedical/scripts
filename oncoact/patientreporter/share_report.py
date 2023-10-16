@@ -11,7 +11,7 @@ def main():
     argument_parser.add_argument('--publish', default=False, action='store_true',
                                  help='whether to publish to portal or not')
     argument_parser.add_argument('--notify-users', default=False, action='store_true',
-                                 help='whether to notify the users of the share event')
+                                 help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
     ReportShare(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,

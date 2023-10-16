@@ -64,7 +64,6 @@ class StatusChecker:
         not_shared_failed_reports = self.not_shared_reports[
             self.not_shared_reports['run_id'].isin(self.failed_runs['id'])]
         print("** FAILED RUNS WHOSE REPORT HAS NOT BEEN SHARED YET **")
-        print("Consider generating a fail report for these entries, or investigating the failure.")
         for i, report_record in not_shared_failed_reports.iterrows():
             self._print_failed_report(index=i + 1, report_record=report_record)
 
