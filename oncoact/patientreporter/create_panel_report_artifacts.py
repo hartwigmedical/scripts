@@ -2,6 +2,7 @@ import argparse
 import pathlib
 import rest_util
 import subprocess
+import os
 
 
 def main():
@@ -29,7 +30,8 @@ class ArtifactGenerator:
         print(f"The scripts have finished. Output is stored at '{output_folder}'")
 
     def generate_output_folder(self):
-        path = f'~/tmp/{self._sample_barcode}/panel_artifacts'
+        home_dir = os.path.expanduser('~')
+        path = f'{home_dir}/tmp/{self._sample_barcode}/panel_artifacts'
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
         return path
 
