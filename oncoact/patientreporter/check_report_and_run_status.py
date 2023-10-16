@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    StatusChecker(profile=args.profile).print_report_and_run_summary()
+    StatusChecker(profile=args.profile).generate_and_print_report_summary()
 
 
 class StatusChecker:
@@ -42,150 +42,170 @@ class StatusChecker:
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports['run_id'])]
 
-    def print_report_and_run_summary(self):
-        print("REPORT AND RUN SUMMARY")
-        self._handle_failed_runs()
-        self._handle_finished_runs()
-        self._handle_validated_runs()
+    def generate_and_print_report_summary(self):
+        chapters = [self._failed_runs_chapter(),
+                    self._finished_runs_chapter(),
+                    self._validated_runs_chapter(),
+                    self._reporting_pipeline_failures_chapter()]
 
-        self._handle_reporting_pipeline_failures()
+        _print_chapters(chapters)
 
-    def _handle_failed_runs(self):
-        print('\n---- Failed runs ----\n')
+    def _failed_runs_chapter(self):
+        failed_runs_chapter = Chapter(name="Failed runs")
+        failed_runs_chapter.add_section(self._failed_runs_without_report_section())
+        failed_runs_chapter.add_section(self._failed_runs_with_report_not_shared_section())
+        failed_runs_chapter.add_section(self._failed_runs_with_report_shared_section())
 
-        self._handle_failed_runs_without_report()
-        self._handle_failed_runs_with_report_not_shared()
-        self._handle_failed_runs_with_report_shared()
+        return failed_runs_chapter
 
-    def _handle_failed_runs_without_report(self):
-        failed_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Failed']
-        if len(failed_runs_without_report) > 0:
-            failed_runs_without_report = failed_runs_without_report.reset_index(drop=True)
-            print('** FAILED RUNS WITHOUT A REPORT **')
-            print('These are runs that have failed, and have no report generated for them.',
-                  'Consider investigating the failure and/or generating a QC failed report.', sep='\n')
-            for i, run_record in failed_runs_without_report.iterrows():
-                output_data = {
-                    'run_id': run_record['id'],
-                    'context': run_record['context'],
-                    'fail_reason': _get_fail_reason(run_record)
-                }
-                StatusChecker._print_entry(i, output_data)
+    def _finished_runs_chapter(self):
+        chapter = Chapter(name="Finished runs")
 
-    def _handle_failed_runs_with_report_not_shared(self):
+        chapter.add_section(self._finished_runs_without_report_section())
+        chapter.add_section(self._finished_runs_with_report_not_shared_section())
+        chapter.add_section(self._finished_runs_with_report_shared_section())
+        return chapter
+
+    def _validated_runs_chapter(self):
+        chapter = Chapter(name='Validated runs')
+        chapter.add_section(self._validated_runs_without_report_section())
+        chapter.add_section(self._validated_runs_with_report_not_shared_section())
+        return chapter
+
+    def _reporting_pipeline_failures_chapter(self):
+        chapter = Chapter(name='Reporting pipeline fails')
+        section = Section(name='Runs with a patient reporter fail',
+                          description='For these runs there is no report due to a patient report failure.')
+        failed_executions = self.rest_client.get_failed_executions()
+
+        for _, (run_id, failure) in enumerate(failed_executions):
+            sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
+            section.add_content({'sample_barcode': sample_barcode,
+                                 'failure': failure})
+        chapter.add_section(section)
+        return chapter
+
+    def _failed_runs_without_report_section(self):
+        section = Section(name='Failed runs without a report',
+                          description='These are runs that have failed, and have no report generated for them. '
+                                      'Consider investigating the failure and/or generating a QC failed report.')
+
+        failed_runs_without_report = self.runs_without_report[
+            self.runs_without_report['status'] == 'Failed']
+        for _, run_record in failed_runs_without_report.iterrows():
+            section.add_content({
+                'run_id': run_record['id'],
+                'context': run_record['context'],
+                'fail_reason': _get_fail_reason(run_record)
+            })
+        return section
+
+    def _failed_runs_with_report_not_shared_section(self):
+        section = Section(name="Failed runs whose report has not been shared",
+                          description="These failed runs have an generated report, "
+                                      "but this report has not been shared yet.")
+
         not_shared_failed_reports = self.not_shared_reports[
             self.not_shared_reports['run_id'].isin(self.failed_runs['id'])]
-        if len(not_shared_failed_reports) > 0:
-            not_shared_failed_reports.reset_index(drop=True)
-            print("** FAILED RUNS WHOSE REPORT HAS NOT BEEN SHARED YET **")
-            print("These failed runs have an generated report, but this report has not been shared yet.")
-            for i, report_record in not_shared_failed_reports.iterrows():
-                self._print_failed_report(index=i, report_record=report_record)
+        for _, report_record in not_shared_failed_reports.iterrows():
+            content = self._generate_failed_report_content(report_record=report_record)
+            section.add_content(content)
+        return section
 
-    def _handle_failed_runs_with_report_shared(self):
+    def _failed_runs_with_report_shared_section(self):
+        section = Section(name="Failed runs whose reports have been shared",
+                          description="Typically, the API status for these kind of runs is set to validated. "
+                                      "Here, this is not yet the case Consider setting the API to status 'validated'")
+
         shared_failed_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.failed_runs['id'])]
-        if len(shared_failed_reports) > 0:
-            shared_failed_reports = shared_failed_reports.reset_index(drop=True)
-            print("** FAILED RUNS WHOSE REPORTS HAVE BEEN SHARED **")
-            print(
-                "Typically, the API status for these kind of runs is set to validated. Here, this is not yet the case",
-                "Consider setting the API to status 'validated'", sep='\n')
-            for i, report_record in shared_failed_reports.iterrows():
-                self._print_failed_report(index=i, report_record=report_record)
+        for _, report_record in shared_failed_reports.iterrows():
+            content = self._generate_failed_report_content(report_record=report_record)
+            section.add_content(content)
+        return section
 
-    def _print_failed_report(self, index, report_record):
+    def _generate_failed_report_content(self, report_record):
         associated_run = self.failed_runs[self.failed_runs['id'] == report_record['run_id']]
         if len(associated_run) == 0:
             fail_reason = 'Unknown (run not present in API)'
         else:
             fail_reason = _get_fail_reason(associated_run.iloc[0])
 
-        StatusChecker._print_entry(index, {'run_id': int(report_record['run_id']),
-                                           'sample_barcode': report_record['sample_barcode'],
-                                           'isolation_barcode': report_record['barcode'],
-                                           'fail_reason': fail_reason})
+        return {'run_id': int(report_record['run_id']),
+                'sample_barcode': report_record['sample_barcode'],
+                'isolation_barcode': report_record['barcode'],
+                'fail_reason': fail_reason}
 
-    def _handle_finished_runs(self):
-        print('\n---- Finished runs ----\n')
-        self._handle_finished_runs_without_report()
-        self._handle_finished_runs_with_report_not_shared()
-        self._handle_finished_runs_with_report_shared()
+    def _finished_runs_without_report_section(self):
+        section = Section(name="Finished runs without a report",
+                          description="These pipeline runs are finished, but no report exists yet. "
+                                      "This could be because the patient reporter is still processing this run.")
 
-    def _handle_finished_runs_without_report(self):
         finished_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Finished']
-        if len(finished_runs_without_report) > 0:
-            finished_runs_without_report = finished_runs_without_report.reset_index(drop=True)
-            print("** FINISHED RUNS WITHOUT REPORT **")
-            print("These pipeline runs are finished, but no report exists yet.",
-                  "This could be because the patient reporter is still processing this run.",
-                  sep='\n')
-            for i, run_record in finished_runs_without_report.iterrows():
-                print_body = {
-                    'run_id': run_record['id'],
-                    'context': run_record['context']
-                }
-                StatusChecker._print_entry(i, print_body)
+        for _, run_record in finished_runs_without_report.iterrows():
+            content = {
+                'run_id': run_record['id'],
+                'context': run_record['context']
+            }
+            section.add_content(content)
+        return section
 
-    def _handle_finished_runs_with_report_not_shared(self):
+    def _finished_runs_with_report_not_shared_section(self):
+        section = Section(name='Finished runs whose reports have not been shared',
+                          description='Typically, these runs have not been validated yet by the snp-check. '
+                                      'Hence no action has to be performed.')
+
         not_shared_finished_reports = self.not_shared_reports[
             self.not_shared_reports['run_id'].isin(self.finished_runs['id'])]
-        if len(not_shared_finished_reports) > 0:
-            not_shared_finished_reports = not_shared_finished_reports.reset_index(drop=True)
-            print('** FINISHED RUNS WHOSE REPORTS HAVE NOT BEEN SHARED **')
-            print('Typically, these runs have not been validated yet by the snp-check. '
-                  'Hence no action has to be performed.')
-            for i, report_record in not_shared_finished_reports.iterrows():
-                self._print_finished_report(index=i, report_record=report_record)
 
-    def _handle_finished_runs_with_report_shared(self):
+        for _, report_record in not_shared_finished_reports.iterrows():
+            content = {'sample barcode': report_record["sample_barcode"],
+                       'isolation barcode': report_record["barcode"]}
+            section.add_content(content)
+        return section
+
+    def _finished_runs_with_report_shared_section(self):
+        section = Section(name='Finished runs whose reports have been shared already',
+                          description='WARNING: these reports have not been validated yet, '
+                                      'but have already been shared!')
         shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.finished_runs['id'])]
-        if len(shared_finished_reports) > 0:
-            shared_finished_reports = shared_finished_reports.reset_index(drop=True)
-            print('** FINISHED RUNS WHOSE REPORTS HAVE ALREADY BEEN SHARED **')
-            print('WARNING: these reports have not been validated yet, but have already been shared!')
-            for i, report_record in shared_finished_reports.iterrows():
-                self._print_finished_report(index=i, report_record=report_record)
 
-    @staticmethod
-    def _print_finished_report(index, report_record):
-        StatusChecker._print_entry(index, {'sample barcode': report_record["sample_barcode"],
-                                           'isolation barcode': report_record["barcode"]})
+        for _, report_record in shared_finished_reports.iterrows():
+            content = {'sample barcode': report_record["sample_barcode"],
+                       'isolation barcode': report_record["barcode"]}
+            section.add_content(content)
+        return section
 
-    def _handle_validated_runs(self):
-        print('\n---- Validated runs ----\n')
-        self._handle_validated_runs_without_report()
-        self._handle_validated_runs_whith_report_not_shared()
+    def _validated_runs_without_report_section(self):
+        section = Section(name='Validated runs without a report',
+                          description='These runs are already validated, but have no report yet. '
+                                      'It could be that the reporting pipeline is still processing them.')
 
-    def _handle_validated_runs_without_report(self):
         validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Validated']
-        if len(validated_runs_without_report) > 0:
-            validated_runs_without_report = validated_runs_without_report.reset_index(drop=True)
-            print('** VALIDATED RUNS WITHOUT A REPORT **')
-            print('These runs are already validated, but have no report yet.',
-                  'It could be that the reporting pipeline is still processing them.',
-                  sep='\n')
-            for i, run_record in validated_runs_without_report.iterrows():
-                print_data = {
-                    'run_id': run_record['id'],
-                    'context': run_record['context']
-                }
-                StatusChecker._print_entry(i, print_data)
 
-    def _handle_validated_runs_whith_report_not_shared(self):
+        for _, run_record in validated_runs_without_report.iterrows():
+            content = {
+                'run_id': run_record['id'],
+                'context': run_record['context']
+            }
+            section.add_content(content)
+        return section
+
+    def _validated_runs_with_report_not_shared_section(self):
+        section = Section(name="Validated runs whose report has not been shared yet",
+                          description='These reports are (almost) ready to be shared,'
+                                      ' any pending warnings are displayed below.')
+
         not_shared_validated_reports = self.not_shared_reports[
             self.not_shared_reports['run_id'].isin(self.validated_runs['id'])]
-        if len(not_shared_validated_reports) > 0:
-            not_shared_validated_reports = not_shared_validated_reports.reset_index(drop=True)
-            print('** VALIDATED RUNS WHOSE REPORT IS HAS NOT YET BEEN SHARED **')
-            print('These reports are (almost) ready to be shared, any pending warnings are displayed below.')
-            for i, report_record in not_shared_validated_reports.iterrows():
-                self._print_validated_report(index=i, report_record=report_record)
+        for _, report_record in not_shared_validated_reports.iterrows():
+            section.add_content(self._print_validated_report(report_record))
+        return section
 
-    def _print_validated_report(self, index, report_record):
+    def _print_validated_report(self, report_record):
         warnings = self._get_all_report_associated_warnings(report_record)
-        StatusChecker._print_entry(index, {'sample barcode': report_record['sample_barcode'],
-                                           'isolation barcode': report_record['barcode'],
-                                           'warnings': warnings})
+        return {'sample barcode': report_record['sample_barcode'],
+                'isolation barcode': report_record['barcode'],
+                'warnings': warnings}
 
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
@@ -248,28 +268,9 @@ class StatusChecker:
             return None
         return associated_run.iloc[:1]['set'].values[0]['name']
 
-    def _handle_reporting_pipeline_failures(self):
-        failed_executions = self.rest_client.get_failed_executions()
-        if len(failed_executions) > 0:
-            print("** RUNS WITH A PATIENT REPORTER FAIL **")
-            print("For these runs there is no report due to a patient report failure.")
-            for i, (run_id, failure) in enumerate(failed_executions):
-                if run_id in self.all_reports['run_id']:
-                    continue
-                sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-                StatusChecker._print_entry(i, {'sample_barcode': sample_barcode,
-                                               'failure': failure})
-
-    @staticmethod
-    def _print_entry(index, body: dict):
-        print('',
-              f'\t{index + 1}.',
-              *[f'\t{k}: {v}' for (k, v) in body.items()],
-              sep='\n')
-
 
 def _get_fail_reason(run_record):
-    return run_record['failure']  # .array[0]
+    return run_record['failure']
 
 
 def _get_health_error_validated_run(set_name: str) -> str:
@@ -277,7 +278,6 @@ def _get_health_error_validated_run(set_name: str) -> str:
 
 
 class Chapter:
-
     def __init__(self, name):
         self.name = name
         self.sections = []
@@ -287,9 +287,26 @@ class Chapter:
 
 
 class Section:
-    def __init__(self, name, content):
+    def __init__(self, name, description=None):
         self.name = name
-        self.content = content
+        self.description = description
+        self.contents = []
+
+    def add_content(self, to_add):
+        self.contents.append(to_add)
+
+
+def _print_chapters(chapters):
+    for chapter in chapters:
+        print(f'\n\n--- {chapter.name} ---')
+        for section in chapter.sections:
+            print(f'\n** {section.name.upper()} **')
+            print(section.description)
+            for i, content in enumerate(section.contents):
+                print('',
+                      f'\t{i + 1}.',
+                      *[f'\t{k}: {v}' for (k, v) in content.items()],
+                      sep='\n')
 
 
 if __name__ == '__main__':
