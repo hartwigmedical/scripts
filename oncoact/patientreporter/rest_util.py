@@ -6,17 +6,17 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        if profile.lower == 'pilot':
+        if profile == 'pilot':
             self._api_base_url = 'http://api.pilot-1'
             self._reporting_pipeline_url = "http://reporting-pipeline-launcher.pilot-1"
             self._lama_url = "http://lama.pilot-1"
-        if profile.lower == 'prod' or profile.lower == 'preview':
+        if profile == 'prod' or profile == 'preview':
             self._api_base_url = 'http://api.prod-1'
             self._reporting_pipeline_url = "http://reporting-pipeline-launcher.prod-1"
             self._lama_url = "http://lama.prod-1"
 
-        self._report_created_url = f'{self._api_base_url}/hmf/v1/reports/created'
-        self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/shared'
+        self._report_created_url = f'{self._api_base_url}/hmf/v1/reports/2/created'
+        self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/2/shared'
         self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
         self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
 
@@ -41,7 +41,7 @@ class RestClient:
         if len(response_json) == 0:
             raise ValueError(f"No report created records found for '{sample_barcode}'")
         if len(response_json) > 1:
-            print(f"Query returned more than one result")
+            print(f"Report created endpoint returned more than one result")
             print('#', 'summary', sep='\t')
             for i, created in enumerate(response_json):
                 print(i + 1, {
@@ -66,8 +66,6 @@ class RestClient:
     def get_sample_set_by_sample_name(self, sample_name):
         """
         Queries the 'sets' endpoint with the given tumor sample name and returns the first entry.
-
-        :param sample_name: the sample_name to query for.
         """
         response = requests.get(self._sets_url, params={'tumor_sample': sample_name})
         response.raise_for_status()
@@ -101,8 +99,6 @@ class RestClient:
     def get_failed_executions(self):
         """
         Gets the failed executions from the reporting-pipeline.
-
-        :return: a dictionary `{run_id: stage_states}` where the value contains the stage information.
         """
         response = requests.get(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
         response.raise_for_status()
