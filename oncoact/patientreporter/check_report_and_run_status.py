@@ -70,7 +70,7 @@ class StatusChecker:
             self.runs_without_report['status'] == 'Failed']
         for _, run_record in failed_runs_without_report.iterrows():
             run_content = _get_default_run_content(run_record)
-            run_content['fail_reason'] = _get_fail_reason(run_record)
+            run_content['fail_reason'] = run_record['failure']
             section.add_content(run_content)
         return section
 
@@ -98,13 +98,12 @@ class StatusChecker:
         return section
 
     def _generate_failed_report_content(self, report_record):
-        associated_run = self.failed_runs[self.failed_runs['id'] == report_record['run_id']].iloc[0]
-        fail_reason = _get_fail_reason(associated_run)
+        run_record = self._get_run_from_report_record(report_record)
+        fail_reason = run_record['failure']
 
-        run_content = _get_default_run_content(associated_run)
+        run_content = _get_default_run_content(run_record)
         run_content['fail_reason'] = fail_reason
         report_content = _get_default_report_content(report_record)
-
         return {**run_content,
                 **report_content}
 
@@ -136,7 +135,7 @@ class StatusChecker:
             self.not_shared_reports['run_id'].isin(self.finished_runs['id'])]
 
         for _, report_record in not_shared_finished_reports.iterrows():
-            section.add_content(self.get_content_based_on_report_record(report_record))
+            section.add_content(self._get_default_report_and_run_content(report_record))
         return section
 
     def _finished_runs_with_report_shared_section(self):
@@ -146,7 +145,7 @@ class StatusChecker:
         shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.finished_runs['id'])]
 
         for _, report_record in shared_finished_reports.iterrows():
-            section.add_content(self.get_content_based_on_report_record(report_record))
+            section.add_content(self._get_default_report_and_run_content(report_record))
         return section
 
     def _validated_runs_chapter(self):
@@ -175,13 +174,11 @@ class StatusChecker:
         not_shared_validated_reports = self.not_shared_reports[
             self.not_shared_reports['run_id'].isin(self.validated_runs['id'])]
         for _, report_record in not_shared_validated_reports.iterrows():
-            section.add_content(self._print_validated_report(report_record))
+            warnings = self._get_all_report_associated_warnings(report_record)
+            content = {**self._get_default_report_and_run_content(report_record),
+                       'warnings': warnings}
+            section.add_content(content)
         return section
-
-    def _print_validated_report(self, report_record):
-        warnings = self._get_all_report_associated_warnings(report_record)
-        return {**self.get_content_based_on_report_record(report_record),
-                'warnings': warnings}
 
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
@@ -212,8 +209,10 @@ class StatusChecker:
 
     def _get_health_checker_related_warnings(self, report_record):
         warnings = []
-        associated_set_name = self._get_set_name_from_report(report_record)
-        health_checker_log = _get_health_error_validated_run(associated_set_name)
+        run_record = self._get_run_from_report_record(report_record)
+        set_name = run_record.iloc[:1]['set'].values[0]['name']
+
+        health_checker_log = _get_health_error_validated_run(set_name)
         if 'WARN' in health_checker_log:
             warnings.append('A warning was found in the health checker log. '
                             f'See: {health_checker_log}')
@@ -221,8 +220,8 @@ class StatusChecker:
 
     def _get_rose_related_warnings(self, report_record):
         warnings = []
-        associated_run = self._get_associated_run(report_record=report_record)
-        run_files = self.rest_client.get_run_files(run_id=associated_run['id'])
+        run_record = self._get_run_from_report_record(report_record=report_record)
+        run_files = self.rest_client.get_run_files(run_id=run_record['id'])
 
         purple_driver_catalog_file = next(
             (file for file in run_files if file['datatype'] == 'purple_somatic_driver_catalog'), None)
@@ -248,32 +247,19 @@ class StatusChecker:
         chapter.add_section(section)
         return chapter
 
-    def get_content_based_on_report_record(self, report_record):
-        run_record = self._get_associated_run(report_record)
-        if run_record is not None:
-            return {**_get_default_run_content(run_record),
-                    **_get_default_report_content(report_record)}
-        return {'run_id': report_record['run_id'],
-                **_get_default_report_content(report_record)}
-
-    def _get_associated_run(self, report_record):
+    def _get_run_from_report_record(self, report_record):
         filtered = self.all_runs[self.all_runs['id'] == report_record['run_id']]
         if len(filtered) == 0:
             return None
         return self.all_runs[self.all_runs['id'] == report_record['run_id']].iloc[0]
 
-    def _get_set_name_from_report(self, report_record):
-        associated_run = self.all_runs[self.all_runs['id'] == report_record['run_id']]
-        if len(associated_run) == 0:
-            return None
-        return associated_run.iloc[:1]['set'].values[0]['name']
-
-
-def _get_default_run_content(run_record):
-    return {
-        'run_id': run_record['id'],
-        'run_finished': run_record['endTime']
-    }
+    def _get_default_report_and_run_content(self, report_record):
+        run_record = self._get_run_from_report_record(report_record)
+        if run_record is not None:
+            return {**_get_default_run_content(run_record),
+                    **_get_default_report_content(report_record)}
+        return {'run_id': report_record['run_id'],
+                **_get_default_report_content(report_record)}
 
 
 def _get_default_report_content(report_created_record):
@@ -285,8 +271,11 @@ def _get_default_report_content(report_created_record):
     }
 
 
-def _get_fail_reason(run_record):
-    return run_record['failure']
+def _get_default_run_content(run_record):
+    return {
+        'run_id': run_record['id'],
+        'run_finished_date': run_record['endTime']
+    }
 
 
 def _get_health_error_validated_run(set_name: str) -> str:
