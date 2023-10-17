@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+patientId=$1 && shift
+
+if [[ -z "${patientId}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+gcloud pubsub topics publish projects/actin-prod/topics/analysis-pipeline.pending --message="{\"patientId\": \"$patientId\"}"
