@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    StatusChecker(profile=args.profile).generate_and_print_report_summary()
+    StatusChecker(profile=args.profile).generate_and_print_summary()
 
 
 class StatusChecker:
@@ -45,7 +45,7 @@ class StatusChecker:
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports['run_id'])]
 
-    def generate_and_print_report_summary(self):
+    def generate_and_print_summary(self):
         chapters = [self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
@@ -285,9 +285,6 @@ class Chapter:
 
     def add_section(self, section):
         self.sections.append(section)
-
-    def is_empty(self):
-        return all(s.is_empty() for s in self.sections)
 
 
 class Section:
