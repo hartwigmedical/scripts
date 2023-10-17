@@ -1,5 +1,4 @@
 import json
-from typing import List
 
 import requests
 
@@ -7,9 +6,14 @@ import requests
 class RestClient:
 
     def __init__(self, profile):
-        self._api_base_url = 'http://api.pilot-1'
-        self._reporting_pipeline_url = "http://reporting-pipeline-launcher.pilot-1"
-        self._lama_url = "http://lama.pilot-1"
+        if profile.lower == 'pilot':
+            self._api_base_url = 'http://api.pilot-1'
+            self._reporting_pipeline_url = "http://reporting-pipeline-launcher.pilot-1"
+            self._lama_url = "http://lama.pilot-1"
+        if profile.lower == 'prod' or profile.lower == 'preview':
+            self._api_base_url = 'http://api.prod-1'
+            self._reporting_pipeline_url = "http://reporting-pipeline-launcher.prod-1"
+            self._lama_url = "http://lama.prod-1"
 
     def get_all_reports_created(self):
         """
@@ -71,13 +75,14 @@ class RestClient:
         response.raise_for_status()
         return response.json()
 
-    def get_runs(self):
+    def get_diagnostic_somatic_cpct_runs(self):
         """
-        Queries the 'runs' endpoint and returns somatic and CPCT inis
+        Queries the 'runs' endpoint for all diagnostic runs and returns somatic and CPCT inis
         """
         res = []
         for ini_type in ['CPCT', 'Somatic']:
-            response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs', params={'ini': f'{ini_type}.ini'})
+            response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs', params={'ini': f'{ini_type}.ini',
+                                                                                     'context': 'DIAGNOSTIC'})
             response.raise_for_status()
             res += response.json()
         return res

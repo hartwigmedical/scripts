@@ -9,17 +9,17 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Emit a QC fail event to the reporting pipeline.")
     parser.add_argument('tumor_sample_barcode')
-    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
     args = parser.parse_args()
 
     tumor_sample_barcode = args.tumor_sample_barcode
 
-    project = None
     if args.profile == 'pilot':
         project = 'hmf-pipeline-development'
-    elif args.profile == 'prod':
+    elif args.profile == 'prod' or args.profile == 'preview':
         project = 'hmf-pipeline-prod'
-
+    else:
+        raise ValueError(f"Profile '{args.profile}' not recognized.")
     assemble_and_emit_qc_fail_event(tumor_sample_barcode, project)
 
 

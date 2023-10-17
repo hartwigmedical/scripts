@@ -9,10 +9,15 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Emit a report override event to the reporting pipeline')
     parser.add_argument('tumor_sample_barcode')
-    parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
     args = parser.parse_args()
 
-    project = 'hmf-pipeline-development'  # TODO set dynamically
+    if args.profile == 'pilot':
+        project = 'hmf-pipeline-development'
+    elif args.profile == 'prod' or args.profile == 'preview':
+        project = 'hmf-pipeline-prod'
+    else:
+        raise ValueError(f"Profile '{args.profile}' not recognized.")
     assemble_and_emit_correction_event(args.tumor_sample_barcode, project)
 
 

@@ -1,13 +1,13 @@
 import argparse
 from rest_util import RestClient
-from google.cloud.storage import Bucket, Blob, Client
+from google.cloud.storage import Bucket, Client
 from gsutil import get_bucket_and_blob_names_from_gs_path, get_file_name_from_blob
 
 
 def main():
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('sample_barcode')
-    argument_parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    argument_parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
     argument_parser.add_argument('--publish', default=False, action='store_true',
                                  help='whether to publish to portal or not')
     argument_parser.add_argument('--notify-users', default=False, action='store_true',
