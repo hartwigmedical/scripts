@@ -14,11 +14,11 @@ def main():
                                  help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
-    ReportShare(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                       notify_users=args.notify_users)
+    ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
+                                                                                        notify_users=args.notify_users)
 
 
-class ReportShare:
+class ReportSharer:
 
     def __init__(self, sample_barcode, profile='pilot'):
         self.sample_barcode = sample_barcode
@@ -74,11 +74,7 @@ class ReportShare:
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
     def _copy_files_to_remote_buckets(self):
-        if self.report_created_record['report_type'] == 'panel_report':  # TODO find true panel type name
-            run_blobs = self._get_panel_run_files_as_blobs()
-        else:
-            run_blobs = self._get_wgs_run_files_as_blobs()
-
+        run_blobs = self._get_run_files_as_blobs()
         report_blobs = self._get_report_files_as_blobs()
 
         print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
@@ -90,27 +86,15 @@ class ReportShare:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
             self._copy_blob_to_archive_bucket(blob=blob)
 
-    def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
-        if target_sub_folder != '' and target_sub_folder[-1] != '/':
-            target_sub_folder += '/'
-        file_name = get_file_name_from_blob(blob.name)
-        source_bucket = blob.bucket
-        print(f"{blob.name} ---> {self.portal_bucket.name}")
-        source_bucket.copy_blob(blob=blob,
-                                destination_bucket=self.portal_bucket,
-                                new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
-
-    def _copy_blob_to_archive_bucket(self, blob):
-        file_name = get_file_name_from_blob(blob.name)
-        source_bucket = blob.bucket
-        print(f"{blob.name} ---> {self.archive_bucket.name}")
-        source_bucket.copy_blob(blob=blob,
-                                destination_bucket=self.archive_bucket,
-                                new_name=file_name)
+    def _get_run_files_as_blobs(self):
+        if self.run is None:  # if there is no associated run there are also no run files to return.
+            return []
+        if self.report_created_record['report_type'] == 'panel_report':  # TODO find true panel type name
+            return self._get_panel_run_files_as_blobs()
+        else:
+            return self._get_wgs_run_files_as_blobs()
 
     def _get_wgs_run_files_as_blobs(self):
-        if self.run_id is None:  # if there is no associated run there are also no run files to return.
-            return []
         all_run_files = self.rest_client.get_run_files(self.run_id)
         run_file_types = {'purple_somatic_driver_catalog',
                           'linx_driver_catalog',
@@ -130,8 +114,6 @@ class ReportShare:
         Panel run files currently are NOT stored in the API because the archiver doesn't run.
         Hence, we have to hardcode almost all panel blob-names to retrieve them.
         """
-        if self.run_id is None:
-            return []
         panel_file_suffixes = {
             "driver.catalog.somatic.tsv",
             "purple.somatic.vcf.gz"
@@ -164,6 +146,24 @@ class ReportShare:
             blob = self._get_blob_from_gs_path(gs_path=file['path'])
             result.append(blob)
         return result
+
+    def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
+        if target_sub_folder != '' and target_sub_folder[-1] != '/':
+            target_sub_folder += '/'
+        file_name = get_file_name_from_blob(blob.name)
+        source_bucket = blob.bucket
+        print(f"{blob.name} ---> {self.portal_bucket.name}")
+        source_bucket.copy_blob(blob=blob,
+                                destination_bucket=self.portal_bucket,
+                                new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
+
+    def _copy_blob_to_archive_bucket(self, blob):
+        file_name = get_file_name_from_blob(blob.name)
+        source_bucket = blob.bucket
+        print(f"{blob.name} ---> {self.archive_bucket.name}")
+        source_bucket.copy_blob(blob=blob,
+                                destination_bucket=self.archive_bucket,
+                                new_name=file_name)
 
     def _get_blob_from_gs_path(self, gs_path):
         bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(gs_path)
