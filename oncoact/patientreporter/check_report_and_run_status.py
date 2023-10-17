@@ -21,14 +21,17 @@ class StatusChecker:
         self.rest_client = RestClient(profile)
         self.storage_client = Client()
 
-        self.all_reports = pd.DataFrame(self.rest_client.get_all_reports_created())
+        self.all_reports = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
+                            .drop_duplicates(subset='id', keep='last'))
+
         # these if checks are to ensure that if the dataframe is empty,
         # it still has the required columns to prevent KeyErrors.
         if len(self.all_reports) == 0:
             self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
 
-        self.shared_reports = pd.DataFrame([shared['report_created']
-                                            for shared in self.rest_client.get_all_reports_shared()])
+        self.shared_reports = (pd.DataFrame([shared['report_created']
+                                             for shared in self.rest_client.get_all_reports_shared()])
+                               .drop_duplicates(subset='id', keep='last'))
         if len(self.shared_reports) == 0:
             self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
         self.not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
