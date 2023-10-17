@@ -235,6 +235,8 @@ sub processSample{
     my $entity = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $priority = getPriorityForSample( $sample );
     my $yield_in_gbase = getValueByKey( $sample, 'yield' );
+    my $reporting_id = getValueByKey( $sample, 'reporting_id' );
+    my $ref_reporting_id = $reporting_id . "-ref";
 
     ## floats are allowed for yield_in_gbase
     ## flooring to whole numbers for yield (in bases) by converting to int
@@ -372,8 +374,6 @@ sub processSample{
     }
     elsif ( $analysis eq 'Somatic_T' ){
 
-        my $reporting_id = getValueByKey( $sample, 'reporting_id' );
-        my $ref_reporting_id = $reporting_id . "-ref";
         my $ref_obj;
         my $ini = $SOM_INI;
         my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
