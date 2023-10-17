@@ -117,7 +117,7 @@ main(){
     elif [[ "${class}" =~ ^contact-group ]]; then
         printf "#%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail
         jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email, ([.recipients[].name]|join(";")),
-        ([.recipients[].email]|join(";"))] | @tsv' | sort -k1 -k2 <<< "${json_result}"
+        ([.recipients[].email]|join(";"))] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contract ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" code displayName sampleIdStart type startDate endDate
         jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
