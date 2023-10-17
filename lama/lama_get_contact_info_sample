@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source lama || exit 1
 
 tumor_barcode=$1 && shift
 
@@ -9,11 +8,10 @@ if [[ -z "${tumor_barcode}" ]]; then
     error "No tumor barcode ID passed to function. Exiting"
 fi
 
-lama_endpoint=$(curl "http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode}")
+lama_endpoint=$(curl "http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode}" -L | jq .)
 
-hospitalName=$(echo $lama_endpoint | jq .hospitalName)
-contractCode=$(echo $lama_endpoint | jq .contractCode)
+hospitalName=$(echo $lama_endpoint | jq .hospitalName | tr -d '"')
+contractCode=$(echo $lama_endpoint | jq .contractCode | tr -d '"')
 
 echo "Contact details on sample ${tumor_barcode}"
 lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}"
-
