@@ -128,7 +128,7 @@ class ReportShare:
     def _get_panel_run_files_as_blobs(self):
         """
         Panel run files currently are NOT stored in the API because the archiver doesn't run.
-        Hence, we have to hardcode almost all panel files to retrieve.
+        Hence, we have to hardcode almost all panel blob-names to retrieve them.
         """
         if self.run_id is None:
             return []
