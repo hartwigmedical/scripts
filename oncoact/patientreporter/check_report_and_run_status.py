@@ -61,33 +61,6 @@ class StatusChecker:
 
         return failed_runs_chapter
 
-    def _finished_runs_chapter(self):
-        chapter = Chapter(name="Finished runs")
-
-        chapter.add_section(self._finished_runs_without_report_section())
-        chapter.add_section(self._finished_runs_with_report_not_shared_section())
-        chapter.add_section(self._finished_runs_with_report_shared_section())
-        return chapter
-
-    def _validated_runs_chapter(self):
-        chapter = Chapter(name='Validated runs')
-        chapter.add_section(self._validated_runs_without_report_section())
-        chapter.add_section(self._validated_runs_with_report_not_shared_section())
-        return chapter
-
-    def _reporting_pipeline_failures_chapter(self):
-        chapter = Chapter(name='Reporting pipeline fails')
-        section = Section(name='Runs with a patient reporter fail',
-                          description='For these runs there is no report due to a patient report failure.')
-        failed_executions = self.rest_client.get_failed_executions()
-
-        for _, (run_id, failure) in enumerate(failed_executions):
-            sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-            section.add_content({'sample_barcode': sample_barcode,
-                                 'failure': failure})
-        chapter.add_section(section)
-        return chapter
-
     def _failed_runs_without_report_section(self):
         section = Section(name='Failed runs without a report',
                           description='These are runs that have failed, and have no report generated for them. '
@@ -96,11 +69,9 @@ class StatusChecker:
         failed_runs_without_report = self.runs_without_report[
             self.runs_without_report['status'] == 'Failed']
         for _, run_record in failed_runs_without_report.iterrows():
-            section.add_content({
-                'run_id': run_record['id'],
-                'context': run_record['context'],
-                'fail_reason': _get_fail_reason(run_record)
-            })
+            run_content = _get_default_run_content(run_record)
+            run_content['fail_reason'] = _get_fail_reason(run_record)
+            section.add_content(run_content)
         return section
 
     def _failed_runs_with_report_not_shared_section(self):
@@ -127,28 +98,32 @@ class StatusChecker:
         return section
 
     def _generate_failed_report_content(self, report_record):
-        associated_run = self.failed_runs[self.failed_runs['id'] == report_record['run_id']]
-        if len(associated_run) == 0:
-            fail_reason = 'Unknown (run not present in API)'
-        else:
-            fail_reason = _get_fail_reason(associated_run.iloc[0])
+        associated_run = self.failed_runs[self.failed_runs['id'] == report_record['run_id']].iloc[0]
+        fail_reason = _get_fail_reason(associated_run)
 
-        return {'run_id': int(report_record['run_id']),
-                'sample_barcode': report_record['sample_barcode'],
-                'isolation_barcode': report_record['barcode'],
-                'fail_reason': fail_reason}
+        run_content = _get_default_run_content(associated_run)
+        run_content['fail_reason'] = fail_reason
+        report_content = _get_default_report_content(report_record)
+
+        return {**run_content,
+                **report_content}
+
+    def _finished_runs_chapter(self):
+        chapter = Chapter(name="Finished runs")
+
+        chapter.add_section(self._finished_runs_without_report_section())
+        chapter.add_section(self._finished_runs_with_report_not_shared_section())
+        chapter.add_section(self._finished_runs_with_report_shared_section())
+        return chapter
 
     def _finished_runs_without_report_section(self):
         section = Section(name="Finished runs without a report",
-                          description="These pipeline runs are finished, but no report exists yet. "
+                          description="These molecular pipeline runs are finished, but no report exists yet. "
                                       "This could be because the patient reporter is still processing this run.")
 
         finished_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Finished']
         for _, run_record in finished_runs_without_report.iterrows():
-            content = {
-                'run_id': run_record['id'],
-                'context': run_record['context']
-            }
+            content = _get_default_run_content(run_record)
             section.add_content(content)
         return section
 
@@ -161,9 +136,7 @@ class StatusChecker:
             self.not_shared_reports['run_id'].isin(self.finished_runs['id'])]
 
         for _, report_record in not_shared_finished_reports.iterrows():
-            content = {'sample barcode': report_record["sample_barcode"],
-                       'isolation barcode': report_record["barcode"]}
-            section.add_content(content)
+            section.add_content(self.get_content_based_on_report_record(report_record))
         return section
 
     def _finished_runs_with_report_shared_section(self):
@@ -173,10 +146,14 @@ class StatusChecker:
         shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.finished_runs['id'])]
 
         for _, report_record in shared_finished_reports.iterrows():
-            content = {'sample barcode': report_record["sample_barcode"],
-                       'isolation barcode': report_record["barcode"]}
-            section.add_content(content)
+            section.add_content(self.get_content_based_on_report_record(report_record))
         return section
+
+    def _validated_runs_chapter(self):
+        chapter = Chapter(name='Validated runs')
+        chapter.add_section(self._validated_runs_without_report_section())
+        chapter.add_section(self._validated_runs_with_report_not_shared_section())
+        return chapter
 
     def _validated_runs_without_report_section(self):
         section = Section(name='Validated runs without a report',
@@ -186,10 +163,7 @@ class StatusChecker:
         validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Validated']
 
         for _, run_record in validated_runs_without_report.iterrows():
-            content = {
-                'run_id': run_record['id'],
-                'context': run_record['context']
-            }
+            content = _get_default_run_content(run_record)
             section.add_content(content)
         return section
 
@@ -206,8 +180,7 @@ class StatusChecker:
 
     def _print_validated_report(self, report_record):
         warnings = self._get_all_report_associated_warnings(report_record)
-        return {'sample barcode': report_record['sample_barcode'],
-                'isolation barcode': report_record['barcode'],
+        return {**self.get_content_based_on_report_record(report_record),
                 'warnings': warnings}
 
     def _get_all_report_associated_warnings(self, report_record):
@@ -262,14 +235,54 @@ class StatusChecker:
             warnings.append(f"A rose related warning was found. Try running 'gsutil cat {path}'")
         return warnings
 
+    def _reporting_pipeline_failures_chapter(self):
+        chapter = Chapter(name='Reporting pipeline fails')
+        section = Section(name='Runs with a patient reporter fail',
+                          description='For these runs there is no report due to a patient report failure.')
+        failed_executions = self.rest_client.get_failed_executions()
+
+        for _, (run_id, failure) in enumerate(failed_executions):
+            sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
+            section.add_content({'sample_barcode': sample_barcode,
+                                 'failure': failure})
+        chapter.add_section(section)
+        return chapter
+
+    def get_content_based_on_report_record(self, report_record):
+        run_record = self._get_associated_run(report_record)
+        if run_record is not None:
+            return {**_get_default_run_content(run_record),
+                    **_get_default_report_content(report_record)}
+        return {'run_id': report_record['run_id'],
+                **_get_default_report_content(report_record)}
+
     def _get_associated_run(self, report_record):
-        return self.all_runs[self.all_runs['id'] == report_record['run_id']]
+        filtered = self.all_runs[self.all_runs['id'] == report_record['run_id']]
+        if len(filtered) == 0:
+            return None
+        return self.all_runs[self.all_runs['id'] == report_record['run_id']].iloc[0]
 
     def _get_set_name_from_report(self, report_record):
         associated_run = self.all_runs[self.all_runs['id'] == report_record['run_id']]
         if len(associated_run) == 0:
             return None
         return associated_run.iloc[:1]['set'].values[0]['name']
+
+
+def _get_default_run_content(run_record):
+    return {
+        'run_id': run_record['id'],
+        'run_finished': run_record['endTime']
+    }
+
+
+def _get_default_report_content(report_created_record):
+    return {
+        'report_created_id': report_created_record['id'],
+        'sample_barcode': report_created_record['sample_barcode'],
+        'isolation_barcode': report_created_record['barcode'],
+        'report_type': report_created_record['report_type']
+    }
 
 
 def _get_fail_reason(run_record):
@@ -288,6 +301,9 @@ class Chapter:
     def add_section(self, section):
         self.sections.append(section)
 
+    def is_empty(self):
+        return all(s.is_empty() for s in self.sections)
+
 
 class Section:
     def __init__(self, name, description=None):
@@ -298,6 +314,9 @@ class Section:
     def add_content(self, to_add):
         self.contents.append(to_add)
 
+    def is_empty(self):
+        return len(self.contents) == 0
+
 
 def _print_chapters(chapters):
     for chapter in chapters:
@@ -305,6 +324,9 @@ def _print_chapters(chapters):
         for section in chapter.sections:
             print(f'\n** {section.name.upper()} **')
             print(section.description)
+            if section.is_empty():
+                print('\n\t- This section is empty -')
+                continue
             for i, content in enumerate(section.contents):
                 print('',
                       f'\t{i + 1}.',
