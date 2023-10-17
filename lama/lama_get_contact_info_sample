@@ -9,11 +9,11 @@ if [[ -z "${tumor_barcode}" ]]; then
     error "No tumor barcode ID passed to function. Exiting"
 fi
 
-lama_endpoint=$(curl http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode} -L)
+lama_endpoint=$(curl "http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode}" -L)
 
-#hospitalName=$(echo $lama_endpoint | jq .hospitalName)
-#contractCode=$(echo $lama_endpoint | jq .contractCode)
-#
-#echo "Contact details on sample ${tumor_barcode}"
-#lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}"
+hospitalName=$(echo $lama_endpoint | jq .hospitalName)
+contractCode=$(echo $lama_endpoint | jq .contractCode)
+
+echo "Contact details on sample ${tumor_barcode}"
+lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}"
 
