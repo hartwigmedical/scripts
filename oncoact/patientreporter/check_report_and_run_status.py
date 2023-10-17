@@ -182,7 +182,7 @@ class StatusChecker:
 
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
-                # self._get_health_checker_related_warnings(report_record) +
+                self._get_health_checker_related_warnings(report_record) +
                 self._get_rose_related_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
@@ -210,9 +210,9 @@ class StatusChecker:
     def _get_health_checker_related_warnings(self, report_record):
         warnings = []
         run_record = self._get_run_from_report_record(report_record)
-        set_name = run_record.iloc[:1]['set'].values[0]['name']
+        set_name = run_record['set']['name']
 
-        health_checker_log = _get_health_error_validated_run(set_name)
+        health_checker_log = subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
         if 'WARN' in health_checker_log:
             warnings.append('A warning was found in the health checker log. '
                             f'See: {health_checker_log}')
@@ -276,10 +276,6 @@ def _get_default_run_content(run_record):
         'run_id': run_record['id'],
         'run_finished_date': run_record['endTime']
     }
-
-
-def _get_health_error_validated_run(set_name: str) -> str:
-    return subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
 
 
 class Chapter:
