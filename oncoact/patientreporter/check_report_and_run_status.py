@@ -4,7 +4,7 @@ import subprocess
 
 from rest_util import RestClient
 from gsutil import get_bucket_and_blob_names_from_gs_path
-from google.cloud.storage import Bucket, Blob, Client
+from google.cloud.storage import Client
 
 
 def main():
