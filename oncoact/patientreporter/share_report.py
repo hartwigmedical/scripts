@@ -25,8 +25,9 @@ class ReportShare:
         self.rest_client: RestClient = RestClient(profile)
         self.storage_client: Client = Client()
 
-        self.archive_bucket = self.storage_client.bucket(f'patient-reporter-final-{profile}-1')
-        self.portal_bucket = self.storage_client.bucket(f'hmf-customer-portal-report-shared-{profile}')
+        self.archive_bucket: Bucket = self.storage_client.bucket(f'patient-reporter-final-{profile}-1')
+        self.portal_bucket: Bucket = self.storage_client.bucket(f'hmf-customer-portal-report-shared-{profile}')
+        self.panel_pipeline_output_bucket: Bucket = self.storage_client.bucket(f'targeted-pipeline-output-{profile}-1')
 
         self.report_created_record = self.rest_client.get_report_created(self.sample_barcode)
         self.run_id = self.report_created_record['run_id']
@@ -73,7 +74,11 @@ class ReportShare:
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
     def _copy_files_to_remote_buckets(self):
-        run_blobs = self._get_run_files_as_blobs()
+        if self.report_created_record['report_type'] == 'panel_report':  # TODO find true panel type name
+            run_blobs = self._get_panel_run_files_as_blobs()
+        else:
+            run_blobs = self._get_wgs_run_files_as_blobs()
+
         report_blobs = self._get_report_files_as_blobs()
 
         print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
@@ -103,11 +108,16 @@ class ReportShare:
                                 destination_bucket=self.archive_bucket,
                                 new_name=file_name)
 
-    def _get_run_files_as_blobs(self):
-        if self.run_id is None:  # if there is no associated run there are also no report files to return.
+    def _get_wgs_run_files_as_blobs(self):
+        if self.run_id is None:  # if there is no associated run there are also no run files to return.
             return []
         all_run_files = self.rest_client.get_run_files(self.run_id)
-        run_file_types = self._determine_run_files_to_be_shared()
+        run_file_types = {'purple_somatic_driver_catalog',
+                          'linx_driver_catalog',
+                          'somatic_variants_purple',
+                          'structural_variants_purple',
+                          'linx_fusions',
+                          'orange_output_pdf'}
         run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
         result = []
         for file in run_files_to_upload:
@@ -115,19 +125,35 @@ class ReportShare:
             result.append(blob)
         return result
 
-    def _determine_run_files_to_be_shared(self):
-        if self.report_created_record['report_type'] in {'panel_result_report', 'panel_result_report_fail'}:
-            return {'purple_somatic_driver_catalog',
-                    'purple_purity',
-                    'somatic_variants_purple',
-                    'structural_variants_purple'}
-        else:  # Oncoact wgs report -- the default case
-            return {'purple_somatic_driver_catalog',
-                    'linx_driver_catalog',
-                    'somatic_variants_purple',
-                    'structural_variants_purple',
-                    'linx_fusions',
-                    'orange_output_pdf'}
+    def _get_panel_run_files_as_blobs(self):
+        """
+        Panel run files currently are NOT stored in the API because the archiver doesn't run.
+        Hence, we have to hardcode almost all panel files to retrieve.
+        """
+        if self.run_id is None:
+            return []
+        panel_file_suffixes = {
+            "driver.catalog.somatic.tsv",
+            "purple.somatic.vcf.gz"
+            "purple.purity.tsv",
+            "purple.somatic.vcf.gz",
+            "purple.cnv.gene.tsv",
+            "reported.somatic.vcf",
+            "sampleQcReport.pdf",
+            "sampleQcReport.png",
+            "sampleQcDeamination.pdf",
+            "sampleQcDeamination.png"
+        }
+        result = []
+        set_name = self.run['set']['name']
+        blobs = self.panel_pipeline_output_bucket.list_blobs(prefix=set_name)
+        for suffix in panel_file_suffixes:
+            for blob in blobs:
+                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
+                    result.append(blob)
+                    break
+
+        return result
 
     def _get_report_files_as_blobs(self):
         all_report_files = self.report_created_record["report_files"]
