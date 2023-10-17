@@ -15,11 +15,16 @@ class RestClient:
             self._reporting_pipeline_url = "http://reporting-pipeline-launcher.prod-1"
             self._lama_url = "http://lama.prod-1"
 
+        self._report_created_url = f'{self._api_base_url}/hmf/v1/reports/created'
+        self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/shared'
+        self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
+        self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
+
     def get_all_reports_created(self):
         """
         Queries the 'reports/created' endpoint and returns all results.
         """
-        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/created')
+        response = requests.get(self._report_created_url)
         response.raise_for_status()
         json_response = response.json()
         return json_response
@@ -30,10 +35,11 @@ class RestClient:
 
         :param sample_barcode: the sample_barcode to query for.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/reports/created',
-                                params={'sample_barcode': sample_barcode})
+        response = requests.get(self._report_created_url, params={'sample_barcode': sample_barcode})
         response.raise_for_status()
         response_json = response.json()
+        if len(response_json) == 0:
+            raise ValueError(f"No report created records found for '{sample_barcode}'")
         if len(response_json) > 1:
             print(f"Query returned more than one result")
             print('#', 'summary', sep='\t')
@@ -45,8 +51,6 @@ class RestClient:
                 }, sep='\t')
             to_return = input("Which one do you want to return? Please enter the #\n")
             return response_json[int(to_return) - 1]
-        if len(response_json) == 0:
-            raise ValueError(f"No report created records found for '{sample_barcode}'")
         return response_json[0]
 
     def get_all_reports_shared(self):
@@ -54,7 +58,7 @@ class RestClient:
         Queries the 'reports/shared' endpoint and returns all results.
 
         """
-        response = requests.get(f'{self._api_base_url}/hmf/v1/reports/shared')
+        response = requests.get(self._report_shared_url)
         response.raise_for_status()
         json_response = response.json()
         return json_response
@@ -65,13 +69,13 @@ class RestClient:
 
         :param sample_name: the sample_name to query for.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/sets', params={'tumor_sample': sample_name})
+        response = requests.get(self._sets_url, params={'tumor_sample': sample_name})
         response.raise_for_status()
         response_json = response.json()
         return response_json[0]
 
     def get_sample_set_by_id(self, set_id):
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/sets/{set_id}')
+        response = requests.get(f'{self._sets_url}/{set_id}')
         response.raise_for_status()
         return response.json()
 
@@ -81,8 +85,7 @@ class RestClient:
         """
         res = []
         for ini_type in ['CPCT', 'Somatic']:
-            response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs', params={'ini': f'{ini_type}.ini',
-                                                                                     'context': 'DIAGNOSTIC'})
+            response = requests.get(self._runs_url, params={'ini': f'{ini_type}.ini', 'context': 'DIAGNOSTIC'})
             response.raise_for_status()
             res += response.json()
         return res
@@ -91,7 +94,7 @@ class RestClient:
         """
         Gets the run by id.
         """
-        response = requests.get(url=f'{self._api_base_url}/hmf/v1/runs/{run_id}')
+        response = requests.get(f'{self._runs_url}/{run_id}')
         response.raise_for_status()
         return response.json()
 
@@ -139,7 +142,7 @@ class RestClient:
         tumor_sample = tumor_samples[0]
         tumor_isolation_barcode = tumor_sample['barcode']
 
-        self.get_tumor_sample_barcode(tumor_isolation_barcode)
+        return self.get_tumor_sample_barcode(tumor_isolation_barcode)
 
     def post_report_shared(self, report_created_id, notify_users, publish_to_portal):
         """
