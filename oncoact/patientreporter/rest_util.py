@@ -1,6 +1,6 @@
 import json
-
 import requests
+from datetime import datetime, timedelta
 
 
 class RestClient:
@@ -19,15 +19,25 @@ class RestClient:
         self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/shared'
         self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
         self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
+        self._files_url = f'{self._api_base_url}/hmf/v1/files'
 
-    def get_all_reports_created(self):
+    def get_all_reports_created(self, lookback_days=90):
         """
         Queries the 'reports/created' endpoint and returns all results.
+
+        :param lookback_days the amount of days to look back for the report creation time.
         """
-        response = requests.get(self._report_created_url)
-        response.raise_for_status()
-        json_response = response.json()
-        return json_response
+        from_date = datetime.today().date() - timedelta(days=lookback_days)
+        return _get_as_json(url=self._report_created_url, params={'from_create_date': from_date})
+
+    def get_all_reports_shared(self, lookback_days=90):
+        """
+        Queries the 'reports/shared' endpoint and returns all results.
+
+        :param lookback_days the amount of days to look back for the report creation time.
+        """
+        from_date = datetime.today().date() - timedelta(days=lookback_days)
+        return _get_as_json(url=self._report_shared_url, params={'from_create_date': from_date})
 
     def get_report_created(self, sample_barcode):
         """
@@ -35,11 +45,9 @@ class RestClient:
 
         :param sample_barcode: the sample_barcode to query for.
         """
-        response = requests.get(self._report_created_url, params={'sample_barcode': sample_barcode})
-        response.raise_for_status()
-        response_json = response.json()
+        response_json = _get_as_json(self._report_created_url, params={'sample_barcode': sample_barcode})
         if len(response_json) == 0:
-            raise ValueError(f"No report created records found for '{sample_barcode}'")
+            raise ValueError(f"No report created records found for sample_barcode: '{sample_barcode}'")
         if len(response_json) > 1:
             print(f"Report created endpoint returned more than one result")
             print('#', 'summary', sep='\t')
@@ -53,65 +61,47 @@ class RestClient:
             return response_json[int(to_return) - 1]
         return response_json[0]
 
-    def get_all_reports_shared(self):
-        """
-        Queries the 'reports/shared' endpoint and returns all results.
-
-        """
-        response = requests.get(self._report_shared_url)
-        response.raise_for_status()
-        json_response = response.json()
-        return json_response
-
     def get_sample_set_by_sample_name(self, sample_name):
         """
-        Queries the 'sets' endpoint with the given tumor sample name and returns the first entry.
+        Queries the 'sets' endpoint with the given tumor sample name and returns the last entry.
         """
-        response = requests.get(self._sets_url, params={'tumor_sample': sample_name})
-        response.raise_for_status()
-        response_json = response.json()
-        return response_json[0]
+        response_json = _get_as_json(self._sets_url, params={'tumor_sample': sample_name})
+        if len(response_json) == 0:
+            raise ValueError(f"No sets found for sample_name '{sample_name}'")
+        return response_json[-1]
 
     def get_sample_set_by_id(self, set_id):
-        response = requests.get(f'{self._sets_url}/{set_id}')
-        response.raise_for_status()
-        return response.json()
+        return _get_as_json(f'{self._sets_url}/{set_id}')
 
-    def get_diagnostic_somatic_cpct_runs(self):
+    def get_diagnostic_somatic_cpct_runs(self, lookback_days=90):
         """
-        Queries the 'runs' endpoint for all diagnostic runs and returns somatic and CPCT inis
+        Queries the 'runs' endpoint for all diagnostic runs and returns somatic and CPCT inis.
+        :param lookback_days the amount of days to look back for.
         """
+        from_end_date = datetime.today().date() - timedelta(days=lookback_days)
+
         res = []
         for ini_type in ['CPCT', 'Somatic']:
-            response = requests.get(self._runs_url, params={'ini': f'{ini_type}.ini', 'context': 'DIAGNOSTIC'})
-            response.raise_for_status()
-            res += response.json()
+            res += _get_as_json(self._runs_url, params={'ini': f'{ini_type}.ini',
+                                                        'context': 'DIAGNOSTIC',
+                                                        'from_enddate': from_end_date})
         return res
 
     def get_run(self, run_id):
         """
         Gets the run by id.
         """
-        response = requests.get(f'{self._runs_url}/{run_id}')
-        response.raise_for_status()
-        return response.json()
+        return _get_as_json(f'{self._runs_url}/{run_id}')
 
     def get_failed_executions(self):
         """
         Gets the failed executions from the reporting-pipeline.
         """
-        response = requests.get(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
-        response.raise_for_status()
-
-        json_response: [json] = response.json()
-        res = []
-
-        for execution in json_response:
-            res.append({
-                "run_id": execution.runName,
-                "stage_states": execution.stageStates
-            })
-
+        json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
+        res = [{
+            "run_id": execution.runName,
+            "stage_states": execution.stageStates
+        } for execution in json_response]
         return res
 
     def get_tumor_sample_barcode(self, tumor_isolation_barcode):
@@ -120,9 +110,7 @@ class RestClient:
 
         This method does not rely on the existence of a report. It uses Lama to retrieve the tumor sample barcode.
         """
-        response = requests.get(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')
-        response.raise_for_status()
-        return response.json()['sampleBarcode']
+        return _get_as_json(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')['sampleBarcode']
 
     def get_tumor_sample_barcode_from_run_id(self, run_id):
         """
@@ -139,6 +127,9 @@ class RestClient:
         tumor_isolation_barcode = tumor_sample['barcode']
 
         return self.get_tumor_sample_barcode(tumor_isolation_barcode)
+
+    def get_run_files(self, run_id):
+        return _get_as_json(self._files_url, params={'run_id': run_id})
 
     def post_report_shared(self, report_created_id, notify_users, publish_to_portal):
         """
@@ -157,7 +148,11 @@ class RestClient:
         response = requests.post(f'{self._api_base_url}/hmf/v1/reports/shared', json=body)
         response.raise_for_status()
 
-    def get_run_files(self, run_id):
-        response = requests.get(f'{self._api_base_url}/hmf/v1/files', params={'run_id': run_id})
-        response.raise_for_status()
-        return response.json()
+
+def _get_as_json(url, params=None):
+    if params:
+        response = requests.get(url, params=params)
+    else:
+        response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
