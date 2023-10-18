@@ -123,7 +123,7 @@ main(){
         jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^hospital ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\n" code name officialName postalCode  city
-         jq -r '.[] | [.code, .name, , .officialName, .postalCode, .city] | @tsv' <<< "${json_result}"
+         jq -r '.[] | [.code, .name, .officialName, .postalCode, .city] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^isolate ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId sampleBarcode coupeBarcode isolationBarcode inputType resultType experimentNr status
         jq -r '.[] | [.sampleId,
