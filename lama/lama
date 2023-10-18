@@ -115,15 +115,15 @@ main(){
             .allowExternalUseWithCheck
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contact-group ]]; then
-        printf "#%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail recipientsContactName recipientsContactEmail
         jq -r '.[] | [.contractCode, .hospitalName, .mainContact.name, .mainContact.email, ([.recipients[].name]|join(";")),
         ([.recipients[].email]|join(";"))] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contract ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" code displayName sampleIdStart type startDate endDate
         jq -r '.[] | [.code, .displayName, .sampleIdStart, .type, .startDate//"N/A", .endDate//"N/A"] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^hospital ]]; then
-        printf "#%s\t%s\t%s\n" code name city
-        jq -r '.[] | [.code, .name, .city] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\n" code name officialName postalCode  city
+         jq -r '.[] | [.code, .name, , .officialName, .postalCode, .city] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^isolate ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId sampleBarcode coupeBarcode isolationBarcode inputType resultType experimentNr status
         jq -r '.[] | [.sampleId,
