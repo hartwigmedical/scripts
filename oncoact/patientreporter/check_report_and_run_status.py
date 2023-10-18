@@ -49,7 +49,8 @@ class StatusChecker:
         chapters = [self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
-                    self._reporting_pipeline_failures_chapter()]
+                    self._reporting_pipeline_failures_chapter(),
+                    self._waiting_pending_processing_runs_chapter()]
 
         _print_chapters(chapters)
 
@@ -247,6 +248,19 @@ class StatusChecker:
         chapter.add_section(section)
         return chapter
 
+    def _waiting_pending_processing_runs_chapter(self):
+        chapter = Chapter(name='Waiting, pending and processing runs')
+        for status in {'Waiting', 'Pending', 'Processing'}:
+            chapter.add_section(self._simple_run_status_section(status))
+        return chapter
+
+    def _simple_run_status_section(self, status):
+        section = Section(name=f"{status} runs")
+        runs = self.all_runs[self.all_runs['status'] == status]
+        for _, run_record in runs.iterrows():
+            section.add_content(_get_default_run_content(run_record))
+        return section
+
     def _get_run_from_report_record(self, report_record):
         filtered = self.all_runs[self.all_runs['id'] == report_record['run_id']]
         if len(filtered) == 0:
@@ -305,7 +319,8 @@ def _print_chapters(chapters):
         print(f'\n\n--- {chapter.name} ---')
         for section in chapter.sections:
             print(f'\n** {section.name.upper()} **')
-            print(section.description)
+            if section.description:
+                print(section.description)
             if section.is_empty():
                 print('\n\t- This section is empty -')
                 continue
