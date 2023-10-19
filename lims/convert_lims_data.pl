@@ -927,6 +927,7 @@ sub addExcelSamples{
 
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
+        $row_info->{ 'reporting_id' } = $row_info->{ 'sample_name' };
         $row_info->{ 'entity' } = $row_info->{ 'submission' };
 
         # Check data analysis type and set accordingly
