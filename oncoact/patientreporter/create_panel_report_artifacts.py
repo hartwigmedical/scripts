@@ -51,15 +51,20 @@ class ArtifactGenerator:
 
     def _run_r_script(self, script_location, output_folder, log_file_name):
         sample_name = self._report_created_record['sample_name']
-        output = subprocess.check_output(['Rscript', script_location, sample_name, output_folder, output_folder])
-        _generate_file(f'{output_folder}/{log_file_name}', content=output.decode())
+        output = subprocess.run(['Rscript', script_location, sample_name, output_folder, output_folder])
+        if output.stderr:
+            raise ValueError("An error has occurred during the R script:", output.stderr.decode())
+        _generate_file(f'{output_folder}/{log_file_name}', content=output.stdout.decode())
 
     def _download_required_resources(self, download_folder):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()
 
         for blob in required_resources:
-            target_file_name = blob.name.split('/', 4)[4]
-            with open(f'{download_folder}/{target_file_name}', 'wb') as file:
+            target_file_path = blob.name.split('/', 1)[1]
+            dir_name = os.path.dirname(f'{download_folder}/{target_file_path}')
+            os.makedirs(dir_name, exist_ok=True)
+
+            with open(f'{download_folder}/{target_file_path}', 'wb') as file:
                 blob.download_to_file(file)
 
     def _get_required_resources_as_blobs(self):
@@ -72,7 +77,7 @@ class ArtifactGenerator:
         }
         run_id = self._report_created_record['run_id']
         set_name = self._rest_client.get_run(run_id)['set']['name']
-        run_blobs = self._panel_pipeline_output_bucket.list_blobs(prefix=set_name)
+        run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=set_name))
 
         result = []
         for suffix in required_file_suffixes:
