@@ -73,7 +73,8 @@ class ArtifactGenerator:
             "purple.somatic.vcf.gz",
             "purple.purity.tsv",
             "purple.somatic.vcf.gz",
-            "purple.cnv.gene.tsv"
+            "purple.cnv.gene.tsv",
+            "sage.exon.medians.tsv"
         }
         run_id = self._report_created_record['run_id']
         set_name = self._rest_client.get_run(run_id)['set']['name']
