@@ -196,7 +196,7 @@ class StatusChecker:
         bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(log_file['path'])
         log_blob = self.storage_client.get_bucket(bucket_name).get_blob(blob_name)
         if log_blob is None:
-            warnings.append('The patient reporter log file for report was not found!')
+            warnings.append('The patient reporter log file was not found!')
             return warnings
         log_content = log_blob.download_as_string().decode()
         if 'WARN' in log_content:
@@ -247,8 +247,10 @@ class StatusChecker:
 
         for _, (run_id, failure) in enumerate(failed_executions):
             sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-            section.add_content({'sample_barcode': sample_barcode,
-                                 'failure': failure})
+            content = _get_default_run_content(run_id)
+            content['failure'] = failure
+            content['sample_barcode'] = sample_barcode
+            section.add_content(content)
         chapter.add_section(section)
         return chapter
 
