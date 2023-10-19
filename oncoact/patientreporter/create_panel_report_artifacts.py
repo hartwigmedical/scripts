@@ -37,8 +37,8 @@ class ArtifactGenerator:
         home_dir = os.path.expanduser('~')
         path = f'{home_dir}/tmp/{self._sample_barcode}/panel_artifacts'
 
-        input_folder = f'{path}/input'
-        output_folder = f'{path}/output'
+        input_folder = f'{path}/input/'
+        output_folder = f'{path}/output/'
         pathlib.Path(input_folder).mkdir(parents=True, exist_ok=True)
         pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)
         return input_folder, output_folder
