@@ -30,15 +30,6 @@ class RestClient:
         from_date = datetime.today().date() - timedelta(days=lookback_days)
         return _get_as_json(url=self._report_created_url, params={'from_create_date': from_date})
 
-    def get_all_reports_shared(self, lookback_days=90):
-        """
-        Queries the 'reports/shared' endpoint and returns all results.
-
-        :param lookback_days the amount of days to look back for the report creation time.
-        """
-        from_date = datetime.today().date() - timedelta(days=lookback_days)
-        return _get_as_json(url=self._report_shared_url, params={'from_create_date': from_date})
-
     def get_report_created(self, sample_barcode):
         """
         Queries the 'reports/created' endpoint for the given sample_barcode.
@@ -61,17 +52,14 @@ class RestClient:
             return response_json[int(to_return) - 1]
         return response_json[0]
 
-    def get_sample_set_by_sample_name(self, sample_name):
+    def get_all_reports_shared(self, lookback_days=90):
         """
-        Queries the 'sets' endpoint with the given tumor sample name and returns the last entry.
-        """
-        response_json = _get_as_json(self._sets_url, params={'tumor_sample': sample_name})
-        if len(response_json) == 0:
-            raise ValueError(f"No sets found for sample_name '{sample_name}'")
-        return response_json[-1]
+        Queries the 'reports/shared' endpoint and returns all results.
 
-    def get_sample_set_by_id(self, set_id):
-        return _get_as_json(f'{self._sets_url}/{set_id}')
+        :param lookback_days the amount of days to look back for the report creation time.
+        """
+        from_date = datetime.today().date() - timedelta(days=lookback_days)
+        return _get_as_json(url=self._report_shared_url, params={'from_create_date': from_date})
 
     def get_all_relevant_runs(self, lookback_days=90):
         """
@@ -93,18 +81,10 @@ class RestClient:
         """
         return _get_as_json(f'{self._runs_url}/{run_id}')
 
-    def get_failed_executions(self):
-        """
-        Gets the failed executions from the reporting-pipeline.
-        """
-        json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
-        res = [{
-            "run_id": execution.runName,
-            "stage_states": execution.stageStates
-        } for execution in json_response]
-        return res
+    def get_run_files(self, run_id):
+        return _get_as_json(self._files_url, params={'run_id': run_id})
 
-    def get_tumor_sample_barcode(self, tumor_isolation_barcode):
+    def get_sample_barcode_from_isolation_barcode(self, tumor_isolation_barcode):
         """
         Gets the tumor sample barcode from the tumor isolation barcode.
 
@@ -126,10 +106,19 @@ class RestClient:
         tumor_sample = tumor_samples[0]
         tumor_isolation_barcode = tumor_sample['barcode']
 
-        return self.get_tumor_sample_barcode(tumor_isolation_barcode)
+        return self.get_sample_barcode_from_isolation_barcode(tumor_isolation_barcode)
 
-    def get_run_files(self, run_id):
-        return _get_as_json(self._files_url, params={'run_id': run_id})
+    def get_sample_set_by_sample_name(self, sample_name):
+        """
+        Queries the 'sets' endpoint with the given tumor sample name and returns the last entry.
+        """
+        response_json = _get_as_json(self._sets_url, params={'tumor_sample': sample_name})
+        if len(response_json) == 0:
+            raise ValueError(f"No sets found for sample_name '{sample_name}'")
+        return response_json[-1]
+
+    def get_sample_set_by_id(self, set_id):
+        return _get_as_json(f'{self._sets_url}/{set_id}')
 
     def post_report_shared(self, report_created_id, notify_users, publish_to_portal):
         """
@@ -147,6 +136,14 @@ class RestClient:
         }
         response = requests.post(self._report_shared_url, json=body)
         response.raise_for_status()
+
+    def get_failed_executions(self):
+        """
+        Gets the failed executions from the reporting-pipeline.
+        """
+        json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
+        res = [{"run_id": execution.runName, "stage_states": execution.stageStates} for execution in json_response]
+        return res
 
 
 def _get_as_json(url, params=None):
