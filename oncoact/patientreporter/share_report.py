@@ -144,7 +144,7 @@ class ReportSharer:
                                   file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
         result = []
         for file in report_files_to_upload:
-            blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
+            _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
             result.append(blob)
         return result
 
