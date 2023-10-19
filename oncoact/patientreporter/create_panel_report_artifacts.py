@@ -51,7 +51,7 @@ class ArtifactGenerator:
 
     def _run_r_script(self, script_location, output_folder, log_file_name):
         sample_name = self._report_created_record['sample_name']
-        output = subprocess.run(['Rscript', script_location, sample_name, output_folder, output_folder])
+        output = subprocess.run(['Rscript', script_location, sample_name, output_folder, output_folder], check=False)
         if output.stderr:
             raise ValueError("An error has occurred during the R script:", output.stderr.decode())
         _generate_file(f'{output_folder}/{log_file_name}', content=output.stdout.decode())
