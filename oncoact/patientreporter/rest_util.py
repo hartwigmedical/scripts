@@ -73,15 +73,15 @@ class RestClient:
     def get_sample_set_by_id(self, set_id):
         return _get_as_json(f'{self._sets_url}/{set_id}')
 
-    def get_diagnostic_somatic_cpct_runs(self, lookback_days=90):
+    def get_all_relevant_runs(self, lookback_days=90):
         """
-        Queries the 'runs' endpoint for all diagnostic runs and returns somatic and CPCT inis.
+        Queries the 'runs' endpoint for all diagnostic runs and returns somatic, CPCT and targeted inis.
         :param lookback_days the amount of days to look back for.
         """
         from_end_date = datetime.today().date() - timedelta(days=lookback_days)
 
         res = []
-        for ini_type in ['CPCT', 'Somatic']:
+        for ini_type in ['CPCT', 'Somatic', 'Targeted']:
             res += _get_as_json(self._runs_url, params={'ini': f'{ini_type}.ini',
                                                         'context': 'DIAGNOSTIC',
                                                         'from_enddate': from_end_date})

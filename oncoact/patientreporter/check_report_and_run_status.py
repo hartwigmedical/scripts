@@ -36,7 +36,7 @@ class StatusChecker:
             self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
         self.not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
 
-        self.all_runs = pd.DataFrame(self.rest_client.get_diagnostic_somatic_cpct_runs())
+        self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
         if len(self.all_runs) == 0:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
 
@@ -194,7 +194,11 @@ class StatusChecker:
         if not log_file:
             return warnings
         bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(log_file['path'])
-        log_content = self.storage_client.get_bucket(bucket_name).get_blob(blob_name).download_as_string().decode()
+        log_blob = self.storage_client.get_bucket(bucket_name).get_blob(blob_name)
+        if log_blob is None:
+            warnings.append('The patient reporter log file for report was not found!')
+            return warnings
+        log_content = log_blob.download_as_string().decode()
         if 'WARN' in log_content:
             warnings.append('A warning was found in the patient-reporter log. '
                             f"Try running 'gsutil cat {log_file}' | grep WARN' to find out more.")
@@ -288,6 +292,7 @@ def _get_default_report_content(report_created_record):
 def _get_default_run_content(run_record):
     return {
         'run_id': run_record['id'],
+        'run_ini': run_record['ini'],
         'run_finished_date': run_record['endTime']
     }
 
