@@ -7,7 +7,7 @@ GS_PATH_REGEX = re.compile(r'^gs://([a-z0-9._-]+)((?:/[a-zA-Z0-9_.-]+)*)$')
 
 def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (Bucket, Blob):
     """
-    Returns the bucket name and the blob name from a given google storage path.
+    Returns the bucket and the blob from a given google storage path.
 
     :param storage_client: the gcp storage client.
     :param gs_path: the path in the following format: (gs://<bucket-name>/<blob-name>).
@@ -29,7 +29,7 @@ def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (B
 
 def get_file_name_from_blob_name(blob_name: str) -> str:
     """
-    Given a blob, it will treat it as a traditional file path and return the file name (the name after the last "/").
+    Given a blob name, it will treat it as a traditional file path and return the file name (the name after the last "/").
 
     :param blob_name: the full blob name, including (pseudo) subdirectories
     :return: the blobs file name
