@@ -145,7 +145,7 @@ class RestClient:
             'notify_users': notify_users,
             'publish_to_portal': publish_to_portal
         }
-        response = requests.post(f'{self._api_base_url}/hmf/v1/reports/shared', json=body)
+        response = requests.post(self._report_shared_url, json=body)
         response.raise_for_status()
 
 
