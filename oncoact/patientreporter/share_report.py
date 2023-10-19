@@ -49,10 +49,11 @@ class ReportSharer:
         self._copy_files_to_remote_buckets()
 
         print('Updating api')
-        self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
-                                            publish_to_portal=publish_to_portal,
-                                            notify_users=notify_users)
-        print("Done :)")
+        response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
+                                                       publish_to_portal=publish_to_portal,
+                                                       notify_users=notify_users)
+        print("API response:", response)
+        print("Done!")
 
     def _prompt_user_no_run(self):
         cont = input(

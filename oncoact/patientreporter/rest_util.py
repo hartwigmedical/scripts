@@ -136,6 +136,7 @@ class RestClient:
         }
         response = requests.post(self._report_shared_url, json=body)
         response.raise_for_status()
+        return response.json()
 
     def get_failed_executions(self):
         """
