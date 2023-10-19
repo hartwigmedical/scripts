@@ -28,40 +28,42 @@ class ArtifactGenerator:
             f'targeted-pipeline-output-{profile}-1')
 
     def generate_artifacts(self):
-        output_folder = self._generate_output_folder()
-        self._download_required_resources(output_folder)
+        input_folder, output_folder = self._generate_input_and_output_folders()
+        self._download_required_resources(download_to=input_folder)
 
-        self._run_scripts(output_folder=output_folder)
-        print(f"The scripts have finished. Output is stored at '{output_folder}'")
+        self._run_scripts(input_folder=input_folder, output_folder=output_folder)
 
-    def _generate_output_folder(self):
+    def _generate_input_and_output_folders(self):
         home_dir = os.path.expanduser('~')
         path = f'{home_dir}/tmp/{self._sample_barcode}/panel_artifacts'
-        pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-        return path
 
-    def _run_scripts(self, output_folder):
+        input_folder = f'{path}/input'
+        output_folder = f'{path}/output'
+        pathlib.Path(input_folder).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)
+        return input_folder, output_folder
+
+    def _run_scripts(self, input_folder, output_folder):
         sample_report_script_path = '/data/repos/scripts/panel/createSampleQcReport.R'
         deamination_script_path = '/data/repos/scripts/panel/createSampleQcReport_Deamination.R'
 
-        self._run_r_script(sample_report_script_path, output_folder=output_folder,
-                           log_file_name='createSampleQcReport.log')
-        self._run_r_script(deamination_script_path, output_folder=output_folder,
-                           log_file_name='createSampleQcReport_Deamination.log')
+        self._run_r_script(sample_report_script_path, input_folder=input_folder, output_folder=output_folder)
+        self._run_r_script(deamination_script_path, input_folder=input_folder, output_folder=output_folder)
+        print(f"The scripts have finished. Output is stored at '{output_folder}'")
 
-    def _run_r_script(self, script_location, output_folder, log_file_name):
+    def _run_r_script(self, script_location, input_folder, output_folder):
         sample_name = self._report_created_record['sample_name']
-        subprocess.run(['Rscript', script_location, sample_name, output_folder, output_folder], check=False)
+        subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder], check=False)
 
-    def _download_required_resources(self, download_folder):
+    def _download_required_resources(self, download_to):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()
 
         for blob in required_resources:
             target_file_path = blob.name.split('/', 1)[1]
-            dir_name = os.path.dirname(f'{download_folder}/{target_file_path}')
+            dir_name = os.path.dirname(f'{download_to}/{target_file_path}')
             os.makedirs(dir_name, exist_ok=True)
 
-            with open(f'{download_folder}/{target_file_path}', 'wb') as file:
+            with open(f'{download_to}/{target_file_path}', 'wb') as file:
                 blob.download_to_file(file)
 
     def _get_required_resources_as_blobs(self):
