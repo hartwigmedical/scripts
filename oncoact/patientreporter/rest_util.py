@@ -15,8 +15,8 @@ class RestClient:
             self._reporting_pipeline_url = "http://reporting-pipeline-launcher.prod-1"
             self._lama_url = "http://lama.prod-1"
 
-        self._report_created_url = f'{self._api_base_url}/hmf/v1/reports/2/created'
-        self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/2/shared'
+        self._report_created_url = f'{self._api_base_url}/hmf/v1/reports/created'
+        self._report_shared_url = f'{self._api_base_url}/hmf/v1/reports/shared'
         self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
         self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
         self._files_url = f'{self._api_base_url}/hmf/v1/files'
