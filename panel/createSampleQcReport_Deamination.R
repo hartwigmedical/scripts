@@ -284,7 +284,7 @@ runSampleQcDeamination<-function()
          labs(title=sampleTitle, y='VAF',x='Coverage (log10)', plot.title=element_text(hjust=0.5))
 
     # PDF creation
-    outputDir = paste0(runDir, "/sampleQcDeamination/")
+    outputDir = paste0(runDir, "sampleQcDeamination/")
     if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
     outputFile = paste0(outputDir, sampleId, '.sampleQcDeamination.pdf')

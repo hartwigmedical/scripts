@@ -309,7 +309,7 @@ runSampleQcReport<-function()
     # theme(legend.position=c(0.1, 0.1))
 
     # PDF creation
-    outputDir = paste0(runDir, "/sampleQcReports/")
+    outputDir = paste0(runDir, "sampleQcReports/")
     #outputDir = paste0(runDir, "TEST/")
     if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
