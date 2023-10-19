@@ -88,10 +88,10 @@ class ReportSharer:
             self._copy_blob_to_archive_bucket(blob=blob)
 
     def _get_run_files_as_blobs(self):
-        if self.run is None:  # if there is no associated run there are also no run files to return.
+        if self.run is None:  # if there is no run there are also no run files to return.
             return []
-        if self.report_created_record['report_type'] == 'panel_report':  # TODO find true panel type name
-            return self._get_panel_run_files_as_blobs()
+        if self.report_created_record['report_type'] == 'oncopanel_result_report':
+            return self._get_targeted_run_files_as_blobs()
         else:
             return self._get_wgs_run_files_as_blobs()
 
@@ -110,9 +110,9 @@ class ReportSharer:
             result.append(blob)
         return result
 
-    def _get_panel_run_files_as_blobs(self):
+    def _get_targeted_run_files_as_blobs(self):
         """
-        Panel run files currently are NOT stored in the API because the archiver doesn't run.
+        Targeted run files currently are NOT stored in the API because the archiver doesn't run.
         Hence, we have to hardcode almost all panel blob-names to retrieve them.
         """
         panel_file_suffixes = {
@@ -129,7 +129,7 @@ class ReportSharer:
         }
         result = []
         set_name = self.run['set']['name']
-        blobs = self.panel_pipeline_output_bucket.list_blobs(prefix=set_name)
+        blobs = list(self.panel_pipeline_output_bucket.list_blobs(prefix=set_name))
         for suffix in panel_file_suffixes:
             for blob in blobs:
                 if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
