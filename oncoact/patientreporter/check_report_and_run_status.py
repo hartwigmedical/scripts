@@ -3,7 +3,7 @@ import pandas as pd
 import subprocess
 
 from rest_util import RestClient
-from gsutil import get_bucket_and_blob_names_from_gs_path
+from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Client
 
 
@@ -193,8 +193,8 @@ class StatusChecker:
         log_file = next((file for file in report_files if file['datatype'] == 'report_log'), None)
         if not log_file:
             return warnings
-        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(log_file['path'])
-        log_blob = self.storage_client.get_bucket(bucket_name).get_blob(blob_name)
+        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, log_file['path'])
+
         if log_blob is None:
             warnings.append('The patient reporter log file was not found!')
             return warnings
@@ -233,8 +233,8 @@ class StatusChecker:
         if not purple_driver_catalog_file:
             return warnings
         path = purple_driver_catalog_file['filepath']
-        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(path)
-        content = self.storage_client.bucket(bucket_name).get_blob(blob_name).download_as_string().decode()
+        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+        content = blob.download_as_string().decode()
         if content.find('AMP'):
             warnings.append(f"A rose related warning was found. Try running 'gsutil cat {path}'")
         return warnings

@@ -1,7 +1,7 @@
 import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Client
-from gsutil import get_bucket_and_blob_names_from_gs_path, get_file_name_from_blob
+from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
 
 
 def main():
@@ -106,7 +106,7 @@ class ReportSharer:
         run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
         result = []
         for file in run_files_to_upload:
-            blob = self._get_blob_from_gs_path(gs_path=file['filepath'])
+            _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['filepath'])
             result.append(blob)
         return result
 
@@ -144,14 +144,14 @@ class ReportSharer:
                                   file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
         result = []
         for file in report_files_to_upload:
-            blob = self._get_blob_from_gs_path(gs_path=file['path'])
+            blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
             result.append(blob)
         return result
 
     def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
         if target_sub_folder != '' and target_sub_folder[-1] != '/':
             target_sub_folder += '/'
-        file_name = get_file_name_from_blob(blob.name)
+        file_name = get_file_name_from_blob_name(blob.name)
         source_bucket = blob.bucket
         print(f"{blob.name} ---> {self.portal_bucket.name}")
         source_bucket.copy_blob(blob=blob,
@@ -159,17 +159,13 @@ class ReportSharer:
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
 
     def _copy_blob_to_archive_bucket(self, blob):
-        file_name = get_file_name_from_blob(blob.name)
+        file_name = get_file_name_from_blob_name(blob.name)
         source_bucket = blob.bucket
         print(f"{blob.name} ---> {self.archive_bucket.name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.archive_bucket,
                                 new_name=file_name)
 
-    def _get_blob_from_gs_path(self, gs_path):
-        bucket_name, blob_name = get_bucket_and_blob_names_from_gs_path(gs_path)
-        bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name)
-        return bucket.get_blob(blob_name)
 
 
 if __name__ == "__main__":

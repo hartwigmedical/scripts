@@ -3,7 +3,7 @@ import os
 import shutil
 import argparse
 from rest_util import RestClient
-from gsutil import get_bucket_and_blob_names_from_gs_path, get_file_name_from_blob
+from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
 from google.cloud.storage import Bucket, Client
 
 
@@ -55,9 +55,9 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     if upload_report_json.lower() == 'y':
         for report in reports:
             path = report['path']
-            (bucket_name, blob) = get_bucket_and_blob_names_from_gs_path(path)
-            blob_file = get_file_name_from_blob(blob)
-            remote_bucket: Bucket = client.bucket(bucket_name)
+            remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, path)
+            blob_file = get_file_name_from_blob_name(blob.name)
+
             destination_file_name = f'{temp_dir_path}/{blob_file}'
             with open(destination_file_name, 'xb') as file:
                 remote_bucket.blob(blob).download_to_file(file)
@@ -66,7 +66,7 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     if upload_orange_report.lower() == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
-        blob_file = get_file_name_from_blob(blob_name)
+        blob_file = get_file_name_from_blob_name(blob_name)
         destination_file_name = f'{temp_dir_path}/{blob_file}'
         with open(destination_file_name, 'xb'):
             bucket.blob(blob_name).download_to_filename(destination_file_name)
@@ -75,7 +75,7 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     if upload_cuppa.lower() == 'y':
         bucket: Bucket = client.bucket(pipeline_output_bucket)
         blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
-        blob_file = get_file_name_from_blob(blob_name)
+        blob_file = get_file_name_from_blob_name(blob_name)
         destination_file_name = f'{temp_dir_path}/{blob_file}'
         with open(destination_file_name, 'xb'):
             bucket.blob(blob_name).download_to_filename(destination_file_name)
