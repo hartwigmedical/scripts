@@ -21,31 +21,32 @@ class StatusChecker:
         self.rest_client = RestClient(profile)
         self.storage_client = Client()
 
-        self.all_reports = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
+        print("Gathering data")
+        self.all_reports_with_null = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
                             .drop_duplicates(subset='id', keep='last'))
-
+        self.all_reports = self.all_reports_with_null[self.all_reports_with_null['sample_barcode'].notnull()]
         # these if checks are to ensure that if the dataframe is empty,
         # it still has the required columns to prevent KeyErrors.
         if len(self.all_reports) == 0:
             self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
-
-        self.shared_reports = (pd.DataFrame([shared['report_created']
+        self.shared_reports_with_null = (pd.DataFrame([shared['report_created']
                                              for shared in self.rest_client.get_all_reports_shared()])
                                .drop_duplicates(subset='id', keep='last'))
+        self.shared_reports = self.shared_reports_with_null[self.shared_reports_with_null['sample_barcode'].notnull()]
+
         if len(self.shared_reports) == 0:
             self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
         self.not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
-
         self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
         if len(self.all_runs) == 0:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
-
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
-        self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports['run_id'])]
+        self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
 
     def generate_and_print_summary(self):
+        print("Generating report summary")
         chapters = [self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
@@ -55,6 +56,7 @@ class StatusChecker:
         _print_chapters(chapters)
 
     def _failed_runs_chapter(self):
+        print("Processing failed runs chapter")
         failed_runs_chapter = Chapter(name="Failed runs")
         failed_runs_chapter.add_section(self._failed_runs_without_report_section())
         failed_runs_chapter.add_section(self._failed_runs_with_report_not_shared_section())
@@ -109,6 +111,7 @@ class StatusChecker:
                 **report_content}
 
     def _finished_runs_chapter(self):
+        print("Processing finished runs chapter")
         chapter = Chapter(name="Finished runs")
 
         chapter.add_section(self._finished_runs_without_report_section())
@@ -143,13 +146,16 @@ class StatusChecker:
         section = Section(name='Finished runs whose reports have been shared already',
                           description='WARNING: these reports have not been validated yet, '
                                       'but have already been shared!')
-        shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(self.finished_runs['id'])]
+        finished_non_ini_runs = self.finished_runs[self.finished_runs['ini'] != 'Targeted.ini']
+
+        shared_finished_reports = self.shared_reports[self.shared_reports['run_id'].isin(finished_non_ini_runs['id'])]
 
         for _, report_record in shared_finished_reports.iterrows():
             section.add_content(self._get_default_report_and_run_content(report_record))
         return section
 
     def _validated_runs_chapter(self):
+        print("Processing validated runs chapter")
         chapter = Chapter(name='Validated runs')
         chapter.add_section(self._validated_runs_without_report_section())
         chapter.add_section(self._validated_runs_with_report_not_shared_section())
@@ -183,7 +189,7 @@ class StatusChecker:
 
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
-                self._get_health_checker_related_warnings(report_record) +
+                # self._get_health_checker_related_warnings(report_record) +
                 self._get_rose_related_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
@@ -235,11 +241,12 @@ class StatusChecker:
         path = purple_driver_catalog_file['filepath']
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
         content = blob.download_as_string().decode()
-        if content.find('AMP'):
+        if content.find('AMP') != -1:
             warnings.append(f"A rose related warning was found. Try running 'gsutil cat {path}'")
         return warnings
 
     def _reporting_pipeline_failures_chapter(self):
+        print("Processing reporting pipelines failures chapter")
         chapter = Chapter(name='Reporting pipeline fails')
         section = Section(name='Runs with a patient reporter fail',
                           description='For these runs there is no report due to a patient report failure.')
@@ -255,6 +262,7 @@ class StatusChecker:
         return chapter
 
     def _waiting_pending_processing_runs_chapter(self):
+        print("Processing waiting, processing and pending pipelines chapter")
         chapter = Chapter(name='Waiting, pending and processing runs')
         for status in {'Waiting', 'Pending', 'Processing'}:
             chapter.add_section(self._simple_run_status_section(status))
