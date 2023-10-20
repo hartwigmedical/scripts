@@ -27,11 +27,15 @@ class ArtifactGenerator:
         self._panel_pipeline_output_bucket: Bucket = self._storage_client.bucket(
             f'targeted-pipeline-output-{profile}-1')
 
+        run_id = self._report_created_record['run_id']
+        self.set_name = self._rest_client.get_run(run_id)['set']['name']
+
     def generate_artifacts(self):
         input_folder, output_folder = self._generate_input_and_output_folders()
         self._download_required_resources(download_to=input_folder)
 
         self._run_scripts(input_folder=input_folder, output_folder=output_folder)
+        self._copy_output_to_bucket(output_folder=output_folder)
 
     def _generate_input_and_output_folders(self):
         home_dir = os.path.expanduser('~')
@@ -75,9 +79,7 @@ class ArtifactGenerator:
             "purple.cnv.gene.tsv",
             "sage.exon.medians.tsv"
         }
-        run_id = self._report_created_record['run_id']
-        set_name = self._rest_client.get_run(run_id)['set']['name']
-        run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=set_name))
+        run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
 
         result = []
         for suffix in required_file_suffixes:
@@ -87,6 +89,20 @@ class ArtifactGenerator:
                     break
 
         return result
+
+    def _copy_output_to_bucket(self, output_folder):
+        output_blob_prefix = f"{self.set_name}/reporting"
+
+        artifacts = dict()
+        for dir_path, dir_names, filenames in os.walk(output_folder):
+            for filename in filenames:
+                artifact_path = os.path.join(dir_path, filename)
+                artifacts[artifact_path] = filename
+
+        for path, filename in artifacts.values():
+            output_blob = f'{output_blob_prefix}/{filename}'
+            print(path)
+            print(output_blob)
 
 
 def _generate_file(path, content):
