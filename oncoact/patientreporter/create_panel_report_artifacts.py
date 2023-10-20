@@ -100,9 +100,10 @@ class ArtifactGenerator:
                 artifacts[artifact_path] = filename
 
         for path, filename in artifacts.values():
-            output_blob = f'{output_blob_prefix}/{filename}'
-            print(path)
-            print(output_blob)
+            output_blob_name = f'{output_blob_prefix}/{filename}'
+            output_blob = self._panel_pipeline_output_bucket.blob(blob_name=output_blob_name)
+            output_blob.upload_from_filename(path)
+            print(f"Copied {filename} to gs://{self._panel_pipeline_output_bucket.name}/{output_blob.name}")
 
 
 def _generate_file(path, content):
