@@ -269,7 +269,7 @@ runSampleQcDeamination<-function()
 
     # Plot of all PASSED variants in the panel by variant type (Deamination)
     # so not filtered for Genes of interest / Reportability / Impact
-    sampleTitle = paste0('QC: Variant Base Substitutions - ', sampleId, ' ( TCP ', 100*(purity$purity), '% )' )
+    sampleTitle = paste0('QC: Variant Base Substitutions - ', sampleId, ' ( mTCP ', 100*(purity$purity), '% )' )
 
     variantPlot = ggplot(varGeneData, aes(x=log(DP,10),y=AF)) +
          geom_point(aes(color=Deamination)) +
