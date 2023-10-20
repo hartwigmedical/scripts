@@ -70,20 +70,24 @@ print_shallow_qc_for_run() {
     set_name=$(jq -r '.set.name' <<< "${run_json}")
     run_url="gs://${bucket}/${set_name}"
 
+    metadata_json=$(gsutil cat ${run_url}/metadata.json || die "Unable to retrieve metadata info from (${run_url})")
+    ref_reporting_id=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    tum_reporting_id=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
+
     amb_dir="${run_url}/amber"
     pur_dir="${run_url}/purple"
-    ref_dir="${run_url}/${ref_sample}"
-    tum_dir="${run_url}/${tum_sample}"
+    ref_dir="${run_url}/${ref_reporting_id}"
+    tum_dir="${run_url}/${tum_reporting_id}"
 
-    aqc_file="${amb_dir}/${tum_sample}.amber.qc"
+    aqc_file="${amb_dir}/${tum_reporting_id}.amber.qc"
     vsn_file="${pur_dir}/purple.version"
-    pqc_file="${pur_dir}/${tum_sample}.purple.qc"
-    ppu_file="${pur_dir}/${tum_sample}.purple.purity.tsv"
+    pqc_file="${pur_dir}/${tum_reporting_id}.purple.qc"
+    ppu_file="${pur_dir}/${tum_reporting_id}.purple.purity.tsv"
 
-    wgs_file_r="${ref_dir}/bam_metrics/${ref_sample}.wgsmetrics"
-    wgs_file_t="${tum_dir}/bam_metrics/${tum_sample}.wgsmetrics"
-    flg_file_r="${ref_dir}/flagstat/${ref_sample}.flagstat"
-    flg_file_t="${tum_dir}/flagstat/${tum_sample}.flagstat"
+    wgs_file_r="${ref_dir}/bam_metrics/${ref_reporting_id}.wgsmetrics"
+    wgs_file_t="${tum_dir}/bam_metrics/${tum_reporting_id}.wgsmetrics"
+    flg_file_r="${ref_dir}/flagstat/${ref_reporting_id}.flagstat"
+    flg_file_t="${tum_dir}/flagstat/${tum_reporting_id}.flagstat"
 
     ## gather file contents
     wgs_file_r_content=$(gsutil cat "${wgs_file_r}" | grep -A1 GENOME_T)
