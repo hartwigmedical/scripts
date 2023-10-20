@@ -117,8 +117,8 @@ print_shallow_qc_for_run() {
     ## gather Flagstat info
     ref_rds=$(echo "${flg_file_r_content}" | grep 'total ('  | cut -d ' ' -f1)
     tum_rds=$(echo "${flg_file_t_content}" | grep 'total ('  | cut -d ' ' -f1)
-    ref_map=$(echo "${flg_file_r_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 | sed tr -d '[:space:]')
-    tum_map=$(echo "${flg_file_t_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 | sed tr -d '[:space:]')
+    ref_map=$(echo "${flg_file_r_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 | tr -d '[:space:]')
+    tum_map=$(echo "${flg_file_t_content}" | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 | tr -d '[:space:]')
 
     ## gather Amber info
     amb_qc=$(echo "${aqc_file_content}" | grep QCStatus | cut -f2)
