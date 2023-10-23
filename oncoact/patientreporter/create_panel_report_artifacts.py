@@ -76,7 +76,7 @@ class ArtifactGenerator:
                     res.append(line)
 
         if res:
-            with open(f"{output_folder}{self.set_name}.reported.somatic.vcf", 'x') as file:
+            with open(f"{output_folder}{self.hmf_id}.reported.somatic.vcf", 'x') as file:
                 file.writelines(res)
 
     def _download_required_resources(self, download_to):
