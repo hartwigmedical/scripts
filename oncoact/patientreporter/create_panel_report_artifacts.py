@@ -115,7 +115,7 @@ class ArtifactGenerator:
                 artifact_path = os.path.join(dir_path, filename)
                 artifacts[artifact_path] = filename
 
-        for path, filename in artifacts.values():
+        for path, filename in artifacts.items():
             output_blob_name = f'{output_blob_prefix}/{filename}'
             output_blob = self._panel_pipeline_output_bucket.blob(blob_name=output_blob_name)
             output_blob.upload_from_filename(path)
