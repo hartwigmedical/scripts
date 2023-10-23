@@ -167,14 +167,14 @@ info "Copy the oncoAct data to the gcp bucket"
 bucket="hmf-public"
 path_oncoact="OncoAct-Resources"
 # file download on https://storage.googleapis.com/hmf-public/OncoAct-Resources/latest_oncoact.zip"
-#gsutil cp ${oncoact_zip_date} gs://${bucket}/${path_oncoact}
-#gsutil cp ${oncoact_zip_latest} gs://${bucket}/${path_oncoact}
+gsutil cp ${oncoact_zip_date} gs://${bucket}/${path_oncoact}
+gsutil cp ${oncoact_zip_latest} gs://${bucket}/${path_oncoact}
 
 info "Copy the oncoPanel data to the gcp bucket"
 path_oncopanel="OncoPanel-Resources"
 # file download on "https://storage.googleapis.com/hmf-public/OncoPanel-Resources/latest_oncopanel.zip"
-#gsutil cp ${oncopanel_zip_date} gs://${bucket}/${path_oncopanel}
-#gsutil cp ${oncopanel_zip_latest} gs://${bucket}/${path_oncopanel}
+gsutil cp ${oncopanel_zip_date} gs://${bucket}/${path_oncopanel}
+gsutil cp ${oncopanel_zip_latest} gs://${bucket}/${path_oncopanel}
 
 ##Deleting data
 info "Removing temporarily data"
