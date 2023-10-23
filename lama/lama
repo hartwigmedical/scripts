@@ -8,7 +8,7 @@ NA="N/A"
 
 get_script="lama_api_get"
 classes_with_table_support=(contact-groups contract hospitals isolates patient report status statuses tumor-sample reference-sample
-queries/consents queries/database-loader queries/patient-reporter queries/registration TUMOR_INFO)
+queries/consent queries/database-loader queries/patient-reporter queries/registration TUMOR_INFO)
 
 print_usage(){
     script=$(basename "$0")
@@ -105,7 +105,7 @@ main(){
     fi
 
     # print result as table
-    if [[ "${class}" == "queries/consents" ]]; then
+    if [[ "${class}" =~ ^queries/consent ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeData intUse extUseWoCheck extUseWithCheck
         jq -r '.[] | [.sampleId,
             .barcode,
