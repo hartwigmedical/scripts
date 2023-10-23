@@ -106,7 +106,7 @@ main(){
 
     # print result as table
     if [[ "${class}" =~ ^queries/consent ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeData intUse extUseWoCheck extUseWithCheck
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeDataForReuse allowInternalUse allowExternalUseWithoutCheck allowExternalUseWithCheck
         jq -r '.[] | [.sampleId,
             .barcode,
             .storeDataForReuse,
