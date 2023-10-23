@@ -199,7 +199,8 @@ class StatusChecker:
         log_file = next((file for file in report_files if file['datatype'] == 'report_log'), None)
         if not log_file:
             return warnings
-        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, log_file['path'])
+        path = log_file['path']
+        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
 
         if log_blob is None:
             warnings.append('The patient reporter log file was not found!')
@@ -207,14 +208,14 @@ class StatusChecker:
         log_content = log_blob.download_as_string().decode()
         if 'WARN' in log_content:
             warnings.append('A warning was found in the patient-reporter log. '
-                            f"Try running 'gsutil cat {log_file}' | grep WARN' to find out more.")
+                            f"Try running 'gsutil cat {path}' | grep WARN' to find out more.")
 
         if ("Consent" in log_content or
                 "Mismatching ref sample name" in log_content or
                 "do not match" in log_content or
                 "Missing or invalid hospital" in log_content):
             warnings.append('A lims error was found in the patient-reporter log. '
-                            f"Check for lims problems 'gsutil cat {log_file}'.")
+                            f"Check for lims problems 'gsutil cat {path}'.")
 
         return warnings
 
@@ -252,11 +253,11 @@ class StatusChecker:
                           description='For these runs there is no report due to a patient report failure.')
         failed_executions = self.rest_client.get_failed_executions()
 
-        for _, (run_id, failure) in enumerate(failed_executions):
-            sample_barcode = self.rest_client.get_tumor_sample_barcode_from_run_id(run_id)
-            content = _get_default_run_content(run_id)
-            content['failure'] = failure
-            content['sample_barcode'] = sample_barcode
+        for _, execution in enumerate(failed_executions):
+            content = {
+                'stageStates': execution['stageStates'],
+                'runName': execution['runName']
+            }
             section.add_content(content)
         chapter.add_section(section)
         return chapter

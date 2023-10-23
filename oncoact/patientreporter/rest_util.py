@@ -143,7 +143,7 @@ class RestClient:
         Gets the failed executions from the reporting-pipeline.
         """
         json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
-        res = [{"run_id": execution.runName, "stage_states": execution.stageStates} for execution in json_response]
+        res = [{"runName": execution['runName'], "stageStates": execution['stageStates']} for execution in json_response]
         return res
 
 
