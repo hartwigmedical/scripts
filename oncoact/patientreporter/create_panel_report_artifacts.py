@@ -50,8 +50,8 @@ class ArtifactGenerator:
 
         input_folder = f'{path}/input/'
         output_folder = f'{path}/output/'
-        shutil.rmtree(input_folder)
-        shutil.rmtree(output_folder)
+        shutil.rmtree(input_folder, ignore_errors=True)
+        shutil.rmtree(output_folder, ignore_errors=True)
         pathlib.Path(input_folder).mkdir(parents=True, exist_ok=False)
         pathlib.Path(output_folder).mkdir(parents=True, exist_ok=False)
         return input_folder, output_folder
