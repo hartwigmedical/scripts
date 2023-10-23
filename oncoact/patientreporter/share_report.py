@@ -46,7 +46,10 @@ class ReportSharer:
             self._prompt_user_non_validated_run()
 
         self._delete_old_artifacts_in_portal_bucket()
-        self._copy_files_to_remote_buckets()
+        if publish_to_portal:
+            self._copy_files_to_remote_buckets_publish()
+        else:
+            self._copy_files_to_remote_buckets_no_publish()
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
@@ -74,7 +77,7 @@ class ReportSharer:
         print(*[blob.name for blob in blobs_old_run], sep='\n')
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
-    def _copy_files_to_remote_buckets(self):
+    def _copy_files_to_remote_buckets_publish(self):
         run_blobs = self._get_run_files_as_blobs()
         report_blobs = self._get_report_files_as_blobs()
 
@@ -85,6 +88,12 @@ class ReportSharer:
         print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
         for blob in report_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
+            self._copy_blob_to_archive_bucket(blob=blob)
+
+    def _copy_files_to_remote_buckets_no_publish(self):
+        report_blobs = self._get_report_files_as_blobs()
+        print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
+        for blob in report_blobs:
             self._copy_blob_to_archive_bucket(blob=blob)
 
     def _get_run_files_as_blobs(self):
@@ -165,7 +174,6 @@ class ReportSharer:
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.archive_bucket,
                                 new_name=file_name)
-
 
 
 if __name__ == "__main__":
