@@ -4,6 +4,7 @@ import rest_util
 from google.cloud.storage import Client, Bucket, Blob
 import subprocess
 import os
+import gzip
 
 
 def main():
@@ -28,13 +29,17 @@ class ArtifactGenerator:
             f'targeted-pipeline-output-{profile}-1')
 
         run_id = self._report_created_record['run_id']
-        self.set_name = self._rest_client.get_run(run_id)['set']['name']
+        self.run = self._rest_client.get_run(run_id)
+        self.hmf_id = self.run['set']['tumor_sample']
+        self.set_name = self.run['set']['name']
 
     def generate_artifacts(self):
         input_folder, output_folder = self._generate_input_and_output_folders()
         self._download_required_resources(download_to=input_folder)
 
-        self._run_scripts(input_folder=input_folder, output_folder=output_folder)
+        # self._run_scripts(input_folder=input_folder, output_folder=output_folder)
+        self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
+
         self._copy_output_to_bucket(output_folder=output_folder)
 
     def _generate_input_and_output_folders(self):
@@ -58,6 +63,17 @@ class ArtifactGenerator:
     def _run_r_script(self, script_location, input_folder, output_folder):
         sample_name = self._report_created_record['sample_name']
         subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder], check=False)
+
+    def _generate_vcf(self, input_folder, output_folder):
+        res = []
+        with gzip.open(f"{input_folder}purple.somatic.vcf.gz", 'rt') as file:
+            for line in file.readlines():
+                if "REPORTED" in line:
+                    res.append(line)
+
+        if res:
+            with open(f"{output_folder}{self.set_name}.reported.somatic.vcf", 'x') as file:
+                file.writelines(res)
 
     def _download_required_resources(self, download_to):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()

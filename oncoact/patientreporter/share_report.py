@@ -128,7 +128,6 @@ class ReportSharer:
             "driver.catalog.somatic.tsv",
             "purple.somatic.vcf.gz"
             "purple.purity.tsv",
-            "purple.somatic.vcf.gz",
             "purple.cnv.gene.tsv",
             "reported.somatic.vcf",
             "sampleQcReport.pdf",
