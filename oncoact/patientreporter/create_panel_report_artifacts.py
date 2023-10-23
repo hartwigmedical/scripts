@@ -1,5 +1,7 @@
 import argparse
 import pathlib
+import shutil
+
 import rest_util
 from google.cloud.storage import Client, Bucket, Blob
 import subprocess
@@ -48,8 +50,10 @@ class ArtifactGenerator:
 
         input_folder = f'{path}/input/'
         output_folder = f'{path}/output/'
-        pathlib.Path(input_folder).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(output_folder).mkdir(parents=True, exist_ok=True)
+        shutil.rmtree(input_folder)
+        shutil.rmtree(output_folder)
+        pathlib.Path(input_folder).mkdir(parents=True, exist_ok=False)
+        pathlib.Path(output_folder).mkdir(parents=True, exist_ok=False)
         return input_folder, output_folder
 
     def _run_scripts(self, input_folder, output_folder):
