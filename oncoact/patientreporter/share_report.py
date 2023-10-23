@@ -133,7 +133,8 @@ class ReportSharer:
             "sampleQcReport.pdf",
             "sampleQcReport.png",
             "sampleQcDeamination.pdf",
-            "sampleQcDeamination.png"
+            "sampleQcDeamination.png",
+            "reported.somatic.vcf"
         }
         result = []
         set_name = self.run['set']['name']
