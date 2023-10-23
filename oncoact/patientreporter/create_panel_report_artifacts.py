@@ -72,7 +72,7 @@ class ArtifactGenerator:
         res = []
         with gzip.open(f"{input_folder}purple/{self.hmf_id}.purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
-                if "REPORTED" in line:
+                if "REPORTED" in line or (len(line) > 0 and line[0] == '#'):
                     res.append(line)
 
         if res:
