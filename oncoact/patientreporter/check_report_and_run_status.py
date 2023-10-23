@@ -208,7 +208,7 @@ class StatusChecker:
         log_content = log_blob.download_as_string().decode()
         if 'WARN' in log_content:
             warnings.append('A warning was found in the patient-reporter log. '
-                            f"Try running 'gsutil cat {path}' | grep WARN' to find out more.")
+                            f"Try running 'gsutil cat {path} | grep WARN' to find out more.")
 
         if ("Consent" in log_content or
                 "Mismatching ref sample name" in log_content or
