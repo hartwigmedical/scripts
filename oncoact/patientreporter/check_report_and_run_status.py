@@ -188,9 +188,8 @@ class StatusChecker:
         return section
 
     def _get_all_report_associated_warnings(self, report_record):
-        return (self._get_patient_reporter_log_related_warnings(report_record) +
+        return (self._get_patient_reporter_log_related_warnings(report_record))
                 # self._get_health_checker_related_warnings(report_record) +
-                self._get_rose_related_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -228,22 +227,6 @@ class StatusChecker:
         if 'WARN' in health_checker_log:
             warnings.append('A warning was found in the health checker log. '
                             f'See: {health_checker_log}')
-        return warnings
-
-    def _get_rose_related_warnings(self, report_record):
-        warnings = []
-        run_record = self._get_run_from_report_record(report_record=report_record)
-        run_files = self.rest_client.get_run_files(run_id=run_record['id'])
-
-        purple_driver_catalog_file = next(
-            (file for file in run_files if file['datatype'] == 'purple_somatic_driver_catalog'), None)
-        if not purple_driver_catalog_file:
-            return warnings
-        path = purple_driver_catalog_file['filepath']
-        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
-        content = blob.download_as_string().decode()
-        if content.find('AMP') != -1:
-            warnings.append(f"A rose related warning was found. Try running 'gsutil cat {path}'")
         return warnings
 
     def _reporting_pipeline_failures_chapter(self):
