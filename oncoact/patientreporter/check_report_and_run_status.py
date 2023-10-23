@@ -304,7 +304,8 @@ def _get_default_run_content(run_record):
     return {
         'run_id': run_record['id'],
         'run_ini': run_record['ini'],
-        'run_finished_date': run_record['endTime']
+        'run_finished_date': run_record['endTime'],
+        'set_name': run_record['set']['name']
     }
 
 
