@@ -243,9 +243,11 @@ class StatusChecker:
             used_primary_tumor_type = lama_data['primaryTumorType']
 
         lama_blob_name = f"{sample_barcode.lower()}/lama/patient-reporter.json"
-
+        lama_blob = self.oncoact_bucket.get_blob(blob_name=lama_blob_name)
+        if lama_blob is None:
+            return ["Doid warning: the lama json file is missing"]
         actual_lama_data = json.loads(
-            self.oncoact_bucket.get_blob(blob_name=lama_blob_name).download_as_string().decode())
+            lama_blob.download_as_string().decode())
 
         actual_primary_tumor_type = None
         if 'primaryTumorType' in actual_lama_data:
