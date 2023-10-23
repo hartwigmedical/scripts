@@ -66,7 +66,7 @@ class ArtifactGenerator:
 
     def _generate_vcf(self, input_folder, output_folder):
         res = []
-        with gzip.open(f"{input_folder}purple.somatic.vcf.gz", 'rt') as file:
+        with gzip.open(f"{input_folder}purple.somatic.vcf.gz", 'xt') as file:
             for line in file.readlines():
                 if "REPORTED" in line:
                     res.append(line)
