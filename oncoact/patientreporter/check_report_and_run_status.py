@@ -4,7 +4,8 @@ import subprocess
 
 from rest_util import RestClient
 from gsutil import get_bucket_and_blob_from_gs_path
-from google.cloud.storage import Client
+from google.cloud.storage import Client, Bucket
+import json
 
 
 def main():
@@ -21,17 +22,19 @@ class StatusChecker:
         self.rest_client = RestClient(profile)
         self.storage_client = Client()
 
+        self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="run-oncoact-reporting-pipeline")
+
         print("Gathering data")
         self.all_reports_with_null = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
-                            .drop_duplicates(subset='id', keep='last'))
+                                      .drop_duplicates(subset='id', keep='last'))
         self.all_reports = self.all_reports_with_null[self.all_reports_with_null['sample_barcode'].notnull()]
         # these if checks are to ensure that if the dataframe is empty,
         # it still has the required columns to prevent KeyErrors.
         if len(self.all_reports) == 0:
             self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
         self.shared_reports_with_null = (pd.DataFrame([shared['report_created']
-                                             for shared in self.rest_client.get_all_reports_shared()])
-                               .drop_duplicates(subset='id', keep='last'))
+                                                       for shared in self.rest_client.get_all_reports_shared()])
+                                         .drop_duplicates(subset='id', keep='last'))
         self.shared_reports = self.shared_reports_with_null[self.shared_reports_with_null['sample_barcode'].notnull()]
 
         if len(self.shared_reports) == 0:
@@ -189,7 +192,8 @@ class StatusChecker:
 
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
-                self._get_health_checker_related_warnings(report_record))
+                self._get_health_checker_related_warnings(report_record) +
+                self._get_doid_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -227,6 +231,36 @@ class StatusChecker:
         if 'WARN' in health_checker_log:
             warnings.append('A warning was found in the health checker log. '
                             f'See: {health_checker_log}')
+        return warnings
+
+    def _get_doid_warnings(self, report_record):
+        warnings = []
+        isolation_barcode = report_record['barcode']
+        sample_barcode = report_record["sample_barcode"]
+        lama_data = self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
+        used_primary_tumor_type = None
+        if 'primaryTumorType' in lama_data:
+            used_primary_tumor_type = lama_data['primaryTumorType']
+
+        lama_blob_name = f"{sample_barcode.lower()}/lama/patient-reporter.json"
+
+        actual_lama_data = json.loads(
+            self.oncoact_bucket.get_blob(blob_name=lama_blob_name).download_as_string().decode())
+
+        actual_primary_tumor_type = None
+        if 'primaryTumorType' in actual_lama_data:
+            actual_primary_tumor_type = actual_lama_data['primaryTumorType']
+
+        if actual_primary_tumor_type != used_primary_tumor_type:
+            warnings.append("Doid warning: the doid data in lama is different "
+                            "than the doid data that was used to generate this report. "
+                            f"Doid data in lama: {actual_primary_tumor_type} "
+                            f"Doid data used to generate report: {used_primary_tumor_type}")
+        elif actual_primary_tumor_type is None:
+            warnings.append("Doid warning: the primary tumor type was 'None'.")
+        elif actual_primary_tumor_type['location'].lower() == 'unknown':
+            warnings.append("Doid warning: the doid value was 'unknown'.")
+
         return warnings
 
     def _reporting_pipeline_failures_chapter(self):

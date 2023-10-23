@@ -147,6 +147,11 @@ class RestClient:
         return res
 
 
+    def get_lama_patient_reporter_data(self, isolation_barcode):
+        return _get_as_json(f"{self._lama_url}/api/queries/patient-reporter/isolation-barcode/{isolation_barcode}")
+
+
+
 def _get_as_json(url, params=None):
     if params:
         response = requests.get(url, params=params)
