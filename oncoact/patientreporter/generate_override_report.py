@@ -15,7 +15,7 @@ def main():
     if args.profile == 'pilot':
         project = 'hmf-pipeline-development'
     elif args.profile == 'prod' or args.profile == 'preview':
-        project = 'hmf-pipeline-prod'
+        project = 'hmf-pipeline-prod-e45b00f2'
     else:
         raise ValueError(f"Profile '{args.profile}' not recognized.")
     assemble_and_emit_correction_event(args.tumor_sample_barcode, project)
