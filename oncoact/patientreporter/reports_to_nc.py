@@ -35,7 +35,7 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     set_name = sample_set['name']
 
     reports = [report_file for report_file in report_created['report_files'] if
-               report_file['datatype'] in {'report_pdf', 'report_json'}]
+               report_file['datatype'] in {'report_pdf', 'report_json', 'report_xml'}]
 
     temp_dir_path = f'{os.path.expanduser("~")}/temp'
 
@@ -51,34 +51,14 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
 
     client = Client()
 
-    upload_report_json = input('Do you want to upload the final OncoAct report (PDF and json)? y or n\n')
-    if upload_report_json.lower() == 'y':
-        for report in reports:
-            path = report['path']
-            remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, path)
-            blob_file = get_file_name_from_blob_name(blob.name)
+    for report in reports:
+        path = report['path']
+        remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, path)
+        blob_file = get_file_name_from_blob_name(blob.name)
 
-            destination_file_name = f'{temp_dir_path}/{blob_file}'
-            with open(destination_file_name, 'xb') as file:
-                remote_bucket.blob(blob).download_to_file(file)
-
-    upload_orange_report = input("Do you want to upload the ORANGE report? y or n\n")
-    if upload_orange_report.lower() == 'y':
-        bucket: Bucket = client.bucket(pipeline_output_bucket)
-        blob_name = f'{set_name}/orange/{sample_name}.orange.pdf'
-        blob_file = get_file_name_from_blob_name(blob_name)
         destination_file_name = f'{temp_dir_path}/{blob_file}'
-        with open(destination_file_name, 'xb'):
-            bucket.blob(blob_name).download_to_filename(destination_file_name)
-
-    upload_cuppa = input('Do you want to upload the CUPPA RUO report? y or n\n')
-    if upload_cuppa.lower() == 'y':
-        bucket: Bucket = client.bucket(pipeline_output_bucket)
-        blob_name = f'{set_name}/cuppa/{sample_name}_cup_report.pdf'
-        blob_file = get_file_name_from_blob_name(blob_name)
-        destination_file_name = f'{temp_dir_path}/{blob_file}'
-        with open(destination_file_name, 'xb'):
-            bucket.blob(blob_name).download_to_filename(destination_file_name)
+        with open(destination_file_name, 'xb') as file:
+            blob.download_to_file(file)
 
     upload_to_nextcloud(temp_dir_path)
     shutil.rmtree(temp_dir_path)
@@ -97,7 +77,7 @@ def upload_to_nextcloud(path):
         for file in files:
             upload_to_nextcloud(f'{path}/{file}')
     else:
-        upload_to_nextcloud(path)
+        _upload_file_to_nextcloud(path)
 
 
 def _upload_file_to_nextcloud(filepath):
