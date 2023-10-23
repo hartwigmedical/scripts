@@ -37,7 +37,7 @@ class ArtifactGenerator:
         input_folder, output_folder = self._generate_input_and_output_folders()
         self._download_required_resources(download_to=input_folder)
 
-        # self._run_scripts(input_folder=input_folder, output_folder=output_folder)
+        self._run_scripts(input_folder=input_folder, output_folder=output_folder)
         self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
 
         self._copy_output_to_bucket(output_folder=output_folder)
@@ -66,7 +66,7 @@ class ArtifactGenerator:
 
     def _generate_vcf(self, input_folder, output_folder):
         res = []
-        with gzip.open(f"{input_folder}purple.somatic.vcf.gz", 'xt') as file:
+        with gzip.open(f"{input_folder}purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
                 if "REPORTED" in line:
                     res.append(line)
