@@ -19,7 +19,7 @@ db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
 
 info "Loading all trials from ${trial_database_directory} into ACTIN database '${actin_database_name}'"
 
-java -cp ${actin_jar} com.hartwig.actin.database.trial.TrialLoaderApplication \
+java -cp ${actin_jar} com.hartwig.actin.database.trial.TrialLoaderApplicationKt \
     -trial_database_directory ${trial_database_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

@@ -19,7 +19,7 @@ db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
 
 info "Loading clinical data from ${clinical_directory} into ACTIN database '${actin_database_name}'"
 
-java -cp ${actin_jar} com.hartwig.actin.database.clinical.ClinicalLoaderApplication \
+java -cp ${actin_jar} com.hartwig.actin.database.clinical.ClinicalLoaderApplicationKt \
     -clinical_directory ${clinical_directory} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
