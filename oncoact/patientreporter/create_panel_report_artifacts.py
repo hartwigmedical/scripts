@@ -7,6 +7,7 @@ from google.cloud.storage import Client, Bucket, Blob
 import subprocess
 import os
 import gzip
+from reports_to_nc import upload_to_nextcloud
 
 
 def main():
@@ -41,8 +42,9 @@ class ArtifactGenerator:
 
         self._run_scripts(input_folder=input_folder, output_folder=output_folder)
         self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
-
+        upload_to_nextcloud(output_folder)
         self._copy_output_to_bucket(output_folder=output_folder)
+
 
     def _generate_input_and_output_folders(self):
         home_dir = os.path.expanduser('~')
@@ -129,6 +131,7 @@ class ArtifactGenerator:
 def _generate_file(path, content):
     with open(path, 'x') as file:
         file.write(content)
+
 
 
 if __name__ == '__main__':
