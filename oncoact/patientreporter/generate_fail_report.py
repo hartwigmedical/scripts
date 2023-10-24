@@ -2,6 +2,8 @@ import json
 import argparse
 from google.cloud import pubsub
 
+from oncoact.patientreporter.input_util import multi_line_input
+
 
 def main():
     """
@@ -26,14 +28,14 @@ def main():
 def assemble_and_emit_qc_fail_event(tumor_sample_barcode: str,
                                     project: str):
     reason = _prompt_user_for_reason()
-    fail_reason_comment = input("Please add an optional fail reason comment\n")
+    fail_reason_comment = multi_line_input("Please add an optional fail reason comment\n")
     fail_reason_comment = fail_reason_comment if fail_reason_comment else None
 
     add_correction = input('Add correction? y/n\n').lower() == 'y'
     correction = None
     if add_correction:
         remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
-        comments = input('Enter comments...\n')
+        comments = multi_line_input('Enter comments...\n')
         correction = {
             'comments': comments,
             'remarkIsExternal': remark_is_external

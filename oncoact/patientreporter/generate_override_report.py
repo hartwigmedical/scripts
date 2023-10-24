@@ -2,6 +2,8 @@ import argparse
 import json
 from google.cloud import pubsub
 
+from oncoact.patientreporter.input_util import multi_line_input
+
 
 def main():
     """
@@ -22,16 +24,16 @@ def main():
 
 
 def assemble_and_emit_correction_event(tumor_sample_barcode: str, project: str):
-    special_remark = input('Enter an optional special remark...\n')
+    special_remark = multi_line_input('Enter an optional special remark...\n')
     special_remark = special_remark if special_remark else None
-    rose_override = input('Enter an optional rose override...\n')
+    rose_override = multi_line_input('Enter an optional rose override...\n')
     rose_override = rose_override if rose_override else None
 
     correction = None
     add_correction = input('Add correction? y/n\n').lower() == 'y'
     if add_correction:
         remark_is_external = input('Is remark external? y/n\n').lower() == 'y'
-        comments = input('Enter comments...\n')
+        comments = multi_line_input('Enter comments...\n')
         correction = {
             'comments': comments,
             'remarkIsExternal': remark_is_external
