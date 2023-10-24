@@ -45,7 +45,7 @@ class StatusChecker:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
-        self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
+        self.validated_runs = self.all_runs[self.all_runs['status'] == 'Deleted']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
 
     def generate_and_print_summary(self):
@@ -169,7 +169,7 @@ class StatusChecker:
                           description='These runs are already validated, but have no report yet. '
                                       'It could be that the reporting pipeline is still processing them.')
 
-        validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Validated']
+        validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Deleted']
 
         for _, run_record in validated_runs_without_report.iterrows():
             content = _get_default_run_content(run_record)
