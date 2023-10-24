@@ -26,7 +26,7 @@ class StatusChecker:
 
         print("Gathering data")
         self.all_reports_with_null = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
-                                      .drop_duplicates(subset='id', keep='last'))
+                                      .drop_duplicates(subset='sample_barcode', keep='last'))
         self.all_reports = self.all_reports_with_null[self.all_reports_with_null['sample_barcode'].notnull()]
         # these if checks are to ensure that if the dataframe is empty,
         # it still has the required columns to prevent KeyErrors.
@@ -34,7 +34,7 @@ class StatusChecker:
             self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
         self.shared_reports_with_null = (pd.DataFrame([shared['report_created']
                                                        for shared in self.rest_client.get_all_reports_shared()])
-                                         .drop_duplicates(subset='id', keep='last'))
+                                         .drop_duplicates(subset='sample_barcode', keep='last'))
         self.shared_reports = self.shared_reports_with_null[self.shared_reports_with_null['sample_barcode'].notnull()]
 
         if len(self.shared_reports) == 0:
