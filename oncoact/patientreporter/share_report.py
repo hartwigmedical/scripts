@@ -99,7 +99,7 @@ class ReportSharer:
     def _get_run_files_as_blobs(self):
         if self.run is None:  # if there is no run there are also no run files to return.
             return []
-        if self.report_created_record['report_type'] == 'oncopanel_result_report':
+        if self.report_created_record['report_type'] == 'panel_result_report':
             return self._get_targeted_run_files_as_blobs()
         else:
             return self._get_wgs_run_files_as_blobs()
