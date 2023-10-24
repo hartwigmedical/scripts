@@ -147,6 +147,7 @@ function process_samples () {
         sample_id=$(echo "${line}" | cut -f8)
         sample_nm=$(echo "${line}" | cut -f9)
         submission=$(echo "${line}" | cut -f10)
+        #reporting_id="NA"
         api_samples_json=$(hmf_api_get "samples?barcode=${sample_id}")
         if [[ "${api_samples_json}" == "[]" ]]; then
             smp_status="Unregistered"
@@ -155,10 +156,12 @@ function process_samples () {
         else
             sample=$(jq -cr '.[-1]' <<< "${api_samples_json}")
             sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req] | @tsv')
+            #sample_tsv=$(echo "${sample}" | jq -r '[.status,.yld,.yld_req,.reporting_id] | @tsv')
             # Note: last cut shortens "Insufficient Quality" to "Insufficient"
             smp_status=$(echo "${sample_tsv}" | cut -f1 | cut -d" " -f1)
             yld=$(echo "${sample_tsv}" | cut -f2)
             req=$(echo "${sample_tsv}" | cut -f3)
+            #reporting_id=$(echo "${sample_tsv}" | cut -f4)
             if [[ "${yld}" == "" && "${req}" != ""  ]]; then
                 # This happens when no FASTQ files are registered yet, but the sample is registered properly
                 yld="0"
@@ -216,6 +219,7 @@ function process_samples () {
             status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}"
         fi
         printf "%s\t%s\t%s\t%s\t%s\t%s\n" "${submission}" "${sample_id}" "${sample_nm}" "${ini}" "${status_info}" "${set_name}"
+        #printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "${submission}" "${sample_id}" "${sample_nm}" "${reporting_id}" "${ini}" "${status_info}" "${set_name}"
    done | sort -k1,1 -k3,3
 }
 
