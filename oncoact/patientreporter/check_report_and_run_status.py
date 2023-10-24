@@ -193,7 +193,8 @@ class StatusChecker:
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
-                self._get_doid_warnings(report_record))
+                self._get_doid_warnings(report_record) +
+                self._get_patient_reporter_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -265,6 +266,27 @@ class StatusChecker:
 
         return warnings
 
+    def _get_patient_reporter_warnings(self, report_record):
+        warnings = []
+        sample_barcode = report_record["sample_barcode"].lower()
+        bucket_name = "run-oncoact-reporting-pipeline"
+        bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name)
+        rose_blob = bucket.get_blob(blob_name=f"{sample_barcode}/rose.log")
+        protect_blob = bucket.get_blob(blob_name=f"{sample_barcode}/protect.log")
+
+        if rose_blob is not None:
+            rose_log = rose_blob.download_as_string().decode()
+            if 'WARN' in rose_log:
+                warnings.append(
+                    f"A warning was found in the rose log. Use 'gsutil cat gs://{bucket_name}/{rose_blob.name}'")
+
+        if protect_blob is not None:
+            protect_log = protect_blob.download_as_string().decode()
+            if 'WARN' in protect_log:
+                warnings.append(f"A warning was found in the protect log. Use 'gsutil cat gs://{bucket_name}/{protect_blob.name}'")
+
+        return warnings
+
     def _reporting_pipeline_chapter(self):
         print("Processing reporting pipeline failures chapter")
         chapter = Chapter(name='Reporting pipeline fails')
@@ -290,7 +312,7 @@ class StatusChecker:
         running_executions = self.rest_client.get_running_executions()
         for _, execution in enumerate(running_executions):
             content = {
-                 **execution
+                **execution
             }
             section.add_content(content)
         return section
