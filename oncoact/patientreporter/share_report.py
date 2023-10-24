@@ -126,7 +126,7 @@ class ReportSharer:
         """
         panel_file_suffixes = {
             "driver.catalog.somatic.tsv",
-            "purple.somatic.vcf.gz"
+            "purple.somatic.vcf.gz",
             "purple.purity.tsv",
             "purple.cnv.gene.tsv",
             "reported.somatic.vcf",
@@ -134,7 +134,7 @@ class ReportSharer:
             "sampleQcReport.png",
             "sampleQcDeamination.pdf",
             "sampleQcDeamination.png",
-            "reported.somatic.vcf"
+            "reported.somatic.vcf",
         }
         result = []
         set_name = self.run['set']['name']
