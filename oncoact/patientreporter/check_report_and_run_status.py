@@ -53,7 +53,7 @@ class StatusChecker:
         chapters = [self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
-                    self._reporting_pipeline_failures_chapter(),
+                    self._reporting_pipeline_chapter(),
                     self._waiting_pending_processing_runs_chapter()]
 
         _print_chapters(chapters)
@@ -265,21 +265,35 @@ class StatusChecker:
 
         return warnings
 
-    def _reporting_pipeline_failures_chapter(self):
-        print("Processing reporting pipelines failures chapter")
+    def _reporting_pipeline_chapter(self):
+        print("Processing reporting pipeline failures chapter")
         chapter = Chapter(name='Reporting pipeline fails')
-        section = Section(name='Runs with a patient reporter fail',
-                          description='For these runs there is no report due to a patient report failure.')
-        failed_executions = self.rest_client.get_failed_executions()
+        chapter.add_section(self._reporting_pipeline_fail_section())
+        chapter.add_section(self._reporting_pipeline_in_progress_section())
 
+        return chapter
+
+    def _reporting_pipeline_fail_section(self):
+        section = Section(name='Runs with a patient reporter fail',
+                          description='For these entries there is no report due to a patient report failure.')
+        failed_executions = self.rest_client.get_failed_executions()
         for _, execution in enumerate(failed_executions):
             content = {
-                'stageStates': execution['stageStates'],
-                'runName': execution['runName']
+                **execution
             }
             section.add_content(content)
-        chapter.add_section(section)
-        return chapter
+        return section
+
+    def _reporting_pipeline_in_progress_section(self):
+        section = Section(name="Reporting pipeline in progress",
+                          description="For these reports, the reporting pipeline is running")
+        running_executions = self.rest_client.get_running_executions()
+        for _, execution in enumerate(running_executions):
+            content = {
+                 **execution
+            }
+            section.add_content(content)
+        return section
 
     def _waiting_pending_processing_runs_chapter(self):
         print("Processing waiting, processing and pending pipelines chapter")

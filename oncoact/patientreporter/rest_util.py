@@ -143,13 +143,18 @@ class RestClient:
         Gets the failed executions from the reporting-pipeline.
         """
         json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions', params={'success': 'false'})
-        res = [{"runName": execution['runName'], "stageStates": execution['stageStates']} for execution in json_response]
+        res = [execution for execution in
+               json_response]
         return res
 
+    def get_running_executions(self):
+        json_response = _get_as_json(f'{self._reporting_pipeline_url}/executions')
+        res = [execution for execution in json_response
+               if execution['isRunning']]
+        return res
 
     def get_lama_patient_reporter_data(self, isolation_barcode):
         return _get_as_json(f"{self._lama_url}/api/queries/patient-reporter/isolation-barcode/{isolation_barcode}")
-
 
 
 def _get_as_json(url, params=None):
