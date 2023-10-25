@@ -82,6 +82,11 @@ class ReportSharer:
         run_blobs = self._get_run_files_as_blobs()
         report_blobs = self._get_report_files_as_blobs()
 
+        new_line = '\n'
+        sanity_check = input(f"Are these files correct?: { new_line.join([b.name for b in run_blobs + report_blobs]) }")
+        if sanity_check.lower() != 'y':
+            quit(1)
+
         print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
         for blob in run_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO')
