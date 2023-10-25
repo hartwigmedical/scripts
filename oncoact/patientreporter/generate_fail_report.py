@@ -2,7 +2,7 @@ import json
 import argparse
 from google.cloud import pubsub
 
-from oncoact.patientreporter.input_util import multi_line_input
+from input_util import multi_line_input
 
 
 def main():
