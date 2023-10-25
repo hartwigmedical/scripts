@@ -2,7 +2,7 @@ import re
 from google.cloud.storage import Client, Bucket, Blob
 
 # Regex for gs file locations: gs:://<bucket-name>/<blob-name>
-GS_PATH_REGEX = re.compile(r'^gs://([a-z0-9._\-\s]+)((?:/[a-zA-Z0-9_.\-\s]+)*)$')
+GS_PATH_REGEX = re.compile(r'^gs://([a-z0-9._-]+)((?:/[a-zA-Z0-9_.\-\s]+)*)$')
 
 
 def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (Bucket, Blob):
@@ -13,9 +13,7 @@ def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (B
     :param gs_path: the path in the following format: (gs://<bucket-name>/<blob-name>).
     :return: a tuple containing both the bucket and blob: (bucket, blob).
     """
-    print(gs_path)
     match = GS_PATH_REGEX.match(gs_path)
-    print(match)
     if not match:
         raise ValueError(f"'{gs_path}' is not a valid path!")
 
