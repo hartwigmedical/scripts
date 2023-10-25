@@ -108,7 +108,7 @@ class ReportSharer:
         if self.report_created_record['report_type'] == 'panel_result_report':
             return self._get_targeted_run_files_as_blobs()
         else:
-            return self._get_wgs_run_files_as_blobs()
+            return self._get_wgs_run_files_as_blobs_by_file_name()
 
     def _get_wgs_run_files_as_blobs(self):
         all_run_files = self.rest_client.get_run_files(self.run_id)
@@ -124,6 +124,32 @@ class ReportSharer:
             _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['filepath'])
             result.append(blob)
         return result
+
+
+    def _get_wgs_run_files_as_blobs_by_file_name(self):
+        set_name = self.run['set']['name']
+        sample_name = self.report_created_record['sample_name']
+
+        run_files_suffix = {
+            "purple.driver.catalog.somatic.tsv",
+            "linx.driver.catalog.tsv",
+            "purple.somatic.vcf.gz",
+            "purple.sv.vcf.gz",
+            "linx.fusion.tsv",
+            f"{set_name}/orange_no_germline/{sample_name}.orange.pdf"
+        }
+        result = []
+
+        bucket = self.storage_client.bucket(bucket_name="research-pipeline-output-prod-1")
+        blobs = list(bucket.list_blobs(prefix=set_name))
+        for suffix in run_files_suffix:
+            for blob in blobs:
+                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
+                    result.append(blob)
+                    break
+
+        return result
+
 
     def _get_targeted_run_files_as_blobs(self):
         """
