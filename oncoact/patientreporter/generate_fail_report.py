@@ -59,7 +59,7 @@ def assemble_and_emit_qc_fail_event(tumor_sample_barcode: str,
 
 def _prompt_user_for_reason():
     choices = ['wgs_processing_issue', 'wgs_isolation_fail', 'wgs_tcp_shallow_fail', 'wgs_preparation_fail',
-               'wgs_tumor_processing_issue', 'wgs_pipeline_fail', 'wgs_tcp_fail']
+               'wgs_tumor_processing_issue', 'wgs_pipeline_fail', 'wgs_tcp_fail', 'panel_result_report_fail']
     print('Please provide a reason for the failure, the possible reasons are:')
     print('\n'.join(choices))
     reason = input()
