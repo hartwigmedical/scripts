@@ -13,7 +13,9 @@ def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (B
     :param gs_path: the path in the following format: (gs://<bucket-name>/<blob-name>).
     :return: a tuple containing both the bucket and blob: (bucket, blob).
     """
+    print(gs_path)
     match = GS_PATH_REGEX.match(gs_path)
+    print(match)
     if not match:
         raise ValueError(f"'{gs_path}' is not a valid path!")
 
