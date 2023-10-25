@@ -75,6 +75,9 @@ class RestClient:
                                                         'from_enddate': from_end_date})
         return res
 
+    def get_research_run(self, report_created):
+        return _get_as_json(self._runs_url, params={'context': 'RESEARCH', 'barcode': report_created['barcode']})[-1]
+
     def get_run(self, run_id):
         """
         Gets the run by id.

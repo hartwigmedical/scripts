@@ -30,8 +30,9 @@ class ReportSharer:
         self.panel_pipeline_output_bucket: Bucket = self.storage_client.bucket(f'targeted-pipeline-output-{profile}-1')
 
         self.report_created_record = self.rest_client.get_report_created(self.sample_barcode)
-        self.run_id = self.report_created_record['run_id']
-        self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
+
+        self.run = self.rest_client.get_research_run(self.report_created_record)
+        self.run_id = self.run['id']
 
     def share_report(self, publish_to_portal, notify_users):
         """
