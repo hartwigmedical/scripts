@@ -45,7 +45,7 @@ class StatusChecker:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
-        self.validated_runs = self.all_runs[self.all_runs['status'] == 'Deleted']
+        self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
 
     def generate_and_print_summary(self):
@@ -169,7 +169,7 @@ class StatusChecker:
                           description='These runs are already validated, but have no report yet. '
                                       'It could be that the reporting pipeline is still processing them.')
 
-        validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Deleted']
+        validated_runs_without_report = self.runs_without_report[self.runs_without_report['status'] == 'Validated']
 
         for _, run_record in validated_runs_without_report.iterrows():
             content = _get_default_run_content(run_record)
@@ -225,13 +225,13 @@ class StatusChecker:
 
     def _get_health_checker_related_warnings(self, report_record):
         warnings = []
-#         run_record = self._get_run_from_report_record(report_record)
-#         set_name = run_record['set']['name']
-#
-#         health_checker_log = subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
-#         if 'WARN' in health_checker_log:
-#             warnings.append('A warning was found in the health checker log. '
-#                             f'See: {health_checker_log}')
+        run_record = self._get_run_from_report_record(report_record)
+        set_name = run_record['set']['name']
+
+        health_checker_log = subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
+        if 'WARN' in health_checker_log:
+            warnings.append('A warning was found in the health checker log. '
+                            f'See: {health_checker_log}')
         return warnings
 
     def _get_doid_warnings(self, report_record):
