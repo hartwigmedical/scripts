@@ -441,6 +441,9 @@ sub processSample{
             elsif ( $run_status eq "Finished" ){
                 sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
+            elsif ( $run_status eq "Deleted" ){
+                sayWarn("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode but pls check if there will be enough data!");
+            }
             else{
                 sayWarn("  RESULT: SKIPPING because ShallowSeq runs with status $run_status found for $match_string");
                 return "NoJsonMade_DeletedShallowSeqRunFound";
@@ -627,6 +630,7 @@ sub getCorrectBarcodeWithSuffixForRefSampleName{
 sub printSetJson{
     my ($data, $out_path) = @_;
     my $json_obj = JSON->new->allow_nonref;
+    $json_obj->canonical(1);
     my $json_txt = $json_obj->pretty->encode( $data );
     sayInfo("  Writing json ($out_path)");
     open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
