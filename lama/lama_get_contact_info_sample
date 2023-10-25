@@ -14,4 +14,4 @@ hospitalName=$(echo $lama_endpoint | jq .hospitalName | tr -d '"')
 contractCode=$(echo $lama_endpoint | jq .contractCode | tr -d '"')
 
 echo "Contact details on sample ${tumor_barcode}"
-lama "contact-groups/contract-code/${contractCode}/hospital/${hospitalName}"
+lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}"
