@@ -10,5 +10,15 @@ fi
 
 output_dir="${run_dir}/orange_pilot_targeted"
 ref_genome_version="38"
+driver_gene_panel="$(locate_driver_gene_panel_38_tsv)"
+known_fusion_file="$(locate_known_fusion_data_38_csv)"
+ensembl_data_dir="$(locate_ensembl_data_dir_38)"
 
-do_run_orange_pilot_targeted ${run_dir} ${output_dir} ${ref_genome_version} "$@"
+do_run_orange_pilot_targeted \
+    ${run_dir} \
+    ${output_dir} \
+    ${ref_genome_version} \
+    -driver_gene_panel "${driver_gene_panel}" \
+    -known_fusion_file "${known_fusion_file}" \
+    -ensembl_data_dir "${ensembl_data_dir}" \
+    "$@"
