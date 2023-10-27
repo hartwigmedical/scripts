@@ -52,6 +52,7 @@ driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
+experiment_type="PANEL"
 ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
@@ -74,7 +75,8 @@ info "Running ORANGE research targeted on ${run_dir}"
 java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_date ${collection_date} \
+    -experiment_type ${experiment_type} \
+    -sampling_date ${collection_date} \
     -ref_genome_version ${ref_genome_version} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
