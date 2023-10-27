@@ -8,12 +8,9 @@ rva_logo="$(locate_rva_logo_prod)"
 company_logo="$(locate_company_logo_prod)"
 signature="$(locate_signature_prod)"
 
-expected_pipeline_version="$(extract_expected_pipeline_version_research)"
-
 java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
     -udi_di "(01)08720299486034(8012)v5.29" \
-    -expected_pipeline_version ${expected_pipeline_version} \
     "$@"
