@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+report_created_id=$1 && shift
+share_time=$1 && shift
+
+
+data_string=$(printf '{"report_created_id": %s, "notify_users": %s, "publish_to_portal": %s, "share_time": "%s"}' ${report_created_id} "false" "false" ${share_time})
+
+curl -X POST \
+     -H "Content-Type: application/json" \
+     -d "{data_string}" http://api.prod-1/hmf/v1/reports/shared
