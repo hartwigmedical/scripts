@@ -8,4 +8,4 @@ data_string=$(printf '{"report_created_id": %s, "notify_users": %s, "publish_to_
 
 curl -X POST \
      -H "Content-Type: application/json" \
-     -d "{data_string}" http://api.prod-1/hmf/v1/reports/shared
+     -d "${data_string}" http://api.prod-1/hmf/v1/reports/shared
