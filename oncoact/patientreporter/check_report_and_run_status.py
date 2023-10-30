@@ -39,7 +39,11 @@ class StatusChecker:
 
         if len(self.shared_reports) == 0:
             self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
-        self.not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
+
+        not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
+        self.to_be_shared_reports = not_shared_reports[~not_shared_reports['run_id'].isin(self.shared_reports['run_id'])]
+        self.to_be_shared_reports = self.to_be_shared_reports.sort_values(by='id', ascending=True).drop_duplicates(subset=['sample_barcode'], keep='last')
+
         self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
         if len(self.all_runs) == 0:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
@@ -85,8 +89,8 @@ class StatusChecker:
                           description="These failed runs have an generated report, "
                                       "but this report has not been shared yet.")
 
-        not_shared_failed_reports = self.not_shared_reports[
-            self.not_shared_reports['run_id'].isin(self.failed_runs['id'])]
+        not_shared_failed_reports = self.to_be_shared_reports[
+            self.to_be_shared_reports['run_id'].isin(self.failed_runs['id'])]
         for _, report_record in not_shared_failed_reports.iterrows():
             content = self._generate_failed_report_content(report_record=report_record)
             section.add_content(content)
@@ -138,8 +142,8 @@ class StatusChecker:
                           description='Typically, these runs have not been validated yet by the snp-check. '
                                       'Hence no action has to be performed.')
 
-        not_shared_finished_reports = self.not_shared_reports[
-            self.not_shared_reports['run_id'].isin(self.finished_runs['id'])]
+        not_shared_finished_reports = self.to_be_shared_reports[
+            self.to_be_shared_reports['run_id'].isin(self.finished_runs['id'])]
 
         for _, report_record in not_shared_finished_reports.iterrows():
             section.add_content(self._get_default_report_and_run_content(report_record))
@@ -180,9 +184,8 @@ class StatusChecker:
         section = Section(name="Validated runs whose report has not been shared yet",
                           description='These reports are (almost) ready to be shared,'
                                       ' any pending warnings are displayed below.')
-
-        not_shared_validated_reports = self.not_shared_reports[
-            self.not_shared_reports['run_id'].isin(self.validated_runs['id'])]
+        not_shared_validated_reports = self.to_be_shared_reports[
+            self.to_be_shared_reports['run_id'].isin(self.validated_runs['id'])]
         for _, report_record in not_shared_validated_reports.iterrows():
             warnings = self._get_all_report_associated_warnings(report_record)
             content = {**self._get_default_report_and_run_content(report_record),
