@@ -25,7 +25,7 @@ actin_jar="$(locate_pilot_actin)"
 
 info "Running ACTIN ORANGE interpreter on ${sample}"
 
-java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
+java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplicationKt \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
