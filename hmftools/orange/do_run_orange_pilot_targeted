@@ -8,7 +8,7 @@ run_dir=$1 && shift
 output_dir=$1 && shift
 ref_genome_version=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${ref_genome_version}"  ]]; then
     error "Inputs missing. Exiting";
 fi
 
@@ -33,13 +33,17 @@ else
 fi
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
+orange_run_script="do_run_orange_pilot_37"
+if [[ "${ref_genome_version}" == "38" ]]; then
+    orange_run_script="do_run_orange_pilot_38"
+fi
+
 info "Running ORANGE pilot in targeted-mode on ${run_dir}"
 
-do_run_orange_pilot_37 \
+${orange_run_script} \
     ${run_dir} \
     ${output_dir} \
     ${pipeline_version_cmd} \
-    -ref_genome_version ${ref_genome_version} \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
     -sage_dir "${sage_somatic_dir}" \

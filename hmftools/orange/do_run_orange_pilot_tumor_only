@@ -6,8 +6,9 @@ source message_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
+ref_genome_version=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${ref_genome_version}"  ]]; then
     error "Inputs missing. Exiting";
 fi
 
@@ -36,9 +37,14 @@ fi
 
 sigs_dir="$(locate_sigs_data_directory ${run_dir})"
 
+orange_run_script="do_run_orange_pilot_37"
+if [[ "${ref_genome_version}" == "38" ]]; then
+    orange_run_script="do_run_orange_pilot_38"
+fi
+
 info "Running ORANGE pilot tumor-only on ${run_dir}"
 
-do_run_orange_pilot_37 \
+${orange_run_script} \
     ${run_dir} \
     ${output_dir} \
     ${pipeline_version_cmd} \
