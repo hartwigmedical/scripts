@@ -30,9 +30,6 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     """
     api_util = RestClient(profile='prod')
     report_created = api_util.get_report_created(sample_barcode)
-    sample_name = report_created['sample_name']
-    sample_set = api_util.get_sample_set_by_sample_name(sample_name)
-    set_name = sample_set['name']
 
     reports = [report_file for report_file in report_created['report_files'] if
                report_file['datatype'] in {'report_pdf', 'report_json', 'report_xml'}]
