@@ -85,7 +85,7 @@ ${orange_run_script} \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
-    ${linx_somatic_plot_dir} \
+    ${linx_somatic_plot_dir_arg} \
     -linx_germline_dir "${linx_germline_dir}" \
     -lilac_dir "${lilac_dir}" \
     -virus_dir "${virus_dir}" \
