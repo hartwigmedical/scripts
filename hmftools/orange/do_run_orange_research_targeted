@@ -2,10 +2,7 @@
 
 source locate_files || exit 1
 source metadata_functions || exit 1
-source api_functions || exit 1
 source message_functions || exit 1
-source io_functions || exit 1
-source orange_lama_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
@@ -14,46 +11,6 @@ if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
     error "Inputs missing. Exiting";
 fi
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-
-if [[ $# -gt 0 && ! ($1 =~ ^"-")]]; then
-    collection_date=$1 && shift
-    info "Collection date has been manually configured as '${collection_date}'"
-else
-    collection_date=$(collection_date_for_sample ${tumor_sample})
-fi
-
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
-fi
-
-if [[ $# -gt 0 && ! ($1 =~ ^"-") ]]; then
-    primary_tumor_doids=$1 && shift
-    info "Primary tumor doids have been manually configured as '${primary_tumor_doids}'"
-elif [[ ${tumor_sample} == "COLO"* ]]; then
-    primary_tumor_doids="8923"
-else
-    primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${tumor_sample})
-fi
-
-if [[ -z "${primary_tumor_doids}" ]]; then
-    primary_tumor_doids="\"\""
-fi
-
-create_or_cleanup_dir ${output_dir}
-
-orange_jar="$(locate_research_orange)"
-
-doid_json="$(locate_doid_json)"
-cohort_mapping_tsv="$(locate_cohort_mapping_tsv)"
-cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
-driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
-known_fusion_file="$(locate_known_fusion_data_37_csv)"
-ensembl_data_dir="$(locate_ensembl_data_dir_37)"
-
-experiment_type="PANEL"
-ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
 pipeline_version_cmd=""
 if [[ -f "${pipeline_version_file}" ]]; then
@@ -68,30 +25,26 @@ purple_dir="$(locate_purple_data_directory ${run_dir})"
 purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
 linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
+if [[ -d "${linx_somatic_plot_dir}" ]]; then
+    linx_somatic_plot_dir_arg="-linx_plot_dir ${linx_somatic_plot_dir}"
+else
+    linx_somatic_plot_dir_arg=""
+fi
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
-info "Running ORANGE research targeted on ${run_dir}"
+info "Running ORANGE research in targeted-mode on ${run_dir}"
 
-java -jar ${orange_jar} \
-    -tumor_sample_id ${tumor_sample} \
-    -primary_tumor_doids ${primary_tumor_doids} \
-    -experiment_type ${experiment_type} \
-    -sampling_date ${collection_date} \
-    -ref_genome_version ${ref_genome_version} \
-    -output_dir "${output_dir}" \
-    -doid_json "${doid_json}" \
-    -cohort_mapping_tsv "${cohort_mapping_tsv}" \
-    -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
-    -driver_gene_panel "${driver_gene_panel}" \
-    -known_fusion_file "${known_fusion_file}" \
-    -ensembl_data_dir "${ensembl_data_dir}" \
+do_run_orange_research \
+    ${run_dir} \
+    ${output_dir} \
+    "$@" \
     ${pipeline_version_cmd} \
+    -experiment_type "PANEL" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
     -sage_dir "${sage_somatic_dir}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
-    -linx_plot_dir "${linx_somatic_plot_dir}" \
-    -add_disclaimer \
-    "$@"
+    ${linx_somatic_plot_dir_arg} \
+    -lilac_dir "${lilac_dir}"
