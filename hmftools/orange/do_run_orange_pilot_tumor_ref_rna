@@ -57,7 +57,7 @@ peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE pilot tumor-ref-rna on ${run_dir}"
 
-do_run_orange_pilot \
+do_run_orange_pilot_37 \
     ${run_dir} \
     ${output_dir} \
     ${isofox_gene_distribution_cmd} \

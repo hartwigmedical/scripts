@@ -35,7 +35,7 @@ lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
 info "Running ORANGE pilot in targeted-mode on ${run_dir}"
 
-do_run_orange_pilot \
+do_run_orange_pilot_37 \
     ${run_dir} \
     ${output_dir} \
     ${pipeline_version_cmd} \
