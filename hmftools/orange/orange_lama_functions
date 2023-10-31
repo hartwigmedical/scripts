@@ -2,11 +2,11 @@
 
 source secrets_functions || exit 1
 
-collection_date_for_sample() {
+sampling_date_for_sample() {
     sample=$1 && shift
 
-    collection_date=$(lama -j tumor-sample sample-id/${sample} | jq -r '.samplingDate')
+    sampling_date=$(lama -j tumor-sample sample-id/${sample} | jq -r '.samplingDate')
 
     # Convert format yyyy-mm-dd to yymmdd
-    echo "${collection_date:2:2}${collection_date:5:2}${collection_date:8:2}"
+    echo "${sampling_date:2:2}${sampling_date:5:2}${sampling_date:8:2}"
 }

@@ -26,10 +26,10 @@ known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-collection_date=$(collection_date_for_sample ${tumor_sample})
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
+sampling_date=$(sampling_date_for_sample ${tumor_sample})
+if [[ -z "${sampling_date}" ]]; then
+    warn "No sampling date found for ${tumor_sample}"
+    sampling_date="NA"
 fi
 
 if [[ ${tumor_sample} == "COLO"* ]]; then
@@ -45,7 +45,7 @@ java -jar ${orange_jar} \
     -ref_genome_version "37" \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -sampling_date ${collection_date} \
+    -sampling_date ${sampling_date} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \

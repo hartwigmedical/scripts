@@ -28,15 +28,15 @@ ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 if [[ $# -gt 0 && ! ($1 =~ ^"-")]]; then
-    collection_date=$1 && shift
-    info "Collection date has been manually configured as '${collection_date}'"
+    sampling_date=$1 && shift
+    info "Sampling date has been manually configured as '${sampling_date}'"
 else
-    collection_date=$(collection_date_for_sample ${tumor_sample})
+    sampling_date=$(sampling_date_for_sample ${tumor_sample})
 fi
 
-if [[ -z "${collection_date}" ]]; then
-    warn "No collection date found for ${tumor_sample}"
-    collection_date="NA"
+if [[ -z "${sampling_date}" ]]; then
+    warn "No sampling date found for ${tumor_sample}"
+    sampling_date="NA"
 fi
 
 if [[ $# -gt 0 && ! ($1 =~ ^"-") ]]; then
@@ -56,7 +56,7 @@ java -jar ${orange_jar} \
     -ref_genome_version "37" \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -sampling_date ${collection_date} \
+    -sampling_date ${sampling_date} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
