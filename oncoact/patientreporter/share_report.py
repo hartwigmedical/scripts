@@ -123,7 +123,7 @@ class ReportSharer:
 
     def _get_wgs_run_files_as_blobs_by_file_name(self):
         set_name = self.run['set']['name']
-        sample_name = self.report_created_record['sample_name']
+        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportingId']
 
         run_files_suffix = {
             "purple.driver.catalog.somatic.tsv",
@@ -131,7 +131,7 @@ class ReportSharer:
             "purple.somatic.vcf.gz",
             "purple.sv.vcf.gz",
             "linx.fusion.tsv",
-            f"{set_name}/orange_no_germline/{sample_name}.orange.pdf"
+            f"{set_name}/orange_no_germline/{reporting_id}.orange.pdf"
         }
         result = []
 
