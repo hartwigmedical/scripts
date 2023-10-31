@@ -27,9 +27,9 @@ purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
 linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
 if [[ -d "${linx_somatic_plot_dir}" ]]; then
-  linx_somatic_plot_dir_arg="-linx_plot_dir ${linx_somatic_plot_dir}"
+    linx_somatic_plot_dir_arg="-linx_plot_dir ${linx_somatic_plot_dir}"
 else
-  linx_somatic_plot_dir_arg=""
+    linx_somatic_plot_dir_arg=""
 fi
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
@@ -51,6 +51,6 @@ ${orange_run_script} \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
-    -lilac_dir "${lilac_dir}" \
     ${linx_somatic_plot_dir_arg} \
+    -lilac_dir "${lilac_dir}" \
     "$@"
