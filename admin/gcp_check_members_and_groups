@@ -8,6 +8,7 @@ groups=(
 "2faexempt"
 "actin"
 "data-exchanger"
+"data-exchanger-australia"
 "data-requests"
 "emc-production-support"
 "emc-sql-users"
