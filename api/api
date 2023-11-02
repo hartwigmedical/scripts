@@ -118,8 +118,8 @@ main(){
         jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds, .status, .undet_rds_p_pass, (.createTime|.[:10]), (.updateTime|.[:10]), .sequencer, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=int($4/1e9); $5=int($5/1e9) }1'
     elif [[ "${class}" == "samples" ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30_req q30 yld_req yld status name type id
-        jq -r '.[] | [.submission, .barcode, .q30_req, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json_result}" \
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30_req q30 yld_req yld status name type reporting_id id
+        jq -r '.[] | [.submission, .barcode, .q30_req, .q30, .yld_req, .yld, .status, .name, .type, .reporting_id, .id] | @tsv' <<< "${json_result}" \
         | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.1f",$4); $5=int($5/1e9); $6=int($6/1e9) }1'
     elif [[ "${class}" == "runs" ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" name ref tum ini version status failure context bucket startDate endDate id
