@@ -26,6 +26,7 @@ chmod +x ${DIR}/bcl2fastq/2.20.0.422/bcl2fastq
 chmod +x ${DIR}/star/2.7.3a/STAR
 chmod +x ${DIR}/rmblast/2.10.0/rmblastn
 chmod +x ${DIR}/trf/4.0.9/trf
+chmod +x ${DIR}/seqtk/1.4/seqtk
 
 find /data/tools/cuppa -maxdepth 1 -type d | egrep '[0-9]' | while read v; do
     if [[ ! -d ${v}/cuppa-chart ]]; then
