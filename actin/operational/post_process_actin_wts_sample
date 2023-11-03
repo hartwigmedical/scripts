@@ -17,4 +17,4 @@ run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
 run_actin_rna_post_process ${run_dir}
 
 # Then rerun ORANGE to include the RNA data in the ORANGE output
-#rerun_orange_in_actin_mode ${run_dir}
+rerun_orange_in_actin_mode ${run_dir}
