@@ -323,51 +323,52 @@ extract_expected_pipeline_version_panel() {
 ############################## ACTIN Resources #################################
 
 locate_actin_local_crunch_repo() {
-    echo "$HOME/hmf/repos/crunch-resources-private/actin"
+    echo "$HOME/hmf/repos/actin-resources-private/actin"
 }
 
 locate_actin_database_sql_script() {
-    echo "/data/resources/crunch/actin/sql_database/generate_database.sql"
+    echo "/data/resources/actin/sql_database/generate_database.sql"
 }
 
 locate_actin_database_views_sql_script() {
-    echo "/data/resources/crunch/actin/sql_database/generate_views.sql"
+    echo "/data/resources/actin/sql_database/generate_views.sql"
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/crunch/actin/clinical_curation"
+locate_actin_clinical_curation_directory() {
+    echo "/data/resources/actin/clinical_curation"
 }
 
 locate_actin_treatment_db_directory() {
-    echo "/data/resources/crunch/actin/treatment_db"
+    echo "/data/resources/actin/treatment_db"
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/crunch/actin/trial_config"
+    echo "/data/resources/actin/trial_config"
 }
 
 locate_actin_ctc_config_directory() {
-    echo "/data/resources/crunch/actin/ctc_config"
+    echo "/data/resources/actin/ctc_config"
 }
 
 locate_actin_minimal_molecular_json() {
-    echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
+    echo "/data/resources/actin/minimal_molecular_json/minimal.json"
 }
 
 locate_actin_serve_db() {
-    echo "/data/resources/crunch/actin/serve_db"
+    echo "/data/resources/actin/serve_db"
 }
 
 locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/crunch/actin/evidence_curation/external_trial_mapping.tsv"
+    echo "/data/resources/actin/evidence_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_known_genes_tsv() {
-    echo "/data/resources/crunch/actin/serve_db/KnownGenes.SERVE.37.tsv"
+    echo "/data/resources/actin/serve_db/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_rna_sample_metadata_file() {
-    echo "/data/resources/crunch/actin/rna_cohort/actin_sample_cohort_mapping.csv"
+    echo "/data/resources/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
 
 ############################### ACTIN Cohort ###################################
@@ -393,7 +394,7 @@ locate_actin_cohort_clinical_directory() {
 }
 
 locate_actin_cohort_trial_config_directory() {
-    echo "/data/resources/crunch/actin/cohort_analysis/trial_config"
+    echo "/data/resources/actin/cohort_analysis/trial_config"
 }
 
 locate_actin_cohort_trial_database_directory() {
@@ -713,7 +714,7 @@ locate_cuppa_ref_dir_dna() {
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/crunch/actin/cuppa_ref_dna_rna_1_8"
+    echo "/data/resources/actin/cuppa_ref_dna_rna_1_8"
 }
 
 locate_cohort_mapping_tsv() {
@@ -725,11 +726,11 @@ locate_cohort_percentiles_tsv() {
 }
 
 locate_isofox_gene_distribution_csv() {
-    echo "/data/resources/crunch/actin/rna_reference_database/isofox.hmf_3444.gene_distribution.37.csv"
+    echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.gene_distribution.37.csv"
 }
 
 locate_isofox_alt_sj_cohort_csv() {
-    echo "/data/resources/crunch/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
+    echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
 }
 
 locate_doid_json() {
@@ -737,7 +738,7 @@ locate_doid_json() {
 }
 
 locate_atc_tsv() {
-    echo "/data/resources/crunch/actin/atc_config/atc_tree.tsv"
+    echo "/data/resources/actin/atc_config/atc_tree.tsv"
 }
 
 locate_driver_gene_panel_37_tsv() {

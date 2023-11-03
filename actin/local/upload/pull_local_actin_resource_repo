@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 current_path=$(pwd)
 
-cd "$HOME/hmf/repos/crunch-resources-private"
+cd "$HOME/hmf/repos/actin-resources-private"
 
 git pull
 

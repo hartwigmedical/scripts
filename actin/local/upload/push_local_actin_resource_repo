@@ -9,9 +9,9 @@ fi
 
 current_path=$(pwd)
 
-info "Committing and pushing changes in actin crunch resources"
+info "Committing and pushing changes in actin resources"
 
-cd "$HOME/hmf/repos/crunch-resources-private"
+cd "$HOME/hmf/repos/actin-resources-private"
 
 git pull
 git commit -m "${commit_message}" actin
