@@ -327,47 +327,47 @@ locate_actin_local_crunch_repo() {
 }
 
 locate_actin_database_sql_script() {
-    echo "/data/resources/crunch/sql_database/generate_database.sql"
+    echo "/data/resources/crunch/actin/sql_database/generate_database.sql"
 }
 
 locate_actin_database_views_sql_script() {
-    echo "/data/resources/crunch/sql_database/generate_views.sql"
+    echo "/data/resources/crunch/actin/sql_database/generate_views.sql"
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/crunch/clinical_curation"
+    echo "/data/resources/crunch/actin/clinical_curation"
 }
 
 locate_actin_treatment_db_directory() {
-    echo "/data/resources/crunch/treatment_db"
+    echo "/data/resources/crunch/actin/treatment_db"
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/crunch/trial_config"
+    echo "/data/resources/crunch/actin/trial_config"
 }
 
 locate_actin_ctc_config_directory() {
-    echo "/data/resources/crunch/ctc_config"
+    echo "/data/resources/crunch/actin/ctc_config"
 }
 
 locate_actin_minimal_molecular_json() {
-    echo "/data/resources/crunch/minimal_molecular_json/minimal.json"
+    echo "/data/resources/crunch/actin/minimal_molecular_json/minimal.json"
 }
 
 locate_actin_serve_db() {
-    echo "/data/resources/crunch/serve_db"
+    echo "/data/resources/crunch/actin/serve_db"
 }
 
 locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/crunch/evidence_curation/external_trial_mapping.tsv"
+    echo "/data/resources/crunch/actin/evidence_curation/external_trial_mapping.tsv"
 }
 
 locate_actin_known_genes_tsv() {
-    echo "/data/resources/crunch/serve_db/KnownGenes.SERVE.37.tsv"
+    echo "/data/resources/crunch/actin/serve_db/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_rna_sample_metadata_file() {
-    echo "/data/resources/crunch/rna_cohort/actin_sample_cohort_mapping.csv"
+    echo "/data/resources/crunch/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
 
 ############################### ACTIN Cohort ###################################
