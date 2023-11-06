@@ -15,7 +15,7 @@ info "Committing and pushing changes in actin resources"
 cd "$(locate_actin_local_resource_repo)"
 
 git pull
-git commit -m "${commit_message}" actin
+git commit -a -m "${commit_message}"
 git push
 
 cd "${current_path}"
