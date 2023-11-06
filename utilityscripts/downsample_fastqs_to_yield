@@ -216,6 +216,7 @@ downsample_single_fastq()
 
 get_yield()
 {
+  source message_functions || exit 1
   fastq_file=$1 && shift
   seqtk_path=$1 && shift
 
@@ -231,17 +232,21 @@ get_yield()
 
 get_as_base_count()
 {
+  source message_functions || exit 1
   yield=$1 && shift
 
   if [[ -z ${yield} ]]; then
     die "Not enough arguments for 'get_as_base_count'"
   fi
 
-  numfmt --from si "${yield}" --suffix "B"
+  base_count=$(numfmt --from si "${yield}" --suffix "B") || die "Could not calculate yield as base count: ${yield}"
+  # strip final B from count
+  echo "${base_count::-1}"
 }
 
 get_nice_yield()
 {
+  source message_functions || exit 1
   base_count=$1 && shift
 
   if [[ -z ${base_count} ]]; then
