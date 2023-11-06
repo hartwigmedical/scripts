@@ -1,0 +1,250 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+LOCAL_WORKING_DIR="/data/tmp"
+SEQTK_DEFAULT_SOURCE="gs://common-tools/seqtk/1.4"
+GCP_URL_START="gs://"
+
+print_usage()
+{
+  echo "-----"
+  echo " Descr: Downsample FASTQ to approximately the intended yield"
+  echo " Usage: ${SCRIPT_NAME} -i <input_dir> -o <output_dir> -t <target_yield> -a <input_sample_name> -s <seed> <optional_arguments>"
+  echo " Arguments:"
+  echo "   -i  input_dir           Directory containing the FASTQ files to downsample. Can be a GCP bucket directory."
+  echo "   -o  output_dir          Output directory. Can be a GCP bucket directory."
+  echo "   -t  target_yield        Intended sample yield expressed as number of bases. Can be provided in convenient formats,"
+  echo "                           e.g. 50000, 50KB and 50K are interpreted identically."
+  echo "   -a  input_sample_name   Input sample name. Input FASTQ files need to start with \"\${input_sample_name}_\"."
+  echo "   -s  seed                Seed for random sampling. Needs to be an integer."
+  echo " Optional arguments:"
+  echo "   -l  local_working_dir   Local directory in which to create a subdirectory \"tmp_\${input_sample_name}_\${target_yield}\""
+  echo "                           for storing files, if necessary. The subdirectory is deleted at the end of this script."
+  echo "                           Defaults to \"${LOCAL_WORKING_DIR}\"."
+  echo "   -p  seqtk_path          Path to seqtk tool. If not provided, this tool is downloaded from \"${SEQTK_DEFAULT_SOURCE}\""
+  echo "   -c  current_yield       Current sample yield expressed as number of bases. Can be provided in the same formats as target_yield."
+  echo "                           If not provided, is calculated from input FASTQ files."
+  echo "   -b  output_sample_name  Output sample name. Output FASTQ files will have the input sample name replaced by the output sample name."
+  echo "                           Defaults to \"\${input_sample_name}-\${target_yield}-1\"."
+  echo "   -x  thread_count        Maximum number of threads to use whilst downsampling. At most 1 thread per FASTQ file can be used effectively."
+  echo "                           Defaults to all available threads."
+  echo "   -f  use_fixed_seed      Use the same seed for all lane pairs. Mainly used for FASTQ files generated externally."
+  echo "                           By default each FASTQ pair uses its own seed. If we don't do this,"
+  echo "                           then the same position reads are selected from all FASTQ files "
+  echo "                           (e.g. the first read is selected from either all files, or none of them)."
+  echo "                           However, the implementation for unique seeds requires that file names for a read pair are identical "
+  echo "                           except the read 1 file contains the string 'R1' where the read 2 file contains the string 'R2'."
+  echo "                           This is true for our internal FASTQ files, but is unlikely to be true for externally sourced FASTQ files."
+  echo " Examples:"
+  echo "   ${SCRIPT_NAME} -i gs://bucket/input -o gs://bucket/output -t 50KB -a NAME2 -s 11"
+  echo "   ${SCRIPT_NAME} -i ./input -o ./output -t 100M -a NAME1 -s 100 -l /data/tmp -p /path/to/seqtk -c 110G -b NAME1-100M-2 -x 4"
+  echo "   ${SCRIPT_NAME} -i ./input -o ./output -t 5000000 -a NAME2 -s 13 -c 5735395 -b NAME2-DS -f"
+  echo "-----"
+  exit 1
+}
+
+main()
+{
+  info "Started downsampling FASTQ"
+
+  use_fixed_seed="FALSE"
+  while getopts 'i:o:t:a:s:l:p:c:b:x:f' flag; do
+    case "${flag}" in
+      i) input_dir=${OPTARG} ;;
+      o) output_dir=${OPTARG} ;;
+      t) target_yield=${OPTARG} ;;
+      a) input_sample_name=${OPTARG} ;;
+      s) seed=${OPTARG} ;;
+      l) local_working_dir=${OPTARG} ;;
+      p) seqtk_path=${OPTARG} ;;
+      c) current_yield=${OPTARG} ;;
+      b) output_sample_name=${OPTARG} ;;
+      x) thread_count=${OPTARG} ;;
+      f) use_fixed_seed="TRUE" ;;
+      *) print_usage >&2
+      exit 1 ;;
+    esac
+  done
+
+  # check required arguments
+  if [[ -z ${input_dir} || -z ${output_dir} || -z ${target_yield} || -z ${input_sample_name} || -z ${seed} ]]; then
+    warn "Not all required input parameters provided to ${SCRIPT_NAME}."
+    print_usage >&2
+  fi
+
+  # handle optional arguments
+  if [[ -z ${output_sample_name} ]]; then
+    output_sample_name="${input_sample_name}-${target_yield}-1"
+  fi
+
+  if [[ -z ${thread_count} ]]; then
+    thread_count=$(nproc) || die "Could not set maximum thread count"
+  fi
+
+  if [[ -z ${local_working_dir} ]]; then
+    local_working_dir="${LOCAL_WORKING_DIR}"
+  fi
+  local_working_sample_dir="${LOCAL_WORKING_DIR}/tmp_${input_sample_name}_${target_yield}"
+
+  # handle local vs remote input
+  if [[ -z ${seqtk_path} ]]; then
+    local_seqtk_dir="${local_working_sample_dir}/seqtk"
+    mkdir -p "${local_seqtk_dir}" || die "Could not create local seqtk dir: ${local_seqtk_dir}"
+    gsutil -m rsync -r "${SEQTK_DEFAULT_SOURCE}" "${local_seqtk_dir}" || die "Could not download seqtk from ${SEQTK_DEFAULT_SOURCE} to ${local_seqtk_dir}"
+    seqtk_path="${local_seqtk_dir}/seqtk"
+    chmod +x "${seqtk_path}" || die "Could not make seqtk executable: ${seqtk_path}"
+  fi
+
+  if [[ "${input_dir}" == "${GCP_URL_START}"* ]]; then
+    local_input_dir="${local_working_sample_dir}/input"
+    mkdir -p "${local_input_dir}" || die "Could not create local input dir: ${local_input_dir}"
+    gsutil -m cp -r "${input_dir}/${input_sample_name}_*.fastq.gz" "${local_input_dir}/" || die "Could not download input FASTQ from ${input_dir} to ${local_input_dir}"
+  else
+    local_input_dir=input_dir
+  fi
+
+  if [[ "${output_dir}" == "${GCP_URL_START}"* ]]; then
+    local_output_dir="${local_working_sample_dir}/output"
+  else
+    local_output_dir=output_dir
+  fi
+
+  # determine what needs to be done
+  if [[ -z ${current_yield} ]]; then
+    info "Calculate yields for input FASTQ"
+    current_yield=0
+    for input_fastq in "${local_input_dir}/${input_sample_name}_"*.fastq.gz; do
+      file_yield=$(get_yield "${input_fastq}" "${seqtk_path}") || die "Could not get yield for file: ${input_fastq}"
+      info "Yield for ${input_fastq}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
+      current_yield=$((current_yield + file_yield)) || die "Could not add upp current yield"
+    done
+    info "Current total yield: ${current_yield} ($(get_nice_yield "${current_yield}"))"
+  else
+    current_yield=$(get_as_base_count "${current_yield}") || die "Could not convert current yield to base count: ${current_yield}"
+  fi
+
+  target_yield=$(get_as_base_count "${target_yield}") || die "Could not convert target yield to base count: ${target_yield}"
+
+  if (( target_yield > current_yield )); then
+    die "Cannot downsample to a larger yield: current=${current_yield}, target=${target_yield}"
+  fi
+
+  info "Downsampling from ${current_yield} ($(get_nice_yield "${current_yield}")) to approximately ${target_yield} ($(get_nice_yield "${target_yield}")) bases"
+
+  fraction=$(echo "${target_yield} ${current_yield}" | awk '{printf "%.20f \n", $1/$2}') || die "Could not calculate downsample fraction"
+  info "Using downsampling fraction ${fraction}"
+
+  # start actual work
+  if [[ ! -d "${local_output_dir}" ]]; then
+    mkdir -p "${local_output_dir}" || die "Could not create local output directory: ${local_output_dir}"
+  fi
+
+  info "Start downsampling"
+  export -f downsample_single_fastq
+  find "${local_input_dir}/${input_sample_name}_"*.fastq.gz -print0 | \
+    xargs -0 -P"${thread_count}" -n1 -I% bash -c "downsample_single_fastq % ${fraction} ${local_output_dir} ${input_sample_name} ${output_sample_name} ${seqtk_path} ${seed} ${use_fixed_seed}" \
+    || die "Could not downsample the FASTQs"
+
+  if [[ "${output_dir}" == "${GCP_URL_START}"* ]]; then
+    info "Upload output files"
+    gsutil -m cp "${local_output_dir}/${output_sample_name}_*.fastq.gz" "${output_dir}/" || die "Could not upload output FASTQ from ${local_output_dir} to ${output_dir}"
+  fi
+
+  resulting_yield=0
+  for input_fastq in "${local_input_dir}/${input_sample_name}_"*.fastq.gz; do
+    input_fastq_name=$(basename "${input_fastq}") || die "Could not get input FASTQ file name: ${input_fastq}"
+    output_fastq="${local_output_dir}/${input_fastq_name/"${input_sample_name}"/"${output_sample_name}"}"
+
+    file_yield=$(get_yield "${output_fastq}" "${seqtk_path}") || die "Could not get yield for file: ${output_fastq}"
+    info "Yield for ${output_fastq}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
+
+    resulting_yield=$((resulting_yield + file_yield)) || die "Could not add upp total yield"
+  done
+
+  info "Total achieved yield: ${resulting_yield} ($(get_nice_yield "${resulting_yield}"))"
+  info "Intended yield: ${target_yield} ($(get_nice_yield "${target_yield}"))"
+
+  if [[ -d "${local_working_sample_dir}" ]]; then
+    info "Delete local working sample dir: ${local_working_sample_dir}"
+    rm -r "${local_working_sample_dir}" || die "Could not delete local working sample dir: ${local_working_sample_dir}"
+  fi
+
+  info "Finished downsampling FASTQ"
+}
+
+downsample_single_fastq()
+{
+  source message_functions || exit 1
+
+  input_fastq=$1 && shift
+  fraction=$1 && shift
+  local_output_dir=$1 && shift
+  input_sample_name=$1 && shift
+  output_sample_name=$1 && shift
+  seqtk_path=$1 && shift
+  seed=$1 && shift
+  use_fixed_seed=$1 && shift
+
+  if [[ -z ${use_fixed_seed} ]]; then
+    die "Missing arguments to 'downsample_fastq'"
+  fi
+  input_fastq_name=$(basename "${input_fastq}") || die "Could not get input FASTQ file name: ${input_fastq}"
+  output_fastq="${local_output_dir}/${input_fastq_name/"${input_sample_name}"/"${output_sample_name}"}"
+
+  if [[ "${use_fixed_seed}" == "TRUE" ]]; then
+    final_seed="${seed}"
+    info "Seed for ${input_fastq_name}: ${seed}"
+  else
+    no_r1_input_name="${input_fastq_name//R1/R?}"
+    no_r1_or_r2_input_name="${no_r1_input_name//R2/R?}"
+    seed_from_file_name=$(echo "${no_r1_or_r2_input_name}" | cksum | cut -f1 -d" ") || die "Could not calculate seed from FASTQ file name"
+    final_seed=$(( seed + seed_from_file_name)) || die "Could not calculate seed to use for downsampling"
+    info "Seed for ${input_fastq_name}: ${final_seed}"
+  fi
+
+  info "Start downsampling ${input_fastq_name}"
+
+  "${seqtk_path}" sample -s"${final_seed}" "${input_fastq}" "${fraction}" | gzip > "${output_fastq}" || \
+      die "Could not downsample ${input_fastq} to ${output_fastq}"
+
+  info "Finished downsampling ${input_fastq_name}"
+}
+
+get_yield()
+{
+  fastq_file=$1 && shift
+  seqtk_path=$1 && shift
+
+  if [[ -z ${seqtk_path} ]]; then
+    die "Not enough arguments for 'get_yield'"
+  fi
+
+  "${seqtk_path}" size "${fastq_file}" | cut -f2 -d$'\t' || die "Could not get yield in FASTQ file"
+}
+
+get_as_base_count()
+{
+  yield=$1 && shift
+
+  if [[ -z ${yield} ]]; then
+    die "Not enough arguments for 'get_as_base_count'"
+  fi
+
+  numfmt --from si "${yield}" --suffix "B"
+}
+
+get_nice_yield()
+{
+  base_count=$1 && shift
+
+  if [[ -z ${base_count} ]]; then
+    die "Not enough arguments for 'get_nice_yield'"
+  fi
+
+  numfmt --to si "${base_count}" --round nearest --suffix "B"
+}
+
+main "$@"
