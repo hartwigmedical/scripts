@@ -36,7 +36,7 @@ function check_one_unreported_sample(){
     lama_all_statusus=$(curl --silent "${LAMA_API_URL}/statuses/sample-id/${sampleId}")
 
     # LAMA API has no filter on type currently so need to use jq for now
-    lama_status=$(jq '[.[] | select(.type|test("^TUMOR_TISSUE|TUMOR_DNA_EXTERNALLY_ISOLATED$"))]' <<< "${lama_all_statusus}")
+    lama_status=$(jq '[.[] | select(.type|test("^TUMOR_TISSUE|TUMOR_DNA_EXTERNALLY_ISOLATED|TUMOR_FFPE_DNA_EXTERNALLY_ISOLATED$"))]' <<< "${lama_all_statusus}")
     additional_barcodes=$(jq -cr '[.[] | .sampleBarcode, .isolationBarcodes[] ] | join(",")' <<< "${lama_status}")
     info="${sampleId}=${additional_barcodes}"
     total_count=$(jq 'length' <<< "${lama_status}")
