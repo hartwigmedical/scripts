@@ -226,7 +226,7 @@ get_yield()
 
   file_yield=$("${seqtk_path}" size "${fastq_file}" | cut -f2 -d$'\t') || die "Could not get yield in FASTQ file"
   fastq_file_name=$(basename "${fastq_file}") || die "Could not get FASTQ file name: ${fastq_file}"
-  info "Yield for ${fastq_file_name}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
+  info "Yield for ${fastq_file_name}: ${file_yield} ($(get_nice_yield "${file_yield}"))" >&2
   echo "${file_yield}"
 }
 
