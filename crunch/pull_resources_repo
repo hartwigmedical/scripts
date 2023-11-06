@@ -7,7 +7,7 @@ repo=$1
 [[ -z ${repo} ]] && die "$(basename $0) requires a repo resources name as an argument"
 
 if [ ${repo} != "ops" -a ${repo} != "crunch" -a ${repo} != "private" -a ${repo} != "public" -a ${repo} != "actin" ] ; then
-    die "Only allowed to be used on ops ,crunch, acton, private and public resources repos. Other repos are set to a fixed version on purpose."
+    die "Only allowed to be used on ops ,crunch, actin, private and public resources repos. Other repos are set to a fixed version on purpose."
 fi
 
 pull_repo $(locate_resources_repo_dir "${repo}")
