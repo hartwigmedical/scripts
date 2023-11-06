@@ -322,8 +322,8 @@ extract_expected_pipeline_version_panel() {
 
 ############################## ACTIN Resources #################################
 
-locate_actin_local_crunch_repo() {
-    echo "$HOME/hmf/repos/crunch-resources-private/actin"
+locate_actin_local_resource_repo() {
+    echo "$HOME/hmf/repos/crunch-resources-private"
 }
 
 locate_actin_database_sql_script() {

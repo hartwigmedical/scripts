@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 commit_message=$1 && shift
 if [[ -z ${commit_message} ]]; then
@@ -11,7 +12,7 @@ current_path=$(pwd)
 
 info "Committing and pushing changes in actin resources"
 
-cd "$HOME/hmf/repos/actin-resources-private"
+cd "$(locate_actin_local_resource_repo)"
 
 git pull
 git commit -m "${commit_message}" actin
