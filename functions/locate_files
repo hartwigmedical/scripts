@@ -393,7 +393,7 @@ locate_actin_cohort_clinical_directory() {
 }
 
 locate_actin_cohort_trial_config_directory() {
-    echo "/data/resources/actin/cohort_analysis/trial_config"
+    echo "/data/resources/actin/actin/cohort_analysis/trial_config"
 }
 
 locate_actin_cohort_trial_database_directory() {
@@ -713,7 +713,7 @@ locate_cuppa_ref_dir_dna() {
 }
 
 locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/actin/cuppa_ref_dna_rna_1_8"
+    echo "/data/resources/actin/actin/cuppa_ref_dna_rna_1_8"
 }
 
 locate_cohort_mapping_tsv() {
@@ -725,11 +725,11 @@ locate_cohort_percentiles_tsv() {
 }
 
 locate_isofox_gene_distribution_csv() {
-    echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.gene_distribution.37.csv"
+    echo "/data/resources/actin/actin/rna_reference_database/isofox.hmf_3444.gene_distribution.37.csv"
 }
 
 locate_isofox_alt_sj_cohort_csv() {
-    echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
+    echo "/data/resources/actin/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
 }
 
 locate_doid_json() {
@@ -737,7 +737,7 @@ locate_doid_json() {
 }
 
 locate_atc_tsv() {
-    echo "/data/resources/actin/atc_config/atc_tree.tsv"
+    echo "/data/resources/actin/actin/atc_config/atc_tree.tsv"
 }
 
 locate_driver_gene_panel_37_tsv() {
