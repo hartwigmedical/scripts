@@ -89,6 +89,12 @@ main()
   fi
   local_working_sample_dir="${LOCAL_WORKING_DIR}/tmp_${input_sample_name}_${target_yield}"
 
+  # export sub functions
+  export -f downsample_single_fastq || die "Could not export 'downsample_single_fastq'"
+  export -f get_yield || die "Could not export 'get_yield'"
+  export -f get_as_base_count || die "Could not export 'get_as_base_count'"
+  export -f get_nice_yield || die "Could not export 'get_nice_yield'"
+
   # handle local vs remote input
   if [[ -z ${seqtk_path} ]]; then
     local_seqtk_dir="${local_working_sample_dir}/seqtk"
@@ -115,12 +121,11 @@ main()
   # determine what needs to be done
   if [[ -z ${current_yield} ]]; then
     info "Calculate yields for input FASTQ"
-    current_yield=0
-    for input_fastq in "${local_input_dir}/${input_sample_name}_"*.fastq.gz; do
-      file_yield=$(get_yield "${input_fastq}" "${seqtk_path}") || die "Could not get yield for file: ${input_fastq}"
-      info "Yield for ${input_fastq}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
-      current_yield=$((current_yield + file_yield)) || die "Could not add upp current yield"
-    done
+    current_yield=$( \
+        find "${local_input_dir}/${input_sample_name}_"*.fastq.gz -print0 | \
+        xargs -0 -P"${thread_count}" -n1 -I% bash -c "get_yield % ${seqtk_path}" | \
+        awk '{s+=$1} END {printf "%.0f", s}' \
+    ) || die "Could not calculate current yield"
     info "Current total yield: ${current_yield} ($(get_nice_yield "${current_yield}"))"
   else
     current_yield=$(get_as_base_count "${current_yield}") || die "Could not convert current yield to base count: ${current_yield}"
@@ -143,7 +148,6 @@ main()
   fi
 
   info "Start downsampling"
-  export -f downsample_single_fastq
   find "${local_input_dir}/${input_sample_name}_"*.fastq.gz -print0 | \
     xargs -0 -P"${thread_count}" -n1 -I% bash -c "downsample_single_fastq % ${fraction} ${local_output_dir} ${input_sample_name} ${output_sample_name} ${seqtk_path} ${seed} ${use_fixed_seed}" \
     || die "Could not downsample the FASTQs"
@@ -153,16 +157,13 @@ main()
     gsutil -m cp "${local_output_dir}/${output_sample_name}_*.fastq.gz" "${output_dir}/" || die "Could not upload output FASTQ from ${local_output_dir} to ${output_dir}"
   fi
 
-  resulting_yield=0
-  for input_fastq in "${local_input_dir}/${input_sample_name}_"*.fastq.gz; do
-    input_fastq_name=$(basename "${input_fastq}") || die "Could not get input FASTQ file name: ${input_fastq}"
-    output_fastq="${local_output_dir}/${input_fastq_name/"${input_sample_name}"/"${output_sample_name}"}"
-
-    file_yield=$(get_yield "${output_fastq}" "${seqtk_path}") || die "Could not get yield for file: ${output_fastq}"
-    info "Yield for ${output_fastq}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
-
-    resulting_yield=$((resulting_yield + file_yield)) || die "Could not add upp total yield"
-  done
+  resulting_yield=$( \
+      find "${local_input_dir}/${input_sample_name}_"*.fastq.gz -print0 | \
+      xargs -n1 -0 basename | \
+      sed "s/${input_sample_name}/${output_sample_name}/g" | \
+      xargs -0 -P"${thread_count}" -n1 -I% bash -c "get_yield ${local_output_dir}/% ${seqtk_path}" | \
+      awk '{s+=$1} END {printf "%.0f", s}' \
+  ) || die "Could not get resulting yield"
 
   info "Total achieved yield: ${resulting_yield} ($(get_nice_yield "${resulting_yield}"))"
   info "Intended yield: ${target_yield} ($(get_nice_yield "${target_yield}"))"
@@ -201,7 +202,7 @@ downsample_single_fastq()
     no_r1_input_name="${input_fastq_name//R1/R?}"
     no_r1_or_r2_input_name="${no_r1_input_name//R2/R?}"
     seed_from_file_name=$(echo "${no_r1_or_r2_input_name}" | cksum | cut -f1 -d" ") || die "Could not calculate seed from FASTQ file name"
-    final_seed=$(( seed + seed_from_file_name)) || die "Could not calculate seed to use for downsampling"
+    final_seed=$((seed + seed_from_file_name)) || die "Could not calculate seed to use for downsampling"
     info "Seed for ${input_fastq_name}: ${final_seed}"
   fi
 
@@ -222,7 +223,10 @@ get_yield()
     die "Not enough arguments for 'get_yield'"
   fi
 
-  "${seqtk_path}" size "${fastq_file}" | cut -f2 -d$'\t' || die "Could not get yield in FASTQ file"
+  file_yield=$("${seqtk_path}" size "${fastq_file}" | cut -f2 -d$'\t') || die "Could not get yield in FASTQ file"
+  fastq_file_name=$(basename "${fastq_file}") || die "Could not get FASTQ file name: ${fastq_file}"
+  info "Yield for ${fastq_file_name}: ${file_yield} ($(get_nice_yield "${file_yield}"))"
+  echo "${file_yield}"
 }
 
 get_as_base_count()
