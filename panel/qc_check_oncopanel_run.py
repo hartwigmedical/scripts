@@ -174,7 +174,10 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     logging.info("Get tumor sample name")
     metadata_json = get_metadata_json(gcp_run_url)
     tumor_name = metadata_json["tumor"]["sampleName"]
-    logging.info(f"Handling run for {tumor_name}: {gcp_run_url}")
+    tumor_barcode = metadata_json["tumor"]["barcode"]
+    patient_reporter_data_json = get_patient_reporter_data_json(tumor_barcode)
+    pathology_id = patient_reporter_data_json["pathologyNumber"]
+    logging.info(f"Handling run for {tumor_name} ({pathology_id}): {gcp_run_url}")
 
     if not working_directory.exists():
         logging.info(f"Create working directory: {working_directory}")
@@ -222,6 +225,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
         wgs_metrics,
         driver_gene_panel_entries,
         tumor_name,
+        pathology_id,
         output_file,
     )
 
@@ -237,6 +241,7 @@ def do_qc_checks(
         wgs_metrics: WgsMetrics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
         tumor_name: str,
+        pathology_id: str,
         output_file: Path,
 ) -> None:
     output_text = get_qc_check_output_text(
@@ -248,6 +253,7 @@ def do_qc_checks(
         wgs_metrics,
         driver_gene_panel_entries,
         tumor_name,
+        pathology_id,
     )
 
     with open(output_file, "w") as out_f:
@@ -262,9 +268,11 @@ def get_qc_check_output_text(
         wgs_metrics: WgsMetrics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
         tumor_name: str,
+        pathology_id: str,
 ) -> str:
     lines = []
-    lines.append(f"Sample name: {tumor_name}")
+    lines.append(f"Pathology ID: {pathology_id}")
+    lines.append(f"Internal sample name: {tumor_name}")
     lines.append(f"Purity: {purple_qc.purity}")
     lines.append(f"Ploidy: {purple_qc.ploidy}")
     lines.append(f"Amber gender: {purple_qc.amber_gender}")
@@ -742,12 +750,15 @@ def copy_file_to_local_directory(source_url: str, local_directory: Path) -> None
 
 
 def get_metadata_json(gcp_run_url: str) -> Dict[str, Any]:
-    metadata_json = json.loads(gsutil_cat(f"{gcp_run_url}/metadata.json"))
-    return metadata_json
+    return json.loads(run_bash_command(["gsutil", "cat", f"{gcp_run_url}/metadata.json"]))
 
 
-def gsutil_cat(gcp_url: str) -> str:
-    return subprocess.run(["gsutil", "cat", gcp_url], capture_output=True, text=True).stdout
+def get_patient_reporter_data_json(tumor_barcode: str) -> Dict[str, Any]:
+    return json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
+
+
+def run_bash_command(command: List[str]) -> str:
+    return subprocess.run(command, capture_output=True, text=True).stdout
 
 
 def parse_args() -> argparse.Namespace:
