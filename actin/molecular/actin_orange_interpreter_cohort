@@ -13,7 +13,7 @@ fi
 molecular_dir="$(locate_actin_cohort_molecular_directory ${sample})"
 
 orange_json="${molecular_dir}/${sample}.orange.json"
-serve_directory="/data/resources/actin/actin/cohort_analysis/serve_db"
+serve_directory="/data/resources/actin/cohort_analysis/serve_db"
 external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
 patient=$(echo ${sample} | head -c 12)
