@@ -8,7 +8,7 @@ dir="${HOME}/Downloads"
 
 source_file="${dir}/EMC Trial Database - EMC - iClusion mapping.tsv"
 target_file="${dir}/external_trial_mapping.tsv"
-target_dir="$(locate_actin_local_resource_repo)/actin/evidence_curation"
+target_dir="$(locate_actin_local_resource_repo)/evidence_curation"
 
 do_update_actin_resource_file "${source_file}" "${target_file}" "${target_dir}"
 

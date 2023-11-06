@@ -11,6 +11,6 @@ fi
 
 pull_local_actin_resource_repo
 
-cp "${database_sql}" "$(locate_actin_local_resource_repo)/actin/sql_database"
+cp "${database_sql}" "$(locate_actin_local_resource_repo)/sql_database"
 
 push_local_actin_resource_repo "Updated ACTIN sql database schema"
