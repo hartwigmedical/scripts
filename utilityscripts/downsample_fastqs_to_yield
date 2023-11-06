@@ -161,7 +161,7 @@ main()
       find "${local_input_dir}/${input_sample_name}_"*.fastq.gz -print0 | \
       xargs -n1 -0 basename | \
       sed "s/${input_sample_name}/${output_sample_name}/g" | \
-      xargs -0 -P"${thread_count}" -n1 -I% bash -c "get_yield ${local_output_dir}/% ${seqtk_path}" | \
+      xargs -P"${thread_count}" -n1 -I% bash -c "get_yield ${local_output_dir}/% ${seqtk_path}" | \
       awk '{s+=$1} END {printf "%.0f", s}' \
   ) || die "Could not get resulting yield"
 
