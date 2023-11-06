@@ -149,7 +149,7 @@ cmd+=("--labels" "${labels}")
 cmd+=("${network_arg[@]}")
 
 [[ "${preemptible}" == "TRUE" ]] && cmd+=("--preemptible")
-[[ "${startup_script}" != "NONE" ]] && cmd+=(" --metadata-from-file=startup-script=${startup_script}")
+[[ "${startup_script}" != "NONE" ]] && cmd+=("--metadata-from-file=startup-script=${startup_script}")
 
 info "Command to be executed: ${cmd[*]}"
 info "NOTE: Cost center will be configured to '${cost_center}'"
