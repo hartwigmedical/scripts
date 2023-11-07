@@ -173,82 +173,66 @@ create_run_specific_files () {
         die "Pipeline version string has unknown format (${pip})"
         exit 1
     fi
- 
+
     # From pipeline v5.10 onwards CRAM replaced BAM (but DIAGNOSTIC context still has BAM format as final alignments file)
     if [[ "${pip}" == "Fastq" ]]; then
         # For fastq type runs no pipeline output is available
-        ref_bam="undef"
-        ref_bam_bai="undef"
-        tumor_bam="undef"
-        tumor_bam_bai="undef"
-    elif [[ "${minor_version}" -lt 10 || "${context}" == "DIAGNOSTIC" ]]; then
-        ref_bam="${ref}/aligner/${ref}.bam"
-        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
-        tumor_bam="${tum}/aligner/${tum}.bam"
-        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
+        bam1="undef"
+        bam1_bai="undef"
+        bam2="undef"
+        bam2_bai="undef"
     else
-        ref_bam="${ref}/cram/${ref}.cram"
-        ref_bam_bai="${ref}/cram/${ref}.cram.crai"
-        tumor_bam="${tum}/cram/${tum}.cram"
-        tumor_bam_bai="${tum}/cram/${tum}.cram.crai"
+        bam1=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | head -n1)
+        bam2=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | tail -n1)
+        if [[ "${minor_version}" -lt 10 || "${context}" == "DIAGNOSTIC" ]]; then
+            bam1_bai="${bam1}.bai"
+            bam2_bai="${bam2}.bai"
+        else
+            bam1_bai="${bam1}.crai"
+            bam2_bai="${bam2}.crai"
+        fi
     fi
-
-    mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[].filepath' )
 
     local purple_files=(
-        "purple/purple.version"
-        "purple/${tum}.purple.cnv.somatic.tsv"
-        "purple/${tum}.purple.cnv.gene.tsv"
-        "purple/${tum}.purple.purity.tsv"
-        "purple/${tum}.purple.purity.range.tsv"
-        "purple/${tum}.purple.qc"
-        "purple/${tum}.purple.sv.vcf.gz"
-        "purple/${tum}.purple.sv.vcf.gz.tbi"
-        "purple/${tum}.purple.somatic.vcf.gz"
-        "purple/${tum}.purple.somatic.vcf.gz.tbi"
-        "purple/plot/${tum}.circos.png"
+        "$(echo ${json} | jq -r '.[] | select(.filename == "purple.version") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_copy_number") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.cnv\\.gene\\.tsv")) | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_purity") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.purity\\.range\\.tsv")) | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_qc") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath').tbi"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath').tbi"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_circos_plot") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_driver_catalog") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_driver_catalog") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_deletion") | .filepath')"
     )
-
-    # Backwards compatibility: No germline driver catalog if older than 5.19
-    if [[ "${minor_version}" -lt 19 ]]; then
-        purple_files+=("purple/${tum}.driver.catalog.tsv")
-    else
-        purple_files+=("purple/${tum}.driver.catalog.germline.tsv")
-        purple_files+=("purple/${tum}.driver.catalog.somatic.tsv")
-    fi
-
-    # Backwards compatibility: Different germline deletion file if older than 5.28
-    if [[ "${minor_version}" -lt 28 ]]; then
-        purple_files+=("purple/${tum}.purple.cnv.germline.tsv")
-    else
-        purple_files+=("purple/${tum}.purple.germline.deletion.tsv")
-    fi
 
     # Final file list for SingleSample runs
     local single_sample_files=(
-        "${ref_bam}"
-        "${ref_bam_bai}"
-        "${ref}/germline_caller/${ref}.germline.vcf.gz"
-        "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+        "${bam1}"
+        "${bam1_bai}"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath').tbi"
     )
 
     # Final file list for ShallowSeq runs
     local shallow_files=(
-        "${ref_bam}"
-        "${ref_bam_bai}"
-        "${tumor_bam}"
-        "${tumor_bam_bai}"
+        "${bam1}"
+        "${bam1_bai}"
+        "${bam2}"
+        "${bam2_bai}"
         "${purple_files[@]}"
     )
 
     # Final file list for Somatic runs
     local somatic_files=(
-        "${ref_bam}"
-        "${ref_bam_bai}"
-        "${ref}/germline_caller/${ref}.germline.vcf.gz"
-        "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
-        "${tumor_bam}"
-        "${tumor_bam_bai}"
+        "${bam1}"
+        "${bam1_bai}"
+        "${bam2}"
+        "${bam2_bai}"
         "${purple_files[@]}"
     )
 
@@ -260,26 +244,17 @@ create_run_specific_files () {
     elif [[ ${run_type} == "SingleSample" ]]; then
         file_selection=("${single_sample_files[@]}")
     elif [[ ${run_type} == "Fastq" ]]; then
+        mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[].filepath' )
         file_selection=("${all_file_paths[@]}")
     else
         die "Unknown run type (${run_type})"
     fi
 
-    # Construct internal URLs
-    gs_urls=()
-    for file_path in "${file_selection[@]}"; do
-        if [[ ${run_type} == "Fastq" ]]; then
-            gs_urls+=("${file_path}")
-        else
-            gs_urls+=("gs://${bucket}/${set_name}/${file_path}")
-        fi
-    done
-
     info "Creating signed URLs for all files"
-    signurl_payload=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "${secret}") "${gs_urls[@]}")
+    signurl_payload=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "${secret}") "${file_selection[@]}")
 
     info "Creating md5sum file ($out_md5)"
-    gs_file_info=$(gsutil ls -L "${gs_urls[@]}") || die "Unable to retrieve gs file listing! Exiting."
+    gs_file_info=$(gsutil ls -L "${file_selection[@]}") || die "Unable to retrieve gs file listing! Exiting."
     md5sums_info=$(parse_md5sums_from_file_listing "$gs_file_info") || die "Unable to parse md5sums from gs file listing! Exiting."
     echo "$md5sums_info" > "$out_md5" || die "Unable to create md5 output file! Exiting."
 
