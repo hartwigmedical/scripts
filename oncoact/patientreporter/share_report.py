@@ -160,7 +160,9 @@ class ReportSharer:
             "sampleQcReport.png",
             "sampleQcDeamination.pdf",
             "sampleQcDeamination.png",
-            "reported.somatic.vcf",
+            "cobalt.ratio.tsv.gz",
+            "amber.baf.tsv.gz",
+            "purple.cnv.somatic.tsv",
         }
         result = []
         set_name = self.run['set']['name']
