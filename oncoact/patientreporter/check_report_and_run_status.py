@@ -41,8 +41,10 @@ class StatusChecker:
             self.shared_reports = pd.DataFrame(columns=['id', 'sample_barcode', 'run_id'])
 
         not_shared_reports = self.all_reports[~self.all_reports['id'].isin(self.shared_reports['id'])]
-        self.to_be_shared_reports = not_shared_reports[~not_shared_reports['run_id'].isin(self.shared_reports['run_id'])]
-        self.to_be_shared_reports = self.to_be_shared_reports.sort_values(by='id', ascending=True).drop_duplicates(subset=['sample_barcode'], keep='last')
+        self.to_be_shared_reports = not_shared_reports[
+            ~not_shared_reports['run_id'].isin(self.shared_reports['run_id'])]
+        self.to_be_shared_reports = self.to_be_shared_reports.sort_values(by='id', ascending=True).drop_duplicates(
+            subset=['sample_barcode'], keep='last')
 
         self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
         if len(self.all_runs) == 0:
@@ -197,7 +199,8 @@ class StatusChecker:
         return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
                 self._get_doid_warnings(report_record) +
-                self._get_patient_reporter_warnings(report_record))
+                self._get_rose_warnings(report_record) +
+                self._get_protect_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -240,23 +243,17 @@ class StatusChecker:
     def _get_doid_warnings(self, report_record):
         warnings = []
         isolation_barcode = report_record['barcode']
-        sample_barcode = report_record["sample_barcode"]
         lama_data = self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
         used_primary_tumor_type = None
         if 'primaryTumorType' in lama_data:
             used_primary_tumor_type = lama_data['primaryTumorType']
-
-        lama_blob_name = f"{sample_barcode.lower()}/lama/patient-reporter.json"
-        lama_blob = self.oncoact_bucket.get_blob(blob_name=lama_blob_name)
+        lama_blob = self._get_report_blob(report_record, "lama.json", "lama/patient-reporter.json")
         if lama_blob is None:
             return ["Doid warning: the lama json file is missing"]
-        actual_lama_data = json.loads(
-            lama_blob.download_as_string().decode())
-
+        actual_lama_data = json.loads(lama_blob.download_as_string().decode())
         actual_primary_tumor_type = None
         if 'primaryTumorType' in actual_lama_data:
             actual_primary_tumor_type = actual_lama_data['primaryTumorType']
-
         if actual_primary_tumor_type != used_primary_tumor_type:
             warnings.append("Doid warning: the doid data in lama is different "
                             "than the doid data that was used to generate this report. "
@@ -266,29 +263,35 @@ class StatusChecker:
             warnings.append("Doid warning: the primary tumor type was 'None'.")
         elif actual_primary_tumor_type['location'].lower() == 'unknown':
             warnings.append("Doid warning: the doid value was 'unknown'.")
-
         return warnings
 
-    def _get_patient_reporter_warnings(self, report_record):
+    def _get_rose_warnings(self, report_record):
         warnings = []
-        sample_barcode = report_record["sample_barcode"].lower()
-        bucket_name = "run-oncoact-reporting-pipeline"
-        bucket: Bucket = self.storage_client.bucket(bucket_name=bucket_name)
-        rose_blob = bucket.get_blob(blob_name=f"{sample_barcode}/rose.log")
-        protect_blob = bucket.get_blob(blob_name=f"{sample_barcode}/protect.log")
-
-        if rose_blob is not None:
-            rose_log = rose_blob.download_as_string().decode()
-            if 'WARN' in rose_log:
-                warnings.append(
-                    f"A warning was found in the rose log. Use 'gsutil cat gs://{bucket_name}/{rose_blob.name}'")
-
-        if protect_blob is not None:
-            protect_log = protect_blob.download_as_string().decode()
-            if 'WARN' in protect_log:
-                warnings.append(f"A warning was found in the protect log. Use 'gsutil cat gs://{bucket_name}/{protect_blob.name}'")
-
+        rose_blob = self._get_report_blob(report_record, "rose_log", "rose.log")
+        if rose_blob is None:
+            return ["Rose log not found."]
+        rose_log = rose_blob.download_as_string().decode()
+        if 'WARN' in rose_log:
+            warnings.append(f"A warning was found in the rose log. Use 'gsutil cat gs://{rose_blob.bucket.name}/{rose_blob.name}'")
         return warnings
+
+    def _get_protect_warnings(self, report_record):
+        warnings = []
+        protect_blob = self._get_report_blob(report_record, "protect_log", "protect.log")
+        if protect_blob is None:
+            return ["Protect log not found"]
+        protect_log = protect_blob.download_as_string().decode()
+        if 'WARN' in protect_log:
+            warnings.append(f"A warning was found in the protect log. Use 'gsutil cat gs://{protect_blob.bucket.name}/{protect_blob.name}'")
+        return warnings
+
+    def _get_report_blob(self, report_record, datatype, fallback_blob=None):
+        path = _get_report_file_path_or_none(report_record, datatype=datatype)
+        if fallback_blob and path is None:  # fallback to hardcoded solution (old samples rely on this)
+            sample_barcode = report_record["sample_barcode"].lower()
+            path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
+        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+        return blob
 
     def _reporting_pipeline_chapter(self):
         print("Processing reporting pipeline failures chapter")
@@ -365,6 +368,10 @@ def _get_default_run_content(run_record):
         'run_finished_date': run_record['endTime'],
         'set_name': run_record['set']['name']
     }
+
+
+def _get_report_file_path_or_none(report_record, datatype):
+    return next((entry["path"] for entry in report_record["report_files"] if entry["datatype"] == datatype), None)
 
 
 class Chapter:
