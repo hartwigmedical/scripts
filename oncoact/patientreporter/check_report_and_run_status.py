@@ -245,15 +245,15 @@ class StatusChecker:
         isolation_barcode = report_record['barcode']
         lama_data = self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
         used_primary_tumor_type = None
-        if 'primaryTumorType' in lama_data:
-            used_primary_tumor_type = lama_data['primaryTumorType']
+        if 'tumorType' in lama_data:
+            used_primary_tumor_type = lama_data['tumorType']
         lama_blob = self._get_report_blob(report_record, "lama.json", "lama/patient-reporter.json")
         if lama_blob is None:
             return ["Doid warning: the lama json file is missing"]
         actual_lama_data = json.loads(lama_blob.download_as_string().decode())
         actual_primary_tumor_type = None
-        if 'primaryTumorType' in actual_lama_data:
-            actual_primary_tumor_type = actual_lama_data['primaryTumorType']
+        if 'tumorType' in actual_lama_data:
+            actual_primary_tumor_type = actual_lama_data['tumorType']
         if actual_primary_tumor_type != used_primary_tumor_type:
             warnings.append("Doid warning: the doid data in lama is different "
                             "than the doid data that was used to generate this report. "
