@@ -242,28 +242,54 @@ class StatusChecker:
 
     def _get_doid_warnings(self, report_record):
         warnings = []
-        isolation_barcode = report_record['barcode']
-        lama_data = self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
-        used_primary_tumor_type = None
-        if 'primaryTumorType' in lama_data:
-            used_primary_tumor_type = lama_data['primaryTumorType']
+
+        used_lama_data = self._get_lama_data_used_for_report(report_record)
+        current_lama_data = self._get_current_lama_data(report_record)
+
+        if used_lama_data is None or current_lama_data is None:
+            if used_lama_data is None:
+                warnings.append("No Lama data was found in the patient reporter for this report. "
+                                "This is most certainly a bug in the scripts or in the patient reporter.")
+            if current_lama_data is None:
+                warnings.append("No lama data was found in the API for this report. "
+                                "This is most certainly a bug in the scripts or in LAMA.")
+            return warnings
+        tumor_type_key = "primaryTumorType"
+        used_primary_tumor_type = used_lama_data[tumor_type_key] if tumor_type_key in used_lama_data else None
+        current_primary_tumor_type = current_lama_data[tumor_type_key] if tumor_type_key in current_lama_data else None
+
+        if used_primary_tumor_type is None or current_primary_tumor_type is None:
+            if used_primary_tumor_type is None:
+                warnings.append("The primary tumor typed used for generating this report was 'None', "
+                                "No Doid information was available during the generation of this report.")
+            if current_primary_tumor_type is None:
+                warnings.append("The current primary tumor type in LAMA for this report is 'None', "
+                                "No doid information is available in LAMA as of right now.")
+            return warnings
+
+        if used_primary_tumor_type["doids"] != current_primary_tumor_type["doids"]:
+            warnings.append("There was a difference detected between the doid data used for creating this report "
+                            "and the doid data stored in LAMA. "
+                            f"Used doids: {used_primary_tumor_type['doids']} "
+                            f"Doids in LAMA: {current_primary_tumor_type['doids']}")
+
+        if used_primary_tumor_type["type"].lower() == "unknown":
+            warnings.append("The primary tumor type value was 'unknown' "
+                            "at the time the patient reporter generated this report.")
+        if current_primary_tumor_type["type"].lower() == "unknown":
+            warnings.append("The primary tumor type value is 'unknown' at this time in LAMA for this sample.")
+
+        return warnings
+
+    def _get_lama_data_used_for_report(self, report_record):
         lama_blob = self._get_report_blob(report_record, "lama.json", "lama/patient-reporter.json")
         if lama_blob is None:
-            return ["Doid warning: the lama json file is missing"]
-        actual_lama_data = json.loads(lama_blob.download_as_string().decode())
-        actual_primary_tumor_type = None
-        if 'tumorType' in actual_lama_data:
-            actual_primary_tumor_type = actual_lama_data['tumorType']
-        if actual_primary_tumor_type['doids'] != used_primary_tumor_type['doids']:
-            warnings.append("Doid warning: the doid data in lama is different "
-                            "than the doid data that was used to generate this report. "
-                            f"Doid data in lama: {actual_primary_tumor_type} "
-                            f"Doid data used to generate report: {used_primary_tumor_type}")
-        elif actual_primary_tumor_type is None:
-            warnings.append("Doid warning: the primary tumor type was 'None'.")
-        elif actual_primary_tumor_type['type'].lower() == 'unknown':
-            warnings.append("Doid warning: the doid value was 'unknown'.")
-        return warnings
+            return None
+        return json.loads(lama_blob.download_as_string().decode())
+
+    def _get_current_lama_data(self, report_record):
+        isolation_barcode = report_record['barcode']
+        return self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
 
     def _get_rose_warnings(self, report_record):
         warnings = []
@@ -272,7 +298,8 @@ class StatusChecker:
             return ["Rose log not found."]
         rose_log = rose_blob.download_as_string().decode()
         if 'WARN' in rose_log:
-            warnings.append(f"A warning was found in the rose log. Use 'gsutil cat gs://{rose_blob.bucket.name}/{rose_blob.name}'")
+            warnings.append(
+                f"A warning was found in the rose log. Use 'gsutil cat gs://{rose_blob.bucket.name}/{rose_blob.name}'")
         return warnings
 
     def _get_protect_warnings(self, report_record):
@@ -282,7 +309,8 @@ class StatusChecker:
             return ["Protect log not found"]
         protect_log = protect_blob.download_as_string().decode()
         if 'WARN' in protect_log:
-            warnings.append(f"A warning was found in the protect log. Use 'gsutil cat gs://{protect_blob.bucket.name}/{protect_blob.name}'")
+            warnings.append(
+                f"A warning was found in the protect log. Use 'gsutil cat gs://{protect_blob.bucket.name}/{protect_blob.name}'")
         return warnings
 
     def _get_report_blob(self, report_record, datatype, fallback_blob=None):
