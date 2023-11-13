@@ -107,7 +107,7 @@ main() {
     copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}" || die "Could not download SAGE jar"
   fi
 
-  local_output_vcf="$HOME/${sample_name}.coverage.vcf"
+  local_output_vcf="${working_dir}/${sample_name}.coverage.vcf"
   if [[ ! -f "${local_output_vcf}" ]]; then
     info "Running SAGE append"
     java -Xms4G -Xmx16G -cp "${local_sage_jar}" com.hartwig.hmftools.sage.append.SageAppendApplication \
