@@ -245,23 +245,27 @@ class StatusChecker:
         isolation_barcode = report_record['barcode']
         lama_data = self.rest_client.get_lama_patient_reporter_data(isolation_barcode)
         used_primary_tumor_type = None
+        used_primary_tumor_type_doid = None
         if 'primaryTumorType' in lama_data:
-            used_primary_tumor_type = lama_data['primaryTumorType']['doid']
+            used_primary_tumor_type = lama_data['primaryTumorType']
+            used_primary_tumor_type_doid = used_primary_tumor_type['doid']
         lama_blob = self._get_report_blob(report_record, "lama.json", "lama/patient-reporter.json")
         if lama_blob is None:
             return ["Doid warning: the lama json file is missing"]
         actual_lama_data = json.loads(lama_blob.download_as_string().decode())
         actual_primary_tumor_type = None
+        actual_primary_tumor_typ_doid = None
         if 'tumorType' in actual_lama_data:
-            actual_primary_tumor_type = actual_lama_data['tumorType']['doid']
-        if actual_primary_tumor_type != used_primary_tumor_type:
+            actual_primary_tumor_type = actual_lama_data['tumorType']
+            actual_primary_tumor_typ_doid = actual_primary_tumor_type['doid']
+        if actual_primary_tumor_typ_doid != used_primary_tumor_type_doid:
             warnings.append("Doid warning: the doid data in lama is different "
                             "than the doid data that was used to generate this report. "
                             f"Doid data in lama: {actual_primary_tumor_type} "
-                            f"Doid data used to generate report: {used_primary_tumor_type}")
-        elif actual_primary_tumor_type is None:
+                            f"Doid data used to generate report: {used_primary_tumor_type_doid}")
+        elif actual_primary_tumor_typ_doid is None:
             warnings.append("Doid warning: the primary tumor type was 'None'.")
-        elif actual_primary_tumor_type['location'].lower() == 'unknown':
+        elif actual_primary_tumor_type['type'].lower() == 'unknown':
             warnings.append("Doid warning: the doid value was 'unknown'.")
         return warnings
 
