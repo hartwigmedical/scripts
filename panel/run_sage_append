@@ -94,6 +94,7 @@ main() {
   fi
 
   ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
+  ref_genome_fasta_dict="${ref_genome_fasta_dict/.fna/.dict}"
   local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
   if [[ ! -f "${local_ref_genome_fasta_dict}" ]]; then
     info "Downloading reference genome FASTA dict index: ${ref_genome_fasta_dict}"
