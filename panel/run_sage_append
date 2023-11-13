@@ -88,14 +88,14 @@ main() {
 
   ref_genome_fasta_fai="${ref_genome_fasta}.fai"
   local_ref_genome_fasta_fai="${working_dir}/$(basename "${ref_genome_fasta_fai}")"
-  if [[ ! -f "${ref_genome_fasta_fai}" ]]; then
+  if [[ ! -f "${local_ref_genome_fasta_fai}" ]]; then
     info "Downloading reference genome FASTA index: ${ref_genome_fasta_fai}"
     copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}" || die "Could not download reference genome FASTA index"
   fi
 
   ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
   local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
-  if [[ ! -f "${ref_genome_fasta_dict}" ]]; then
+  if [[ ! -f "${local_ref_genome_fasta_dict}" ]]; then
     info "Downloading reference genome FASTA dict index: ${ref_genome_fasta_dict}"
     copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}" || die "Could not download reference genome FASTA dict index"
   fi
@@ -113,6 +113,7 @@ main() {
               -reference "${sample_name}" \
               -reference_bam "${local_input_bam}" \
               -ref_genome "${local_ref_genome_fasta}" \
+              -ref_genome_version 38 \
               -input_vcf "${local_input_vcf}" \
               -out "${local_output_vcf}" \
               -sync_fragments \
