@@ -109,7 +109,7 @@ main() {
   local_output_vcf="$HOME/${sample_name}.coverage.vcf"
   if [[ ! -f "${local_output_vcf}" ]]; then
     info "Running SAGE append"
-    java -Xms4G -Xmx16G -cp "${sage_jar}" com.hartwig.hmftools.sage.append.SageAppendApplication \
+    java -Xms4G -Xmx16G -cp "${local_sage_jar}" com.hartwig.hmftools.sage.append.SageAppendApplication \
               -reference "${sample_name}" \
               -reference_bam "${local_input_bam}" \
               -ref_genome "${local_ref_genome_fasta}" \
