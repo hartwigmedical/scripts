@@ -161,6 +161,7 @@ class ReportSharer:
             "sampleQcDeamination.pdf",
             "sampleQcDeamination.png",
             "cobalt.ratio.tsv.gz",
+            "cobalt.ratio.pcf",
             "amber.baf.tsv.gz",
             "purple.cnv.somatic.tsv",
         }
