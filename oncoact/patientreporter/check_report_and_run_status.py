@@ -273,7 +273,7 @@ class StatusChecker:
                             f"Used doids: {used_primary_tumor_type['doids']} "
                             f"Doids in LAMA: {current_primary_tumor_type['doids']}")
 
-        if used_primary_tumor_type["type"].lower() == "unknown":
+        if used_primary_tumor_type["location"].lower() == "unknown":
             warnings.append("The primary tumor type value was 'unknown' "
                             "at the time the patient reporter generated this report.")
         if current_primary_tumor_type["type"].lower() == "unknown":
