@@ -276,7 +276,7 @@ class StatusChecker:
         if used_primary_tumor_type["location"].lower() == "unknown":
             warnings.append("The primary tumor type value was 'unknown' "
                             "at the time the patient reporter generated this report.")
-        if current_primary_tumor_type["type"].lower() == "unknown":
+        if current_primary_tumor_type["location"].lower() == "unknown":
             warnings.append("The primary tumor type value is 'unknown' at this time in LAMA for this sample.")
 
         return warnings
