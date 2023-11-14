@@ -175,6 +175,32 @@ def getNormCorrection(cobalt_segmented):
             nProbes.append(float(arr[header.index('n.probes')]))
             sValues.append(float(arr[header.index('mean')]))
     return weightedAverage(sValues,nProbes)
+
+
+def getNormPurple(purple_segmented, purple_purity, sampleId):
+    first = True
+    header=[]
+
+    FClogs = []
+    Weights = []
+
+    with open(purple_segmented,'r') as fh:
+        for lines in fh:
+            lines=lines.rstrip('\n')
+            if first == True:
+                header=lines.split(tsvSplit)
+                first = False
+                continue
+            arr = lines.split(tsvSplit)
+            res = getPurityPloidy(purple_purity)
+            purity = res['purity']
+            ploidy = res['ploidy']
+            copyNumber = float(arr[header.index('copyNumber')])
+            FClog = math.log2((purity * copyNumber +2*(1-purity))/(purity*ploidy+2*(1-purity)))
+            FClogs.append(FClog)
+            Weights.append(int(arr[header.index('depthWindowCount')]))
+    return weightedAverage(FClogs,Weights)
+
 def transformSegmentedFile(purple_segmented,purple_purity, sampleId, normCorrection):
 
 # xx
@@ -256,7 +282,8 @@ def main(args):
     transformRatioFile(args.cobaltRatio, sampleId, geneLocation)
     genVCFfile(args.amber, sampleId)
     readDriverCatalog(args.purpledriverCatalog)
-    transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,normCorrection)
+    normPurple=getNormPurple(args.purpleSomatic,args.purplePurity,sampleId)
+    transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,-normPurple+normCorrection)
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
