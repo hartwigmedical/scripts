@@ -8,7 +8,7 @@ from decimal import Decimal
 from enum import Enum, auto
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 GCP_URL_START = "gs:"
 
@@ -23,6 +23,14 @@ SOMATIC_VARIANT_MIN_PURITY_THRESHOLD = Decimal("0.10")
 
 DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
 RECURRENT_PARTIAL_DEL_GENES = {"BRCA2", "PTEN", "RASA1", "RB1"}
+
+@dataclass(frozen=True)
+class Metadata:
+    tumor_name: str
+    tumor_barcode: str
+    pathology_id: str
+    pipeline_version: str
+
 
 class DriverType(Enum):
     AMP = auto()
@@ -171,13 +179,10 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     while gcp_run_url and gcp_run_url[-1] == "/":
         gcp_run_url = gcp_run_url[:-1]
 
-    logging.info("Get tumor sample name")
-    metadata_json = get_metadata_json(gcp_run_url)
-    tumor_name = metadata_json["tumor"]["sampleName"]
-    tumor_barcode = metadata_json["tumor"]["barcode"]
-    patient_reporter_data_json = get_patient_reporter_data_json(tumor_barcode)
-    pathology_id = patient_reporter_data_json["pathologyNumber"]
-    logging.info(f"Handling run for {tumor_name} ({pathology_id}): {gcp_run_url}")
+    logging.info("Get metadata")
+    metadata = get_metadata(gcp_run_url)
+
+    logging.info(f"Handling run for {metadata.tumor_name} ({metadata.pathology_id}): {gcp_run_url}")
 
     if not working_directory.exists():
         logging.info(f"Create working directory: {working_directory}")
@@ -186,35 +191,35 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
         logging.info(f"Working directory exists: {working_directory}")
 
     logging.info("Copy files to local")
-    local_directory = working_directory / tumor_name
+    local_directory = working_directory / metadata.tumor_name
     copy_purple_files_to_local(gcp_run_url, local_directory)
-    copy_sage_exons_median_tsv_to_local(gcp_run_url, local_directory, tumor_name)
-    copy_wgs_metrics_file(gcp_run_url, local_directory, tumor_name)
+    copy_sage_exons_median_tsv_to_local(gcp_run_url, local_directory, metadata.tumor_name)
+    copy_wgs_metrics_file(gcp_run_url, local_directory, metadata.tumor_name)
 
     logging.info("Load drivers")
-    drivers = load_drivers(local_directory, tumor_name)
+    drivers = load_drivers(local_directory, metadata.tumor_name)
 
     logging.info("Load sample qc info")
-    purple_qc = load_purple_qc(local_directory, tumor_name)
+    purple_qc = load_purple_qc(local_directory, metadata.tumor_name)
 
     logging.info("Load gene copy numbers")
-    gene_copy_numbers = load_gene_copy_numbers(local_directory, tumor_name)
+    gene_copy_numbers = load_gene_copy_numbers(local_directory, metadata.tumor_name)
 
     logging.info("Load somatic copy numbers")
-    somatic_copy_numbers = load_somatic_copy_numbers(local_directory, tumor_name)
+    somatic_copy_numbers = load_somatic_copy_numbers(local_directory, metadata.tumor_name)
 
     logging.info("Load exon median coverages")
-    exon_median_coverages = load_exon_median_coverages(local_directory, tumor_name)
+    exon_median_coverages = load_exon_median_coverages(local_directory, metadata.tumor_name)
 
     logging.info("Load wgs metrics")
-    wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
+    wgs_metrics = load_wgs_metrics(local_directory, metadata.tumor_name)
 
     logging.info("Load driver gene panel")
     driver_gene_panel_entries = load_driver_gene_panel(driver_gene_panel)
 
-    logging.info(f"Do QC checks for {tumor_name}")
+    logging.info(f"Do QC checks for {metadata.tumor_name}")
     if output_file is None:
-        output_file = local_directory / f"{tumor_name}.qc_check.txt"
+        output_file = local_directory / f"{metadata.tumor_name}.qc_check.txt"
 
     do_qc_checks(
         drivers,
@@ -224,8 +229,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
         exon_median_coverages,
         wgs_metrics,
         driver_gene_panel_entries,
-        tumor_name,
-        pathology_id,
+        metadata,
         output_file,
     )
 
@@ -240,8 +244,7 @@ def do_qc_checks(
         exon_median_coverages: List[ExonMedianCoverage],
         wgs_metrics: WgsMetrics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
-        tumor_name: str,
-        pathology_id: str,
+        metadata: Metadata,
         output_file: Path,
 ) -> None:
     output_text = get_qc_check_output_text(
@@ -252,8 +255,7 @@ def do_qc_checks(
         exon_median_coverages,
         wgs_metrics,
         driver_gene_panel_entries,
-        tumor_name,
-        pathology_id,
+        metadata,
     )
 
     with open(output_file, "w") as out_f:
@@ -267,12 +269,12 @@ def get_qc_check_output_text(
         exon_median_coverages: List[ExonMedianCoverage],
         wgs_metrics: WgsMetrics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
-        tumor_name: str,
-        pathology_id: str,
+        metadata: Metadata,
 ) -> str:
     lines = []
-    lines.append(f"Pathology ID: {pathology_id}")
-    lines.append(f"Internal sample name: {tumor_name}")
+    lines.append(f"Pathology ID: {metadata.pathology_id}")
+    lines.append(f"Internal sample name: {metadata.tumor_name}")
+    lines.append(f"Pipeline version: {metadata.pipeline_version}")
     lines.append(f"Purity: {purple_qc.purity}")
     lines.append(f"Ploidy: {purple_qc.ploidy}")
     lines.append(f"Amber gender: {purple_qc.amber_gender}")
@@ -749,12 +751,26 @@ def copy_file_to_local_directory(source_url: str, local_directory: Path) -> None
     subprocess.run(["gsutil", "-m", "cp", source_url, local_directory], capture_output=True)
 
 
-def get_metadata_json(gcp_run_url: str) -> Dict[str, Any]:
-    return json.loads(run_bash_command(["gsutil", "cat", f"{gcp_run_url}/metadata.json"]))
+def get_metadata(gcp_run_url: str) -> Metadata:
+    metadata_json = json.loads(run_bash_command(["gsutil", "cat", f"{gcp_run_url}/metadata.json"]))
+    tumor_name = metadata_json["tumor"]["sampleName"]
+    tumor_barcode = metadata_json["tumor"]["barcode"]
 
+    patient_reporter_data_json = json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
+    pathology_id = patient_reporter_data_json["pathologyNumber"]
+    set_name = metadata_json["set"]
 
-def get_patient_reporter_data_json(tumor_barcode: str) -> Dict[str, Any]:
-    return json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
+    api_json = json.loads(run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"]))
+    finished_runs = [run_info for run_info in api_json if run_info["status"] == "Finished"]
+    if not finished_runs:
+        logging.warning(f"Could not find finished pipeline run for this set")
+        pipeline_version = "Not found"
+    else:
+        if len(finished_runs) > 1:
+            logging.warning(f"Chose latest finished run for pipeline version for '{set_name}'")
+        pipeline_version = finished_runs[-1]["version"]
+
+    return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version)
 
 
 def run_bash_command(command: List[str]) -> str:
