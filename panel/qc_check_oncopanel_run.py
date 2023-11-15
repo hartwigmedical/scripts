@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import gzip
 import json
 import logging
 import subprocess
@@ -30,6 +31,7 @@ class Metadata:
     tumor_barcode: str
     pathology_id: str
     pipeline_version: str
+    gcp_run_url: str
 
 
 class DriverType(Enum):
@@ -166,18 +168,43 @@ class WgsMetrics:
 
 
 @dataclass(frozen=True, eq=True)
+class Variant:
+    chromosome: str
+    position: int
+    ref: str
+    alt: str
+
+    def __str__(self) -> str:
+        return f"{self.chromosome}:{self.position}{self.ref}>{self.alt}"
+
+
+@dataclass(frozen=True, eq=True)
+class AnnotatedVariant:
+    variant: Variant
+    total_depth: int
+    alt_read_count: int
+
+
+@dataclass(frozen=True, eq=True)
 class RunData:
     drivers: Tuple[Driver]
     purple_qc: PurpleQc
     gene_copy_numbers: Tuple[GeneCopyNumber]
     somatic_copy_numbers: Tuple[SomaticCopyNumber]
     exon_median_coverages: Tuple[ExonMedianCoverage]
+    sage_unfiltered_variants: Tuple[AnnotatedVariant]
     wgs_metrics: WgsMetrics
 
 
 @dataclass(frozen=True, eq=True)
 class DriverGenePanelEntry:
     gene: str
+
+
+ID_TO_RESISTANCE_VARIANT = {
+    "EGFR T790M": Variant("chr7", 55181378, "C", "T"),
+    "EGFR C797S": Variant("chr7", 55181398, "T", "A"),
+}
 
 
 def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, output_file: Optional[Path]) -> None:
@@ -200,11 +227,8 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     else:
         logging.info(f"Working directory exists: {working_directory}")
 
-    logging.info("Copy files to local")
     local_directory = working_directory / metadata.tumor_name
-    copy_purple_files_to_local(gcp_run_url, local_directory)
-    copy_sage_exons_median_tsv_to_local(gcp_run_url, local_directory, metadata.tumor_name)
-    copy_wgs_metrics_file(gcp_run_url, local_directory, metadata.tumor_name)
+    copy_run_files_to_local(gcp_run_url, local_directory, metadata.tumor_name)
 
     run_data = load_run_data(local_directory, metadata.tumor_name)
 
@@ -223,30 +247,6 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     )
 
     logging.info("Finished QC checking OncoPanel run")
-
-
-def load_run_data(local_directory: Path, tumor_name: str):
-    logging.info("Load drivers")
-    drivers = load_drivers(local_directory, tumor_name)
-    logging.info("Load sample qc info")
-    purple_qc = load_purple_qc(local_directory, tumor_name)
-    logging.info("Load gene copy numbers")
-    gene_copy_numbers = load_gene_copy_numbers(local_directory, tumor_name)
-    logging.info("Load somatic copy numbers")
-    somatic_copy_numbers = load_somatic_copy_numbers(local_directory, tumor_name)
-    logging.info("Load exon median coverages")
-    exon_median_coverages = load_exon_median_coverages(local_directory, tumor_name)
-    logging.info("Load wgs metrics")
-    wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
-    run_data = RunData(
-        tuple(drivers),
-        purple_qc,
-        tuple(gene_copy_numbers),
-        tuple(somatic_copy_numbers),
-        tuple(exon_median_coverages),
-        wgs_metrics,
-    )
-    return run_data
 
 
 def do_qc_checks(
@@ -270,6 +270,7 @@ def get_qc_check_output_text(
         get_sample_overview_stats_text(run_data.purple_qc, run_data.wgs_metrics, run_data.gene_copy_numbers, driver_gene_panel_entries),
         get_percent_excluded_text(run_data.wgs_metrics),
         get_qc_warning_text(run_data),
+        get_resistance_text(run_data.sage_unfiltered_variants, metadata),
         get_driver_catalog_text(run_data.drivers),
     ]
     return "\n\n".join([section for section in sections if section]) + "\n"
@@ -415,6 +416,38 @@ def get_qc_warning_text(run_data: RunData) -> str:
     return "\n".join(lines)
 
 
+def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant], metadata: Metadata) -> str:
+    lines = [
+        "Resistance checks:",
+    ]
+    for resistance_variant_id in sorted(ID_TO_RESISTANCE_VARIANT.keys()):
+        variant = ID_TO_RESISTANCE_VARIANT[resistance_variant_id]
+        matching_variants = [
+            annotated_variant for annotated_variant in sage_unfiltered_variants if annotated_variant.variant == variant
+        ]
+        if len(matching_variants) == 1:
+            matching_variant = matching_variants[0]
+            lines.append(
+                f"{resistance_variant_id} ({variant}): {matching_variant.alt_read_count} of {matching_variant.total_depth} reads"
+            )
+        elif not matching_variants:
+            lines.append(
+                f"{resistance_variant_id} ({variant}): ? of ? reads"
+            )
+        else:
+            raise ValueError(f"Variant {variant} is present in SAGE unfiltered VCF more than once")
+
+    lines.append("IGV URLs:")
+    lines.append(get_signed_bam_urls(metadata))
+
+    return "\n".join(lines)
+
+
+def get_signed_bam_urls(metadata: Metadata) -> str:
+    gcp_bam_url = f"{metadata.gcp_run_url}/{metadata.tumor_name}/aligner/{metadata.tumor_name}.bam"
+    return run_bash_command(["sign_bam_url", gcp_bam_url, "8h"])
+
+
 def get_driver_catalog_text(drivers: Tuple[Driver]) -> str:
     lines = ["Driver catalog:"]
     for driver in drivers:
@@ -443,6 +476,33 @@ def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers:
         raise ValueError(
             f"Could not determine deletion status of exon {exon_coverage.gene_name}:{exon_coverage.exon_rank}")
     return deletion_status
+
+
+def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
+    logging.info("Load drivers")
+    drivers = load_drivers(local_directory, tumor_name)
+    logging.info("Load sample qc info")
+    purple_qc = load_purple_qc(local_directory, tumor_name)
+    logging.info("Load gene copy numbers")
+    gene_copy_numbers = load_gene_copy_numbers(local_directory, tumor_name)
+    logging.info("Load somatic copy numbers")
+    somatic_copy_numbers = load_somatic_copy_numbers(local_directory, tumor_name)
+    logging.info("Load exon median coverages")
+    exon_median_coverages = load_exon_median_coverages(local_directory, tumor_name)
+    logging.info("Load SAGE unfiltered variants")
+    sage_unfiltered_variants = load_sage_unfiltered_variants(local_directory, tumor_name)
+    logging.info("Load wgs metrics")
+    wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
+    run_data = RunData(
+        tuple(drivers),
+        purple_qc,
+        tuple(gene_copy_numbers),
+        tuple(somatic_copy_numbers),
+        tuple(exon_median_coverages),
+        tuple(sage_unfiltered_variants),
+        wgs_metrics,
+    )
+    return run_data
 
 
 def load_driver_gene_panel(driver_gene_panel_path: Path) -> List[DriverGenePanelEntry]:
@@ -736,6 +796,44 @@ def get_driver_from_line(line: str, header: str) -> Driver:
     return driver
 
 
+def load_sage_unfiltered_variants(local_directory: Path, tumor_name: str) -> List[AnnotatedVariant]:
+    sage_unfiltered_vcf_path = local_directory / f"{tumor_name}.sage.somatic.vcf.gz"
+    return load_variants_from_file(sage_unfiltered_vcf_path, tumor_name)
+
+
+def load_variants_from_file(vcf_path: Path, tumor_name: str) -> List[AnnotatedVariant]:
+    variants = []
+    sample_index = -1
+    allelic_depth_index = -1
+    depth_index = -1
+    with gzip.open(vcf_path, "rt") as in_f:
+        for line in in_f:
+            if line[0:2] != "##":
+                split_line = line.rstrip("\n").split("\t")
+                if line[0] == "#":
+                    sample_index = split_line.index(tumor_name)
+                else:
+                    chromosome = split_line[0]
+                    position = int(split_line[1])
+                    ref = split_line[3]
+                    alt = split_line[4]
+                    variant = Variant(chromosome, position, ref, alt)
+
+                    if allelic_depth_index == -1:
+                        info_format = split_line[8]
+                        allelic_depth_index = info_format.split(":").index("AD")
+                    if depth_index == -1:
+                        info_format = split_line[8]
+                        depth_index = info_format.split(":").index("DP")
+
+                    sample_info = split_line[sample_index]
+                    total_depth = int(sample_info.split(":")[depth_index])
+                    allelic_depth = sample_info.split(":")[allelic_depth_index]
+                    alt_read_count = int(allelic_depth.split(",")[1])
+
+                    variants.append(AnnotatedVariant(variant, total_depth, alt_read_count))
+    return variants
+
 def get_bool_from_string(string: str) -> bool:
     if string == "true":
         return True
@@ -745,14 +843,23 @@ def get_bool_from_string(string: str) -> bool:
         raise ValueError(f"Unrecognized boolean string: {string}")
 
 
+def copy_run_files_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
+    logging.info("Copy Purple files to local")
+    copy_purple_files_to_local(gcp_run_url, local_directory)
+    logging.info("Copy SAGE files to local")
+    copy_sage_somatic_files_to_local(gcp_run_url, local_directory)
+    logging.info("Copy WgsMetrics file to local")
+    copy_wgs_metrics_file(gcp_run_url, local_directory, tumor_name)
+
+
 def copy_purple_files_to_local(gcp_run_url: str, local_directory: Path) -> None:
     purple_url = f"{gcp_run_url}/purple"
     sync_directory_to_local(purple_url, local_directory)
 
 
-def copy_sage_exons_median_tsv_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
-    sage_exons_median_tsv_url = f"{gcp_run_url}/sage_somatic/{tumor_name}.sage.exon.medians.tsv"
-    copy_file_to_local_directory(sage_exons_median_tsv_url, local_directory)
+def copy_sage_somatic_files_to_local(gcp_run_url: str, local_directory: Path) -> None:
+    purple_url = f"{gcp_run_url}/sage_somatic"
+    sync_directory_to_local(purple_url, local_directory)
 
 
 def copy_wgs_metrics_file(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
@@ -789,7 +896,7 @@ def get_metadata(gcp_run_url: str) -> Metadata:
             logging.warning(f"Chose latest finished run for pipeline version for '{set_name}'")
         pipeline_version = finished_runs[-1]["version"]
 
-    return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version)
+    return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version, gcp_run_url)
 
 
 def run_bash_command(command: List[str]) -> str:
