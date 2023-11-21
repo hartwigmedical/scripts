@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+curl -X 'GET' 'http://lama.prod-1/api/contact-groups' -H 'accept: */*' | jq -r '.[] | [.contractCode, .hospitalName, ([.dataContacts[].name]|join(";")),([.dataContacts[].email]|join(";"))] | @tsv'

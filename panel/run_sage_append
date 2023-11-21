@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+
+print_usage() {
+    self=$(basename "$0")
+    echo ""
+    echo "Description: Runs SAGE append on a specified BAM and VCF in a bucket and uploads the results to a bucket"
+    echo "Usage: $self -s \${sample_name} -b \${input_bam} -v \${input_vcf} -r \${ref_genome_fasta} -j \${sage_jar} -w \${working_dir} -o \${output_bucket_dir} <optional arguments>"
+    echo "Arguments:"
+    echo "  -s sample_name          Sample name to use in output VCF. The file name of this VCF will be \"${sample_name}.coverage.vcf\""
+    echo "  -b input_bam            Path of input BAM in GCP bucket."
+    echo "  -v input_vcf            Path of input VCF in GCP bucket."
+    echo "  -r ref_genome_fasta     Path of reference genome FASTA in GCP bucket."
+    echo "  -j sage_jar             Path of SAGE JAR in GCP bucket."
+    echo "  -w working_dir          Local working directory for processing."
+    echo "  -o output_bucket_dir    Bucket directory to upload output VCF to."
+    echo "Optional arguments:"
+    echo "  -t threads              Max thread count. Default is all threads."
+    echo "Examples:"
+    echo "  $self -s 'FAKE1' -b 'gs://path/to/input.bam' -v 'gs://path/to/input.vcf' -r 'gs://path/to/ref.fasta' -j 'gs://path/to/sage.jar' -w '/data/working_dir' -o 'gs://path/to/output/dir'"
+    echo "  $self -s 'FAKE2' -b 'gs://path/input.bam' -v 'gs://path/input.vcf' -r 'gs://path/ref.fasta' -j 'gs://path/sage.jar' -w '/data/tmp/FAKE2' -o 'gs://path/output_dir' -t 4"
+    echo ""
+    exit 1
+}
+
+main() {
+  while getopts ':s:b:v:r:j:w:o:t:' flag; do
+      case "${flag}" in
+          s) sample_name=$OPTARG;;
+          b) input_bam=$OPTARG;;
+          v) input_vcf=$OPTARG;;
+          r) ref_genome_fasta=$OPTARG;;
+          j) sage_jar=$OPTARG;;
+          w) working_dir=$OPTARG;;
+          o) output_bucket_dir=$OPTARG;;
+          t) threads=$OPTARG;;
+          *) print_usage
+          exit 1 ;;
+      esac
+  done
+
+  if [[ -z ${sample_name} || -z ${input_bam} || -z ${input_vcf} || -z ${ref_genome_fasta} || -z ${sage_jar} || -z ${working_dir} || -z ${output_bucket_dir} ]]; then
+    info "Missing required argument(s)!"
+    print_usage
+  fi
+
+  if [[ -z ${threads} ]]; then
+    threads=$(nproc) || die "Could not get default thread count"
+  fi
+
+  info "Start running SAGE append for ${sample_name}"
+  output_vcf_in_bucket="${output_bucket_dir}/${sample_name}.coverage_per_base.vcf.gz"
+
+  gsutil -q stat "${output_vcf_in_bucket}"
+  output_vcf_in_bucket_status=$?
+  if [[ ${output_vcf_in_bucket_status} == 0 ]]; then
+    info "Output file for ${sample_name} exist in bucket, so SKIP."
+    exit 0
+  fi
+
+  local_input_bam="${working_dir}/$(basename "${input_bam}")"
+  if [[ ! -f "${local_input_bam}" ]]; then
+    info "Downloading input BAM: ${input_bam}"
+    copy_file_gcp "${input_bam}" "${local_input_bam}" "${threads}" || die "Could not download input BAM"
+  fi
+
+  input_bai="${input_bam}.bai"
+  local_input_bai="${working_dir}/$(basename "${input_bai}")"
+  if [[ ! -f "${local_input_bai}" ]]; then
+    info "Downloading input BAM index: ${input_bai}"
+    copy_file_gcp "${input_bai}" "${local_input_bai}" "${threads}" || die "Could not download input BAM index"
+  fi
+
+  local_input_vcf="${working_dir}/$(basename "${input_vcf}")"
+  if [[ ! -f "${local_input_vcf}" ]]; then
+    info "Downloading input VCF: ${input_vcf}"
+    copy_file_gcp "${input_vcf}" "${local_input_vcf}" "${threads}" || die "Could not download input VCF"
+  fi
+
+  local_ref_genome_fasta="${working_dir}/$(basename "${ref_genome_fasta}")"
+  if [[ ! -f "${local_ref_genome_fasta}" ]]; then
+    info "Downloading reference genome FASTA: ${ref_genome_fasta}"
+    copy_file_gcp "${ref_genome_fasta}" "${local_ref_genome_fasta}" "${threads}" || die "Could not download reference genome FASTA"
+  fi
+
+  ref_genome_fasta_fai="${ref_genome_fasta}.fai"
+  local_ref_genome_fasta_fai="${working_dir}/$(basename "${ref_genome_fasta_fai}")"
+  if [[ ! -f "${local_ref_genome_fasta_fai}" ]]; then
+    info "Downloading reference genome FASTA index: ${ref_genome_fasta_fai}"
+    copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}" || die "Could not download reference genome FASTA index"
+  fi
+
+  ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
+  ref_genome_fasta_dict="${ref_genome_fasta_dict/.fna/.dict}"
+  local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
+  if [[ ! -f "${local_ref_genome_fasta_dict}" ]]; then
+    info "Downloading reference genome FASTA dict index: ${ref_genome_fasta_dict}"
+    copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}" || die "Could not download reference genome FASTA dict index"
+  fi
+
+  local_sage_jar="${working_dir}/$(basename "${sage_jar}")"
+  if [[ ! -f "${local_sage_jar}" ]]; then
+    info "Downloading SAGE jar: ${sage_jar}"
+    copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}" || die "Could not download SAGE jar"
+  fi
+
+  local_output_vcf="${working_dir}/${sample_name}.coverage.vcf.gz"
+  if [[ ! -f "${local_output_vcf}" ]]; then
+    info "Running SAGE append"
+    java -Xms4G -Xmx16G -cp "${local_sage_jar}" com.hartwig.hmftools.sage.append.SageAppendApplication \
+              -reference "${sample_name}" \
+              -reference_bam "${local_input_bam}" \
+              -ref_genome "${local_ref_genome_fasta}" \
+              -ref_genome_version 38 \
+              -input_vcf "${local_input_vcf}" \
+              -out "${local_output_vcf}" \
+              -sync_fragments \
+              -threads "${threads}" \
+              || die "Failed to run SAGE in append mode for ${sample_name}"
+  fi
+
+  info "Uploading output VCF"
+  copy_file_gcp "${local_output_vcf}" "${output_bucket_dir}/$(basename "${local_output_vcf}")" "${threads}" \
+          || die "Could not upload output VCF for ${sample_name}"
+
+  info "Removing local output VCF"
+  rm "${local_output_vcf}" || die "Could not delete local output for ${sample_name}"
+
+  if [[ -f "${local_input_bam}" ]]; then
+    info "Deleting local BAM"
+    rm "${local_input_bam}" || die "Could not delete local BAM for ${sample_name}"
+  fi
+
+  if [[ -f "${local_input_bai}" ]]; then
+    info "Deleting local BAI"
+    rm "${local_input_bai}" || die "Could not delete local BAI for ${sample_name}"
+  fi
+
+  info "Finished running SAGE append for ${sample_name}"
+}
+
+copy_file_gcp() {
+  source=$1 && shift
+  target=$1 && shift
+  threads=$1 && shift
+
+  [[ -n ${threads} ]] || die "Not enough arguments for 'copy_file_gcp' command"
+  gsutil -m \
+      -o "GSUtil:parallel_thread_count=1" \
+      -o "GSUtil:sliced_object_download_max_components=${threads}" \
+      cp \
+      "${source}" \
+      "${target}" \
+          || die "Could not download ${source} to ${target}"
+}
+
+main "$@" || die "Could not run script"

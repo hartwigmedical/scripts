@@ -8,4 +8,4 @@ if [[ -z ${patientId} ]]; then
     error "No patient ID provided"
 fi
 
-gsutil cp gs://patient-reporter-final-prod-1/${patientId}*.pdf ~/hmf/tmp/
+gsutil cp gs://patient-reporter-final-prod-1/*${patientId}*.pdf ~/hmf/tmp/
