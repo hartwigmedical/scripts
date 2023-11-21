@@ -70,34 +70,64 @@ def getPurityPloidy(purple_purity):
     return res
 def transformRatioFile(cobalt, sampleId,geneLocation):
 ## xx
+
+    minTumorGCRatio=10
+    zeroGCoffset = 0.2
+
+
     ft=open('transformed_data/'+sampleId+'.transformed.cnr','w')
     first = True
     header=[]
+
+    linesList = []
+
+
+
     with gzip.open(cobalt,'rt') as fh:
+
         for lines in fh:
+            if first == True:
+               lines=lines.rstrip("\n")
+               header= lines.split(tsvSplit)
+               header.append("end")
+               first = False
+               ft.write(lines+tsvSplit+'start' + tsvSplit + 'end' + tsvSplit + 'log2' + tsvSplit+'gene\n')
+               continue
+            linesList.append(lines.rstrip("\n"))
+    for lines in linesList:
+        lines = lines[3:]
+        data = lines.split(tsvSplit)
+        tumorGCRatio = float(data[header.index('tumorGCRatio')])
+        if (tumorGCRatio < minTumorGCRatio) and (tumorGCRatio > 0):
+            minTumorGCRatio = tumorGCRatio
             lines = lines.rstrip("\n")
             if first == True:
                 header= lines.split(tsvSplit)
                 header.append("end")
                 first = False
-                ft.write(lines+tsvSplit+'start' + tsvSplit + 'end' + tsvSplit + 'log2' + tsvSplit+'gene\n')
-                continue
+
+
+    for lines in linesList:
+        lines = lines[3:]
+        data = lines.split(tsvSplit)
+        start = data[header.index('position')]
+        tumorGCRatio = float(data[header.index('tumorGCRatio')])
+        if tumorGCRatio < 0:
+            continue
+        else:
+            if tumorGCRatio == 0:
+                logR = math.log2(minTumorGCRatio) - zeroGCoffset
             else:
-                lines = lines[3:]
-                data = lines.split(tsvSplit)
-                start = data[header.index('position')]
-                tumorGCRatio = float(data[header.index('tumorGCRatio')])
-                if tumorGCRatio < 0:
-                    continue
-                else:
-                    logR = math.log2(tumorGCRatio)
-                end = str(int (start) + binSize -1)
-                chr = data[0]
-                gene = [geneLoc.gene for geneLoc in geneLocation if geneLoc.chr==data[0] and overlaps([geneLoc.start,geneLoc.end],[int(start),int(end)])]
-                if gene:
-                    ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+'\n')
-                else:
-                    ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+'NA'+'\n')
+                logR = math.log2(tumorGCRatio)
+            end = str(int (start) + binSize -1)
+            chr = data[0]
+            gene = [geneLoc.gene for geneLoc in geneLocation if geneLoc.chr==data[0] and overlaps([geneLoc.start,geneLoc.end],[int(start),int(end)])]
+            if gene:
+                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+'\n')
+            else:
+                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+'NA'+'\n')
+
+
 def transformGeneFile(purple_gene, sampleId, panelGenes):
     first=True
     geneLocation = []
