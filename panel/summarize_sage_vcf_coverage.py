@@ -263,7 +263,7 @@ def create_per_region_output_file(
 
     Path(output_file_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_file_path, "w") as out_f:
-        out_f.write("\n".join(per_region_output_lines))
+        out_f.write("\n".join(per_region_output_lines) + "\n")
 
 
 def create_per_type_output_file(
@@ -287,7 +287,7 @@ def create_per_type_output_file(
     logging.info("Writing output file")
     Path(output_file_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_file_path, "w") as out_f:
-        out_f.write("\n".join(per_type_output_lines))
+        out_f.write("\n".join(per_type_output_lines) + "\n")
 
 
 def get_coverage_summary_line(coverage_summary: CoverageSummary) -> str:
