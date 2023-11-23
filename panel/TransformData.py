@@ -46,7 +46,6 @@ def readDriverCatalog(purple_driver):
                 AmpsDels[arr[2]] = arr[5]
 
 
-
 binSize = 1000
 
 tsvSplit = '\t'
@@ -131,7 +130,6 @@ def transformRatioFile(cobalt, sampleId,geneLocation):
 def transformGeneFile(purple_gene, sampleId, panelGenes):
     first=True
     geneLocation = []
-
 
     ft=open('transformed_data/'+sampleId+'.transformed.genemetrics.cns','w')
     with open(purple_gene,'rt') as fh:
@@ -256,7 +254,7 @@ def transformSegmentedFile(purple_segmented,purple_purity, sampleId, normCorrect
             lines = lines[3:]
             arr = lines.split(tsvSplit)
             arr.append("NA") #gene
-            arr.append("1") #cell_frac 
+            arr.append("1") #cell_frac
             res = getPurityPloidy(purple_purity)
             purity = res['purity']
             ploidy = res['ploidy']
@@ -306,12 +304,13 @@ def parse_args(sys_args):
 def main(args):
     print(args)
     sampleId=args.sampleId
+    readDriverCatalog(args.purpledriverCatalog)
+
     panelGenes = getPanelGenes(args.panelGenes)
     normCorrection=getNormCorrection(args.cobaltSegmented)
     geneLocation=transformGeneFile(args.purpleGene,sampleId, panelGenes)
     transformRatioFile(args.cobaltRatio, sampleId, geneLocation)
     genVCFfile(args.amber, sampleId)
-    readDriverCatalog(args.purpledriverCatalog)
     normPurple=getNormPurple(args.purpleSomatic,args.purplePurity,sampleId)
     transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,-normPurple+normCorrection)
 if __name__ == "__main__":
