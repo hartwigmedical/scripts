@@ -10,12 +10,15 @@ def main():
     argument_parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
     argument_parser.add_argument('--publish', default=False, action='store_true',
                                  help='whether to publish to portal or not')
+    argument_parser.add_argument('--panel', default=False, action='store_true',
+                                 help='whether to publish the panel files to gcp bucket or not')
     argument_parser.add_argument('--notify-users', default=False, action='store_true',
                                  help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
     ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                        notify_users=args.notify_users)
+                                                                                        notify_users=args.notify_users,
+                                                                                        panel=args.panel)
 
 
 class ReportSharer:
@@ -30,17 +33,19 @@ class ReportSharer:
         self.archive_bucket: Bucket = self.storage_client.bucket(f'patient-reporter-final-{profile}-1')
         self.portal_bucket: Bucket = self.storage_client.bucket(f'hmf-customer-portal-report-shared-{profile}')
         self.panel_pipeline_output_bucket: Bucket = self.storage_client.bucket(f'targeted-pipeline-output-{profile}-1')
+        self.panel_share_bucket: Bucket = self.storage_client.bucket(f'oncoact-panel-files-nki')
 
         self.report_created_record = self.rest_client.get_report_created(self.sample_barcode)
         self.run_id = self.report_created_record['run_id']
         self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
 
-    def share_report(self, publish_to_portal, notify_users):
+    def share_report(self, publish_to_portal, notify_users, panel):
         """
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
 
         :param publish_to_portal: whether to publish a pub/sub message to portal.
         :param notify_users: setting this to true will email the users regarding the portal update.
+        :param panel: whether to publish a the panel files to the panel gcp bucket.
         """
         if not self.run:
             self._prompt_user_no_run()
@@ -48,8 +53,9 @@ class ReportSharer:
             self._prompt_user_non_validated_run()
 
         self._delete_old_artifacts_in_portal_bucket()
+        self._delete_old_artifacts_in_gcp_share_bucket()
         if publish_to_portal:
-            self._copy_files_to_remote_buckets_publish()
+            self._copy_files_to_remote_buckets_publish(panel)
         else:
             self._copy_files_to_remote_buckets_no_publish()
 
@@ -79,17 +85,28 @@ class ReportSharer:
         print(*[blob.name for blob in blobs_old_run], sep='\n')
         self.portal_bucket.delete_blobs(blobs=blobs_old_run)
 
-    def _copy_files_to_remote_buckets_publish(self):
+    def _delete_old_artifacts_in_gcp_share_bucket(self):
+        print(f"deleting old artifacts from bucket '{self.panel_share_bucket.name}'")
+        blobs_old_run = list(self.panel_share_bucket.list_blobs(prefix=self.sample_barcode))
+        print(*[blob.name for blob in blobs_old_run], sep='\n')
+        self.panel_share_bucket.delete_blobs(blobs=blobs_old_run)
+
+    def _copy_files_to_remote_buckets_publish(self, panel):
         run_blobs = self._get_run_files_as_blobs()
         report_blobs = self._get_report_files_as_blobs()
 
         print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
         for blob in run_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO')
+            if panel:
+                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='RUO')
+
 
         print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
         for blob in report_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
+            if panel:
+                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='RUO')
             self._copy_blob_to_archive_bucket(blob=blob)
 
     def _copy_files_to_remote_buckets_no_publish(self):
@@ -194,6 +211,17 @@ class ReportSharer:
         print(f"{blob.name} ---> {self.portal_bucket.name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=self.portal_bucket,
+                                new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
+
+
+    def _copy_blob_to_target_gcp_bucket(self, blob, target_sub_folder):
+        if target_sub_folder != '' and target_sub_folder[-1] != '/':
+            target_sub_folder += '/'
+        file_name = get_file_name_from_blob_name(blob.name)
+        source_bucket = blob.bucket
+        print(f"{blob.name} ---> {self.panel_share_bucket.name}")
+        source_bucket.copy_blob(blob=blob,
+                                destination_bucket=self.panel_share_bucket,
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
 
     def _copy_blob_to_archive_bucket(self, blob):
