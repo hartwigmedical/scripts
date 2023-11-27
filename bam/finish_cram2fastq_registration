@@ -7,7 +7,8 @@ new_barcode=$2
 
 if [[ -z "$1" || -z "$2" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Descr: Move fastq samples from fastq-input-prod-1 to hmf-crunch-innovation"
+    echo " Descr: Perform final steps of the procedure for a production cram2fastq run"
+    echo "        (move FASTQ, register in API, and copy SNPcheck VCF)"
     echo " Usage: $(basename $0) original_barcode new_barcode"
     echo " Exmpl: $(basename $0) FR12345678 FR12345678-c2f230212"
     echo "---"
