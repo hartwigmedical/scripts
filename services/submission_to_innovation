@@ -22,7 +22,10 @@ if [[ ${sample_barcodes} == "" ]]; then
     die "No samples in submission ${submission_id}"
 fi
 
+info "Copy FASTQs"
+year_string="${submission_id:9:2}"  # change before year 2100
 for barcode in ${sample_barcodes}; do
-    info "Moving sample ${barcode} from gs://fastq-input-prod-1/ to gs://hmf-crunch-innovation/fastq/${submission_id}"
-    gsutil -m cp "gs://fastq-input-prod-1/${barcode}_*fastq.gz" "gs://hmf-crunch-innovation/fastq/${submission_id}/"
+    destination_url="gs://hmf-crunch-innovation/fastq/HMFregINN-20${year_string}/${submission_id}/${barcode}/"
+    info "Moving sample ${barcode} from gs://fastq-input-prod-1/ to ${destination_url}"
+    gsutil -m cp "gs://fastq-input-prod-1/${barcode}_*fastq.gz" "${destination_url}"
 done
