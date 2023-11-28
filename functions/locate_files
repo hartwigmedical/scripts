@@ -410,6 +410,10 @@ locate_actin_clinical_data_feed_bucket() {
     echo "gs://actin-prod-clinical-data-feed"
 }
 
+locate_actin_clinical_output_bucket() {
+    echo "gs://actin-prod-clinical-pipeline-output"
+}
+
 locate_actin_evaluation_bucket() {
     echo "gs://actin-prod-evaluation"
 }
@@ -426,47 +430,84 @@ locate_actin_prod_data_bucket() {
     echo "gs://actin-prod-patient-data"
 }
 
-################################# ACTIN Data ###################################
-
-locate_actin_clinical_input_feed_directory() {
-    echo "/data/actin/clinical/input_feed/latest"
+locate_actin_analysis_bucket() {
+  echo "gs://actin-prod-analysis-output"
 }
+
+################################# ACTIN Data Bucket Based ###################################
+
+locate_actin_blob(){
+  local gsutilUri=$1 && shift
+  local name=$1 && shift
+  if gsutil ls "${reportGsutilUri}" >/dev/null 2>&1; then
+    echo "${reportGsutilUri}"
+  else
+    error "Could not locate ${name} for patient '${patient}'"
+  fi
+}
+
+locate_actin_clinical_json() {
+  local patient=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_clinical_output_bucket}/${patient}.clinical.json"
+  echo $(locate_actin_blob reportGsutilUri "clinical json")
+}
+
+locate_actin_clinical_json_for_sample() {
+  local sample=$1 && shift
+  patient=$(echo ${sample} | head -c 12)
+  locate_actin_clinical_json patient
+}
+
+locate_actin_molecular_json() {
+  local sample=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/molecular/${sample}.molecular.json"
+  echo $(locate_actin_blob reportGsutilUri "molecular json")
+}
+
+locate_actin_orange_json() {
+  local sample=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/orange/${sample}.orange.json"
+  echo $(locate_actin_blob reportGsutilUri "orange json")
+}
+
+locate_actin_orange_pdf() {
+  local sample=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/orange/${sample}.orange.pdf"
+  echo $(locate_actin_blob reportGsutilUri "orange pdf")
+}
+
+locate_actin_treatment_match_json() {
+  local patient=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_clinical_output_bucket}/algo/${patient}.treatment_match.json"
+  echo $(locate_actin_blob reportGsutilUri "treatment match json")
+}
+
+locate_actin_report_pdf() {
+  local patient=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/report/${patient}.actin.pdf"
+  echo $(locate_actin_blob reportGsutilUri "ACTIN report PDF")
+}
+
+locate_actin_evaluation_details() {
+  local patient=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/evaluation/${patient}.evaluation.details.tsv"
+  echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation details")
+}
+
+locate_actin_evaluation_summary() {
+  local patient=$1 && shift
+  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/evaluation/${patient}.evaluation.summary.tsv"
+  echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation summary")
+}
+
+################################# ACTIN Data VM Based ###################################
 
 locate_actin_curated_clinical_directory() {
     echo "/data/actin/clinical/curated"
 }
 
-locate_actin_clinical_json() {
-    local patient=$1 && shift
-    local clinical_dir=$(locate_actin_curated_clinical_directory)
-
-    if [[ ! -d "${clinical_dir}" ]]; then
-        error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
-    fi
-
-    local clinical_json="${clinical_dir}/${patient}.clinical.json"
-    if [[ ! -f ${clinical_json} ]]; then
-        error "Could not locate clinical json for patient '${patient}'"
-    fi
-
-    echo "${clinical_json}"
-}
-
-locate_actin_clinical_json_for_sample() {
-    local sample=$1 && shift
-    local clinical_dir=$(locate_actin_curated_clinical_directory)
-
-    if [[ ! -d "${clinical_dir}" ]]; then
-        error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
-    fi
-
-    patient=$(echo ${sample} | head -c 12)
-    local clinical_json="${clinical_dir}/${patient}.clinical.json"
-    if [[ ! -f ${clinical_json} ]]; then
-        error "Could not locate clinical json for patient '${patient}' based on sample '${sample}'"
-    fi
-
-    echo "${clinical_json}"
+locate_actin_clinical_input_feed_directory() {
+    echo "/data/actin/clinical/input_feed/latest"
 }
 
 locate_actin_wgs_pipeline_output_directory() {
@@ -517,100 +558,12 @@ locate_most_recent_actin_molecular_json() {
     echo $(locate_actin_molecular_json ${sample})
 }
 
-locate_actin_molecular_json() {
-    local sample=$1
-    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
-
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
-    fi
-
-    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
-    if [[ ! -f ${molecular_json} ]]; then
-        error "Could not locate molecular json for sample '${sample}'"
-    fi
-
-    echo "${molecular_json}"
-}
-
 locate_actin_trial_database_directory() {
     echo "/data/actin/trial_database"
 }
 
 locate_actin_treatment_match_directory() {
     echo "/data/actin/treatment_matches"
-}
-
-locate_actin_treatment_match_json() {
-    local patient=$1 && shift
-    local treatment_match_dir=$(locate_actin_treatment_match_directory)
-
-    if [[ ! -d "${treatment_match_dir}" ]]; then
-        error "Unable to locate ACTIN treatment match directory '${treatment_match_dir}'"
-    fi
-
-    local treatment_match_json="${treatment_match_dir}/${patient}.treatment_match.json"
-    if [[ ! -f ${treatment_match_json} ]]; then
-        error "Could not locate treatment match json for patient '${patient}'"
-    fi
-
-    echo "${treatment_match_json}"
-}
-
-locate_actin_reports_directory() {
-    echo "/data/actin/reports"
-}
-
-locate_actin_report_pdf() {
-    local patient=$1 && shift
-    local reports_dir=$(locate_actin_reports_directory)
-
-    if [[ ! -d "${reports_dir}" ]]; then
-        error "Unable to locate ACTIN report directory '${reports_dir}'"
-    fi
-
-    local report_pdf="${reports_dir}/${patient}.actin.pdf"
-    if [[ ! -f ${report_pdf} ]]; then
-        error "Could not locate ACTIN report pdf for patient '${patient}'"
-    fi
-
-    echo "${report_pdf}"
-}
-
-locate_actin_evaluation_directory() {
-    echo "/data/actin/evaluation"
-}
-
-locate_actin_evaluation_details() {
-    local patient=$1 && shift
-    local evaluation_dir=$(locate_actin_evaluation_directory)
-
-    if [[ ! -d "${evaluation_dir}" ]]; then
-        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
-    fi
-
-    local evaluation_details_tsv="${evaluation_dir}/${patient}.evaluation.details.tsv"
-    if [[ ! -f ${evaluation_details_tsv} ]]; then
-        error "Could not locate ACTIN evaluation details tsv for patient '${patient}'"
-    fi
-
-    echo "${evaluation_details_tsv}"
-}
-
-locate_actin_evaluation_summary() {
-    local patient=$1 && shift
-    local evaluation_dir=$(locate_actin_evaluation_directory)
-
-    if [[ ! -d "${evaluation_dir}" ]]; then
-        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
-    fi
-
-    local evaluation_summary_tsv="${evaluation_dir}/${patient}.evaluation.summary.tsv"
-    if [[ ! -f ${evaluation_summary_tsv} ]]; then
-        error "Could not locate ACTIN evaluation summary tsv for patient '${patient}'"
-    fi
-
-    echo "${evaluation_summary_tsv}"
 }
 
 ##################################### RNA ######################################
