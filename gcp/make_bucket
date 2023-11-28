@@ -36,3 +36,7 @@ gsutil mb ${class_args} -b on -l europe-west4 -p ${project_name} gs://${bucket_n
 gsutil kms encryption -w -k projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001 gs://${bucket_name}
 gsutil label ch -l user:$USER gs://${bucket_name}
 gsutil label ch -l cost_center:${cost_center} gs://${bucket_name}
+if [[ -z $backup_only ]]; then
+    gcloud storage buckets update gs://${bucket_name} --autoclass-terminal-storage-class=ARCHIVE
+fi
+
