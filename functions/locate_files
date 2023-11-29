@@ -460,7 +460,7 @@ locate_actin_clinical_json_for_sample() {
 
 locate_actin_molecular_json() {
   local sample=$1 && shift
-  local reportGsutilUri="$(locate_actin_analysis_bucket)}/molecular/${sample}.molecular.json"
+  local reportGsutilUri="$(locate_actin_analysis_bucket)/molecular/${sample}.molecular.json"
   echo $(locate_actin_blob ${reportGsutilUri} "molecular json")
 }
 
