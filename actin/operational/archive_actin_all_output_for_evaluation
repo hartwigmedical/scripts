@@ -36,8 +36,8 @@ if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_repor
 fi
 
 molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
-orange_json="$(locate_orange_json ${molecular_dir})"
-orange_pdf="$(locate_orange_pdf ${molecular_dir})"
+orange_json="$(locate_actin_orange_no_germline_json ${molecular_dir})"
+orange_pdf="$(locate_actin_orange_no_germline__pdf ${molecular_dir})"
 molecular_json="$(locate_actin_molecular_json ${sample})"
 
 if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then

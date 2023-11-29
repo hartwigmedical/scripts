@@ -464,13 +464,13 @@ locate_actin_molecular_json() {
   echo $(locate_actin_blob reportGsutilUri "molecular json")
 }
 
-locate_actin_orange_json() {
+locate_actin_orange_no_germline__json() {
   local sample=$1 && shift
   local reportGsutilUri = "$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
   echo $(locate_actin_blob reportGsutilUri "orange json")
 }
 
-locate_actin_orange_pdf() {
+locate_actin_orange_no_germline_pdf() {
   local sample=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.pdf"
   echo $(locate_actin_blob reportGsutilUri "orange pdf")
@@ -478,7 +478,7 @@ locate_actin_orange_pdf() {
 
 locate_actin_treatment_match_json() {
   local patient=$1 && shift
-  local reportGsutilUri="$(locate_actin_clinical_output_bucket)/algo/${patient}.treatment_match.json"
+  local reportGsutilUri="$(locate_actin_analysis_bucket)/algo/${patient}.treatment_match.json"
   echo $(locate_actin_blob reportGsutilUri "treatment match json")
 }
 

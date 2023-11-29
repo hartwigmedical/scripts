@@ -10,13 +10,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
-
-molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
-orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${molecular_dir})"
-
-if [[ -z "${orange_no_germline_pdf}" ]]; then
-    error "Missing ORANGE report for ${sample}"
-fi
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf ${molecular_dir})"
 
 info "Archiving ORANGE (no germline) report for ${sample}"
 gsutil cp "${orange_no_germline_pdf}" "${shared_reports_bucket}/orange/"
