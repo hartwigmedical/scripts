@@ -431,7 +431,7 @@ locate_actin_prod_data_bucket() {
 }
 
 locate_actin_analysis_bucket() {
-  echo "gs://actin-prod-analysis-output"
+  echo "gs://actin-prod-actin-analysis-output"
 }
 
 ################################# ACTIN Data Bucket Based ###################################
