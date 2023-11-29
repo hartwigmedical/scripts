@@ -106,7 +106,7 @@ class ReportSharer:
         for blob in report_blobs:
             self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
             if panel:
-                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='RUO')
+                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='')
             self._copy_blob_to_archive_bucket(blob=blob)
 
     def _copy_files_to_remote_buckets_no_publish(self):
