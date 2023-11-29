@@ -466,7 +466,7 @@ locate_actin_molecular_json() {
 
 locate_actin_orange_no_germline_json() {
   local sample=$1 && shift
-  local reportGsutilUri = "$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
+  local reportGsutilUri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
   echo $(locate_actin_blob reportGsutilUri "orange json")
 }
 
