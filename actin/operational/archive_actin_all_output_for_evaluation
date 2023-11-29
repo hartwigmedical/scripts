@@ -39,6 +39,10 @@ orange_json="$(locate_actin_orange_no_germline_json ${sample})"
 orange_pdf="$(locate_actin_orange_no_germline_pdf ${sample})"
 molecular_json="$(locate_actin_molecular_json ${sample})"
 
+echo "ORANGE json ${orange_json}"
+echo "ORANGE pdf ${orange_json}"
+echo "molecular json ${orange_json}"
+
 if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then
     info "Archiving ORANGE data, report and ACTIN interpretation for ${sample}"
     gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"

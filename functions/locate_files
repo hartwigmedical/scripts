@@ -455,7 +455,7 @@ locate_actin_clinical_json() {
 locate_actin_clinical_json_for_sample() {
   local sample=$1 && shift
   patient=$(echo ${sample} | head -c 12)
-  locate_actin_clinical_json patient
+  echo $(locate_actin_clinical_json ${patient})
 }
 
 locate_actin_molecular_json() {
