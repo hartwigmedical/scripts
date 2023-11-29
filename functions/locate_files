@@ -439,8 +439,8 @@ locate_actin_analysis_bucket() {
 locate_actin_blob(){
   local gsutilUri=$1 && shift
   local name=$1 && shift
-  if gsutil ls "${reportGsutilUri}" >/dev/null 2>&1; then
-    echo "${reportGsutilUri}"
+  if gsutil ls "${gsutilUri}" >/dev/null 2>&1; then
+    echo "${gsutilUri}"
   else
     error "Could not locate ${name} at ${gsutilUri}"
   fi
@@ -449,7 +449,7 @@ locate_actin_blob(){
 locate_actin_clinical_json() {
   local patient=$1 && shift
   local reportGsutilUri="$(locate_actin_clinical_output_bucket)/${patient}.clinical.json"
-  echo $(locate_actin_blob reportGsutilUri "clinical json")
+  echo $(locate_actin_blob ${reportGsutilUri} "clinical json")
 }
 
 locate_actin_clinical_json_for_sample() {
@@ -461,43 +461,43 @@ locate_actin_clinical_json_for_sample() {
 locate_actin_molecular_json() {
   local sample=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)}/molecular/${sample}.molecular.json"
-  echo $(locate_actin_blob reportGsutilUri "molecular json")
+  echo $(locate_actin_blob ${reportGsutilUri} "molecular json")
 }
 
 locate_actin_orange_no_germline_json() {
   local sample=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
-  echo $(locate_actin_blob reportGsutilUri "orange json")
+  echo $(locate_actin_blob ${reportGsutilUri} "orange json")
 }
 
 locate_actin_orange_no_germline_pdf() {
   local sample=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.pdf"
-  echo $(locate_actin_blob reportGsutilUri "orange pdf")
+  echo $(locate_actin_blob ${reportGsutilUri} "orange pdf")
 }
 
 locate_actin_treatment_match_json() {
   local patient=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/algo/${patient}.treatment_match.json"
-  echo $(locate_actin_blob reportGsutilUri "treatment match json")
+  echo $(locate_actin_blob ${reportGsutilUri} "treatment match json")
 }
 
 locate_actin_report_pdf() {
   local patient=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/report/${patient}.actin.pdf"
-  echo $(locate_actin_blob reportGsutilUri "ACTIN report PDF")
+  echo $(locate_actin_blob ${reportGsutilUri} "ACTIN report PDF")
 }
 
 locate_actin_evaluation_details() {
   local patient=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.details.tsv"
-  echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation details")
+  echo $(locate_actin_blob ${reportGsutilUri} "ACTIN evaluation details")
 }
 
 locate_actin_evaluation_summary() {
   local patient=$1 && shift
   local reportGsutilUri="$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.summary.tsv"
-  echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation summary")
+  echo $(locate_actin_blob ${reportGsutilUri} "ACTIN evaluation summary")
 }
 
 ################################# ACTIN Data VM Based ###################################
