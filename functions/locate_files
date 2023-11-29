@@ -442,7 +442,7 @@ locate_actin_blob(){
   if gsutil ls "${reportGsutilUri}" >/dev/null 2>&1; then
     echo "${reportGsutilUri}"
   else
-    error "Could not locate ${name} for patient '${patient}'"
+    error "Could not locate ${name} at ${gsutilUri}"
   fi
 }
 
