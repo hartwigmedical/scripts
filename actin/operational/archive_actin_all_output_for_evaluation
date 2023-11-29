@@ -39,17 +39,13 @@ orange_json="$(locate_actin_orange_no_germline_json ${sample})"
 orange_pdf="$(locate_actin_orange_no_germline_pdf ${sample})"
 molecular_json="$(locate_actin_molecular_json ${sample})"
 
-echo "ORANGE json ${orange_json}"
-echo "ORANGE pdf ${orange_pdf}"
-echo "molecular json ${orange_json}"
-
-if [[ -f "${orange_json}" && -f "${orange_pdf}" && -f "${molecular_json}" ]]; then
+if [[ -z "${orange_json}" && -z "${orange_pdf}" && -z "${molecular_json}" ]]; then
+    warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"
+else
     info "Archiving ORANGE data, report and ACTIN interpretation for ${sample}"
     gsutil cp "${orange_json}" "${sample_evaluation_bucket}/"
     gsutil cp "${orange_pdf}" "${sample_evaluation_bucket}/"
     gsutil cp "${molecular_json}" "${sample_evaluation_bucket}/"
-else
-    warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"
 fi
 
 info "Archiving ACTIN data and report for ${patient}"
