@@ -448,7 +448,7 @@ locate_actin_blob(){
 
 locate_actin_clinical_json() {
   local patient=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_clinical_output_bucket}/${patient}.clinical.json"
+  local reportGsutilUri="gs://$(locate_actin_clinical_output_bucket)/${patient}.clinical.json"
   echo $(locate_actin_blob reportGsutilUri "clinical json")
 }
 
@@ -460,43 +460,43 @@ locate_actin_clinical_json_for_sample() {
 
 locate_actin_molecular_json() {
   local sample=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/molecular/${sample}.molecular.json"
+  local reportGsutilUri="gs://$(locate_actin_analysis_bucket)}/molecular/${sample}.molecular.json"
   echo $(locate_actin_blob reportGsutilUri "molecular json")
 }
 
 locate_actin_orange_json() {
   local sample=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/orange/${sample}.orange.json"
+  local reportGsutilUri = "gs://$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
   echo $(locate_actin_blob reportGsutilUri "orange json")
 }
 
 locate_actin_orange_pdf() {
   local sample=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/orange/${sample}.orange.pdf"
+  local reportGsutilUri="gs://$(locate_actin_analysis_bucket)/orange/${sample}.orange.pdf"
   echo $(locate_actin_blob reportGsutilUri "orange pdf")
 }
 
 locate_actin_treatment_match_json() {
   local patient=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_clinical_output_bucket}/algo/${patient}.treatment_match.json"
+  local reportGsutilUri="gs://$(locate_actin_clinical_output_bucket)/algo/${patient}.treatment_match.json"
   echo $(locate_actin_blob reportGsutilUri "treatment match json")
 }
 
 locate_actin_report_pdf() {
   local patient=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/report/${patient}.actin.pdf"
+  local reportGsutilUri="gs://$(locate_actin_analysis_bucket)/report/${patient}.actin.pdf"
   echo $(locate_actin_blob reportGsutilUri "ACTIN report PDF")
 }
 
 locate_actin_evaluation_details() {
   local patient=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/evaluation/${patient}.evaluation.details.tsv"
+  local reportGsutilUri="gs://$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.details.tsv"
   echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation details")
 }
 
 locate_actin_evaluation_summary() {
   local patient=$1 && shift
-  local reportGsutilUri = "gs://${locate_actin_analysis_bucket}/evaluation/${patient}.evaluation.summary.tsv"
+  local reportGsutilUri="gs://$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.summary.tsv"
   echo $(locate_actin_blob reportGsutilUri "ACTIN evaluation summary")
 }
 
