@@ -410,6 +410,10 @@ locate_actin_clinical_data_feed_bucket() {
     echo "gs://actin-prod-clinical-data-feed"
 }
 
+locate_actin_clinical_output_bucket() {
+    echo "gs://actin-prod-clinical-pipeline-output"
+}
+
 locate_actin_evaluation_bucket() {
     echo "gs://actin-prod-evaluation"
 }
@@ -426,7 +430,77 @@ locate_actin_prod_data_bucket() {
     echo "gs://actin-prod-patient-data"
 }
 
-################################# ACTIN Data ###################################
+locate_actin_analysis_bucket() {
+  echo "gs://actin-prod-actin-analysis-output"
+}
+
+################################# ACTIN Data GCP ###################################
+
+locate_actin_blob() {
+  local gsutil_uri=$1 && shift
+  local name=$1 && shift
+  if gsutil ls "${gsutil_uri}" >/dev/null 2>&1; then
+    echo "${gsutil_uri}"
+  else
+    error "Could not locate ${name} at ${gsutil_uri}"
+  fi
+}
+
+locate_actin_clinical_json_gcp() {
+  local patient=$1 && shift
+  local report_gsutil_uri="$(locate_actin_clinical_output_bucket)/${patient}.clinical.json"
+  echo $(locate_actin_blob ${report_gsutil_uri} "clinical json")
+}
+
+locate_actin_clinical_json_for_sample_gcp() {
+  local sample=$1 && shift
+  patient=$(echo ${sample} | head -c 12)
+  echo $(locate_actin_clinical_json ${patient})
+}
+
+locate_actin_molecular_json_gcp() {
+  local sample=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/molecular/${sample}.molecular.json"
+  echo $(locate_actin_blob ${report_gsutil_uri} "molecular json")
+}
+
+locate_actin_orange_no_germline_json_gcp() {
+  local sample=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
+  echo $(locate_actin_blob ${report_gsutil_uri} "orange json")
+}
+
+locate_actin_orange_no_germline_pdf_gcp() {
+  local sample=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.pdf"
+  echo $(locate_actin_blob ${report_gsutil_uri} "orange pdf")
+}
+
+locate_actin_treatment_match_json_gcp() {
+  local patient=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/algo/${patient}.treatment_match.json"
+  echo $(locate_actin_blob ${report_gsutil_uri} "treatment match json")
+}
+
+locate_actin_report_pdf_gcp() {
+  local patient=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/report/${patient}.actin.pdf"
+  echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN report PDF")
+}
+
+locate_actin_evaluation_details_gcp() {
+  local patient=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.details.tsv"
+  echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation details")
+}
+
+locate_actin_evaluation_summary_gcp() {
+  local patient=$1 && shift
+  local report_gsutil_uri="$(locate_actin_analysis_bucket)/evaluation/${patient}.evaluation.summary.tsv"
+  echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation summary")
+}
+
+################################# ACTIN Data VM Based ###################################
 
 locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed/latest"
@@ -612,7 +686,6 @@ locate_actin_evaluation_summary() {
 
     echo "${evaluation_summary_tsv}"
 }
-
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {

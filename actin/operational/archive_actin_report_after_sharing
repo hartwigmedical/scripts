@@ -11,11 +11,7 @@ fi
 
 shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
 
-actin_report_pdf="$(locate_actin_report_pdf ${patient})"
-
-if [[ -z "${actin_report_pdf}" ]]; then
-    error "Missing ACTIN report for ${patient}"
-fi
+actin_report_pdf="$(locate_actin_report_pdf_gcp ${patient})"
 
 info "Archiving ACTIN report for ${patient}"
 gsutil cp "${actin_report_pdf}" "${shared_reports_bucket}/actin/"
