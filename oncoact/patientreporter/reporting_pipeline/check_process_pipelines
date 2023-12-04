@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-curl "reporting-pipeline-launcher.prod-1/executions?running=true"
+curl "reporting-pipeline-launcher.prod-1/executions?running=true" | jq .
