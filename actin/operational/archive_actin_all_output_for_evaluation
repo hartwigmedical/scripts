@@ -25,19 +25,19 @@ if [[ "${bucket_exists_error}" != *"CommandException"* ]]; then
     fi
 fi
 
-clinical_json="$(locate_actin_clinical_json ${patient})"
-treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
-actin_report_pdf="$(locate_actin_report_pdf ${patient})"
-evaluation_details_tsv="$(locate_actin_evaluation_details ${patient})"
-evaluation_summary_tsv="$(locate_actin_evaluation_summary ${patient})"
+clinical_json="$(locate_actin_clinical_json_gcp ${patient})"
+treatment_match_json="$(locate_actin_treatment_match_json_gcp ${patient})"
+actin_report_pdf="$(locate_actin_report_pdf_gcp ${patient})"
+evaluation_details_tsv="$(locate_actin_evaluation_details_gcp ${patient})"
+evaluation_summary_tsv="$(locate_actin_evaluation_summary_gcp ${patient})"
 
 if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" || -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
     error "Missing ACTIN data, report or evaluation details for ${sample}"
 fi
 
-orange_json="$(locate_actin_orange_no_germline_json ${sample})"
-orange_pdf="$(locate_actin_orange_no_germline_pdf ${sample})"
-molecular_json="$(locate_actin_molecular_json ${sample})"
+orange_json="$(locate_actin_orange_no_germline_json_gcp ${sample})"
+orange_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
+molecular_json="$(locate_actin_molecular_json_gcp ${sample})"
 
 if [[ -z "${orange_json}" && -z "${orange_pdf}" && -z "${molecular_json}" ]]; then
     warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${sample} as they do not exist"

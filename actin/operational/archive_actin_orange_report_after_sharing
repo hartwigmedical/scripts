@@ -10,7 +10,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
-orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf ${sample})"
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
 
 info "Archiving ORANGE (no germline) report for ${sample}"
 gsutil cp "${orange_no_germline_pdf}" "${shared_reports_bucket}/orange/"
