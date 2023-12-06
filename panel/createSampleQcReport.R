@@ -1,4 +1,3 @@
-
 #!/usr/bin/env Rscript
 ### Gene Report
 
@@ -56,9 +55,9 @@ runSampleQcReport<-function()
     args <- commandArgs(trailingOnly = TRUE)
     print(args)
 
-    if(length(args) < 3)
+    if(length(args) < 4)
     {
-      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir")
+      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir, 4 = yield (Gb)")
       stop()
     }
 
@@ -71,6 +70,7 @@ runSampleQcReport<-function()
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
     runDir = args[3]
+    yield = args[4]
 
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
@@ -94,6 +94,7 @@ runSampleQcReport<-function()
     sampleGeneCnFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.cnv.gene.tsv')
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
+    bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
@@ -103,6 +104,7 @@ runSampleQcReport<-function()
     check_file(samplePurityFile)
     check_file(sampleSomaticVcf)
     check_file(driverGenePanel)
+    check_file(bamMetricsFile)
     print("files present")
 
     # set plotting features
@@ -176,7 +178,10 @@ runSampleQcReport<-function()
 
     exons = load_file(sampleExonCoverageFile,'sample exon coverage')
     colnames(exons) = c('Gene','Chromosome','PosStart','PosEnd','ExonRank','MedianDepth')
-
+    genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
+    exons = exons %>% filter(!(Gene %in% genesNotInDesign))
+    write.table( exons %>% filter(MedianDepth < 100),'ExonsWithInsufficientConverage.tsv',row.names=F,quote=F,sep="\t")
+    print(paste(nrow( exons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
     exons = exons %>% filter(Gene %in% genesOfInterest)
 
     # genesOfInterest[genesOfInterest %in% unique(exons$Gene) == F]
@@ -235,8 +240,12 @@ runSampleQcReport<-function()
       theme(legend.position='none',axis.text.y=element_blank(),text = element_text(size = 12),axis.text.x = element_text(size = 12),plot.margin=unit(nonGeneMargins,'cm')) +
       labs(title='Exon Median Coverage (log2)', x='',y='',size=12)
 
-    # SNVs by gene and coding effect
+    # metrics
 
+    bamMetrics=read.table(bamMetricsFile,header=T,comment.char='#',sep="\t", nrow=1)
+
+    # SNVs by gene and coding effect
+    
     somaticVcf = readVcf(sampleSomaticVcf)
     somaticVariants = vcf_data_frame(somaticVcf)
 
@@ -318,7 +327,8 @@ runSampleQcReport<-function()
     print(paste0("writing output to pdf file: ", outputFile))
     pdf(file = outputFile, height = 14, width = 20)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; yield ', yield, ' Gb; ',
+        'Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
@@ -333,7 +343,8 @@ runSampleQcReport<-function()
     print(paste0("writing output to png file: ", outputPNG))
     png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '% )' ), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; yield ', yield, ' Gb; ',
+        'Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
