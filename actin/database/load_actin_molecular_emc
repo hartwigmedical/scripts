@@ -10,7 +10,7 @@ if [[ -z "${sample}" ]]; then
 fi
 
 actin_credentials="$(prod_actin_writer_sql_credentials)"
-actin_jar="$(locate_pilot_actin)"
+actin_jar="$(locate_actin_jar_on_vm)"
 actin_database_name="actin"
 
 molecular_json="$(locate_actin_molecular_json ${sample})"

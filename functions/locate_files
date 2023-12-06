@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 ##################################### JARS #####################################
 
-locate_pilot_actin() {
+locate_actin_jar_on_vm() {
     echo "/data/actin/system/actin.jar"
 }
 

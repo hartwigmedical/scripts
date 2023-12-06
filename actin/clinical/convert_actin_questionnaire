@@ -9,7 +9,7 @@ if [[ -z ${questionnaire} ]]; then
     error "No questionnaire passed"
 fi
 
-actin_jar="$(locate_pilot_actin)"
+actin_jar="$(locate_actin_jar_on_vm)"
 
 java -cp ${actin_jar} com.hartwig.actin.clinical.ReformatQuestionnaireApplicationKt \
     -questionnaire ${questionnaire}
