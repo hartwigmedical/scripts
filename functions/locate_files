@@ -401,7 +401,7 @@ locate_actin_cohort_trial_database_directory() {
 }
 
 locate_actin_cohort_treatment_match_directory() {
-    echo "/data/experiments/actin_cohort/treatment_matches"
+    echo "/data/experiments/charlotte_emc_actionability/treatment_matches"
 }
 
 ############################### ACTIN Buckets ##################################
