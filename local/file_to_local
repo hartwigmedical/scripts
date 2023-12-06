@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+gcp_path_file=$1
+
+if [[ -z ${gcp_path_file} ]]; then
+    error "No gcp path of the file provided"
+fi
+
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp;  \
+gsutil cp ${gcp_path_file} ~/temp; \
+file_name=$( ls ~/temp ); "
+
+gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${file_name}  ./
+
+gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "rm -r ~/temp/ 2>&1"
+

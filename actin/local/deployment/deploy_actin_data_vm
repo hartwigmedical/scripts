@@ -1,5 +1,15 @@
 #!/bin/bash
 
+source message_functions || exit 1
+source actin_config || exit 1
+
 version=$1 && shift
 
-do_deploy_actin ${version} data-vm-prod-2 hmf-crunch europe-west4-a
+if [[ -z "${version}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+vm_name="$(pilot_actin_vm)"
+vm_project="$(pilot_actin_project)"
+
+do_deploy_actin ${version} ${vm_name} ${vm_project} europe-west4-a

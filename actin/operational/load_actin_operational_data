@@ -10,7 +10,7 @@ if [[ -z "${patient}" ]]; then
     error "This script takes a patient as an argument"
 fi
 
-actin_jar="$(locate_pilot_actin)"
+actin_jar="$(locate_actin_jar_on_vm)"
 
 db_host="actin-sql.prod"
 db_port="3306"

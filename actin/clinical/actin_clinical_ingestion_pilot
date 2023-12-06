@@ -10,7 +10,7 @@ doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
 output_directory="$(locate_actin_curated_clinical_directory)"
 
-actin_jar="$(locate_pilot_actin)"
+actin_jar="$(locate_actin_jar_on_vm)"
 
 info "Running ACTIN Clinical on ${feed_directory}"
 
