@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+startDate=$(date -d "-7 days" '+%Y-%m-%d')
+endDate=$(date '+%Y-%m-%d')
+
+echo "Reports shared between ${startDate} and ${endDate} with standard data sharing:"
+echo -e "Sample ID\tReporting ID"
+sample_reports_within_date_range=$(api reports/shared | cut -f2,8| awk -F "\t" -v sDate="$startDate" -v eDate="$endDate" '$2 >= sDate && $2 <= eDate {print $1}')
+# echo $sample_reports_within_date_range
+for sample_id in $(echo ${sample_reports_within_date_range} | tr " " "\n")
+do
+    sample_info=$( lama_api_get "tumor-sample/sample-id/${sample_id}" )
+    submission=$( echo $sample_info | jq -r '.submissionNr' )
+    patient_id=$( echo $sample_info | jq -r '.patientId' )
+    if [[ $submission == "HMFregGAYA" || $submission == "HMFregCORE" ]]
+    then
+        patient_info=$( lama_api_get "patient/patient-id/${patient_id}" )
+        hospital_code=$( echo $patient_info | jq -r '.hospitalCode' )
+        reporting_id=$( echo $patient_info | jq -r '.reportingId' )
+        if [[ $hospital_code == "06" || $hospital_code == "VH" ]]
+        then
+            echo -e "${sample_id}\t${reporting_id}"
+        fi
+    fi
+done
