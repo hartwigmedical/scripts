@@ -19,7 +19,7 @@ actin_report_pdf="$(locate_actin_report_pdf_gcp ${patient})"
 
 if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" ||
     -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
-    error "Missing ACTIN data, report or evaluation details for ${sample}"
+    error "Missing ACTIN data, report or evaluation details for ${patient}"
 fi
 
 info "Archiving ACTIN data for ${patient} to ${shared_actin_data_uri}"
