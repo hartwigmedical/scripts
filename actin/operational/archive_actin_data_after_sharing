@@ -4,14 +4,9 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 patient=$1 && shift
-sample_postfix=${1} && shift
 
 if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
-fi
-
-if [[ -z "${sample_postfix}" ]]; then
-    sample_postfix="T"
 fi
 
 shared_actin_data_uri="$(locate_next_actin_shared_data_uri_gcp ${patient})"
@@ -34,7 +29,7 @@ gsutil cp "${actin_report_pdf}" "${shared_actin_data_uri}/"
 gsutil cp "${evaluation_details_tsv}" "${shared_actin_data_uri}/"
 gsutil cp "${evaluation_summary_tsv}" "${shared_actin_data_uri}/"
 
-sample=${patient}${sample_postfix}
+sample=$(locate_actin_most_recent_orange_sample_gcp ${patient})
 orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${sample})"
 orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
 molecular_json="$(locate_actin_molecular_json_gcp ${sample})"

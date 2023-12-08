@@ -507,6 +507,20 @@ locate_actin_molecular_json_gcp() {
     echo $(locate_actin_blob ${report_gsutil_uri} "molecular json")
 }
 
+locate_actin_most_recent_orange_sample_gcp() {
+    local patient=$1 && shift
+
+    for i in {9..1}; do
+        sample="${patient}T${i}"
+        orange_report_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
+        if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
+            break
+        fi
+    done
+
+    echo "${sample}"
+}
+
 locate_actin_orange_no_germline_json_gcp() {
     local sample=$1 && shift
     local report_gsutil_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
