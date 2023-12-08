@@ -510,15 +510,21 @@ locate_actin_molecular_json_gcp() {
 locate_actin_most_recent_orange_sample_gcp() {
     local patient=$1 && shift
 
+    most_recent_sample=""
     for i in {9..1}; do
         sample="${patient}T${i}"
         orange_report_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
         if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
+            most_recent_sample=${sample}
             break
         fi
     done
 
-    echo "${sample}"
+    if [[ -z "${most_recent_sample}" ]]; then
+        most_recent_sample="${patient}T"
+    fi
+
+    echo "${most_recent_sample}"
 }
 
 locate_actin_orange_no_germline_json_gcp() {
