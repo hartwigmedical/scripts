@@ -35,15 +35,15 @@ gsutil cp "${evaluation_details_tsv}" "${shared_actin_data_uri}/"
 gsutil cp "${evaluation_summary_tsv}" "${shared_actin_data_uri}/"
 
 sample=${patient}${sample_postfix}
-orange_json="$(locate_actin_orange_no_germline_json_gcp ${sample})"
-orange_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
+orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${sample})"
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
 molecular_json="$(locate_actin_molecular_json_gcp ${sample})"
 
-if [[ -z "${orange_json}" && -z "${orange_pdf}" && -z "${molecular_json}" ]]; then
+if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" && -z "${molecular_json}" ]]; then
     warn "Skipping archiving of ORANGE data and ACTIN molecular interpretation for ${patient} as they do not exist"
 else
     info "Archiving ORANGE data, report and ACTIN interpretation for ${sample} to ${shared_actin_data_uri}"
-    gsutil cp "${orange_json}" "${shared_actin_data_uri}/"
-    gsutil cp "${orange_pdf}" "${shared_actin_data_uri}/"
+    gsutil cp "${orange_no_germline_json}" "${shared_actin_data_uri}/"
+    gsutil cp "${orange_no_germline_pdf}" "${shared_actin_data_uri}/"
     gsutil cp "${molecular_json}" "${shared_actin_data_uri}/"
 fi
