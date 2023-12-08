@@ -449,7 +449,7 @@ locate_next_orange_shared_data_uri_gcp() {
     patient=$(echo ${sample} | head -c 12)
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/orange"
-    final_uri="$(locate_next_indexed_uri_gcp ${base_uri} )"
+    final_uri="$(locate_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
         error "Could not determine next orange shared data uri for ${sample}"
@@ -462,7 +462,7 @@ locate_next_actin_shared_data_uri_gcp() {
     local patient$1 && shift
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/actin"
-    final_uri="$(locate_next_indexed_uri_gcp ${base_uri} )"
+    final_uri="$(locate_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
         error "Could not determine next actin shared data uri for ${sample}"
