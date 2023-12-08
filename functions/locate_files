@@ -426,6 +426,10 @@ locate_actin_shared_reports_bucket() {
     echo "gs://actin-prod-shared-reports"
 }
 
+locate_actin_shared_data_bucket() {
+    echo "gs://actin-prod-shared-data"
+}
+
 locate_actin_wgs_pipeline_bucket() {
     echo "gs://actin-prod-wgs-pipeline-output"
 }
@@ -439,6 +443,49 @@ locate_actin_analysis_bucket() {
 }
 
 ################################# ACTIN Data GCP ###################################
+
+locate_next_orange_shared_data_uri_gcp() {
+    local sample=$1 && shift
+    patient=$(echo ${sample} | head -c 12)
+
+    base_uri="$(locate_actin_shared_data_bucket)/${patient}/orange"
+    final_uri="$(locate_next_indexed_uri_gcp ${base_uri} )"
+
+    if [[ -z "${final_uri}" ]]; then
+        error "Could not determine next orange shared data uri for ${sample}"
+    fi
+
+    echo ${final_uri}
+}
+
+locate_next_actin_shared_data_uri_gcp() {
+    local patient$1 && shift
+
+    base_uri="$(locate_actin_shared_data_bucket)/${patient}/actin"
+    final_uri="$(locate_next_indexed_uri_gcp ${base_uri} )"
+
+    if [[ -z "${final_uri}" ]]; then
+        error "Could not determine next actin shared data uri for ${sample}"
+    fi
+
+    echo ${final_uri}
+}
+
+locate_next_indexed_uri_gcp() {
+    local base_uri=$1 && shift
+
+    final_uri=""
+    for i in {1..999}; do
+        final_uri="${base_uri}/${i}"
+        if gsutil ls "${final_uri}" >/dev/null 2>&1; then
+            continue
+        else
+            break
+        fi
+    done
+
+    echo "${final_uri}"
+}
 
 locate_actin_clinical_json_for_sample_gcp() {
     local sample=$1 && shift
