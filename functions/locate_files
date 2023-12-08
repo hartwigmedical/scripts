@@ -477,9 +477,8 @@ locate_next_indexed_uri_gcp() {
     final_uri=""
     for i in {1..999}; do
         final_uri="${base_uri}/${i}"
-        if gsutil ls "${final_uri}" >/dev/null 2>&1; then
-            continue
-        else
+        bucket_exists_error=$(gsutil ls ${final_uri} 2>&1)
+        if [[ "${bucket_exists_error}" == *"CommandException"* ]]; then
             break
         fi
     done
