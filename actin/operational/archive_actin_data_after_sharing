@@ -9,9 +9,9 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-shared_reports_bucket="$(locate_actin_shared_reports_bucket)"
+shared_actin_data_uri="$(locate_next_actin_shared_data_uri_gcp ${patient})"
 
 actin_report_pdf="$(locate_actin_report_pdf_gcp ${patient})"
 
-info "Archiving ACTIN report for ${patient}"
-gsutil cp "${actin_report_pdf}" "${shared_reports_bucket}/actin/"
+info "Archiving ACTIN report for ${patient} to ${shared_actin_data_uri}"
+gsutil cp "${actin_report_pdf}" "${shared_actin_data_uri}/"
