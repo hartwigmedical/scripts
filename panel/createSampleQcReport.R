@@ -181,6 +181,26 @@ runSampleQcReport<-function()
     genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
     write.table( exons %>% filter(MedianDepth < 100),'ExonsWithInsufficientConverage.tsv',row.names=F,quote=F,sep="\t")
+
+    entriesPerPage = 30
+
+    outputDir = paste0(runDir, "sampleQcReports/")
+
+    outputPDF = paste0(outputDir, sampleId, '.insufficientCoverage.pdf')
+
+
+    pdf(outputPDF,width=8.5,height=11)
+    df =exons %>% filter(MedianDepth < 100)
+    df = df[order(df$Gene,df$ExonRank),]
+    rownames(df) = 1:(nrow(df))
+    for(i in seq(1,nrow(df),entriesPerPage)){
+      grid.table(df[i:min(nrow(df),(i+entriesPerPage-1)),])
+      if( i+entriesPerPage < nrow(df)){
+        grid.newpage()
+      }
+    }
+    dev.off()
+
     print(paste(nrow( exons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
     exons = exons %>% filter(Gene %in% genesOfInterest)
 
