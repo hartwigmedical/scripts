@@ -24,7 +24,7 @@ make_business_calendar <- function() {
 barcode <- args[1]
 business_calendar <- make_business_calendar()
 
-cmd <- paste("bash /data/repos/scripts/oncoact/patientreporter/ops-vm/oncoact/gather_dates_for_tat.sh", barcode)
+cmd <- paste("bash /data/repos/scripts/oncoact/patientreporter/ops/oncoact/gather_dates_for_tat.sh", barcode)
 barcode_dates <- system(command=cmd, intern=T)
 
 if (barcode_dates[2] == "NA") {
