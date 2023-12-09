@@ -9,7 +9,11 @@ if [[ "${curr_host}" == "prod-vm-operations" ]]; then
 fi
 
 info "Syncing ACTIN patient data to local VM"
+gsutil -m rsync -r $(locate_actin_clinical_data_feed_bucket) $(locate_actin_clinical_input_feed_sync_directory)
+gsutil -m rsync -r $(locate_actin_clinical_curation_bucket) $(locate_actin_clinical_curation_directory)
 gsutil -m rsync -r $(locate_actin_clinical_output_bucket) $(locate_actin_curated_clinical_directory)
+gsutil -m rsync -r $(locate_actin_trial_config_bucket) $(locate_actin_trial_config_directory)
+gsutil -m rsync -r $(locate_actin_ctc_config_bucket) $(locate_actin_ctc_config_directory)
 gsutil -m rsync -r $(locate_actin_prod_data_bucket)/treatment_match/ $(locate_actin_treatment_match_directory)
 
 info "Adding new actin pipeline outputs to treatment match (temporary)"

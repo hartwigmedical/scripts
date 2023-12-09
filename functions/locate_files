@@ -335,7 +335,7 @@ locate_actin_database_views_sql_script() {
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/actin/clinical_curation"
+    echo "/data/resources/actin_sync/clinical_curation"
 }
 
 locate_actin_treatment_db_directory() {
@@ -343,11 +343,11 @@ locate_actin_treatment_db_directory() {
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/actin/trial_config"
+    echo "/data/resources/actin_sync/trial_config"
 }
 
 locate_actin_ctc_config_directory() {
-    echo "/data/resources/actin/ctc_config"
+    echo "/data/resources/actin_sync/ctc_config"
 }
 
 locate_actin_minimal_molecular_json() {
@@ -414,8 +414,20 @@ locate_actin_clinical_data_feed_bucket() {
     echo "gs://actin-prod-clinical-data-feed"
 }
 
+locate_actin_clinical_curation_bucket() {
+    echo "gs://actin-prod-clinical-curation-input"
+}
+
 locate_actin_clinical_output_bucket() {
     echo "gs://actin-prod-clinical-pipeline-output"
+}
+
+locate_actin_trial_config_bucket() {
+    echo "gs://actin-prod-trial-config-input"
+}
+
+locate_actin_ctc_config_bucket() {
+    echo "gs://actin-prod-ctc-config-input"
 }
 
 locate_actin_evaluation_bucket() {
@@ -584,6 +596,10 @@ locate_actin_blob() {
 
 locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed/latest"
+}
+
+locate_actin_clinical_input_feed_sync_directory() {
+    echo "/data/actin/clinical/input_feed/sync"
 }
 
 locate_actin_curated_clinical_directory() {
