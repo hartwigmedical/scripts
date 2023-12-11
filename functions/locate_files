@@ -335,7 +335,7 @@ locate_actin_database_views_sql_script() {
 }
 
 locate_actin_clinical_curation_directory() {
-    echo "/data/resources/actin_sync/clinical_curation"
+    echo "/data/actin/input/clinical_curation"
 }
 
 locate_actin_treatment_db_directory() {
@@ -343,11 +343,11 @@ locate_actin_treatment_db_directory() {
 }
 
 locate_actin_trial_config_directory() {
-    echo "/data/resources/actin_sync/trial_config"
+    echo "/data/actin/input/trial_config"
 }
 
 locate_actin_ctc_config_directory() {
-    echo "/data/resources/actin_sync/ctc_config"
+    echo "/data/actin/input/ctc_config"
 }
 
 locate_actin_minimal_molecular_json() {
