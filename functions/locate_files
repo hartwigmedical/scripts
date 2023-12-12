@@ -414,6 +414,10 @@ locate_actin_clinical_data_feed_bucket() {
     echo "gs://actin-prod-clinical-data-feed"
 }
 
+locate_actin_clinical_feed_input_bucket() {
+    echo "gs://actin-prod-clinical-feed-input"
+}
+
 locate_actin_clinical_curation_bucket() {
     echo "gs://actin-prod-clinical-curation-input"
 }
