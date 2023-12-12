@@ -598,10 +598,6 @@ locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed/latest"
 }
 
-locate_actin_clinical_input_feed_sync_directory() {
-    echo "/data/actin/input/clinical_feed"
-}
-
 locate_actin_curated_clinical_directory() {
     echo "/data/actin/clinical/curated"
 }
