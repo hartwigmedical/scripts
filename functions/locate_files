@@ -169,7 +169,7 @@ locate_pilot_ckb_importer() {
 }
 
 locate_prod_serve() {
-    echo "/data/tools/serve/1.12/serve.jar"
+    echo "/data/tools/serve/2.4.0/serve.jar"
 }
 
 locate_research_serve() {
