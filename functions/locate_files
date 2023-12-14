@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source actin_functions || exit 1
 
 ##################################### JARS #####################################
 
@@ -258,7 +259,7 @@ locate_biopsy_site_mapping_prod() {
     echo "/data/resources/ops/clinical_curation/biopsy_site_mapping.tsv"
 }
 
-############################# Patient report data ############################
+############################# Patient report data ##############################
 
 locate_germline_reporting_prod() {
     echo "/data/resources/ops/germline_reporting/germline_reporting.tsv"
@@ -458,14 +459,14 @@ locate_actin_analysis_bucket() {
     echo "gs://actin-prod-actin-analysis-output"
 }
 
-################################# ACTIN Data GCP ###################################
+############################## ACTIN Data GCP ##################################
 
 locate_next_orange_shared_data_uri_gcp() {
     local sample=$1 && shift
-    patient=$(echo ${sample} | head -c 12)
+    local patient=$(to_actin_patient ${sample})
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/orange"
-    final_uri="$(locate_next_indexed_uri_gcp ${base_uri})"
+    final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
         error "Could not determine next orange shared data uri for ${sample}"
@@ -478,7 +479,7 @@ locate_next_actin_shared_data_uri_gcp() {
     local patient$1 && shift
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/actin"
-    final_uri="$(locate_next_indexed_uri_gcp ${base_uri})"
+    final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
         error "Could not determine next actin shared data uri for ${sample}"
@@ -487,7 +488,7 @@ locate_next_actin_shared_data_uri_gcp() {
     echo ${final_uri}
 }
 
-locate_next_indexed_uri_gcp() {
+determine_next_indexed_uri_gcp() {
     local base_uri=$1 && shift
 
     final_uri=""
@@ -502,9 +503,61 @@ locate_next_indexed_uri_gcp() {
     echo "${final_uri}"
 }
 
+locate_actin_most_recent_orange_sample_gcp() {
+    local patient=$1 && shift
+
+    most_recent_sample=""
+    for i in {9..1}; do
+        sample="${patient}T${i}"
+        orange_report_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange/${sample}.orange.json"
+        if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
+            most_recent_sample=${sample}
+            break
+        fi
+    done
+
+    if [[ -z "${most_recent_sample}" ]]; then
+        most_recent_sample="${patient}T"
+    fi
+
+    echo "${most_recent_sample}"
+}
+
+locate_actin_orange_germline_json_gcp() {
+    local sample=$1 && shift
+    local patient=$(to_actin_patient ${sample})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange/${sample}.orange.json"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE germline json")
+}
+
+locate_actin_orange_germline_pdf_gcp() {
+    local sample=$1 && shift
+    local patient=$(to_actin_patient ${sample})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange/${sample}.orange.pdf"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE germline pdf")
+}
+
+locate_actin_orange_no_germline_json_gcp() {
+    local sample=$1 && shift
+    local patient=$(to_actin_patient ${sample})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange_no_germline/${sample}.orange.json"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline json")
+}
+
+locate_actin_orange_no_germline_pdf_gcp() {
+    local sample=$1 && shift
+    local patient=$(to_actin_patient ${sample})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange_no_germline/${sample}.orange.pdf"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline pdf")
+}
+
 locate_actin_clinical_json_for_sample_gcp() {
     local sample=$1 && shift
-    patient=$(echo ${sample} | head -c 12)
+    local patient=$(to_actin_patient ${sample})
 
     echo $(locate_actin_clinical_json_gcp ${patient})
 }
@@ -521,40 +574,6 @@ locate_actin_molecular_json_gcp() {
     local report_gsutil_uri="$(locate_actin_analysis_bucket)/molecular/${sample}.molecular.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "molecular json")
-}
-
-locate_actin_most_recent_orange_sample_gcp() {
-    local patient=$1 && shift
-
-    most_recent_sample=""
-    for i in {9..1}; do
-        sample="${patient}T${i}"
-        orange_report_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
-        if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
-            most_recent_sample=${sample}
-            break
-        fi
-    done
-
-    if [[ -z "${most_recent_sample}" ]]; then
-        most_recent_sample="${patient}T"
-    fi
-
-    echo "${most_recent_sample}"
-}
-
-locate_actin_orange_no_germline_json_gcp() {
-    local sample=$1 && shift
-    local report_gsutil_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.json"
-
-    echo $(locate_actin_blob ${report_gsutil_uri} "orange json")
-}
-
-locate_actin_orange_no_germline_pdf_gcp() {
-    local sample=$1 && shift
-    local report_gsutil_uri="$(locate_actin_analysis_bucket)/orange/${sample}.orange.pdf"
-
-    echo $(locate_actin_blob ${report_gsutil_uri} "orange pdf")
 }
 
 locate_actin_treatment_match_json_gcp() {
@@ -596,7 +615,7 @@ locate_actin_blob() {
     fi
 }
 
-################################# ACTIN Data VM Based ###################################
+############################## ACTIN Data VM Based #############################
 
 locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed/latest"
@@ -630,7 +649,7 @@ locate_actin_clinical_json_for_sample() {
         error "Unable to locate ACTIN clinical directory '${clinical_dir}'"
     fi
 
-    patient=$(echo ${sample} | head -c 12)
+    local patient=$(to_actin_patient ${sample})
     local clinical_json="${clinical_dir}/${patient}.clinical.json"
     if [[ ! -f ${clinical_json} ]]; then
         error "Could not locate clinical json for patient '${patient}' based on sample '${sample}'"
@@ -1922,7 +1941,7 @@ locate_virus_annotation_tsv() {
     echo ${virus_annotation_tsv}
 }
 
-################################ iClusion importer #################################
+############################## iClusion importer ###############################
 
 locate_pilot_iclusion_importer_trial_tsv() {
     echo "/data/resources/custom/iclusion/iclusion_trials_pilot.tsv"

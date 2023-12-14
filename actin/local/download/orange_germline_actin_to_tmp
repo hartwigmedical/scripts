@@ -9,12 +9,11 @@ if [[ -z "${sample}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-local_dir="${HOME}/hmf/tmp/orange_pilot"
+local_dir="${HOME}/hmf/tmp/orange_germline"
 if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-vm="$(pilot_actin_vm)"
-project="$(pilot_actin_project)"
+orange_report="$(locate_actin_orange_germline_pdf_gcp ${sample})"
 
-do_download_orange_actin_pilot_to_tmp ${sample} ${vm} ${project}
+gsutil cp ${orange_report} ${local_dir}

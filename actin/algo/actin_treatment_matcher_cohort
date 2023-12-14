@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source actin_functions || exit 1
 
 sample=$1 && shift
 
@@ -9,7 +10,7 @@ if [[ -z "${sample}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-patient=$(echo ${sample} | head -c 12)
+patient=$(to_actin_patient ${sample})
 clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
 molecular_json="$(locate_actin_cohort_molecular_directory ${sample})/${sample}.molecular.json"
 trial_database_directory="$(locate_actin_cohort_treatment_database_directory)"

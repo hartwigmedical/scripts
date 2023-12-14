@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+to_actin_patient() {
+    local sample=$1 && shift
+    local patient=$(echo ${sample} | head -c 12)
+
+    echo ${patient}
+}
