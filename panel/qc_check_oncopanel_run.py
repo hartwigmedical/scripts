@@ -883,7 +883,7 @@ def get_metadata(gcp_run_url: str) -> Metadata:
     tumor_barcode = metadata_json["tumor"]["barcode"]
 
     patient_reporter_data_json = json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
-    pathology_id = patient_reporter_data_json["pathologyNumber"]
+    pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else "NA"
     set_name = metadata_json["set"]
 
     api_json = json.loads(run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"]))
