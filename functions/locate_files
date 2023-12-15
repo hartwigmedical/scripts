@@ -435,14 +435,6 @@ locate_actin_ctc_config_bucket() {
     echo "gs://actin-prod-ctc-config-input"
 }
 
-locate_actin_evaluation_bucket() {
-    echo "gs://actin-prod-evaluation"
-}
-
-locate_actin_shared_reports_bucket() {
-    echo "gs://actin-prod-shared-reports"
-}
-
 locate_actin_shared_data_bucket() {
     echo "gs://actin-prod-shared-data"
 }
