@@ -883,18 +883,22 @@ def get_metadata(gcp_run_url: str) -> Metadata:
     tumor_barcode = metadata_json["tumor"]["barcode"]
 
     patient_reporter_data_json = json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
-    pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else "NA"
+    pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else "Not found"
     set_name = metadata_json["set"]
 
-    api_json = json.loads(run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"]))
-    finished_runs = [run_info for run_info in api_json if run_info["status"] == "Finished"]
-    if not finished_runs:
-        logging.warning(f"Could not find finished pipeline run for this set")
-        pipeline_version = "Not found"
+    api_output = run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"])
+    if api_output:
+        api_json = json.loads(api_output)
+        finished_runs = [run_info for run_info in api_json if run_info["status"] == "Finished"]
+        if not finished_runs:
+            logging.warning(f"Could not find finished pipeline run for this set")
+            pipeline_version = "Not found"
+        else:
+            if len(finished_runs) > 1:
+                logging.warning(f"Chose latest finished run for pipeline version for '{set_name}'")
+            pipeline_version = finished_runs[-1]["version"]
     else:
-        if len(finished_runs) > 1:
-            logging.warning(f"Chose latest finished run for pipeline version for '{set_name}'")
-        pipeline_version = finished_runs[-1]["version"]
+        pipeline_version = "Not found"
 
     return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version, gcp_run_url)
 
