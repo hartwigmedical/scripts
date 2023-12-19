@@ -416,11 +416,11 @@ locate_actin_clinical_data_feed_bucket() {
 }
 
 locate_actin_clinical_feed_input_bucket() {
-    echo "gs://actin-prod-clinical-feed-input"
+    echo "gs://actin-prod-clinical-pipeline-feed-input"
 }
 
 locate_actin_clinical_curation_bucket() {
-    echo "gs://actin-prod-clinical-curation-input"
+    echo "gs://actin-prod-clinical-pipeline-curation-input"
 }
 
 locate_actin_clinical_output_bucket() {
@@ -428,11 +428,11 @@ locate_actin_clinical_output_bucket() {
 }
 
 locate_actin_trial_config_bucket() {
-    echo "gs://actin-prod-trial-config-input"
+    echo "gs://actin-prod-trial-pipeline-trial-input"
 }
 
 locate_actin_ctc_config_bucket() {
-    echo "gs://actin-prod-ctc-config-input"
+    echo "gs://actin-prod-trial-pipeline-ctc-input"
 }
 
 locate_actin_shared_data_bucket() {
@@ -448,7 +448,7 @@ locate_actin_prod_data_bucket() {
 }
 
 locate_actin_analysis_bucket() {
-    echo "gs://actin-prod-actin-analysis-output"
+    echo "gs://actin-prod-analysis-pipeline-output"
 }
 
 ############################## ACTIN Data GCP ##################################
