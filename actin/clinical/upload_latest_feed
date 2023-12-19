@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
-gsutil cp /data/actin/clinical/input_feed/latest/*.tsv gs://actin-prod-clinical-feed-input/
-touch /data/actin/clinical/input_feed/latest/upload.complete
-gsutil cp /data/actin/clinical/input_feed/latest/upload.complete gs://actin-prod-clinical-feed-input/
+source locate_files || exit 1
+
+gsutil cp $(locate_actin_clinical_input_feed_directory)/*.tsv gs://$(locate_actin_clinical_feed_input_bucket)/
+touch $(locate_actin_clinical_input_feed_directory)/upload.complete
+gsutil cp $(locate_actin_clinical_input_feed_directory)/upload.complete gs://$(locate_actin_clinical_feed_input_bucket)/
