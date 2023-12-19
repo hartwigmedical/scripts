@@ -9,7 +9,7 @@ set=$1 && shift
 nextcloud_dir="STAGING/New-Reports-Viewing"
 
 bucket="gs://diagnostic-pipeline-output-prod-1"
-orange_dir="${bucket}/${set}/orange/"
+orange_dir="${bucket}/${set}/orange_no_germline/"
 
 temp_folder_path_file=$( pwd )"/temp_cp_orange_${set}"
 mkdir $temp_folder_path_file
