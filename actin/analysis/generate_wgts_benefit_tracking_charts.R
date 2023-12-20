@@ -12,10 +12,11 @@ Q4_2022 <- c(221001, 221231)
 Q1_2023 <- c(230101, 230331)
 Q2_2023 <- c(230401, 230630)
 Q3_2023 <- c(230701, 230930)
+Q4_2023 <- c(231001, 231231)
 
 #add new quartile
-names <- c("2023 Q3", "2023 Q2", "2023 Q1", "2022 Q4", "2022 Q3", "2022 Q2", "2022 Q1", "2021 Q4", "2021 Q3")
-quartiles <- list(Q3_2023, Q2_2023, Q1_2023, Q4_2022, Q3_2022, Q2_2022, Q1_2022, Q4_2021, Q3_2021)
+names <- c("2023 Q4", "2023 Q3", "2023 Q2", "2023 Q1", "2022 Q4", "2022 Q3", "2022 Q2", "2022 Q1", "2021 Q4", "2021 Q3")
+quartiles <- list(Q4_2023, Q3_2023, Q2_2023, Q1_2023, Q4_2022, Q3_2022, Q2_2022, Q1_2022, Q4_2021, Q3_2021)
 
 
 # Getting started ---------------------------------------------------------
@@ -45,11 +46,13 @@ total_nr_patients_value <- length(unique(total_nr_patients$X))
 
 pdf(file= paste0(wd,"LR_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5),mfrow=c(1,1))
-barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)), main = paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "))
+barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)))
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)), main = paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "), add=TRUE)
+barplot(as.matrix(LR_CUP), xlim = c(0,max(LR_CUP[1,])+max(LR_CUP[2,])+5), col=c("blue","red"), las=1, legend = c("LR", "CUP"), horiz = TRUE, args.legend = list(x ='topright', inset = c(-0.05,0.05)), add=TRUE)
 invisible(dev.off())
 
+noquote(paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "))
+noquote(paste0("In ", names[1], " ", LR_CUP[1,1] + LR_CUP[2,1], " WGTS analyses were done (", LR_CUP[1,1], " LR and ", LR_CUP[2,1], " CUP)"))
 
 # Sufficient tumor cells --------------------------------------------------
 suff_cells <- data.frame()
@@ -69,12 +72,14 @@ sufficient_nr <- rowMeans(suff_cells, 1)[1]
 
 pdf(file= paste0(wd,"sufficient_tumor_cells.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5)+.1)
-barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, main = paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGTS analysis"), xaxt = "n")
+barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, xaxt = "n")
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, main = paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGTS analysis"), add=TRUE, xaxt = "n")
+barplot(as.matrix(suff_cells), xlim = c(0,100), col=c("blue","red"), las=1, horiz = TRUE, add=TRUE, xaxt = "n")
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
+noquote(paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGTS analysis"))
+noquote(paste0("In ", names[1], ", ", round(suff_cells[1,1]), "% of biopsies contained sufficient tumor cells"))
 
 # Sufficient tumor cells LR --------------------------------------------------
 suff_cells_LR <- data.frame()
@@ -101,7 +106,6 @@ barplot(as.matrix(suff_cells_LR,1), xlim = c(0,100), col=c("blue","red"), las=1,
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
-
 # Sufficient tumor cells CUP --------------------------------------------------
 suff_cells_CUP <- data.frame()
 i <- 1
@@ -126,6 +130,7 @@ barplot(as.matrix(suff_cells_CUP,1), xlim = c(0,100), col=c("blue","red"), las=1
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
+noquote(paste0(round(rowMeans(suff_cells_LR)[1]), "% of LR biopsies contain sufficient tumor cells while for CUPs ", round(rowMeans(suff_cells_CUP)[1]), "% of biopsies are sufficient"))
 
 # TAT in calender days ---------------------------------------------------------------------
 tat_calender <- data.frame()
@@ -141,13 +146,15 @@ colnames(tat_calender) <- names
 average_tat <- mean(benefit_tracking_WGS$TAT...calendar.days.)
 
 pdf(file= paste0(wd,"TAT_calender_days.pdf"), width = 10, height = 7)
-barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", main = paste0("Average TAT (turnaround-time) in calendar days for WGS is ", average_tat, " days"))
+barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue")
 grid(nx=NA,ny=NULL,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", main = paste0("Average TAT (turnaround-time) in calendar days for WGS is ", average_tat, " days"), add=TRUE)
+barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", add=TRUE)
 invisible(dev.off())
 
 tat_calender_this_quartile <- tat_calender[1, 1]
 
+noquote(paste0("Average TAT (turnaround-time) in calendar days for WGS is ", round(average_tat,1), " days"))
+noquote(paste0("In ", names[1], " WGS TAT is ", round(tat_calender_this_quartile, 1), " days"))
 
 # WGS allowed therapy ----------------------------------------------
 allowed_therapy <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" , ])
@@ -163,6 +170,7 @@ pdf(file= paste0(wd,"WGS_allowed_therapy.pdf"), width = 10, height = 7)
 pie(slices, labels = lbls, col=c("red","blue"),main="Count of WGS allowed therapy?")
 invisible(dev.off())
 
+noquote(paste0(pct[1], "% of LR patients were considered eligible for a WGS-informed treatment."))
 
 # Patient got treated based on WGS biomarker ----------------------------------------------
 yes_treated_based_on_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "Yes" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
@@ -180,6 +188,8 @@ pdf(file= paste0(wd,"treated_based_on_WGS.pdf"), width = 10, height = 7)
 pie(slices,labels = lbls, col=c("lightgreen","blue","orange","red"),main="Patient got treated based on WGS biomarker?")
 invisible(dev.off())
 
+noquote(paste0(pct[1] + pct[3] + pct[4], "% of this group started (yes) or plans to start (?/unknown) a WGS-informed treatment"))
+
 
 # WGS impact category (MIGHT NEED ADJUSTMENTS IF NEW CATEGORIES ARE ADDED)  ----------------------------------------------
 impact_category <- data.frame()
@@ -189,7 +199,7 @@ non_WGS_pref <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.categ
 not_meet_req <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient did not meet non-WGS study requirements" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 not_fit <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 not_willing <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Patient not willing to take treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want experimental treatment" | benefit_tracking_WGS$WGS.impact.category == "Patient decided not to want to start experimental treatment / not fit enough" | benefit_tracking_WGS$WGS.impact.category == "Patient did not want to receive treatment based off unravelled tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
-soc_new_diag <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for uncovered tumor type" | benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for new diagnosis based off WGS" | benefit_tracking_WGS$WGS.impact.category == "Treased using SOC for uncovered tumor type" ) & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
+soc_new_diag <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for uncovered tumor type" | benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for non-WGS informed tumor type" | benefit_tracking_WGS$WGS.impact.category == "Confirmation of tumor origin based on WGS" | benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for new diagnosis based off WGS") & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 not_effective <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "WGS-informed treatment not expected to be effective" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
 
 impact_category[1,1] <- no_slots
@@ -214,7 +224,8 @@ lr_with_biomarker_not_treat <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WG
 lr_with_biomarker_not_treated_perc <- (lr_with_biomarker_not_treat / lr_with_biomarker) * 100
 lr_with_biomarker_not_treated_not_fit_perc <- (nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment", ]) / lr_with_biomarker_not_treat) * 100
 
-
+noquote(paste0(round(lr_with_biomarker_not_treat), "% of LR patients with a WGS-biomarker did not get WGS-informed treatment"))
+noquote(paste0(round(lr_with_biomarker_not_treated_not_fit_perc), "% of this group of patients were not fit enough anymore for treatment"))
 
 # WGS for CUP patients ----------------------------------------------
 WGS_did_not_impacted_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "No" & benefit_tracking_WGS$Category == "CUP", ])
@@ -235,9 +246,10 @@ lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"WGS_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,7,5,5))
-pie(slices,labels = lbls, col=c("orange","blue","red"),main = paste0("For ", nr_confirmation_or_diagnosis, "% CUP patients WGS led to confirmation (", nr_confirmation, "%) or actual diagnosis (", nr_actual_diagnosis, "%)"))
+pie(slices,labels = lbls, col=c("orange","blue","red"))
 invisible(dev.off())
 
+noquote(paste0("For ", nr_confirmation_or_diagnosis, "% CUP patients WGS led to confirmation (", nr_confirmation, "%) or actual diagnosis (", nr_actual_diagnosis, "%)"))
 
 # WTS CUP ----------------------------------------------
 WTS_CUP_improved_prediction <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
@@ -257,7 +269,7 @@ invisible(dev.off())
 
 WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
 
-noquote(paste0("WTS improved prediction for CUP percentage: ", round(WTS_CUP_improved_prediction_perc,1)))
+noquote(paste0("For ", round(WTS_CUP_improved_prediction_perc), "% of CUPs, addition of WTS yields a high confidence prediction while WGS alone does not"))
 
 # WTS LR ----------------------------------------------
 WTS_LR_potential_actionable <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
@@ -283,6 +295,5 @@ WTS_succeeded_perc <- (WTS_succeeded / (WTS_not_succeeded + WTS_succeeded))*100
 
 WTS_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" ) , ]) / WTS_succeeded * 100
 
-noquote(paste0("WTS found potentially actionable biomarker for LR percentage: ", round(WTS_LR_potentially_actionable_perc,1)))
-noquote(paste0("WTS LR+CUP succeeded percentage: ", round(WTS_succeeded_perc,1)))
-noquote(paste0("WTS LR+CUP hypothetical benefit percentage: ", round(WTS_hypoth_benefit_perc,1)))
+noquote(paste0("For ", round(WTS_LR_potentially_actionable_perc), "% of LRs, WTS discovers a potentially actionable biomarker not found by WGS"))
+noquote(paste0("WTS succeeds for ", round(WTS_succeeded_perc), "% of biopsies, offering hypothetical benefit in ", round(WTS_hypoth_benefit_perc), "% in case of successful sequencing"))
