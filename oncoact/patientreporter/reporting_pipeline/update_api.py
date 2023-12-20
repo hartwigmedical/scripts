@@ -13,8 +13,7 @@ def main():
     args = argument_parser.parse_args()
 
     ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                        notify_users=args.notify_users,
-                                                                                        panel=args.panel)
+                                                                                        notify_users=args.notify_users)
 
 class ReportSharer:
 
