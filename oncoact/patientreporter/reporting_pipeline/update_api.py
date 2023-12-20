@@ -48,3 +48,6 @@ class ReportSharer:
                                                        notify_users=notify_users)
         print("API response:", response)
         print("Done!")
+
+if __name__ == "__main__":
+    main()
