@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 startDate=$(date -d "-7 days" '+%Y-%m-%d')
-endDate=$(date '+%Y-%m-%d')
+endDate=$(date -d "tomorrow" '+%Y-%m-%d')
 
 echo "Reports shared between ${startDate} and ${endDate} with standard data sharing:"
 echo -e "Sample ID\tReporting ID"
