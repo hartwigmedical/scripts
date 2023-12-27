@@ -40,6 +40,6 @@ echo -e "sample\tsample type\tdate\tprep status" > ${outPrepFailFile}
 lama statuses | cut -f1,2,5,7 | grep FAILED_FINAL | grep TUMOR_TISSUE | awk -F "\t" -v sDate="$startDate" -v eDate="$endDate" '$3 >= sDate && $3 <= eDate' >> ${outPrepFailFile}
 
 info "Generate report"
-Rscript -e "rmarkdown::render('${scriptdir}/generate_qc_trends_report.Rmd', output_file='${outReportFile}', params=list(data_file='${outDataFile}', iso_fail_file='${outIsoFailFile}', prep_fail_file='${outPrepFailFile}'))" || die "Could not generate report"
+Rscript -e "rmarkdown::render('${scriptdir}/generate_qc_trends_report.Rmd', intermediates_dir='/data/tmp/', output_file='${outReportFile}', params=list(data_file='${outDataFile}', iso_fail_file='${outIsoFailFile}', prep_fail_file='${outPrepFailFile}'))" || die "Could not generate report"
 
 rm /data/tmp/HMF-FOR-096.csv
