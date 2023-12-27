@@ -29,7 +29,7 @@ outIsoFailFile=${outDir}/RETORT_iso_fail_${startDate}_${endDate}_${today}
 outPrepFailFile=${outDir}/RETORT_prep_fail_${startDate}_${endDate}_${today}
 outReportFile="${outDir}/RETORT_report_${startDate}_${endDate}_${today}.html"
 
-scriptdir="/data/repos/scripts/qctrending"
+scriptdir=$(dirname $(realpath "$0"))
 
 info "Gather data"
 gsutil cp gs://hmf-ops-data/qctrending/HMF-FOR-096.csv /data/tmp/HMF-FOR-096.csv || die "Could not fetch GIAB data"
