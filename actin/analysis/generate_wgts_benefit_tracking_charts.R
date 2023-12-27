@@ -259,7 +259,7 @@ lr_with_biomarker_not_treat <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WG
 lr_with_biomarker_not_treated_perc <- (lr_with_biomarker_not_treat / lr_with_biomarker) * 100
 lr_with_biomarker_not_treated_not_fit_perc <- (nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment", ]) / lr_with_biomarker_not_treat) * 100
 
-noquote(paste0(round(lr_with_biomarker_not_treat), "% of LR patients with a WGS-biomarker did not get WGS-informed treatment"))
+noquote(paste0(round(lr_with_biomarker_not_treated_perc), "% of LR patients with a WGS-biomarker did not get WGS-informed treatment"))
 noquote(paste0(round(lr_with_biomarker_not_treated_not_fit_perc), "% of this group of patients were not fit enough anymore for treatment"))
 
 # WGS for CUP patients ----------------------------------------------
