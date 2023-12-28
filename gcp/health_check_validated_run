@@ -13,7 +13,7 @@ exc_buckets="research-pipeline-output-prod"
 runs_json=$(
   hmf_api_get "runs?set_name=${set}" | \
   jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" --arg contexts "${exc_context}" \
-  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not) | select(.context | test($contexts)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
 bucket=$( echo $runs_json | jq -r '.[].bucket' )
