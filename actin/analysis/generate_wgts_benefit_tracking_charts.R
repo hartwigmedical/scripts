@@ -257,13 +257,14 @@ if (soc_treatment>0) {
   impact_category_columns <- append(impact_category_columns, "Treated using SOC for new diagnosis based on WGS")
 }
 
-if (sum(no_slots,non_WGS_pref, not_fit, not_willing, not_effective, not_meeting_criteria, soc_treatment) != no_treated_based_on_biomarker) {
-  noquote (" - WARN! - Not all categories could be assigned to the WGS impact category plots!")
+colnames(impact_category) <- impact_category_columns
+
+# Check if category adjustments are needed
+if (sum(no_slots, non_WGS_pref, not_fit, not_willing, not_effective, not_meeting_criteria, soc_treatment) != no_treated_based_on_biomarker) {
+  noquote ("- !WARN! - Not all categories could be assigned to the WGS impact category plots!")
 } else {
   noquote ("- INFO - All categories are assigned, no need to add new categories to WGS_impact_category.pdf")
 }
-
-colnames(impact_category) <- impact_category_columns
 
 pdf(file= paste0(wd,"WGS_impact_category.pdf"), width = 20, height = 7)
 par(mar=c(5,25,5,5))
@@ -282,30 +283,34 @@ noquote(paste0(round(lr_with_biomarker_not_treated_perc), "% of LR patients with
 noquote(paste0(round(lr_with_biomarker_not_treated_not_fit_perc), "% of this group of patients were not fit enough anymore for treatment"))
 noquote("")
 
-# WGS for CUP patients ----------------------------------------------
-WGS_did_not_impacted_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "No" & benefit_tracking_WGS$Category == "CUP", ])
-biopsy_contained_insuff <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "No" & benefit_tracking_WGS$Category == "CUP", ])
-confirmation <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to.confirmation.of.uncertain.diagnosis. == "Yes" & benefit_tracking_WGS$Category == "CUP", ])
-actual_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "Yes" & benefit_tracking_WGS$Category == "CUP", ])
-confirmation_or_change_diagnosis <- nrow(benefit_tracking_WGS[(benefit_tracking_WGS$WGS.led.to.confirmation.of.uncertain.diagnosis. == "Yes" | benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "Yes") & benefit_tracking_WGS$Category == "CUP", ])
-slices <- c(WGS_did_not_impacted_diagnosis, biopsy_contained_insuff, confirmation_or_change_diagnosis)
+# CUP patients: WGS ----------------------------------------------
+cup_biopsy_contained_insuff_cells <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "No" & benefit_tracking_WGS$Category == "CUP", ])
+cup_no_impact_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "No" & benefit_tracking_WGS$WGS.led.to.confirmation.of.uncertain.diagnosis. != "Yes" & benefit_tracking_WGS$Category == "CUP", ])
+cup_confirmation_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "No" & benefit_tracking_WGS$WGS.led.to.confirmation.of.uncertain.diagnosis. == "Yes" & benefit_tracking_WGS$Category == "CUP", ])
+cup_actual_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "Yes" & benefit_tracking_WGS$Category == "CUP", ])
+cup_unknown_impact_diagnosis <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.led.to..change.of..diagnosis. == "Unknown" & benefit_tracking_WGS$Category == "CUP", ])
 
-nr_confirmation_or_diagnosis <- round(confirmation_or_change_diagnosis / sum(slices)*100)
-nr_confirmation <- round(confirmation / (confirmation + actual_diagnosis)*100)
-nr_actual_diagnosis <- round(actual_diagnosis / (confirmation + actual_diagnosis)*100)
+if (sum(cup_biopsy_contained_insuff_cells, cup_no_impact_diagnosis, cup_confirmation_diagnosis, cup_unknown_impact_diagnosis, cup_actual_diagnosis) != total_nr_biopsies_CUP) {
+  noquote ("- !WARN! - Not all patients could be assigned to the CUP diagnosis categories!")
+} else {
+  noquote ("- INFO - All patients could be assigned to the CUP diagnosis categories")
+}
 
-lbls <- c("WGS did not impact diagnosis:", "Biopsy contained insufficient tumor cells:", "WGS led to confirmation or change of diagnosis:")
+slices <- c(cup_no_impact_diagnosis, cup_biopsy_contained_insuff_cells, cup_confirmation_diagnosis, cup_actual_diagnosis, cup_unknown_impact_diagnosis)
+lbls <- c("WGS did not impact diagnosis:", "Biopsy contained insufficient tumor cells:", "WGS led to confirmation of diagnosis:", "WGS led to actual diagnosis:", "Unknown:")
 pct <- round(slices/sum(slices)*100,1)
-lbls <- paste(lbls, pct)
-lbls <- paste0(lbls,"%")
+lbls <- paste(lbls, round(pct))
+lbls <- paste0(lbls, "%")
 
 pdf(file= paste0(wd,"WGS_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,7,5,5))
-pie(slices,labels = lbls, col=c("orange","blue","red"))
+pie(slices,labels = lbls, col=c("red","blue","lightgreen", "darkgreen", "grey"))
 invisible(dev.off())
 
+pct_confirmation_or_diagnosis <- sum(round(pct[3]), round(pct[4]))
+
 noquote("WGS_CUP.pdf")
-noquote(paste0("For ", nr_confirmation_or_diagnosis, "% CUP patients WGS led to confirmation (", nr_confirmation, "%) or actual diagnosis (", nr_actual_diagnosis, "%)"))
+noquote(paste0("For ", pct_confirmation_or_diagnosis, "% of all CUP patients WGS led to confirmation or actual diagnosis"))
 noquote("")
 
 # WTS CUP ----------------------------------------------
