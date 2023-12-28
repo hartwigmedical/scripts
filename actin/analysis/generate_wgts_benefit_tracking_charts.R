@@ -169,10 +169,10 @@ tat_calendar_this_quartile <- tat_calendar[1, 1]
 
 noquote("TAT_calendar_days.pdf")
 noquote(paste0("Average TAT (turnaround-time) in calendar days for WGS is ", round(average_tat,1), " days"))
-noquote(paste0("In ", names[1], " WGS TAT is ", round(tat_calendar_this_quartile, 1), " days"))
+noquote(paste0("In ", names[1], ", WGS average TAT is ", round(tat_calendar_this_quartile, 1), " days"))
 noquote("")
 
-# WGS allowed therapy ----------------------------------------------
+# LR patients: WGS allowed therapy? ----------------------------------------------
 allowed_therapy <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" , ])
 non_allowed_therapy <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "No" & benefit_tracking_WGS$Category == "LR", ])
 slices <- c(allowed_therapy, non_allowed_therapy)
@@ -187,7 +187,7 @@ pie(slices, labels = lbls, col=c("red","blue"),main="Count of WGS allowed therap
 invisible(dev.off())
 
 noquote("WGS_allowed_therapy.pdf")
-noquote(paste0(pct[1], "% of LR patients were considered eligible for a WGS-informed treatment."))
+noquote(paste0(pct[1], "% of LR patients with successful WGS were considered eligible for a WGS-informed treatment."))
 noquote("")
 
 # LR patients: who got actually treated based on WGS biomarker? ----------------------------------------------
@@ -207,10 +207,10 @@ pie(slices,labels = lbls, col=c("lightgreen","blue","orange","red"),main="Patien
 invisible(dev.off())
 
 noquote("treated_based_on_WGS.pdf")
-noquote(paste0(pct[1] + pct[3] + pct[4], "% of this group started (yes) or potentially started/starting (unknown) a WGS-informed treatment"))
+noquote(paste0(round(pct[1] + pct[3] + pct[4]), "% of this group actually started (yes) or potentially started/starting (unknown) a WGS-informed treatment"))
 noquote("")
 
-# Impact category for LR patients NOT participating (MIGHT NEED ADJUSTMENTS IF NEW CATEGORIES ARE ADDED)  ----------------------------------------------
+# LR patients: Impact category for patients NOT participating (MIGHT NEED ADJUSTMENTS IF NEW CATEGORIES ARE ADDED)  ----------------------------------------------
 impact_category <- data.frame()
 impact_category_columns <- c()
 
@@ -221,7 +221,6 @@ not_willing <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.categor
 not_effective <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "WGS-informed treatment not expected to be effective" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$Category == "LR", ])
 not_meeting_criteria <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Does not meet all trial criteria for WGS informed treatment" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes"  & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$Category == "LR", ])
 soc_treatment <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for new diagnosis based on WGS" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes"  & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$Category == "LR", ])
-soc_treatment_cup <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.impact.category == "Treated using SOC for unraveled diagnosis based on WGS" & benefit_tracking_WGS$WGS.allowed.therapy. == "Yes"  & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$Category == "LR", ])
 
 if (no_slots>0) {
   impact_category[1,'no_slots'] <- no_slots
@@ -258,11 +257,10 @@ if (soc_treatment>0) {
   impact_category_columns <- append(impact_category_columns, "Treated using SOC for new diagnosis based on WGS")
 }
 
-# Should be 0 because category belongs to CUP
-if (soc_treatment_cup>0) {
-  impact_category['soc_treatment_cup'] <- soc_treatment_cup
-  impact_category_columns <- append(impact_category_columns, "Treated using SOC for WGS-unraveled tumor type")
-  noquote("- WARN! - An invalid category has been added to the WGS impact category plot!")
+if (sum(no_slots,non_WGS_pref, not_fit, not_willing, not_effective, not_meeting_criteria, soc_treatment) != no_treated_based_on_biomarker) {
+  noquote (" - WARN! - Not all categories could be assigned to the WGS impact category plots!")
+} else {
+  noquote ("- INFO - All categories are assigned, no need to add new categories to WGS_impact_category.pdf")
 }
 
 colnames(impact_category) <- impact_category_columns
@@ -275,9 +273,9 @@ barplot(as.matrix(rev(impact_category)), xlim = c(0,35), col = "blue", xlab = "C
 invisible(dev.off())
 
 lr_with_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
-lr_with_biomarker_not_treat <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No", ])
-lr_with_biomarker_not_treated_perc <- (lr_with_biomarker_not_treat / lr_with_biomarker) * 100
-lr_with_biomarker_not_treated_not_fit_perc <- (nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment", ]) / lr_with_biomarker_not_treat) * 100
+lr_with_biomarker_not_treated <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No", ])
+lr_with_biomarker_not_treated_perc <- (lr_with_biomarker_not_treated / lr_with_biomarker) * 100
+lr_with_biomarker_not_treated_not_fit_perc <- (nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$Patient.got.treated.based.on.WGS.biomarker. == "No" & benefit_tracking_WGS$WGS.impact.category == "Patient not fit enough for treatment", ]) / lr_with_biomarker_not_treated) * 100
 
 noquote("WGS_impact_category.pdf")
 noquote(paste0(round(lr_with_biomarker_not_treated_perc), "% of LR patients with a WGS-biomarker did not get WGS-informed treatment"))
