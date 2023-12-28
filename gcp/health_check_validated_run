@@ -12,7 +12,7 @@ exc_context="Invalidated"
 exc_buckets="research-pipeline-output-prod"
 runs_json=$(
   hmf_api_get "runs?set_name=${set}" | \
-  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" contexts "${exc_context}" \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" --arg contexts "${exc_context}" \
   '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
