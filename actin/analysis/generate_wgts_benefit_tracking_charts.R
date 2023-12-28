@@ -313,29 +313,7 @@ noquote("WGS_CUP.pdf")
 noquote(paste0("For ", pct_confirmation_or_diagnosis, "% of all CUP patients WGS led to confirmation or actual diagnosis"))
 noquote("")
 
-# WTS CUP ----------------------------------------------
-WTS_CUP_improved_prediction <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
-nr_of_cups <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
-
-WTS_CUP <- data.frame()
-WTS_CUP[1,1] <- WTS_CUP_improved_prediction / nr_of_cups * 100
-WTS_CUP[2,1] <- 100 - WTS_CUP_improved_prediction / nr_of_cups * 100
-colnames(WTS_CUP) <- ""
-
-pdf(file=paste0(wd,"WTS_CUP.pdf"), width = 10, height = 3)
-barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), xaxt = "n", main = "CUPs where WTS leads to high confidence CUPPA prediction")
-grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), main = "CUPs where WTS leads to high confidence CUPPA prediction", add=TRUE, xaxt = "n")
-axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
-invisible(dev.off())
-
-WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
-
-noquote("WTS_CUP.pdf")
-noquote(paste0("For ", round(WTS_CUP_improved_prediction_perc), "% of CUPs, addition of WTS yields a high confidence prediction while WGS alone does not"))
-noquote("")
-
-# WTS LR ----------------------------------------------
+# LR patients: WTS ----------------------------------------------
 WTS_LR_potential_actionable <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
 nr_of_lr <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
 
@@ -362,4 +340,26 @@ WTS_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.pr
 noquote("WTS_LR.pdf")
 noquote(paste0("For ", round(WTS_LR_potentially_actionable_perc), "% of LRs, WTS discovers a potentially actionable biomarker not found by WGS"))
 noquote(paste0("WTS succeeds for ", round(WTS_succeeded_perc), "% of biopsies, offering hypothetical benefit in ", round(WTS_hypoth_benefit_perc), "% in case of successful sequencing"))
+noquote("")
+
+# CUP patients: WTS ----------------------------------------------
+WTS_CUP_improved_prediction <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
+nr_of_cups <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
+
+WTS_CUP <- data.frame()
+WTS_CUP[1,1] <- WTS_CUP_improved_prediction / nr_of_cups * 100
+WTS_CUP[2,1] <- 100 - WTS_CUP_improved_prediction / nr_of_cups * 100
+colnames(WTS_CUP) <- ""
+
+pdf(file=paste0(wd,"WTS_CUP.pdf"), width = 10, height = 3)
+barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), xaxt = "n", main = "CUPs where WTS leads to high confidence CUPPA prediction")
+grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
+barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c("Yes", "No"), args.legend = list(x ='right', inset = c(1,1)), main = "CUPs where WTS leads to high confidence CUPPA prediction", add=TRUE, xaxt = "n")
+axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
+invisible(dev.off())
+
+WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
+
+noquote("WTS_CUP.pdf")
+noquote(paste0("For ", round(WTS_CUP_improved_prediction_perc), "% of CUPs, addition of WTS yields a high confidence prediction while WGS alone does not"))
 noquote("")
