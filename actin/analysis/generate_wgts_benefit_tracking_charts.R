@@ -27,7 +27,7 @@ benefit_tracking_WGS <- read.table(file=filename_WGS, sep = '\t', header = TRUE)
 benefit_tracking_WTS <- read.table(file=filename_WTS, sep = '\t', header = TRUE)
 
 
-# LR/CUP ------------------------------------------------------------------
+# LR/CUP patients: Nr of WGS analyses  ------------------------------------------------------------------
 LR_CUP <- data.frame()
 i <- 1
 
@@ -56,7 +56,7 @@ noquote(paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_
 noquote(paste0("In ", names[1], ", ", LR_CUP[1,1] + LR_CUP[2,1], " WGS analyses were reported (", LR_CUP[1,1], " LR and ", LR_CUP[2,1], " CUP)"))
 noquote("")
 
-# Sufficient tumor cells --------------------------------------------------
+# LR & CUP patients: Sufficient tumor cells --------------------------------------------------
 suff_cells <- data.frame()
 i <- 1
 
@@ -86,7 +86,7 @@ noquote(paste0("Overall, ", round(sufficient_pct_total), "% of biopsies contain 
 noquote(paste0("In ", names[1], ", ", round(suff_cells[1,1]), "% of biopsies contained sufficient tumor cells"))
 noquote("")
 
-# Sufficient tumor cells LR --------------------------------------------------
+# LR patients: Sufficient tumor cells --------------------------------------------------
 suff_cells_LR <- data.frame()
 i <- 1
 
@@ -116,7 +116,7 @@ noquote(paste0("Overall, ", round(sufficient_pct_LR_total), "% of biopsies conta
 noquote(paste0("In ", names[1], ", " , round(suff_cells_LR[1,1]), "% of biopsies contain sufficient tumor cells for WGS analysis for LR"))
 noquote("")
 
-# Sufficient tumor cells CUP --------------------------------------------------
+# CUP patients: Sufficient tumor cells --------------------------------------------------
 suff_cells_CUP <- data.frame()
 i <- 1
 
