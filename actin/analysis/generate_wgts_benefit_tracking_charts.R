@@ -53,7 +53,7 @@ invisible(dev.off())
 
 noquote("LR_CUP.pdf")
 noquote(paste0("Overall, ", total_nr_biopsies, " biopsies (", total_nr_biopsies_LR, " LR, ", total_nr_biopsies_CUP, " CUP) for ", total_nr_patients_value, " patients have been evaluated in ACTIN "))
-noquote(paste0("In ", names[1], ", ", LR_CUP[1,1] + LR_CUP[2,1], " WGS analyses were initiated (", LR_CUP[1,1], " LR and ", LR_CUP[2,1], " CUP)"))
+noquote(paste0("In ", names[1], ", ", LR_CUP[1,1] + LR_CUP[2,1], " WGS analyses were reported (", LR_CUP[1,1], " LR and ", LR_CUP[2,1], " CUP)"))
 noquote("")
 
 # Sufficient tumor cells --------------------------------------------------
@@ -70,7 +70,8 @@ for (x in quartiles){
 }
 colnames(suff_cells) <- names
 
-sufficient_nr <- rowMeans(suff_cells, 1)[1]
+sufficient_nr_total <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.performed.successfully. == "Yes", ])
+sufficient_pct_total <- sufficient_nr_total/total_nr_biopsies*100
 
 pdf(file= paste0(wd,"sufficient_tumor_cells.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5)+.1)
@@ -81,7 +82,7 @@ axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
 noquote("sufficient_tumor_cells.pdf")
-noquote(paste0("Overall, ", round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGTS analysis"))
+noquote(paste0("Overall, ", round(sufficient_pct_total), "% of biopsies contain sufficient tumor cells for WGTS analysis"))
 noquote(paste0("In ", names[1], ", ", round(suff_cells[1,1]), "% of biopsies contained sufficient tumor cells"))
 noquote("")
 
@@ -99,8 +100,8 @@ for (x in quartiles){
 }
 colnames(suff_cells_LR) <- names
 
-sufficient_nr <- rowMeans(suff_cells_LR, 1)[1]
-sufficient_nr_this_quartile <- suff_cells_LR[1, 1]
+sufficient_nr_LR_total <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "LR" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes", ])
+sufficient_pct_LR_total <- sufficient_nr_LR_total/total_nr_biopsies_LR*100
 
 pdf(file= paste0(wd,"sufficient_tumor_cells_LR.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5)+.1)
@@ -111,8 +112,8 @@ axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
 noquote("sufficient_tumor_cells_LR.pdf")
-noquote(paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGS analysis for LR"))
-noquote(paste0("In ", names[1], ", " ,round(sufficient_nr_this_quartile), "% of biopsies contain sufficient tumor cells for WGS analysis for LR"))
+noquote(paste0("Overall, ", round(sufficient_pct_LR_total), "% of biopsies contain sufficient tumor cells for WGS analysis for LR"))
+noquote(paste0("In ", names[1], ", " , round(suff_cells_LR[1,1]), "% of biopsies contain sufficient tumor cells for WGS analysis for LR"))
 noquote("")
 
 # Sufficient tumor cells CUP --------------------------------------------------
@@ -129,8 +130,8 @@ for (x in quartiles){
 }
 colnames(suff_cells_CUP) <- names
 
-sufficient_nr <- rowMeans(suff_cells_CUP, 1)[1]
-sufficient_nr_this_quartile<- suff_cells_CUP[1, 1]
+sufficient_nr_CUP_total <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$Category == "CUP" & benefit_tracking_WGS$WGS.performed.successfully. == "Yes", ])
+sufficient_pct_CUP_total <- sufficient_nr_CUP_total/total_nr_biopsies_CUP*100
 
 pdf(file= paste0(wd,"sufficient_tumor_cells_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5)+.1)
@@ -141,10 +142,9 @@ axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
 noquote("sufficient_tumor_cells_CUP.pdf")
-noquote(paste0(round(sufficient_nr), "% of biopsies contain sufficient tumor cells for WGS analysis for CUP"))
-noquote(paste0("In ", names[1], ", " ,round(sufficient_nr_this_quartile), "% of biopsies contain sufficient tumor cells for WGS analysis for CUP"))
+noquote(paste0("Overall, ", round(sufficient_pct_CUP_total), "% of biopsies contain sufficient tumor cells for WGS analysis for CUP"))
+noquote(paste0("In ", names[1], ", " ,round(suff_cells_CUP[1,1]), "% of biopsies contain sufficient tumor cells for WGS analysis for CUP"))
 noquote("")
-
 
 # TAT in calender days ---------------------------------------------------------------------
 tat_calender <- data.frame()
