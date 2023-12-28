@@ -8,12 +8,12 @@ set=$1 && shift
 
 #Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets})
 inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
-exc_context="Invalidated"
+exc_status="Invalidated"
 exc_buckets="research-pipeline-output-prod"
 runs_json=$(
   hmf_api_get "runs?set_name=${set}" | \
-  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" --arg contexts "${exc_context}" \
-  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not) | select(.context | test($contexts)|not)]'
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" --arg status "${exc_context}" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not) | select(.status | test($status)|not)]'
 )
 run_count=$(jq 'length' <<< "${runs_json}")
 bucket=$( echo $runs_json | jq -r '.[].bucket' )
