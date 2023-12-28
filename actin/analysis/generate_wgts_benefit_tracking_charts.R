@@ -146,30 +146,30 @@ noquote(paste0("Overall, ", round(sufficient_pct_CUP_total), "% of biopsies cont
 noquote(paste0("In ", names[1], ", " ,round(suff_cells_CUP[1,1]), "% of biopsies contain sufficient tumor cells for WGS analysis for CUP"))
 noquote("")
 
-# TAT in calender days ---------------------------------------------------------------------
-tat_calender <- data.frame()
+# TAT in calendar days ---------------------------------------------------------------------
+tat_calendar <- data.frame()
 i <- 1
 
 for (x in quartiles) {
   tat <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= x[2] & benefit_tracking_WGS$WGS.report.date >= x[1] & !is.nan(benefit_tracking_WGS$WGS.report.date), select=TAT...calendar.days.)
-  tat_calender[1,i] <- mean(tat$TAT...calendar.days.)
+  tat_calendar[1,i] <- mean(tat$TAT...calendar.days.)
   i <- i+1
 }
-colnames(tat_calender) <- names
+colnames(tat_calendar) <- names
 
 average_tat <- mean(benefit_tracking_WGS$TAT...calendar.days.)
 
-pdf(file= paste0(wd,"TAT_calender_days.pdf"), width = 10, height = 7)
-barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue")
+pdf(file= paste0(wd,"TAT_calendar_days.pdf"), width = 10, height = 7)
+barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue")
 grid(nx=NA,ny=NULL,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(tat_calender)), ylab = "TAT calender days", ylim = c(0,max(tat_calender)+1), col = "blue", add=TRUE)
+barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue", add=TRUE)
 invisible(dev.off())
 
-tat_calender_this_quartile <- tat_calender[1, 1]
+tat_calendar_this_quartile <- tat_calendar[1, 1]
 
-noquote("TAT_calender_days.pdf")
+noquote("TAT_calendar_days.pdf")
 noquote(paste0("Average TAT (turnaround-time) in calendar days for WGS is ", round(average_tat,1), " days"))
-noquote(paste0("In ", names[1], " WGS TAT is ", round(tat_calender_this_quartile, 1), " days"))
+noquote(paste0("In ", names[1], " WGS TAT is ", round(tat_calendar_this_quartile, 1), " days"))
 noquote("")
 
 # WGS allowed therapy ----------------------------------------------
