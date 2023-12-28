@@ -18,7 +18,7 @@ runs_json=$(
 run_count=$(jq 'length' <<< "${runs_json}")
 bucket=$( echo $runs_json | jq -r '.[].bucket' )
 
-[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+[[ "${run_count}" -gt 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
 
 if [[ ${run_count} == 0 ]]; then
     warn "No run was found for ${set} on gcp."
