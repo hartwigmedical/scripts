@@ -314,12 +314,12 @@ noquote(paste0("For ", pct_confirmation_or_diagnosis, "% of all CUP patients WGS
 noquote("")
 
 # LR patients: WTS ----------------------------------------------
-WTS_LR_potential_actionable <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
-nr_of_lr <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
+wts_lr_sufficient_rna <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
+wts_lr_potentially_actionable_and_sufficient_rna <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" & benefit_tracking_WTS$Category == "LR", ])
 
 WTS_LR <- data.frame()
-WTS_LR[1,1] <- WTS_LR_potential_actionable / nr_of_lr * 100
-WTS_LR[2,1] <- 100 - WTS_LR_potential_actionable / nr_of_lr * 100
+WTS_LR[1,1] <- wts_lr_potentially_actionable_and_sufficient_rna / wts_lr_sufficient_rna * 100
+WTS_LR[2,1] <- 100 - wts_lr_potentially_actionable_and_sufficient_rna / wts_lr_sufficient_rna * 100
 colnames(WTS_LR) <- ""
 
 pdf(file=paste0(wd,"WTS_LR.pdf"), width = 10, height = 3)
@@ -329,26 +329,19 @@ barplot(as.matrix(WTS_LR), col=c("blue","red"), las=1, horiz = TRUE, legend = c(
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
-WTS_LR_potentially_actionable_perc <- WTS_LR_potential_actionable / nr_of_lr * 100
-
-WTS_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes", ])
-WTS_not_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "No", ])
-WTS_succeeded_perc <- (WTS_succeeded / (WTS_not_succeeded + WTS_succeeded))*100
-
-WTS_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" ) , ]) / WTS_succeeded * 100
+pct_wts_lr_potentially_actionable_and_sufficient_rna <- wts_lr_potentially_actionable_and_sufficient_rna / wts_lr_sufficient_rna * 100
 
 noquote("WTS_LR.pdf")
-noquote(paste0("For ", round(WTS_LR_potentially_actionable_perc), "% of LRs, WTS discovers a potentially actionable biomarker not found by WGS"))
-noquote(paste0("WTS succeeds for ", round(WTS_succeeded_perc), "% of biopsies, offering hypothetical benefit in ", round(WTS_hypoth_benefit_perc), "% in case of successful sequencing"))
+noquote(paste0("For ", round(pct_wts_lr_potentially_actionable_and_sufficient_rna), "% of LRs, WTS discovers a potentially actionable biomarker not found or detectable by WGS"))
 noquote("")
 
 # CUP patients: WTS ----------------------------------------------
-WTS_CUP_improved_prediction <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
-nr_of_cups <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
+wts_cup_sufficient_rna <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
+wts_cup_improved_prediction_and_sufficient_rna <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP", ])
 
 WTS_CUP <- data.frame()
-WTS_CUP[1,1] <- WTS_CUP_improved_prediction / nr_of_cups * 100
-WTS_CUP[2,1] <- 100 - WTS_CUP_improved_prediction / nr_of_cups * 100
+WTS_CUP[1,1] <- wts_cup_improved_prediction_and_sufficient_rna / wts_cup_sufficient_rna * 100
+WTS_CUP[2,1] <- 100 - wts_cup_improved_prediction_and_sufficient_rna / wts_cup_sufficient_rna * 100
 colnames(WTS_CUP) <- ""
 
 pdf(file=paste0(wd,"WTS_CUP.pdf"), width = 10, height = 3)
@@ -358,8 +351,20 @@ barplot(as.matrix(WTS_CUP), col=c("blue","red"), las=1, horiz = TRUE, legend = c
 axis(1,at=c(0,20,40,60,80,100),labels=paste0(c(0,20,40,60,80,100), "%"))
 invisible(dev.off())
 
-WTS_CUP_improved_prediction_perc <- WTS_CUP_improved_prediction / nr_of_cups * 100
+pct_wts_cup_improved_prediction_and_sufficient_rna <- wts_cup_improved_prediction_and_sufficient_rna / wts_cup_sufficient_rna * 100
 
 noquote("WTS_CUP.pdf")
-noquote(paste0("For ", round(WTS_CUP_improved_prediction_perc), "% of CUPs, addition of WTS yields a high confidence prediction while WGS alone does not"))
+noquote(paste0("For ", round(pct_wts_cup_improved_prediction_and_sufficient_rna), "% of CUPs, addition of WTS yields a high confidence tumor location prediction while WGS alone does not"))
 noquote("")
+
+# LR+CUP patients: WTS added benefit  ----------------------------------------------
+wts_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes", ])
+wts_not_succeeded <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "No", ])
+wts_succeeded_perc <- (wts_succeeded / (wts_not_succeeded + wts_succeeded))*100
+
+wts_hypoth_benefit_perc <- nrow(benefit_tracking_WTS[benefit_tracking_WTS$RNA.prep.quality.sufficient. == "Yes" & (benefit_tracking_WTS$WTS.detected.novel.actionable.events..not.detected.or.detectable.by.WGS. == "Yes" | (benefit_tracking_WTS$WTS.improved.CUPPA.prediction.for.determining.primary.tumor.location. == "Yes" & benefit_tracking_WTS$Category == "CUP" )), ]) / wts_succeeded * 100
+
+noquote("WTS succeeds & added benefit message:")
+noquote(paste0("WTS succeeds for ", round(wts_succeeded_perc), "% of biopsies, offering hypothetical benefit (new biomarker or improved CUPPA prediction for CUPs) in ", round(wts_hypoth_benefit_perc), "% for WGS/LR patients in case of successful sequencing"))
+noquote("")
+noquote("Done!")
