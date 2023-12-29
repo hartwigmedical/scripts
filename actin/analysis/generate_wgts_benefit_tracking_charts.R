@@ -312,7 +312,7 @@ invisible(dev.off())
 pct_confirmation_or_diagnosis <- sum(round(pct[3]), round(pct[4]))
 
 noquote("WGS_CUP.pdf")
-noquote(paste0("For ", pct_confirmation_or_diagnosis, "% of all CUP patients WGS led to confirmation or actual diagnosis"))
+noquote(paste0("For ", pct_confirmation_or_diagnosis, "% of all CUP patients WGS led to actual diagnosis or confirmation of anticipated diagnosis"))
 noquote("")
 
 # LR patients: WTS ----------------------------------------------
