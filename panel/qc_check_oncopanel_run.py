@@ -187,12 +187,12 @@ class AnnotatedVariant:
 
 @dataclass(frozen=True, eq=True)
 class RunData:
-    drivers: Tuple[Driver]
+    drivers: Tuple[Driver,...]
     purple_qc: PurpleQc
-    gene_copy_numbers: Tuple[GeneCopyNumber]
-    somatic_copy_numbers: Tuple[SomaticCopyNumber]
-    exon_median_coverages: Tuple[ExonMedianCoverage]
-    sage_unfiltered_variants: Tuple[AnnotatedVariant]
+    gene_copy_numbers: Tuple[GeneCopyNumber,...]
+    somatic_copy_numbers: Tuple[SomaticCopyNumber,...]
+    exon_median_coverages: Tuple[ExonMedianCoverage,...]
+    sage_unfiltered_variants: Tuple[AnnotatedVariant,...]
     wgs_metrics: WgsMetrics
 
 
@@ -288,7 +288,7 @@ def get_sample_info_text(metadata: Metadata) -> str:
 def get_sample_overview_stats_text(
         purple_qc: PurpleQc,
         wgs_metrics: WgsMetrics,
-        gene_copy_numbers: Tuple[GeneCopyNumber],
+        gene_copy_numbers: Tuple[GeneCopyNumber,...],
         driver_gene_panel_entries: List[DriverGenePanelEntry],
 ) -> str:
     driver_panel_genes = {entry.gene for entry in driver_gene_panel_entries}
@@ -416,7 +416,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
     return "\n".join(lines)
 
 
-def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant], metadata: Metadata) -> str:
+def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant,...], metadata: Metadata) -> str:
     lines = [
         "Resistance checks:",
     ]
@@ -448,14 +448,14 @@ def get_signed_bam_urls(metadata: Metadata) -> str:
     return run_bash_command(["sign_bam_url", gcp_bam_url, "8h"])
 
 
-def get_driver_catalog_text(drivers: Tuple[Driver]) -> str:
+def get_driver_catalog_text(drivers: Tuple[Driver,...]) -> str:
     lines = ["Driver catalog:"]
     for driver in drivers:
         lines.append(str(driver))
     return "\n".join(lines)
 
 
-def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers: Tuple[SomaticCopyNumber]) -> str:
+def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers: Tuple[SomaticCopyNumber,...]) -> str:
     overlapping_somatic_copy_number_regions = [
         somatic_copy_number for somatic_copy_number in somatic_copy_numbers
         if exon_coverage.chromosome == somatic_copy_number.chromosome
