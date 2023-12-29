@@ -183,7 +183,7 @@ lbls <- paste(lbls, pct)
 lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"WGS_allowed_therapy.pdf"), width = 10, height = 7)
-pie(slices, labels = lbls, col=c("red","blue"),main="Count of WGS allowed therapy?")
+pie(slices, labels = lbls, col=c("green4","red"),main="Count of WGS allowed therapy?")
 invisible(dev.off())
 
 noquote("WGS_allowed_therapy.pdf")
@@ -203,7 +203,7 @@ lbls <- paste(lbls, pct)
 lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"treated_based_on_WGS.pdf"), width = 10, height = 7)
-pie(slices,labels = lbls, col=c("lightgreen","blue","orange","red"),main="Patient got treated based on WGS biomarker?")
+pie(slices,labels = lbls, col=c("green4","red","darkgrey","lightgrey"),main="Patient got treated based on WGS biomarker?")
 invisible(dev.off())
 
 noquote("treated_based_on_WGS.pdf")
@@ -306,7 +306,7 @@ lbls <- paste0(lbls, "%")
 
 pdf(file= paste0(wd,"WGS_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,7,5,5))
-pie(slices,labels = lbls, col=c("red","blue","lightgreen", "darkgreen", "grey"))
+pie(slices,labels = lbls, col=c("red","blue","lightgreen", "green4", "grey"))
 invisible(dev.off())
 
 pct_confirmation_or_diagnosis <- sum(round(pct[3]), round(pct[4]))
