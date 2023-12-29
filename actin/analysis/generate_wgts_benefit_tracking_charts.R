@@ -265,14 +265,14 @@ if (sum(no_slots, non_WGS_pref, not_fit, not_willing, not_effective, not_meeting
 }
 
 colnames(impact_category) <- impact_category_columns
-order_indices <- order(impact_category[1,], decreasing=TRUE)
+order_indices <- order(impact_category[1,], decreasing=FALSE)
 impact_category_ordered <- impact_category[, order_indices]
 
 pdf(file= paste0(wd,"WGS_impact_category.pdf"), width = 20, height = 7)
 par(mar=c(5,25,5,5))
-barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker")
+barplot(as.matrix(impact_category_ordered), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker")
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker", add=TRUE)
+barplot(as.matrix(impact_category_ordered), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker", add=TRUE)
 invisible(dev.off())
 
 lr_with_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
