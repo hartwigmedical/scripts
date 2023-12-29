@@ -257,8 +257,6 @@ if (soc_treatment>0) {
   impact_category_columns <- append(impact_category_columns, "Treated using SOC for new diagnosis based on WGS")
 }
 
-colnames(impact_category) <- impact_category_columns
-
 # Check if category adjustments are needed
 if (sum(no_slots, non_WGS_pref, not_fit, not_willing, not_effective, not_meeting_criteria, soc_treatment) != no_treated_based_on_biomarker) {
   noquote ("- !WARN! - Not all categories could be assigned to the WGS impact category plots!")
@@ -266,11 +264,15 @@ if (sum(no_slots, non_WGS_pref, not_fit, not_willing, not_effective, not_meeting
   noquote ("- INFO - All categories are assigned, no need to add new categories to WGS_impact_category.pdf")
 }
 
+colnames(impact_category) <- impact_category_columns
+order_indices <- order(impact_category[1,], decreasing=TRUE)
+impact_category_ordered <- impact_category[, order_indices]
+
 pdf(file= paste0(wd,"WGS_impact_category.pdf"), width = 20, height = 7)
 par(mar=c(5,25,5,5))
-barplot(as.matrix(rev(impact_category)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker")
+barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker")
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(impact_category)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker", add=TRUE)
+barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker", add=TRUE)
 invisible(dev.off())
 
 lr_with_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
