@@ -11,6 +11,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+RB1_GENE_NAME = "RB1"
+
 GCP_URL_START = "gs:"
 
 TSV_SEPARATOR = "\t"
@@ -131,6 +133,8 @@ class GeneCopyNumber:
     transcript: str
     is_canonical: bool
     depth_window_count: int
+    min_region_start: int
+    min_region_end: int
 
 
 @dataclass(frozen=True, eq=True)
@@ -239,12 +243,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     if output_file is None:
         output_file = local_directory / f"{metadata.tumor_name}.qc_check.txt"
 
-    do_qc_checks(
-        run_data,
-        driver_gene_panel_entries,
-        metadata,
-        output_file,
-    )
+    do_qc_checks(run_data, driver_gene_panel_entries, metadata, output_file)
 
     logging.info("Finished QC checking OncoPanel run")
 
@@ -252,11 +251,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
 def do_qc_checks(
         run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], metadata: Metadata, output_file: Path,
 ) -> None:
-    output_text = get_qc_check_output_text(
-        run_data,
-        driver_gene_panel_entries,
-        metadata,
-    )
+    output_text = get_qc_check_output_text(run_data, driver_gene_panel_entries, metadata)
 
     with open(output_file, "w") as out_f:
         out_f.write(output_text)
@@ -333,14 +328,17 @@ def get_qc_warning_text(run_data: RunData) -> str:
     lines = []
     if run_data.purple_qc.qc_status != "PASS":
         lines.append(f"WARN: Non-PASS Purple QC status: {run_data.purple_qc.qc_status}")
+    
     if run_data.purple_qc.purity < TMB_MIN_PURITY_THRESHOLD:
         lines.append(
             f"WARN: TMB unreliable due to purity {run_data.purple_qc.purity} < {TMB_MIN_PURITY_THRESHOLD}"
         )
+    
     if run_data.purple_qc.purity < MSI_MIN_PURITY_THRESHOLD:
         lines.append(
             f"WARN: MSI unreliable due to purity {run_data.purple_qc.purity} < {MSI_MIN_PURITY_THRESHOLD}"
         )
+    
     if run_data.purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
         mutation_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.MUTATION]
         if mutation_drivers:
@@ -348,6 +346,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: MUTATION drivers unreliable due to purity {run_data.purple_qc.purity} < {SOMATIC_VARIANT_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
+    
     if run_data.purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
         del_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.DEL]
         if del_drivers:
@@ -355,6 +354,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: DEL drivers unreliable due to purity {run_data.purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
+    
     if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
         amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.AMP]
         if amp_drivers:
@@ -362,10 +362,12 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: AMP drivers unreliable due to purity {run_data.purple_qc.purity} < {AMP_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
+    
     partial_amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP]
     if partial_amp_drivers:
         gene_name_string = ", ".join([driver.gene_name for driver in partial_amp_drivers])
         lines.append(f"WARN: Partial AMP drivers called, but haven't been validated: {gene_name_string}")
+    
     amp_drivers_needing_manual_curation = [
         driver for driver in run_data.drivers
         if (driver.driver_type == DriverType.AMP) and
@@ -374,6 +376,34 @@ def get_qc_warning_text(run_data: RunData) -> str:
     if amp_drivers_needing_manual_curation:
         gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers_needing_manual_curation])
         lines.append(f"WARN: AMP drivers need manual curation: {gene_name_string}")
+    
+    rb1_copy_numbers = [copy_number for copy_number in run_data.gene_copy_numbers if copy_number.gene_name == RB1_GENE_NAME]
+    if len(rb1_copy_numbers) != 1:
+        raise ValueError(f"Did not find precisely one RB1 gene copy number for sample")
+    rb1_copy_number = rb1_copy_numbers[0]
+    rb1_del_driver_calls = [
+        driver for driver in run_data.drivers if driver.gene_name == RB1_GENE_NAME and driver.driver_type == DriverType.DEL
+    ]
+    if rb1_copy_number.min_copy_number < DELETION_COPY_NUMBER_THRESHOLD and not rb1_del_driver_calls:
+        min_region_length_string = get_pretty_base_count(rb1_copy_number.min_region_end - rb1_copy_number.min_region_start + 1)
+        lines.append(
+            f"WARN: Potential RB1 deletion missed: "
+            f"minCN={rb1_copy_number.min_copy_number}, "
+            f"maxCN={rb1_copy_number.max_copy_number}, "
+            f"depthWindowCount={rb1_copy_number.depth_window_count}, "
+            f"minRegionLength={min_region_length_string}"
+        )
+    
+    dels_in_suspicious_partial_del_gene = [
+        driver for driver in run_data.drivers
+        if driver.driver_type == DriverType.DEL
+           and driver.gene_name in RECURRENT_PARTIAL_DEL_GENES
+           and driver.max_copy_number < DELETION_COPY_NUMBER_THRESHOLD
+    ]
+    if dels_in_suspicious_partial_del_gene:
+        gene_name_string = ", ".join([driver.gene_name for driver in dels_in_suspicious_partial_del_gene])
+        lines.append(f"WARN: Full deletion called in gene suspicious for partial DELs: {gene_name_string}")
+    
     suspicious_partial_dels = [
         driver for driver in run_data.drivers
         if driver.driver_type == DriverType.DEL
@@ -404,15 +434,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
                 per_driver_lines.append(line)
         driver_string = "\n".join(per_driver_lines)
         lines.append(f"WARN: Partial del called in suspicious gene:\n{driver_string}")
-    dels_in_suspicious_partial_del_gene = [
-        driver for driver in run_data.drivers
-        if driver.driver_type == DriverType.DEL
-           and driver.gene_name in RECURRENT_PARTIAL_DEL_GENES
-           and driver.max_copy_number < DELETION_COPY_NUMBER_THRESHOLD
-    ]
-    if dels_in_suspicious_partial_del_gene:
-        gene_name_string = ", ".join([driver.gene_name for driver in dels_in_suspicious_partial_del_gene])
-        lines.append(f"WARN: Full deletion called in gene suspicious for partial DELs: {gene_name_string}")
+    
     return "\n".join(lines)
 
 
@@ -676,6 +698,8 @@ def get_gene_copy_number_from_line(line: str, header: str) -> GeneCopyNumber:
     min_copy_number = Decimal(split_line[split_header.index("minCopyNumber")])
     max_copy_number = Decimal(split_line[split_header.index("maxCopyNumber")])
     depth_window_count = int(split_line[split_header.index("depthWindowCount")])
+    min_region_start = int(split_line[split_header.index("minRegionStart")])
+    min_region_end = int(split_line[split_header.index("minRegionEnd")])
 
     gene_copy_number = GeneCopyNumber(
         chromosome,
@@ -687,6 +711,8 @@ def get_gene_copy_number_from_line(line: str, header: str) -> GeneCopyNumber:
         transcript,
         is_canonical,
         depth_window_count,
+        min_region_start,
+        min_region_end,
     )
     return gene_copy_number
 
@@ -905,6 +931,15 @@ def get_metadata(gcp_run_url: str) -> Metadata:
 
 def run_bash_command(command: List[str]) -> str:
     return subprocess.run(command, capture_output=True, text=True).stdout
+
+
+def get_pretty_base_count(count: int) -> str:
+    if count >= 1000000:
+        return f"{count/1000000:.1f}MB"
+    elif count >= 1000:
+        return f"{count/1000:.1f}KB"
+    else:
+        return f"{count}B"
 
 
 def parse_args() -> argparse.Namespace:
