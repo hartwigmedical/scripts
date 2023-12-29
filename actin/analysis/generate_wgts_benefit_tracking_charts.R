@@ -183,7 +183,7 @@ lbls <- paste(lbls, pct)
 lbls <- paste0(lbls,"%")
 
 pdf(file= paste0(wd,"WGS_allowed_therapy.pdf"), width = 10, height = 7)
-pie(slices, labels = lbls, col=c("green4","red"),main="Count of WGS allowed therapy?")
+pie(slices, labels = lbls, col=c("green4","red"),main="WGS allowed therapy?")
 invisible(dev.off())
 
 noquote("WGS_allowed_therapy.pdf")
@@ -270,9 +270,9 @@ impact_category_ordered <- impact_category[, order_indices]
 
 pdf(file= paste0(wd,"WGS_impact_category.pdf"), width = 20, height = 7)
 par(mar=c(5,25,5,5))
-barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker")
+barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker")
 grid(nx=NULL,ny=NA,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of WGS impact category", las=1, horiz = TRUE, main = "WGS impact category if patient not treated based on WGS biomarker", add=TRUE)
+barplot(as.matrix(rev(impact_category_ordered)), xlim = c(0,35), col = "blue", xlab = "Count of reason", las=1, horiz = TRUE, main = "Reason if patient not treated based on WGS biomarker", add=TRUE)
 invisible(dev.off())
 
 lr_with_biomarker <- nrow(benefit_tracking_WGS[benefit_tracking_WGS$WGS.allowed.therapy. == "Yes" & benefit_tracking_WGS$Category == "LR", ])
