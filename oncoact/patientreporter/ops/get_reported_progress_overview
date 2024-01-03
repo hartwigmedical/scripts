@@ -20,7 +20,7 @@ while read -r report_info; do
             cat reported_samples_list.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv reported_samples_list.tsv
          fi
          first_report_created_id=$( extract_first_time_reporting_id_on_barcode $barcode )
-         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 | tail )
+         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 | tail -1 )
          #tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
          T=$(printf '\t')
          #echo $sample_name $T $share_date $T $tat $T $report_type  >> reported_samples_list.tsv
