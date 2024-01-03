@@ -5,8 +5,8 @@ source message_functions || exit 1
 out_dir=$1 && shift # prod or pilot lims dir
 
 if [[ -z "${out_dir}" ]]; then
-    echo "Usage: $(basename $0) /path/to/out/dir"
-    echo "   Eg: $(basename $0) /data/ops/lims/pilot"
+    echo "Usage: $(basename "$0") /path/to/out/dir"
+    echo "   Eg: $(basename "$0") /data/ops/lims/pilot"
     exit 1
 fi
 
@@ -103,9 +103,9 @@ excel_sheet_to_tsv() {
     local excel_name=""
     excel_name=$(basename "${input_excel_file}")
 
-    info "  Converting '${excel_name}' sheet ${sheet_index} with ${first_row_index} row as header (${output_tsv})"
-    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}"
-    [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
+    info "  Converting file '${excel_name}' sheet ${sheet_index} with row ${first_row_index} as header (${output_tsv})"
+    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}" \
+      || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
 
 symlink_to_latest() {
