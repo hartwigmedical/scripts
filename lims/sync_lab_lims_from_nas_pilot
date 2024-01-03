@@ -77,12 +77,12 @@ main() {
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
 
     # We need to support the files from previous year until lab team has finished with updates
+    info "Converting input files to text formats for previous year"
     for001_source_2023="${TMP_DIR}/${FOR_001_FILE_2023}"
     for002_source_2023="${TMP_DIR}/${FOR_002_FILE_2023}"
     for001_samp_txt_2023="${DAY_DIR}/2023_for001_samples.tsv"
     for001_subm_txt_2023="${DAY_DIR}/2023_for001_submissions.tsv"
     for002_proc_txt_2023="${DAY_DIR}/2023_for002_processing.tsv"
-    info "Converting input files to text formats (2022)"
     excel_sheet_to_tsv "${for001_source_2023}" "${for001_subm_txt_2023}" "1" "5"
     excel_sheet_to_tsv "${for001_source_2023}" "${for001_samp_txt_2023}" "2" "2"
     excel_sheet_to_tsv "${for002_source_2023}" "${for002_proc_txt_2023}" "1" "5"
