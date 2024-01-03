@@ -5,7 +5,8 @@ source message_functions || exit 1
 
 
 all_created_reports=$( hmf_api_get "reports/created" )
-created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1683566405 ) ]' | jq 'sort_by(.create_time)')
+created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1669849200 ) ]' | jq 'sort_by(.create_time)')
+#date -j -f "%b %d %Y %T" "Dec 01 2022 00:00:00" "+%s"
 
 touch reported_samples_list.tsv
 while read -r report_info; do
@@ -19,7 +20,7 @@ while read -r report_info; do
             cat reported_samples_list.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv reported_samples_list.tsv
          fi
          first_report_created_id=$( extract_first_time_reporting_id_on_barcode $barcode )
-         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 )
+         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 | tail )
          #tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
          T=$(printf '\t')
          #echo $sample_name $T $share_date $T $tat $T $report_type  >> reported_samples_list.tsv
