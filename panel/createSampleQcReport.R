@@ -180,32 +180,9 @@ runSampleQcReport<-function()
     colnames(exons) = c('Gene','Chromosome','PosStart','PosEnd','ExonRank','MedianDepth')
     genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
-    write.table( exons %>% filter(MedianDepth < 100),'ExonsWithInsufficientConverage.tsv',row.names=F,quote=F,sep="\t")
-
-    entriesPerPage = 30
 
     outputDir = paste0(runDir, "sampleQcReports/")
 
-    outputPDF = paste0(outputDir, sampleId, '.insufficientCoverage.pdf')
-
-
-    pdf(outputPDF,width=8.5,height=11)
-    df =exons %>% filter(MedianDepth < 100)
-    df = df[order(df$Gene,df$ExonRank),]
-    rownames(df) = 1:(nrow(df))
-    for(i in seq(1,nrow(df),entriesPerPage)){
-      grid.table(df[i:min(nrow(df),(i+entriesPerPage-1)),])
-      if( i+entriesPerPage < nrow(df)){
-        grid.newpage()
-      }
-    }
-    dev.off()
-
-    print(paste(nrow( exons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
-    exons = exons %>% filter(Gene %in% genesOfInterest)
-
-    # genesOfInterest[genesOfInterest %in% unique(exons$Gene) == F]
-    # TODO: WHY ARE THERE NO EXONS FOR: "CCNE1" "MDM2"  "MYC"
 
     exons = merge(exons,genesList,by='Gene',all.x=T)
     exons = merge(exons,cohortMedianDepth,by=c('Gene','ExonRank'),all.x=T)
@@ -214,6 +191,26 @@ runSampleQcReport<-function()
                              NormDepth=ifelse(CohortRelDepth>0,MedianDepth/CohortRelDepth,MedianDepth))
     exons = exons %>% mutate(Position=floor(PosEnd/1000)*1000+1)
     exons = merge(exons,cobaltRegions,by=c('Chromosome','Position'),all.x=T)
+    exons = exons %>% filter(Gene %in% genesOfInterest)
+
+    write.table( exons %>% filter(MedianDepth < 100),paste0(outputDir,sampleId,'.insufficientCoverage.tsv'),row.names=F,quote=F,sep="\t")
+
+    entriesPerPage = 30
+
+
+
+    print(paste(nrow( exons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
+    
+    # genesOfInterest[genesOfInterest %in% unique(exons$Gene) == F]
+    # TODO: WHY ARE THERE NO EXONS FOR: "CCNE1" "MDM2"  "MYC"
+
+    #exons = merge(exons,genesList,by='Gene',all.x=T)
+    #exons = merge(exons,cohortMedianDepth,by=c('Gene','ExonRank'),all.x=T)
+    #exons = exons %>% mutate(MedianSampleDepth=median(MedianDepth),
+    #                         RelDepth=MedianDepth/MedianSampleDepth,
+    #                         NormDepth=ifelse(CohortRelDepth>0,MedianDepth/CohortRelDepth,MedianDepth))
+    #exons = exons %>% mutate(Position=floor(PosEnd/1000)*1000+1)
+    #exons = merge(exons,cobaltRegions,by=c('Chromosome','Position'),all.x=T)
 
     geneCN = load_file(sampleGeneCnFile,'sample gene copy number') %>% filter(transcriptId!='ENST00000579755')
     purity = load_file(samplePurityFile,'sample purity')
@@ -356,6 +353,20 @@ runSampleQcReport<-function()
                            NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
+    df =exons %>% filter(MedianDepth < 100)
+    df = df[order(df$Gene,df$ExonRank),]
+    if(nrow(df)>0){
+      rownames(df) = 1:nrow(df)
+      grid.newpage()
+    
+      for(i in seq(1,nrow(df),entriesPerPage)){
+        grid.table(df[i:min(nrow(df),(i+entriesPerPage-1)),])
+        if( i+entriesPerPage < nrow(df)){
+          grid.newpage()
+        }
+      }
+    }
+
     dev.off()
 
     # PNG creation
@@ -373,7 +384,6 @@ runSampleQcReport<-function()
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
     dev.off()
-
     #grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
     #                       variantPlot,NULL,exonMedianPlot,NULL,exonNormPlot,NULL,geneCnPlot,NULL,
     #                       NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,NULL,
