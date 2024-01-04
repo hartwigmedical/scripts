@@ -9,6 +9,26 @@ library(DBI)
 library(RMySQL)
 dbConnect <- dbConnect(MySQL(), dbname='actin_pilot', groups="RAnalysis")
 
+## Count of CUP patients
+queryCUPCount <- "
+select distinct(m.patientId)
+from tumor t
+inner join molecular m on m.patientId=t.patientId
+left join variant v on v.sampleId=m.sampleId
+where primaryTumorSubLocation = 'CUP' and containsTumorCells"
+queryCUPCountResult <- dbGetQuery(dbConnect, queryCUPCount)
+CUPpatients=as.integer(count(queryCUPCountResult))
+
+## Count of LR patients
+queryLRCount <- "
+select distinct(m.patientId)
+from tumor t
+inner join molecular m on m.patientId=t.patientId
+left join variant v on v.sampleId=m.sampleId
+where primaryTumorSubLocation != 'CUP' and primaryTumorSubLocation is not null and containsTumorCells"
+queryLRCountResult <- dbGetQuery(dbConnect, queryLRCount)
+LRpatients=as.integer(count(queryLRCountResult))
+
 ## Count of Altered Genes in entire cohort (Reportable)
 queryGeneCount <- "select 
 gene, 
@@ -69,25 +89,23 @@ group by event;"
 queryCopyNumberLRResult <- dbGetQuery(dbConnect, queryCopyNumberLR)
 
 ## Overview of variant treatment evidence in CUP Cases (Reportable and High driver)
-queryTreatmentCountCUP <- "select 
-treatment, count(distinct m.patientId) as treatment_count
+queryTreatmentCountCUP <- "select e.type, Count(distinct m.patientId) as treatment_type_count
 from variant v
 inner join variantEvidence e on e.variantId=v.id 
 inner join molecular m on m.sampleId=v.sampleId
 inner join tumor t on t.patientId = m.patientId
 where containsTumorCells and isReportable and driverLikelihood = 'High' and primaryTumorSubLocation = 'CUP'
-group by treatment"
+group by e.type"
 queryTreatmentCountCUPResult <- dbGetQuery(dbConnect, queryTreatmentCountCUP)
 
 ## Overview of variant treatment evidence in LR Cases (Reportable and High driver)
-queryTreatmentCountLR <- "select 
-treatment, count(distinct m.patientId) as treatment_count
+queryTreatmentCountLR <- "select e.type, Count(distinct m.patientId) as treatment_type_count
 from variant v
 inner join variantEvidence e on e.variantId=v.id 
 inner join molecular m on m.sampleId=v.sampleId
 inner join tumor t on t.patientId = m.patientId
 where containsTumorCells and isReportable and driverLikelihood = 'High' and primaryTumorSubLocation != 'CUP' and primaryTumorSubLocation is not null
-group by treatment"
+group by e.type"
 queryTreatmentCountLRResult <- dbGetQuery(dbConnect, queryTreatmentCountLR)
 
 ## Average number of high driver likelihood variants per sampleId
@@ -104,12 +122,13 @@ queryHighDriverPerSampleResult <- dbGetQuery(dbConnect, queryHighDriverPerSample
 queryVariantEvidencePerSample <- "
 select round(avg(variantEvidenceCount), 1) as average_evidence_per_sampleId
     from ( 
-		select sampleId, count(distinct treatment) as variantEvidenceCount
-		from variant v
+		select m.sampleId, count(distinct treatment) as variantEvidenceCount
+		from molecular m
+		inner join variant v on v.sampleId = m.sampleId
 		inner join variantEvidence e on e.variantId = v.id
-		where driverLikelihood = 'High'
-		group by sampleId
-	) as subquery
+		where driverLikelihood = 'High' and containsTumorCells
+		group by m.sampleId
+	) as subquery;
 "
 queryVariantEvidencePerSampleResult <- dbGetQuery(dbConnect, queryVariantEvidencePerSample)
 
@@ -159,8 +178,12 @@ dbDisconnect(dbConnect)
 CUP_gene_sorted <- queryGeneCountCUPResult %>% arrange(desc(high_driver_likelihood_count)) %>% rename("Gene" = gene, "Gene Count" = gene_count, "Hotspot Count" = hotspot_count, "High Driver Likelihood Count" = high_driver_likelihood_count)
 CUP_gene_10 <- head(CUP_gene_sorted, 10)
 
+CUP_gene_10_with_percentage <- CUP_gene_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / CUPpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Genes_CUP_Reportable.pdf"), width = 10, height = 7)
-CUP_gene_table <- tableGrob(CUP_gene_10, rows = NULL)
+CUP_gene_table <- tableGrob(CUP_gene_10_with_percentage, rows = NULL)
 grid.draw(CUP_gene_table)
 invisible(dev.off())
 
@@ -168,8 +191,12 @@ invisible(dev.off())
 LR_gene_sorted <- queryGeneCountLRResult %>% arrange(desc(high_driver_likelihood_count)) %>% rename("Gene" = gene, "Gene Count" = gene_count, "Hotspot Count" = hotspot_count, "High Driver Likelihood Count" = high_driver_likelihood_count)
 LR_gene_10 <- head(LR_gene_sorted, 10)
 
+LR_gene_10_with_percentage <- LR_gene_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / LRpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Genes_LR_Reportable.pdf"), width = 10, height = 7)
-LR_gene_table <- tableGrob(LR_gene_10, rows = NULL)
+LR_gene_table <- tableGrob(LR_gene_10_with_percentage, rows = NULL)
 grid.draw(LR_gene_table)
 invisible(dev.off())
 
@@ -177,8 +204,12 @@ invisible(dev.off())
 CUP_CN_sorted <- queryCopyNumberCUPResult %>% arrange(desc(Count)) %>% rename("Event" = event)
 CUP_CN_10 <- head(CUP_CN_sorted, 10)
 
+CUP_CN_10_with_percentage <- CUP_CN_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / CUPpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Copy_Number_CUP.pdf"), width = 10, height = 7)
-CUP_CN_table <- tableGrob(CUP_CN_10, rows = NULL)
+CUP_CN_table <- tableGrob(CUP_CN_10_with_percentage, rows = NULL)
 grid.draw(CUP_CN_table)
 invisible(dev.off())
 
@@ -186,34 +217,46 @@ invisible(dev.off())
 LR_CN_sorted <- queryCopyNumberLRResult %>% arrange(desc(Count)) %>% rename("Event" = event)
 LR_CN_10 <- head(LR_CN_sorted, 10)
 
+LR_CN_10_with_percentage <- LR_CN_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / LRpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Copy_Number_LR.pdf"), width = 10, height = 7)
-LR_CN_table <- tableGrob(LR_CN_10, rows = NULL)
+LR_CN_table <- tableGrob(LR_CN_10_with_percentage, rows = NULL)
 grid.draw(LR_CN_table)
 invisible(dev.off())
 
-# Most frequent variant treatment evidence in CUP Cases (Reportable and High driver) ----------------
-CUP_treatment_sorted <- queryTreatmentCountCUPResult %>% arrange(desc(treatment_count)) %>% rename("Treatment" = treatment, "Treatment Count" = treatment_count)
+# Overview of treatment evidence type in CUP Cases (Reportable and High driver) ----------------
+CUP_treatment_sorted <- queryTreatmentCountCUPResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
 CUP_treatment_10 <- head(CUP_treatment_sorted, 10)
 
+CUP_treatment_10_with_percentage <- CUP_treatment_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / CUPpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Variant_treatment_Evidence_CUP.pdf"), width = 10, height = 7)
-CUP_treatment_table <- tableGrob(CUP_treatment_10, rows = NULL)
+CUP_treatment_table <- tableGrob(CUP_treatment_10_with_percentage, rows = NULL)
 grid.draw(CUP_treatment_table)
 invisible(dev.off())
 
-# Most frequent variant treatment evidence in Last Resort Cases (Reportable and High driver) ----------------
-LR_treatment_sorted <- queryTreatmentCountLRResult %>% arrange(desc(treatment_count)) %>% rename("Treatment" = treatment, "Treatment Count" = treatment_count)
+# Overview of treatment evidence type in LR Cases (Reportable and High driver) ----------------
+LR_treatment_sorted <- queryTreatmentCountLRResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
 LR_treatment_10 <- head(LR_treatment_sorted, 10)
 
+LR_treatment_10_with_percentage <- LR_treatment_10 %>%
+  mutate(across(where(is.numeric), 
+                ~ paste0(round(.), " (", round((. / LRpatients) * 100, 0), "%)")))
+
 pdf(file= paste0(wd,"Variant_treatment_Evidence_LR.pdf"), width = 10, height = 7)
-LR_treatment_table <- tableGrob(LR_treatment_10, rows = NULL)
+LR_treatment_table <- tableGrob(LR_treatment_10_with_percentage, rows = NULL)
 grid.draw(LR_treatment_table)
 invisible(dev.off())
 
 ## Average amount of high driver likelihood variants per sampleId 
-queryHighDriverPerSampleResult
+cat("Average found variants per sample:", as.double(queryHighDriverPerSampleResult), "\n")
 
 ## Average amount of variant treatment evidence (for high driver likelihood variants) per sampleId
-queryVariantEvidencePerSampleResult
+cat("Average found evidence-based treatments per sample:", as.double(queryVariantEvidencePerSampleResult), "\n")
 
 # Tumor Mutational Load - entire cohort ----------------------------------------------
 TMLhigh <- queryTMLCountResult$TML_count[queryTMLCountResult$hasHighTumorMutationalLoad==1]
