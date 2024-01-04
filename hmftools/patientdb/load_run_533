@@ -26,7 +26,7 @@ for var in "${reference_sample}" "${tumor_sample}" "${tumor_barcode}" "${db_user
     [[ -n "$var" ]] || die "At least one constructed variable has no content"
 done
 
-LOADERS=(amber chord cuppa flagstat linx_germline linx_somatic metrics peach purple signatures virusbreakend virusintrprtr)
+LOADERS=(amber chord cuppa flagstat linx_germline linx_somatic metrics peach signatures virusbreakend virusintrprtr purple)
 
 main () {
     info "START load for tumor [${tumor_sample}]"
