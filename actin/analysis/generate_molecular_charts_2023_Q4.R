@@ -90,19 +90,17 @@ where containsTumorCells and isReportable and driverLikelihood = 'High' and prim
 group by treatment"
 queryTreatmentCountLRResult <- dbGetQuery(dbConnect, queryTreatmentCountLR)
 
-## Average amount of high driver likelihood variants per sampleId 
-queryHighDriverPerSample <- "select 
-round(avg(highDriverCount), 1) as average_variant_per_sampleId
-from (
-    select sampleId, count(sampleId) as highDriverCount
-    from variant 
-    where driverLikelihood = 'High'
-    group by sampleId
-) as subquery
-"
+## Average number of high driver likelihood variants per sampleId
+queryHighDriverPerSample <- "select avg(highDriverCount)
+from
+(select m.sampleId, count(case when driverLikelihood='High' then m.sampleId end) as highDriverCount
+from molecular m
+left join variant v on m.sampleId=v.sampleId
+where containsTumorCells
+group by m.sampleId) as subquery"
 queryHighDriverPerSampleResult <- dbGetQuery(dbConnect, queryHighDriverPerSample)
 
-## Average amount of variant treatment evidence (for high driver likelihood variants) per sampleId
+## Average number of variant treatment evidence (for high driver likelihood variants) per sampleId
 queryVariantEvidencePerSample <- "
 select round(avg(variantEvidenceCount), 1) as average_evidence_per_sampleId
     from ( 
@@ -122,14 +120,12 @@ where containsTumorCells
 group by hasHighTumorMutationalLoad"
 queryTMLCountResult <- dbGetQuery(dbConnect, queryTMLCount)
 
-
 ## Tumor mutational burden - entire cohort
 queryTMBCount <- "select hasHighTumorMutationalBurden, count(distinct patientId) as TMB_count
 from molecular
 where containsTumorCells
 group by hasHighTumorMutationalBurden"
 queryTMBCountResult <- dbGetQuery(dbConnect, queryTMBCount)
-
 
 ## Tumor homologous repair deficiency - entire cohort
 queryHRDCount <- "select isHomologousRepairDeficient, count(distinct patientId) as HRD_count
@@ -139,7 +135,9 @@ group by isHomologousRepairDeficient"
 queryHRDCountResult <- dbGetQuery(dbConnect, queryHRDCount)
 
 ## Tumor purity overview
-queryPurity <- "select purity from molecular"
+queryPurity <- "select purity
+from molecular
+where containsTumorCells"
 queryPurityResult <- dbGetQuery(dbConnect, queryPurity)
 
 dbDisconnect(dbConnect)
@@ -230,7 +228,7 @@ pdf(file= paste0(wd,"Tumor_Mutational_Load.pdf"), width = 10, height = 7)
 pie(slices, labels = lbls, col=c("green4","red"),main="High Tumor Mutational Load")
 invisible(dev.off())
 
-noquote(paste0(pct[1], "% of patients had a high tumor mutational load"))
+noquote(paste0(pct[1], "% of patients had a high tumor mutational load sample"))
 
 # Tumor Mutational Burden - entire cohort ----------------------------------------------
 TMBhigh <- queryTMBCountResult$TMB_count[queryTMBCountResult$hasHighTumorMutationalBurden==1]
@@ -245,7 +243,7 @@ pdf(file= paste0(wd,"Tumor_Mutational_Burden.pdf"), width = 10, height = 7)
 pie(slices, labels = lbls, col=c("green4","red"),main="High Tumor Mutational Burden")
 invisible(dev.off())
 
-noquote(paste0(pct[1], "% of patients had a high tumor mutational burden"))
+noquote(paste0(pct[1], "% of patients had a high tumor mutational burden sample"))
 
 # HRD - entire cohort ----------------------------------------------
 HRD <- na.omit(queryHRDCountResult$HRD_count[queryHRDCountResult$isHomologousRepairDeficient==1])
@@ -261,7 +259,7 @@ pdf(file= paste0(wd,"Homologous_Repair_Deficiency.pdf"), width = 10, height = 7)
 pie(slices, labels = lbls, col=c("green4","red", "gray"),main="Homologous Repair Deficiency")
 invisible(dev.off())
 
-noquote(paste0(pct[1], "% of patients were homologous repair deficient"))
+noquote(paste0(pct[1], "% of patients had a homologous repair deficient sample"))
 
 # Tumor purity distribution - entrire cohort ----------------------------------------------
 pdf(file= paste0(wd,"Tumor_Purity.pdf"), width = 10, height = 7)
@@ -279,5 +277,5 @@ ggplot(data, aes(x = purity)) +
   theme_minimal()
 invisible(dev.off())
 
-noquote(paste0("Median Tumor purity ", median(data$purity), "% (IQR: ", IQR(data$purity),")"))
+noquote(paste0("Median tumor purity for samples with detected tumor ", median(data$purity), "% (IQR: ", IQR(data$purity),")"))
 
