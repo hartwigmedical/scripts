@@ -26,7 +26,7 @@ for var in "${reference_sample}" "${tumor_sample}" "${tumor_barcode}" "${db_user
     [[ -n "$var" ]] || die "At least one constructed variable has no content"
 done
 
-LOADERS=(amber chord cuppa flagstat linx_germline linx_somatic metrics peach purple signatures virusbreakend virusintrprtr)
+LOADERS=(amber chord cuppa flagstat linx_germline linx_somatic metrics peach signatures virusbreakend virusintrprtr purple)
 
 main () {
     info "START load for tumor [${tumor_sample}]"
@@ -47,6 +47,10 @@ main () {
 function load_virusintrprtr () {
     info "Loading VIRUS INTERPRETER"
     local annotation_tsv="${run_dir}/virusintrprtr/${tumor_sample}.virus.annotated.tsv"
+    if [[ ! -f "${annotation_tsv}" ]]; then
+        # alternative directory naming exists on data-vm
+        annotation_tsv="${run_dir}/virus_interpreter/${tumor_sample}.virus.annotated.tsv"
+    fi
     [[ -f "${annotation_tsv}" ]] || return 1
     run_patient_db LoadVirusInterpreter \
         -sample "${tumor_sample}" \
@@ -161,7 +165,7 @@ function load_amber () {
     snp_vcf="${run_dir}/amber/${reference_sample}.amber.snp.vcf.gz"
     [[ -f "${snpcheck_vcf}" ]] || return 1
     [[ -f "${snp_vcf}" ]] || return 1
-    run_patient_db LoadAmberData \
+    run_patient_db amber.LoadAmberData \
         -sample "${tumor_sample}" \
         -amber_snp_vcf "${snp_vcf}" \
         -snpcheck_vcf "${snpcheck_vcf}"
