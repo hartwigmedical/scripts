@@ -10,6 +10,7 @@ use File::Slurp;
 use JSON;
 use XML::Simple;
 use List::Util qw/sum/;
+use Text::CSV_XS;
 use 5.010.000;
 
 ## -----
@@ -555,9 +556,8 @@ sub printTableForLevelSortedByYield{
 sub readSampleSheet{
     my ($csv_file) = @_;
     
-    ## SampleSheet file has windows returns
-    my $return_str = $/;
-    $/ = "\r\n";
+    ## SampleSheet file might have windows or unix eol
+    my $csv = Text::CSV_XS->new( { binary => 1, eol => "\n" } );
     
     my %output;
     $output{ 'samples' } = {};
@@ -568,13 +568,13 @@ sub readSampleSheet{
         say "## WARNING skipping SampleSheet read: file not found ($csv_file)";
         return( \%output );
     }
-    
-    open FILE, "<", $csv_file or die "Couldn't open file ($csv_file): $!";
-    while ( <FILE> ) {
-        chomp($_);
-        next if $_ =~ /^[\[\,]/;
-        next if $_ eq "";
-        my @fields = split( ",", $_);
+
+    open my $fh, "<:crlf", $csv_file or die "Couldn't open file ($csv_file): $!";
+    while (my $row = $csv->getline($fh)) {
+        chomp($row);
+        next if $row->[0] =~ /^[\[\,]/;
+        next if $row->[0] eq "";
+        my @fields = @$row;
 
         ## get hmf run id from config line
         if ($fields[0] =~ /Experiment(.)*Name/ ){
@@ -583,7 +583,7 @@ sub readSampleSheet{
         }
 
         ## find header
-        elsif ( $_ =~ m/Sample_ID/ ){
+        elsif ( $row =~ m/Sample_ID/ ){
             @header = @fields;
         }
         ## read sample line if header seen before
@@ -599,10 +599,7 @@ sub readSampleSheet{
             $output{ 'samples' }{ $sample_id } = \%tmp;
         }
     }
-    close FILE;
-    
-    ## reset return string
-    $/ = $return_str;
+    close $fh;
     
     return( \%output );
 }
