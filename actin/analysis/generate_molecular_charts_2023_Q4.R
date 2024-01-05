@@ -241,11 +241,14 @@ grid.draw(LR_CN_table)
 invisible(dev.off())
 
 # Overview of treatment evidence type in CUP Cases (Reportable and High driver) ----------------
-CUP_treatment_sorted <- queryTreatmentCountCUPResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
+Treatment_custom_order <- c("Approved", "On-label experimental", "Off-label experimental", "Pre-clinical", "Suspect resistant", "Trial")
+
+CUP_treatment <- queryTreatmentCountCUPResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
+CUP_treatment_sorted <- CUP_treatment[order(match(CUP_treatment$`Treatment Category`, Treatment_custom_order), decreasing=FALSE), ]
 CUP_treatment_10 <- head(CUP_treatment_sorted, 10)
 
 CUP_treatment_10_with_percentage <- CUP_treatment_10 %>%
-  mutate(across(where(is.numeric), 
+  mutate(across(where(is.numeric),
                 ~ paste0(round(.), " (", round((. / CUPpatients) * 100, 0), "%)")))
 
 pdf(file= paste0(wd,"Variant_treatment_Evidence_CUP.pdf"), width = 10, height = 7)
@@ -254,7 +257,8 @@ grid.draw(CUP_treatment_table)
 invisible(dev.off())
 
 # Overview of treatment evidence type in LR Cases (Reportable and High driver) ----------------
-LR_treatment_sorted <- queryTreatmentCountLRResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
+LR_treatment <- queryTreatmentCountLRResult %>% arrange(desc(treatment_type_count)) %>% rename("Treatment Category" = type, "Count (%)" = treatment_type_count)
+LR_treatment_sorted <- LR_treatment[order(match(LR_treatment$`Treatment Category`, Treatment_custom_order), decreasing=FALSE), ]
 LR_treatment_10 <- head(LR_treatment_sorted, 10)
 
 LR_treatment_10_with_percentage <- LR_treatment_10 %>%
