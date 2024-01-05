@@ -139,7 +139,7 @@ select round(avg(variantEvidenceCount), 1) as average_evidence_per_sampleId
 		from molecular m
 		left join variant v on v.sampleId = m.sampleId
 		left join variantEvidence e on e.variantId = v.id
-		where driverLikelihood = 'High' and containsTumorCells
+		where containsTumorCells
 		group by m.sampleId
 	) as subquery;
 "
