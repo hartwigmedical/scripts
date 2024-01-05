@@ -108,15 +108,28 @@ where containsTumorCells and isReportable and driverLikelihood = 'High' and prim
 group by e.type"
 queryTreatmentCountLRResult <- dbGetQuery(dbConnect, queryTreatmentCountLR)
 
-## Average number of high driver likelihood variants per sampleId
-queryHighDriverPerSample <- "select avg(highDriverCount)
+## Average number of high driver likelihood variants per LR sampleId
+queryHighDriverPerLRSample <- "select avg(highDriverCount)
 from
 (select m.sampleId, count(case when driverLikelihood='High' then m.sampleId end) as highDriverCount
 from molecular m
+inner join tumor t on m.patientId=t.patientId
 left join variant v on m.sampleId=v.sampleId
-where containsTumorCells
+where containsTumorCells and primaryTumorSubLocation != 'CUP' and primaryTumorSubLocation is not null
 group by m.sampleId) as subquery"
-queryHighDriverPerSampleResult <- dbGetQuery(dbConnect, queryHighDriverPerSample)
+queryHighDriverPerLRSampleResult <- dbGetQuery(dbConnect, queryHighDriverPerLRSample)
+
+## Average number of high driver likelihood variants per CUP sampleId
+queryHighDriverPerCUPSample <- "select avg(highDriverCount)
+from
+(select m.sampleId, count(case when driverLikelihood='High' then m.sampleId end) as highDriverCount
+from molecular m
+inner join tumor t on m.patientId=t.patientId
+left join variant v on m.sampleId=v.sampleId
+where containsTumorCells and primaryTumorSubLocation = 'CUP'
+group by m.sampleId) as subquery"
+queryHighDriverPerCUPSampleResult <- dbGetQuery(dbConnect, queryHighDriverPerCUPSample)
+
 
 ## Average number of variant treatment evidence (for high driver likelihood variants) per sampleId
 queryVariantEvidencePerSample <- "
@@ -124,8 +137,8 @@ select round(avg(variantEvidenceCount), 1) as average_evidence_per_sampleId
     from ( 
 		select m.sampleId, count(distinct treatment) as variantEvidenceCount
 		from molecular m
-		inner join variant v on v.sampleId = m.sampleId
-		inner join variantEvidence e on e.variantId = v.id
+		left join variant v on v.sampleId = m.sampleId
+		left join variantEvidence e on e.variantId = v.id
 		where driverLikelihood = 'High' and containsTumorCells
 		group by m.sampleId
 	) as subquery;
@@ -167,7 +180,8 @@ dbDisconnect(dbConnect)
 #View(queryCopyNumberLRResult)
 #View(queryTreatmentCountCUPResult)
 #View(queryTreatmentCountLRResult)
-#View(queryHighDriverPerSampleResult)
+#View(queryHighDriverPerLRSampleResult)
+#View(queryHighDriverPerCUPSampleResult)
 #View(queryVariantEvidencePerSampleResult)
 #View(queryTMLCountResult)
 #View(queryTMBCountResult)
@@ -253,7 +267,10 @@ grid.draw(LR_treatment_table)
 invisible(dev.off())
 
 ## Average amount of high driver likelihood variants per sampleId 
-cat("Average found variants per sample:", as.double(queryHighDriverPerSampleResult), "\n")
+cat("Average found variants per LR sample:", as.double(queryHighDriverPerLRSampleResult), "\n")
+
+## Average amount of high driver likelihood variants per sampleId
+cat("Average found variants per CUP sample:", as.double(queryHighDriverPerCUPSampleResult), "\n")
 
 ## Average amount of variant treatment evidence (for high driver likelihood variants) per sampleId
 cat("Average found evidence-based treatments per sample:", as.double(queryVariantEvidencePerSampleResult), "\n")
@@ -320,5 +337,5 @@ ggplot(data, aes(x = purity)) +
   theme_minimal()
 invisible(dev.off())
 
-noquote(paste0("Median tumor purity for samples with detected tumor ", median(data$purity), "% (IQR: ", IQR(data$purity),")"))
+noquote(paste0("Median tumor purity for samples with detected tumor ", median(data$purity)*100, "% (IQR: ", IQR(data$purity),")"))
 
