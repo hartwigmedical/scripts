@@ -98,6 +98,7 @@ class RestClient:
 
         This method does not rely on the existence of a report. It uses Lama to retrieve the tumor sample barcode.
         """
+        print(_get_as_json(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}'))
         return _get_as_json(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')['sampleBarcode']
 
     def get_tumor_sample_barcode_from_run_id(self, run_id):
