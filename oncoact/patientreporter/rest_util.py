@@ -87,6 +87,7 @@ class RestClient:
         Gets the sample information at sample barcode
         """
         sample = _get_as_json(self._samples_url, params={'barcode': barcode})
+        print(sample)
         return sample['yld']
 
     def get_run_files(self, run_id):
