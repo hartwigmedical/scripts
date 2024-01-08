@@ -106,6 +106,7 @@ class RestClient:
 
         """
         run = self.get_run(run_id)
+        print(run)
         sample_set = self.get_sample_set_by_id(run['set']['id'])
         samples = sample_set['samples']
         tumor_samples = [s for s in samples if s['type'] == 'tumor']
@@ -113,7 +114,7 @@ class RestClient:
             raise ValueError(f"No tumor sample found for run '{run_id}'")
         tumor_sample = tumor_samples[0]
         tumor_isolation_barcode = tumor_sample['barcode']
-
+        print(tumor_isolation_barcode)
         return self.get_sample_barcode_from_isolation_barcode(tumor_isolation_barcode)
 
     def get_sample_set_by_sample_name(self, sample_name):
