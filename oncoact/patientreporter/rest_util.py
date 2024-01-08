@@ -22,7 +22,7 @@ class RestClient:
         self._files_url = f'{self._api_base_url}/hmf/v1/files'
         self._samples_url = f'{self._api_base_url}/hmf/v1/samples'
 
-def get_all_reports_created(self, lookback_days=90):
+    def get_all_reports_created(self, lookback_days=90):
         """
         Queries the 'reports/created' endpoint and returns all results.
 
