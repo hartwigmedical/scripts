@@ -31,8 +31,8 @@ class ArtifactGenerator:
         self._panel_pipeline_output_bucket: Bucket = self._storage_client.bucket(
             f'targeted-pipeline-output-{profile}-1')
 
-        run_id = self._report_created_record['run_id']
-        self.run = self._rest_client.get_run(run_id)
+        self.run_id = self._report_created_record['run_id']
+        self.run = self._rest_client.get_run(self.run_id)
         self.hmf_id = self.run['set']['tumor_sample']
         self.set_name = self.run['set']['name']
 
@@ -68,7 +68,7 @@ class ArtifactGenerator:
 
     def _run_r_script_qc(self, script_location, input_folder, output_folder):
         sample_name = self._report_created_record['sample_name']
-        barcode = self._rest_client.get_tumor_sample_barcode_from_run_id(self._report_created_record['run_id'])
+        barcode = self._rest_client.get_tumor_sample_barcode_from_run_id(self.run_id)
         print(barcode)
         # gb_yield = self._rest_client.get_yield(barcode)
         # subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder, gb_yield], check=False)
