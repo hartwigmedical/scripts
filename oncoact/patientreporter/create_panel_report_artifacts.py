@@ -68,7 +68,7 @@ class ArtifactGenerator:
 
     def _run_r_script_qc(self, script_location, input_folder, output_folder):
         sample_name = self._report_created_record['sample_name']
-        barcode = self._rest_client.get_tumor_sample_barcode_from_run_id(self.run)
+        barcode = self._rest_client.get_tumor_sample_barcode_from_run_id(self._report_created_record['run_id'])
         gb_yield = self._rest_client.get_yield(barcode)
         subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder, gb_yield], check=False)
 
