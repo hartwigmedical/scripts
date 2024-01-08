@@ -62,11 +62,17 @@ class ArtifactGenerator:
         sample_report_script_path = '/data/repos/scripts/panel/createSampleQcReport.R'
         deamination_script_path = '/data/repos/scripts/panel/createSampleQcReport_Deamination.R'
 
-        self._run_r_script(sample_report_script_path, input_folder=input_folder, output_folder=output_folder)
-        self._run_r_script(deamination_script_path, input_folder=input_folder, output_folder=output_folder)
+        self._run_r_script_qc(sample_report_script_path, input_folder=input_folder, output_folder=output_folder)
+        self._run_r_script_deamination(deamination_script_path, input_folder=input_folder, output_folder=output_folder)
         print(f"The scripts have finished. Output is stored at '{output_folder}'")
 
-    def _run_r_script(self, script_location, input_folder, output_folder):
+    def _run_r_script_qc(self, script_location, input_folder, output_folder):
+        sample_name = self._report_created_record['sample_name']
+        barcode = self._rest_client.get_tumor_sample_barcode_from_run_id(self.run)
+        gb_yield = self._rest_client.get_yield(barcode)
+        subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder, gb_yield], check=False)
+
+    def _run_r_script_deamination(self, script_location, input_folder, output_folder):
         sample_name = self._report_created_record['sample_name']
         subprocess.run(['Rscript', script_location, sample_name, input_folder, output_folder], check=False)
 

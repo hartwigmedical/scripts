@@ -20,8 +20,9 @@ class RestClient:
         self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
         self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
         self._files_url = f'{self._api_base_url}/hmf/v1/files'
+        self._samples_url = f'{self._api_base_url}/hmf/v1/samples'
 
-    def get_all_reports_created(self, lookback_days=90):
+def get_all_reports_created(self, lookback_days=90):
         """
         Queries the 'reports/created' endpoint and returns all results.
 
@@ -80,6 +81,13 @@ class RestClient:
         Gets the run by id.
         """
         return _get_as_json(f'{self._runs_url}/{run_id}')
+
+    def get_yield(self, barcode):
+        """
+        Gets the sample information at sample barcode
+        """
+        sample = _get_as_json(self._samples_url, params={'barcode': barcode})
+        return sample['yld']
 
     def get_run_files(self, run_id):
         return _get_as_json(self._files_url, params={'run_id': run_id})
