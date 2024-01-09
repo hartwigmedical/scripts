@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-patientId=$1 && shift
+patient_id=$1 && shift
 
-if [[ -z "${patientId}" ]]; then
+if [[ -z "${patient_id}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
 gcloud pubsub topics publish projects/actin-prod/topics/analysis-pipeline.pending \
-    --message="{\"patientId\": \"$patientId\", \"trigger\": \"MANUAL\"}"
+    --message="{\"patientId\": \"${patient_id}\", \"trigger\": \"MANUAL\"}"
