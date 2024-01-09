@@ -359,10 +359,6 @@ locate_actin_serve_db() {
     echo "/data/resources/actin/serve_db"
 }
 
-locate_actin_external_trial_mapping_tsv() {
-    echo "/data/resources/actin/evidence_curation/external_trial_mapping.tsv"
-}
-
 locate_actin_known_genes_tsv() {
     echo "/data/resources/actin/serve_db/KnownGenes.SERVE.37.tsv"
 }

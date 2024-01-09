@@ -14,7 +14,6 @@ molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
 
 orange_json="$(locate_orange_no_germline_json ${molecular_dir})"
 serve_directory="$(locate_actin_serve_db)"
-external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 clinical_json="$(locate_actin_clinical_json_for_sample ${sample})"
 doid_json="$(locate_doid_json)"
 
@@ -28,7 +27,6 @@ info "Running ACTIN ORANGE interpreter on ${sample}"
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplicationKt \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
-    -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
     -clinical_json "${clinical_json}" \
     -doid_json "${doid_json}" \
     -output_directory "${output_directory}" \

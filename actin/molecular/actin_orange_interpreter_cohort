@@ -15,7 +15,6 @@ molecular_dir="$(locate_actin_cohort_molecular_directory ${sample})"
 
 orange_json="${molecular_dir}/${sample}.orange.json"
 serve_directory="/data/resources/actin/cohort_analysis/serve_db"
-external_trial_mapping_tsv="$(locate_actin_external_trial_mapping_tsv)"
 
 patient=$(to_actin_patient ${sample})
 clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
@@ -28,7 +27,6 @@ info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
-    -external_trial_mapping_tsv "${external_trial_mapping_tsv}" \
     -clinical_json "${clinical_json}" \
     -doid_json "${doid_json}" \
     -output_directory "${molecular_dir}" \
