@@ -55,9 +55,9 @@ runSampleQcReport<-function()
     args <- commandArgs(trailingOnly = TRUE)
     print(args)
 
-    if(length(args) < 4)
+    if(length(args) < 3)
     {
-      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir, 4 = yield (Gb)")
+      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir")
       stop()
     }
 
@@ -70,7 +70,7 @@ runSampleQcReport<-function()
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
     runDir = args[3]
-    yield = args[4]
+#    yield = args[4]
 
 
 #    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
@@ -344,8 +344,7 @@ runSampleQcReport<-function()
     print(paste0("writing output to pdf file: ", outputFile))
     pdf(file = outputFile, height = 14, width = 20)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; yield ', yield, ' Gb; ',
-        'Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
@@ -374,8 +373,7 @@ runSampleQcReport<-function()
     print(paste0("writing output to png file: ", outputPNG))
     png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; yield ', yield, ' Gb; ',
-        'Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
