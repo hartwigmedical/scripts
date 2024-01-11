@@ -14,6 +14,7 @@ gsutil -m rsync -r $(locate_actin_clinical_curation_bucket) $(locate_actin_clini
 gsutil -m rsync -r $(locate_actin_clinical_output_bucket) $(locate_actin_curated_clinical_directory)
 gsutil -m rsync -r $(locate_actin_trial_config_bucket) $(locate_actin_trial_config_directory)
 gsutil -m rsync -r $(locate_actin_ctc_config_bucket) $(locate_actin_ctc_config_directory)
+gsutil -m rsync -r $(locate_actin_prod_data_bucket)/molecular/ $(locate_actin_molecular_directory)
 gsutil -m rsync -r $(locate_actin_prod_data_bucket)/treatment_match/ $(locate_actin_treatment_match_directory)
 
 info "Adding new actin pipeline outputs to treatment match (temporary)"
