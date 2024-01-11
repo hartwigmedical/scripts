@@ -56,6 +56,8 @@ class ReportSharer:
         self._delete_old_artifacts_in_gcp_share_bucket()
         if publish_to_portal:
             self._copy_files_to_remote_buckets_publish(panel)
+            if not panel:
+                self._copy_germline_files_to_remote_buckets_publish()
         else:
             self._copy_files_to_remote_buckets_no_publish()
 
@@ -108,6 +110,38 @@ class ReportSharer:
             if panel:
                 self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='')
             self._copy_blob_to_archive_bucket(blob=blob)
+
+    def _copy_germline_files_to_remote_buckets_publish(self):
+        run_blobs = self._get_run_germline_files_as_blobs()
+
+        print(f"Copying a total of '{len(run_blobs)}' germline run files to remote buckets")
+        for blob in run_blobs:
+            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO_germline')
+
+    def _get_run_germline_files_as_blobs(self):
+        set_name = self.run['set']['name']
+        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportingId']
+
+        run_files_suffix = {
+            "purple.germline.vcf.gz",
+            f"{set_name}/purple/{reporting_id}.purple.germline.vcf.gz.tbi"
+            "purple.germline.deletion.tsv",
+            "gripss.filtered.germline.vcf.gz",
+            f"{set_name}/gripss_germline/{reporting_id}.gripss.filtered.germline.vcf.gz.tbi"
+            "linx.germline.disruption.tsv",
+            "linx.germline.driver.catalog.tsv"
+            "driver.catalog.germline.tsv"
+        }
+        result = []
+
+        blobs = list(self.pipeline_output_bucket.list_blobs(prefix=set_name))
+        for suffix in run_files_suffix:
+            for blob in blobs:
+                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
+                    result.append(blob)
+                    break
+
+        return result
 
     def _copy_files_to_remote_buckets_no_publish(self):
         report_blobs = self._get_report_files_as_blobs()
