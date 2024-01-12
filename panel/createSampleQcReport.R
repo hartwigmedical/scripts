@@ -48,7 +48,6 @@ vcf_data_frame<-function(vcf)
 runSampleQcReport<-function()
 {
 
-    # Parse and check inputs
 
 
 #     Parse and check inputs
@@ -63,38 +62,24 @@ runSampleQcReport<-function()
 
     sampleId <- args[1]
     sampleDataDir <- args[2]
-    #cohortMedianDepthFile = args[3]
-    #cobaltRegionsFile = args[4]
 
-    #runDir = "/home/mmendeville/matias/Panel/"
-
-#    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
     runDir = args[3]
-#    yield = args[4]
 
 
-#    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
 
     cohortMedianDepthFile = paste0("/data/resources/public/target_regions/38/target_regions_exon_relative_depth.38.csv")
-#   cohortMedianDepthFile = 
-#    cobaltRegionsFile = paste0(runDir, "QC/target_regions_normalisation.38.tsv")
     cobaltRegionsFile = "/data/resources/public/target_regions/38/target_regions_normalisation.38.tsv"
     ensembl_gene_data = "/data/resources/public/ensembl_data_cache/38/ensembl_gene_data.csv"
     driverGenePanel = "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
-#    ensembl_gene_data = paste0(runDir, "resources/ensembl_gene_data.csv")
-#    driverGenePanel = paste0(runDir, "resources/DriverGenePanel.38.tsv")
 
-#    sampleId = "FRXXXXXX"
     print(sampleId)
 
-    #sampleDataDir = paste0(runDir, "Test/")
-# should come in as argument
-    #sampleDataDir = paste0(runDir, "230519-532-test-prod-panel/",sampleId,"-panel-prod-test/") 
     sampleExonCoverageFile = paste0(sampleDataDir,'/sage_somatic/',sampleId,'.sage.exon.medians.tsv')
     sampleGeneCnFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.cnv.gene.tsv')
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
     bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
+    excludedFile = 'textfile.txt'
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
@@ -106,6 +91,7 @@ runSampleQcReport<-function()
     check_file(driverGenePanel)
     check_file(bamMetricsFile)
     print("files present")
+    check_file(excludedFile)
 
     # set plotting features
     defaultFontSize=8
@@ -129,41 +115,29 @@ runSampleQcReport<-function()
 
     ensemblGenes = load_file(ensembl_gene_data,'ensembl gene data', delim=',')
     driverGenePanel = load_file(driverGenePanel, 'driver gene panel')
+    excludedExons = load_file(excludedFile,'excluded exons')
 
-    # arrange genes on alphabetical order of gene name
-    # genesList = genesList %>% arrange(Gene) %>% mutate(GeneIndex=row_number())
+
+
 
     # sort ensembl on chromosomal order
     ensemblGenes = ensemblGenes %>% mutate(ChromIndex=as.integer(ensemblGenes$Chromosome))
     ensemblGenes$ChromIndex[which(ensemblGenes$Chromosome=='X')] <- 23
     ensemblGenes$ChromIndex[which(ensemblGenes$Chromosome=='Y')] <- 24
     ensemblGenes = ensemblGenes %>% arrange(ChromIndex, GeneStart)
-    # check if correct: table(ensemblGenes$Chromosome, ensemblGenes$ChromIndex)
 
-    # filter genes from driver gene panel - annotated with likelihoodType (TSG / ONCO)
-    # driverGenes = ensemblGenes %>% filter(GeneName %in% driverGenePanel$gene)
     colnames(ensemblGenes)[2] <- 'gene'
     driverGenes = dplyr::inner_join(ensemblGenes, driverGenePanel, by="gene")
-
-    # genesOfInterest = c('MPL','NRAS','ALK','IDH1','ERBB4','VHL','MLH1','CTNNB1','PIK3CA','FGFR3','PDGFRA','KIT','KDR','FBXW7','APC','CSF1R','NPM1',
-    #                     'ROS1','EGFR','MET','SMO','BRAF','EZH2','FGFR1','JAK2','CDKN2A','GNAQ','ABL1','NOTCH1','RET','PTEN','FGFR2','HRAS',"ATM",
-    #                     'KRAS','PTPN11','HNF1A','POLE','FLT3','RB1','AKT1','IDH2','CDH1','TP53','ERBB2','SMAD4','STK11','GNA11','JAK3','SRC','GNAS','SMARCB1')
 
     # filter genes of interest for OncoPanel. Check: "Proposed validation gene list" in Oncopanel > CNV validation
     # 10 genes for DELs
     reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1')
     # 17 genes for AMPS
     reportGenesAmplification = c('AR','CCNE1','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MDM2','MET','MYC','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1','FGFR1')
-    # notes: MST1R is removed from the list, since it is not in Hartwig's driver gene panel
 
-    # these genes do not work: "CCNE1" "MDM2"  "MYC"
-#    reportGenesAmplification = c('AR','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MET','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1', 'FGFR1')
-    # all reportAmplification=TRUE from driverGenePanel
-    # reportAmplification = driverGenes %>% filter(reportAmplification=='true' & likelihoodType=='ONCO')
     genesOfInterest = c(reportGenesDeletions, reportGenesAmplification)
 
     genesList = driverGenes %>% filter(gene %in% genesOfInterest)
-    #likelihoodType = genesList$likelihoodType
     likelihoodType = as.data.frame(cbind(genesList$gene, genesList$likelihoodType))
     colnames(likelihoodType) = c('Gene', 'likelihoodType')
     # TODO: color genes in legend by likelihoodType (TSG/ONCO)
@@ -172,12 +146,12 @@ runSampleQcReport<-function()
     colnames(genesList) = c('Gene')
     genesList = genesList %>% mutate(GeneIndex=row_number())
 
-    #genesList = as.data.frame(cbind(genesList$gene, genesList$likelihoodType))
-    #colnames(genesList) = c('Gene', 'likelihoodType')
-    #genesList = genesList %>% mutate(GeneIndex=row_number())
 
     exons = load_file(sampleExonCoverageFile,'sample exon coverage')
+
     colnames(exons) = c('Gene','Chromosome','PosStart','PosEnd','ExonRank','MedianDepth')
+    print(paste(nrow(exons)," total exons in driver catalog"),sep="")
+
     genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
 
@@ -191,26 +165,39 @@ runSampleQcReport<-function()
                              NormDepth=ifelse(CohortRelDepth>0,MedianDepth/CohortRelDepth,MedianDepth))
     exons = exons %>% mutate(Position=floor(PosEnd/1000)*1000+1)
     exons = merge(exons,cobaltRegions,by=c('Chromosome','Position'),all.x=T)
+    allExons = exons
     exons = exons %>% filter(Gene %in% genesOfInterest)
 
-    write.table( exons %>% filter(MedianDepth < 100),paste0(outputDir,sampleId,'.insufficientCoverage.tsv'),row.names=F,quote=F,sep="\t")
+    allExons$excludedInValidation = rep(FALSE,nrow(allExons))
+    for(i in 1:nrow(allExons)){
+       if(!(allExons$Gene[i] %in% excludedExons$Gene)){
+            allExons$excludedInValidation[i]=TRUE
+       }
+       else{
+           excludedExonsGene = excludedExons[excludedExons$Gene == allExons$Gene[i],]$Trancript.ID.exons.not.included
+           excludedExonsGene = strsplit(excludedExonsGene,split=",")[[1]]
+       
 
+           if(allExons$ExonRank[i] %in% excludedExonsGene){
+               allExons$excludedInValidation[i]=TRUE
+           }
+       }
+    }
+    excluded=allExons[allExons$excludedInValidation==TRUE,]
+    print(excluded[order(excluded$Gene),])
+    checkedExons = allExons[allExons$excludedInValidation==FALSE,]
+    print(paste(nrow(checkedExons)," exons checked"),sep="")
+
+    checkedExons$excludedInValidation=NULL
+    insufficientCoverageExons = checkedExons %>% filter(MedianDepth < 100)
+    
+    write.table( insufficientCoverageExons %>% filter(MedianDepth < 100),paste0(outputDir,sampleId,'.insufficientCoverage.tsv'),row.names=F,quote=F,sep="\t")
     entriesPerPage = 30
 
 
 
-    print(paste(nrow( exons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
+    print(paste(nrow( checkedExons %>% filter(MedianDepth < 100))," exons with insufficient coverage",sep=""))
     
-    # genesOfInterest[genesOfInterest %in% unique(exons$Gene) == F]
-    # TODO: WHY ARE THERE NO EXONS FOR: "CCNE1" "MDM2"  "MYC"
-
-    #exons = merge(exons,genesList,by='Gene',all.x=T)
-    #exons = merge(exons,cohortMedianDepth,by=c('Gene','ExonRank'),all.x=T)
-    #exons = exons %>% mutate(MedianSampleDepth=median(MedianDepth),
-    #                         RelDepth=MedianDepth/MedianSampleDepth,
-    #                         NormDepth=ifelse(CohortRelDepth>0,MedianDepth/CohortRelDepth,MedianDepth))
-    #exons = exons %>% mutate(Position=floor(PosEnd/1000)*1000+1)
-    #exons = merge(exons,cobaltRegions,by=c('Chromosome','Position'),all.x=T)
 
     geneCN = load_file(sampleGeneCnFile,'sample gene copy number') %>% filter(transcriptId!='ENST00000579755')
     purity = load_file(samplePurityFile,'sample purity')
@@ -295,20 +282,11 @@ runSampleQcReport<-function()
     varGeneData = varGeneData %>% mutate(CanonicalCodingEffect=ifelse(is.na(CanonicalCodingEffect),'EMPTY',as.character(CanonicalCodingEffect)),
                                          IsHotspot=ifelse(is.na(Hotspot)|CanonicalCodingEffect=='EMPTY','EMPTY',ifelse(Hotspot,'HOTSPOT','NON-HOTSPOT')),
                                          AF=ifelse(is.na(AF),-1,AF))
-    #varGeneData = left_join(varGeneData, likelihoodType, by='Gene')
     likelihoodType = likelihoodType %>% mutate(likelihoodTypeColours=ifelse(likelihoodType=='ONCO','tomato1','turquoise3'))
     likelihoodTypeColours = likelihoodType$likelihoodTypeColours
 
     legendCodingEffectColours =c('red','blue')
     codingEffectColours =c('yellow','red','blue')
-
-    #ggplot(varGeneData, aes(x=AF,y=reorder(Gene,-GeneIndex))) +
-    #  geom_point(aes(shape=CanonicalCodingEffect,color=Hotspot)) +
-    #  scale_color_manual(values = codingEffectColours)# alpha = 0.1,
-
-    #ggplot(varGeneData %>% filter(CanonicalCodingEffect!='EMPTY'), aes(x=AF,y=reorder(Gene,-GeneIndex))) +
-    #  geom_point(aes(shape=CanonicalCodingEffect,color=Hotspot)) +
-    #  scale_color_manual(values = codingEffectColours)# alpha = 0.1,
 
     # plot to generate a legend for the variant types
     varCreateLegendPlot = ggplot(varGeneData, aes(x=reorder(Gene,-GeneIndex),y=AF)) +
@@ -331,8 +309,6 @@ runSampleQcReport<-function()
       theme(legend.position='none') +
       labs(title='Variant VAFs by Type', x='',y='')
 
-    # theme(legend.position='none') +
-    # theme(legend.position=c(0.1, 0.1))
 
     # CREATE PLOTS
 
@@ -352,15 +328,14 @@ runSampleQcReport<-function()
                            NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
-    df =exons %>% filter(MedianDepth < 100)
-    df = df[order(df$Gene,df$ExonRank),]
-    if(nrow(df)>0){
-      rownames(df) = 1:nrow(df)
+    print(insufficientCoverageExons)
+    if(nrow(insufficientCoverageExons)>0){
+      rownames(insufficientCoverageExons) = 1:nrow(insufficientCoverageExons)
       grid.newpage()
     
-      for(i in seq(1,nrow(df),entriesPerPage)){
-        grid.table(df[i:min(nrow(df),(i+entriesPerPage-1)),])
-        if( i+entriesPerPage < nrow(df)){
+      for(i in seq(1,nrow(insufficientCoverageExons),entriesPerPage)){
+        grid.table(insufficientCoverageExons[i:min(nrow(insufficientCoverageExons),(i+entriesPerPage-1)),])
+        if( i+entriesPerPage <= nrow(insufficientCoverageExons)){
           grid.newpage()
         }
       }
@@ -382,24 +357,9 @@ runSampleQcReport<-function()
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
     dev.off()
-    #grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
-    #                       variantPlot,NULL,exonMedianPlot,NULL,exonNormPlot,NULL,geneCnPlot,NULL,
-    #                       NULL,varLegendPlot,NULL,NULL,NULL,NULL,NULL,NULL,
-    #                       ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
-    #                       rel_heights=c(1,20,1),align='v',axis='l'))
-    #dev.off()
-    # grid.arrange(plot_grid(title,NULL,NULL,NULL,
-    #                        variantPlot,exonMedianPlot,exonNormPlot,geneCnPlot,
-    #                        NULL,varLegendPlot,NULL,NULL,
-    #                        ncol = 4, nrow = 3, rel_heights = c(1,20,1), align = 'v', axis = 'l'))
-    #dev.off()
 
 }
 
-#Samples =read.table("/home/evandijk/TEST_QC_Plots/QC_rundir/sampleNew532.txt")
 
 runSampleQcReport()
 
-#for(S in Samples$V1){
-#  runSampleQcReport(S)
-#}
