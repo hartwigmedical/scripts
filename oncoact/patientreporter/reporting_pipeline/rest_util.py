@@ -20,6 +20,7 @@ class RestClient:
         self._sets_url = f'{self._api_base_url}/hmf/v1/sets'
         self._runs_url = f'{self._api_base_url}/hmf/v1/runs'
         self._files_url = f'{self._api_base_url}/hmf/v1/files'
+        self._samples_url = f'{self._api_base_url}/hmf/v1/samples'
 
     def get_all_reports_created(self, lookback_days=90):
         """
@@ -81,6 +82,14 @@ class RestClient:
         """
         return _get_as_json(f'{self._runs_url}/{run_id}')
 
+    def get_yield(self, barcode):
+        """
+        Gets the sample information at sample barcode
+        """
+        sample = _get_as_json(self._samples_url, params={'barcode': barcode})
+        print(sample)
+        return sample['yld']
+
     def get_run_files(self, run_id):
         return _get_as_json(self._files_url, params={'run_id': run_id})
 
@@ -90,6 +99,7 @@ class RestClient:
 
         This method does not rely on the existence of a report. It uses Lama to retrieve the tumor sample barcode.
         """
+        print(_get_as_json(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}', params={'sampleBarcode': tumor_isolation_barcode}))
         return _get_as_json(f'{self._lama_url}/api/statuses/sample-barcode/{tumor_isolation_barcode}')['sampleBarcode']
 
     def get_tumor_sample_barcode_from_run_id(self, run_id):
@@ -98,6 +108,7 @@ class RestClient:
 
         """
         run = self.get_run(run_id)
+        print(run)
         sample_set = self.get_sample_set_by_id(run['set']['id'])
         samples = sample_set['samples']
         tumor_samples = [s for s in samples if s['type'] == 'tumor']
@@ -105,7 +116,7 @@ class RestClient:
             raise ValueError(f"No tumor sample found for run '{run_id}'")
         tumor_sample = tumor_samples[0]
         tumor_isolation_barcode = tumor_sample['barcode']
-
+        print(tumor_isolation_barcode)
         return self.get_sample_barcode_from_isolation_barcode(tumor_isolation_barcode)
 
     def get_sample_set_by_sample_name(self, sample_name):

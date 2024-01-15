@@ -31,8 +31,8 @@ class ArtifactGenerator:
         self._panel_pipeline_output_bucket: Bucket = self._storage_client.bucket(
             f'targeted-pipeline-output-{profile}-1')
 
-        run_id = self._report_created_record['run_id']
-        self.run = self._rest_client.get_run(run_id)
+        self.run_id = self._report_created_record['run_id']
+        self.run = self._rest_client.get_run(self.run_id)
         self.hmf_id = self.run['set']['tumor_sample']
         self.set_name = self.run['set']['name']
 
@@ -99,7 +99,8 @@ class ArtifactGenerator:
             "purple.purity.tsv",
             "purple.somatic.vcf.gz",
             "purple.cnv.gene.tsv",
-            "sage.exon.medians.tsv"
+            "sage.exon.medians.tsv",
+            ".wgsmetrics"
         }
         run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
 
