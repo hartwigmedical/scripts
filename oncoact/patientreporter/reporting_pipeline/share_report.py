@@ -124,10 +124,10 @@ class ReportSharer:
 
         run_files_suffix = {
             "purple.germline.vcf.gz",
-            f"{set_name}/purple/{reporting_id}.purple.germline.vcf.gz.tbi"
+            f"{set_name}/purple/{reporting_id}.purple.germline.vcf.gz.tbi",
             "purple.germline.deletion.tsv",
             "gripss.filtered.germline.vcf.gz",
-            f"{set_name}/gripss_germline/{reporting_id}.gripss.filtered.germline.vcf.gz.tbi"
+            f"{set_name}/gripss_germline/{reporting_id}.gripss.filtered.germline.vcf.gz.tbi",
             "linx.germline.disruption.tsv",
             "linx.germline.driver.catalog.tsv"
             "driver.catalog.germline.tsv"
