@@ -157,6 +157,8 @@ runSampleQcReport<-function()
 
     outputDir = paste0(runDir, "sampleQcReports/")
 
+    outputDir = paste0(runDir, "sampleQcReports/")
+    if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
     exons = merge(exons,genesList,by='Gene',all.x=T)
     exons = merge(exons,cohortMedianDepth,by=c('Gene','ExonRank'),all.x=T)
@@ -311,9 +313,6 @@ runSampleQcReport<-function()
 
 
     # CREATE PLOTS
-
-    outputDir = paste0(runDir, "sampleQcReports/")
-    if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
     # PDF creation
     outputFile = paste0(outputDir, sampleId, '.sampleQcReport.pdf')
