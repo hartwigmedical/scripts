@@ -156,8 +156,6 @@ runSampleQcReport<-function()
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
 
     outputDir = paste0(runDir, "sampleQcReports/")
-
-    outputDir = paste0(runDir, "sampleQcReports/")
     if (!dir.exists(outputDir)){ dir.create(outputDir)}
 
     exons = merge(exons,genesList,by='Gene',all.x=T)
