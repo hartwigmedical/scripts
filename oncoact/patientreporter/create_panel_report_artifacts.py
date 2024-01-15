@@ -41,9 +41,9 @@ class ArtifactGenerator:
         self._download_required_resources(download_to=input_folder)
 
         self._run_scripts(input_folder=input_folder, output_folder=output_folder)
-        # self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
-        # upload_to_nextcloud(output_folder)
-        # self._copy_output_to_bucket(output_folder=output_folder)
+        self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
+        upload_to_nextcloud(output_folder)
+        self._copy_output_to_bucket(output_folder=output_folder)
 
 
     def _generate_input_and_output_folders(self):
@@ -59,7 +59,7 @@ class ArtifactGenerator:
         return input_folder, output_folder
 
     def _run_scripts(self, input_folder, output_folder):
-        sample_report_script_path = '/home/lschoenmaker/tmp/scripts/panel/createSampleQcReport.R'
+        sample_report_script_path = '/data/repos/scripts/panel/createSampleQcReport.R'
         deamination_script_path = '/data/repos/scripts/panel/createSampleQcReport_Deamination.R'
 
         self._run_r_script(sample_report_script_path, input_folder=input_folder, output_folder=output_folder)
