@@ -79,7 +79,7 @@ runSampleQcReport<-function()
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
     bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
-    excludedFile = 'textfile.txt'
+    excludedFile = '/data/resources/ops/panel/excludedExons.tsv'
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
