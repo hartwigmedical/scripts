@@ -81,6 +81,10 @@ my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/Statuses.json';
 my $LAMA_CONTRACTS_JSON = $LATEST_DIR . '/Contracts.json';
 
 # Files from previous years
+my $SUBM_TSV_2023 = $LATEST_DIR . '/2023_for001_submissions.tsv';
+my $SAMP_TSV_2023 = $LATEST_DIR . '/2023_for001_samples.tsv';
+my $PROC_TSV_2023 = $LATEST_DIR . '/2023_for002_processing.tsv';
+
 my $SUBM_TSV_2022 = $LATEST_DIR . '/2022_for001_submissions.tsv';
 my $SAMP_TSV_2022 = $LATEST_DIR . '/2022_for001_samples.tsv';
 my $PROC_TSV_2022 = $LATEST_DIR . '/2022_for002_processing.tsv';
@@ -107,6 +111,8 @@ my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json';
 my @ALL_INPUT_FILES = (
     $LAMA_ISOLATION_JSON, $LAMA_PATIENT_JSON, $LAMA_LIBRARYPREP_JSON, $LAMA_SAMPLESTATUS_JSON,
     $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV, $FOR_001_CONT_TSV,
+    $SUBM_TSV_2023, $SAMP_TSV_2023, $PROC_TSV_2023,
+    $SUBM_TSV_2022, $SAMP_TSV_2022, $PROC_TSV_2022,
     $SUBM_TSV_2021, $SAMP_TSV_2021, $PROC_TSV_2021,
     $SUBM_TSV_2020, $SAMP_TSV_2020, $PROC_TSV_2020,
     $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
@@ -144,6 +150,7 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2023, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
@@ -151,6 +158,7 @@ $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2020'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2021'}, 'submission', 0, $SUBM_TSV_2021, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2022'}, 'submission', 0, $SUBM_TSV_2022, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2023'}, 'submission', 0, $SUBM_TSV_2023, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
@@ -159,6 +167,7 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2023'}, 'sample_id',  1, $SAMP_TSV_2023, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 my $lama_status = parseLamaSampleStatus($LAMA_SAMPLESTATUS_JSON);
@@ -660,10 +669,15 @@ sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
-    my $line_count = `wc -l < $file`;
-    chomp($line_count);
+    my $line_count;
+    open(COUNT_LINES, "< $file") or die "can't open $file: $!";
+    while ( <COUNT_LINES> ){
+        next if /^\s*$/;
+        $line_count++
+    }
+    close(COUNT_LINES);
 
-    sayInfo(sprintf "  Parsing CSV/TSV [%s,lineCount=%s]", basename($file), $line_count);
+    sayInfo(sprintf "  Parsing CSV/TSV [%s,nonEmptyLineCount=%s]", basename($file), $line_count);
     open IN, "<", $file or die "[ERROR] Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -1308,7 +1322,8 @@ sub getFieldNameTranslations{
     );
 
     my %SUBM_DICT_2022 = %SUBM_DICT_2021;
-    my %SUBM_DICT = %SUBM_DICT_2022;
+    my %SUBM_DICT_2023 = %SUBM_DICT_2022;
+    my %SUBM_DICT = %SUBM_DICT_2023;
 
     # Columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
@@ -1349,18 +1364,12 @@ sub getFieldNameTranslations{
         "Remarks"             => 'remarks',
     );
 
-    # Columns samples sheet 2020 FOR-001 is identical to 2019
     my %SAMP_DICT_2020 = %SAMP_DICT_2019;
-
-    # Columns samples sheet of 2021 FOR-001 has extra ShallowSeq field
     my %SAMP_DICT_2021 = %SAMP_DICT_2020;
     $SAMP_DICT_2021{"ShallowSeq_required"} = 'shallowseq';
-
-    # Columns samples sheet 2022 FOR-001 is identical to 2021
     my %SAMP_DICT_2022 = %SAMP_DICT_2021;
-
-    # Columns samples sheet CURRENT FOR-001 are identical to 2022 format
-    my %SAMP_DICT = %SAMP_DICT_2022;
+    my %SAMP_DICT_2023 = %SAMP_DICT_2022;
+    my %SAMP_DICT = %SAMP_DICT_2023;
 
     # Columns In Process sheet (HMF-FOR-002)
     my %PROC_DICT_2022 = (
@@ -1369,7 +1378,8 @@ sub getFieldNameTranslations{
         'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
         'Sop_tracking_code' => 'lab_sop_versions',
     );
-    my %PROC_DICT = %PROC_DICT_2022;
+    my %PROC_DICT_2023 = %PROC_DICT_2022;
+    my %PROC_DICT = %PROC_DICT_2023;
 
     my %lama_patient_dict = (
         '_id' => 'lama_patient_object_id',
@@ -1483,18 +1493,21 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2023' => \%SUBM_DICT_2023,
         'SUBM_2022' => \%SUBM_DICT_2022,
         'SUBM_2021' => \%SUBM_DICT_2021,
         'SUBM_2020' => \%SUBM_DICT_2020,
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2023' => \%SAMP_DICT_2023,
         'SAMP_2022' => \%SAMP_DICT_2022,
         'SAMP_2021' => \%SAMP_DICT_2021,
         'SAMP_2020' => \%SAMP_DICT_2020,
         'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
+        'PROC_2023' => \%PROC_DICT_2023,
         'PROC_2022' => \%PROC_DICT_2022,
         'lama_content_translations_by_field_name' => \%lama_content_translations_by_field_name,
         'lama_patient_dict' => \%lama_patient_dict,

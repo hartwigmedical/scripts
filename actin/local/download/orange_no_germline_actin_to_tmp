@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+local_dir="${HOME}/hmf/tmp/orange_no_germline"
+if [[ ! -d "${local_dir}" ]]; then
+    mkdir -p "${local_dir}"
+fi
+
+orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
+
+gsutil cp ${orange_report} ${local_dir}/

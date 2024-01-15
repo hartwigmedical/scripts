@@ -20,17 +20,17 @@ def main():
 
 
 def get_flowcells() -> List[Dict]:
-   bashCommand = "hmf_api_get flowcells"
-   flowcells = subprocess.run(bashCommand.split(), capture_output=True, text=True)
-   if flowcells.stderr != '':
-       print(f"[ERROR]: {flowcells.stderr}")
-       sys.exit()
-   return json.loads(flowcells.stdout)
+    bashCommand = "hmf_api_get flowcells"
+    flowcells = subprocess.run(bashCommand.split(), capture_output=True, text=True)
+    if flowcells.stderr != '':
+        print(f"[ERROR]: {flowcells.stderr}")
+        sys.exit()
+    return json.loads(flowcells.stdout)
 
 def check_flowcell_time_range(flowcell: Dict, s: datetime.date, e: datetime.date) -> Optional[bool]:
     convert_time = flowcell["convertTime"]
     if convert_time == None:
-       return False
+        return False
     convert_date = datetime.datetime.strptime(convert_time, "%Y-%m-%dT%H:%M:%S").date()
     if convert_date >= s and convert_date <= e:
         return True
@@ -120,7 +120,7 @@ def merge_sample_and_flowcell_info(sample: Dict, flowcell: Dict) -> Dict:
             #"version": sample["version"]
             #"coverage": sample["coverage"],
             #"bqr": sample["bqr"]
-           }
+            }
 
 def merge_samples_and_flowcell_info(samples: List[Dict], flowcell: Dict) -> List[Dict]:
     complete_sample_info = []
@@ -150,7 +150,7 @@ def get_samples(flowcells: List[Dict]):
                 data = get_samples_qc_info(samples_data)
                 data = merge_samples_and_flowcell_info(data, flowcell)
                 for sample in data:
-                   samples.append(sample)
+                    samples.append(sample)
     return samples
 
 

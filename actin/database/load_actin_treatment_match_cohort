@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source database_functions || exit 1
+source actin_functions || exit 1
 
 sample=$1 && shift
 
@@ -13,7 +14,7 @@ actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="$(locate_cohort_actin)"
 actin_database_name="actin_cohort"
 
-patient=$(echo ${sample} | head -c 12)
+patient=$(to_actin_patient ${sample})
 treatment_match_json="/data/experiments/charlotte_emc_actionability/treatment_matches/${patient}.treatment_match.json"
 
 do_load_actin_treatment_match ${treatment_match_json} "${actin_credentials}" ${actin_jar} ${actin_database_name}

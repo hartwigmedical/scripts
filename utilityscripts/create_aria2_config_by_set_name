@@ -178,42 +178,64 @@ create_run_specific_files () {
     if [[ "${pip}" == "Fastq" ]]; then
         # For fastq type runs no pipeline output is available
         bam1="undef"
-        bam1_bai="undef"
+        bam1_index="undef"
         bam2="undef"
-        bam2_bai="undef"
+        bam2_index="undef"
+    elif [[ "${context}" == "SERVICES" ]]; then
+        base_file_path="gs://${bucket}/${set_name}"
+
+        bam1="${base_file_path}/${tum}/cram/${tum}.cram"
+        bam2="${base_file_path}/${ref}/cram/${ref}.cram"
+        bam1_index="${bam1}.crai"
+        bam2_index="${bam2}.crai"
+
+        local purple_files=(
+            "${base_file_path}/purple/purple.version"
+            "${base_file_path}/purple/${tum}.purple.cnv.somatic.tsv"
+            "${base_file_path}/purple/${tum}.purple.cnv.gene.tsv"
+            "${base_file_path}/purple/${tum}.purple.purity.tsv"
+            "${base_file_path}/purple/${tum}.purple.purity.range.tsv"
+            "${base_file_path}/purple/${tum}.purple.qc"
+            "${base_file_path}/purple/${tum}.purple.sv.vcf.gz"
+            "${base_file_path}/purple/${tum}.purple.sv.vcf.gz.tbi"
+            "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz"
+            "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz.tbi"
+            "${base_file_path}/purple/plot/${tum}.circos.png"
+        )
+
     else
         bam1=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | head -n1)
         bam2=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | tail -n1)
         if [[ "${minor_version}" -lt 10 || "${context}" == "DIAGNOSTIC" ]]; then
-            bam1_bai="${bam1}.bai"
-            bam2_bai="${bam2}.bai"
+            bam1_index="${bam1}.bai"
+            bam2_index="${bam2}.bai"
         else
-            bam1_bai="${bam1}.crai"
-            bam2_bai="${bam2}.crai"
+            bam1_index="${bam1}.crai"
+            bam2_index="${bam2}.crai"
         fi
-    fi
 
-    local purple_files=(
-        "$(echo ${json} | jq -r '.[] | select(.filename == "purple.version") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_copy_number") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.cnv\\.gene\\.tsv")) | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_purity") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.purity\\.range\\.tsv")) | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_qc") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath').tbi"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath').tbi"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_circos_plot") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_driver_catalog") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_driver_catalog") | .filepath')"
-        "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_deletion") | .filepath')"
-    )
+        local purple_files=(
+            "$(echo ${json} | jq -r '.[] | select(.filename == "purple.version") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_copy_number") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.cnv\\.gene\\.tsv")) | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_purity") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.purity\\.range\\.tsv")) | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_qc") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath').tbi"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath').tbi"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_circos_plot") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_deletion") | .filepath')"
+        )
+    fi
 
     # Final file list for SingleSample runs
     local single_sample_files=(
         "${bam1}"
-        "${bam1_bai}"
+        "${bam1_index}"
         "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath')"
         "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath').tbi"
     )
@@ -221,18 +243,18 @@ create_run_specific_files () {
     # Final file list for ShallowSeq runs
     local shallow_files=(
         "${bam1}"
-        "${bam1_bai}"
+        "${bam1_index}"
         "${bam2}"
-        "${bam2_bai}"
+        "${bam2_index}"
         "${purple_files[@]}"
     )
 
     # Final file list for Somatic runs
     local somatic_files=(
         "${bam1}"
-        "${bam1_bai}"
+        "${bam1_index}"
         "${bam2}"
-        "${bam2_bai}"
+        "${bam2_index}"
         "${purple_files[@]}"
     )
 

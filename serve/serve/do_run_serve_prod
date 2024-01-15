@@ -5,30 +5,4 @@ source message_functions || exit 1
 
 serve_jar="$(locate_prod_serve)"
 
-ensembl_data_dir_37="$(locate_ensembl_data_dir_37)"
-ensembl_data_dir_38="$(locate_ensembl_data_dir_38)"
-
-ref_genome_37_fasta_file="$(locate_ref_genome_37_fasta_file)"
-ref_genome_38_fasta_file="$(locate_ref_genome_38_fasta_file)"
-ref_genome_37_to_38_chain="$(locate_ref_genome_37_to_38_chain)"
-ref_genome_38_to_37_chain="$(locate_ref_genome_38_to_37_chain)"
-
-driver_gene_37_tsv="$(locate_driver_gene_panel_37_tsv)"
-driver_gene_38_tsv="$(locate_driver_gene_panel_38_tsv)"
-
-#TODO Switch to "do_run_serve" once prod is upgraded to > SERVE 2.1
-known_fusion_37_file="/data/resources/custom/fusions/37/known_fusion_data.37.csv"
-known_fusion_38_file="/data/resources/custom/fusions/38/known_fusion_data.38.csv"
-
-java -Xms2G -Xmx16G -jar ${serve_jar} \
-    -ensembl_data_dir_37 ${ensembl_data_dir_37} \
-    -ensembl_data_dir_38 ${ensembl_data_dir_38} \
-    -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
-    -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
-    -ref_genome_37_to_38_chain ${ref_genome_37_to_38_chain} \
-    -ref_genome_38_to_37_chain ${ref_genome_38_to_37_chain} \
-    -driver_gene_37_tsv ${driver_gene_37_tsv} \
-    -driver_gene_38_tsv ${driver_gene_38_tsv} \
-    -known_fusion_37_file ${known_fusion_37_file} \
-    -known_fusion_38_file ${known_fusion_38_file} \
-    "$@"
+do_run_serve ${serve_jar} "$@"

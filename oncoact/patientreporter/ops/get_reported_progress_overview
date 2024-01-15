@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_reporting_api || exit 1
+source message_functions || exit 1
+
+
+all_created_reports=$( hmf_api_get "reports/created" )
+created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1669849200 ) ]' | jq 'sort_by(.create_time)')
+#date -j -f "%b %d %Y %T" "Dec 01 2022 00:00:00" "+%s"
+
+touch reported_samples_list.tsv
+while read -r report_info; do
+    sample_name=$(echo "${report_info}" | cut -f1)
+    report_type=$(echo "${report_info}" | cut -f2)
+    report_created_id=$(echo "${report_info}" | cut -f3)
+    barcode=$(echo "${report_info}" | cut -f4)
+    #
+    if [[ $( hmf_api_get reports/shared?report_created_id=${report_created_id} | jq -r .[] | wc -l ) -gt 0 ]]; then
+         if [[ $( cat reported_samples_list.tsv | grep ${sample_name} | wc -l ) -gt 0 ]]; then
+            cat reported_samples_list.tsv | grep -v ${sample_name} > tmp.tsv && mv -f tmp.tsv reported_samples_list.tsv
+         fi
+         first_report_created_id=$( extract_first_time_reporting_id_on_barcode $barcode )
+         share_date=$( hmf_api_get reports/shared?report_created_id=${first_report_created_id} | jq -r .[].share_time | cut -c1-10 | tail -1 )
+         #tat=$( get_current_TAT.sh ${sample_name} | tail -1 )
+         T=$(printf '\t')
+         #echo $sample_name $T $share_date $T $tat $T $report_type  >> reported_samples_list.tsv
+         echo $sample_name $T $share_date $T $report_type  >> reported_samples_list.tsv
+    fi
+done < <(echo "${created_reports}" | jq -cr '.[] | [.sample_name,.report_type,.id,.barcode] | @tsv')
+
+##gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/reported_samples_list.tsv ~/reported_samples_list.tsv
+##gcloud compute scp --project="hmf-crunch" --zone="europe-west4-a" --recurse "data-vm-prod-2":~/reported_samples_list.tsv ~/reported_samples_list.tsv

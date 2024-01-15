@@ -9,6 +9,8 @@ output:
     theme: united
 params:
   data_file: ""
+  iso_fail_file: ""
+  prep_fail_file: ""
 ---
 <style type="text/css">
    .main-container {max-width: 80%;}
@@ -17,7 +19,7 @@ params:
 </style>
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(dplyr) # Functionality (%>%, filter, select, etc)
 library(tidyr) # Table/data frame manipulation
 library(ggplot2) # Plotting
@@ -97,8 +99,18 @@ flowcell_qc_info <- sample_qc_info[!duplicated(sample_qc_info$flowcell),]
 diagnostic_flowcell_qc_info <- diagnostic_sample_qc_info[!duplicated(diagnostic_sample_qc_info$flowcell),]
 nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondiagnostic_sample_qc_info$flowcell),]
 
+# Lab Failures QC Info
+iso_fail_info <- read.table(params$iso_fail_file, sep = '\t', header = TRUE)
+if (nrow(iso_fail_info) >= 1) {
+  iso_fail_info$date <- as.Date(iso_fail_info$date, format = '%Y-%m-%d')
+}
+prep_fail_info <- read.table(params$prep_fail_file, sep = '\t', header = TRUE)
+if (nrow(prep_fail_info) >= 1) {
+  prep_fail_info$date <- as.Date(prep_fail_info$date, format = '%Y-%m-%d')
+}
+
 # GIAB QC Info
-giab_info <- as.data.frame(t(read.csv("/tmp/HMF-FOR-096.csv", sep=",", header=F, na.strings=c("", "NA", "N/A"))))
+giab_info <- as.data.frame(t(read.csv("/data/tmp/HMF-FOR-096.csv", sep=",", header=F, na.strings=c("", "NA", "N/A"))))
 giab_info <- giab_info[,c(2,4,9,12,20,25)]
 giab_info <- giab_info[-1,]
 colnames(giab_info) <- c("Machine", "SetName", "Q30", "Mapped", "Duplicates", "Excluded")
@@ -386,11 +398,11 @@ basic_table(coefficients_annotation(nondiagnostic_sample_qc_info, "date", "sampl
 
 # Stats
 
-Number of flowcells: `r nrow(flowcell_qc_info)`   
-Number of flowcells with diagnostic data: `r nrow(diagnostic_flowcell_qc_info)`   
+Number of flowcells: `r nrow(flowcell_qc_info)`
+Number of flowcells with diagnostic data: `r nrow(diagnostic_flowcell_qc_info)`
 
-Number of samples: `r nrow(sample_qc_info)`  
-Number of diagnostic samples: `r nrow(diagnostic_sample_qc_info)`   
+Number of samples: `r nrow(sample_qc_info)`
+Number of diagnostic samples: `r nrow(diagnostic_sample_qc_info)`
 
 ### Numbers per Submission/Study (Diagnostics)
 ```{r stats_numbers, echo=FALSE}
@@ -448,6 +460,35 @@ ggplotly(samples_plot)
 samples_plot <- ggplot(diagnostic_sample_qc_info, aes(date, fill=type)) +
                 geom_bar(stat="count") +
                 labs(y="Count", x="Date/Time", fill="type", title="Diagnostic") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+</div>
+
+
+### Lab Failures
+<div class = "row">
+<div class = "column">
+```{r iso_fails, echo=FALSE}
+samples_plot <- ggplot(iso_fail_info, aes(date)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", title="Isolation") +
+                scale_x_date(date_labels="%m-%Y") +
+                xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
+                theme_minimal() +
+                theme(legend.position="right", axis.text.x=element_text(size=6))
+ggplotly(samples_plot)
+```
+</div>
+<div class = "column">
+```{r prep_fails, echo=FALSE}
+samples_plot <- ggplot(prep_fail_info, aes(date)) +
+                geom_bar(stat="count") +
+                labs(y="Count", x="Date/Time", title="Prep") +
                 scale_x_date(date_labels="%m-%Y") +
                 xlim(as.Date(qc_date_range, format="%Y-%m-%d")) +
                 theme_minimal() +

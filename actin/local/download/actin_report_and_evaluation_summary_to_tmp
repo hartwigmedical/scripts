@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source locate_files || exit 1
 
 patient=$1 && shift
 
@@ -10,7 +9,4 @@ if [[ -z "${patient}" ]]; then
 fi
 
 actin_report_to_tmp ${patient}
-
-sample=$(locate_actin_most_recent_orange_sample_gcp ${patient})
-orange_germline_actin_to_tmp ${sample}
-orange_no_germline_actin_to_tmp ${sample}
+actin_evaluation_summary_to_tmp ${patient}

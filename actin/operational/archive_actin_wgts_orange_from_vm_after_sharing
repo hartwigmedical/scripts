@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+sample=$1 && shift
+
+if [[ -z "${sample}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${sample})"
+
+run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+orange_no_germline_json="$(locate_orange_no_germline_json ${run_dir})"
+orange_no_germline_pdf="$(locate_orange_no_germline_pdf ${run_dir})"
+
+info "Archiving ORANGE (no germline) data from VM for ${sample} to ${shared_orange_data_uri}"
+gsutil cp "${orange_no_germline_json}" "${shared_orange_data_uri}/"
+gsutil cp "${orange_no_germline_pdf}" "${shared_orange_data_uri}/"

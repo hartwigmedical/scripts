@@ -19,7 +19,8 @@ missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
 do_run_serve_research \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} \
+    -use_ckb_evidence -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} \
+    -use_ckb_trials \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
     -use_docm -docm_tsv ${docm_tsv} \
     -use_hartwig_cohort_hotspots -hartwig_cohort_hotspot_tsv ${hartwig_cohort_hotspot_tsv} \

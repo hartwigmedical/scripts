@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
+command -v jq > /dev/null 2>&1 || die "Dependency not found (jq)"
 
 set=$1 && shift
 
@@ -10,10 +11,8 @@ exclude_buckets="research-pipeline-output-prod"
 
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 
-info "Retrieving API set info..."
-set_json=$(hmf_api_get "sets?name=${set}" | jq '.[-1]')
-mapfile -t sample_names < <( jq -r '.samples[].name' <<< "${set_json}")
-info "Retrieving API run info (including ${include_inis} and excluding ${exclude_buckets} for run selection)..."
+info "Retrieving API runs [${include_inis}]"
+info "Excluding runs with certain buckets [${exclude_buckets}]"
 runs_json=$(
   hmf_api_get "runs?set_name=${set}" | \
   jq --arg inis "$include_inis" --arg buckets "$exclude_buckets" \
@@ -23,6 +22,11 @@ run_count=$(jq 'length' <<< "${runs_json}")
 
 run_json=$(jq '.[-1]' <<< "${runs_json}")
 bucket=$(jq -r '.bucket' <<< "${run_json}")
+metadata_file_url="gs://${bucket}/${set}/metadata.json"
+metadata_json=$(gsutil cat "${metadata_file_url}") || die "Unable to read metadata file [${metadata_file_url}]"
+ref_sample_name=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+tum_sample_name=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
+sample_names=("${ref_sample_name}" "${tum_sample_name}")
 
 [[ -n "${bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
 
@@ -30,7 +34,7 @@ info "Performing cat for each sample in run..."
 for sample_name in "${sample_names[@]}"; do
     file_url="gs://${bucket}/${set}/${sample_name}/bam_metrics/${sample_name}.wgsmetrics"
     info "WGSMetrics from ${file_url}:"
-    gsutil cat "${file_url}" | grep -A1 GENOME | datamash transpose
+    (printf "%s\t%s\n" "SAMPLE" "${sample_name}" && gsutil cat "${file_url}" | grep -A1 GENOME | datamash transpose) | column -t
 done
 
 [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"

@@ -5,8 +5,8 @@ source message_functions || exit 1
 out_dir=$1 && shift # prod or pilot lims dir
 
 if [[ -z "${out_dir}" ]]; then
-    echo "Usage: $(basename $0) /path/to/out/dir"
-    echo "   Eg: $(basename $0) /data/ops/lims/pilot"
+    echo "Usage: $(basename "$0") /path/to/out/dir"
+    echo "   Eg: $(basename "$0") /data/ops/lims/pilot"
     exit 1
 fi
 
@@ -16,19 +16,20 @@ TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/machines/00 LIMS"
 
-FOR_001_FILE="HMF-FOR-001 Received Samples 2023 v5.14.xlsx"
-FOR_001_FILE_2022="HMF-FOR-001 Received Samples 2022 v5.14.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2023 v4.7.xlsx"
-FOR_002_FILE_2022="HMF-FOR-002 Sample in process 2022 v4.6.xlsx"
+FOR_001_FILE="HMF-FOR-001 Received samples 2024 v5.15.xlsm"
+FOR_001_FILE_2023="HMF-FOR-001 Received Samples 2023 v5.14.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process 2024 v4.8.xlsm"
+FOR_002_FILE_2023="HMF-FOR-002 Sample in process 2023 v4.7.xlsx"
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
-  "${NAS_DIR}/${FOR_001_FILE_2022}"
+  "${NAS_DIR}/${FOR_001_FILE_2023}"
   "${NAS_DIR}/${FOR_002_FILE}"
-  "${NAS_DIR}/${FOR_002_FILE_2022}"
+  "${NAS_DIR}/${FOR_002_FILE_2023}"
 )
 
 LAMA_BUCKET="lama-export"
+
 LAMA_FILES=(
   "gs://${LAMA_BUCKET}/BiopsySites.json"
   "gs://${LAMA_BUCKET}/ContactGroups.json"
@@ -76,15 +77,15 @@ main() {
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
 
     # We need to support the files from previous year until lab team has finished with updates
-    for001_source_2022="${TMP_DIR}/${FOR_001_FILE_2022}"
-    for002_source_2022="${TMP_DIR}/${FOR_002_FILE_2022}"
-    for001_samp_txt_2022="${DAY_DIR}/2022_for001_samples.tsv"
-    for001_subm_txt_2022="${DAY_DIR}/2022_for001_submissions.tsv"
-    for002_proc_txt_2022="${DAY_DIR}/2022_for002_processing.tsv"
-    info "Converting input files to text formats (2022)"
-    excel_sheet_to_tsv "${for001_source_2022}" "${for001_subm_txt_2022}" "1" "5"
-    excel_sheet_to_tsv "${for001_source_2022}" "${for001_samp_txt_2022}" "2" "2"
-    excel_sheet_to_tsv "${for002_source_2022}" "${for002_proc_txt_2022}" "1" "5"
+    info "Converting input files to text formats for previous year"
+    for001_source_2023="${TMP_DIR}/${FOR_001_FILE_2023}"
+    for002_source_2023="${TMP_DIR}/${FOR_002_FILE_2023}"
+    for001_samp_txt_2023="${DAY_DIR}/2023_for001_samples.tsv"
+    for001_subm_txt_2023="${DAY_DIR}/2023_for001_submissions.tsv"
+    for002_proc_txt_2023="${DAY_DIR}/2023_for002_processing.tsv"
+    excel_sheet_to_tsv "${for001_source_2023}" "${for001_subm_txt_2023}" "1" "5"
+    excel_sheet_to_tsv "${for001_source_2023}" "${for001_samp_txt_2023}" "2" "2"
+    excel_sheet_to_tsv "${for002_source_2023}" "${for002_proc_txt_2023}" "1" "5"
 
     info "Symlinking to latest dir (${SYM_DIR})"
     find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" -or -name "*.json" | while read -r txt_file; do
@@ -102,9 +103,9 @@ excel_sheet_to_tsv() {
     local excel_name=""
     excel_name=$(basename "${input_excel_file}")
 
-    info "  Converting '${excel_name}' sheet ${sheet_index} with ${first_row_index} row as header (${output_tsv})"
-    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}"
-    [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
+    info "  Converting file '${excel_name}' sheet ${sheet_index} with row ${first_row_index} as header (${output_tsv})"
+    xlsx2csv -d "\t" "${input_excel_file}" -s "${sheet_index}" | tail -n +"${first_row_index}" > "${output_tsv}" \
+      || die "Excel conversion to tsv FAILED (${sheet_index})"
 }
 
 symlink_to_latest() {

@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+source api_functions || exit 1
+source message_functions || exit 1
+
+biopsy_name=$1 && shift # eg TARGTO000000T
+
+PRESIGN_SECONDS=172800
+PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
+
+key_file="/data/credentials/hmf-download"
+region="europe-west4"
+project="hmf-database"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Prints presigned OncoPanel BAM and BAI URLs by biopsy name"
+    echo " Usage: $(basename $0) \${biopsy-name}"
+    echo "        $(basename $0) TARGTO000000T"
+    echo "  Note: URLs will be valid for ${PRESIGN_SECONDS} seconds (${PRESIGN_DAYS} days)"
+    echo "-----"
+    exit 1
+}
+
+if [[ -z "${biopsy_name}" ]]; then
+    print_usage
+fi
+
+# construct BAM location based on API data
+api_data=$(hmf_api_get "runs?tumor_sample=${biopsy_name}&status=Finished") || die "Could not get run data from API"
+run_count=$(echo "${api_data}" | jq length) || die "Could not determine run count for sample"
+if [[ "${run_count}" != "1" ]]; then
+  warn "Run count for ${biopsy_name} is unexpectedly ${run_count} instead of 1"
+fi
+bucket=$(echo "${api_data}" | jq -r last.bucket) || die "Could not get bucket name from API data"
+set_name=$(echo "${api_data}" | jq -r last.set.name) || die "Could not get set name from API data"
+internal_bam_url="gs://${bucket}/${set_name}/${biopsy_name}/aligner/${biopsy_name}.bam"
+
+# Sanity check (not all samples are linked to a biopsy yet in API)
+[[ "${internal_bam_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_bam_url}) for biopsy ${biopsy_name}"
+internal_bai_url="${internal_bam_url}.bai"
+
+signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}" | grep -v 'Signed URL' | cut -f4)
+signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}" | grep -v 'Signed URL' | cut -f4)
+
+[[ "${signed_bam_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bam_url})"
+[[ "${signed_bai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bai_url})"
+
+info "URLs for biopsy ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
+info "BAM internal URL: ${internal_bam_url}"
+info "BAI internal URL: ${internal_bai_url}"
+info "BAM external URL: ${signed_bam_url}"
+info "BAI external URL: ${signed_bai_url}"

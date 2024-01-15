@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source actin_config || exit 1
+
+# TODO: Remove script once WTS-post-process pipeline is place and we share from buckets rather than VM.
+
+sample=$1 && shift
+
+vm=$(production_actin_ops_vm)
+project=$(production_actin_project)
+
+if [[ -z "${sample}" || -z "${vm}" || -z "${project}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+local_dir="${HOME}/hmf/tmp/orange_no_germline"
+if [[ ! -d "${local_dir}" ]]; then
+    mkdir -p "${local_dir}"
+fi
+
+info "Downloading ORANGE no-germline report for ${sample} from ${vm}"
+gcloud compute --project ${project} scp ${vm}:$(locate_actin_molecular_directory)/*${sample}*/orange_no_germline/*.pdf ${local_dir}/
