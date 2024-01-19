@@ -198,6 +198,7 @@ class RunData:
     exon_median_coverages: Tuple[ExonMedianCoverage,...]
     sage_unfiltered_variants: Tuple[AnnotatedVariant,...]
     wgs_metrics: WgsMetrics
+    driver_catalog_header: str
 
 
 @dataclass(frozen=True, eq=True)
@@ -266,7 +267,7 @@ def get_qc_check_output_text(
         get_percent_excluded_text(run_data.wgs_metrics),
         get_qc_warning_text(run_data),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
-        get_driver_catalog_text(run_data.drivers),
+        get_driver_catalog_text(run_data.drivers, run_data.driver_catalog_header),
     ]
     return "\n\n".join([section for section in sections if section]) + "\n"
 
@@ -470,8 +471,8 @@ def get_signed_bam_urls(metadata: Metadata) -> str:
     return run_bash_command(["sign_bam_url", gcp_bam_url, "8h"])
 
 
-def get_driver_catalog_text(drivers: Tuple[Driver,...]) -> str:
-    lines = ["Driver catalog:"]
+def get_driver_catalog_text(drivers: Tuple[Driver,...], driver_catalog_header: str) -> str:
+    lines = ["Driver catalog:", driver_catalog_header]
     for driver in drivers:
         lines.append(str(driver))
     return "\n".join(lines)
@@ -503,6 +504,8 @@ def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers:
 def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     logging.info("Load drivers")
     drivers = load_drivers(local_directory, tumor_name)
+    logging.info("Load driver catalog header")
+    driver_catalog_header = load_driver_catalog_header(local_directory, tumor_name)
     logging.info("Load sample qc info")
     purple_qc = load_purple_qc(local_directory, tumor_name)
     logging.info("Load gene copy numbers")
@@ -523,6 +526,7 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
         tuple(exon_median_coverages),
         tuple(sage_unfiltered_variants),
         wgs_metrics,
+        driver_catalog_header,
     )
     return run_data
 
@@ -762,10 +766,7 @@ def load_purple_qc_from_file(purple_qc_path: Path, purple_purity_path: Path) -> 
 
 
 def load_drivers(local_directory: Path, tumor_name: str) -> List[Driver]:
-    local_purple_driver_catalog = local_directory / f"{tumor_name}.purple.driver.catalog.somatic.tsv"
-    if not local_purple_driver_catalog.exists():
-        local_purple_driver_catalog = local_directory / f"{tumor_name}.driver.catalog.somatic.tsv"
-    return load_drivers_from_file(local_purple_driver_catalog)
+    return load_drivers_from_file(get_local_purple_driver_catalog(local_directory, tumor_name))
 
 
 def load_drivers_from_file(driver_catalog_path: Path) -> List[Driver]:
@@ -776,6 +777,22 @@ def load_drivers_from_file(driver_catalog_path: Path) -> List[Driver]:
             driver = get_driver_from_line(line, header)
             drivers.append(driver)
     return drivers
+
+
+def load_driver_catalog_header(local_directory: Path, tumor_name: str) -> str:
+    return load_driver_catalog_header_from_file(get_local_purple_driver_catalog(local_directory, tumor_name))
+
+
+def load_driver_catalog_header_from_file(driver_catalog_path: Path) -> str:
+    with open(driver_catalog_path, "r") as in_f:
+        return next(in_f).replace("\n", "")
+
+
+def get_local_purple_driver_catalog(local_directory, tumor_name):
+    local_purple_driver_catalog = local_directory / f"{tumor_name}.purple.driver.catalog.somatic.tsv"
+    if not local_purple_driver_catalog.exists():
+        local_purple_driver_catalog = local_directory / f"{tumor_name}.driver.catalog.somatic.tsv"
+    return local_purple_driver_catalog
 
 
 def get_driver_from_line(line: str, header: str) -> Driver:
