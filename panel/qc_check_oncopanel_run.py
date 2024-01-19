@@ -120,6 +120,10 @@ class PurpleQc:
     cobalt_gender: str
     deleted_genes: int
     amber_mean_depth: int
+    ms_indels_per_mb: Decimal
+    msi_status: str
+    tmb_per_mb: Decimal
+    tmb_status: str
 
 
 @dataclass(frozen=True, eq=True)
@@ -299,6 +303,10 @@ def get_sample_overview_stats_text(
         f"Purple QC status: {purple_qc.qc_status}",
         f"Purity: {purple_qc.purity}",
         f"Ploidy: {purple_qc.ploidy}",
+        f"MSI status: {purple_qc.msi_status}",
+        f"Ms indels per MB: {purple_qc.ms_indels_per_mb}",
+        f"TMB status: {purple_qc.tmb_status}",
+        f"TMB per MB: {purple_qc.tmb_per_mb}",
         f"Amber gender: {purple_qc.amber_gender}",
         f"Cobalt gender: {purple_qc.cobalt_gender}",
         f"AMBER mean depth: {purple_qc.amber_mean_depth}",
@@ -750,6 +758,10 @@ def load_purple_qc_from_file(purple_qc_path: Path, purple_purity_path: Path) -> 
         split_line = line.replace("\n", "").split(TSV_SEPARATOR)
 
         ploidy = Decimal(split_line[split_header.index("ploidy")])
+        ms_indels_per_mb = Decimal(split_line[split_header.index("msIndelsPerMb")])
+        msi_status = split_line[split_header.index("msStatus")]
+        tmb_per_mb = Decimal(split_line[split_header.index("tmbPerMb")])
+        tmb_status = split_line[split_header.index("tmbStatus")]
 
     purple_qc = PurpleQc(
         qc_status,
@@ -761,6 +773,10 @@ def load_purple_qc_from_file(purple_qc_path: Path, purple_purity_path: Path) -> 
         cobalt_gender,
         deleted_genes,
         amber_mean_depth,
+        ms_indels_per_mb,
+        msi_status,
+        tmb_per_mb,
+        tmb_status
     )
     return purple_qc
 
