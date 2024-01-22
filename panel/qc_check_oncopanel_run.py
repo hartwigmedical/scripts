@@ -16,6 +16,7 @@ RB1_GENE_NAME = "RB1"
 GCP_URL_START = "gs:"
 
 TSV_SEPARATOR = "\t"
+DOMAIN_SEPARATOR = ";"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
 DEL_MIN_PURITY_THRESHOLD = Decimal("0.30")
@@ -194,6 +195,24 @@ class AnnotatedVariant:
 
 
 @dataclass(frozen=True, eq=True)
+class Fusion:
+    name: str
+    reported: bool
+    reported_type: str
+    phased: str
+    driver_likelihood: str
+    chain_links: int
+    chain_terminated: bool
+    domains_kept: Tuple[str, ...]
+    domains_lost: Tuple[str, ...]
+    fused_exon_up: str
+    fused_exon_down: str
+    gene_start: str
+    gene_end: str
+    junction_copy_number: Decimal
+
+
+@dataclass(frozen=True, eq=True)
 class RunData:
     drivers: Tuple[Driver,...]
     purple_qc: PurpleQc
@@ -202,6 +221,7 @@ class RunData:
     exon_median_coverages: Tuple[ExonMedianCoverage,...]
     sage_unfiltered_variants: Tuple[AnnotatedVariant,...]
     wgs_metrics: WgsMetrics
+    reportable_fusions: Tuple[Fusion,...]
     driver_catalog_header: str
 
 
@@ -253,9 +273,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     logging.info("Finished QC checking OncoPanel run")
 
 
-def do_qc_checks(
-        run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], metadata: Metadata, output_file: Path,
-) -> None:
+def do_qc_checks(run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], metadata: Metadata, output_file: Path) -> None:
     output_text = get_qc_check_output_text(run_data, driver_gene_panel_entries, metadata)
 
     with open(output_file, "w") as out_f:
@@ -272,6 +290,7 @@ def get_qc_check_output_text(
         get_qc_warning_text(run_data),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
         get_driver_catalog_text(run_data.drivers, run_data.driver_catalog_header),
+        get_fusion_text(run_data.reportable_fusions),
     ]
     return "\n\n".join([section for section in sections if section]) + "\n"
 
@@ -479,10 +498,28 @@ def get_signed_bam_urls(metadata: Metadata) -> str:
     return run_bash_command(["sign_bam_url", gcp_bam_url, "8h"])
 
 
-def get_driver_catalog_text(drivers: Tuple[Driver,...], driver_catalog_header: str) -> str:
+def get_driver_catalog_text(drivers: Tuple[Driver, ...], driver_catalog_header: str) -> str:
     lines = ["Driver catalog:", driver_catalog_header]
     for driver in drivers:
         lines.append(str(driver))
+    return "\n".join(lines)
+
+
+def get_fusion_text(reportable_fusions: Tuple[Fusion, ...]) -> str:
+    lines = ["Reportable fusions:"]
+    header = "\t".join(["Name", "DriverLikelihood", "JunctionCopyNumber", "ReportedType", "Phased", "FusedExonUp", "FusedExonDown"])
+    lines.append(header)
+    for fusion in reportable_fusions:
+        line = "\t".join([
+            fusion.name,
+            fusion.driver_likelihood,
+            str(fusion.junction_copy_number),
+            fusion.reported_type,
+            fusion.phased,
+            str(fusion.fused_exon_up),
+            str(fusion.fused_exon_down),
+        ])
+        lines.append(line)
     return "\n".join(lines)
 
 
@@ -526,6 +563,8 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     sage_unfiltered_variants = load_sage_unfiltered_variants(local_directory, tumor_name)
     logging.info("Load wgs metrics")
     wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
+    logging.info("Load reported fusions")
+    reported_fusions = load_reported_fusions(local_directory, tumor_name)
     run_data = RunData(
         tuple(drivers),
         purple_qc,
@@ -534,6 +573,7 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
         tuple(exon_median_coverages),
         tuple(sage_unfiltered_variants),
         wgs_metrics,
+        tuple(reported_fusions),
         driver_catalog_header,
     )
     return run_data
@@ -559,12 +599,67 @@ def get_driver_gene_panel_entry_from_line(line: str, header: str) -> DriverGeneP
     return DriverGenePanelEntry(gene)
 
 
+def load_reported_fusions(local_directory: Path, tumor_name: str) -> List[Fusion]:
+    fusion_file_path = local_directory / f"{tumor_name}.linx.fusion.tsv"
+    return load_reported_fusions_from_file(fusion_file_path)
+
+
+def load_reported_fusions_from_file(fusion_file_path: Path) -> List[Fusion]:
+    reported_fusions = []
+    with open(fusion_file_path, "r") as in_f:
+        header = next(in_f)
+        for line in in_f:
+            fusion = get_fusion_from_line(line, header)
+            if fusion.reported:
+                reported_fusions.append(fusion)
+    return reported_fusions
+
+
+def get_fusion_from_line(line: str, header: str) -> Fusion:
+    split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+
+    split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+
+    name = split_line[split_header.index("name")]
+    reported = get_bool_from_string(split_line[split_header.index("reported")])
+    reported_type = split_line[split_header.index("reportedType")]
+    phased = split_line[split_header.index("phased")]
+    driver_likelihood = split_line[split_header.index("likelihood")]
+    chain_links = int(split_line[split_header.index("chainLinks")])
+    chain_terminated = get_bool_from_string(split_line[split_header.index("chainTerminated")])
+    domains_kept = tuple(split_line[split_header.index("domainsKept")].split(DOMAIN_SEPARATOR))
+    domains_lost = tuple(split_line[split_header.index("domainsLost")].split(DOMAIN_SEPARATOR))
+    fused_exon_up = split_line[split_header.index("fusedExonUp")]
+    fused_exon_down = split_line[split_header.index("fusedExonDown")]
+    gene_start = split_line[split_header.index("geneStart")]
+    gene_end = split_line[split_header.index("geneEnd")]
+    junction_copy_number = Decimal(split_line[split_header.index("junctionCopyNumber")])
+
+    fusion = Fusion(
+        name,
+        reported,
+        reported_type,
+        phased,
+        driver_likelihood,
+        chain_links,
+        chain_terminated,
+        domains_kept,
+        domains_lost,
+        fused_exon_up,
+        fused_exon_down,
+        gene_start,
+        gene_end,
+        junction_copy_number,
+    )
+    return fusion
+
+
 def load_wgs_metrics(local_directory: Path, tumor_name: str) -> WgsMetrics:
     wgs_metrics_path = local_directory / f"{tumor_name}.wgsmetrics"
     return load_wgs_metrics_from_file(wgs_metrics_path)
 
 
-def load_wgs_metrics_from_file(wgs_metrics_path) -> WgsMetrics:
+def load_wgs_metrics_from_file(wgs_metrics_path: Path) -> WgsMetrics:
     with open(wgs_metrics_path, "r") as in_f:
         # skip first line
         next(in_f)
@@ -604,7 +699,6 @@ def get_wgs_metrics_from_line(line: str, header: str) -> WgsMetrics:
         percent_100x,
     )
     return wgs_metrics
-
 
 
 def load_exon_median_coverages(local_directory: Path, tumor_name: str) -> List[ExonMedianCoverage]:
@@ -908,7 +1002,9 @@ def copy_run_files_to_local(gcp_run_url: str, local_directory: Path, tumor_name:
     logging.info("Copy SAGE files to local")
     copy_sage_somatic_files_to_local(gcp_run_url, local_directory)
     logging.info("Copy WgsMetrics file to local")
-    copy_wgs_metrics_file(gcp_run_url, local_directory, tumor_name)
+    copy_wgs_metrics_file_to_local(gcp_run_url, local_directory, tumor_name)
+    logging.info("Copy Linx fusion file to local")
+    copy_fusion_file_to_local(gcp_run_url, local_directory, tumor_name)
 
 
 def copy_purple_files_to_local(gcp_run_url: str, local_directory: Path) -> None:
@@ -921,10 +1017,13 @@ def copy_sage_somatic_files_to_local(gcp_run_url: str, local_directory: Path) ->
     sync_directory_to_local(purple_url, local_directory)
 
 
-def copy_wgs_metrics_file(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
+def copy_wgs_metrics_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
     wgs_metrics_url = f"{gcp_run_url}/{tumor_name}/bam_metrics/{tumor_name}.wgsmetrics"
     copy_file_to_local_directory(wgs_metrics_url, local_directory)
 
+def copy_fusion_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
+    fusion_url = f"{gcp_run_url}/linx/{tumor_name}.linx.fusion.tsv"
+    copy_file_to_local_directory(fusion_url, local_directory)
 
 def sync_directory_to_local(source_url: str, local_directory: Path) -> None:
     local_directory.mkdir(parents=True, exist_ok=True)
