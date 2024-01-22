@@ -44,6 +44,7 @@ main() {
     fi
   done
 
+  info "Upload plots and QC check txt files to NextCloud with: upload_panel_qc_files_to_nextcloud ${local_working_directory}"
   info "Copy plots to local with command similar to: gcloud compute scp 'data-vm-prod-2:${local_working_directory}/*/plot/*' ~/Downloads/tmp/"
   
   info "Finished ${SCRIPT_NAME}"
