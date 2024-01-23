@@ -91,6 +91,8 @@ class ReportSharer:
         if publish_to_portal:
             if self._is_failure():
                 self._share_failure_report(report_blobs)
+            elif self._is_panel_failure():
+                self._share_panel_failure_report(report_blobs)
             elif self._is_panel():
                 self._share_panel_report(report_blobs)
             else:
@@ -105,6 +107,12 @@ class ReportSharer:
         print(f"Sharing ${len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
+
+    def _share_panel_failure_report(self, report_blobs):
+        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        for blob in report_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
 
     def _share_panel_report(self, report_blobs):
         panel_blobs = self._get_blobs_from_bucket(bucket=self.panel_pipeline_output_bucket,
@@ -223,7 +231,10 @@ class ReportSharer:
         return self.report_created_record['report_type'] in ['wgs_processing_issue', 'wgs_isolation_fail',
                                                              'wgs_tcp_shallow_fail', 'wgs_preparation_fail',
                                                              'wgs_tumor_processing_issue', 'wgs_pipeline_fail',
-                                                             'wgs_tcp_fail', 'panel_result_report_fail']
+                                                             'wgs_tcp_fail']
+
+    def _is_panel_failure(self):
+        return self.report_created_record['report_type'] in ['panel_result_report_fail']
 
 
 if __name__ == "__main__":
