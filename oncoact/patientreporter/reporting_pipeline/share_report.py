@@ -116,7 +116,7 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
         print(f"Sharing a total of '{len(panel_blobs)}' panel files with the portal")
         for blob in panel_blobs:
-            self._copy_blob_to_bucket(blob, self.panel_share_bucket, target_sub_folder='RUO')
+            self._copy_blob_to_bucket(blob, self.portal_bucket, target_sub_folder='RUO')
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
     def _share_wgs_report(self, report_blobs):
