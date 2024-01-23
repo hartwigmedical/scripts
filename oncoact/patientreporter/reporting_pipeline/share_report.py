@@ -107,19 +107,16 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
 
     def _share_panel_report(self, report_blobs):
-        molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
-                                                      file_names=self._molecular_files())
         panel_blobs = self._get_blobs_from_bucket(bucket=self.panel_pipeline_output_bucket,
                                                   file_names=self._panel_files())
 
         print(f"Sharing ${len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
-        print(f"Sharing a total of '{len(molecular_blobs)}' molecular files with the portal")
-        for blob in molecular_blobs:
-            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket, target_sub_folder='RUO')
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
         print(f"Sharing a total of '{len(panel_blobs)}' panel files with the portal")
         for blob in panel_blobs:
+            self._copy_blob_to_bucket(blob, self.panel_share_bucket, target_sub_folder='RUO')
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
     def _share_wgs_report(self, report_blobs):
