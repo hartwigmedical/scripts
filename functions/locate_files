@@ -93,6 +93,10 @@ locate_pilot_sigs() {
     echo "/data/experiments/pilot_tools/sigs/sigs.jar"
 }
 
+locate_pilot_crest() {
+    echo "/data/experiments/pilot_tools/crest/crest.jar"
+}
+
 locate_prod_orange() {
     echo "/data/tools/orange/1.6/orange.jar"
 }
