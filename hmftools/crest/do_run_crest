@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source metadata_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir=$1 && shift
+crest_jar=$1 && shift
+output_dir=$1 && shift
+
+if [[ -z "${run_dir}" || -z "${crest_jar}" || -z "${output_dir}" ]]; then
+    error "Inputs missing. Exiting";
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+rna_sample="${sample}_RNA"
+purple_dir="$(locate_purple_data_directory ${run_dir})"
+
+create_or_cleanup_dir ${output_dir}
+
+java -jar ${crest_jar} \
+    -sample ${sample} \
+    -rna_sample ${rna_sample} \
+    -purple_dir ${purple_dir} \
+    -output_dir ${output_dir}
