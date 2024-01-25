@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 LIMS_JSON="/data/ops/lims/prod/lims.json"
+INNOVATION_RETENTION_DAYS=14
+PATIENT_CONTRACT_RETENTION_DAYS=365
+DEFAULT_RETENTION_DAYS=90
+
 inn_submission_count=15
 non_inn_submission_count=15
 submission=$1 # optional HMFregXXXX id to print table for
@@ -30,10 +34,13 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     sample_count=$(echo "${line}" | cut -f4)
     analysis=$(echo "${line}" | cut -f5)
     details=""
-    retention_days=90
+    retention_days="${DEFAULT_RETENTION_DAYS}"
 
+    # reset retentionDays when applicable
     if [[ "${project}" =~ ^PT\- ]]; then
-        retention_days=365
+        retention_days="${PATIENT_CONTRACT_RETENTION_DAYS}"
+    elif [[ "${submission}" =~ ^HMFregINN[0-9]+ ]]; then
+        retention_days="${INNOVATION_RETENTION_DAYS}"
     fi
 
     # reset some fields according to project type
