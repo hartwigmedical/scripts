@@ -11,8 +11,10 @@ groups=(
 "data-exchanger"
 "data-exchanger-australia"
 "data-requests"
+"diagnostic-silo-support"
 "emc-production-support"
 "emc-sql-users"
+"linkage-silo-support"
 "hmftools_users"
 "onboarding"
 "operations"
@@ -23,7 +25,6 @@ groups=(
 "report-manager"
 "researcher"
 "secret-manager"
-"silo-support"
 )
 
 if [[ -n $1 ]]; then
