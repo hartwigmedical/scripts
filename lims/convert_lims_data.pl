@@ -936,8 +936,8 @@ sub addExcelSamples{
         next if isSkipValue( $sample_name );
 
         my $sample_id = $row_info->{ 'sample_id' } or sayWarn("SKIPPING sample ($sample_name): No sample_id found") and next;
-        my $submission = $row_info->{ 'submission' } or sayWarn("SKIPPING sample ($sample_name): No submission found") and next;
-        my $analysis_type = $row_info->{ 'analysis_type' } or sayWarn("SKIPPING sample ($sample_name): No analysis_type found") and next;
+        my $submission = $row_info->{ 'submission' } or sayWarn("SKIPPING sample ($sample_name, $sample_id): No submission found") and next;
+        my $analysis_type = $row_info->{ 'analysis_type' } or sayWarn("SKIPPING sample ($sample_name, $sample_id): No analysis_type found") and next;
 
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
@@ -1392,6 +1392,7 @@ sub getFieldNameTranslations{
         'legacySampleId'        => 'legacy_sample_name',
         'refIsolationBarcode'   => 'ref_sample_id', # was refFrBarcode pre-lama-v2
         'pathologyNumber'       => 'hospital_pa_sample_id',
+        'hospitalSampleLabel'   => 'hospital_sample_label',
         'patientGermlineChoice' => 'report_germline_level',
         'primaryTumorType'      => 'ptum',
         'biopsySite'            => 'lama_tumor_sample_biopsy_site',
