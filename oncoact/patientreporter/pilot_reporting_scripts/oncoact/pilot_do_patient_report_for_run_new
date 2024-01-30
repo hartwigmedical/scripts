@@ -17,13 +17,13 @@ orange_json="$(locate_orange_json ${run_dir})"
 lama_json="/home/lschoenmaker/dataset_copy/lama.json"
 diagnostic_silo_json="/home/lschoenmaker/dataset_copy/silo.json"
 
-protect_evidence_tsv="$(locate_protect_evidence_pilot ${run_dir})"
+protect_evidence_tsv="/home/lschoenmaker/dataset_copy/protect.tsv"
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 
 # TODO Switch to PROD once ROSE v2.0 has become production version
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-rose_tsv="/home/lschoenmaker/dataset_copy/${tumor_sample}/rose_pilot/rose.txt"
+rose_tsv="/home/lschoenmaker/dataset_copy/protect.txt"
 
 germline_reporting_tsv="$(locate_germline_reporting_prod)"
 clinical_transcripts_tsv="$(locate_clinical_transcripts_prod)"
