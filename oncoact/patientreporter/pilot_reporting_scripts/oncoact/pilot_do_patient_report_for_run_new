@@ -23,7 +23,7 @@ cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 
 # TODO Switch to PROD once ROSE v2.0 has become production version
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-rose_tsv="/home/lschoenmaker/dataset_copy/protect.txt"
+rose_tsv="/home/lschoenmaker/dataset_copy/rose.txt"
 
 germline_reporting_tsv="$(locate_germline_reporting_prod)"
 clinical_transcripts_tsv="$(locate_clinical_transcripts_prod)"
