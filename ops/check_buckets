@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod)
+OUT_BUCKETS=(diagnostic-pipeline-output-prod-1 research-pipeline-output-prod-1 rna-pipeline-output-prod-1 services-pipeline-output-prod-1)
+
+main () {
+    info "Starting bucket check"
+    all_buckets=("${RAW_BUCKETS[@]}" "${OUT_BUCKETS[@]}")
+    info "Checking size of the following buckets: ${all_buckets[*]}"
+    for bucket_name in "${all_buckets[@]}"; do
+        process_one_bucket "${bucket_name}"
+    done
+}
+
+function process_one_bucket () {
+    local bucket_name=$1 && shift
+    gsutil du -sh "gs://${bucket_name}"
+}
+
+main
