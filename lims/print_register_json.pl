@@ -236,6 +236,9 @@ sub processSample{
     my $priority = getPriorityForSample( $sample );
     my $yield_in_gbase = getValueByKey( $sample, 'yield' );
     my $reporting_id = getValueByKey( $sample, 'reporting_id' );
+    if (exists $sample->{hospital_sample_label} and $sample->{hospital_sample_label} ne ""){
+        $reporting_id = $reporting_id . "-" . $sample->{hospital_sample_label};
+    }
     my $ref_reporting_id = $reporting_id . "-ref";
 
     ## floats are allowed for yield_in_gbase
