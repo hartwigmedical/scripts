@@ -4,6 +4,7 @@ source message_functions || exit 1
 
 RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod)
 OUT_BUCKETS=(diagnostic-pipeline-output-prod-1 research-pipeline-output-prod-1 rna-pipeline-output-prod-1 services-pipeline-output-prod-1)
+YYMMDD=$(date +'%y%m%d')
 
 main () {
     info "Starting bucket check"
@@ -16,7 +17,8 @@ main () {
 
 function process_one_bucket () {
     local bucket_name=$1 && shift
-    gsutil du -sh "gs://${bucket_name}"
+    output=$(gsutil du -sh "gs://${bucket_name}" | tr -s " ")
+    printf "%s %s\n" "${YYMMDD}" "${output}"
 }
 
 main
