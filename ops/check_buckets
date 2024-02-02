@@ -6,17 +6,18 @@ SCRIPT=$(basename "${0}")
 YYMMDD=$(date +'%y%m%d')
 
 RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod)
-PIPELINE5_OUT_BUCKETS=(
+PIPELINE5_BUCKETS=(
     diagnostic-pipeline-output-prod-1
     research-pipeline-output-prod-1
     rna-pipeline-output-prod-1
     services-pipeline-output-prod-1
     targeted-pipeline-output-prod-1
 )
+LOGGING_BUCKETS=(bcl-forensics-prod-1)
 
 main () {
     info "Starting bucket storage size check [script: ${SCRIPT}]"
-    all_buckets=("${RAW_BUCKETS[@]}" "${PIPELINE5_OUT_BUCKETS[@]}")
+    all_buckets=("${RAW_BUCKETS[@]}" "${PIPELINE5_BUCKETS[@]}" "${LOGGING_BUCKETS[@]}")
     for bucket_name in "${all_buckets[@]}"; do
         process_one_bucket "${bucket_name}"
     done
