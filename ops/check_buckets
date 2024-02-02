@@ -25,7 +25,7 @@ main () {
 
 function process_one_bucket () {
     local bucket_name=$1 && shift
-    output=$(gsutil du -sh "gs://${bucket_name}" | tr -s " ")
+    output=$(gsutil du -sh "gs://${bucket_name}" | tr -s " " | tr " " "\t")
     printf "%s %s\n" "${YYMMDD}" "${output}"
 }
 
