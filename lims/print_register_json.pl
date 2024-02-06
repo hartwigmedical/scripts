@@ -236,10 +236,11 @@ sub processSample{
     my $priority = getPriorityForSample( $sample );
     my $yield_in_gbase = getValueByKey( $sample, 'yield' );
     my $reporting_id = getValueByKey( $sample, 'reporting_id' );
-    if (exists $sample->{hospital_sample_label} and $sample->{hospital_sample_label} ne ""){
-        $reporting_id = $reporting_id . "-" . $sample->{hospital_sample_label};
-    }
     my $ref_reporting_id = $reporting_id . "-ref";
+    my $tum_reporting_id = $reporting_id;
+    if (exists $sample->{hospital_sample_label} and $sample->{hospital_sample_label} ne ""){
+        $tum_reporting_id = $reporting_id . "-" . $sample->{hospital_sample_label};
+    }
 
     ## floats are allowed for yield_in_gbase
     ## flooring to whole numbers for yield (in bases) by converting to int
@@ -531,7 +532,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
-            $reporting_id,
+            $tum_reporting_id,
         );
     }
     elsif ( $analysis eq 'Targeted_Tumor_Only' ){
@@ -560,7 +561,7 @@ sub processSample{
             $yield,
             $use_existing_tum,
             $skip_recalculating_yield_tum,
-            $reporting_id,
+            $tum_reporting_id,
         );
 
     }
