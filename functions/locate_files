@@ -382,7 +382,7 @@ locate_atc_tsv() {
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {
-    echo "/data/experiments/charlotte_emc_actionability/system/actin.jar"
+    echo "/data/actin/system/actin.jar"
 }
 
 locate_actin_cohort_pipeline_directory() {
