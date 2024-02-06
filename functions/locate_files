@@ -388,17 +388,17 @@ locate_cohort_actin() {
 locate_actin_cohort_pipeline_directory() {
     sample=$1
 
-    echo "/data/experiments/charlotte_emc_actionability/pipelines/${sample}"
+    echo "/data/experiments/ACTIN-547-daphne/pipelines/${sample}"
 }
 
 locate_actin_cohort_molecular_directory() {
     sample=$1
 
-    echo "/data/experiments/charlotte_emc_actionability/molecular/${sample}"
+    echo "/data/experiments/ACTIN-547-daphne/molecular/${sample}"
 }
 
 locate_actin_cohort_clinical_directory() {
-    echo "/data/experiments/charlotte_emc_actionability/clinical"
+    echo "/data/experiments/ACTIN-547-daphne/clinical"
 }
 
 locate_actin_cohort_trial_config_directory() {
