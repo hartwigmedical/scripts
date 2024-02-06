@@ -61,16 +61,25 @@ function main() {
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
     run_url="gs://${bucket}/${set_name}"
+    metadata_json_url="${run_url}/metadata.json"
     out_file="${out_dir}/${tum}_run-${oid}_igv-config.txt"
+
+    info "Collecting sample names from metadata json"
+    metadata_json=$(gsutil cat "${metadata_json_url}") || die "Unable to read metadata json [${metadata_json_url}]"
+    ref_tag=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    tum_tag=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
 
     info "Details:"
     info "  RunName: ${set_name} (oid=${oid})"
     info "  IniName: ${ini}"
-    info "  Bucket:  ${bucket}"
-    info "  Status:  ${status}"
-    info "  Sample:  ${tum}"
+    info "   Bucket: ${bucket}"
+    info "   Status: ${status}"
+    info "  RefName: ${ref}"
+    info "  TumName: ${tum}"
+    info "   RefTag: ${ref_tag}"
+    info "   TumTag: ${tum_tag}"
 
-    create_igv_config "${out_file}" "${run_url}" "${ref}" "${tum}" || die "Unable to create IGV config. Exiting."
+    create_igv_config "${out_file}" "${run_url}" "${ref_tag}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
 
     info "Finished with ${script_name}"
 }
