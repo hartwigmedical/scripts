@@ -8,6 +8,7 @@ curation_directory="$(locate_actin_clinical_curation_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
+atc_overrides_tsv="$(locate_atc_overrides_tsv)"
 output_directory="$(locate_actin_curated_clinical_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
@@ -22,5 +23,6 @@ java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt 
     -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
     -atc_tsv ${atc_tsv} \
+    -atc_overrides_tsv ${atc_overrides_tsv} \
     -output_directory ${output_directory} \
     "$@"

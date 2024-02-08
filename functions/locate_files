@@ -379,6 +379,10 @@ locate_atc_tsv() {
     echo "/data/resources/actin/atc_config/atc_tree.tsv"
 }
 
+locate_atc_overrides_tsv() {
+    echo "/data/resources/actin/atc_config/atc_overrides.tsv"
+}
+
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {
