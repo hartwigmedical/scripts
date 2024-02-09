@@ -99,17 +99,17 @@ class ReportSharer:
                 self._share_wgs_report(report_blobs)
 
     def _archive_blobs(self, blobs):
-        print(f"Copying ${len(blobs)} blobs to the archive bucket")
+        print(f"Copying {len(blobs)} blobs to the archive bucket")
         for blob in blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.archive_bucket)
 
     def _share_failure_report(self, report_blobs):
-        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
 
     def _share_panel_failure_report(self, report_blobs):
-        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
@@ -132,7 +132,7 @@ class ReportSharer:
                                                       file_names=self._molecular_files())
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
                                                      file_names=self._germline_files())
-        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
         print(f"Sharing a total of '{len(molecular_blobs)}' molecular files with the portal")
@@ -216,7 +216,7 @@ class ReportSharer:
             target_sub_folder += '/'
         file_name = get_file_name_from_blob_name(blob.name)
         source_bucket = blob.bucket
-        print(f"{blob.name} ---> {destination_bucket.name}")
+        print(f"{source_bucket}/{blob.name} ---> {destination_bucket.name}/{target_sub_folder}{file_name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=destination_bucket,
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
