@@ -5,16 +5,11 @@ source metadata_functions || exit 1
 source message_functions || exit 1
 source database_functions || exit 1
 
-run_dir=$1 && shift
 sample_pilot_protect=$1 && shift
 sample_pilot_db=$1 && shift
 
 sample_prod_protect=$1 && shift
 sample_prod_db=$1 && shift
-
-if [[ -z "${run_dir}" ]]; then
-    error "No run dir passed. Exiting"
-fi
 
 if [[ -z "${sample_pilot_protect}" ]]; then
     error "No pilot sample ID passed. Exiting"
