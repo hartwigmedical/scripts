@@ -19,5 +19,5 @@ info "Loading PROTECT data for ${sample} to ${database_name}"
 java -Dorg.jooq.no-logo=true -cp ${oncoact_db_jar} com.hartwig.oncoact.database.LoadProtectData \
     -sample ${sample} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
-    -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}" \
+    -db_user "${db_user}" -db_pass_env_variable "${db_pass}" -db_url "${db_url}" \
     "$@"
