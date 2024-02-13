@@ -6,27 +6,39 @@ source message_functions || exit 1
 source database_functions || exit 1
 
 run_dir=$1 && shift
-sample_database=$1 && shift
-sample_protect=$1 && shift
+sample_pilot_protect=$1 && shift
+sample_pilot_db=$1 && shift
+
+sample_prod_protect=$1 && shift
+sample_prod_db=$1 && shift
+
 if [[ -z "${run_dir}" ]]; then
     error "No run dir passed. Exiting"
 fi
 
-if [[ -z "${sample_database}" ]]; then
-    error "No sample ID for database passed. Exiting"
+if [[ -z "${sample_pilot_protect}" ]]; then
+    error "No pilot sample ID passed. Exiting"
 fi
 
-if [[ -z "${sample_protect}" ]]; then
-    error "No sample ID for protect passed. Exiting"
+if [[ -z "${sample_pilot_db}" ]]; then
+    error "No pilot sample ID for database passed. Exiting"
 fi
 
-protect_evidence_tsv_prod=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/prod_version_7_26/protect -type f -name "${sample_protect}.protect.tsv")
-protect_evidence_tsv_pilot=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/runs_23-09-07/${run_dir}/protect -type f -name "protect.tsv")
+if [[ -z "${sample_prod_protect}" ]]; then
+    error "No prod sample ID passed. Exiting"
+fi
+
+if [[ -z "${sample_prod_db}" ]]; then
+    error "No pilot sample ID for database passed. Exiting"
+fi
+
+protect_evidence_tsv_prod=$("/home/lschoenmaker/tmp/verifications/germline_hotfix/current/hmf-crunch-reporting-pipeline-verify-1-0-2/${sample_prod_protect}/protect/protect.tsv")
+protect_evidence_tsv_pilot=$("/home/lschoenmaker/tmp/verifications/germline_hotfix/pilot_take3/hmf-crunch-reporting-pipeline-verify-1-0-3/${sample_pilot_protect}/protect/protect.tsv")
 
 database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_protect_data ${sample_protect} ${protect_evidence_tsv_prod} ${database} "${credentials}" ${patient_db_jar}
-do_load_protect_data ${sample_database} ${protect_evidence_tsv_pilot} ${database} "${credentials}" ${patient_db_jar}
+do_load_protect_data ${sample_prod_db} ${protect_evidence_tsv_prod} ${database} "${credentials}" ${patient_db_jar}
+do_load_protect_data ${sample_pilot_db} ${protect_evidence_tsv_pilot} ${database} "${credentials}" ${patient_db_jar}
 
