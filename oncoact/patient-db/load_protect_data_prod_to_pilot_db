@@ -20,6 +20,6 @@ protect_evidence_tsv=$(find -L /home/lschoenmaker/verifications/reporting_pipeli
 
 database="hmfpatients_pilot"
 credentials=$(prod_writer_sql_credentials)
-patient_db_jar="/home/lschoenmaker/tmp/database-jar-with-dependencies.jar"
+patient_db_jar="/data/experiments/pilot_tools/patient-db/oncoact-db-jar-with-dependencies.jar"
 
 do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
