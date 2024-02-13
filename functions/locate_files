@@ -185,7 +185,7 @@ locate_research_serve() {
     echo "/data/tools/serve/3.0.0/serve.jar"
 }
 
-locate_pilot_serve() {locate_pilot_patient_db
+locate_pilot_serve() {
     echo "/data/experiments/pilot_tools/serve/serve.jar"
 }
 
