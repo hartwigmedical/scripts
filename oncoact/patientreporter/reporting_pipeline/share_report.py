@@ -216,7 +216,7 @@ class ReportSharer:
             target_sub_folder += '/'
         file_name = get_file_name_from_blob_name(blob.name)
         source_bucket = blob.bucket
-        print(f"{blob.name} ---> {destination_bucket.name}")
+        print(f"{source_bucket}/{blob.name} ---> {destination_bucket.name}/{target_sub_folder}{file_name}")
         source_bucket.copy_blob(blob=blob,
                                 destination_bucket=destination_bucket,
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
