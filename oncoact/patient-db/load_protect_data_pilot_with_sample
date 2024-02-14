@@ -27,7 +27,7 @@ if [[ -z "${sample_prod_db}" ]]; then
     error "No pilot sample ID for database passed. Exiting"
 fi
 
-protect_evidence_tsv_prod=$(find -L /home/lschoenmaker/tmp/verifications/germline_hotfix/current/hmf-crunch-reporting-pipeline-verify-1-0-2/${sample_prod_protect}/protect/protect.tsv)
+protect_evidence_tsv_prod=$(find -L /home/lschoenmaker/tmp/verifications/germline_hotfix/current_extra/${sample_prod_protect}/protect/protect.tsv)
 protect_evidence_tsv_pilot=$(find -L /home/lschoenmaker/tmp/verifications/germline_hotfix/pilot_take3/hmf-crunch-reporting-pipeline-verify-1-0-3/${sample_pilot_protect}/protect/protect.tsv)
 
 database="hmfpatients_pilot"
