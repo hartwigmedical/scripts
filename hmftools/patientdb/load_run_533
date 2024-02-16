@@ -5,10 +5,10 @@ source database_functions || exit 1
 source metadata_functions || exit 1
 source locate_files || exit 1
 
-patient_db_jar=$1 && shift
-database_name=$1 && shift
-secret_name=$1 && shift
 run_dir=$1 && shift
+patient_db_jar=${1-/data/tools/patient-db/5.33.3/patient-db.jar} && shift
+database_name=${1-hmfpatients} && shift
+secret_name=${1-mysql-patients-sql-prod-1-writer} && shift
 
 [[ -n "${run_dir}" && -n "${patient_db_jar}" && -n "${database_name}" && -n "${secret_name}" ]] \
     || die "Run with: <patient_db_jar> <database_name> <secret_name> <run_dir>"
@@ -107,26 +107,50 @@ function load_chord () {
 
 function load_flagstat () {
     info "Loading FLAGSTAT"
-    local ref_file="${run_dir}/${reference_sample}/flagstat/${reference_sample}.flagstat"
-    local tum_file="${run_dir}/${tumor_sample}/flagstat/${tumor_sample}.flagstat"
-    [[ -f "${ref_file}" ]] || return 1
-    [[ -f "${tum_file}" ]] || return 1
+    ref_file=$(locate_flagstat_file "${run_dir}" "${reference_sample}") || return 1
+    tum_file=$(locate_flagstat_file "${run_dir}" "${tumor_sample}") || return 1
     run_patient_db LoadFlagstatData \
         -sample "${tumor_sample}" \
         -ref_flagstat_file "${ref_file}" \
         -tumor_flagstat_file "${tum_file}"
 }
 
+function locate_flagstat_file () {
+    local run_dir=$1 && shift
+    local sample_name=$1 && shift
+    local option1="${run_dir}/${sample_name}/flagstat/${sample_name}_dedup.realigned.flagstat"
+    local option2="${run_dir}/${sample_name}/flagstat/${sample_name}.flagstat"
+    if [[ -f "${option1}" ]]; then
+        echo "${option1}" && return 0
+    elif [[ -f "${option2}" ]]; then
+        echo "${option2}" && return 0
+    else
+        die "No flagstat file found for sample [${sample_name}] in run dir [${run_dir}]"
+    fi
+}
+
 function load_metrics () {
     info "Loading BAMMETRICS"
-    local ref_file="${run_dir}/${reference_sample}/bam_metrics/${reference_sample}.wgsmetrics"
-    local tum_file="${run_dir}/${tumor_sample}/bam_metrics/${tumor_sample}.wgsmetrics"
-    [[ -f "${ref_file}" ]] || return 1
-    [[ -f "${tum_file}" ]] || return 1
+    ref_file=$(locate_metrics_file "${run_dir}" "${reference_sample}") || return 1
+    tum_file=$(locate_metrics_file "${run_dir}" "${tumor_sample}") || return 1
     run_patient_db LoadMetricsData \
         -sample "${tumor_sample}" \
         -ref_metrics_file "${ref_file}" \
         -tumor_metrics_file "${tum_file}"
+}
+
+function locate_metrics_file () {
+    local run_dir=$1 && shift
+    local sample_name=$1 && shift
+    local option1="${run_dir}/${sample_name}/bam_metrics/${sample_name}_dedup_WGSMetrics.txt"
+    local option2="${run_dir}/${sample_name}/bam_metrics/${sample_name}.wgsmetrics"
+    if [[ -f "${option1}" ]]; then
+        echo "${option1}" && return 0
+    elif [[ -f "${option2}" ]]; then
+        echo "${option2}" && return 0
+    else
+        die "No wgsmetrics file found for sample [${sample_name}] in run dir [${run_dir}]"
+    fi
 }
 
 function load_linx_somatic () {
