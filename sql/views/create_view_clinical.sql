@@ -16,7 +16,7 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
     firstMatchedTreatmentResponse.measurementDone AS responseMeasured, firstMatchedTreatmentResponse.responseDate,
     firstMatchedTreatmentResponse.response AS firstResponse
 FROM sample
-    INNER JOIN consentsLAMA ON sample.sampleId = consentsLAMA.sampleId
+    INNER JOIN consentsLAMA ON sample.sampleId = consentsLAMA.sampleId AND consentsLAMA.allowInternalUse = 'true'
     INNER JOIN patient ON sample.patientId = patient.id
     LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
     LEFT JOIN rnaStatistics on sample.sampleId = rnaStatistics.sampleId
@@ -32,4 +32,3 @@ FROM sample
         FROM drug INNER JOIN treatment ON drug.treatmentId = treatment.id GROUP BY biopsyId)
         biopsyDrugs ON biopsy.id = biopsyDrugs.biopsyId
     LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId
- WHERE consentsLAMA.allowInternalUse = 'true'
