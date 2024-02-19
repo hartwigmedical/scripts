@@ -1,4 +1,4 @@
-#for patients with multiples samples, this view (as opposed to the datarequest view) contains only the sample with the highest purity
+# (CB) For patients with multiple samples, this view (as opposed to the datarequest view) contains only the sample with the highest purity
 CREATE OR REPLACE VIEW hpc AS
 
 SELECT SUBSTRING_INDEX(group_concat(purity.sampleId ORDER BY purity DESC, id ASC SEPARATOR ','), ",", 1) AS sampleId
