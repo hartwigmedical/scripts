@@ -1,5 +1,5 @@
 select patients.patientId,
-codeICD, desciptionICD, bastType, bastTosp, cohortName, ttype
+codeICD, descriptionICD, bastType, bastTosp, cohortName, ttype
 from
 	(select distinct patientId from drupEcrf) patients
 left join
@@ -7,9 +7,9 @@ left join
     from drupEcrf where item = 'FLD.ICD10Code' group by patientId) codeICD
 on patients.patientId = codeICD.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as desciptionICD
-    from drupEcrf where item = 'FLD.ICD10Descr' group by patientId) desciptionICD
-on patients.patientId = desciptionICD.patientId
+   (select patientId, group_concat(itemValue separator ', ') as descriptionICD
+    from drupEcrf where item = 'FLD.ICD10Descr' group by patientId) descriptionICD
+on patients.patientId = descriptionICD.patientId
 left join
    (select patientId, group_concat(itemValue separator ', ') as bastType
     from drupEcrf where item = 'FLD.BASTTYP' group by patientId) bastType
