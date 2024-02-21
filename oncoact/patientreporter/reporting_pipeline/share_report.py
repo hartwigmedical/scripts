@@ -211,15 +211,15 @@ class ReportSharer:
     #         "linx.germline.driver.catalog.tsv"
     #     }
     #
-    # def _get_report_blobs(self):
-    #     all_report_files = self.report_created_record["report_files"]
-    #     report_files_to_upload = [file for file in all_report_files if
-    #                               file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
-    #     result = []
-    #     for file in report_files_to_upload:
-    #         _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
-    #         result.append(blob)
-    #     return result
+    def _get_report_blobs(self):
+        all_report_files = self.report_created_record["report_files"]
+        report_files_to_upload = [file for file in all_report_files if
+                                  file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
+        result = []
+        for file in report_files_to_upload:
+            _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
+            result.append(blob)
+        return result
     #
     # def _copy_blob_to_bucket(self, blob, destination_bucket, target_sub_folder=''):
     #     if target_sub_folder != '' and target_sub_folder[-1] != '/':
