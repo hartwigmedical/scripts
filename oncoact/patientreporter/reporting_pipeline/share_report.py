@@ -180,14 +180,14 @@ class ReportSharer:
         hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
             'hospitalSampleLabel']
 
-        print({reporting_id})
-        print({hospital_sample_label})
-        if {hospital_sample_label} is not None:
+        print(reporting_id)
+        print(hospital_sample_label)
+        if hospital_sample_label is not None:
             converted_reporting_id = {reporting_id}-{hospital_sample_label}
         else:
             converted_reporting_id = {reporting_id}
 
-        print ({converted_reporting_id})
+        print (converted_reporting_id)
         return {
             "purple.driver.catalog.somatic.tsv",
             "linx.driver.catalog.tsv",
