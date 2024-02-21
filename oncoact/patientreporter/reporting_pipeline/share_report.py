@@ -186,6 +186,7 @@ class ReportSharer:
         else:
             converted_reporting_id = {reporting_id}
 
+        print ({converted_reporting_id})
         return {
             "purple.driver.catalog.somatic.tsv",
             "linx.driver.catalog.tsv",
