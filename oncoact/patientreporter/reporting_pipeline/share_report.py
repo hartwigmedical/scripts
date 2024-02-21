@@ -87,8 +87,9 @@ class ReportSharer:
 
     def _copy_files_to_remote_buckets(self, publish_to_portal):
         report_blobs = self._get_report_blobs()
+        self._share_wgs_report(report_blobs)
         # self._archive_blobs(report_blobs)
-        if publish_to_portal:
+        # if publish_to_portal:
             # if self._is_failure():
             #     self._share_failure_report(report_blobs)
             # elif self._is_panel_failure():
@@ -97,7 +98,7 @@ class ReportSharer:
             #     self._share_panel_report(report_blobs)
             # else:
             #     self._share_wgs_report(report_blobs)
-            self._share_wgs_report(report_blobs)
+
 
     # def _archive_blobs(self, blobs):
     #     print(f"Copying {len(blobs)} blobs to the archive bucket")
@@ -179,14 +180,14 @@ class ReportSharer:
         hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
             'hospitalSampleLabel']
 
-        print(reporting_id)
-        print(hospital_sample_label)
+        print({reporting_id})
+        print({hospital_sample_label})
         if {hospital_sample_label} is not None:
             converted_reporting_id = {reporting_id}-{hospital_sample_label}
         else:
             converted_reporting_id = {reporting_id}
 
-        print (converted_reporting_id)
+        print ({converted_reporting_id})
         return {
             "purple.driver.catalog.somatic.tsv",
             "linx.driver.catalog.tsv",
