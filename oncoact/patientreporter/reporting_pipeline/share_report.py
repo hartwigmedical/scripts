@@ -175,6 +175,13 @@ class ReportSharer:
         set_name = self._set_name()
         reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
             'reportingId']
+        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'hospitalSampleLabel']
+
+        if {hospital_sample_label} is not None:
+            converted_reporting_id = {reporting_id}-{hospital_sample_label}
+        else:
+            converted_reporting_id = {reporting_id}
 
         return {
             "purple.driver.catalog.somatic.tsv",
@@ -182,7 +189,7 @@ class ReportSharer:
             "purple.somatic.vcf.gz",
             "purple.sv.vcf.gz",
             "linx.fusion.tsv",
-            f"{set_name}/orange_no_germline/{reporting_id}.orange.pdf"
+            f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf"
         }
 
     def _germline_files(self):
