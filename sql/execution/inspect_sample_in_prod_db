@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
+command -v column > /dev/null 2>&1 || die "Dependency not found (column)"
+
+db="hmfpatients"
+script="/data/repos/scripts/sql/execution/execute_sql_on_prod"
+purity_fields="sampleId, gender, fitMethod, runMode, qcStatus, purity, ploidy, msStatus, tmbStatus, contamination"
+metric_fields="sampleId, refMeanCoverage, tumorMeanCoverage, refPctExcTotal, tumorPctExcTotal";
+
+sampleId=$1 && shift
+
+[[ -n "${sampleId}" ]] || die "Provide a sampleId"
+
+info "Inspecting sample [${sampleId}]"
+info "  Database [${db}]"
+info "  Script [${script}]"
+info "Counts:"
+${script} "SELECT '${sampleId}' AS sampleId,
+(SELECT COUNT(*) FROM ${db}.purity WHERE sampleId = '${sampleId}') AS purityCount,
+(SELECT COUNT(*) FROM ${db}.somaticVariant WHERE sampleId = '${sampleId}') AS somaticVariantCount,
+(SELECT COUNT(*) FROM ${db}.structuralVariant WHERE sampleId = '${sampleId}') AS structuralVariantCount,
+(SELECT COUNT(*) FROM ${db}.copyNumber WHERE sampleId = '${sampleId}') AS copyNumberCount,
+(SELECT COUNT(*) FROM ${db}.driverCatalog WHERE sampleId = '${sampleId}') AS driverCatalogCount;" \
+| datamash transpose | column -t
+
+info "Purity table:"
+${script} "SELECT ${purity_fields} FROM ${db}.purity WHERE sampleId = '${sampleId}'" | datamash transpose | column -t
+
+info "Metrics table:"
+${script} "SELECT ${metric_fields} FROM ${db}.metric WHERE sampleId = '${sampleId}'" | datamash transpose | column -t
