@@ -8,8 +8,9 @@ input="${1-/data/ops/recurrent/submission_cleanup/jobs/input_submission.list}"
 [[ -f "${input}" ]] || die "Input file does not exist [$input]"
 
 info "Gathering all files from bucket [${bucket}]"
-all_files_in_bucket="$(gsutil ls "gs://${bucket}/")"
-info "Checking bucket [${bucket}] for submissions from input file [${input}]"
+all_files_in_bucket=$(gsutil ls "gs://${bucket}/")
+printf "%s\n" "${all_files_in_bucket}"
+info "Checking bucket content for submissions from input file [${input}]"
 cut -d" " -f1 < "${input}" | while read -r submission; do
     info "Grepping files for submission [${submission}]"
     grep -i "${submission}" <<< "${all_files_in_bucket}"
