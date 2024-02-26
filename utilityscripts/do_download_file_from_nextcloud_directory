@@ -19,23 +19,15 @@ if [[ ! $1 || ! $2 || $1 == "-h" || $1 == "--help" ]]; then print_help; fi
 
 nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
 nextcloud_dir=$1 && shift
-files_to_downlad=("$@")
+file=$2 && shift
 
 info "Running script $(basename $0)"
-info "Directory to download into is ${nextcloud_dir}"
+info "Directory to download from is ${nextcloud_dir}"
 info "Collecting credentials"
 
 user=$(get_nextcloud_upload_user)
 pass=$(get_nextcloud_upload_password)
 
-info "Checking the existence of input files"
-for file in "${files_to_download[@]}"; do
-    [[ -f "${file}" ]] || error "File not found (${file})"
-done
-
 info "Starting donwload of file from Nextcloud dir ${nextcloud_dir} for user ${user}"
-for file in "${files_to_download[@]}"; do
-    info "Downloading ${file}"
-    curl -u "${user}:${pass}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" || warn "Download of file failed (${file})"
-done
+curl -u "${user}:${pass}" -O "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" --output ./
 info "Finished with donwload."
