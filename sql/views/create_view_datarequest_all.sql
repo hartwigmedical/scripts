@@ -17,7 +17,8 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
     firstMatchedTreatmentResponse.measurementDone AS responseMeasured, firstMatchedTreatmentResponse.responseDate,
     firstMatchedTreatmentResponse.response AS firstResponse, purity.purity AS tumorPurity, purity.qcStatus AS purpleQC,
     metric.sufficientCoverage AS sufficientCoverage,
-    consentsLAMA.allowInternalUse, consentsLAMA.allowExternalUseWithoutCheck,consentsLAMA.allowExternalUseWithCheck
+    consentsLAMA.allowInternalUse, consentsLAMA.allowExternalUseWithoutCheck,consentsLAMA.allowExternalUseWithCheck,
+    IF( (IF( consentsIRBnki.broadconsent is null AND cohortId = 'COREDB' AND hospital = 1, 0, consentsIRBnki.broadconsent)) is null, 1, IF( consentsIRBnki.broadconsent is null AND cohortId = 'COREDB' AND hospital = 1, 0, consentsIRBnki.broadconsent))  AS AllowExternalUseIRBchecked
 FROM sample
     INNER JOIN consentsLAMA ON sample.sampleId = consentsLAMA.sampleId AND allowInternalUse = 'true'
     INNER JOIN purity ON sample.sampleId = purity.sampleId AND purity.qcStatus = 'PASS'
@@ -36,3 +37,4 @@ FROM sample
         FROM drug INNER JOIN treatment ON drug.treatmentId = treatment.id GROUP BY biopsyId)
         biopsyDrugs ON biopsy.id = biopsyDrugs.biopsyId
     LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId
+    LEFT JOIN consentsIRBnki on left(sample.sampleId, 12) = consentsIRBnki.patientId
