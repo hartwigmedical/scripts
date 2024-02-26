@@ -30,4 +30,4 @@ pass=$(get_nextcloud_upload_password)
 
 info "Starting donwload of file from Nextcloud dir ${nextcloud_dir} for user ${user}"
 curl -u "${user}:${pass}" -O "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" --output ./
-info "Finished with donwload."
+info "Finished with donwload. "
