@@ -17,7 +17,7 @@ if [[ ! $1 || ! $2 || $1 == "-h" || $1 == "--help" ]]; then print_help; fi
 
 nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
 nextcloud_dir=$1 && shift
-file=$2 && shift
+file=$1 && shift
 
 info "Running script $(basename $0)"
 info "Directory to download from is ${nextcloud_dir}"
