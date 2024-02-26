@@ -4,8 +4,6 @@ source locate_files || exit 1
 source message_functions || exit 1
 source secrets_functions || exit 1
 
-set -e
-
 function print_help () {
     echo "-----"
     echo " Descr: Download provided file to provided nextcloud directory"
