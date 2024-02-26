@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
+command -v jq > /dev/null 2>&1 || die "Dependency not found (jq)"
+
+set_name=$1 && shift
+
+include_inis="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini|Targeted.ini|ShallowSeq.ini"
+exclude_buckets="research-pipeline-output-prod"
+
+[[ -n "${set_name}" ]] || die "Please provide a set name to $(basename "$0")"
+
+info "Retrieving API runs [${include_inis}]"
+info "  Include inis: ${include_inis}"
+info "  Exclude buckets: ${exclude_buckets}"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set_name}" | \
+  jq --arg inis "$include_inis" --arg buckets "$exclude_buckets" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+[[ "${run_count}" -eq 1 ]] || warn "Multiple [${run_count}] runs encountered. Results will be from the most recent run!"
+
+run_json=$(jq '.[-1]' <<< "${runs_json}")
+bucket=$(jq -r '.bucket' <<< "${run_json}")
+run_log_file_url="gs://${bucket}/${set_name}/run.log"
+
+info "Collecting contents of run log [${run_log_file_url}]"
+run_log_content=$(gsutil cat "${run_log_file_url}") || die "Unable to read run log file [${run_log_file_url}]"
+pipeline_version_string=$(perl -lne 'print $1 if /Version of pipeline5 is \[(.*)\]/' <<< "${run_log_content}")
+arguments_string=$(perl -lne 'print $1 if /Arguments are \[Arguments\{(.*)\}\]/' <<< "${run_log_content}")
+
+info "Pipeline version used: ${pipeline_version_string}"
+
+info "Arguments from run log:"
+(tr -d " " | tr "," "\n" | sort | tr "=" "\t" | column -t) <<< "${arguments_string}"
