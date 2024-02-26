@@ -22,70 +22,70 @@ print_usage() {
 
 main()
 {
-  info "Started replacing Orange test run"
+    info "Started replacing Orange test run"
 
-  bucket_run_dir=$1 && shift
-  target_local_dir=$1 && shift
-  bucket_tumor_name=$1 && shift
-  bucket_ref_name=$1 && shift
+    bucket_run_dir=$1 && shift
+    target_local_dir=$1 && shift
+    bucket_tumor_name=$1 && shift
+    bucket_ref_name=$1 && shift
 
-  if [[ -z ${bucket_ref_name} ]]; then
-    info "Missing arguments"
-    print_usage
-  fi
-
-  while IFS= read -r -d '' local_file_path; do
-    info "Handling ${local_file_path}"
-    relative_file_path="${local_file_path#"${target_local_dir}/"}"
-    deanonymised_relative_file_path=$(deanonymise_path "${relative_file_path}" "${bucket_tumor_name}" "${bucket_ref_name}") \
-        || die "Could not deanonymise path"
-
-    if [[ "${deanonymised_relative_file_path}" == *.vcf ]]; then
-      bucket_file_path="${bucket_run_dir}/${deanonymised_relative_file_path}.gz"
-    else
-      bucket_file_path="${bucket_run_dir}/${deanonymised_relative_file_path}"
+    if [[ -z ${bucket_ref_name} ]]; then
+        info "Missing arguments"
+        print_usage
     fi
 
-    # check whether file exists
-    gsutil -q stat "${bucket_file_path}"
-    status=$?
-    if [[ $status != 0 ]]; then
-      warn "Could not find ${bucket_file_path} to copy to ${local_file_path}"
-    elif [[ "${bucket_file_path}" == *.gz ]]; then
-      gsutil cat "${bucket_file_path}" \
-          | zcat - \
-          | sed "s/${bucket_tumor_name}/${ANONYMOUS_TUMOR_NAME}/g" \
-          | sed "s/${bucket_ref_name}/${ANONYMOUS_REF_NAME}/g" \
-          > "${local_file_path}" \
-          || die "Could not download, unzip and anonymize ${bucket_file_path} to ${local_file_path}"
-    elif [[ "${bucket_file_path}" == *.png ]]; then
-      gsutil cat "${bucket_file_path}" \
-          > "${local_file_path}" \
-          || die "Could not download, unzip and anonymize ${bucket_file_path} to ${local_file_path}"
-    else
-      gsutil cat "${bucket_file_path}" \
-          | sed "s/${bucket_tumor_name}/${ANONYMOUS_TUMOR_NAME}/g" \
-          | sed "s/${bucket_ref_name}/${ANONYMOUS_REF_NAME}/g" \
-          > "${local_file_path}" \
-          || die "Could not download and anonymize ${bucket_file_path} to ${local_file_path}"
-    fi
-  done < <(find "${target_local_dir}" -type f -print0)
+    while IFS= read -r -d '' local_file_path; do
+        info "Handling ${local_file_path}"
+        relative_file_path="${local_file_path#"${target_local_dir}/"}"
+        deanonymised_relative_file_path=$(deanonymise_path "${relative_file_path}" "${bucket_tumor_name}" "${bucket_ref_name}") \
+            || die "Could not deanonymise path"
 
-  warn "Fix warnings and manually check everything before committing!"
+        if [[ "${deanonymised_relative_file_path}" == *.vcf ]]; then
+            bucket_file_path="${bucket_run_dir}/${deanonymised_relative_file_path}.gz"
+        else
+            bucket_file_path="${bucket_run_dir}/${deanonymised_relative_file_path}"
+        fi
 
-  info "Finished replacing Orange test run"
+        # check whether file exists
+        gsutil -q stat "${bucket_file_path}"
+        status=$?
+        if [[ $status != 0 ]]; then
+            warn "Could not find ${bucket_file_path} to copy to ${local_file_path}"
+        elif [[ "${bucket_file_path}" == *.gz ]]; then
+            gsutil cat "${bucket_file_path}" \
+                | zcat - \
+                | sed "s/${bucket_tumor_name}/${ANONYMOUS_TUMOR_NAME}/g" \
+                | sed "s/${bucket_ref_name}/${ANONYMOUS_REF_NAME}/g" \
+                > "${local_file_path}" \
+                || die "Could not download, unzip and anonymize ${bucket_file_path} to ${local_file_path}"
+        elif [[ "${bucket_file_path}" == *.png ]]; then
+            gsutil cat "${bucket_file_path}" \
+                > "${local_file_path}" \
+                || die "Could not download, unzip and anonymize ${bucket_file_path} to ${local_file_path}"
+        else
+            gsutil cat "${bucket_file_path}" \
+                | sed "s/${bucket_tumor_name}/${ANONYMOUS_TUMOR_NAME}/g" \
+                | sed "s/${bucket_ref_name}/${ANONYMOUS_REF_NAME}/g" \
+                > "${local_file_path}" \
+                || die "Could not download and anonymize ${bucket_file_path} to ${local_file_path}"
+        fi
+    done < <(find "${target_local_dir}" -type f -print0)
+
+    warn "Fix warnings and manually check everything before committing!"
+
+    info "Finished replacing Orange test run"
 }
 
 deanonymise_path()
 {
-  local file_path=$1 && shift
-  local bucket_tumor_name=$1 && shift
-  local bucket_ref_name=$1 && shift
+    local file_path=$1 && shift
+    local bucket_tumor_name=$1 && shift
+    local bucket_ref_name=$1 && shift
 
-  [[ -n "${bucket_ref_name}" ]] || die "Missing arguments"
+    [[ -n "${bucket_ref_name}" ]] || die "Missing arguments"
 
-  temp="${file_path//"${ANONYMOUS_TUMOR_NAME}"/"${bucket_tumor_name}"}"
-  echo "${temp//"${ANONYMOUS_REF_NAME}"/"${bucket_ref_name}"}"
+    temp="${file_path//"${ANONYMOUS_TUMOR_NAME}"/"${bucket_tumor_name}"}"
+    echo "${temp//"${ANONYMOUS_REF_NAME}"/"${bucket_ref_name}"}"
 }
 
 main "$@" || die "Could not run script"
