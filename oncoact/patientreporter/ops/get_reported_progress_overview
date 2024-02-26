@@ -5,8 +5,8 @@ source message_functions || exit 1
 
 
 all_created_reports=$( hmf_api_get "reports/created" )
-created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1669849200 ) ]' | jq 'sort_by(.create_time)')
-#date -j -f "%b %d %Y %T" "Dec 01 2022 00:00:00" "+%s"
+created_reports=$(echo "${all_created_reports}" | jq '[.[] | select(.create_time + "Z" | fromdateiso8601 > 1698793200 ) ]' | jq 'sort_by(.create_time)')
+#date -j -f "%b %d %Y %T" "Nov 01 2023 00:00:00" "+%s"
 
 touch reported_samples_list.tsv
 while read -r report_info; do
