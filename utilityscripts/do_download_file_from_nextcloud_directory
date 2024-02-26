@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source secrets_functions || exit 1
+
+set -e
+
+function print_help () {
+    echo "-----"
+    echo " Descr: Download provided file to provided nextcloud directory"
+    echo " Usage: $(basename $0) \${NC_DIR} <File1> ]"
+    echo " Examp: $(basename $0) UPLOAD file.txt"
+    echo "-----"
+    exit 1
+}
+
+if [[ ! $1 || ! $2 || $1 == "-h" || $1 == "--help" ]]; then print_help; fi
+
+nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
+nextcloud_dir=$1 && shift
+files_to_downlad=("$@")
+
+info "Running script $(basename $0)"
+info "Directory to download into is ${nextcloud_dir}"
+info "Collecting credentials"
+
+user=$(get_nextcloud_upload_user)
+pass=$(get_nextcloud_upload_password)
+
+info "Checking the existence of input files"
+for file in "${files_to_download[@]}"; do
+    [[ -f "${file}" ]] || error "File not found (${file})"
+done
+
+info "Starting donwload of file from Nextcloud dir ${nextcloud_dir} for user ${user}"
+for file in "${files_to_download[@]}"; do
+    info "Downloading ${file}"
+    curl -u "${user}:${pass}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" || warn "Download of file failed (${file})"
+done
+info "Finished with donwload."
