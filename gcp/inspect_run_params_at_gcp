@@ -11,7 +11,7 @@ exclude_buckets="research-pipeline-output-prod"
 
 [[ -n "${set_name}" ]] || die "Please provide a set name to $(basename "$0")"
 
-info "Retrieving API runs [${include_inis}]"
+info "Retrieving API runs"
 info "  Include inis: ${include_inis}"
 info "  Exclude buckets: ${exclude_buckets}"
 runs_json=$(
