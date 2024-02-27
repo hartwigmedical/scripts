@@ -62,15 +62,15 @@ locate_prod_cuppa_chart() {
 }
 
 locate_prod_cuppa_dna() {
-    echo "/data/tools/cuppa/1.8.1.rc1/cuppa.jar"
+    echo "/data/tools/cuppa/2.0.1/cuppa.jar"
 }
 
 locate_prod_cuppa_dna_rna() {
-    echo "/data/tools/cuppa/1.8.1.rc1/cuppa.jar"
+    echo "/data/tools/cuppa/2.0.1/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
-    echo " /data/tools/cuppa/1.8.1.rc1/cuppa.jar"
+    echo " /data/tools/cuppa/2.0.1/cuppa.jar"
 }
 
 locate_prod_paddle() {

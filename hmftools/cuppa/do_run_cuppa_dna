@@ -32,11 +32,11 @@ else
     cp -r ${run_dir}/virusintrprtr/* ${tmp_sample_data_dir}/
 fi
 
-info "Running Cuppa DNA on ${run_dir}"
-java -Xmx4G -jar ${cuppa_jar} \
-    -categories DNA \
-    -ref_data_dir ${ref_data_dir} \
-    -sample_data ${tumor_sample} \
+info "Running CuppaDataPrep DNA on ${run_dir}"
+java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
+    -sample ${tumor_sample} \
+    -categories "DNA" \
+    -ref_genome_version "V37" \
     -sample_data_dir ${tmp_sample_data_dir} \
     -output_dir ${cuppa_dir} \
     "$@"
