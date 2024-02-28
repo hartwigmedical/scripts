@@ -239,16 +239,40 @@ class ReportSharer:
         return self.run['set']['name']
 
     def _is_panel(self):
-        return self.report_created_record['report_type'] in ['panel_result_report', 'panel_result_report_fail']
+        return self.report_created_record['report_type'] in ['panel_result_report',
+                                                             'panel_result_report_corrected_internal',
+                                                             'panel_result_report_corrected_external',
+                                                             'panel_result_report_fail',
+                                                             'panel_result_report_fail_corrected_internal',
+                                                             'panel_result_report_fail_corrected_external']
 
     def _is_failure(self):
-        return self.report_created_record['report_type'] in ['wgs_processing_issue', 'wgs_isolation_fail',
-                                                             'wgs_tcp_shallow_fail', 'wgs_preparation_fail',
-                                                             'wgs_tumor_processing_issue', 'wgs_pipeline_fail',
-                                                             'wgs_tcp_fail']
+        return self.report_created_record['report_type'] in ['wgs_processing_issue',
+                                                             'wgs_processing_issue_corrected_internal',
+                                                             'wgs_processing_issue_corrected_external',
+                                                             'wgs_isolation_fail',
+                                                             'wgs_isolation_fail_corrected_internal',
+                                                             'wgs_isolation_fail_corrected_external',
+                                                             'wgs_tcp_shallow_fail',
+                                                             'wgs_tcp_shallow_fail_corrected_internal',
+                                                             'wgs_tcp_shallow_fail_corrected_external',
+                                                             'wgs_preparation_fail',
+                                                             'wgs_preparation_fail_corrected_internal',
+                                                             'wgs_preparation_fail_corrected_external',
+                                                             'wgs_tumor_processing_issue',
+                                                             'wgs_tumor_processing_issue_corrected_internal',
+                                                             'wgs_tumor_processing_issue_corrected_external',
+                                                             'wgs_pipeline_fail',
+                                                             'wgs_pipeline_fail_corrected_internal',
+                                                             'wgs_pipeline_fail_corrected_external',
+                                                             'wgs_tcp_fail',
+                                                             'wgs_tcp_fail_corrected_internal',
+                                                             'wgs_tcp_fail_corrected_external']
 
     def _is_panel_failure(self):
-        return self.report_created_record['report_type'] in ['panel_result_report_fail']
+        return self.report_created_record['report_type'] in ['panel_result_report_fail',
+                                                             'panel_result_report_fail_corrected_internal',
+                                                             'panel_result_report_fail_corrected_external']
 
 
 if __name__ == "__main__":
