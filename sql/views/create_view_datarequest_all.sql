@@ -18,9 +18,9 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
     firstMatchedTreatmentResponse.response AS firstResponse, purity.purity AS tumorPurity, purity.qcStatus AS purpleQC,
     metric.sufficientCoverage AS sufficientCoverage,
     consentsLAMA.allowInternalUse, consentsLAMA.allowExternalUseWithoutCheck,consentsLAMA.allowExternalUseWithCheck,
-    IF( (IF( consentsIRBnki.broadconsent is null AND cohortId = 'COREDB' AND hospital = 1, 0, consentsIRBnki.broadconsent)) is null, 1, IF( consentsIRBnki.broadconsent is null AND cohortId = 'COREDB' AND hospital = 1, 0, consentsIRBnki.broadconsent))  AS AllowExternalUseIRBchecked
+    IF( (IF( consentsIRBnki.broadconsent is null AND consentsLAMA.allowExternalUseWithCheck = 'True', 0, consentsIRBnki.broadconsent)) is null, 1, IF( consentsIRBnki.broadconsent is null AND consentsLAMA.allowExternalUseWithCheck = 'True', 0, consentsIRBnki.broadconsent))  AS AllowExternalUseIRBchecked
 FROM sample
-    INNER JOIN consentsLAMA ON sample.sampleId = consentsLAMA.sampleId AND allowInternalUse = 'true'
+    INNER JOIN consentsLAMA ON sample.sampleId = consentsLAMA.sampleId AND allowInternalUse = 'True'
     INNER JOIN purity ON sample.sampleId = purity.sampleId AND purity.qcStatus = 'PASS'
     INNER JOIN metric ON sample.sampleId = metric.sampleId AND metric.sufficientCoverage = 1
     LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
