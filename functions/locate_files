@@ -383,6 +383,10 @@ locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
 }
 
+locate_extended_efficacy_json() {
+  echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
+}
+
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {

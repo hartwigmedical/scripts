@@ -16,6 +16,9 @@ molecular_json="$(locate_actin_cohort_molecular_directory ${sample})/${sample}.m
 trial_database_directory="$(locate_actin_cohort_treatment_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
+atc_tsv="$(locate_atc_tsv)"
+extended_efficacy_json="$(locate_extended_efficacy_json)"
+
 output_directory="/data/experiments/charlotte_emc_actionability/treatment_matches"
 
 actin_jar="$(locate_cohort_actin)"
@@ -28,5 +31,7 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -trial_database_directory ${trial_database_directory} \
     -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
+    -atc_tsv ${atc_tsv} \
+    -extended_efficacy_json ${extended_efficacy_json} \
     -output_directory ${output_directory} \
     "$@"
