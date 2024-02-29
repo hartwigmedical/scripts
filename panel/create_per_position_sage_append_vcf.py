@@ -36,7 +36,7 @@ HEADER_LINES = [
     "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tFAKE",
 ]
 FORMAT = "GT:ABQ:AD:AF:AMQ:ANM:DP:RABQ:RAD:RC_CNT:RC_IPC:RC_JIT:RC_QUAL:RDP:RSB:SB"
-
+FAKE_VALUES = "./.:0:0,0:0.0:0,0:0.0,0.0:0:0,0:0,0:0,0,0,0,0,0,0:0:0,0,0:0,0,0,0,0,0,0:0:0.0,0.0:0.0,0.0"
 
 class ReferenceGenomeVersion(Enum):
     V37 = auto()
@@ -216,11 +216,7 @@ def get_output_vcf_text(
 def get_output_line(chromosome: Chromosome, position: int, reference_genome_version: ReferenceGenomeVersion) -> str:
     ref_base = "A"
     alt_base = "T"
-    line = (
-        f"{chromosome.to_string(reference_genome_version)}\t{position}\t.\t{ref_base}\t{alt_base}\t.\tPASS\t.\t{FORMAT}"
-        f"\t./.:0:0,0:0.0:0:0,0:0,0:0,0,0,0,0,0,0:0:0,0,0:0,0,0,0,0,0,0:0:0.0"
-    )
-    return line
+    return f"{chromosome.to_string(reference_genome_version)}\t{position}\t.\t{ref_base}\t{alt_base}\t.\tPASS\t.\t{FORMAT}\t{FAKE_VALUES}"
 
 
 def ends_with(input_string: str, end_string: str) -> bool:
