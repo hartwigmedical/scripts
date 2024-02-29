@@ -116,8 +116,7 @@ main() {
               -ref_genome "${local_ref_genome_fasta}" \
               -ref_genome_version 38 \
               -input_vcf "${local_input_vcf}" \
-              -out "${local_output_vcf}" \
-              -sync_fragments \
+              -output_vcf "${local_output_vcf}" \
               -threads "${threads}" \
               || die "Failed to run SAGE in append mode for ${sample_name}"
   fi
