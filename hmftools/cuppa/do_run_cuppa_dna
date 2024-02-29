@@ -43,6 +43,13 @@ rm -r ${tmp_sample_data_dir}
 
 info "Running pycuppa DNA on ${run_dir}"
 pycuppa_prepare_venv
+
+python_version=$(python3 --version)
+if [[ "${python_version}" != "Python 3.9.0" ]]; then
+    info "Adding python 3.9.0 to PATH"
+    export PATH="$HOME/.pyenv/versions/3.9.0/bin:$PATH"
+fi
+
 python3 -m cuppa.predict \
     --sample_id ${tumor_sample} \
     --features_path "${cuppa_dir}/${tumor_sample}.cuppa_data.tsv.gz" \
