@@ -21,9 +21,11 @@ download_isofox_to_run_dir ${run_dir}
 if [[ -d "${run_dir}/isofox" ]]; then
     # Make sure sample is present in the sample metadata file for RNA!
 
-    run_cuppa_dna_rna_prod ${run_dir}
-    generate_cup_dna_rna_report ${run_dir}
-    run_cuppa_chart_dna_rna ${run_dir}
+    # TODO (KD): Clean up at some point.
+    warn "CUPPA DNA-RNA currently not supported in scripts (transition v1 to v2)"
+#    run_cuppa_dna_rna_prod ${run_dir}
+#    generate_cup_dna_rna_report ${run_dir}
+#    run_cuppa_chart_dna_rna ${run_dir}
 fi
 
 download_rna_bam_to_run_dir ${run_dir}

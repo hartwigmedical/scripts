@@ -900,14 +900,6 @@ locate_amber_snpcheck_38_vcf() {
     echo "/data/resources/public/amber/38/Amber.snpcheck.38.vcf"
 }
 
-locate_cuppa_ref_dir_dna() {
-    echo "/data/resources/public/cuppa"
-}
-
-locate_cuppa_ref_dir_dna_rna() {
-    echo "/data/resources/actin/cuppa_ref_dna_rna_1_8"
-}
-
 locate_cohort_mapping_tsv() {
     echo "/data/resources/public/orange/cohort_mapping.tsv"
 }
