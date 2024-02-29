@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+python_version=$(python3 --version)
+if [[ ${python_version} -ne "Python 3.9.0" ]]; then
+    info "Adding python 3.9.0 to PATH"
+    export PATH="$HOME/.pyenv/versions/3.9.0/bin:$PATH"
+fi
+
+info "Setting up pycuppa venv"
+pycuppa_venv="${HOME}/pycuppa_venv"
+python3 -m venv ${pycuppa_venv}
+source ${pycuppa_venv}/bin/activate
+
+info "Installing pycuppa tool into venv"
+pip3 install --upgrade pip
+pip3 install /data/experiments/pilot_tools/pycuppa
+
