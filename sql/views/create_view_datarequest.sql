@@ -2,4 +2,4 @@
 
 CREATE OR REPLACE VIEW datarequest AS
 
-SELECT * FROM hmfpatients.datarequest_all where allowExternalUseWithoutCheck = 'true';
+SELECT * FROM hmfpatients.datarequest_all where allowExternalUseWithoutCheck = 'True';
