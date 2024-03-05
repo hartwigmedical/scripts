@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Downloading NCR CRC dataset to local"
+gsutil cp "gs://hmf-crunch-actin-ncr-dataset/K23244.csv" "${HOME}/hmf/tmp/ncr_crc_dataset.csv"

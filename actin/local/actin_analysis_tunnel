@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-gcloud beta compute ssh --ssh-flag="-L localhost:8888:localhost:8888" --zone "europe-west4-a" "actin-analysis-vm" --tunnel-through-iap --project "hmf-crunch"
+gcloud beta compute ssh --ssh-flag="-L localhost:8888:localhost:8888" \
+    --zone "europe-west4-a" "actin-analysis-vm" \
+    --project "hmf-crunch" \
+    --tunnel-through-iap
+
