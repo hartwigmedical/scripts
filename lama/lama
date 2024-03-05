@@ -179,8 +179,8 @@ main(){
             ([.referenceSamples[].sampleBarcode//"N/A"]|join(","))
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^report ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\n" isolationBarcode sampleId reportDate reportType contractCode
-        jq -r '.[] | [.isolationBarcode, .sampleId, .reportDate, .reportType, .contractCode] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" isolationBarcode type purity hasReliablePurity hasReliableQuality createTime
+        jq -r '.[] | [.isolationBarcode, .type, .purity, .hasReliablePurity, .hasReliableQuality, .createTime] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "TUMOR_INFO" ]]; then
             printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId tumLocation tumType tumExtra tumDoids biospyLocation biospySubLocation biospyPalgaCode
             jq -r --arg na "$NA" '.[] | select(.tumorType != null) | [
