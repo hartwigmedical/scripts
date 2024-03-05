@@ -52,13 +52,13 @@ if [[ "${python_version}" != "Python 3.9.0" ]]; then
     fi
 fi
 
-if [[ ! -d "${HOME}/pycuppa" ]]; then
-    info "Setting up pycuppa"
-    unzip ${cuppa_jar} pycuppa/* -d "${HOME}"
-fi
+info "Setting up pycuppa"
+create_or_cleanup_dir "${HOME}/pycuppa"
+unzip ${cuppa_jar} pycuppa/* -d "${HOME}"
 
 info "Setting up pycuppa venv"
 pycuppa_venv="${HOME}/pycuppa_venv"
+create_or_cleanup_dir ${pycuppa_venv}
 python3 -m venv ${pycuppa_venv}
 source ${pycuppa_venv}/bin/activate
 
