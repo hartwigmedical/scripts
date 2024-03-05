@@ -2,9 +2,10 @@
 
 source message_functions || exit 1
 
-SCRIPT=$(basename "${0}")
 YYMMDD=$(date +'%y%m%d')
+bucket=$1
 
+LOGGING_BUCKETS=(bcl-forensics-prod-1)
 RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod)
 PIPELINE5_BUCKETS=(
     diagnostic-pipeline-output-prod-1
@@ -13,20 +14,31 @@ PIPELINE5_BUCKETS=(
     services-pipeline-output-prod-1
     targeted-pipeline-output-prod-1
 )
-LOGGING_BUCKETS=(bcl-forensics-prod-1)
 
 main () {
-    info "Starting bucket storage size check [script: ${SCRIPT}]"
-    all_buckets=("${RAW_BUCKETS[@]}" "${PIPELINE5_BUCKETS[@]}" "${LOGGING_BUCKETS[@]}")
-    for bucket_name in "${all_buckets[@]}"; do
-        process_one_bucket "${bucket_name}"
-    done
+    info "Starting bucket storage size check"
+    if [[ -n "${bucket}" ]]; then
+        info "Bucket provided so checking contents of one bucket [${bucket}]"
+        process_contents_of_one_bucket "${bucket}"
+    else
+        info "No bucket provided so checking size of all relevant buckets"
+        buckets=("${RAW_BUCKETS[@]}" "${PIPELINE5_BUCKETS[@]}" "${LOGGING_BUCKETS[@]}")
+        for bucket in "${buckets[@]}"; do
+            process_one_bucket "${bucket}"
+        done
+    fi
 }
 
 function process_one_bucket () {
     local bucket_name=$1 && shift
-    output=$(gsutil du -sh "gs://${bucket_name}" | tr -s " " | tr " " "\t")
-    printf "%s %s\n" "${YYMMDD}" "${output}"
+    output=$(gsutil du -sh "gs://${bucket_name}" | tr -s " " | tr " " "\t") || die "Gsutil du failed"
+    printf "%s\t%s\n" "${YYMMDD}" "${output}"
+}
+
+function process_contents_of_one_bucket () {
+    local bucket_name=$1 && shift
+    contents=$(gsutil ls "gs://${bucket_name}") || die "Gsutil ls failed"
+    echo "${contents}" | xargs -n 1 -P "$(nproc)" gsutil du -sh
 }
 
 main
