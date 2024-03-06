@@ -123,7 +123,11 @@ echo " cat ${repo_file}"
 echo ""
 
 info "And generate final test report (FILL IN your name!)"
-echo " generate_final_test_report.py -i ${repo_file} -o ~/ -n 'Name'"
+echo " generate_final_test_report.py -i ${repo_file} -o ${out_path}/ -n 'Name'"
+echo ""
+
+info "And/or send mail, change settings as needed!"
+echo " msg -s -t ss ${submission}"
 echo ""
 
 # Warn if not potentially complete
