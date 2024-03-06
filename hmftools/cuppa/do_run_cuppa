@@ -38,6 +38,7 @@ info "Running CuppaDataPrep with mode ${cuppa_mode} on ${run_dir}"
 java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
     -sample "${tumor_sample}" \
     -categories "${cuppa_mode}" \
+    -ref_alt_sj_sites "${tmp_sample_data_dir}/${tumor_sample}.isf.alt_splice_junc.csv" \
     -ref_genome_version "V37" \
     -sample_data_dir "${tmp_sample_data_dir}" \
     -output_dir "${cuppa_dir}" \
