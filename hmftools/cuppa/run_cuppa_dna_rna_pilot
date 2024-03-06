@@ -11,6 +11,6 @@ fi
 
 cuppa_jar="$(locate_pilot_cuppa)"
 cuppa_dir="${run_dir}/cuppa_pilot"
-cuppa_mode="DNA;RNA"
+cuppa_mode="ALL"
 
 do_run_cuppa ${run_dir} ${cuppa_jar} ${cuppa_dir} ${cuppa_mode} "$@"
