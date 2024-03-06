@@ -8,14 +8,15 @@ source io_functions || exit 1
 run_dir=$1 && shift
 cuppa_jar=$1 && shift
 cuppa_dir=$1 && shift
+cuppa_mode=$1 && shift
 
-if [[ -z "${run_dir}" || -z ${cuppa_jar} || -z "${cuppa_dir}" ]]; then
+if [[ -z "${run_dir}" || -z "${cuppa_jar}" || -z "${cuppa_dir}" || -z "${cuppa_mode}" ]]; then
     error "Missing params. Exiting"
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-tmp_sample_data_dir="${run_dir}/cuppa_sample_data_dna"
+tmp_sample_data_dir="${run_dir}/cuppa_sample_data"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
@@ -27,15 +28,19 @@ else
     cp -r ${run_dir}/virusintrprtr/* ${tmp_sample_data_dir}/
 fi
 
+if [[ -d ${run_dir}/isofox ]]; then
+    cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
+fi
+
 create_or_cleanup_dir "${cuppa_dir}"
 
-info "Running CuppaDataPrep DNA on ${run_dir}"
+info "Running CuppaDataPrep with mode ${cupppa_mode} on ${run_dir}"
 java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
-    -sample ${tumor_sample} \
-    -categories "DNA" \
+    -sample "${tumor_sample}" \
+    -categories "${cuppa_mode}" \
     -ref_genome_version "V37" \
-    -sample_data_dir ${tmp_sample_data_dir} \
-    -output_dir ${cuppa_dir} \
+    -sample_data_dir "${tmp_sample_data_dir}" \
+    -output_dir "${cuppa_dir}" \
     "$@"
 
 info "Removing temporary data dir '${tmp_sample_data_dir}'"
