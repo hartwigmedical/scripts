@@ -34,7 +34,7 @@ fi
 
 create_or_cleanup_dir "${cuppa_dir}"
 
-info "Running CuppaDataPrep with mode ${cupppa_mode} on ${run_dir}"
+info "Running CuppaDataPrep with mode ${cuppa_mode} on ${run_dir}"
 java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
     -sample "${tumor_sample}" \
     -categories "${cuppa_mode}" \
