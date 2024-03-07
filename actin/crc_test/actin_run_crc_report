@@ -2,8 +2,8 @@
 
 patient="ACTN02020001"
 
-actin_treatment_matcher_pilot ${patient}
+actin_treatment_matcher_crc_report ${patient}
 
 echo ""
 
-actin_reporter_pilot ${patient}
+actin_reporter_crc_report ${patient}
