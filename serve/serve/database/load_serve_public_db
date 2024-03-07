@@ -4,7 +4,7 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 serve_actionability_dir="/home/lschoenmaker/tmp/resources/"
-serve_jar=$(locate_research_serve)
+serve_jar=$(locate_prod_serve)
 
 credentials=$(prod_writer_sql_credentials)
 
