@@ -36,3 +36,4 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -enable_extended_mode \
     -mode "CRC" \
     "$@"
+
