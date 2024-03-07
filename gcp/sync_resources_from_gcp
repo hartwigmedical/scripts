@@ -9,8 +9,17 @@ source locate_gcp_files || exit 1
 set -e
 
 info "Syncing resources from GCP"
-gsutil -m rsync -Pr gs://common-resources ${BASE}/bucket
+hostname="$(hostname)"
+if [[ "${hostname}" =~ ops-vm ]]; then
+    info "Hostname contains 'ops-vm' [${hostname}] so syncing bucket resources without the (large) virus ones"
+    gsutil -m rsync -x ".*(virusbreakend_db|virus_reference_genome)/.*" -Pr gs://common-resources ${BASE}/bucket
+else
+    info "Hostname does not contain 'ops' [${hostname}] so syncing all bucket resources"
+    gsutil -m rsync -Pr gs://common-resources ${BASE}/bucket
+fi
+info "Pulling public resources repo"
 cd ${BASE}/public && git pull
+info "Pulling private resources repo"
 cd ${BASE}/private && git pull
 
 if [[ $(whoami) == "root" ]]; then

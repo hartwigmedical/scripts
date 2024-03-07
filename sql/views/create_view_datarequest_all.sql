@@ -2,7 +2,7 @@ CREATE OR REPLACE VIEW datarequest_all AS
 
 SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPatientId,
     CAST((right(left(sample.sampleId,8),2)) as DECIMAL) as hospital, sample.cohortId,
-    sample.sampleId, left(sample.sampleId, 12) AS patientId, setName,
+    sample.sampleId, left(sample.sampleId, 12) AS patientId, setName, not(isnull(rnaStatistics.sampleId)) as hasRNA,
     sample.arrivalDate as sampleArrivalDate, sample.samplingDate,
     baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType,

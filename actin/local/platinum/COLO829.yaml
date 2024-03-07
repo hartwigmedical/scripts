@@ -1,0 +1,23 @@
+gcp:
+  project: hmf-crunch
+  region: europe-west4
+serviceAccount:
+  kubernetesServiceAccount: hmf-crunch-sa
+  gcpEmailAddress: hmf-crunch@hmf-crunch.iam.gserviceaccount.com
+cluster: research-cluster-prod-1
+cmek: "projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001"
+image: eu.gcr.io/hmf-build/pipeline5:5.35.0-beta.1
+outputBucket: hmf-crunch-kd-colo-5-35-test
+argumentOverrides:
+  image_project: hmf-pipeline-development
+  image_name: pipeline5-5-35-202403061046
+  ref_genome_version: 37
+  cost_center_label: actin
+samples:
+  - name: COLO829v003
+    tumors:
+      - name: COLO829v003T
+        bam: "gs://hmf-verification-data-bam/COLO829v003T/37/COLO829v003T.bam"
+    normal:
+      name: COLO829v003R
+      bam: "gs://hmf-verification-data-bam/COLO829v003T/37/COLO829v003R.bam"
