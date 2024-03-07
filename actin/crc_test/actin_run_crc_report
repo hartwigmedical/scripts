@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+patient="ACTN02020001"
+
+actin_treatment_matcher_pilot ${patient}
+
+echo ""
+
+actin_reporter_pilot ${patient}
