@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+currentDate=$(date +%Y-%m-%d)
+fileName="${currentDate}.txt"
+fileLocalPath="${HOME}/tmp/${fileName}"
+touch ${fileLocalPath}
+
+gcp_bucket_file="gs://oncoact-panel-files-nki/date/${fileName}"
+
+echo "${fileName} is uploaded to the GCP bucket"
+#gsutil cp ${fileName} ${gcp_bucket_file}
+
+echo "${fileName} is removed"
+rm ${fileLocalPath}
+echo "Done!"
