@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 cuppa_jar="$(locate_research_cuppa)"
-cuppa_dir="$(locate_cuppa_dna_output_directory)"
+cuppa_dir="$(locate_cuppa_dna_output_directory ${run_dir})"
 cuppa_mode="DNA"
 
 do_run_cuppa ${run_dir} ${cuppa_jar} ${cuppa_dir} ${cuppa_mode} "$@"
