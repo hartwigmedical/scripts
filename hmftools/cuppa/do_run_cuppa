@@ -78,7 +78,7 @@ python3 -m cuppa.predict \
     --features_path "${cuppa_dir}/${tumor_sample}.cuppa_data.tsv.gz" \
     --output_dir "${cuppa_dir}"
 
-info "Regenerating CUPPA R visualization for ${sample} in ${run_dir}"
+info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_dir}"
 Rscript --vanilla /data/experiments/pilot_tools/cuppa_visualizer/plot_predictions.R \
     "${cuppa_dir}/${tumor_sample}.cuppa.vis_data.tsv" \
     "${cuppa_dir}/${tumor_sample}.cuppa.vis.png"
