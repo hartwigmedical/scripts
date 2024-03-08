@@ -34,12 +34,12 @@ fi
 
 create_or_cleanup_dir "${cuppa_dir}"
 
-# TODO (KD): Configure -ref_alt_sj_sites (contains "Chromosome", "PosStart", "PosEnd")
 info "Running CuppaDataPrep with mode ${cuppa_mode} on ${run_dir}"
 java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
     -sample "${tumor_sample}" \
     -categories "${cuppa_mode}" \
     -ref_genome_version "V37" \
+    -ref_alt_sj_sites "/data/experiments/cup/ref/017/rna/alt_sj.selected_loci.tsv.gz" \
     -sample_data_dir "${tmp_sample_data_dir}" \
     -output_dir "${cuppa_dir}" \
     "$@"
