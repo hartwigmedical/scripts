@@ -18,9 +18,12 @@ base_dir_535="${base_dir}/COLO829_v5_35_0"
 
 info "Running compar on COLO829 v5.34 versus v5.35"
 
+# TODO (KD): Include CUPPA or change to ALL once CUPPA v2 is supported in compar
+categories="PURITY,DRIVER,SOMATIC_VARIANT,GERMLINE_VARIANT,GERMLINE_DELETION,GERMLINE_SV,FUSION,DISRUPTION,CHORD,LILAC"
+
 java -jar ${compar_jar} \
     -sample "COLO829v003T" \
-    -categories "ALL" \
+    -categories "${categories}" \
     -match_level "DETAILED" \
     -sample_dir_ref "${base_dir_534}"\
     -sample_dir_new "${base_dir_535}"\
