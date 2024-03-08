@@ -31,7 +31,8 @@ linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
 linx_driver_catalog_tsv=$(locate_linx_driver_catalog ${run_dir})
 annotated_virus_tsv=$(locate_virus_annotation_tsv ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
-cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
+# TODO (Fix CUPPA input)
+#cuppa_result_csv=$(locate_cuppa_result_csv ${run_dir})
 
 driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
 

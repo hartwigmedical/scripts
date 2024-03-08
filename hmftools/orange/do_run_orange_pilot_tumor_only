@@ -35,9 +35,9 @@ lilac_dir="$(locate_lilac_data_directory ${run_dir})"
 
 virus_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
 chord_dir="$(locate_chord_data_directory ${run_dir})"
-cuppa_dir="$(locate_cuppa_dna_rna_data_directory ${run_dir})"
+cuppa_dir="$(locate_cuppa_dna_rna_output_directory ${run_dir})"
 if [[ ! -d "${cuppa_dir}" ]]; then
-    cuppa_dir="$(locate_cuppa_data_directory ${run_dir})"
+    cuppa_dir="$(locate_cuppa_dna_output_directory ${run_dir})"
 fi
 
 sigs_dir="$(locate_sigs_data_directory ${run_dir})"

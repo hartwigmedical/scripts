@@ -7,16 +7,16 @@ source io_functions || exit 1
 
 run_dir=$1 && shift
 cuppa_jar=$1 && shift
-cuppa_dir=$1 && shift
+cuppa_output_dir=$1 && shift
 cuppa_mode=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${cuppa_jar}" || -z "${cuppa_dir}" || -z "${cuppa_mode}" ]]; then
+if [[ -z "${run_dir}" || -z "${cuppa_jar}" || -z "${cuppa_output_dir}" || -z "${cuppa_mode}" ]]; then
     error "Missing params. Exiting"
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-tmp_sample_data_dir="${run_dir}/cuppa_sample_data"
+tmp_sample_data_dir="${run_dir}/cuppa_sample_data_tmp"
 
 info "Creating and populating sample data dir '${tmp_sample_data_dir}'"
 create_or_cleanup_dir ${tmp_sample_data_dir}
@@ -32,16 +32,16 @@ if [[ -d ${run_dir}/isofox ]]; then
     cp -r ${run_dir}/isofox/* ${tmp_sample_data_dir}/
 fi
 
-create_or_cleanup_dir "${cuppa_dir}"
+create_or_cleanup_dir "${cuppa_output_dir}"
 
 info "Running CuppaDataPrep with mode ${cuppa_mode} on ${run_dir}"
 java -Xmx4G -cp ${cuppa_jar} com.hartwig.hmftools.cup.prep.CuppaDataPrep \
     -sample "${tumor_sample}" \
     -categories "${cuppa_mode}" \
     -ref_genome_version "V37" \
-    -ref_alt_sj_sites "/data/experiments/cup/ref/017/rna/alt_sj.selected_loci.tsv.gz" \
+    -ref_alt_sj_sites "$(locate_cuppa_ref_alt_sj_sites)" \
     -sample_data_dir "${tmp_sample_data_dir}" \
-    -output_dir "${cuppa_dir}" \
+    -output_dir "${cuppa_output_dir}" \
     "$@"
 
 info "Removing temporary data dir '${tmp_sample_data_dir}'"
@@ -59,28 +59,30 @@ if [[ "${python_version}" != "Python 3.9.0" ]]; then
 fi
 
 info "Setting up pycuppa"
-create_or_cleanup_dir "${HOME}/pycuppa"
-unzip ${cuppa_jar} pycuppa/* -d "${HOME}"
+pycuppa_base_dir="${HOME}"
+pycuppa_dir="${pycuppa_base_dir}/pycuppa"
+create_or_cleanup_dir "${pycuppa_dir}"
+unzip ${cuppa_jar} pycuppa/* -d "${pycuppa_base_dir}"
 
 info "Setting up pycuppa venv"
-pycuppa_venv="${HOME}/pycuppa_venv"
+pycuppa_venv="${pycuppa_base_dir}/pycuppa_venv"
 create_or_cleanup_dir ${pycuppa_venv}
 python3 -m venv ${pycuppa_venv}
 source ${pycuppa_venv}/bin/activate
 
 info "Installing pycuppa tool into venv"
 pip3 install --upgrade pip
-pip3 install "${HOME}/pycuppa"
+pip3 install "${pycuppa_dir}"
 
 info "Running pycuppa DNA on ${run_dir}"
 python3 -m cuppa.predict \
     --sample_id ${tumor_sample} \
-    --features_path "${cuppa_dir}/${tumor_sample}.cuppa_data.tsv.gz" \
-    --output_dir "${cuppa_dir}"
+    --features_path "$(locate_cuppa_features_tsv ${cuppa_output_dir})" \
+    --output_dir "${cuppa_output_dir}"
 
-info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_dir}"
-Rscript --vanilla /data/experiments/pilot_tools/cuppa_visualizer/plot_predictions.R \
-    "${cuppa_dir}/${tumor_sample}.cuppa.vis_data.tsv" \
-    "${cuppa_dir}/${tumor_sample}.cuppa.vis.png"
+info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir}"
+Rscript --vanilla $(locate_pilot_cuppa_visualizer) \
+    "$(locate_cuppa_vis_data_tsv ${cuppa_output_dir})" \
+    "${cuppa_output_dir}/${tumor_sample}.cuppa.vis.png"
 
 info "Complete"

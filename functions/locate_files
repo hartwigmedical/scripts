@@ -61,16 +61,16 @@ locate_prod_cuppa_chart() {
     echo "/data/tools/cuppa/1.8.1.rc1/cuppa-chart"
 }
 
-locate_prod_cuppa_dna() {
-    echo "/data/tools/cuppa/2.0.1/cuppa.jar"
-}
-
-locate_prod_cuppa_dna_rna() {
+locate_research_cuppa() {
     echo "/data/tools/cuppa/2.0.1/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
     echo " /data/experiments/pilot_tools/cuppa/cuppa.jar"
+}
+
+locate_pilot_cuppa_visualizer() {
+    echo "/data/experiments/pilot_tools/cuppa_visualizer/plot_predictions.R"
 }
 
 locate_prod_paddle() {
@@ -322,7 +322,7 @@ extract_expected_pipeline_version_data_vm() {
 }
 
 extract_expected_pipeline_version_research() {
-    echo "5.31"
+    echo "5.33"
 }
 
 extract_expected_pipeline_version_panel() {
@@ -914,6 +914,10 @@ locate_isofox_gene_distribution_csv() {
 
 locate_isofox_alt_sj_cohort_csv() {
     echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
+}
+
+locate_cuppa_ref_alt_sj_sites() {
+    echo "/data/resources/public/cuppa/37/alt_sj.selected_loci.tsv.gz"
 }
 
 locate_doid_json() {
@@ -1952,69 +1956,38 @@ locate_latest_iclusion_importer_trial_tsv() {
 }
 ################################## CUPPA #######################################
 
-locate_cuppa_data_directory() {
+locate_cuppa_dna_output_directory() {
     local run_dir=$1
 
     echo "${run_dir}/cuppa"
 }
 
-locate_cuppa_dna_rna_data_directory() {
+locate_cuppa_dna_rna_output_directory() {
     local run_dir=$1
 
     echo "${run_dir}/cuppa_dna_rna"
 }
 
-locate_cuppa_result_csv() {
-    local run_dir=$1
-    local result_csv=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.data.csv")
-    if [[ -z "${result_csv}" ]]; then
-        error "Unable to locate cuppa result csv in ${run_dir}."
+locate_cuppa_features_tsv() {
+    local cuppa_dir=$1
+    local features_tsv=$(find -L ${cuppa_dir}/ -type f -name "*.cuppa_data.tsv.gz")
+    if [[ -z "${features_tsv}" ]]; then
+        error "Unable to locate cuppa features tsv in ${cuppa_dir}."
     fi
-    echo ${result_csv}
+    echo ${features_tsv}
 }
 
-locate_cuppa_dna_rna_result_csv() {
-    local run_dir=$1
-    local result_csv=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.data.csv")
-    if [[ -z "${result_csv}" ]]; then
-        error "Unable to locate cuppa dna-rna result csv in ${run_dir}."
+locate_cuppa_vis_data_tsv() {
+    local cuppa_dir=$1
+    local vis_data_tsv=$(find -L ${cuppa_dir}/ -type f -name "*.cuppa.vis_data.tsv")
+    if [[ -z "${vis_data_tsv}" ]]; then
+        error "Unable to locate cuppa vis data tsv in ${cuppa_dir}."
     fi
-    echo ${result_csv}
-}
-
-locate_cuppa_summary_plot() {
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.summary.png")
-    if [[ -z "${plot}" ]]; then
-        error "Unable to locate cuppa summary plot in ${run_dir}."
-    fi
-    echo ${plot}
-}
-
-locate_cuppa_dna_rna_summary_plot() {
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.summary.png")
-    if [[ -z "${plot}" ]]; then
-        error "Unable to locate cuppa dna-rna summary plot in ${run_dir}."
-    fi
-    echo ${plot}
-}
-
-locate_cuppa_feature_plot() {
-    # Feature plot is optional so no warn if it cannot be found.
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cup.report.features.png")
-    echo ${plot}
-}
-
-locate_cuppa_dna_rna_feature_plot() {
-    # Feature plot is optional so no warn if it cannot be found.
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cup.report.features.png")
-    echo ${plot}
+    echo ${vis_data_tsv}
 }
 
 locate_cuppa_chart_plot() {
+    # TODO (KD) Remove when patient reporter doesn't use this anymore.
     local run_dir=$1
     local plot=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.chart.png")
     if [[ -z "${plot}" ]]; then
@@ -2023,16 +1996,8 @@ locate_cuppa_chart_plot() {
     echo ${plot}
 }
 
-locate_cuppa_dna_rna_chart_plot() {
-    local run_dir=$1
-    local plot=$(find -L ${run_dir}/cuppa_dna_rna/ -type f -name "*.cuppa.chart.png")
-    if [[ -z "${plot}" ]]; then
-        error "Unable to locate cuppa dna-rna chart in ${run_dir}."
-    fi
-    echo ${plot}
-}
-
 locate_cuppa_conclusion_txt() {
+    # TODO (KD) Remove when patient reporter doesn't use this anymore.
     local run_dir=$1
     local conclusion_txt=$(find -L ${run_dir}/cuppa/ -type f -name "*.cuppa.conclusion.txt")
     if [[ -z "${conclusion_txt}" ]]; then
