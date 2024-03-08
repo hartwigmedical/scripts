@@ -7,7 +7,7 @@ fileName="${currentDate}.txt"
 fileLocalPath="${HOME}/tmp/${fileName}"
 touch ${fileLocalPath}
 
-gcp_bucket_file="gs://oncoact-panel-files-nki/date/${fileName}"
+gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
 
 echo "${fileName} is uploaded to the GCP bucket"
 gsutil cp ${fileName} ${gcp_bucket_file}
