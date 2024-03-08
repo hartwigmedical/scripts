@@ -4,29 +4,30 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-compar_jar="/data/tools/compar/pilot/compar.jar"
+compar_jar="/data/experiments/pilot_tools/compar/compar.jar"
 
-output_dir="/data/experiments/verification_pipeline_v5_26/compar_pilot_COLO829"
+base_dir="/data/experiments/verification_pipeline_v5_35_0"
+
+output_dir="${base_dir}/compar_pilot_COLO829"
 create_or_cleanup_dir ${output_dir}
 
 driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 
-base_dir="/data/experiments/verification_pipeline_v5_26"
-base_dir_525="${base_dir}/runs_v5_25/COLO829v003T-525"
-base_dir_526="${base_dir}/runs_v5_26/COLO829v003T-526"
+base_dir_534="${base_dir}/COLO829_v5_34_1"
+base_dir_535="${base_dir}/COLO829_v5_35_0"
 
-file_sources_v525="linx_dir=${base_dir_525}/linx/;purple_dir=${base_dir_525}/purple/"
-file_sources_v526="linx_dir=${base_dir_526}/linx/;purple_dir=${base_dir_526}/purple/"
+file_sources_v534="linx_dir=${base_dir_534}/linx/;purple_dir=${base_dir_534}/purple/"
+file_sources_v535="linx_dir=${base_dir_535}/linx/;purple_dir=${base_dir_535}/purple/"
 
-info "Running compar on COLO829 v5.25 versus v5.26"
+info "Running compar on COLO829 v5.34 versus v5.35"
 
+#-source_sample_mappings "v526=-526,v525=-525" \
 java -jar ${compar_jar} \
     -sample COLO829v003T \
     -categories "DRIVER,FUSION,DISRUPTION" \
     -match_level REPORTABLE \
-    -source_sample_mappings "v526=-526,v525=-525" \
-    -file_sources "v525;${file_sources_v525},v526;${file_sources_v526}" \
+    -file_sources "v534;${file_sources_v534},v535;${file_sources_v535}" \
     -output_dir ${output_dir} \
-    -output_id v525_vs_v526 \
+    -output_id v534_vs_v535 \
     -driver_gene_panel ${driver_gene_panel} \
     -log_debug
