@@ -16,17 +16,14 @@ driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 base_dir_534="${base_dir}/COLO829_v5_34_1"
 base_dir_535="${base_dir}/COLO829_v5_35_0"
 
-file_sources_v534="linx_dir=${base_dir_534}/linx/;purple_dir=${base_dir_534}/purple/"
-file_sources_v535="linx_dir=${base_dir_535}/linx/;purple_dir=${base_dir_535}/purple/"
-
 info "Running compar on COLO829 v5.34 versus v5.35"
 
 java -jar ${compar_jar} \
     -sample "COLO829v003T" \
-    -categories "DRIVER,FUSION,DISRUPTION" \
-    -match_level "REPORTABLE" \
-    -file_source_ref "${file_sources_v534}"\
-    -file_source_new "${file_sources_v535}"\
+    -categories "ALL" \
+    -match_level "DETAILED" \
+    -sample_data_ref "${base_dir_534}"\
+    -sample_data_new "${base_dir_535}"\
     -output_dir "${output_dir}" \
     -output_id "v534_vs_v535" \
     -driver_gene_panel "${driver_gene_panel}" \
