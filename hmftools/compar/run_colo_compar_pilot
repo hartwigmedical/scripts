@@ -22,8 +22,8 @@ java -jar ${compar_jar} \
     -sample "COLO829v003T" \
     -categories "ALL" \
     -match_level "DETAILED" \
-    -sample_data_ref "${base_dir_534}"\
-    -sample_data_new "${base_dir_535}"\
+    -sample_dir_ref "${base_dir_534}"\
+    -sample_dir_new "${base_dir_535}"\
     -output_dir "${output_dir}" \
     -output_id "v534_vs_v535" \
     -driver_gene_panel "${driver_gene_panel}" \
