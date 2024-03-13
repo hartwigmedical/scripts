@@ -102,7 +102,7 @@ locate_prod_crest() {
 }
 
 locate_prod_orange() {
-    echo "/data/tools/orange/1.6/orange.jar"
+    echo "/data/tools/orange/2.6.2/orange.jar"
 }
 
 locate_research_orange() {
