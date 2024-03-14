@@ -6,8 +6,9 @@ source message_functions || exit 1
 
 run_dir=$1 && shift
 output_dir=$1 && shift
+ref_genome_version=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${ref_genome_version}"  ]]; then
     error "Inputs missing. Exiting";
 fi
 
@@ -17,15 +18,10 @@ if [[ -f "${pipeline_version_file}" ]]; then
     pipeline_version_cmd="-pipeline_version_file ${pipeline_version_file}"
 fi
 
-reference_sample=$(load_ref_sample_from_metadata ${run_dir})
-ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
-ref_sample_flagstat_file="$(locate_flagstats ${run_dir} ${reference_sample})"
-
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
-sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
 purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
 linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
@@ -35,19 +31,7 @@ if [[ -d "${linx_somatic_plot_dir}" ]]; then
 else
     linx_somatic_plot_dir_arg=""
 fi
-linx_germline_dir="$(locate_linx_germline_data_directory ${run_dir})"
 lilac_dir="$(locate_lilac_data_directory ${run_dir})"
-
-rna_sample_cmd=""
-isofox_gene_distribution_cmd=""
-isofox_alt_sj_cohort_cmd=""
-isofox_dir_cmd=""
-if [[ -d "${run_dir}/isofox" ]]; then
-    rna_sample_cmd="-rna_sample_id ${tumor_sample}_RNA"
-    isofox_gene_distribution_cmd="-isofox_gene_distribution $(locate_isofox_gene_distribution_csv)"
-    isofox_alt_sj_cohort_cmd="-isofox_alt_sj_cohort $(locate_isofox_alt_sj_cohort_csv)"
-    isofox_dir_cmd="-isofox_dir $(locate_isofox_data_directory ${run_dir})"
-fi
 
 virus_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
 chord_dir="$(locate_chord_data_directory ${run_dir})"
@@ -58,35 +42,28 @@ fi
 
 sigs_dir="$(locate_sigs_data_directory ${run_dir})"
 
-peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
+orange_run_script="do_run_orange_pilot_37"
+if [[ "${ref_genome_version}" == "38" ]]; then
+    orange_run_script="do_run_orange_pilot_38"
+fi
 
-info "Running ORANGE research tumor-ref-rna on ${run_dir}"
+info "Running ORANGE pilot tumor-only on ${run_dir}"
 
 do_run_orange_prod \
     ${run_dir} \
     ${output_dir} \
-    "$@" \
-    ${isofox_gene_distribution_cmd} \
-    ${isofox_alt_sj_cohort_cmd} \
     ${pipeline_version_cmd} \
     -experiment_type "WGS" \
-    -reference_sample_id ${reference_sample} \
-    ${rna_sample_cmd} \
-    -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
-    -ref_sample_flagstat_file "${ref_sample_flagstat_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
     -sage_dir "${sage_somatic_dir}" \
-    -sage_germline_dir "${sage_germline_dir}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
     ${linx_somatic_plot_dir_arg} \
-    -linx_germline_dir "${linx_germline_dir}" \
     -lilac_dir "${lilac_dir}" \
     -virus_dir "${virus_dir}" \
     -chord_dir "${chord_dir}" \
     -cuppa_dir "${cuppa_dir}" \
     -sigs_dir "${sigs_dir}" \
-    ${isofox_dir_cmd} \
-    -peach_dir "${peach_dir}"
+    "$@"
