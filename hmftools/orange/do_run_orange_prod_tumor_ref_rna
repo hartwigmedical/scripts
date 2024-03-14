@@ -62,7 +62,7 @@ peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
-do_run_orange_research \
+do_run_orange_prod \
     ${run_dir} \
     ${output_dir} \
     "$@" \
