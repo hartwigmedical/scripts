@@ -52,14 +52,10 @@ if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
-sampling_date=$(sampling_date_for_sample ${tumor_sample})
-
 java -jar ${orange_jar} \
     -ref_genome_version "37" \
-    -sampling_date ${sampling_date} \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
-    -sampling_date ${sampling_date} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
