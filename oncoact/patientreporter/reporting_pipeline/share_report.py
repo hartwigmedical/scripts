@@ -10,15 +10,12 @@ def main():
     argument_parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
     argument_parser.add_argument('--publish', default=False, action='store_true',
                                  help='whether to publish to portal or not')
-    argument_parser.add_argument('--panel', default=False, action='store_true',
-                                 help='whether to publish the panel files to gcp bucket or not')
     argument_parser.add_argument('--notify-users', default=False, action='store_true',
                                  help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
     ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                        notify_users=args.notify_users,
-                                                                                        panel=args.panel)
+                                                                                        notify_users=args.notify_users)
 
 
 class ReportSharer:
@@ -39,13 +36,12 @@ class ReportSharer:
         self.run_id = self.report_created_record['run_id']
         self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
 
-    def share_report(self, publish_to_portal, notify_users, panel):
+    def share_report(self, publish_to_portal, notify_users):
         """
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
 
         :param publish_to_portal: whether to publish a pub/sub message to portal.
         :param notify_users: setting this to true will email the users regarding the portal update.
-        :param panel: whether to publish a the panel files to the panel gcp bucket.
         """
         if not self.run:
             self._prompt_user_no_run()
@@ -54,12 +50,8 @@ class ReportSharer:
 
         self._delete_old_artifacts_in_portal_bucket()
         self._delete_old_artifacts_in_gcp_share_bucket()
-        if publish_to_portal:
-            self._copy_files_to_remote_buckets_publish(panel)
-            if not panel:
-                self._copy_germline_files_to_remote_buckets_publish()
-        else:
-            self._copy_files_to_remote_buckets_no_publish()
+
+        self._copy_files_to_remote_buckets(publish_to_portal=publish_to_portal)
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
@@ -93,114 +85,76 @@ class ReportSharer:
         print(*[blob.name for blob in blobs_old_run], sep='\n')
         self.panel_share_bucket.delete_blobs(blobs=blobs_old_run)
 
-    def _copy_files_to_remote_buckets_publish(self, panel):
-        run_blobs = self._get_run_files_as_blobs()
-        report_blobs = self._get_report_files_as_blobs()
+    def _copy_files_to_remote_buckets(self, publish_to_portal):
+        report_blobs = self._get_report_blobs()
+        self._archive_blobs(report_blobs)
+        if publish_to_portal:
+            if self._is_failure():
+                self._share_failure_report(report_blobs)
+            elif self._is_panel_failure():
+                self._share_panel_failure_report(report_blobs)
+            elif self._is_panel():
+                self._share_panel_report(report_blobs)
+            else:
+                self._share_wgs_report(report_blobs)
 
-        print(f"Copying a total of '{len(run_blobs)}' run files to remote buckets")
-        for blob in run_blobs:
-            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO')
-            if panel:
-                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='RUO')
+    def _archive_blobs(self, blobs):
+        print(f"Copying {len(blobs)} blobs to the archive bucket")
+        for blob in blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.archive_bucket)
 
-
-        print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
+    def _share_failure_report(self, report_blobs):
+        print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
-            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='')
-            if panel:
-                self._copy_blob_to_target_gcp_bucket(blob=blob, target_sub_folder='')
-            self._copy_blob_to_archive_bucket(blob=blob)
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
 
-    def _copy_germline_files_to_remote_buckets_publish(self):
-        run_blobs = self._get_run_germline_files_as_blobs()
+    def _share_panel_failure_report(self, report_blobs):
+        print(f"Sharing {len(report_blobs)} report files with the portal")
+        for blob in report_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
 
-        print(f"Copying a total of '{len(run_blobs)}' germline run files to remote buckets")
-        for blob in run_blobs:
-            self._copy_blob_to_portal_bucket(blob=blob, target_sub_folder='RUO_germline')
+    def _share_panel_report(self, report_blobs):
+        panel_blobs = self._get_blobs_from_bucket(bucket=self.panel_pipeline_output_bucket,
+                                                  file_names=self._panel_files())
 
-    def _get_run_germline_files_as_blobs(self):
-        set_name = self.run['set']['name']
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportingId']
+        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        for blob in report_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
+        print(f"Sharing a total of '{len(panel_blobs)}' panel files with the portal")
+        for blob in panel_blobs:
+            self._copy_blob_to_bucket(blob, self.portal_bucket, target_sub_folder='RUO')
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
-        run_files_suffix = {
-            "purple.germline.vcf.gz",
-            f"{set_name}/purple/{reporting_id}.purple.germline.vcf.gz.tbi",
-            "purple.germline.deletion.tsv",
-            "purple.driver.catalog.germline.tsv",
-            "gripss.filtered.germline.vcf.gz",
-            f"{set_name}/gripss_germline/{reporting_id}.gripss.filtered.germline.vcf.gz.tbi",
-            "linx.germline.disruption.tsv",
-            "linx.germline.driver.catalog.tsv"
-        }
+    def _share_wgs_report(self, report_blobs):
+        molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
+                                                      file_names=self._molecular_files())
+        germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
+                                                     file_names=self._germline_files())
+        print(f"Sharing {len(report_blobs)} report files with the portal")
+        for blob in report_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
+        print(f"Sharing a total of '{len(molecular_blobs)}' molecular files with the portal")
+        for blob in molecular_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket, target_sub_folder='RUO')
+        print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
+        for blob in germline_blobs:
+            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
+                                      target_sub_folder='RUO_germline')
+
+    def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
-
-        blobs = list(self.pipeline_output_bucket.list_blobs(prefix=set_name))
-        for suffix in run_files_suffix:
-            for blob in blobs:
-                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
+        bucket_contents = list(bucket.list_blobs(prefix=self._set_name()))
+        for blob in bucket_contents:
+            for file_name in file_names:
+                if blob.name[-len(file_name):] == file_name:  # this checks if the blob name ends with the file name.
                     result.append(blob)
                     break
-
         return result
 
-    def _copy_files_to_remote_buckets_no_publish(self):
-        report_blobs = self._get_report_files_as_blobs()
-        print(f"Copying a total of '{len(report_blobs)}' report files to remote buckets")
-        for blob in report_blobs:
-            self._copy_blob_to_archive_bucket(blob=blob)
-
-    def _get_run_files_as_blobs(self):
-        if self.run is None:  # if there is no run there are also no run files to return.
-            return []
-        if self.report_created_record['report_type'] == 'panel_result_report':
-            return self._get_targeted_run_files_as_blobs()
-        else:
-            return self._get_wgs_run_files_as_blobs_by_file_name()
-
-    def _get_wgs_run_files_as_blobs(self):
-        all_run_files = self.rest_client.get_run_files(self.run_id)
-        run_file_types = {'purple_somatic_driver_catalog',
-                          'linx_driver_catalog',
-                          'somatic_variants_purple',
-                          'structural_variants_purple',
-                          'linx_fusions',
-                          'orange_output_pdf'}
-        run_files_to_upload = [file for file in all_run_files if file['datatype'] in run_file_types]
-        result = []
-        for file in run_files_to_upload:
-            _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['filepath'])
-            result.append(blob)
-        return result
-
-    def _get_wgs_run_files_as_blobs_by_file_name(self):
-        set_name = self.run['set']['name']
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportingId']
-
-        run_files_suffix = {
-            "purple.driver.catalog.somatic.tsv",
-            "linx.driver.catalog.tsv",
-            "purple.somatic.vcf.gz",
-            "purple.sv.vcf.gz",
-            "linx.fusion.tsv",
-            f"{set_name}/orange_no_germline/{reporting_id}.orange.pdf"
-        }
-        result = []
-
-        blobs = list(self.pipeline_output_bucket.list_blobs(prefix=set_name))
-        for suffix in run_files_suffix:
-            for blob in blobs:
-                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
-                    result.append(blob)
-                    break
-
-        return result
-
-    def _get_targeted_run_files_as_blobs(self):
-        """
-        Targeted run files currently are NOT stored in the API because the archiver doesn't run.
-        Hence, we have to hardcode almost all panel blob-names to retrieve them.
-        """
-        panel_file_suffixes = {
+    def _panel_files(self):
+        return {
             "driver.catalog.somatic.tsv",
             "purple.somatic.vcf.gz",
             "purple.purity.tsv",
@@ -216,18 +170,52 @@ class ReportSharer:
             "amber.baf.tsv.gz",
             "purple.cnv.somatic.tsv",
         }
-        result = []
-        set_name = self.run['set']['name']
-        blobs = list(self.panel_pipeline_output_bucket.list_blobs(prefix=set_name))
-        for suffix in panel_file_suffixes:
-            for blob in blobs:
-                if blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
-                    result.append(blob)
-                    break
 
-        return result
+    def _molecular_files(self):
+        set_name = self._set_name()
+        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'reportingId']
+        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'hospitalSampleLabel']
 
-    def _get_report_files_as_blobs(self):
+        if hospital_sample_label is not None:
+            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
+        else:
+            converted_reporting_id = f"{reporting_id}"
+
+        return {
+            "purple.driver.catalog.somatic.tsv",
+            "linx.driver.catalog.tsv",
+            "purple.somatic.vcf.gz",
+            "purple.sv.vcf.gz",
+            "linx.fusion.tsv",
+            f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf"
+        }
+
+    def _germline_files(self):
+        set_name = self._set_name()
+        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'reportingId']
+        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'hospitalSampleLabel']
+
+        if hospital_sample_label is not None:
+            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
+        else:
+            converted_reporting_id = f"{reporting_id}"
+
+        return {
+            "purple.germline.vcf.gz",
+            f"{set_name}/purple/{converted_reporting_id}.purple.germline.vcf.gz.tbi",
+            "purple.germline.deletion.tsv",
+            "purple.driver.catalog.germline.tsv",
+            "gripss.filtered.germline.vcf.gz",
+            f"{set_name}/gripss_germline/{converted_reporting_id}.gripss.filtered.germline.vcf.gz.tbi",
+            "linx.germline.disruption.tsv",
+            "linx.germline.driver.catalog.tsv"
+        }
+
+    def _get_report_blobs(self):
         all_report_files = self.report_created_record["report_files"]
         report_files_to_upload = [file for file in all_report_files if
                                   file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
@@ -237,34 +225,54 @@ class ReportSharer:
             result.append(blob)
         return result
 
-    def _copy_blob_to_portal_bucket(self, blob, target_sub_folder):
+    def _copy_blob_to_bucket(self, blob, destination_bucket, target_sub_folder=''):
         if target_sub_folder != '' and target_sub_folder[-1] != '/':
             target_sub_folder += '/'
         file_name = get_file_name_from_blob_name(blob.name)
         source_bucket = blob.bucket
-        print(f"{blob.name} ---> {self.portal_bucket.name}")
+        print(f"{source_bucket}/{blob.name} ---> {destination_bucket.name}/{target_sub_folder}{file_name}")
         source_bucket.copy_blob(blob=blob,
-                                destination_bucket=self.portal_bucket,
+                                destination_bucket=destination_bucket,
                                 new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
 
+    def _set_name(self):
+        return self.run['set']['name']
 
-    def _copy_blob_to_target_gcp_bucket(self, blob, target_sub_folder):
-        if target_sub_folder != '' and target_sub_folder[-1] != '/':
-            target_sub_folder += '/'
-        file_name = get_file_name_from_blob_name(blob.name)
-        source_bucket = blob.bucket
-        print(f"{blob.name} ---> {self.panel_share_bucket.name}")
-        source_bucket.copy_blob(blob=blob,
-                                destination_bucket=self.panel_share_bucket,
-                                new_name=f'{self.sample_barcode}/{target_sub_folder}{file_name}')
+    def _is_panel(self):
+        return self.report_created_record['report_type'] in ['panel_result_report',
+                                                             'panel_result_report_corrected_internal',
+                                                             'panel_result_report_corrected_external',
+                                                             'panel_result_report_fail',
+                                                             'panel_result_report_fail_corrected_internal',
+                                                             'panel_result_report_fail_corrected_external']
 
-    def _copy_blob_to_archive_bucket(self, blob):
-        file_name = get_file_name_from_blob_name(blob.name)
-        source_bucket = blob.bucket
-        print(f"{blob.name} ---> {self.archive_bucket.name}")
-        source_bucket.copy_blob(blob=blob,
-                                destination_bucket=self.archive_bucket,
-                                new_name=file_name)
+    def _is_failure(self):
+        return self.report_created_record['report_type'] in ['wgs_processing_issue',
+                                                             'wgs_processing_issue_corrected_internal',
+                                                             'wgs_processing_issue_corrected_external',
+                                                             'wgs_isolation_fail',
+                                                             'wgs_isolation_fail_corrected_internal',
+                                                             'wgs_isolation_fail_corrected_external',
+                                                             'wgs_tcp_shallow_fail',
+                                                             'wgs_tcp_shallow_fail_corrected_internal',
+                                                             'wgs_tcp_shallow_fail_corrected_external',
+                                                             'wgs_preparation_fail',
+                                                             'wgs_preparation_fail_corrected_internal',
+                                                             'wgs_preparation_fail_corrected_external',
+                                                             'wgs_tumor_processing_issue',
+                                                             'wgs_tumor_processing_issue_corrected_internal',
+                                                             'wgs_tumor_processing_issue_corrected_external',
+                                                             'wgs_pipeline_fail',
+                                                             'wgs_pipeline_fail_corrected_internal',
+                                                             'wgs_pipeline_fail_corrected_external',
+                                                             'wgs_tcp_fail',
+                                                             'wgs_tcp_fail_corrected_internal',
+                                                             'wgs_tcp_fail_corrected_external']
+
+    def _is_panel_failure(self):
+        return self.report_created_record['report_type'] in ['panel_result_report_fail',
+                                                             'panel_result_report_fail_corrected_internal',
+                                                             'panel_result_report_fail_corrected_external']
 
 
 if __name__ == "__main__":
