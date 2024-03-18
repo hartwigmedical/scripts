@@ -33,7 +33,6 @@ class ArtifactGenerator:
 
         self.run_id = self._report_created_record['run_id']
         self.run = self._rest_client.get_run(self.run_id)
-        self.hmf_id = self.run['set']['tumor_sample']
         self.set_name = self.run['set']['name']
 
     def generate_artifacts(self):
@@ -72,13 +71,24 @@ class ArtifactGenerator:
 
     def _generate_vcf(self, input_folder, output_folder):
         res = []
-        with gzip.open(f"{input_folder}purple/{self.hmf_id}.purple.somatic.vcf.gz", 'rt') as file:
+
+        reporting_id = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
+            'reportingId']
+        hospital_sample_label = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
+            'hospitalSampleLabel']
+
+        if hospital_sample_label is not None:
+            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
+        else:
+            converted_reporting_id = f"{reporting_id}"
+
+        with gzip.open(f"{input_folder}purple/{converted_reporting_id}.purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
                 if "REPORTED" in line or (len(line) > 0 and line[0] == '#'):
                     res.append(line)
 
         if res:
-            with open(f"{output_folder}{self.hmf_id}.reported.somatic.vcf", 'x') as file:
+            with open(f"{output_folder}{converted_reporting_id}.reported.somatic.vcf", 'x') as file:
                 file.writelines(res)
 
     def _download_required_resources(self, download_to):
