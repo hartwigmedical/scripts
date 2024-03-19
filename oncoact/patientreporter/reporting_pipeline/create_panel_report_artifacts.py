@@ -67,16 +67,6 @@ class ArtifactGenerator:
         print(f"The scripts have finished. Output is stored at '{output_folder}'")
 
     def _run_r_script(self, script_location, input_folder, output_folder):
-        reporting_id = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
-            'hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
-
         metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
 
@@ -84,17 +74,6 @@ class ArtifactGenerator:
 
     def _generate_vcf(self, input_folder, output_folder):
         res = []
-
-        reporting_id = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self._rest_client.get_lama_patient_reporter_data(self._report_created_record['barcode'])[
-            'hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
-
         metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
 
