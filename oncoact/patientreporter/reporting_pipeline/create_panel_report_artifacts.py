@@ -126,7 +126,8 @@ class ArtifactGenerator:
             "purple.somatic.vcf.gz",
             "purple.cnv.gene.tsv",
             "sage.exon.medians.tsv",
-            ".wgsmetrics"
+            ".wgsmetrics",
+            "metadata.json"
         }
         run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
 
