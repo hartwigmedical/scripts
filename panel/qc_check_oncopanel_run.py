@@ -261,6 +261,10 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     else:
         local_directory_name = metadata.pathology_id
     local_directory = working_directory / local_directory_name
+
+    if local_directory.is_dir():
+        raise ValueError(f"Local directory {local_directory} already exists!")
+
     copy_run_files_to_local(gcp_run_url, local_directory, metadata.tumor_name)
 
     run_data = load_run_data(local_directory, metadata.tumor_name)
