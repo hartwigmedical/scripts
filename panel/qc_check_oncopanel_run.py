@@ -32,7 +32,7 @@ RECURRENT_PARTIAL_DEL_GENES = {"BRCA2", "PTEN", "RASA1", "RB1"}
 class Metadata:
     tumor_name: str
     tumor_barcode: str
-    pathology_id: str
+    pathology_id: Optional[str]
     pipeline_version: str
     gcp_run_url: str
 
@@ -256,7 +256,11 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     else:
         logging.info(f"Working directory exists: {working_directory}")
 
-    local_directory = working_directory / metadata.tumor_name
+    if metadata.pathology_id is None:
+        local_directory_name = metadata.tumor_name
+    else:
+        local_directory_name = metadata.pathology_id
+    local_directory = working_directory / local_directory_name
     copy_run_files_to_local(gcp_run_url, local_directory, metadata.tumor_name)
 
     run_data = load_run_data(local_directory, metadata.tumor_name)
@@ -1041,7 +1045,7 @@ def get_metadata(gcp_run_url: str) -> Metadata:
     tumor_barcode = metadata_json["tumor"]["barcode"]
 
     patient_reporter_data_json = json.loads(run_bash_command(["lama_get_patient_reporter_data", tumor_barcode]))
-    pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else "Not found"
+    pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else None
     set_name = metadata_json["set"]
 
     api_output = run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"])
