@@ -1,4 +1,5 @@
 import argparse
+import json
 import pathlib
 import shutil
 
@@ -76,7 +77,10 @@ class ArtifactGenerator:
         else:
             converted_reporting_id = f"{reporting_id}"
 
-        subprocess.run(['Rscript', script_location, converted_reporting_id, input_folder, output_folder], check=False)
+        metaDataFile = open(f"{input_folder}metadata.json", "r")
+        pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
+
+        subprocess.run(['Rscript', script_location, pipelineSampleName, input_folder, output_folder], check=False)
 
     def _generate_vcf(self, input_folder, output_folder):
         res = []
@@ -91,13 +95,16 @@ class ArtifactGenerator:
         else:
             converted_reporting_id = f"{reporting_id}"
 
-        with gzip.open(f"{input_folder}purple/{converted_reporting_id}.purple.somatic.vcf.gz", 'rt') as file:
+        metaDataFile = open(f"{input_folder}metadata.json", "r")
+        pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
+
+        with gzip.open(f"{input_folder}purple/{pipelineSampleName}.purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
                 if "REPORTED" in line or (len(line) > 0 and line[0] == '#'):
                     res.append(line)
 
         if res:
-            with open(f"{output_folder}{converted_reporting_id}.reported.somatic.vcf", 'x') as file:
+            with open(f"{output_folder}{pipelineSampleName}.reported.somatic.vcf", 'x') as file:
                 file.writelines(res)
 
     def _download_required_resources(self, download_to):
@@ -119,7 +126,8 @@ class ArtifactGenerator:
             "purple.somatic.vcf.gz",
             "purple.cnv.gene.tsv",
             "sage.exon.medians.tsv",
-            ".wgsmetrics"
+            ".wgsmetrics",
+            "metadata.json"
         }
         run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
 
