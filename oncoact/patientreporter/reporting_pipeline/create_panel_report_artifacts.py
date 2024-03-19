@@ -77,7 +77,7 @@ class ArtifactGenerator:
         else:
             converted_reporting_id = f"{reporting_id}"
 
-        metaDataFile = open("{input_folder}metadata.json", "r")
+        metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
 
         subprocess.run(['Rscript', script_location, pipelineSampleName, input_folder, output_folder], check=False)
@@ -95,7 +95,7 @@ class ArtifactGenerator:
         else:
             converted_reporting_id = f"{reporting_id}"
 
-        metaDataFile = open("{input_folder}metadata.json", "r")
+        metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
 
         with gzip.open(f"{input_folder}purple/{pipelineSampleName}.purple.somatic.vcf.gz", 'rt') as file:
