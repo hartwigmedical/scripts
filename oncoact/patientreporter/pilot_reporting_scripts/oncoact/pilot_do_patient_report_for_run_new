@@ -13,17 +13,16 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 pipeline_version_file="${run_dir}/pipeline.version"
-orange_json="$(locate_orange_json ${run_dir})"
-lama_json="/home/lschoenmaker/dataset_copy/lama.json"
-diagnostic_silo_json="/home/lschoenmaker/dataset_copy/silo.json"
+orange_json="/home/lschoenmaker/tmp/reports/pilot/orange.json"
+lama_json="/home/lschoenmaker/tmp/reports/pilot/patient-reporter.json"
 
-protect_evidence_tsv="/home/lschoenmaker/dataset_copy/protect.tsv"
+protect_evidence_tsv="/home/lschoenmaker/tmp/reports/pilot/protect.tsv"
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
 cuppa_plot=$(locate_cuppa_chart_plot ${run_dir})
 
 # TODO Switch to PROD once ROSE v2.0 has become production version
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-rose_tsv="/home/lschoenmaker/dataset_copy/rose.txt"
+rose_tsv="/home/lschoenmaker/tmp/reports/pilot/rose.txt"
 
 germline_reporting_tsv="$(locate_germline_reporting_prod)"
 clinical_transcripts_tsv="$(locate_clinical_transcripts_prod)"
@@ -33,13 +32,11 @@ known_fusion_file="$(locate_known_fusion_data_37_csv)"
 pilot_do_run_base_patient_reporter \
     -orange_json ${orange_json} \
     -lama_json ${lama_json} \
-    -diagnostic_silo_json ${diagnostic_silo_json} \
     -cuppa_plot ${cuppa_plot} \
     -purple_circos_plot ${purple_circos_plot} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
     -rose_tsv ${rose_tsv} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -clinical_transcripts_tsv ${clinical_transcripts_tsv} \
-    -is_diagnostic \
     -log_debug \
     "$@"
