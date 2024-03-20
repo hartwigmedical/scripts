@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-orange_jar="$(locate_pilot_orange)"
+orange_jar="$(locate_research_orange)"
 
 credentials=$(prod_writer_sql_credentials)
 db_user=$(extract_database_user "${credentials}")
