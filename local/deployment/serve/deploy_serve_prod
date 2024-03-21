@@ -10,6 +10,6 @@ target_path="$HOME/hmf/repos/serve/serve"
 create_or_cleanup_dir ${target_path}
 cp -r "${source_path}" "${target_path}"
 
-mv "${target_path}/target/algo-${version}-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
+mv "${target_path}/target/algo-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
 
 do_deploy_prod_serve_tool "serve" ${version}
