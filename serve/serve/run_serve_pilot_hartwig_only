@@ -6,13 +6,17 @@ source io_functions || exit 1
 output_dir="/data/output/pilot_output_hartwig_only"
 create_or_cleanup_dir ${output_dir}
 
-hartwig_cohort_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
-hartwig_curated_tsv="$(locate_hartwig_curated_hotspots_tsv)"
+hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
+hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
+hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
+
 missing_doids_mapping_tsv="$(locate_public_missing_doids_mapping_tsv)"
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
-    -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
+    -use_hartwig_cohort_hotspots -hartwig_cohort_hotspot_tsv ${hartwig_cohort_hotspot_tsv} \
+    -use_hartwig_curated_hotspots -hartwig_curated_hotspot_tsv ${hartwig_curated_hotspot_tsv} \
+    -use_hartwig_driver_genes \
+    -use_hartwig_curated_genes -hartwig_curated_gene_tsv ${hartwig_curated_gene_tsv} \
     -output_dir ${output_dir} \
     "$@"
