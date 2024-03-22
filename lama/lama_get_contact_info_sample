@@ -10,7 +10,7 @@ fi
 
 lama_endpoint=$(curl "http://lama.prod-1/api/queries/patient-reporter/isolation-barcode/${tumor_barcode}" -L | jq .)
 
-hospitalName=$(echo $lama_endpoint | jq .hospitalName | tr -d '"')
+hospitalName="$(echo $lama_endpoint | jq .hospitalName | tr -d '"')"
 contractCode=$(echo $lama_endpoint | jq .contractCode | tr -d '"')
 
 echo "Contact details on sample ${tumor_barcode}"
