@@ -7,11 +7,11 @@ source locate_files || exit 1
 
 run_dir=$1 && shift
 patient_db_jar=${1-/data/tools/patient-db/5.33.3/patient-db.jar} && shift
-database_name=${1-hmfpatients} && shift
+database_name=${1-hmfpatients_pilot} && shift
 secret_name=${1-mysql-patients-sql-prod-1-writer} && shift
 
 [[ -n "${run_dir}" && -n "${patient_db_jar}" && -n "${database_name}" && -n "${secret_name}" ]] \
-    || die "Run with: <patient_db_jar> <database_name> <secret_name> <run_dir>"
+    || die "Run with: <run_dir> <patient_db_jar> <database_name> <secret_name>"
 
 credentials=$(gcloud secrets versions access "latest" --secret="${secret_name}" --project=hmf-secrets)
 reference_sample=$(load_ref_sample_from_metadata "${run_dir}")
