@@ -5,7 +5,7 @@ import json
 import logging
 import subprocess
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 from enum import Enum, auto
 
 from pathlib import Path
@@ -28,6 +28,9 @@ SOMATIC_VARIANT_MIN_PURITY_THRESHOLD = Decimal("0.10")
 DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
 RECURRENT_PARTIAL_DEL_GENES = {"BRCA2", "PTEN", "RASA1", "RB1"}
 
+BASES_PER_GBASE = 1000000000
+TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
+
 @dataclass(frozen=True, eq=True)
 class Metadata:
     tumor_name: str
@@ -35,6 +38,7 @@ class Metadata:
     pathology_id: Optional[str]
     pipeline_version: str
     gcp_run_url: str
+    yield_in_bases: int
 
 
 class DriverType(Enum):
@@ -295,7 +299,7 @@ def get_qc_check_output_text(
         get_sample_info_text(metadata),
         get_sample_overview_stats_text(run_data.purple_qc, run_data.wgs_metrics, run_data.gene_copy_numbers, driver_gene_panel_entries),
         get_percent_excluded_text(run_data.wgs_metrics),
-        get_qc_warning_text(run_data),
+        get_qc_warning_text(run_data, metadata),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
         get_driver_catalog_text(run_data.drivers, run_data.driver_catalog_header),
         get_fusion_text(run_data.reportable_fusions),
@@ -307,7 +311,8 @@ def get_sample_info_text(metadata: Metadata) -> str:
     lines = [
         f"Pathology ID: {metadata.pathology_id}",
         f"Internal sample name: {metadata.tumor_name}",
-        f"Pipeline version: {metadata.pipeline_version}"
+        f"Pipeline version: {metadata.pipeline_version}",
+        f"Yield: {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb"
     ]
     return "\n".join(lines)
 
@@ -360,21 +365,24 @@ def get_percent_excluded_text(wgs_metrics: WgsMetrics) -> str:
     return "\n".join(lines)
 
 
-def get_qc_warning_text(run_data: RunData) -> str:
+def get_qc_warning_text(run_data: RunData, metadata: Metadata) -> str:
     lines = []
+    if metadata.yield_in_bases < TARGET_YIELD_IN_BASES:
+        lines.append(f"WARN: Yield {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb less than target yield {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb")
+
     if run_data.purple_qc.qc_status != "PASS":
         lines.append(f"WARN: Non-PASS Purple QC status: {run_data.purple_qc.qc_status}")
-    
+
     if run_data.purple_qc.purity < TMB_MIN_PURITY_THRESHOLD:
         lines.append(
             f"WARN: TMB unreliable due to purity {run_data.purple_qc.purity} < {TMB_MIN_PURITY_THRESHOLD}"
         )
-    
+
     if run_data.purple_qc.purity < MSI_MIN_PURITY_THRESHOLD:
         lines.append(
             f"WARN: MSI unreliable due to purity {run_data.purple_qc.purity} < {MSI_MIN_PURITY_THRESHOLD}"
         )
-    
+
     if run_data.purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
         mutation_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.MUTATION]
         if mutation_drivers:
@@ -382,7 +390,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: MUTATION drivers unreliable due to purity {run_data.purple_qc.purity} < {SOMATIC_VARIANT_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
-    
+
     if run_data.purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
         del_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.DEL]
         if del_drivers:
@@ -390,7 +398,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: DEL drivers unreliable due to purity {run_data.purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
-    
+
     if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
         amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.AMP]
         if amp_drivers:
@@ -398,12 +406,12 @@ def get_qc_warning_text(run_data: RunData) -> str:
             lines.append(
                 f"WARN: AMP drivers unreliable due to purity {run_data.purple_qc.purity} < {AMP_MIN_PURITY_THRESHOLD}: {gene_name_string}"
             )
-    
+
     partial_amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP]
     if partial_amp_drivers:
         gene_name_string = ", ".join([driver.gene_name for driver in partial_amp_drivers])
         lines.append(f"WARN: Partial AMP drivers called, but haven't been validated: {gene_name_string}")
-    
+
     amp_drivers_needing_manual_curation = [
         driver for driver in run_data.drivers
         if (driver.driver_type == DriverType.AMP) and
@@ -412,7 +420,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
     if amp_drivers_needing_manual_curation:
         gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers_needing_manual_curation])
         lines.append(f"WARN: AMP drivers need manual curation: {gene_name_string}")
-    
+
     rb1_copy_numbers = [copy_number for copy_number in run_data.gene_copy_numbers if copy_number.gene_name == RB1_GENE_NAME]
     if len(rb1_copy_numbers) != 1:
         raise ValueError(f"Did not find precisely one RB1 gene copy number for sample")
@@ -429,7 +437,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
             f"depthWindowCount={rb1_copy_number.depth_window_count}, "
             f"minRegionLength={min_region_length_string}"
         )
-    
+
     dels_in_suspicious_partial_del_gene = [
         driver for driver in run_data.drivers
         if driver.driver_type == DriverType.DEL
@@ -439,7 +447,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
     if dels_in_suspicious_partial_del_gene:
         gene_name_string = ", ".join([driver.gene_name for driver in dels_in_suspicious_partial_del_gene])
         lines.append(f"WARN: Full deletion called in gene suspicious for partial DELs: {gene_name_string}")
-    
+
     suspicious_partial_dels = [
         driver for driver in run_data.drivers
         if driver.driver_type == DriverType.DEL
@@ -470,7 +478,7 @@ def get_qc_warning_text(run_data: RunData) -> str:
                 per_driver_lines.append(line)
         driver_string = "\n".join(per_driver_lines)
         lines.append(f"WARN: Partial del called in suspicious gene:\n{driver_string}")
-    
+
     return "\n".join(lines)
 
 
@@ -1029,9 +1037,11 @@ def copy_wgs_metrics_file_to_local(gcp_run_url: str, local_directory: Path, tumo
     wgs_metrics_url = f"{gcp_run_url}/{tumor_name}/bam_metrics/{tumor_name}.wgsmetrics"
     copy_file_to_local_directory(wgs_metrics_url, local_directory)
 
+
 def copy_fusion_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
     fusion_url = f"{gcp_run_url}/linx/{tumor_name}.linx.fusion.tsv"
     copy_file_to_local_directory(fusion_url, local_directory)
+
 
 def sync_directory_to_local(source_url: str, local_directory: Path) -> None:
     local_directory.mkdir(parents=True, exist_ok=True)
@@ -1052,21 +1062,51 @@ def get_metadata(gcp_run_url: str) -> Metadata:
     pathology_id = patient_reporter_data_json["pathologyNumber"] if "pathologyNumber" in patient_reporter_data_json.keys() else None
     set_name = metadata_json["set"]
 
-    api_output = run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"])
-    if api_output:
-        api_json = json.loads(api_output)
-        finished_runs = [run_info for run_info in api_json if run_info["status"] == "Finished"]
-        if not finished_runs:
-            logging.warning(f"Could not find finished pipeline run for this set")
-            pipeline_version = "Not found"
-        else:
-            if len(finished_runs) > 1:
-                logging.warning(f"Chose latest finished run for pipeline version for '{set_name}'")
-            pipeline_version = finished_runs[-1]["version"]
-    else:
-        pipeline_version = "Not found"
+    pipeline_version = get_pipeline_version_from_api(set_name)
+    yield_in_bases = get_yield_in_bases_from_api(tumor_barcode)
 
-    return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version, gcp_run_url)
+    return Metadata(tumor_name, tumor_barcode, pathology_id, pipeline_version, gcp_run_url, yield_in_bases)
+
+
+def get_pipeline_version_from_api(set_name: str) -> str:
+    api_output = run_bash_command(["hmf_api_get", f"runs?set_name={set_name}"])
+
+    if not api_output:
+        logging.warning(f"Could not reach API for pipeline version of set {set_name}")
+        return "API not found"
+
+    api_json = json.loads(api_output)
+    finished_runs = [run_info for run_info in api_json if run_info["status"] == "Finished"]
+    if not finished_runs:
+        logging.warning(f"Could not find finished pipeline run for set {set_name}")
+        return "Run not found in API"
+
+    if len(finished_runs) > 1:
+        logging.warning(
+            f"Multiple runs found for set {set_name}.\n"
+            f"Chose latest finished run in API for pipeline version for '{set_name}'"
+        )
+    return finished_runs[-1]["version"]
+
+
+def get_yield_in_bases_from_api(tumor_barcode: str) -> int:
+    api_output = run_bash_command(["hmf_api_get", f"samples?barcode={tumor_barcode}"])
+    if not api_output:
+        logging.warning(f"Could not reach API for sample yield")
+        return -BASES_PER_GBASE
+
+    api_json = json.loads(api_output)
+    if not api_json:
+        logging.warning(f"Could not find sample in API with barcode {tumor_barcode}")
+        return -BASES_PER_GBASE
+
+    if len(api_json) > 1:
+        logging.warning(
+            f"Found multiple samples in API with barcode {tumor_barcode}"
+        )
+        return -BASES_PER_GBASE
+
+    return api_json[0]["yld"]
 
 
 def run_bash_command(command: List[str]) -> str:
@@ -1080,6 +1120,10 @@ def get_pretty_base_count(count: int) -> str:
         return f"{count/1000:.1f}KB"
     else:
         return f"{count}B"
+
+
+def convert_bases_to_rounded_gbases(base_count: int) -> Decimal:
+    return (Decimal(base_count) / Decimal(BASES_PER_GBASE)).quantize(Decimal("0.1"), rounding=ROUND_DOWN)
 
 
 def parse_args() -> argparse.Namespace:
