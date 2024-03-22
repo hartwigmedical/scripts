@@ -15,5 +15,7 @@ contractCode=$(echo $lama_endpoint | jq .contractCode | tr -d '"')
 
 echo "Contact details on sample ${tumor_barcode}"
 echo "#contractCode	hospitalName	mainContactName	mainContactEmail	recipientsContactName	recipientsContactEmail"
-lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}"
-lama_get_patient_reporter_data ${tumor_barcode} | jq .requesterEmail
+lama_contact=$(lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}" | awk -F "\t" '{print $6}' | sed '/^recipientsContactEmail/d')
+lama_sample_contact=$(lama_get_patient_reporter_data ${tumor_barcode} | jq .requesterEmail | awk '{print $1}' | tr -d '"')
+
+echo ${lama_contact}";"${lama_sample_contact}
