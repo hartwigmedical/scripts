@@ -298,7 +298,7 @@ sub addLamaSamples{
                     $sample_to_store{cohort}, $expected_cohort, $sample_print_info);
                 next;
             }
-            $final_target_yield = 50;
+            $final_target_yield = 30;
         }
         elsif ($isolation_type eq 'TUMOR_DNA_ISOLATE' or $isolation_type eq 'Tissue') {
             $analysis_type = 'Somatic_T'; # DNA from tumor tissue
