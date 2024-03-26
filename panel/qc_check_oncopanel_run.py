@@ -260,12 +260,7 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     else:
         logging.info(f"Working directory exists: {working_directory}")
 
-    if metadata.pathology_id is None:
-        local_directory_name = metadata.tumor_name
-    else:
-        local_directory_name = metadata.pathology_id
-    local_directory = working_directory / local_directory_name
-
+    local_directory = working_directory / metadata.tumor_name
     if local_directory.is_dir():
         raise ValueError(f"Local directory {local_directory} already exists!")
 
