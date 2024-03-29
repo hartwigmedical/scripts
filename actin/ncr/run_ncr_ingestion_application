@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Running NCR ingestion application"
+
+ncr_dataset_csv="/data/patient_like_me/ncr/K23244.csv"
+ncr_jar="/data/tools/ncr/ncr.jar"
+
+java -jar ${ncr_jar} \
+    -ncr_dataset_csv "${ncr_dataset_csv}" \
+    "$@"
