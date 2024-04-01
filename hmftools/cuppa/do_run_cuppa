@@ -81,9 +81,9 @@ python3 -m cuppa.predict \
     --classifier_path "$(locate_cuppa_classifier_pickle)" \
     --output_dir "${cuppa_output_dir}"
 
-info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir}"
+info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir} using pilot visualizer"
 Rscript --vanilla $(locate_pilot_cuppa_visualizer) \
     "$(locate_cuppa_vis_data_tsv ${cuppa_output_dir})" \
-    "${cuppa_output_dir}/${tumor_sample}.cuppa.vis.png"
+    "${cuppa_output_dir}/${tumor_sample}.cuppa.pilot.vis.png"
 
 info "Complete"

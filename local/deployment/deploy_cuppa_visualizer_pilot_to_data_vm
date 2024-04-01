@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+vm="data-vm-prod-2"
+info "Copying CUPPA visualizer to ${vm}"
+
+visualizer_local="${HOME}/hmf/repos/hmftools/cuppa/src/main/python/pycuppa/cuppa/visualization/plot_predictions.R"
+visualizer_remote="$(locate_pilot_cuppa_visualizer)"
+
+gcloud compute scp ${visualizer_local} ${vm}:${visualizer_remote}
