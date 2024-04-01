@@ -62,7 +62,7 @@ locate_prod_cuppa_chart() {
 }
 
 locate_research_cuppa() {
-    echo "/data/tools/cuppa/2.0.1/cuppa.jar"
+    echo "/data/tools/cuppa/2.1.0/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
