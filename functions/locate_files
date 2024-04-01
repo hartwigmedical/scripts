@@ -921,6 +921,10 @@ locate_isofox_alt_sj_cohort_csv() {
     echo "/data/resources/actin/rna_reference_database/isofox.hmf_3444.alt_sj_cohort.37.csv"
 }
 
+locate_cuppa_cv_predictions() {
+    echo "/data/resources/private/cuppa/37/cuppa_cv_predictions.37.tsv.gz"
+}
+
 locate_cuppa_classifier_pickle() {
     echo "/data/resources/public/cuppa/37/cuppa_classifier.37.pickle.gz"
 }
