@@ -922,7 +922,7 @@ locate_isofox_alt_sj_cohort_csv() {
 }
 
 locate_cuppa_classifier_pickle() {
-    echo "/data/resources/public/cuppa/37/cuppa_classifier.37.pickle.gz"
+    echo "/data/resources/private/cuppa/37/cuppa_classifier.37.pickle.gz"
 }
 
 locate_cuppa_ref_alt_sj_sites() {
