@@ -74,12 +74,12 @@ info "Installing pycuppa tool into venv"
 pip3 install --upgrade pip
 pip3 install "${pycuppa_dir}"
 
+# TODO (KD) Consider passing --cv_predictions_path "$(locate_cuppa_cv_predictions)" \
 info "Running pycuppa DNA on ${run_dir}"
 python3 -m cuppa.predict \
     --sample_id ${tumor_sample} \
     --features_path "$(locate_cuppa_features_tsv ${cuppa_output_dir})" \
     --classifier_path "$(locate_cuppa_classifier_pickle)" \
-    --cv_predictions_path "$(locate_cuppa_cv_predictions)" \
     --output_dir "${cuppa_output_dir}"
 
 info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir} using pilot visualizer"
