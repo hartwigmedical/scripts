@@ -78,6 +78,7 @@ info "Running pycuppa DNA on ${run_dir}"
 python3 -m cuppa.predict \
     --sample_id ${tumor_sample} \
     --features_path "$(locate_cuppa_features_tsv ${cuppa_output_dir})" \
+    --classifier_path "$(locate_cuppa_classifier_pickle)" \
     --output_dir "${cuppa_output_dir}"
 
 info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir}"
