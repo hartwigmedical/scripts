@@ -58,6 +58,10 @@ class ReportSharer:
                                                        publish_to_portal=publish_to_portal,
                                                        notify_users=notify_users)
         print("API response:", response)
+
+        delete_response = self._delete_run_from_reporting_pipeline()
+        print("Reporting pipeline response:", delete_response)
+
         print("Done!")
 
     def _prompt_user_no_run(self):
@@ -84,6 +88,10 @@ class ReportSharer:
         blobs_old_run = list(self.panel_share_bucket.list_blobs(prefix=self.sample_barcode))
         print(*[blob.name for blob in blobs_old_run], sep='\n')
         self.panel_share_bucket.delete_blobs(blobs=blobs_old_run)
+
+    def _delete_run_from_reporting_pipeline(self):
+        print(f"deleting runs with sample barcode '{self.sample_barcode}' from reporting pipeline")
+        return self.rest_client.delete_finished_execution(self.sample_barcode)
 
     def _copy_files_to_remote_buckets(self, publish_to_portal):
         report_blobs = self._get_report_blobs()

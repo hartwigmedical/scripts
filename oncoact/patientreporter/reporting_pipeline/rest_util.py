@@ -164,6 +164,9 @@ class RestClient:
                if execution['isRunning']]
         return res
 
+    def delete_finished_execution(self, sample_barcode):
+        return _delete_as_json(f'{self._reporting_pipeline_url}/report-executions', params={'sample_barcode': sample_barcode})
+
     def get_lama_patient_reporter_data(self, isolation_barcode):
         return _get_as_json(f"{self._lama_url}/api/queries/patient-reporter/isolation-barcode/{isolation_barcode}")
 
@@ -173,5 +176,14 @@ def _get_as_json(url, params=None):
         response = requests.get(url, params=params)
     else:
         response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+
+
+def _delete_as_json(url, params=None):
+    if params:
+        response = requests.delete(url, params=params)
+    else:
+        response = requests.delete(url)
     response.raise_for_status()
     return response.json()
