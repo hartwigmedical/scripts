@@ -5,34 +5,33 @@ source message_functions || exit 1
 
 patient=$1 && shift
 
-clinical_json="/data/experiments/240307_charlotte_crc_report/${patient}.clinical.json"
-molecular_json="/data/experiments/240307_charlotte_crc_report/${patient}.molecular.json"
-if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
-    molecular_json="$(locate_actin_minimal_molecular_json)"
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
 fi
 
-treatment_match_json="/data/experiments/240307_charlotte_crc_report/${patient}.treatment_match.json"
+base_dir="/data/experiments/240307_charlotte_crc_report"
 
-output_directory="/data/experiments/240307_charlotte_crc_report/"
+clinical_json="${base_dir}/${patient}.clinical.json"
+molecular_json="${base_dir}/${patient}.molecular.json"
+treatment_match_json="${base_dir}/${patient}.treatment_match.json"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
-    -treatment_match_json ${treatment_match_json} \
-    -output_directory ${output_directory} \
+    -clinical_json "${clinical_json}" \
+    -molecular_json "${molecular_json}" \
+    -treatment_match_json "${treatment_match_json}" \
+    -output_directory "${base_dir}" \
     -mode "CRC" \
     "$@"
 
 echo ""
 
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
-    -treatment_match_json ${treatment_match_json} \
-    -output_directory ${output_directory} \
+    -clinical_json "${clinical_json}" \
+    -molecular_json "${molecular_json}" \
+    -treatment_match_json "${treatment_match_json}" \
+    -output_directory "${base_dir}" \
     -enable_extended_mode \
     -mode "CRC" \
     "$@"

@@ -5,12 +5,14 @@ source message_functions || exit 1
 
 patient=$1 && shift
 
-clinical_json="/data/experiments/240307_charlotte_crc_report/${patient}.clinical.json"
-molecular_json="/data/experiments/240307_charlotte_crc_report/${patient}.molecular.json"
-if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
-    molecular_json="$(locate_actin_minimal_molecular_json)"
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
 fi
+
+base_dir="/data/experiments/240307_charlotte_crc_report"
+
+clinical_json="${base_dir}/${patient}.clinical.json"
+molecular_json="${base_dir}/${patient}.molecular.json"
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
@@ -18,19 +20,17 @@ doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
 
-output_directory="/data/experiments/240307_charlotte_crc_report/"
-
 actin_jar="$(locate_actin_jar_on_vm)"
 
 info "Running ACTIN treatment matcher on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
-    -trial_database_directory ${trial_database_directory} \
-    -treatment_directory ${treatment_directory} \
-    -doid_json ${doid_json} \
-    -atc_tsv ${atc_tsv} \
-    -extended_efficacy_json ${extended_efficacy_json} \
-    -output_directory ${output_directory} \
+    -clinical_json "${clinical_json}" \
+    -molecular_json "${molecular_json}" \
+    -trial_database_directory "${trial_database_directory}" \
+    -treatment_directory "${treatment_directory}" \
+    -doid_json "${doid_json}" \
+    -atc_tsv "${atc_tsv}" \
+    -extended_efficacy_json "${extended_efficacy_json}" \
+    -output_directory "${base_dir}" \
     "$@"
