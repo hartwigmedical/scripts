@@ -9,12 +9,9 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_clinical_json ${patient})"
-
-molecular_json="$(locate_most_recent_actin_molecular_json ${patient})"
-if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
-    molecular_json="$(locate_actin_minimal_molecular_json)"
+patient_record_json="$(locate_most_recent_actin_patient_record_json ${patient})"
+if [[ -z "${patient_record_json}" ]]; then
+    error "No patient record json found for ${patient}"
 fi
 
 treatment_match_json="$(locate_actin_treatment_match_json ${patient})"
@@ -24,8 +21,7 @@ output_directory="$(locate_actin_reports_directory)"
 actin_jar="$(locate_actin_jar_on_vm)"
 
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
+    -patient_json ${patient_record_json} \
     -treatment_match_json ${treatment_match_json} \
     -output_directory ${output_directory} \
     "$@"
@@ -33,8 +29,7 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
 echo ""
 
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
+    -patient_json ${patient_record_json} \
     -treatment_match_json ${treatment_match_json} \
     -output_directory ${output_directory} \
     -enable_extended_mode \
