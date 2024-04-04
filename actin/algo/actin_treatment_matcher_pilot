@@ -9,12 +9,9 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-clinical_json="$(locate_actin_clinical_json ${patient})"
-
-molecular_json="$(locate_most_recent_actin_molecular_json ${patient})"
-if [[ -z "${molecular_json}" ]]; then
-    warn "No molecular json found for ${patient}. Falling back on minimal molecular json"
-    molecular_json="$(locate_actin_minimal_molecular_json)"
+patient_record_json="$(locate_most_recent_actin_patient_record_json ${patient})"
+if [[ -z "${patient_record_json}" ]]; then
+    error "No patient record json found for ${patient}."
 fi
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
@@ -30,8 +27,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 info "Running ACTIN treatment matcher on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
-    -clinical_json ${clinical_json} \
-    -molecular_json ${molecular_json} \
+    -patient_json ${patient_record_json} \
     -trial_database_directory ${trial_database_directory} \
     -treatment_directory ${treatment_directory} \
     -doid_json ${doid_json} \
