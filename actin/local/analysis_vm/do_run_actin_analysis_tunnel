@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+suffix=$1 && shift
+
+if [[ -z "${suffix}" ]]; then
+    error "VM name suffix missing. Exiting.";
+fi
+
+# NOTE: If you want to create a new VM, use "make_vm -n actin-analysis-vm-$suffix -i actin-analysis-base -p hmf-crunch -c actin"
+
+gcloud beta compute ssh --ssh-flag="-L localhost:8888:localhost:8888" \
+    --zone "europe-west4-a" "actin-analysis-vm-${suffix}" \
+    --project "hmf-crunch" \
+    --tunnel-through-iap
