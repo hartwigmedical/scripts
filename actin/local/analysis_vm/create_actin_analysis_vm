@@ -16,6 +16,7 @@ make_vm -n ${vm_name} -i actin-analysis-base -p hmf-crunch -c actin
 
 #  In addition, you need to take the following steps on the VM:
 #   - Start up the jupyterlab service: sudo systemctl start jupyterlab.service
-#   - Create an SSH key via ssh-keygen and register public key (~/.ssh/id_rsa.pub) in your github settings on github.com
-#   - Switch ownership of .git folders to your user in /data/repos/personalization/: sudo chown -R ${usr}:users .git*
-#   - Up the permissions in this directory so your user can write: sudo chmod -R 775 /data/repos/actin-personalization
+#   - Create an SSH key via "ssh-keygen" and register public key (in ~/.ssh/id_rsa.pub) in your github settings on github.com
+#   - Move to /data/actin/personalization and try "git pull" (possibly you need to run "git config --global --add safe.directory /data/repos/actin-personalization")
+#   - Switch ownership of .git folders to your user in /data/repos/personalization/: "sudo chown -R ${usr}:users .git*"
+#   - Up the permissions in this directory so your user can write: "sudo chmod -R 775 /data/repos/actin-personalization"
