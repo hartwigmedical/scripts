@@ -11,4 +11,4 @@ if [[ -z "${source_bucket}" || -z "${dest_path}" ]]; then
 fi
 
 switch_to_hmf_ops_service_account
-gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" gs://${source_bucket} ${dest_path}
+gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" ${source_bucket} ${dest_path}
