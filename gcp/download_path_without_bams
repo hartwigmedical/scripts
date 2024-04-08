@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source gcp_functions || exit 1
 
 source_bucket=$1 && shift
 dest_path=$1 && shift
@@ -10,5 +9,4 @@ if [[ -z "${source_bucket}" || -z "${dest_path}" ]]; then
     error "Missing input parameters. Exiting"
 fi
 
-switch_to_hmf_ops_service_account
-gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" ${source_bucket} ${dest_path}
+gsutil -u hmf-crunch -m rsync -r -x ".*\.bam$|.*\.cram$" ${source_bucket} ${dest_path}
