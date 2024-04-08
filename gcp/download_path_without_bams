@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source gcp_functions || exit 1
 
 source_bucket=$1 && shift
 dest_path=$1 && shift
