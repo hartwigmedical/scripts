@@ -11,6 +11,7 @@ fi
 vm_name="actin-analysis-vm-${suffix}"
 
 info "Creating ACTIN analysis VM '${vm_name}'"
+# NOTE: Below requires "${scripts_repo}/gcp" to be on your $PATH!
 make_vm -n ${vm_name} -i actin-analysis-base -p hmf-crunch -c actin
 
 #  In addition, you need to take the following steps on the VM:
