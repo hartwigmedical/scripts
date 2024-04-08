@@ -3,7 +3,7 @@
 suffix=$1 && shift
 
 if [[ -z "${suffix}" ]]; then
-    error "VM name suffix missing. Exiting.";
+    error "VM name suffix missing. Exiting."
 fi
 
 gcloud beta compute ssh --ssh-flag="-L localhost:8888:localhost:8888" \

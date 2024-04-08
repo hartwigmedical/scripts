@@ -5,7 +5,7 @@ source message_functions || exit 1
 suffix=$1 && shift
 
 if [[ -z "${suffix}" ]]; then
-    error "VM name suffix missing. Exiting.";
+    error "VM name suffix missing. Exiting."
 fi
 
 vm_name="actin-analysis-vm-${suffix}"
