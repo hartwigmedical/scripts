@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+run_dir_ref=$1 && shift
+run_dir_new=$1 && shift
+output_id=$1 && shift
+output_dir=$1 && shift
+
+if [[ -z "${run_dir_ref}" || -z "${run_dir_new}" || -z "${output_id}" || -z "${output_dir}" ]]; then
+    error "Inputs missing. Exiting";
+fi
+
+info "Running compar on COLO829 ${run_dir_ref} versus ${run_dir_new}"
+
+compar_jar="/data/experiments/pilot_tools/compar/compar.jar"
+
+create_or_cleanup_dir ${output_dir}
+
+# We assume sample is identical between ref and new run dir.
+sample=$(load_tumor_sample_from_metadata ${run_dir_ref})
+
+driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
+
+# TODO (KD): Include CUPPA or change to ALL once CUPPA v2 is supported in compar
+categories="PURITY,DRIVER,SOMATIC_VARIANT,GERMLINE_VARIANT,GERMLINE_DELETION,GERMLINE_SV,FUSION,DISRUPTION,CHORD,LILAC"
+
+java -jar ${compar_jar} \
+    -sample "${sample}" \
+    -categories "${categories}" \
+    -match_level "DETAILED" \
+    -sample_dir_ref "${run_dir_ref}"\
+    -sample_dir_new "${run_dir_new}"\
+    -output_dir "${output_dir}" \
+    -output_id "${output_id}" \
+    -driver_gene_panel "${driver_gene_panel}" \
+    -log_debug

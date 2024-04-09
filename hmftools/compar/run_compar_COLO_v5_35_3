@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+base_dir="/data/experiments/240408_kd_pipeline_v5_35_3_verification"
+
+run_dir_ref="${base_dir}/COLO829_v5_35_0"
+run_dir_new="${base_dir}/COLO829_v5_35_3"
+output_id="v5_35_0_vs_v5_35_3"
+output_dir=${base_dir}/"compar_${output_id}"
+
+do_run_compar_pilot ${run_dir_ref} ${run_dir_new} ${output_id} ${output_dir}
