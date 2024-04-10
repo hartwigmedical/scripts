@@ -10,5 +10,7 @@ Steps:
 4. From platinum repo, run `./platinum run -i /path/to/COLO829.yaml -n ${run_id}`
    - Note: `${run_id}` should be short, eg "kd-240307-colo"
 
+Do note that more configuration examples exist within the `platinum-configuration` repo!
+
 You can use the same method to run any other sample (either from BAM or from FASTQ) with any pipeline version, assuming you know where
 the input data is stored, and `hmf-crunch` has access to it. 
