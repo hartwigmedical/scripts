@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+artifact=$1 && shift
+
+if [[ -z "${artifact}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+artifact_registry_url="https://europe-west4-maven.pkg.dev/hmf-build/hmf-maven/com/hartwig"
+
+artifact_url="${artifact_registry_url}/${artifact}"
+token="$(gcloud auth print-access-token)"
+curl -H "authorization: Bearer ${token}" -O -L ${artifact_url}
+
+info "Retrieved ${artifact_url}!"
