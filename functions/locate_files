@@ -724,22 +724,6 @@ locate_most_recent_actin_patient_record_json() {
     echo $(locate_actin_patient_record_json ${sample})
 }
 
-locate_actin_molecular_json() {
-    local sample=$1
-    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
-
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
-    fi
-
-    local molecular_json="${molecular_dir}/actin/${sample}.molecular.json"
-    if [[ ! -f ${molecular_json} ]]; then
-        error "Could not locate molecular json for sample '${sample}'"
-    fi
-
-    echo "${molecular_json}"
-}
-
 locate_actin_patient_record_json() {
     local sample=$1
     local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
