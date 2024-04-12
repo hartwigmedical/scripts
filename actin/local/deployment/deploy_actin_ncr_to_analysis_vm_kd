@@ -8,6 +8,6 @@ if [[ ! -f "${ncr_jar}" ]]; then
     error "Could not locate NCR jar!"
 fi
 
-vm="actin-analysis-vm"
+vm="actin-analysis-vm-kd"
 info "Copying ${ncr_jar} to ${vm}"
 gcloud compute scp ${ncr_jar} ${vm}:/data/tools/ncr/ncr.jar
