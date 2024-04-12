@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-base_dir="/data/experiments/240408_kd_pipeline_v5_35_3_verification"
+base_dir="/data/experiments/240408_kd_pipeline_v5_35_4_verification"
 
 run_dir_ref="${base_dir}/COLO829_v5_35_0"
 run_dir_new="${base_dir}/COLO829_v5_35_3_fastq"
