@@ -224,7 +224,7 @@ def getNormPurple(purple_segmented, purple_purity, sampleId):
             purity = res['purity']
             ploidy = res['ploidy']
             copyNumber = float(arr[header.index('copyNumber')])
-            FClog = math.log2((purity * copyNumber +2*(1-purity))/(purity*ploidy+2*(1-purity)))
+            FClog = math.log2(max((purity * copyNumber +2*(1-purity))/(purity*ploidy+2*(1-purity)),0.05))
             FClogs.append(FClog)
             Weights.append(int(arr[header.index('depthWindowCount')]))
     return weightedAverage(FClogs,Weights)
@@ -259,7 +259,7 @@ def transformSegmentedFile(purple_segmented,purple_purity, sampleId, normCorrect
             purity = res['purity']
             ploidy = res['ploidy']
             copyNumber = float(arr[header.index('copyNumber')])
-            FClog = math.log2((purity * copyNumber +2*(1-purity))/(purity*ploidy+2*(1-purity)))+normCorrection
+            FClog = math.log2(max((purity * copyNumber +2*(1-purity))/(purity*ploidy+2*(1-purity)),0.05))+normCorrection
 
             arr.append(str(FClog))
             ft.write(tsvSplit.join(arr)+'\n')
