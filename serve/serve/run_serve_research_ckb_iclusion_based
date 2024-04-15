@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir="/data/output/research_output_ckb_iclusion_based_not_verified"
+output_dir="/data/output/research_output_ckb_iclusion_based"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
@@ -17,7 +17,7 @@ hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
-do_run_serve_research_not_verified \
+do_run_serve_research \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} -ckb_filter_tsv ${ckb_filter_tsv} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} \
     -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} -iclusion_filter_tsv ${iclusion_filter_tsv} \
