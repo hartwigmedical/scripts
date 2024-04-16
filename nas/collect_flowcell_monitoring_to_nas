@@ -47,7 +47,7 @@ for name in $(jq '.[] | .name' <<< ${flowcells}); do
     gsutil cp "${bcl_bucket_path}/RunParameters.xml" "${data_tmp_location}/Runparameters.xml" || warn "Could not copy RunParameters.xml"
     gsutil -m cp -r "${bcl_bucket_path}/InterOp/" "${data_tmp_location}/" || warn "Could not copy InterOp directory"
 
-    data_final_location="${data_final_base_path}/${name_id}"
+    data_final_location="${data_final_base_path}/${sequencer}/${name_id}"
     info "Copying data from ${data_tmp_location} on ops to ${data_final_location} on NAS"
     sync_dir_to_nas "${data_tmp_location}/" "${data_final_location}/" || warn "Could not move data to NAS"
 
