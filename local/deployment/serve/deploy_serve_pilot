@@ -14,6 +14,6 @@ cp -r "${source_path}" "${target_path}"
 mv "${target_path}/target/algo-${version}-jar-with-dependencies.jar" "${target_path}/target/serve-${version}-jar-with-dependencies.jar"
 
 vm="serve-vm-prod-1"
-project="hmf-crunch""
+project="hmf-crunch"
 
 do_deploy_pilot_serve_tool ${vm} ${project} "serve"
