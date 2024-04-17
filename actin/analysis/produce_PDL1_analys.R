@@ -19,7 +19,7 @@ inner join hpc on hpc.sampleId = dr.sampleId
 inner join (select count(da.sampleId) as totalCount from datarequest da inner join hpc on da.sampleId=hpc.sampleId) total
 where dr.gene = 'CD274';
 "
-ampCountResult = dbGetQuery(dbConnect, ampCountQuery)
+ampCountResult <- dbGetQuery(dbConnect, ampCountQuery)
 ampPercentage <- round(ampCountResult$ampCount/ampCountResult$totalCount*100,2)
 print(paste("CD274amp is found in", ampCountResult$ampCount, "samples in the Hartwig database (total", ampCountResult$totalCount, ",", ampPercentage,"%)"))
 
@@ -29,7 +29,7 @@ select count(driver = 'AMP') as ampCount
 from driverCatalog 
 where sampleId like 'ACTN%' and gene = 'CD274';
 "
-ACTNampCountResult = dbGetQuery(dbConnect, ACTNampCountQuery)
+ACTNampCountResult <- dbGetQuery(dbConnect, ACTNampCountQuery)
 print(paste("Number of ACTIN samples with CD274 amplification:", ACTNampCountResult))
 
 ## TPM distribution in ACTIN samples
@@ -40,7 +40,7 @@ where e.sampleId like 'ACTN%'
 and gene = 'CD274';
 "
 tmpResult <- dbGetQuery(dbConnect, tpmQuery)
-tmpValues = unlist(tmpResult)
+tmpValues <- unlist(tmpResult)
 tmp <- as.numeric(tmpValues)
 
 percentile_90 <- quantile(tmp, 0.9)
@@ -83,7 +83,7 @@ inner join geneExpression g on g.sampleID = dr.sampleId
 inner join rnaStatistics r on dr.sampleId=r.sampleId
 where dr.gene = 'CD274' and r.qcStatus='PASS' and g.gene = 'CD274';
 "
-ampAndExpressionResult = dbGetQuery(dbConnect, ampAndExpressionQuery)
+ampAndExpressionResult <- dbGetQuery(dbConnect, ampAndExpressionQuery)
 
 ## Percentage of samples with CD274amp on DNA level in top 10% CD274 expression samples
 CD274ampPercIntop10TPM <- CD274ampInTopTPMResult/count(tpmTop10Result)*100
@@ -214,7 +214,7 @@ where g.sampleId in (select sampleId from svBreakend where gene = 'CD274' and co
 and r.qcStatus='PASS'
 and gene = 'CD274';
 "
-CD274disruption3UTRResult = dbGetQuery(dbConnect, CD274disruption3UTRQuery)
+CD274disruption3UTRResult <- dbGetQuery(dbConnect, CD274disruption3UTRQuery)
 CD274disruption3UTRInTop10Expr <- tpmTop10Result %>% inner_join(CD274disruption3UTRResult, by = "sampleId") %>% nrow()
 print(paste(CD274disruption3UTRInTop10Expr, "of", count(CD274disruption3UTRResult), "samples with CD274 3UTR disruption have a CD274 expression above the 90th percentile (", CD274disruption3UTRInTop10Expr/count(CD274disruption3UTRResult) *100, "% )"))
 
