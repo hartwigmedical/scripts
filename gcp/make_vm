@@ -60,6 +60,7 @@ print_usage() {
     echo "  gcloud --project ${image_project} compute images list | grep ${image_family}"
     echo "  gcloud --project hmf-pipeline-development compute images list | grep pipeline5-5-29"
     echo "  gcloud --project hmf-pipeline-prod-e45b00f2 compute images describe-from-family pipeline5-5-29 --format 'get(name)'"
+    echo "  gcloud --project debian-cloud compute images describe-from-family debian-12 --format 'get(name)'"
     echo ""
     exit 1
 }
