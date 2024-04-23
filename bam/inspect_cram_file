@@ -24,8 +24,8 @@ main () {
         [[ -f "${cram}" ]] || die "Input file does not exist (${cram}). Exiting"
     fi
 
-    print_header "HEADER"
-    $samtools view -H "${cram}"
+    print_header "HEADER (--no-PG)"
+    $samtools view --no-PG -H "${cram}"
 
     print_header "READS (head 3) with -T ref genome"
     $samtools view -T "${ref_genome}" "${cram}" | head -3
