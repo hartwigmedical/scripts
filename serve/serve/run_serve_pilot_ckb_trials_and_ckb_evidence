@@ -7,7 +7,7 @@ output_dir="/data/output/pilot_output_ckb_trials_and_ckb_evidence"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
-ckb_blacklist_molecular_profile_tsv="$(locate_ckb_filter_pilot_tsv)"
+ckb_blacklist_molecular_profile_tsv="$(locate_ckb_blacklist_molecular_profile_pilot_tsv)"
 ckb_blacklist_studies_tsv="$(locate_ckb_blacklist_studies_pilot_tsv)"
 ckb_blacklist_evidence_tsv="$(locate_ckb_blacklist_evidences_pilot_tsv)"
 ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
