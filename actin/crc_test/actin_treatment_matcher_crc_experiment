@@ -11,8 +11,7 @@ fi
 
 base_dir="/data/experiments/240307_charlotte_crc_report"
 
-clinical_json="${base_dir}/${patient}.clinical.json"
-molecular_json="${base_dir}/${patient}.molecular.json"
+patient_json="${base_dir}/${patient}.patient_record.json"
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
@@ -25,8 +24,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 info "Running ACTIN treatment matcher on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
-    -clinical_json "${clinical_json}" \
-    -molecular_json "${molecular_json}" \
+    -patient_json "${patient_json}" \
     -trial_database_directory "${trial_database_directory}" \
     -treatment_directory "${treatment_directory}" \
     -doid_json "${doid_json}" \
