@@ -9,7 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-base_dir="/data/experiments/240307_charlotte_crc_report"
+base_dir="/data/experiments/240424_cb_crc_report"
 
 patient_json="${base_dir}/${patient}.patient_record.json"
 
