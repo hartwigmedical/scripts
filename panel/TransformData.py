@@ -66,7 +66,18 @@ def getPurityPloidy(purple_purity):
             arr = lines.split(tsvSplit)
             res['purity'] = float(arr[header.index('purity')])
             res['ploidy'] = float(arr[header.index('ploidy')])
+            res['gender'] =str(arr[header.index('gender')])
     return res
+
+def writePurplePurity(purple_purity, sampleId, output_dir='transformed_data'):
+  res = getPurityPloidy(purple_purity)
+
+  with open(output_dir + '/' + sampleId + '.purity', 'w') as ft:
+    ft.write(str(res['purity']))
+  with open(output_dir + '/' + sampleId + '.gender', 'w') as ft:
+    ft.write(res['gender'])
+  with open(output_dir + '/' + sampleId + '.ploidy', 'w') as ft:
+    ft.write(str(res['ploidy']))
 
 
 def transformRatioFile(cobalt, sampleId,geneLocation, output_dir='transformed_data'):
@@ -170,9 +181,9 @@ def genVCFfile(amber, sampleId, output_dir='transformed_data'):
             Depth = arr[header.index("tumorDepth")]
 
             BAF =  arr[header.index("tumorBAF")]
-            SAF = str(int(round(int(Depth)*float(BAF)*0.5)))
-            SAR = str(int(float(Depth)*float(BAF)) - int(SAF))
 
+            SAF = str(int(round(int(Depth)*float(BAF)*0.5)))
+            SAR = str(round(float(Depth)*float(BAF)) - int(SAF))
 
 
             CHROM = arr[header.index('chromosome')]
@@ -300,7 +311,7 @@ def parse_args(sys_args):
     parser.add_argument("--purplePurity", "-p", type=str, required=True, help="purity file - ends with purple.purity.tsv")
     parser.add_argument("--sampleId","-i", type = str, required =True, help="sample Id - used for output file names")
     parser.add_argument("--panelGenes","-t", type = str, required = True, help="panel genes - used to annotate genes")
-    parser.add_argument("--outputDir","-o", type = str, required = False, help="output directory")
+    parser.add_argument("--outputDir","-o", type = str, required = False, help="output directory",default = 'transformed_data')
     args = parser.parse_args(sys_args)
     return Config(args.cobaltRatio, args.cobaltSegmented, args.amber, args.purpledriverCatalog, args.purpleGene, args.purpleSomatic, args.purplePurity, args.sampleId, args.panelGenes, args.outputDir)
 
@@ -317,7 +328,7 @@ def main(args):
     genVCFfile(args.amber, sampleId, args.outputDir)
     normPurple=getNormPurple(args.purpleSomatic, args.purplePurity)
     transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,-normPurple+normCorrection, args.outputDir)
-
+    writePurplePurity(args.purplePurity,sampleId,args.outputDir)
 
 if __name__ == "__main__":
     logging.basicConfig(
