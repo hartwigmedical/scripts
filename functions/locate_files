@@ -22,7 +22,7 @@ locate_prod_sage() {
 }
 
 locate_research_sage() {
-    echo "/data/tools/sage/3.2.5/sage.jar"
+    echo "/data/tools/sage/3.4.1/sage.jar"
 }
 
 locate_pilot_sage() {

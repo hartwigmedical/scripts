@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source metadata_functions || exit 1
+
+run_dir=$1 && shift
+specific_variants=$1 && shift # Should be "chr:pos:ref:alt;chr:pos:ref:alt" etc
+specific_regions=$1 && shift # Should be in BED format ("chr:start-stop")
+
+if [[ -z "${run_dir}" || -z "${specific_variants}" || -z "${specific_regions}" ]]; then
+    error "Missing params. Exiting";
+fi
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+sage_jar="$(locate_research_sage)"
+resource_dir="/data/resources/public"
+
+java -Xmx48G -jar ${sage_jar} \
+    -tumor "${tumor_sample}" \
+    -tumor_bam "${run_dir}/${tumor_sample}/aligner/${tumor_sample}.bam" \
+    -reference "${ref_sample}" \
+    -reference_bam "${run_dir}/${ref_sample}/aligner/${ref_sample}.bam" \
+    -hotspots "${resource_dir}/sage/37/KnownHotspots.somatic.37.vcf.gz" \
+    -high_confidence_bed "${resource_dir}/giab_high_conf/37/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz" \
+    -panel_bed "${resource_dir}/sage/37/ActionableCodingPanel.37.bed.gz" \
+    -coverage_bed "${resource_dir}/sage/37/CoverageCodingPanel.37.bed.gz" \
+    -ref_genome "${resource_dir}/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta" \
+    -ref_genome_version "V37" \
+    -ensembl_data_dir "${resource_dir}/ensembl_data_cache/37/" \
+    -bqr_load \
+    -vis_variants "${specific_variants}" \
+    -specific_regions "${specific_regions}" \
+    -output_vcf "${run_dir}/sage_somatic/${tumor_sample}.sage.somatic.vcf.gz"
+
+
