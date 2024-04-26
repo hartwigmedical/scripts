@@ -17,6 +17,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 sage_jar="$(locate_research_sage)"
 resource_dir="/data/resources/public"
+bucket_dir="/data/resources/bucket"
 
 # TODO (KD): Rename 'load_bqr' to 'bqr_load' in SAGE release after 3.4.1
 java -Xmx48G -jar ${sage_jar} \
@@ -28,7 +29,7 @@ java -Xmx48G -jar ${sage_jar} \
     -high_confidence_bed "${resource_dir}/giab_high_conf/37/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz" \
     -panel_bed "${resource_dir}/sage/37/ActionableCodingPanel.37.bed.gz" \
     -coverage_bed "${resource_dir}/sage/37/CoverageCodingPanel.37.bed.gz" \
-    -ref_genome "${resource_dir}/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta" \
+    -ref_genome "${bucket_dir}/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta" \
     -ref_genome_version "V37" \
     -ensembl_data_dir "${resource_dir}/ensembl_data_cache/37/" \
     -load_bqr \
