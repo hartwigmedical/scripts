@@ -19,8 +19,8 @@ hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_ckb_trials -ckb_dir ${ckb_dir} -ckb_blacklist_molecular_profile_tsv ${ckb_blacklist_molecular_profile_tsv} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} -ckb_blacklist_studies_tsv ${ckb_blacklist_studies_tsv}\
-    -use_ckb_evidence -ckb_dir ${ckb_dir} -ckb_blacklist_molecular_profile_tsv ${ckb_blacklist_molecular_profile_tsv} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} -ckb_blacklist_evidence_tsv ${ckb_blacklist_evidence_tsv}\
+    -use_ckb_trials -ckb_dir ${ckb_dir} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} -ckb_blacklist_studies_tsv ${ckb_blacklist_studies_tsv}\
+    -use_ckb_evidence -ckb_dir ${ckb_dir} -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} -ckb_blacklist_evidence_tsv ${ckb_blacklist_evidence_tsv}\
     -use_docm -docm_tsv ${docm_tsv} \
     -use_hartwig_cohort_hotspots -hartwig_cohort_hotspot_tsv ${hartwig_cohort_hotspot_tsv} \
     -use_hartwig_curated_hotspots -hartwig_curated_hotspot_tsv ${hartwig_curated_hotspot_tsv} \
