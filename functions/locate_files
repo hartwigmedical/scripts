@@ -444,7 +444,7 @@ locate_actin_trial_config_bucket() {
 }
 
 locate_actin_ctc_config_bucket() {
-    echo "gs://actin-prod-trial-pipeline-ctc-input"
+    echo "gs://actin-prod-trial-pipeline-status-input"
 }
 
 locate_actin_shared_data_bucket() {
