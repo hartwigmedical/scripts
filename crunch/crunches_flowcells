@@ -62,6 +62,9 @@ function process_flowcell () {
     # shellcheck disable=SC2029
     run_info_file_content=$(ssh "$server" cat "$run_info_file")
 
+    instrument_id="NA"
+    instrument_id=$(xmllint --xpath '//RunInfo/Run/Instrument/text()' <(echo "${run_info_file_content}"))
+
     expected_cycle_count="NA"
     if [[ "${run_info_file_content}" != "" ]]; then
         expected_cycle_count=$(xmllint --xpath 'sum(//RunInfo/Run/Reads/Read/@NumCycles)' <(echo "${run_info_file_content}"))
@@ -72,8 +75,8 @@ function process_flowcell () {
     lane1_dir="${run_base}/Data/Intensities/BaseCalls/L001"
     # shellcheck disable=SC2029
     if ssh "$server" "[ -d '${lane1_dir}' ]"; then
-        if [[ "${exp_name}" =~ ^NS ]]; then
-            # Nextseqs do things differently. Yay!
+        if [[ "${exp_name}" =~ ^NS || "${instrument_id}" == "FS10001173" ]]; then
+            # Nextseqs and Iseqs do things differently. Yay!
             cycle_count=$(ssh "$server" find "${lane1_dir}" -maxdepth 1 -name "*.bgzf" | wc -l | tr -d " ")
         else
             cycle_count=$(ssh "$server" find "$lane1_dir" -mindepth 1 -maxdepth 1 -type d -name "C*" | wc -l | tr -d " ")
