@@ -473,6 +473,11 @@ locate_actin_analysis_bucket() {
     echo "gs://${project}-analysis-pipeline-output"
 }
 
+locate_actin_trial_database_bucket() {
+    project=${1:-actin-prod}
+    echo "gs://${project}-trial-pipeline-output"
+}
+
 ############################## ACTIN Data GCP ##################################
 
 locate_next_orange_shared_data_uri_gcp() {
