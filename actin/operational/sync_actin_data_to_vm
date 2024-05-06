@@ -3,26 +3,21 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-project=$1
-
 curr_host=$(hostname)
 if [[ "${curr_host}" == "prod-vm-operations" ]]; then
     error "ACTIN data is not supposed to synced to the prod VM"
 fi
 
 info "Syncing ACTIN patient data to local VM"
-gsutil -m rsync -r -d $(locate_actin_clinical_feed_input_bucket $project) $(locate_actin_clinical_input_feed_directory)
-gsutil -m rsync -r -d $(locate_actin_clinical_curation_bucket $project) $(locate_actin_clinical_curation_directory)
-gsutil -m rsync -r -d $(locate_actin_clinical_output_bucket $project) $(locate_actin_curated_clinical_directory)
-gsutil -m rsync -r -d $(locate_actin_trial_config_bucket $project) $(locate_actin_trial_config_directory)
-gsutil -m rsync -r -d $(locate_actin_ctc_config_bucket $project) $(locate_actin_ctc_config_directory)
-echo "gsutil -m rsync -r -d $(locate_actin_prod_data_bucket $project)/molecular/ $(locate_actin_molecular_directory)"
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/molecular/ $(locate_actin_molecular_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/treatment_match/ $(locate_actin_treatment_match_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/reports/ /data/actin/reports/
-gsutil -m rsync -r -d $(locate_actin_trial_database_bucket $project) $(locate_actin_trial_database_directory)
+gsutil -m rsync -r $(locate_actin_clinical_feed_input_bucket) $(locate_actin_clinical_input_feed_directory)
+gsutil -m rsync -r $(locate_actin_clinical_curation_bucket) $(locate_actin_clinical_curation_directory)
+gsutil -m rsync -r $(locate_actin_clinical_output_bucket) $(locate_actin_curated_clinical_directory)
+gsutil -m rsync -r $(locate_actin_trial_config_bucket) $(locate_actin_trial_config_directory)
+gsutil -m rsync -r $(locate_actin_ctc_config_bucket) $(locate_actin_ctc_config_directory)
+gsutil -m rsync -r $(locate_actin_prod_data_bucket)/molecular/ $(locate_actin_molecular_directory)
+gsutil -m rsync -r $(locate_actin_prod_data_bucket)/treatment_match/ $(locate_actin_treatment_match_directory)
 
 info "Adding new actin pipeline outputs to treatment match (temporary)"
-gsutil cp -r $(locate_actin_analysis_bucket $project)/algo/* $(locate_actin_treatment_match_directory)
+gsutil cp -r $(locate_actin_analysis_bucket)/algo/* $(locate_actin_treatment_match_directory)
 
 info "Done"
