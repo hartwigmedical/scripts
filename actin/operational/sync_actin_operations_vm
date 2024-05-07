@@ -5,8 +5,7 @@ source locate_files || exit 1
 
 set -e
 
-actin_prod_project_id="actin-prod"
-project=${1:-$actin_prod_project_id}
+project=${1:-actin-prod}
 
 info "Syncing ACTIN wgs pipeline output from GCP"
 gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket $project) $(locate_actin_wgs_pipeline_output_directory)
@@ -21,11 +20,5 @@ gsutil -m rsync -r -d $(locate_actin_trial_database_bucket $project) $(locate_ac
 gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/molecular/ $(locate_actin_molecular_directory)
 gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/treatment_match/ $(locate_actin_treatment_match_directory)
 gsutil -m rsync -r -d $(locate_actin_analysis_bucket $project)/reports/ /data/actin/reports/
-
-info "Syncing ACTIN patient data to GCP"
-gsutil -m rsync -r $(locate_actin_curated_clinical_directory) $(locate_actin_prod_data_bucket)/clinical/
-gsutil -m rsync -r -x "^(?!.*actin).*" $(locate_actin_molecular_directory) $(locate_actin_prod_data_bucket)/molecular/
-gsutil -m rsync -r $(locate_actin_treatment_match_directory) $(locate_actin_prod_data_bucket)/treatment_match/
-
 
 info "Done"
