@@ -6,7 +6,7 @@ source locate_files || exit 1
 set -e
 
 actin_prod_project_id="actin-prod"
-project={$1:-$actin_prod_project_id}
+project=${1:-$actin_prod_project_id}
 
 info "Syncing ACTIN wgs pipeline output from GCP"
 gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket $project) $(locate_actin_wgs_pipeline_output_directory)
