@@ -506,7 +506,7 @@ def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant,...], m
 
 def get_signed_bam_urls(metadata: Metadata) -> str:
     gcp_bam_url = f"{metadata.gcp_run_url}/{metadata.tumor_name}/aligner/{metadata.tumor_name}.bam"
-    return run_bash_command(["sign_bam_url", gcp_bam_url, "8h"])
+    return run_bash_command(["sign_bam_url", gcp_bam_url, "24h"])
 
 
 def get_driver_catalog_text(drivers: Tuple[Driver, ...], driver_catalog_header: str) -> str:
