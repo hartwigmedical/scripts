@@ -33,5 +33,5 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -doid_json ${doid_json} \
     -atc_tsv ${atc_tsv} \
     -extended_efficacy_json ${extended_efficacy_json} \
-    -output_directory ${output_directory} \
+    -output_directory /home/pwolfe/output \
     "$@"
