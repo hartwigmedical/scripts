@@ -24,7 +24,7 @@ actin_jar="$(locate_cohort_actin)"
 
 info "Running ACTIN ORANGE cohort interpreter on ${sample}"
 
-java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplication \
+java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -clinical_json "${clinical_json}" \
