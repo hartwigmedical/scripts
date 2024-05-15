@@ -27,5 +27,5 @@ create_or_cleanup_dir ${molecular_dir}
 cp "${pipeline_dir}/orange_no_germline/${sample}.orange.json" "${molecular_dir}/"
 rm -rf ${pipeline_dir}
 
-actin_orange_interpreter_cohort ${sample}
+actin_molecular_interpreter_cohort ${sample}
 load_actin_molecular_cohort ${sample}

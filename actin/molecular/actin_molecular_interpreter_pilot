@@ -24,7 +24,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 
 info "Running ACTIN ORANGE interpreter on ${sample}"
 
-java -cp ${actin_jar} com.hartwig.actin.molecular.orange.OrangeInterpreterApplicationKt \
+java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -clinical_json "${clinical_json}" \
