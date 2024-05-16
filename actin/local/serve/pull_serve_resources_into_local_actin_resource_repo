@@ -7,5 +7,5 @@ local_base_path="${HOME}/hmf/repos/actin-resources-private"
 
 info "Pulling SERVE resources from ${remote_base_path} into ${local_base_path}"
 
-gcloud compute --project hmf-crunch scp ${remote_base_path}/*37*tsv ${local_base_path}/serve_db/
-gcloud compute --project hmf-crunch scp ${remote_base_path}/*38*tsv ${local_base_path}/serve_db_38/
+gcloud compute --project hmf-crunch scp ${remote_base_path}/37/*37*tsv ${local_base_path}/serve_db/37/
+gcloud compute --project hmf-crunch scp ${remote_base_path}/38/*38*tsv ${local_base_path}/serve_db/38/
