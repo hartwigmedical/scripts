@@ -54,7 +54,7 @@ function check_one_unreported_sample(){
     elif [[ $(has_revoked_libraryprep "${lama_status}") == "true" ]]; then
         info "SKIPPING: REVOKED library prep [${info}]"
     elif [[ $(isolation_in_process_count "${lama_status}") -gt 0 ]]; then
-        info "SKIPPING: PROCESSING isolation [${info}]"
+        warn "SKIPPING: PROCESSING isolation [${info}]"
     elif [[ $(isolation_failed_count "${lama_status}") -eq "${total_count}" ]]; then
         warn "CHECK: FAILED_FINAL status for all isolations [${info}]"
     elif [[ $(libraryprep_finished_count "${lama_status}") -eq 0 ]]; then
