@@ -15,7 +15,7 @@ protobuf==3.19.1
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pysam==0.17.0
-requests==2.26.0
+requests==2.32.0
 rsa==4.7.2
 six==1.16.0
 toml==0.10.2
