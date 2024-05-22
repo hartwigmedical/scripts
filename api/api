@@ -25,6 +25,7 @@ print_usage(){
     echo " $script runs 'barcode=FR30539000'"
     echo " $script sets 210824_HMFregACTN_FR30538995_FR30539000_ACTN01020001"
     echo " $script -j datasets 'ACTN01020001T'"
+    echo " $script reports/shared barcode=FR30539000"
     echo "Options:"
     echo " -j  Output raw api json content instead of TSV"
     echo " -t  Use testing/pilot environment instead of production"
