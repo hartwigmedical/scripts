@@ -134,7 +134,7 @@ def transformRatioFile(cobalt, sampleId,geneLocation, output_dir='transformed_da
             chr = data[0]
             gene = [geneLoc.gene for geneLoc in geneLocation if geneLoc.chr==data[0] and overlaps([geneLoc.start,geneLoc.end],[int(start),int(end)])]
             if gene:
-                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+'\n')
+                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+ '\n')
             else:
                 ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+'NA'+'\n')
 
