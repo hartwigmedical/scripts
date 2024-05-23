@@ -30,7 +30,7 @@ function process_server () {
     fi
     while IFS=  read -r -d $'\0'; do
         flowcells_to_process+=("$REPLY")
-    done < <(ssh "${server}" find "${search_dir}/" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -print0)
+    done < <(ssh "${server}" find "${search_dir}/" "${search_dir}/iseq" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -not -name "iseq" -print0)
     declare -a all_stdout
     for flowcell_path in "${flowcells_to_process[@]}"; do
         mapfile -t stdout < <(process_flowcell "$server" "$type" "$flowcell_path")
