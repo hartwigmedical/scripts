@@ -33,7 +33,7 @@ function process_server () {
     local sheets=()
     while IFS=  read -r -d $'\0'; do
         sheets+=("$REPLY")
-    done < <(ssh "${server}" find "${flowcells_dir}" -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" -print0)
+    done < <(ssh "${server}" find "${flowcells_dir}" "${flowcells_dir}/iseq" -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" -not -name "iseq" -print0)
     for sheet in "${sheets[@]}"; do
         process_flowcell "$server" "$sheet"
     done
