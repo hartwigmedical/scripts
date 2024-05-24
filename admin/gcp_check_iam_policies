@@ -7,20 +7,59 @@ source message_functions || exit 1
 account_email=$1
 project_id=$2
 
-[[ -n "${account_email}" ]] || die "Provide email address of account to check [${account_email}]"
-[[ -n "${project_id}" ]] || die "Provide project id [${project_id}]"
+[[ -n "${account_email}" ]] || die "Provide email address of account to check (and optionally a specific project)"
 [[ "${account_email}" =~ .*@.*\..* ]] || die "Input does not look like an email address [${account_email}]"
 
 function main() {
-    policies "$project_id" "$account_email"
+    if [[ -n "${project_id}" ]]; then
+        info "Project ID provided so checking only this one [${project_id}]"
+        policies "$project_id" "$account_email"
+    else
+        info "No project ID provided so checking all known projects"
+        # Ugly solution to avoid output of list_projects stored as one big string
+        mapfile -t projects < <(list_projects|tr " " "\n")
+        for project_id in "${projects[@]}"; do
+            policies "$project_id" "$account_email"
+        done
+    fi
 }
 
 function policies() {
     local project_id=$1 && shift
     local account_email=$1 && shift
     info "Checking iam policies for [${account_email}] in project [${project_id}]"
+    if [[ "${project_id}" == "hmf-backups-development" ]]; then
+        warn "Project not yet supported in policy check [${project_id}]"
+        return 0
+    fi
     gcloud asset search-all-iam-policies --scope="projects/${project_id}" --query="policy:${account_email}" --format=json \
           | jq --arg u "${account_email}" --arg p "${project_id}" -r '.[] | [$u, $p, .policy.bindings[].role,.resource] | @tsv'
+}
+
+function list_projects() {
+    local projects=(
+      "hmf-actin"
+      "hmf-backups-development"
+      "hmf-bigquery"
+      "hmf-build"
+      "hmf-catalog"
+      "hmf-crunch"
+      "hmf-customer-portal"
+      "hmf-database-development"
+      "hmf-images"
+      "hmf-lama"
+      "hmf-pipeline-development"
+      "hmf-pipeline-prod-e45b00f2"
+      "hmf-pmc"
+      "hmf-olvg"
+      "hmf-ops"
+      "hmf-secrets"
+      "hmf-share"
+      "hmf-silo-diagnostic"
+      "hmf-silo-linkage"
+      "hmf-vpc-network"
+    )
+    echo "${projects[*]}"
 }
 
 main
