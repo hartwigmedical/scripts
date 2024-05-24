@@ -66,6 +66,10 @@ main(){
   fi
   source_r1_fastq_files=( $(echo "${source_fastq_json}" | jq -r '.[].name_r1') ) || die "Could not get source R1 FASTQ file names"
 
+  if [[ $(echo "${target_r1_fastq_files[@]}" | uniq | wc -l) != $(echo "${source_r1_fastq_files[@]}" | uniq | wc -l) ]]; then
+    die "Target and Source unique fastq files are of unequal number."
+  fi
+
   info "Sample info:"
   info "  target_sample_name=${target_sample_name}"
   info "  target_barcode=${target_barcode}"
