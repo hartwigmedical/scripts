@@ -6,7 +6,7 @@ First make sure you can publish to the Hartwig Docker repository:
 
 Build the local Docker image:
 
-    docker build -t preprocess-recon-cnv
+    docker build -t preprocess-recon-cnv .
 
 Test the local Docker image:
 
