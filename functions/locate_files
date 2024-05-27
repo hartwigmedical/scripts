@@ -343,12 +343,12 @@ locate_actin_database_views_sql_script() {
     echo "/data/resources/actin/sql_database/generate_views.sql"
 }
 
-locate_actin_clinical_curation_directory() {
-    echo "/data/actin/input/clinical_curation"
-}
-
 locate_actin_treatment_db_directory() {
     echo "/data/resources/actin/treatment_db"
+}
+
+locate_actin_clinical_curation_directory() {
+    echo "/data/actin/input/clinical_curation"
 }
 
 locate_actin_trial_config_directory() {
@@ -359,16 +359,12 @@ locate_actin_ctc_config_directory() {
     echo "/data/actin/input/ctc_config"
 }
 
-locate_actin_minimal_molecular_json() {
-    echo "/data/resources/actin/minimal_molecular_json/minimal.json"
-}
-
 locate_actin_serve_db() {
-    echo "/data/resources/actin/serve_db"
+    echo "/data/resources/actin/serve_db/37"
 }
 
 locate_actin_known_genes_tsv() {
-    echo "/data/resources/actin/serve_db/KnownGenes.SERVE.37.tsv"
+    echo "/data/resources/actin/serve_db/37/KnownGenes.SERVE.37.tsv"
 }
 
 locate_actin_rna_sample_metadata_file() {
