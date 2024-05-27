@@ -360,7 +360,7 @@ locate_actin_ctc_config_directory() {
 }
 
 locate_actin_serve_db() {
-    echo "/data/resources/actin/serve_db/37"
+    echo "/data/resources/actin/serve_db"
 }
 
 locate_actin_known_genes_tsv() {
