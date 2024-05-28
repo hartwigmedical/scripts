@@ -15,8 +15,8 @@ db_url=$(construct_database_url "${credentials}" ${database_name})
 
 info "Deleting data for ${sample} from ${db_url}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.DeleteSampleFromDatabase \
-    -sample ${sample} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+java -Dorg.jooq.no-logo=true -cp "${patient_db_jar}" com.hartwig.hmftools.patientdb.DeleteSampleFromDatabase \
+    -sample "${sample}" \
+    -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}"
 
 info "Data for sample '${sample}' has been deleted from ${db_url}"
