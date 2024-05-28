@@ -11,12 +11,12 @@ patient_db_jar=$1 && shift
 # Database details
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_url=$(construct_database_url "${credentials}" ${database_name})
+db_url=$(construct_database_url "${credentials}" "${database_name}")
 
-info "Deleting data for ${sample} from ${db_url}"
+info "Deleting data for sample [${sample}] from [${db_url}]"
 
 java -Dorg.jooq.no-logo=true -cp "${patient_db_jar}" com.hartwig.hmftools.patientdb.DeleteSampleFromDatabase \
-    -sample "${sample}" \
-    -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}"
+    -sample "${sample}" -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}" \
+    || die "Failed to delete data for sample [${sample}] using url [${db_url}]"
 
-info "Data for sample '${sample}' has been deleted from ${db_url}"
+info "Data for sample [${sample}] has been deleted from [${db_url}]"
