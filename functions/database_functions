@@ -18,6 +18,10 @@ prod_reader_sql_credentials() {
     echo $(get_secret_from_secret_manager "mysql-patients-sql-prod-1-reader")
 }
 
+dev_writer_sql_credentials() {
+    get_secret_from_secret_manager "mysql-research-patients-sql-pilot-1-writer"
+}
+
 diagnostic_writer_sql_credentials() {
     echo $(get_secret_from_secret_manager "mysql-diagnostic-patients-sql-prod-1-writer")
 }
