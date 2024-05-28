@@ -7,11 +7,11 @@ source database_functions || exit 1
 sample=$1 && shift
 
 if [[ -z "${sample}" ]]; then
-    error "No sample is provided to $(basename $0). Exiting."
+    error "No sample is provided to $(basename "$0"). Exiting."
 fi
 
 database="hmfpatients"
 patient_db_jar=$(locate_prod_patient_db)
 credentials=$(prod_writer_sql_credentials)
 
-do_delete_sample_from_database ${sample} ${database} "${credentials}" ${patient_db_jar}
+do_delete_sample_from_database "${sample}" "${database}" "${credentials}" "${patient_db_jar}"
