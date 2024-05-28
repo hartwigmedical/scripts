@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+source metadata_functions || exit 1
+source secrets_functions || exit 1
+source locate_files || exit 1
+
+script=$(basename "$0")
+
+run_dir=$1 && shift
+patient_db_jar=$1 && shift
+database_name=$1 && shift
+secret_name=$1 && shift
+loader=$1 && shift # optional (for testing)
+
+[[ -n "${run_dir}" && -n "${patient_db_jar}" && -n "${database_name}" && -n "${secret_name}" ]] \
+    || die "Usage: <path-to-run-dir> <path-to-patient-db-jar> <database-name> <secret-name> [<loader>]"
+
+LOADERS=(cider chord cuppa2 peach teal linx_germline linx_somatic signatures virusbreakend virusintrprtr amber metrics flagstat purple)
+[[ -n "${loader}" ]] && LOADERS=("${loader}")
+
+main () {
+    info "Starting with ${script} for run dir [${run_dir}]"
+
+    info "Collecting metadata info"
+    ref_sample=$(load_ref_sample_from_metadata "${run_dir}")
+    ref_barcode=$(load_ref_sample_barcode_from_metadata "${run_dir}")
+    tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
+    tumor_barcode=$(load_tumor_sample_barcode_from_metadata "${run_dir}")
+
+    info "Collecting database connection info"
+    credentials=$(gcloud secrets versions access "latest" --secret="${secret_name}" --project=hmf-secrets)
+    db_user=$(extract_database_user "${credentials}")
+    db_pass=$(extract_database_password "${credentials}")
+    db_url=$(construct_database_url "${credentials}" "${database_name}")
+
+    info "Sample config: tumor=${tumor_sample}, tumor_barcode=${tumor_barcode}, ref=${ref_sample}, ref_barcode=${ref_barcode}"
+    info "Load config: secret=${secret_name}, jar=${patient_db_jar}, url=${db_url}"
+
+    for var in "${ref_sample}" "${tumor_sample}" "${ref_barcode}" "${tumor_barcode}" "${db_user}" "${db_url}"; do
+        [[ -n "${var}" ]] || die "At least one variable has no content. Exiting."
+    done
+
+    # Some input files have changed name over the years and are found by certain locate logic
+    # Better to check all at the start and fail early than to wait until single loaders fail
+    locate_amber_snpcheck_37_vcf > /dev/null || die "Unable to find amber_snpcheck_37_vcf file for [${tumor_sample}]"
+    locate_wgs_metrics "${run_dir}" "${ref_sample}" > /dev/null || die "Unable to find metrics file for [${ref_sample}]"
+    locate_wgs_metrics "${run_dir}" "${tumor_sample}" > /dev/null || die "Unable to find metrics file for [${tumor_sample}]"
+    locate_flagstats "${run_dir}" "${ref_sample}" > /dev/null || die "Unable to find flagstats file for [${ref_sample}]"
+    locate_flagstats "${run_dir}" "${tumor_sample}" > /dev/null || die "Unable to find flagstats file for [${tumor_sample}]"
+
+    info "Loading $(join_by , "${LOADERS[@]}")"
+    for loader in "${LOADERS[@]}"; do
+        load_function="load_${loader}"
+        info "Running ${load_function}"
+        $load_function || die "Error running loader [${load_function}] for sample [${tumor_sample}]"
+    done
+    info "Finished with ${script} for run dir [${run_dir}]"
+}
+
+function load_amber () {
+    snpcheck_vcf=$(locate_amber_snpcheck_37_vcf)
+    snp_vcf="${run_dir}/amber/${ref_sample}.amber.snp.vcf.gz"
+    [[ -f "${snpcheck_vcf}" ]] || return 1
+    [[ -f "${snp_vcf}" ]] || return 1
+    run_patient_db amber.LoadAmberData \
+        -sample "${tumor_sample}" \
+        -amber_snp_vcf "${snp_vcf}" \
+        -snpcheck_vcf "${snpcheck_vcf}"
+}
+
+function load_chord () {
+    local prediction_file="${run_dir}/chord/${tumor_sample}_chord_prediction.txt"
+    [[ -f "${prediction_file}" ]] || return 1
+    run_patient_db LoadChordData \
+        -sample "${tumor_sample}" \
+        -prediction_file "${prediction_file}"
+}
+
+function load_cider () {
+    local cider_dir="${run_dir}/cider"
+    [[ -d "${cider_dir}" ]] || return 1
+    run_patient_db LoadCiderData \
+        -sample "${tumor_sample}" \
+        -cider "${cider_dir}"
+}
+
+function load_cuppa2 () {
+    # Cuppa in Pv5.34 has a new (LoadCuppa2) class for some reason
+    local vis_data_tsv="${run_dir}/cuppa/${tumor_sample}.cuppa.vis_data.tsv"
+    [[ -f "${vis_data_tsv}" ]] || return 1
+    run_patient_db LoadCuppa2 \
+        -sample "${tumor_sample}" \
+        -cuppa_vis_data_tsv "${vis_data_tsv}"
+}
+
+function load_flagstat () {
+    local ref_file=""
+    local tum_file=""
+    ref_file=$(locate_flagstats "${run_dir}" "${ref_sample}") || return 1
+    tum_file=$(locate_flagstats "${run_dir}" "${tumor_sample}") || return 1
+    [[ -f "${ref_file}" ]] || return 1
+    [[ -f "${tum_file}" ]] || return 1
+    run_patient_db LoadFlagstatData \
+        -sample "${tumor_sample}" \
+        -ref_flagstat_file "${ref_file}" \
+        -tumor_flagstat_file "${tum_file}"
+}
+
+function load_linx_germline () {
+    local input_dir="${run_dir}/linx_germline"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadLinxData \
+        -sample "${tumor_sample}" \
+        -linx_dir "${input_dir}" \
+        -germline_only
+}
+
+function load_linx_somatic () {
+    local input_dir="${run_dir}/linx"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadLinxData \
+        -sample "${tumor_sample}" \
+        -linx_dir "${input_dir}" \
+        -somatic_only
+}
+
+function load_metrics () {
+    local ref_file=""
+    local tum_file=""
+    ref_file=$(locate_wgs_metrics "${run_dir}" "${ref_sample}") || return 1
+    tum_file=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}") || return 1
+    [[ -f "${ref_file}" ]] || return 1
+    [[ -f "${tum_file}" ]] || return 1
+    run_patient_db LoadMetricsData \
+        -sample "${tumor_sample}" \
+        -ref_metrics_file "${ref_file}" \
+        -tumor_metrics_file "${tum_file}"
+}
+
+function load_peach () {
+    local calls_tsv="${run_dir}/peach/${tumor_sample}.peach.calls.tsv"
+    local genotype_tsv="${run_dir}/peach/${tumor_sample}.peach.genotype.tsv"
+    [[ -f "${calls_tsv}" ]] || return 1
+    [[ -f "${genotype_tsv}" ]] || return 1
+    run_patient_db LoadPeachData \
+        -sample "${tumor_sample}" \
+        -peach_calls_txt "${calls_tsv}" \
+        -peach_genotype_txt "${genotype_tsv}"
+}
+
+function load_purple () {
+    local input_dir="${run_dir}/purple"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadPurpleData \
+        -sample "${tumor_sample}" \
+        -reference "${ref_sample}" \
+        -purple_dir "${input_dir}"
+}
+
+function load_signatures () {
+    local input_dir="${run_dir}/sigs"
+    [[ -d "${input_dir}" ]] || return 1
+    run_patient_db LoadSignatures \
+        -sample "${tumor_sample}" \
+        -sample_dir "${input_dir}"
+}
+
+function load_teal () {
+    local teal_dir="${run_dir}/teal"
+    [[ -d "${teal_dir}" ]] || return 1
+    run_patient_db LoadTealData \
+        -sample "${tumor_sample}" \
+        -reference "${ref_sample}" \
+        -teal "${teal_dir}"
+}
+
+function load_virusintrprtr () {
+    local annotation_tsv="${run_dir}/virusintrprtr/${tumor_sample}.virus.annotated.tsv"
+    if [[ ! -f "${annotation_tsv}" ]]; then
+        # alternative directory naming exists on data-vm
+        annotation_tsv="${run_dir}/virus_interpreter/${tumor_sample}.virus.annotated.tsv"
+    fi
+    [[ -f "${annotation_tsv}" ]] || return 1
+    run_patient_db LoadVirusInterpreter \
+        -sample "${tumor_sample}" \
+        -virus_annotation_tsv "${annotation_tsv}"
+}
+
+function load_virusbreakend () {
+    local breakend_tsv="${run_dir}/virusbreakend/${tumor_sample}.virusbreakend.vcf.summary.tsv"
+    [[ -f "${breakend_tsv}" ]] || return 1
+    run_patient_db LoadVirusBreakendData \
+        -sample "${tumor_sample}" \
+        -virus_breakend_tsv "${breakend_tsv}"
+}
+
+function run_patient_db () {
+    class=$1 && shift
+    [[ -f "${patient_db_jar}" ]] || die "Unable to find patient db jar [${patient_db_jar}]"
+    java -cp "${patient_db_jar}" "com.hartwig.hmftools.patientdb.${class}" \
+        -db_user "${db_user}" -db_pass "${db_pass}" -db_url "${db_url}" \
+        "$@"
+}
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+main
