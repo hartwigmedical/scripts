@@ -79,7 +79,8 @@ runSampleQcReport<-function()
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
     bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
-    excludedFile = 'textfile.txt'
+#    excludedFile = 'textfile.txt'
+    excludedFile = '/data/resources/ops/panel/excludedExons.tsv'
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
@@ -153,7 +154,7 @@ runSampleQcReport<-function()
     print(paste(nrow(exons)," total exons in driver catalog"),sep="")
 
    # genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
-    genesNotInDesign = c("SMARCE1")
+    genesNotInDesign = c("SPATA31A7","LINC01001","U2AF1")
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
 
     outputDir = paste0(runDir, "sampleQcReports/")
