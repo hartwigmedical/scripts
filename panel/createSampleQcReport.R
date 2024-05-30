@@ -79,7 +79,7 @@ runSampleQcReport<-function()
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
     bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
-    excludedFile = '/data/resources/ops/panel/excludedExons.tsv'
+    excludedFile = 'textfile.txt'
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
@@ -130,7 +130,7 @@ runSampleQcReport<-function()
     driverGenes = dplyr::inner_join(ensemblGenes, driverGenePanel, by="gene")
 
     # filter genes of interest for OncoPanel. Check: "Proposed validation gene list" in Oncopanel > CNV validation
-    # 10 genes for DELs
+    # 12 genes for DELs
     reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1')
     # 17 genes for AMPS
     reportGenesAmplification = c('AR','CCNE1','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MDM2','MET','MYC','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1','FGFR1')
@@ -152,11 +152,12 @@ runSampleQcReport<-function()
     colnames(exons) = c('Gene','Chromosome','PosStart','PosEnd','ExonRank','MedianDepth')
     print(paste(nrow(exons)," total exons in driver catalog"),sep="")
 
-    genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
+   # genesNotInDesign = c("FANCM","H3-3B","H3C13","LINC00290","LINC01001","OR11H1","OR4F21","OR4N2","RABAC1","SPATA31A7","U2AF1","SMARCE1") 
+    genesNotInDesign = c("SMARCE1")
     exons = exons %>% filter(!(Gene %in% genesNotInDesign))
 
     outputDir = paste0(runDir, "sampleQcReports/")
-    if (!dir.exists(outputDir)){ dir.create(outputDir)}
+
 
     exons = merge(exons,genesList,by='Gene',all.x=T)
     exons = merge(exons,cohortMedianDepth,by=c('Gene','ExonRank'),all.x=T)
@@ -312,12 +313,15 @@ runSampleQcReport<-function()
 
     # CREATE PLOTS
 
+    outputDir = paste0(runDir, "sampleQcReports/")
+    if (!dir.exists(outputDir)){ dir.create(outputDir)}
+
     # PDF creation
     outputFile = paste0(outputDir, sampleId, '.sampleQcReport.pdf')
     print(paste0("writing output to pdf file: ", outputFile))
     pdf(file = outputFile, height = 14, width = 20)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', 100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
@@ -326,10 +330,16 @@ runSampleQcReport<-function()
                            ncol=8, nrow=3, rel_widths=c(plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,gapWidth,plotWidth,0.1),
                            rel_heights=c(1,20,1),align='v',axis='l'))
     print(insufficientCoverageExons)
+    insufficientCoverageExons$GeneIndex =NULL
+    insufficientCoverageExons$CohortRelDepth =NULL
+    insufficientCoverageExons$RelDepth =NULL
+    insufficientCoverageExons$NormDepth =NULL
+    insufficientCoverageExons$RelativeEnrichment =NULL
+    
     if(nrow(insufficientCoverageExons)>0){
       rownames(insufficientCoverageExons) = 1:nrow(insufficientCoverageExons)
       grid.newpage()
-    
+      
       for(i in seq(1,nrow(insufficientCoverageExons),entriesPerPage)){
         grid.table(insufficientCoverageExons[i:min(nrow(insufficientCoverageExons),(i+entriesPerPage-1)),])
         if( i+entriesPerPage <= nrow(insufficientCoverageExons)){
@@ -345,7 +355,7 @@ runSampleQcReport<-function()
     print(paste0("writing output to png file: ", outputPNG))
     png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_targets_100x ', 100*bamMetrics$PCT_100X, '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', 100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
