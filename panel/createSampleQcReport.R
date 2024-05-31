@@ -322,7 +322,7 @@ runSampleQcReport<-function()
     print(paste0("writing output to pdf file: ", outputFile))
     pdf(file = outputFile, height = 14, width = 20)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', 100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', format(100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)),digits=4), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
@@ -356,7 +356,7 @@ runSampleQcReport<-function()
     print(paste0("writing output to png file: ", outputPNG))
     png(file = outputPNG, height = 25, width = 50, units="cm", res=1200, pointsize=1)
     par(mar = c(1, 1, 1, 1))
-    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', 100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
+    title = textGrob(paste0(sampleId, ' ( mTCP ', 100*(purity$purity), '%; Percentage_exon_100x ', format(100-100*(nrow(insufficientCoverageExons)/nrow(checkedExons)),digits=4), '% )'), gp = gpar(fontface = "bold", fontsize = 16))
     plotWidth=3
     gapWidth=0
     grid.arrange(plot_grid(NULL,NULL,NULL, title, NULL,NULL,NULL,NULL,
