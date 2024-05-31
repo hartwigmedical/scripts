@@ -9,7 +9,7 @@ from decimal import Decimal, ROUND_DOWN
 from enum import Enum, auto
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 RB1_GENE_NAME = "RB1"
 
@@ -27,6 +27,7 @@ SOMATIC_VARIANT_MIN_PURITY_THRESHOLD = Decimal("0.10")
 
 DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
 RECURRENT_PARTIAL_DEL_GENES = {"BRCA2", "PTEN", "RASA1", "RB1"}
+GENES_EXCLUDED_FROM_DESIGN = {"SPATA31A7", "LINC01001", "U2AF1"}
 
 BASES_PER_GBASE = 1000000000
 TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
@@ -218,14 +219,14 @@ class Fusion:
 
 @dataclass(frozen=True, eq=True)
 class RunData:
-    drivers: Tuple[Driver,...]
+    drivers: Tuple[Driver, ...]
     purple_qc: PurpleQc
-    gene_copy_numbers: Tuple[GeneCopyNumber,...]
-    somatic_copy_numbers: Tuple[SomaticCopyNumber,...]
-    exon_median_coverages: Tuple[ExonMedianCoverage,...]
-    sage_unfiltered_variants: Tuple[AnnotatedVariant,...]
-    wgs_metrics: WgsMetrics
-    reportable_fusions: Tuple[Fusion,...]
+    gene_copy_numbers: Tuple[GeneCopyNumber, ...]
+    somatic_copy_numbers: Tuple[SomaticCopyNumber, ...]
+    exon_median_coverages: Tuple[ExonMedianCoverage, ...]
+    sage_unfiltered_variants: Tuple[AnnotatedVariant, ...]
+    # wgs_metrics: WgsMetrics
+    reportable_fusions: Tuple[Fusion, ...]
     driver_catalog_header: str
 
 
@@ -234,13 +235,21 @@ class DriverGenePanelEntry:
     gene: str
 
 
+@dataclass(frozen=True, eq=True)
+class ExonExclusion:
+    gene_name: str
+    gene_id: str
+    canonical_transcript_id: str
+    excluded_exons: Tuple[int, ...]
+
+
 ID_TO_RESISTANCE_VARIANT = {
     "EGFR T790M": Variant("chr7", 55181378, "C", "T"),
     "EGFR C797S": Variant("chr7", 55181398, "T", "A"),
 }
 
 
-def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, output_file: Optional[Path]) -> None:
+def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, excluded_exons: Path, output_file: Optional[Path]) -> None:
     logging.info("Start QC checking OncoPanel run")
 
     logging.info("Perform sanity checks")
@@ -271,29 +280,38 @@ def main(gcp_run_url: str, working_directory: Path, driver_gene_panel: Path, out
     logging.info("Load driver gene panel")
     driver_gene_panel_entries = load_driver_gene_panel(driver_gene_panel)
 
+    logging.info("Load excluded_exons")
+    excluded_exons = load_excluded_exons(excluded_exons)
+
     logging.info(f"Do QC checks for {metadata.tumor_name}")
     if output_file is None:
         output_file = local_directory / f"{metadata.tumor_name}.qc_check.txt"
 
-    do_qc_checks(run_data, driver_gene_panel_entries, metadata, output_file)
+    do_qc_checks(run_data, driver_gene_panel_entries, excluded_exons, metadata, output_file)
 
     logging.info("Finished QC checking OncoPanel run")
 
 
-def do_qc_checks(run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], metadata: Metadata, output_file: Path) -> None:
-    output_text = get_qc_check_output_text(run_data, driver_gene_panel_entries, metadata)
+def do_qc_checks(
+        run_data: RunData,
+        driver_gene_panel_entries: List[DriverGenePanelEntry],
+        excluded_exons: List[ExonExclusion],
+        metadata: Metadata,
+        output_file: Path
+) -> None:
+    output_text = get_qc_check_output_text(run_data, driver_gene_panel_entries, excluded_exons, metadata)
 
     with open(output_file, "w") as out_f:
         out_f.write(output_text)
 
 
 def get_qc_check_output_text(
-        run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], metadata: Metadata,
+        run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], excluded_exons: List[ExonExclusion], metadata: Metadata,
 ) -> str:
     sections = [
         get_sample_info_text(metadata),
-        get_sample_overview_stats_text(run_data.purple_qc, run_data.wgs_metrics, run_data.gene_copy_numbers, driver_gene_panel_entries),
-        get_percent_excluded_text(run_data.wgs_metrics),
+        get_sample_overview_stats_text(run_data.purple_qc, run_data.gene_copy_numbers, run_data.exon_median_coverages, driver_gene_panel_entries, excluded_exons),
+        # get_percent_excluded_text(run_data.wgs_metrics),
         get_qc_warning_text(run_data, metadata),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
         get_driver_catalog_text(run_data.drivers, run_data.driver_catalog_header),
@@ -314,18 +332,29 @@ def get_sample_info_text(metadata: Metadata) -> str:
 
 def get_sample_overview_stats_text(
         purple_qc: PurpleQc,
-        wgs_metrics: WgsMetrics,
-        gene_copy_numbers: Tuple[GeneCopyNumber,...],
+        gene_copy_numbers: Tuple[GeneCopyNumber, ...],
+        exon_median_coverages: Tuple[ExonMedianCoverage, ...],
         driver_gene_panel_entries: List[DriverGenePanelEntry],
+        excluded_exons: List[ExonExclusion],
 ) -> str:
     driver_panel_genes = {entry.gene for entry in driver_gene_panel_entries}
     min_copy_numbers_in_driver_genes = [
         gene_cn.min_copy_number for gene_cn in gene_copy_numbers
         if gene_cn.gene_name in driver_panel_genes and gene_cn.is_canonical
     ]
-    negative_min_copy_numbers_count = len([
-        min_copy_number for min_copy_number in min_copy_numbers_in_driver_genes if min_copy_number < 0
-    ])
+    negative_min_copy_numbers_count = len(
+        [
+            min_copy_number for min_copy_number in min_copy_numbers_in_driver_genes if min_copy_number < 0
+        ]
+    )
+
+    gene_to_excluded_exons = {exon_exclusion.gene_name: exon_exclusion.excluded_exons for exon_exclusion in excluded_exons}
+    relevant_exons = [exon for exon in exon_median_coverages if is_relevant_for_coverage(exon, gene_to_excluded_exons)]
+    if not relevant_exons:
+        raise ValueError("No exons found relevant for coverage. Check excluded genes and exons!")
+    exons_with_median_coverage_at_least_100 = [exon for exon in relevant_exons if exon.median_depth >= 100]
+    percent_exons_median_coverage_at_least_100 = 100 * len(exons_with_median_coverage_at_least_100) / len(relevant_exons)
+
     lines = [
         f"Purple QC status: {purple_qc.qc_status}",
         f"Purity: {purple_qc.purity}",
@@ -337,27 +366,37 @@ def get_sample_overview_stats_text(
         f"Amber gender: {purple_qc.amber_gender}",
         f"Cobalt gender: {purple_qc.cobalt_gender}",
         f"AMBER mean depth: {purple_qc.amber_mean_depth}",
-        f"WgsMetrics mean depth: {wgs_metrics.mean_coverage}",
-        f"WgsMetrics median depth: {wgs_metrics.median_coverage}",
-        f"WgsMetrics percent 100X: {wgs_metrics.percent_100x}",
+        f"Exons where median coverage is checked: {len(relevant_exons)}",
+        f"Exons with median coverage >= 100: {len(exons_with_median_coverage_at_least_100)}",
+        f"Percent exons with median coverage >= 100: {percent_exons_median_coverage_at_least_100:.2f}%",
+        # f"WgsMetrics mean depth: {wgs_metrics.mean_coverage}",
+        # f"WgsMetrics median depth: {wgs_metrics.median_coverage}",
+        # f"WgsMetrics percent 100X: {wgs_metrics.percent_100x}",
         f"Driver panel genes with negative minCN: {negative_min_copy_numbers_count} of {len(driver_gene_panel_entries)}",
         f"Lowest minCN in driver panel genes: {min(min_copy_numbers_in_driver_genes)}",
     ]
     return "\n".join(lines)
 
 
-def get_percent_excluded_text(wgs_metrics: WgsMetrics) -> str:
-    lines = [
-        f"Percent excluded adapter: {wgs_metrics.percent_excluded_adapter}",
-        f"Percent excluded MAPQ: {wgs_metrics.percent_excluded_mapq}",
-        f"Percent excluded duplicated: {wgs_metrics.percent_excluded_duplicated}",
-        f"Percent excluded unpaired: {wgs_metrics.percent_excluded_unpaired}",
-        f"Percent excluded baseq: {wgs_metrics.percent_excluded_baseq}",
-        f"Percent excluded overlap: {wgs_metrics.percent_excluded_overlap}",
-        f"Percent excluded capped: {wgs_metrics.percent_excluded_capped}",
-        f"Percent excluded total: {wgs_metrics.percent_excluded_total}",
-    ]
-    return "\n".join(lines)
+def is_relevant_for_coverage(exon: ExonMedianCoverage, gene_to_excluded_exons: Dict[str, Tuple[int, ...]]) -> bool:
+    gene_explicitly_excluded_from_design = exon.gene_name in GENES_EXCLUDED_FROM_DESIGN
+    gene_considered_for_excluded_exons = exon.gene_name in gene_to_excluded_exons.keys()
+    exon_excluded = gene_considered_for_excluded_exons and exon.exon_rank in gene_to_excluded_exons[exon.gene_name]
+    return not gene_explicitly_excluded_from_design and gene_considered_for_excluded_exons and not exon_excluded
+
+
+# def get_percent_excluded_text(wgs_metrics: WgsMetrics) -> str:
+#     lines = [
+#         f"Percent excluded adapter: {wgs_metrics.percent_excluded_adapter}",
+#         f"Percent excluded MAPQ: {wgs_metrics.percent_excluded_mapq}",
+#         f"Percent excluded duplicated: {wgs_metrics.percent_excluded_duplicated}",
+#         f"Percent excluded unpaired: {wgs_metrics.percent_excluded_unpaired}",
+#         f"Percent excluded baseq: {wgs_metrics.percent_excluded_baseq}",
+#         f"Percent excluded overlap: {wgs_metrics.percent_excluded_overlap}",
+#         f"Percent excluded capped: {wgs_metrics.percent_excluded_capped}",
+#         f"Percent excluded total: {wgs_metrics.percent_excluded_total}",
+#     ]
+#     return "\n".join(lines)
 
 
 def get_qc_warning_text(run_data: RunData, metadata: Metadata) -> str:
@@ -477,7 +516,7 @@ def get_qc_warning_text(run_data: RunData, metadata: Metadata) -> str:
     return "\n".join(lines)
 
 
-def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant,...], metadata: Metadata) -> str:
+def get_resistance_text(sage_unfiltered_variants: Tuple[AnnotatedVariant, ...], metadata: Metadata) -> str:
     lines = [
         "Resistance checks:",
     ]
@@ -534,7 +573,7 @@ def get_fusion_text(reportable_fusions: Tuple[Fusion, ...]) -> str:
     return "\n".join(lines)
 
 
-def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers: Tuple[SomaticCopyNumber,...]) -> str:
+def get_deletion_status(exon_coverage: ExonMedianCoverage, somatic_copy_numbers: Tuple[SomaticCopyNumber, ...]) -> str:
     overlapping_somatic_copy_number_regions = [
         somatic_copy_number for somatic_copy_number in somatic_copy_numbers
         if exon_coverage.chromosome == somatic_copy_number.chromosome
@@ -572,8 +611,8 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     exon_median_coverages = load_exon_median_coverages(local_directory, tumor_name)
     logging.info("Load SAGE unfiltered variants")
     sage_unfiltered_variants = load_sage_unfiltered_variants(local_directory, tumor_name)
-    logging.info("Load wgs metrics")
-    wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
+    # logging.info("Load wgs metrics")
+    # wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
     logging.info("Load reported fusions")
     reported_fusions = load_reported_fusions(local_directory, tumor_name)
     run_data = RunData(
@@ -583,7 +622,7 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
         tuple(somatic_copy_numbers),
         tuple(exon_median_coverages),
         tuple(sage_unfiltered_variants),
-        wgs_metrics,
+        # wgs_metrics,
         tuple(reported_fusions),
         driver_catalog_header,
     )
@@ -608,6 +647,29 @@ def get_driver_gene_panel_entry_from_line(line: str, header: str) -> DriverGeneP
     gene = split_line[split_header.index("gene")]
 
     return DriverGenePanelEntry(gene)
+
+
+def load_excluded_exons(excluded_exons_path: Path) -> List[ExonExclusion]:
+    excluded_exons = []
+    with open(excluded_exons_path, "r") as in_f:
+        header = next(in_f)
+        # skip subheader
+        next(in_f)
+        for line in in_f:
+            entry = get_excluded_exons_entry_from_line(line, header)
+            excluded_exons.append(entry)
+    return excluded_exons
+
+
+def get_excluded_exons_entry_from_line(line: str, header: str) -> ExonExclusion:
+    split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+    split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+    gene_name = split_line[split_header.index("Gene (symbol)")]
+    gene_id = split_line[split_header.index("Ensembl gene ID")]
+    canonical_transcript_id = split_line[split_header.index("Ensembl Transcript ID (canonical)")]
+    excluded_exons_string = split_line[split_header.index("Trancript ID exons not included")]
+    excluded_exons = tuple(int(rank) for rank in excluded_exons_string.split(",") if rank)
+    return ExonExclusion(gene_name, gene_id, canonical_transcript_id, excluded_exons)
 
 
 def load_reported_fusions(local_directory: Path, tumor_name: str) -> List[Fusion]:
@@ -665,51 +727,51 @@ def get_fusion_from_line(line: str, header: str) -> Fusion:
     return fusion
 
 
-def load_wgs_metrics(local_directory: Path, tumor_name: str) -> WgsMetrics:
-    wgs_metrics_path = local_directory / f"{tumor_name}.wgsmetrics"
-    return load_wgs_metrics_from_file(wgs_metrics_path)
-
-
-def load_wgs_metrics_from_file(wgs_metrics_path: Path) -> WgsMetrics:
-    with open(wgs_metrics_path, "r") as in_f:
-        # skip first line
-        next(in_f)
-        header = next(in_f)
-        data = next(in_f)
-    return get_wgs_metrics_from_line(data, header)
-
-
-def get_wgs_metrics_from_line(line: str, header: str) -> WgsMetrics:
-    split_header = header.replace("\n", "").split(TSV_SEPARATOR)
-
-    split_line = line.replace("\n", "").split(TSV_SEPARATOR)
-
-    mean_coverage = Decimal(split_line[split_header.index("MEAN_COVERAGE")])
-    median_coverage = Decimal(split_line[split_header.index("MEDIAN_COVERAGE")])
-    percent_excluded_adapter = Decimal(split_line[split_header.index("PCT_EXC_ADAPTER")])
-    percent_excluded_mapq = Decimal(split_line[split_header.index("PCT_EXC_MAPQ")])
-    percent_excluded_duplicated = Decimal(split_line[split_header.index("PCT_EXC_DUPE")])
-    percent_excluded_unpaired = Decimal(split_line[split_header.index("PCT_EXC_UNPAIRED")])
-    percent_excluded_baseq = Decimal(split_line[split_header.index("PCT_EXC_BASEQ")])
-    percent_excluded_overlap = Decimal(split_line[split_header.index("PCT_EXC_OVERLAP")])
-    percent_excluded_capped = Decimal(split_line[split_header.index("PCT_EXC_CAPPED")])
-    percent_excluded_total = Decimal(split_line[split_header.index("PCT_EXC_TOTAL")])
-    percent_100x = Decimal(split_line[split_header.index("PCT_100X")])
-
-    wgs_metrics = WgsMetrics(
-        mean_coverage,
-        median_coverage,
-        percent_excluded_adapter,
-        percent_excluded_mapq,
-        percent_excluded_duplicated,
-        percent_excluded_unpaired,
-        percent_excluded_baseq,
-        percent_excluded_overlap,
-        percent_excluded_capped,
-        percent_excluded_total,
-        percent_100x,
-    )
-    return wgs_metrics
+# def load_wgs_metrics(local_directory: Path, tumor_name: str) -> WgsMetrics:
+#     wgs_metrics_path = local_directory / f"{tumor_name}.wgsmetrics"
+#     return load_wgs_metrics_from_file(wgs_metrics_path)
+#
+#
+# def load_wgs_metrics_from_file(wgs_metrics_path: Path) -> WgsMetrics:
+#     with open(wgs_metrics_path, "r") as in_f:
+#         # skip first line
+#         next(in_f)
+#         header = next(in_f)
+#         data = next(in_f)
+#     return get_wgs_metrics_from_line(data, header)
+#
+#
+# def get_wgs_metrics_from_line(line: str, header: str) -> WgsMetrics:
+#     split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+#
+#     split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+#
+#     mean_coverage = Decimal(split_line[split_header.index("MEAN_COVERAGE")])
+#     median_coverage = Decimal(split_line[split_header.index("MEDIAN_COVERAGE")])
+#     percent_excluded_adapter = Decimal(split_line[split_header.index("PCT_EXC_ADAPTER")])
+#     percent_excluded_mapq = Decimal(split_line[split_header.index("PCT_EXC_MAPQ")])
+#     percent_excluded_duplicated = Decimal(split_line[split_header.index("PCT_EXC_DUPE")])
+#     percent_excluded_unpaired = Decimal(split_line[split_header.index("PCT_EXC_UNPAIRED")])
+#     percent_excluded_baseq = Decimal(split_line[split_header.index("PCT_EXC_BASEQ")])
+#     percent_excluded_overlap = Decimal(split_line[split_header.index("PCT_EXC_OVERLAP")])
+#     percent_excluded_capped = Decimal(split_line[split_header.index("PCT_EXC_CAPPED")])
+#     percent_excluded_total = Decimal(split_line[split_header.index("PCT_EXC_TOTAL")])
+#     percent_100x = Decimal(split_line[split_header.index("PCT_100X")])
+#
+#     wgs_metrics = WgsMetrics(
+#         mean_coverage,
+#         median_coverage,
+#         percent_excluded_adapter,
+#         percent_excluded_mapq,
+#         percent_excluded_duplicated,
+#         percent_excluded_unpaired,
+#         percent_excluded_baseq,
+#         percent_excluded_overlap,
+#         percent_excluded_capped,
+#         percent_excluded_total,
+#         percent_100x,
+#     )
+#     return wgs_metrics
 
 
 def load_exon_median_coverages(local_directory: Path, tumor_name: str) -> List[ExonMedianCoverage]:
@@ -1012,8 +1074,8 @@ def copy_run_files_to_local(gcp_run_url: str, local_directory: Path, tumor_name:
     copy_purple_files_to_local(gcp_run_url, local_directory)
     logging.info("Copy SAGE files to local")
     copy_sage_somatic_files_to_local(gcp_run_url, local_directory)
-    logging.info("Copy WgsMetrics file to local")
-    copy_wgs_metrics_file_to_local(gcp_run_url, local_directory, tumor_name)
+    # logging.info("Copy WgsMetrics file to local")
+    # copy_wgs_metrics_file_to_local(gcp_run_url, local_directory, tumor_name)
     logging.info("Copy Linx fusion file to local")
     copy_fusion_file_to_local(gcp_run_url, local_directory, tumor_name)
 
@@ -1126,6 +1188,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gcp-run-url", "-u", type=str, required=True, help="GCP path to run directory")
     parser.add_argument("--working-directory", "-w", type=Path, required=True, help="Local working directory")
     parser.add_argument("--driver-gene-panel", "-d", type=Path, required=True, help="Driver gene panel")
+    parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis")
     parser.add_argument("--output-file", "-o", type=Path, help="Output file with summary of qc check results")
     return parser.parse_args()
 
@@ -1135,4 +1198,4 @@ if __name__ == "__main__":
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     args = parse_args()
-    main(args.gcp_run_url, args.working_directory, args.driver_gene_panel, args.output_file)
+    main(args.gcp_run_url, args.working_directory, args.driver_gene_panel, args.excluded_exons, args.output_file)

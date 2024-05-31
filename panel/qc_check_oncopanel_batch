@@ -6,6 +6,7 @@ source message_functions || exit 1
 SCRIPT_NAME="$(basename "$0")"
 
 TARGETED_PIPELINE_OUTPUT_BUCKET="gs://targeted-pipeline-output-prod-1"
+EXCLUDED_EXONS="/data/resources/ops/panel/excludedExons.tsv"
 
 print_usage() {
     self=$(basename "$0")
@@ -40,6 +41,7 @@ main() {
         --gcp-run-url "${targeted_run_url}" \
         --working-directory "${local_working_directory}" \
         --driver-gene-panel "${driver_gene_panel}" \
+        --excluded-exons "${EXCLUDED_EXONS}" \
           || die "Could not run QC check script for ${run_id}"
     fi
   done
