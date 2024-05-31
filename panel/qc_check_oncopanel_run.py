@@ -1078,6 +1078,8 @@ def copy_run_files_to_local(gcp_run_url: str, local_directory: Path, tumor_name:
     # copy_wgs_metrics_file_to_local(gcp_run_url, local_directory, tumor_name)
     logging.info("Copy Linx fusion file to local")
     copy_fusion_file_to_local(gcp_run_url, local_directory, tumor_name)
+    logging.info("Copy Orange PDF file to local")
+    copy_orange_pdf_file_to_local(gcp_run_url, local_directory, tumor_name)
 
 
 def copy_purple_files_to_local(gcp_run_url: str, local_directory: Path) -> None:
@@ -1098,6 +1100,11 @@ def copy_wgs_metrics_file_to_local(gcp_run_url: str, local_directory: Path, tumo
 def copy_fusion_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
     fusion_url = f"{gcp_run_url}/linx/{tumor_name}.linx.fusion.tsv"
     copy_file_to_local_directory(fusion_url, local_directory)
+
+
+def copy_orange_pdf_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
+    orange_pdf_url = f"{gcp_run_url}/orange/{tumor_name}.orange.pdf"
+    copy_file_to_local_directory(orange_pdf_url, local_directory)
 
 
 def sync_directory_to_local(source_url: str, local_directory: Path) -> None:

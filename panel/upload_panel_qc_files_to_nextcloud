@@ -40,6 +40,9 @@ main() {
   info "Getting paths to qc check output"
   mapfile -t qc_check_files < <(ls "${qc_check_dir}"/*/*.qc_check.txt) || die "Could not get paths to QC check files"
 
+  info "Getting paths to orange PDFs"
+  mapfile -t orange_reports < <(ls "${qc_check_dir}"/*/*.orange.pdf) || die "Could not get paths to Orange PDF reports"
+
   info "Do sanity checks"
   if [[ ${#plot_paths[@]} -eq 0 ]]; then
     die "No Purple plot files for uploading"
@@ -47,15 +50,18 @@ main() {
   if [[ ${#qc_check_files[@]} -eq 0 ]]; then
     die "No QC check output files for uploading"
   fi
+  if [[ ${#orange_reports[@]} -eq 0 ]]; then
+    die "No Orange PDF files for uploading"
+  fi
 
   info "Files to upload to NextCloud to ${upload_dir}:"
-  printf '%s\n' "${plot_paths[@]}" "${qc_check_files[@]}"
+  printf '%s\n' "${plot_paths[@]}" "${qc_check_files[@]}" "${orange_reports[@]}"
 
   info "Press [ENTER] to upload to NextCloud"
   read -r -s
 
   info "Uploading relevant files from ${qc_check_dir}"
-  do_upload_files_to_nextcloud_directory "${upload_dir}" "${plot_paths[@]}" "${qc_check_files[@]}"
+  do_upload_files_to_nextcloud_directory "${upload_dir}" "${plot_paths[@]}" "${qc_check_files[@]}" "${orange_reports[@]}"
   
   info "Finished ${SCRIPT_NAME}"
 }
