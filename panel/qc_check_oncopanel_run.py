@@ -419,27 +419,24 @@ def get_qc_warning_text(run_data: RunData, metadata: Metadata) -> str:
 
     if run_data.purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
         mutation_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.MUTATION]
-        if mutation_drivers:
-            gene_name_string = ", ".join([driver.gene_name for driver in mutation_drivers])
-            lines.append(
-                f"WARN: MUTATION drivers unreliable due to purity {run_data.purple_qc.purity} < {SOMATIC_VARIANT_MIN_PURITY_THRESHOLD}: {gene_name_string}"
-            )
+        gene_name_string = ", ".join([driver.gene_name for driver in mutation_drivers])
+        lines.append(
+            f"WARN: MUTATION drivers unreliable due to purity {run_data.purple_qc.purity} < {SOMATIC_VARIANT_MIN_PURITY_THRESHOLD}: {gene_name_string}"
+        )
 
     if run_data.purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
         del_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.DEL]
-        if del_drivers:
-            gene_name_string = ", ".join([driver.gene_name for driver in del_drivers])
-            lines.append(
-                f"WARN: DEL drivers unreliable due to purity {run_data.purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}: {gene_name_string}"
-            )
+        gene_name_string = ", ".join([driver.gene_name for driver in del_drivers])
+        lines.append(
+            f"WARN: DEL drivers unreliable due to purity {run_data.purple_qc.purity} < {DEL_MIN_PURITY_THRESHOLD}: {gene_name_string}"
+        )
 
     if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
         amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.AMP]
-        if amp_drivers:
-            gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers])
-            lines.append(
-                f"WARN: AMP drivers unreliable due to purity {run_data.purple_qc.purity} < {AMP_MIN_PURITY_THRESHOLD}: {gene_name_string}"
-            )
+        gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers])
+        lines.append(
+            f"WARN: AMP drivers unreliable due to purity {run_data.purple_qc.purity} < {AMP_MIN_PURITY_THRESHOLD}: {gene_name_string}"
+        )
 
     partial_amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP]
     if partial_amp_drivers:
