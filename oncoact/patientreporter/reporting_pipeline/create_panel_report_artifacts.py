@@ -60,7 +60,7 @@ class ArtifactGenerator:
 
     def _run_scripts(self, input_folder, output_folder):
         sample_report_script_path = '/home/lschoenmaker/tmp/script_repo_clon/scripts/panel/createSampleQcReport.R'
-        deamination_script_path = '/home/lschoenmaker/tmp/script_repo_clon/scripts/createSampleQcReport_Deamination.R'
+        deamination_script_path = '/home/lschoenmaker/tmp/script_repo_clon/scripts/panel/createSampleQcReport_Deamination.R'
 
         self._run_r_script(sample_report_script_path, input_folder=input_folder, output_folder=output_folder)
         self._run_r_script(deamination_script_path, input_folder=input_folder, output_folder=output_folder)
