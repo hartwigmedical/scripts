@@ -9,15 +9,16 @@ if [[ -z ${OPANumber} ]]; then
 fi
 
 currentDate=$(date +%Y-%m-%d)
-fileName="${currentDate}.txt"
 # shellcheck disable=SC2140
-fileLocalPath="${HOME}/tmp/${OPANumber}"_"${fileName}"
+fileName="${OPANumber}"_"${currentDate}.txt"
+
+fileLocalPath="${HOME}/tmp/${fileName}"
 touch ${fileLocalPath}
 
 #gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
-
+#
 #echo "${fileName} is uploaded to the GCP bucket"
-##gsutil cp ${fileLocalPath} ${gcp_bucket_file}
+#gsutil cp ${fileLocalPath} ${gcp_bucket_file}
 #
 #echo "${fileName} is removed"
 #rm ${fileLocalPath}
