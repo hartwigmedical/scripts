@@ -2,15 +2,18 @@
 
 source message_functions || exit 1
 
+OPAMumber=$1 && shift
+
 currentDate=$(date +%Y-%m-%d)
 fileName="${currentDate}.txt"
-fileLocalPath="${HOME}/tmp/${fileName}"
+# shellcheck disable=SC2140
+fileLocalPath="${HOME}/tmp/${OPAMumber}"_"${fileName}"
 touch ${fileLocalPath}
 
-gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
+#gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
 
 echo "${fileName} is uploaded to the GCP bucket"
-gsutil cp ${fileLocalPath} ${gcp_bucket_file}
+#gsutil cp ${fileLocalPath} ${gcp_bucket_file}
 
 echo "${fileName} is removed"
 rm ${fileLocalPath}
