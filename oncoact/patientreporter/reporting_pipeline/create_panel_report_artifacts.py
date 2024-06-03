@@ -109,10 +109,12 @@ class ArtifactGenerator:
             "metadata.json"
         }
         run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
-
+        print(run_blobs)
         result = []
         for suffix in required_file_suffixes:
+            print(suffix)
             for run_blob in run_blobs:
+                print(run_blob)
                 if run_blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
                     result.append(run_blob)
                     break
