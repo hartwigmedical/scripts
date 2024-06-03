@@ -99,7 +99,7 @@ class ArtifactGenerator:
 
     def _get_required_resources_as_blobs(self):
         required_file_suffixes = {
-            "driver.catalog.somatic.tsv",
+            "purple.driver.catalog.somatic.tsv",
             "purple.somatic.vcf.gz",
             "purple.purity.tsv",
             "purple.somatic.vcf.gz",
