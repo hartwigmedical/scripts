@@ -115,9 +115,7 @@ class ArtifactGenerator:
             for run_blob in run_blobs:
 
                 if run_blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
-                    print(run_blob.name)
                     result.append(run_blob)
-                    break
 
         return result
 
