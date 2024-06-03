@@ -113,7 +113,8 @@ class ArtifactGenerator:
         result = []
         for suffix in required_file_suffixes:
             for run_blob in run_blobs:
-                print(run_blob.name + ":" + run_blob.name[-len(suffix):] == suffix)
+                print(run_blob.name)
+                print(run_blob.name[-len(suffix):] == suffix)
                 if run_blob.name[-len(suffix):] == suffix:  # this checks if the blob name ends with the suffix.
                     result.append(run_blob)
                     break
