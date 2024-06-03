@@ -2,12 +2,16 @@
 
 source message_functions || exit 1
 
-OPAMumber=$1 && shift
+OPANumber=$1 && shift
+
+if [[ -z ${OPANumber} ]]; then
+    error "No OPA number of batch is provided"
+fi
 
 currentDate=$(date +%Y-%m-%d)
 fileName="${currentDate}.txt"
 # shellcheck disable=SC2140
-fileLocalPath="${HOME}/tmp/${OPAMumber}"_"${fileName}"
+fileLocalPath="${HOME}/tmp/${OPANumber}"_"${fileName}"
 touch ${fileLocalPath}
 
 #gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
