@@ -11,15 +11,14 @@ fi
 currentDate=$(date +%Y-%m-%d)
 # shellcheck disable=SC2140
 fileName="${OPANumber}"_"${currentDate}.txt"
-
 fileLocalPath="${HOME}/tmp/${fileName}"
 touch ${fileLocalPath}
 
-#gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
-#
-#echo "${fileName} is uploaded to the GCP bucket"
-#gsutil cp ${fileLocalPath} ${gcp_bucket_file}
-#
-#echo "${fileName} is removed"
-#rm ${fileLocalPath}
-#echo "Done!"
+gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
+
+echo "${fileName} is uploaded to the GCP bucket"
+gsutil cp ${fileLocalPath} ${gcp_bucket_file}
+
+echo "${fileName} is removed"
+rm ${fileLocalPath}
+echo "Done!"
