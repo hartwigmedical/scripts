@@ -108,13 +108,14 @@ main(){
 
     # print result as table
     if [[ "${class}" =~ ^queries/consent ]]; then
-        printf "#%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeDataForReuse allowInternalUse allowExternalUseWithoutCheck allowExternalUseWithCheck
+        printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" sampleId barcode storeData internalUse externalUse externalUseWithCheck isCup
         jq -r '.[] | [.sampleId,
             .barcode,
             .storeDataForReuse,
             .allowInternalUse,
             .allowExternalUseWithoutCheck,
-            .allowExternalUseWithCheck
+            .allowExternalUseWithCheck,
+            .isCup
         ] | @tsv' <<< "${json_result}"
     elif [[ "${class}" =~ ^contact-group ]]; then
         printf "#%s\t%s\t%s\t%s\t%s\t%s\n" contractCode hospitalName mainContactName mainContactEmail recipientsContactName recipientsContactEmail
