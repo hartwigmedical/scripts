@@ -82,9 +82,10 @@ python3 -m cuppa.predict \
     --cv_predictions_path "$(locate_cuppa_cv_predictions)" \
     --output_dir "${cuppa_output_dir}"
 
-info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir} using pilot visualizer"
-Rscript --vanilla $(locate_pilot_cuppa_visualizer) \
-    "$(locate_cuppa_vis_data_tsv ${cuppa_output_dir})" \
-    "${cuppa_output_dir}/${tumor_sample}.cuppa.pilot.vis.png"
+# Below code can be used for testing changes to just the visualization script of CUPPA v2
+#info "Regenerating CUPPA R visualization for ${sample} in ${cuppa_output_dir} using pilot visualizer"
+#Rscript --vanilla $(locate_pilot_cuppa_visualizer) \
+#    "$(locate_cuppa_vis_data_tsv ${cuppa_output_dir})" \
+#    "${cuppa_output_dir}/${tumor_sample}.cuppa.pilot.vis.png"
 
 info "Complete"
