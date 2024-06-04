@@ -21,6 +21,10 @@ locate_prod_sage() {
     echo "/data/tools/sage/3.2.3/sage.jar"
 }
 
+locate_research_sage_annotation() {
+    echo "/data/tools/sage/3.2.5/sage.jar"
+}
+
 locate_research_sage() {
     echo "/data/tools/sage/3.4.1/sage.jar"
 }
