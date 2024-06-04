@@ -4,8 +4,6 @@ source message_functions || exit 1
 source locate_files || exit 1
 source actin_config || exit 1
 
-# TODO: Remove script once WTS-post-process pipeline is place and we share from buckets rather than VM.
-
 sample=$1 && shift
 
 vm=$(production_actin_ops_vm)

@@ -9,7 +9,6 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-# TODO Potentially replace with a non-ACTIN serve db
 serve_actionability_dir="$(locate_actin_serve_db)"
 
 output_dir="${run_dir}/protect_pilot"
