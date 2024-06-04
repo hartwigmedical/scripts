@@ -50,15 +50,11 @@ locate_prod_lilac() {
 }
 
 locate_research_lilac() {
-    echo "/data/tools/lilac/1.5.2/lilac.jar"
+    echo "/data/tools/lilac/1.6/lilac.jar"
 }
 
 locate_pilot_lilac() {
     echo "/data/experiments/pilot_tools/lilac/lilac.jar"
-}
-
-locate_prod_cuppa_chart() {
-    echo "/data/tools/cuppa/1.8.1.rc1/cuppa-chart"
 }
 
 locate_research_cuppa() {
@@ -86,7 +82,7 @@ locate_pilot_linx() {
 }
 
 locate_prod_sigs() {
-    echo "/data/tools/sigs/1.1/sigs.jar"
+    echo "/data/tools/sigs/1.2/sigs.jar"
 }
 
 locate_pilot_sigs() {
