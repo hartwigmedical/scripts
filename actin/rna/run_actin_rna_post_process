@@ -23,7 +23,7 @@ if [[ -d "${run_dir}/isofox" ]]; then
     run_cuppa_dna_rna_prod ${run_dir}
 fi
 
-# TODO Enable again once CUPPA rerun has been completed.
+# TODO (KD) Enable again once CUPPA rerun has been completed.
 #download_rna_bam_to_run_dir ${run_dir}
 #rna_bam_dir="$(locate_rna_bam_directory ${run_dir})"
 #if [[ -d "${rna_bam_dir}" ]]; then
