@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set=$1 && shift
+
+[[ -n "${set}" ]] || die "No set provided. Exiting"
+
+#Searching and selecting run (including ${inc_inis} and excluding ${exc_buckets} excluding ${exc_status})
+inc_inis="Somatic.ini|PipelineV5.ini|CPCT.ini"
+exc_status="Invalidated"
+exc_buckets="research-pipeline-output-prod"
+runs_json=$(
+  hmf_api_get "runs?set_name=${set}" | \
+  jq --arg inis "$inc_inis" --arg buckets "$exc_buckets" --arg status "${exc_status}" \
+  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not) | select(.status | test($status)|not)]'
+)
+run_count=$(jq 'length' <<< "${runs_json}")
+bucket=$( echo $runs_json | jq -r '.[].bucket' )
+
+[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for this set (${run_count}). Info is from the most recent run!"
+
+if [[ ${run_count} == 0 ]]; then
+    warn "No run was found for ${set} on gcp."
+    exit 1
+fi
+
+###
+
+virusintrprtr_url="gs://${bucket}/${set}/virusintrprtr/"
+
+error=$( gsutil ls ${virusintrprtr_url} 2>&1)
+if [[ "$error" == *"CommandException"* ]]; then
+    warn "Run virusintrprtr output does not exist in ${bucket} on gcp."
+    exit 1
+fi
+
+gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv

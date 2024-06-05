@@ -234,7 +234,10 @@ class StatusChecker:
         warnings = []
         run_record = self._get_run_from_report_record(report_record)
         set_name = run_record['set']['name']
-        print(set_name)
+        virusintrprtr_log = subprocess.check_output(['check_virus_interpreter_file', set_name, '2>&1']).decode()
+
+        warnings.append('A warning was found in the virusintrprtr log. '
+                            f'See: {virusintrprtr_log}')
         return warnings
 
     def _get_health_checker_related_warnings(self, report_record):
