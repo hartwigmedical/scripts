@@ -230,7 +230,7 @@ locate_pilot_datarequest() {
 }
 
 locate_dsync() {
-    echo "/data/tools/dsync/1.9.2/dsync.jar"
+    echo "/data/tools/dsync/1.9.3/dsync.jar"
 }
 
 locate_run_contexts_writer() {
