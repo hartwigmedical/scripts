@@ -39,6 +39,6 @@ virusName=$(gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv
 countVirus=$(echo $virusName | wc -l)
 
 if [[ $countVirus -ge 1 ]]; then
-  name=$(${virusName} | awk -F "\t" '{print $2, $5}')
+  name=$(echo ${virusName} | awk -F "\t" '{print $2, $5}')
   warn "Check the following virus before sharing the orange report: ${name}"
 fi
