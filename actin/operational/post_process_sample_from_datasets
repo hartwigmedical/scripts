@@ -39,13 +39,12 @@ echo ${version} >> ${pipeline_version_file}
 # Post-process all RNA and integrate with DNA.
 run_actin_rna_post_process ${run_dir}
 
-# TODO (KD) Enable them once CUPPA v2 rerun has been done.
 # Load the RNA annotated data into prod db.
-#load_rna_run_data_to_prod ${run_dir}
+load_rna_run_data_to_prod ${run_dir}
 
-## Run standard ORANGE in research
-#run_orange_research ${run_dir}
-#
-## Converted-germline is generated to be able to share externally with people who do not wish to see germline.
-#run_orange_research_no_germline ${run_dir}
+# Run standard ORANGE in research
+run_orange_research ${run_dir}
+
+# Converted-germline is generated to be able to share externally with people who do not wish to see germline.
+run_orange_research_no_germline ${run_dir}
 
