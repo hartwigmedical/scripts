@@ -234,7 +234,6 @@ class StatusChecker:
         warnings = []
         run_record = self._get_run_from_report_record(report_record)
         set_name = run_record['set']['name']
-        virus_file = subprocess.check_output(['virusintrprtr', set_name, '2>&1']).decode()
         print(set_name)
         return warnings
 
