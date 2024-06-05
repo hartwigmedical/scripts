@@ -18,4 +18,8 @@ echo "#contractCode	hospitalName	mainContactName	mainContactEmail	recipientsCont
 lama_contact=$(lama "contact-group/contract-code/${contractCode}/hospital/${hospitalName}" | sed '/^#/d' | awk -F "\t" '{print $6}')
 lama_sample_contact=$(lama_get_patient_reporter_data ${tumor_barcode} | jq .requesterEmail | awk '{print $1}' | tr -d '"')
 
-echo ${lama_contact}";"${lama_sample_contact} | sort | uniq
+if [[ ${lama_sample_contact} == null ]];then
+  echo ${lama_contact}
+else
+  echo ${lama_contact}";"${lama_sample_contact} | sort | uniq
+fi
