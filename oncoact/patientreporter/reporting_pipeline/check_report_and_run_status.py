@@ -198,6 +198,7 @@ class StatusChecker:
     def _get_all_report_associated_warnings(self, report_record):
         return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
+                self._get_virus_names(report_record) +
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
                 self._get_protect_warnings(report_record))
@@ -227,6 +228,14 @@ class StatusChecker:
             warnings.append('A lims error was found in the patient-reporter log. '
                             f"Check for lims problems 'gsutil cat {path}'.")
 
+        return warnings
+
+    def _get_virus_names(self, report_record):
+        warnings = []
+        run_record = self._get_run_from_report_record(report_record)
+        set_name = run_record['set']['name']
+        virus_file = subprocess.check_output([set_name, '2>&1']).decode()
+        print(virus_file)
         return warnings
 
     def _get_health_checker_related_warnings(self, report_record):
