@@ -43,7 +43,7 @@ class ArtifactGenerator:
         self._run_scripts(input_folder=input_folder, output_folder=output_folder)
         self._generate_vcf(input_folder=input_folder, output_folder=output_folder)
         upload_to_nextcloud(output_folder)
-       # self._copy_output_to_bucket(output_folder=output_folder)
+        self._copy_output_to_bucket(output_folder=output_folder)
 
 
     def _generate_input_and_output_folders(self):
