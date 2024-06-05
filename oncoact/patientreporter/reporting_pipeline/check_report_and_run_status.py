@@ -245,7 +245,6 @@ class StatusChecker:
         run_record = self._get_run_from_report_record(report_record)
         set_name = run_record['set']['name']
         health_checker_log = subprocess.check_output(['health_check_validated_run', set_name, '2>&1']).decode()
-        print(health_checker_log)
         if 'WARN' in health_checker_log:
             warnings.append('A warning was found in the health checker log. '
                             f'See: {health_checker_log}')
