@@ -35,4 +35,4 @@ if [[ "$error" == *"CommandException"* ]]; then
     exit 1
 fi
 
-gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv | grep -v ^taxid | awk -F "\t" '{print $2, $5}'
+warn "Check the following virus before sharing the orange report: " gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv | grep -v ^taxid | awk -F "\t" '{print $2, $5}'
