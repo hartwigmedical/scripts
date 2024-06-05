@@ -36,4 +36,8 @@ if [[ "$error" == *"CommandException"* ]]; then
 fi
 
 virusName=$(gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv | grep -v ^taxid | awk -F "\t" '{print $2, $5}')
-warn "Check the following virus before sharing the orange report: ${virusName}"
+countVirus=$(echo $virusName | wc -l)
+
+if [[ $countVirus -ge 1]];then
+  warn "Check the following virus before sharing the orange report: ${virusName}"
+fi
