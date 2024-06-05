@@ -35,7 +35,7 @@ if [[ "$error" == *"CommandException"* ]]; then
     exit 1
 fi
 
-virusName=$(gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv | grep -v ^taxid)
+virusName=$(gsutil cat gs://${bucket}/${set}/virusintrprtr/*.virus.annotated.tsv | grep -v ^taxid | tr -d "\n")
 countVirus=$(echo $virusName | wc -l)
 
 if [[ $countVirus -eq 1 ]]; then
