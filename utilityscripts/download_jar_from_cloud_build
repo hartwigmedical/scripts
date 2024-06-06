@@ -19,7 +19,7 @@ target_dir=$3
 
 local_dir="${target_dir}/${tool}/${version}"
 remote_dir="${AR_URL}/${tool}/${version}"
-if [[ "${tool}" == "orange-datamodel" ]]; then
+if [[ "${tool}" =~ ^(orange-datamodel|platinum)$ ]]; then
   jar_name="${tool}-${version}.jar"
 else
   jar_name="${tool}-${version}-jar-with-dependencies.jar"
