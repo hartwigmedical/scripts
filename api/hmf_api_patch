@@ -66,6 +66,15 @@ main () {
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
     info_string="name=${name}|class=${class}|id=${oid}|env=${environment}"
+
+    # Lane (and Fastq) records should be deleted prior to patch of flowcell status to Pending (to restart bcl2fastq conversion)
+    if [[ "${class}" == "flowcells" && "${field}" == "status" && "${value}" == "Pending" ]]; then
+        info "This patch would restart bcl2fastq so checking for lane/fastq presence in HMFAPI (${info_string})"
+        lane_json=$(get_with_curl "lanes?flowcell_id=${oid}")
+        lane_count=$(jq 'length' <<< "${lane_json}")
+        die "Found existing lanes [${lane_count}]. HMFAPI cleanup required (lane/fastq) to rerun bcl2fastq conversion (${info_string})"
+    fi
+
     if [[ "${confirmation}" == "true" ]]; then
         info "About to patch object (${info_string}) with '${data}'"
         current_value=$(jq --arg key "${field}" '.[$key]' <<< "${json}")
