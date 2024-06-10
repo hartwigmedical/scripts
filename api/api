@@ -45,7 +45,6 @@ while getopts ':jrt' flag; do
         j) output_json='TRUE' ;;
         t) additional_get_params="-t";;
         *) print_usage >&2
-        exit 1 ;;
     esac
 done
 class=${*:$OPTIND:1} && shift # obligatory
@@ -66,6 +65,8 @@ main(){
         filter_field="set_name" # runs have no name field but do have a set_name filter
     elif [[ "${class}" == "datasets" ]]; then
         filter_field="id"
+    elif [[ "${class}" == "fastq" ]]; then
+        filter_field="name_r1"
     else
         filter_field="name"
     fi
