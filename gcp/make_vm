@@ -162,6 +162,7 @@ fi
 info "Start creating VM instance ${vm_name}"
 "${cmd[@]}" || die "Something went wrong with VM creation. Please check the gcloud response."
 echo ""
+gcloud compute disks add-labels "${vm_name}" --project="${vm_project}" --zone="${zone}" --labels="${labels}"
 
 info "Useful cmds:"
 echo " gcloud compute ssh ${vm_name} --tunnel-through-iap"
