@@ -24,6 +24,7 @@ value='' # the value to PATCH field with
 confirmation='true' # by default script requires key press
 environment='prod' # by default uses production instead of testing/pilot
 
+# NOTE: some fields are currently not supported in api PATCH code (eg sample_id)
 unquoted_values='null|true|false'
 quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample|name_r1|name_r2|reporting_id|context'
 unquoted_fields='yld|yld_req|q30|q30_req|qc_pass|max_undet|min_q30|min_sample_yield'
@@ -39,7 +40,6 @@ while getopts ':c:o:f:v:et' flag; do
         e) confirmation='false' ;;
         t) environment='pilot' ;;
         *) print_usage >&2
-        exit 1 ;;
     esac
 done
 
