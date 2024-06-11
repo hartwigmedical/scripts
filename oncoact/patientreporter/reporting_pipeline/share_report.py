@@ -177,6 +177,8 @@ class ReportSharer:
             "cobalt.ratio.pcf",
             "amber.baf.tsv.gz",
             "purple.cnv.somatic.tsv",
+            "orange.pdf",
+            ".html"
         }
 
     def _molecular_files(self):
