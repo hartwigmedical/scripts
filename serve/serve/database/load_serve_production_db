@@ -12,7 +12,7 @@ db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
 db_url=$(construct_database_url "${credentials}" "serve_production")
 
-java -cp ${serve_jar} com.hartwig.hmftools.serve.dao.LoadServeDatabase \
+java -cp ${serve_jar} com.hartwig.serve.dao.LoadServeDatabase \
     -serve_actionability_dir ${serve_actionability_dir} \
     -ref_genome_version 37 \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
