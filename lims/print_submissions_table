@@ -13,8 +13,9 @@ if [[ -n "$submission" ]]; then
     submissions=$(jq --arg key "$submission" '.submissions[$key]' "${LIMS_JSON}")
 else
     inn_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregINN\"))) | sort_by(.submission) | .[-${inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
-    non_inn_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregINN\") | not)) | sort_by(.submission) | .[-${non_inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
-    submissions=$(printf "%s\n%s" "${inn_submissions}" "${non_inn_submissions}")
+    val_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregVAL\"))) | sort_by(.submission) | .[-${inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
+    regular_submissions=$(jq "[.submissions[]] | map(select(.submission | startswith(\"HMFregINN\") or startswith(\"HMFregVAL\") or startswith(\"HMFregGIAB\") | not)) | sort_by(.submission) | .[-${non_inn_submission_count}:] | reverse[]" "${LIMS_JSON}")
+    submissions=$(printf "%s\n%s\n%s" "${inn_submissions}" "${val_submissions}" "${regular_submissions}")
 fi
 
 # header
