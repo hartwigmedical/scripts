@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+
+experiment_dir=$1 && shift
+
+if [[ -z "${experiment_dir}" ]]; then
+    error "Usage: $0 <experiment_dir>"
+fi
+
+database="hmfpatients_pilot"
+credentials=$(prod_writer_sql_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+processed_ids=()
+
+for file in "${experiment_dir}"/*; do
+    filename=$(basename "$file")
+    sample_id=$(echo "$filename" | cut -d'.' -f1)
+
+    # shellcheck disable=SC2199
+    if [[ " ${processed_ids[@]} " =~ " ${sample_id} " ]]; then
+        echo "[INFO] Skipping already processed sample ${sample_id}"
+    else
+        echo "[INFO] Processing sample ${sample_id}"
+        do_load_sigs_data ${sample_id} ${experiment_dir} ${database} "${credentials}" ${patient_db_jar}
+        if [[ $? -ne 0 ]]; then
+            error "Error loading sigs data for sample ${sample_id}"
+        fi
+        processed_ids+=("${sample_id}")
+    fi
+done
+
+echo "All patients processed successfully."
