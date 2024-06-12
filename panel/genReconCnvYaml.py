@@ -12,8 +12,13 @@ cmd ="for i in  `"+listRelevantBuckets+ "`; do echo -n \"$i \"; gsutil cat ${i}m
 capture_output=subprocess.run(cmd,shell=True,capture_output=True,text=True)
 
 res=capture_output.stdout
+#containts space seperated list of buckets and sampleIds in this batch
+
 res=res.rstrip('\n')
-arr = res.split('\n')
+
+
+lines_arr = res.split('\n')
+
 
 
 body="""workflow: "panel-plot"
@@ -24,13 +29,16 @@ outputYaml=""
 
 cnt=0
 
-for i in arr:
+for lines in lines_arr:
   
-  arr2 = i.split(' ')
+  arr = lines.split(' ')
+  inputBucket = arr[0]
+  sampleId = arr[1]
+
   outputYaml += 'name: \"'  + batch+"_"+str(cnt) +'\"\n'
   outputYaml += body
-  outputYaml+=  '  run_uri: ' + '\"' + arr2[0] +'"\n'
-  outputYaml += '  sample_id: '  + arr2[1] +'\n'
+  outputYaml+=  '  run_uri: ' + '\"' + inputBucket +'"\n'
+  outputYaml += '  sample_id: '  + sampleId +'\n'
   outputYaml += "---\n"
   cnt+=1
 outputYaml = outputYaml.rstrip('\n')
