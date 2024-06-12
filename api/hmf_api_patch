@@ -29,7 +29,7 @@ unquoted_values='null|true|false'
 quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample|name_r1|name_r2|reporting_id|context'
 unquoted_fields='yld|yld_req|q30|q30_req|qc_pass|max_undet|min_q30|min_sample_yield'
 quoted_array_fields='primary_tumor_doids'
-unquoted_array_fields='no_literal_array_fields_yet'
+all_supported_fields="${quoted_fields}|${unquoted_fields}|${quoted_array_fields}"
 
 while getopts ':c:o:f:v:et' flag; do
     case "${flag}" in
@@ -107,12 +107,10 @@ construct_data_json () {
         data=$(printf '{"%s": %s}' "$field" "${value}")
     elif [[ "${field}" =~ ^(${quoted_fields})$ ]]; then
         data=$(printf '{"%s": "%s"}' "$field" "${value}")
-    elif [[ "${field}" =~ ^(${unquoted_array_fields})$ ]]; then
-        data=$(printf '{"%s": [%s]}' "$field" "${value}")
     elif [[ "${field}" =~ ^(${quoted_array_fields})$ ]]; then
         data=$(printf '{"%s": ["%s"]}' "$field" "${value//,/\",\"}")
     else
-        die "Field ${field} is not supported"
+        die "Field [${field}] not in supported fields [${all_supported_fields}]"
     fi
     echo "${data}"
 }
