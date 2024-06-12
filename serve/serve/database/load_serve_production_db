@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-serve_actionability_dir="/data/output/research_output_ckb_iclusion_based"
+serve_actionability_dir="/data/output/prod_output_ckb_evidence_latest_and_iclusion_from_240531_dump_verification"
 serve_jar=$(locate_research_serve)
 
 credentials=$(prod_writer_sql_credentials)
