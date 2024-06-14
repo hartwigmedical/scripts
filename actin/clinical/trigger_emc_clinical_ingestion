@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+echo | gsutil cp - $(locate_actin_clinical_feed_input_bucket)/upload.complete
