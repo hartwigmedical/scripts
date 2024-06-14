@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source database_functions || exit 1
+source locate_files || exit 1
 
 experiment_dir=$1 && shift
 
