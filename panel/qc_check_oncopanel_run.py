@@ -31,6 +31,8 @@ GENES_EXCLUDED_FROM_DESIGN = {"SPATA31A7", "LINC01001", "U2AF1"}
 
 BASES_PER_GBASE = 1000000000
 TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
+TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 95.
+USUAL_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 99.
 
 @dataclass(frozen=True, eq=True)
 class Metadata:
@@ -243,6 +245,26 @@ class ExonExclusion:
     excluded_exons: Tuple[int, ...]
 
 
+@dataclass(frozen=True, eq=True)
+class ExonCoverageStatistics:
+    relevant_exon_count: int
+    exons_with_median_coverage_at_least_100_count: int
+
+    @classmethod
+    def from_exon_coverages(
+            cls, exon_median_coverages: Tuple[ExonMedianCoverage, ...], excluded_exons: List[ExonExclusion]
+    ) -> "ExonCoverageStatistics":
+        gene_to_excluded_exons = {exon_exclusion.gene_name: exon_exclusion.excluded_exons for exon_exclusion in excluded_exons}
+        relevant_exons = [exon for exon in exon_median_coverages if is_relevant_for_coverage(exon, gene_to_excluded_exons)]
+        if not relevant_exons:
+            raise ValueError("No exons found relevant for coverage. Check excluded genes and exons!")
+        exons_with_median_coverage_at_least_100 = [exon for exon in relevant_exons if exon.median_depth >= 100]
+        return ExonCoverageStatistics(len(relevant_exons), len(exons_with_median_coverage_at_least_100))
+
+    def percent_exons_median_coverage_at_least_100(self) -> float:
+        return 100 * self.exons_with_median_coverage_at_least_100_count / self.relevant_exon_count
+
+
 ID_TO_RESISTANCE_VARIANT = {
     "EGFR T790M": Variant("chr7", 55181378, "C", "T"),
     "EGFR C797S": Variant("chr7", 55181398, "T", "A"),
@@ -308,11 +330,12 @@ def do_qc_checks(
 def get_qc_check_output_text(
         run_data: RunData, driver_gene_panel_entries: List[DriverGenePanelEntry], excluded_exons: List[ExonExclusion], metadata: Metadata,
 ) -> str:
+    exon_coverage_statistics = ExonCoverageStatistics.from_exon_coverages(run_data.exon_median_coverages, excluded_exons)
     sections = [
         get_sample_info_text(metadata),
-        get_sample_overview_stats_text(run_data.purple_qc, run_data.gene_copy_numbers, run_data.exon_median_coverages, driver_gene_panel_entries, excluded_exons),
+        get_sample_overview_stats_text(run_data.purple_qc, run_data.gene_copy_numbers, exon_coverage_statistics, driver_gene_panel_entries),
         # get_percent_excluded_text(run_data.wgs_metrics),
-        get_qc_warning_text(run_data, metadata),
+        get_qc_warning_text(run_data, exon_coverage_statistics, metadata),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
         get_driver_catalog_text(run_data.drivers, run_data.driver_catalog_header),
         get_fusion_text(run_data.reportable_fusions),
@@ -333,9 +356,8 @@ def get_sample_info_text(metadata: Metadata) -> str:
 def get_sample_overview_stats_text(
         purple_qc: PurpleQc,
         gene_copy_numbers: Tuple[GeneCopyNumber, ...],
-        exon_median_coverages: Tuple[ExonMedianCoverage, ...],
+        exon_coverage_statistics: ExonCoverageStatistics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
-        excluded_exons: List[ExonExclusion],
 ) -> str:
     driver_panel_genes = {entry.gene for entry in driver_gene_panel_entries}
     min_copy_numbers_in_driver_genes = [
@@ -348,13 +370,6 @@ def get_sample_overview_stats_text(
         ]
     )
 
-    gene_to_excluded_exons = {exon_exclusion.gene_name: exon_exclusion.excluded_exons for exon_exclusion in excluded_exons}
-    relevant_exons = [exon for exon in exon_median_coverages if is_relevant_for_coverage(exon, gene_to_excluded_exons)]
-    if not relevant_exons:
-        raise ValueError("No exons found relevant for coverage. Check excluded genes and exons!")
-    exons_with_median_coverage_at_least_100 = [exon for exon in relevant_exons if exon.median_depth >= 100]
-    percent_exons_median_coverage_at_least_100 = 100 * len(exons_with_median_coverage_at_least_100) / len(relevant_exons)
-
     lines = [
         f"Purple QC status: {purple_qc.qc_status}",
         f"Purity: {purple_qc.purity}",
@@ -366,9 +381,9 @@ def get_sample_overview_stats_text(
         f"Amber gender: {purple_qc.amber_gender}",
         f"Cobalt gender: {purple_qc.cobalt_gender}",
         f"AMBER mean depth: {purple_qc.amber_mean_depth}",
-        f"Exons where median coverage is checked: {len(relevant_exons)}",
-        f"Exons with median coverage >= 100: {len(exons_with_median_coverage_at_least_100)}",
-        f"Percent exons with median coverage >= 100: {percent_exons_median_coverage_at_least_100:.2f}%",
+        f"Exons where median coverage is checked: {exon_coverage_statistics.relevant_exon_count}",
+        f"Exons with median coverage >= 100: {exon_coverage_statistics.exons_with_median_coverage_at_least_100_count}",
+        f"Percent exons with median coverage >= 100: {exon_coverage_statistics.percent_exons_median_coverage_at_least_100():.2f}%",
         # f"WgsMetrics mean depth: {wgs_metrics.mean_coverage}",
         # f"WgsMetrics median depth: {wgs_metrics.median_coverage}",
         # f"WgsMetrics percent 100X: {wgs_metrics.percent_100x}",
@@ -399,10 +414,25 @@ def is_relevant_for_coverage(exon: ExonMedianCoverage, gene_to_excluded_exons: D
 #     return "\n".join(lines)
 
 
-def get_qc_warning_text(run_data: RunData, metadata: Metadata) -> str:
+def get_qc_warning_text(run_data: RunData, exon_coverage_statistics: ExonCoverageStatistics, metadata: Metadata) -> str:
     lines = []
     if metadata.yield_in_bases < TARGET_YIELD_IN_BASES:
-        lines.append(f"WARN: Yield {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb less than target yield {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb")
+        lines.append(
+            f"WARN: Yield {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb less than "
+            f"target yield {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb"
+        )
+
+    percent_exons_median_coverage_at_least_100 = exon_coverage_statistics.percent_exons_median_coverage_at_least_100()
+    if percent_exons_median_coverage_at_least_100 < TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:
+        lines.append(
+            f"WARN: Percent exons with median coverage >= 100 {percent_exons_median_coverage_at_least_100:.2f}% less than "
+            f"target percentage {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100}%"
+        )
+    elif percent_exons_median_coverage_at_least_100 < USUAL_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:
+        lines.append(
+            f"WARN: Percent exons with median coverage >= 100 {percent_exons_median_coverage_at_least_100:.2f}% less than "
+            f"usual percentage {USUAL_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100}%"
+        )
 
     if run_data.purple_qc.qc_status != "PASS":
         lines.append(f"WARN: Non-PASS Purple QC status: {run_data.purple_qc.qc_status}")
