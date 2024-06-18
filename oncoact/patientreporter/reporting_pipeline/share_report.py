@@ -178,7 +178,7 @@ class ReportSharer:
             "amber.baf.tsv.gz",
             "purple.cnv.somatic.tsv",
             "orange.pdf",
-            ".html"
+            ".reconCNV.html"
         }
 
     def _molecular_files(self):
