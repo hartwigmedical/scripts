@@ -54,5 +54,5 @@ writeLines(c("INSERT INTO work_calender (date_time, is_working_day) VALUES"), fi
 for (date in seq(as.Date(start_date), as.Date(end_date)-1, by="day")) {
   writeLines(paste0( "('", as.Date(date), "',", as.integer(is.bizday(date, work_calendar)), ")," ), fileConn)
 }
-writeLines(paste0( "('", as.Date(date), "',", as.integer(is.bizday(end_date, work_calendar)), ");" ), fileConn)
+writeLines(paste0( "('", as.Date(end_date), "',", as.integer(is.bizday(end_date, work_calendar)), ");" ), fileConn)
 close(fileConn)
