@@ -52,7 +52,7 @@ work_calendar <- create.calendar('nl_business_calendar',
 fileConn <- file(output_file, "w")
 writeLines(c("INSERT INTO work_calender (date_time, is_working_day) VALUES"), fileConn)
 for (date in seq(as.Date(start_date), as.Date(end_date)-1, by="day")) {
-  writeLines(paste0( "(", as.Date(date), " 00:00:00,", as.integer(is.bizday(date, work_calendar)), ")," ), fileConn)
+  writeLines(paste0( "('", as.Date(date), "',", as.integer(is.bizday(date, work_calendar)), ")," ), fileConn)
 }
-writeLines(paste0( "(", as.Date(end_date), " 00:00:00,", as.integer(is.bizday(end_date, work_calendar)), ");" ), fileConn)
+writeLines(paste0( "('", as.Date(date), "',", as.integer(is.bizday(end_date, work_calendar)), ");" ), fileConn)
 close(fileConn)
