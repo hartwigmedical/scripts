@@ -50,7 +50,7 @@ work_calendar <- create.calendar('nl_business_calendar',
 
 # Loop through all dates and determine if it is a business day, write the combination to output file
 fileConn <- file(output_file, "w")
-writeLines(c("INSERT INTO work_calender (date_time, is_working_day) VALUES"), fileConn)
+writeLines(c("INSERT INTO work_calender (datestamp, is_working_day) VALUES"), fileConn)
 for (date in seq(as.Date(start_date), as.Date(end_date)-1, by="day")) {
   writeLines(paste0( "('", as.Date(date), "',", as.integer(is.bizday(date, work_calendar)), ")," ), fileConn)
 }
