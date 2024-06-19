@@ -18,7 +18,7 @@ fi
 protect_evidence_tsv=$(find -L /home/lschoenmaker/tmp/verifications/verification_reporting_pipeline_v1.0.5_ckb_clinical_trials/reporting_pipeline_data/hmf-ops-crunch-bridge/verification/${run}/protect -type f -name "protect.tsv")
 
 
-database="hmfpatients_pilot"
+database="protect_pilot"
 credentials=$(prod_writer_sql_credentials)
 patient_db_jar="/data/experiments/pilot_tools/patient-db/oncoact-db-jar-with-dependencies.jar"
 
