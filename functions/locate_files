@@ -636,7 +636,7 @@ locate_actin_blob() {
 ############################## ACTIN Data VM Based #############################
 
 locate_actin_clinical_input_feed_directory() {
-    echo "/data/actin/clinical/input_feed/latest"
+    echo "/data/actin/clinical/input_feed"
 }
 
 locate_actin_curated_clinical_directory() {
