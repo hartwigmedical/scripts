@@ -15,7 +15,7 @@ fi
 if [[ -z "${sample}" ]]; then
     error "No sample passed. Exiting"
 fi
-protect_evidence_tsv=$(find -L /home/lschoenmaker/verifications/reporting_pipeline/runs_23-09-07/${run}/protect -type f -name "protect.tsv")
+protect_evidence_tsv=$(find -L /home/lschoenmaker/tmp/verifications/verification_reporting_pipeline_v1.0.5_ckb_clinical_trials/reporting_pipeline_data/hmf-ops-crunch-bridge/verification${run}/protect -type f -name "protect.tsv")
 
 
 database="hmfpatients_pilot"
