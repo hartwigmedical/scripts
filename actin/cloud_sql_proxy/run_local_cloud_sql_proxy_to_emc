@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-cloud_sql_proxy_tool="${HOME}/devtools/cloud_sql_proxy/cloud_sql_proxy"
-
-do_run_cloud_sql_proxy_to_emc ${cloud_sql_proxy_tool}
