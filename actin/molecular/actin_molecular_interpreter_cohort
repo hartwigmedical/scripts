@@ -19,6 +19,8 @@ orange_json="${molecular_dir}/${sample}.orange.json"
 
 serve_directory="/data/resources/actin/cohort_analysis/serve_db"
 doid_json="$(locate_doid_json)"
+dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
+dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 
 actin_jar="$(locate_cohort_actin)"
 
@@ -29,6 +31,8 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -doid_json "${doid_json}" \
+    -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \
+    -tsg_dnds_database_path "${dnds_driver_likelihood_tsg}" \
     -output_directory "${molecular_dir}" \
     "$@"
 

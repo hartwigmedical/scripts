@@ -17,6 +17,8 @@ orange_json="$(locate_orange_no_germline_json ${molecular_dir})"
 
 serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"
+dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
+dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 
 output_directory="${molecular_dir}/actin"
 create_or_cleanup_dir ${output_directory}
@@ -30,6 +32,8 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -doid_json "${doid_json}" \
+    -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \
+    -tsg_dnds_database_path "${dnds_driver_likelihood_tsg}" \
     -output_directory "${output_directory}" \
     "$@"
 

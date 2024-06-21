@@ -379,6 +379,14 @@ locate_extended_efficacy_json() {
   echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
 }
 
+locate_dnds_driver_likelihood_onco() {
+  echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_onco.tsv"
+}
+
+locate_dnds_driver_likelihood_tsg() {
+  echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
+}
+
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {
