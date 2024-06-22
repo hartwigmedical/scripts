@@ -20,8 +20,7 @@ doid_json="$(locate_doid_json)"
 dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 
-output_directory="${molecular_dir}/actin"
-create_or_cleanup_dir ${output_directory}
+output_directory="$(locate_actin_patient_record_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
