@@ -737,7 +737,7 @@ locate_actin_patient_record_json() {
         error "Unable to locate ACTIN patient directory '${patient_dir}'"
     fi
 
-    local patient_record_json="${molecular_dir}/${patient}.patient_record.json"
+    local patient_record_json="${patient_dir}/${patient}.patient_record.json"
     if [[ ! -f ${patient_record_json} ]]; then
         error "Could not locate patient record json for patient '${patient}'"
     fi
