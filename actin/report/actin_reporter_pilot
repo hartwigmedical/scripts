@@ -9,7 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-patient_record_json="$(locate_most_recent_actin_patient_record_json ${patient})"
+patient_record_json="$(locate_actin_patient_record_json ${patient})"
 if [[ -z "${patient_record_json}" ]]; then
     error "No patient record json found for ${patient}"
 fi

@@ -725,32 +725,21 @@ locate_most_recent_actin_molecular_sample() {
     echo ${sample}
 }
 
-locate_most_recent_actin_molecular_json() {
-    local patient=$1
-    local sample=$(locate_most_recent_actin_molecular_sample ${patient})
-
-    echo $(locate_actin_molecular_json ${sample})
-}
-
-locate_most_recent_actin_patient_record_json() {
-    local patient=$1
-    local sample=$(locate_most_recent_actin_molecular_sample ${patient})
-
-    echo $(locate_actin_patient_record_json ${sample})
+locate_actin_patient_record_directory() {
+    echo "/data/actin/patients"
 }
 
 locate_actin_patient_record_json() {
-    local sample=$1
-    local molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+    local patient=$1
+    local patient_dir=$(locate_actin_patient_record_directory)
 
-    if [[ ! -d "${molecular_dir}" ]]; then
-        error "Unable to locate ACTIN molecular directory '${molecular_dir}'"
+    if [[ ! -d "${patient_dir}" ]]; then
+        error "Unable to locate ACTIN patient directory '${patient_dir}'"
     fi
 
-    local patient=$(to_actin_patient ${sample})
-    local patient_record_json="${molecular_dir}/actin/${patient}.patient_record.json"
+    local patient_record_json="${molecular_dir}/${patient}.patient_record.json"
     if [[ ! -f ${patient_record_json} ]]; then
-        error "Could not locate patient record json for sample '${sample}'"
+        error "Could not locate patient record json for patient '${patient}'"
     fi
 
     echo "${patient_record_json}"

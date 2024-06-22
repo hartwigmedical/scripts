@@ -5,8 +5,9 @@ source message_functions || exit 1
 
 info "Loading all molecular data into ACTIN pilot database"
 
-for run_dir in $(locate_actin_molecular_directory)/*; do
-    sample=$(basename ${run_dir})
+for json_file in $(locate_actin_patient_record_directory)/*; do
+    patient_record_json=$(basename ${json_file})
+    patient=$(echo ${patient_record_json} | cut -d "." -f 1)
 
-    load_actin_molecular_pilot ${sample}
+    load_actin_molecular_pilot ${patient}
 done
