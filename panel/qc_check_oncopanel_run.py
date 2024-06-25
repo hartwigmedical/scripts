@@ -12,6 +12,9 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 
 RB1_GENE_NAME = "RB1"
+CHR_X = "chrX"
+CHR_X_NON_PAR_START = 2781479
+CHR_X_NON_PAR_END = 156030895
 
 GCP_URL_START = "gs:"
 
@@ -33,6 +36,7 @@ BASES_PER_GBASE = 1000000000
 TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
 TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 95.
 USUAL_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 99.
+
 
 @dataclass(frozen=True, eq=True)
 class Metadata:
@@ -220,6 +224,12 @@ class Fusion:
 
 
 @dataclass(frozen=True, eq=True)
+class AmberBafPoint:
+    chromosome: str
+    position: int
+
+
+@dataclass(frozen=True, eq=True)
 class RunData:
     drivers: Tuple[Driver, ...]
     purple_qc: PurpleQc
@@ -229,6 +239,7 @@ class RunData:
     sage_unfiltered_variants: Tuple[AnnotatedVariant, ...]
     # wgs_metrics: WgsMetrics
     reportable_fusions: Tuple[Fusion, ...]
+    amber_baf_points: Tuple[AmberBafPoint, ...]
     driver_catalog_header: str
 
 
@@ -333,7 +344,7 @@ def get_qc_check_output_text(
     exon_coverage_statistics = ExonCoverageStatistics.from_exon_coverages(run_data.exon_median_coverages, excluded_exons)
     sections = [
         get_sample_info_text(metadata),
-        get_sample_overview_stats_text(run_data.purple_qc, run_data.gene_copy_numbers, exon_coverage_statistics, driver_gene_panel_entries),
+        get_sample_overview_stats_text(run_data, exon_coverage_statistics, driver_gene_panel_entries),
         # get_percent_excluded_text(run_data.wgs_metrics),
         get_qc_warning_text(run_data, exon_coverage_statistics, metadata),
         get_resistance_text(run_data.sage_unfiltered_variants, metadata),
@@ -354,33 +365,36 @@ def get_sample_info_text(metadata: Metadata) -> str:
 
 
 def get_sample_overview_stats_text(
-        purple_qc: PurpleQc,
-        gene_copy_numbers: Tuple[GeneCopyNumber, ...],
+        run_data: RunData,
         exon_coverage_statistics: ExonCoverageStatistics,
         driver_gene_panel_entries: List[DriverGenePanelEntry],
 ) -> str:
     driver_panel_genes = {entry.gene for entry in driver_gene_panel_entries}
     min_copy_numbers_in_driver_genes = [
-        gene_cn.min_copy_number for gene_cn in gene_copy_numbers
+        gene_cn.min_copy_number for gene_cn in run_data.gene_copy_numbers
         if gene_cn.gene_name in driver_panel_genes and gene_cn.is_canonical
     ]
-    negative_min_copy_numbers_count = len(
-        [
-            min_copy_number for min_copy_number in min_copy_numbers_in_driver_genes if min_copy_number < 0
-        ]
-    )
+    negative_min_copy_numbers_count = len([min_copy_number for min_copy_number in min_copy_numbers_in_driver_genes if min_copy_number < 0])
+    baf_points_in_x_outside_par = [
+        baf_point for baf_point in run_data.amber_baf_points
+        if baf_point.chromosome == CHR_X and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
+    ]
+    percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / len(run_data.amber_baf_points)
 
     lines = [
-        f"Purple QC status: {purple_qc.qc_status}",
-        f"Purity: {purple_qc.purity}",
-        f"Ploidy: {purple_qc.ploidy}",
-        f"MSI status: {purple_qc.msi_status}",
-        f"Ms indels per MB: {purple_qc.ms_indels_per_mb}",
-        f"TMB status: {purple_qc.tmb_status}",
-        f"TMB per MB: {purple_qc.tmb_per_mb}",
-        f"Amber gender: {purple_qc.amber_gender}",
-        f"Cobalt gender: {purple_qc.cobalt_gender}",
-        f"AMBER mean depth: {purple_qc.amber_mean_depth}",
+        f"Purple QC status: {run_data.purple_qc.qc_status}",
+        f"Purity: {run_data.purple_qc.purity}",
+        f"Ploidy: {run_data.purple_qc.ploidy}",
+        f"MSI status: {run_data.purple_qc.msi_status}",
+        f"Ms indels per MB: {run_data.purple_qc.ms_indels_per_mb}",
+        f"TMB status: {run_data.purple_qc.tmb_status}",
+        f"TMB per MB: {run_data.purple_qc.tmb_per_mb}",
+        f"Amber gender: {run_data.purple_qc.amber_gender}",
+        f"Cobalt gender: {run_data.purple_qc.cobalt_gender}",
+        f"BAF points called: {len(run_data.amber_baf_points)}",
+        f"BAF points in non-PAR region of X: {len(baf_points_in_x_outside_par)}",
+        f"Percent of all BAF points in non-PAR region of X (FEMALE iff > 1%): {percent_baf_points_in_x_outside_par:.2f}%",
+        f"AMBER mean depth: {run_data.purple_qc.amber_mean_depth}",
         f"Exons where median coverage is checked: {exon_coverage_statistics.relevant_exon_count}",
         f"Exons with median coverage >= 100: {exon_coverage_statistics.exons_with_median_coverage_at_least_100_count}",
         f"Percent exons with median coverage >= 100: {exon_coverage_statistics.percent_exons_median_coverage_at_least_100():.2f}%",
@@ -642,6 +656,8 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     # wgs_metrics = load_wgs_metrics(local_directory, tumor_name)
     logging.info("Load reported fusions")
     reported_fusions = load_reported_fusions(local_directory, tumor_name)
+    logging.info("Load Amber BAF points")
+    amber_baf_points = load_amber_baf_points(local_directory, tumor_name)
     run_data = RunData(
         tuple(drivers),
         purple_qc,
@@ -651,6 +667,7 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
         tuple(sage_unfiltered_variants),
         # wgs_metrics,
         tuple(reported_fusions),
+        tuple(amber_baf_points),
         driver_catalog_header,
     )
     return run_data
@@ -697,6 +714,30 @@ def get_excluded_exons_entry_from_line(line: str, header: str) -> ExonExclusion:
     excluded_exons_string = split_line[split_header.index("Trancript ID exons not included")]
     excluded_exons = tuple(int(rank) for rank in excluded_exons_string.split(",") if rank)
     return ExonExclusion(gene_name, gene_id, canonical_transcript_id, excluded_exons)
+
+
+def load_amber_baf_points(local_directory: Path, tumor_name: str) -> List[AmberBafPoint]:
+    amber_baf_file_path = local_directory / f"{tumor_name}.amber.baf.tsv.gz"
+    return load_amber_baf_points_from_file(amber_baf_file_path)
+
+
+def load_amber_baf_points_from_file(amber_baf_file_path: Path) -> List[AmberBafPoint]:
+    baf_points = []
+    with gzip.open(amber_baf_file_path, "rt") as in_f:
+        header = next(in_f)
+        for line in in_f:
+            baf_point = get_baf_point_from_line(line, header)
+            baf_points.append(baf_point)
+    return baf_points
+
+
+def get_baf_point_from_line(line: str, header: str) -> AmberBafPoint:
+    split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+    split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+
+    chromosome = split_line[split_header.index("chromosome")]
+    position = int(split_line[split_header.index("position")])
+    return AmberBafPoint(chromosome, position)
 
 
 def load_reported_fusions(local_directory: Path, tumor_name: str) -> List[Fusion]:
@@ -1107,6 +1148,8 @@ def copy_run_files_to_local(gcp_run_url: str, local_directory: Path, tumor_name:
     copy_fusion_file_to_local(gcp_run_url, local_directory, tumor_name)
     logging.info("Copy Orange PDF file to local")
     copy_orange_pdf_file_to_local(gcp_run_url, local_directory, tumor_name)
+    logging.info("Copy Amber BAF file to local")
+    copy_amber_baf_file_to_local(gcp_run_url, local_directory, tumor_name)
 
 
 def copy_purple_files_to_local(gcp_run_url: str, local_directory: Path) -> None:
@@ -1131,6 +1174,11 @@ def copy_fusion_file_to_local(gcp_run_url: str, local_directory: Path, tumor_nam
 
 def copy_orange_pdf_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
     orange_pdf_url = f"{gcp_run_url}/orange/{tumor_name}.orange.pdf"
+    copy_file_to_local_directory(orange_pdf_url, local_directory)
+
+
+def copy_amber_baf_file_to_local(gcp_run_url: str, local_directory: Path, tumor_name: str) -> None:
+    orange_pdf_url = f"{gcp_run_url}/amber/{tumor_name}.amber.baf.tsv.gz"
     copy_file_to_local_directory(orange_pdf_url, local_directory)
 
 
