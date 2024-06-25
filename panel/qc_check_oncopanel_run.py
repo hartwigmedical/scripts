@@ -379,7 +379,7 @@ def get_sample_overview_stats_text(
         baf_point for baf_point in run_data.amber_baf_points
         if baf_point.chromosome == CHR_X and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
     ]
-    percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / len(run_data.amber_baf_points)
+    percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / max(len(run_data.amber_baf_points), 1)
 
     lines = [
         f"Purple QC status: {run_data.purple_qc.qc_status}",
