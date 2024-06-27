@@ -819,6 +819,17 @@ locate_actin_evaluation_summary() {
 
     echo "${evaluation_summary_tsv}"
 }
+
+############################ ACTIN Personalization #############################
+
+locate_actin_personalization_jar() {
+    echo "/data/tools/actin-personalization/actin-personalization.jar"
+}
+
+locate_ncr_dataset() {
+    echo "/data/patient_like_me/ncr/K23244.csv"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
