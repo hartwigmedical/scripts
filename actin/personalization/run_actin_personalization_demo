@@ -17,6 +17,8 @@ ncr_dataset=$(locate_ncr_dataset)
 personalization_jar=$(locate_actin_personalization_jar)
 output_path="/data/patient_like_me/reports/personalized_demo.pdf"
 
+info "Starting personalization demo with age=${age}, who=${who_status}, ras=${has_ras_mutation}, metastases=${metastasis_locations}"
+
 java -cp ${personalization_jar} com.hartwig.actin.personalization.similarity.PersonalizationReportWriterApplicationKt \
     -ncr_file ${ncr_dataset} \
     -age ${age} \
