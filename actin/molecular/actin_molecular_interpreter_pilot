@@ -19,6 +19,8 @@ serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"
 dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
+ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
 output_directory="$(locate_actin_patient_record_directory)"
 
@@ -33,6 +35,8 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -doid_json "${doid_json}" \
     -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \
     -tsg_dnds_database_path "${dnds_driver_likelihood_tsg}" \
+    -ref_genome_fasta_file "${ref_genome_fasta_file}" \
+    -ensembl_data_dir "${ensembl_data_dir}" \
     -output_directory "${output_directory}" \
     "$@"
 
