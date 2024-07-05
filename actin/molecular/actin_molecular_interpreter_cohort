@@ -24,7 +24,7 @@ dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 
 actin_jar="$(locate_cohort_actin)"
 
-info "Running ACTIN ORANGE cohort interpreter on ${sample}"
+info "Running ACTIN molecular cohort interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \

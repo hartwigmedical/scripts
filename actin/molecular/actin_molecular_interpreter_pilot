@@ -26,7 +26,7 @@ output_directory="$(locate_actin_patient_record_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
-info "Running ACTIN ORANGE interpreter on ${sample}"
+info "Running ACTIN molecular interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \
