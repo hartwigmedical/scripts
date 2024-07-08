@@ -3,30 +3,33 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-sample=$1 && shift
+sequencing_sample=$1 && shift
+actin_patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${sequencing_sample}" || -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-info "Running ACTIN WGS post process for ${sample}"
+info "Running ACTIN WGS post process for ${sequencing_sample}"
 
 match_run=""
 for run in $(locate_actin_wgs_pipeline_output_directory)/*; do
-    sample_match_count=$(ls ${run} | grep -c ${sample})
+    sample_match_count=$(ls ${run} | grep -c ${sequencing_sample})
     if [[ ${sample_match_count} -gt 0 ]]; then
         if [[ ! -z "${match_run}" ]]; then
-            error "Found multiple WGS runs for sample '${sample}'!"
+            error "Found multiple WGS runs for sample '${sequencing_sample}'!"
         fi
         match_run="${run}"
     fi
 done
 
 if [[ -z "${match_run}" ]]; then
-    error "Could not find matching run for sample '${sample}' in WGS pipeline output"
+    error "Could not find matching run for sample '${sequencing_sample}' in WGS pipeline output"
 fi
 
-run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+# KD: Not ideal, assume we can always map to "T" sample.
+actin_sample="${actin_patient}T"
+run_dir="$(locate_actin_molecular_directory_for_sample ${actin_sample})"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
     rm -r "${run_dir}"
