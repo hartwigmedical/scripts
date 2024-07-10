@@ -12,8 +12,8 @@ fi
 
 shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${actin_patient})"
 
-orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${services_sample})"
-orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${services_sample})"
+orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${services_sample} ${actin_patient})"
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${services_sample} ${actin_patient})"
 
 info "Archiving ORANGE (no germline) data for ${services_sample} to ${shared_orange_data_uri}"
 gsutil cp "${orange_no_germline_json}" "${shared_orange_data_uri}/"

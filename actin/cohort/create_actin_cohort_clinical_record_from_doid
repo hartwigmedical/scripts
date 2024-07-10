@@ -3,29 +3,27 @@
 source locate_files || exit 1
 source api_functions || exit 1
 source message_functions || exit 1
-source actin_functions || exit 1
 
-sample=$1 && shift
+services_sample=$1 && shift
+actin_patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting"
 fi
 
-primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${sample})
+primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${services_sample})
 if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
-
-patient=$(to_actin_patient ${sample})
 
 output_directory=$(locate_actin_cohort_clinical_directory)
 
 actin_jar="$(locate_cohort_actin)"
 
-info "Running ACTIN Build Clinical From Doids Only on ${patient}"
+info "Running ACTIN Build Clinical From Doids Only on ${actin_patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.clinical.BuildClinicalFromDoidsOnlyKt \
-    -patient ${patient} \
+    -patient ${actin_patient} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -output_directory ${output_directory} \
     "$@"

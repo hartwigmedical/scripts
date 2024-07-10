@@ -4,15 +4,16 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-sample=$1 && shift
+services_sample=$1 && shift
+actin_patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-clinical_json="$(locate_actin_clinical_json_for_sample ${sample})"
+clinical_json="$(locate_actin_clinical_json ${actin_patient})"
 
-molecular_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+molecular_dir="$(locate_actin_molecular_directory_for_sample ${services_sample})"
 orange_json="$(locate_orange_no_germline_json ${molecular_dir})"
 
 serve_directory="$(locate_actin_serve_db)"
@@ -26,7 +27,7 @@ output_directory="$(locate_actin_patient_record_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
-info "Running ACTIN molecular interpreter on ${sample}"
+info "Running ACTIN molecular interpreter on ${actin_patient} using ${services_sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \

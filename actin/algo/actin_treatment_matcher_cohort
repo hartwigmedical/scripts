@@ -2,17 +2,16 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
-source actin_functions || exit 1
 
-sample=$1 && shift
+services_sample=$1 && shift
+actin_patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-patient=$(to_actin_patient ${sample})
-clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
-molecular_json="$(locate_actin_cohort_molecular_directory ${sample})/${sample}.molecular.json"
+clinical_json="$(locate_actin_cohort_clinical_directory)/${actin_patient}.clinical.json"
+molecular_json="$(locate_actin_cohort_molecular_directory ${services_sample})/${services_sample}.molecular.json"
 trial_database_directory="$(locate_actin_cohort_treatment_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
@@ -23,7 +22,7 @@ output_directory="/data/experiments/charlotte_emc_actionability/treatment_matche
 
 actin_jar="$(locate_cohort_actin)"
 
-info "Running ACTIN treatment matcher on ${sample}"
+info "Running ACTIN treatment matcher on ${actin_patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -clinical_json ${clinical_json} \

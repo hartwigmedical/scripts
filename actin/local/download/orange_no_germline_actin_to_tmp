@@ -3,9 +3,10 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-sample=$1 && shift
+services_sample=$1 && shift
+actin_patient=$1 && shift
 
-if [[ -z "${sample}" ]]; then
+if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
@@ -14,6 +15,6 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${sample})"
+orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${services_sample} ${actin_patient})"
 
 gsutil cp ${orange_report} ${local_dir}/
