@@ -515,45 +515,42 @@ determine_next_indexed_uri_gcp() {
     echo "${final_uri}"
 }
 
-locate_actin_most_recent_orange_sample_gcp() {
+locate_sequenced_sample_for_actin_patient_gcp() {
+    # NOTE: We assume that there is one unique pipeline run for an ACTIN patient.
     local patient=$1 && shift
 
-    most_recent_sample=""
-    for i in {9..1}; do
-        sample="${patient}T${i}"
-        orange_report_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange/${sample}.orange.json"
-        if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
-            most_recent_sample=${sample}
-            break
-        fi
-    done
-
-    if [[ -z "${most_recent_sample}" ]]; then
-        most_recent_sample="${patient}T"
+    local sequenced_sample=""
+    local pipeline_report_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*"
+    local orange_report_uri=$(gsutil ls "${pipeline_report_uri}/orange_no_germline/*.orange.pdf")
+    if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
+        orange_report=$(basename ${orange_report_uri})
+        sequenced_sample=$(echo ${orange_report} | cut -d "." -f 1)
+    else
+        error "Could not locate sequenced sample for patient ${patient} at ${pipeline_report_uri}"
     fi
 
-    echo "${most_recent_sample}"
+    echo "${sequenced_sample}"
 }
 
 locate_actin_orange_germline_pdf_gcp() {
-    local sample=$1 && shift
     local patient=$1 && shift
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${patient})
     local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange/${sample}.orange.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE germline pdf")
 }
 
 locate_actin_orange_no_germline_json_gcp() {
-    local sample=$1 && shift
     local patient=$1 && shift
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${patient})
     local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange_no_germline/${sample}.orange.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline json")
 }
 
 locate_actin_orange_no_germline_pdf_gcp() {
-    local sample=$1 && shift
     local patient=$1 && shift
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${patient})
     local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket)/*${patient}*/orange_no_germline/${sample}.orange.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline pdf")

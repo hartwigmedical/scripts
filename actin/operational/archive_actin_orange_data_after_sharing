@@ -3,18 +3,19 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-services_sample=$1 && shift
-actin_patient=$1 && shift
+patient=$1 && shift
 
-if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${actin_patient})"
+shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${patient})"
 
-orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${services_sample} ${actin_patient})"
-orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${services_sample} ${actin_patient})"
+orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${patient})"
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${patient})"
 
-info "Archiving ORANGE (no germline) data for ${services_sample} for ${actin_patient} to ${shared_orange_data_uri}"
+sequenced_sample=$(locate_sequenced_sample_for_actin_patient_gcp ${patient})
+
+info "Archiving ORANGE (no germline) data for ${services_sample} for ${patient} to ${shared_orange_data_uri}"
 gsutil cp "${orange_no_germline_json}" "${shared_orange_data_uri}/"
 gsutil cp "${orange_no_germline_pdf}" "${shared_orange_data_uri}/"

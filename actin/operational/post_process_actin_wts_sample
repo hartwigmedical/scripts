@@ -3,6 +3,9 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
+# TODO Not kept up to date as we do not have WTS samples coming in
+error "This script is no longer functional"
+
 sample=$1 && shift
 
 if [[ -z "${sample}" ]]; then
