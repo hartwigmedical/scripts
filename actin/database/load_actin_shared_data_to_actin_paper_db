@@ -8,7 +8,7 @@ actin_credentials="$(prod_writer_sql_credentials)"
 actin_jar="$(locate_actin_jar_on_vm)"
 actin_database_name="actin_paper"
 
-shared_data_directory="/data/experiments/240711_kd_map_actin_shared_data"
+shared_data_directory="/data/experiments/240711_kd_map_actin_shared_data/input"
 
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
