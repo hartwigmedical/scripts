@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+actin_credentials="$(prod_writer_sql_credentials)"
+actin_jar="$(locate_actin_jar_on_vm)"
+actin_database_name="actin_paper"
+
+shared_data_directory="/data/experiments/240711_kd_map_actin_shared_data/input"
+
+db_user=$(extract_database_user "${actin_credentials}")
+db_pass=$(extract_database_password "${actin_credentials}")
+db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
+
+info "Ingesting all shared data into ${actin_database_name}"
+
+java -cp ${actin_jar} com.hartwig.actin.database.historic.SharedDataLoaderApplicationKt \
+    -shared_data_directory ${shared_data_directory} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
