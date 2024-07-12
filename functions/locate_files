@@ -181,7 +181,7 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/3.4.0/serve.jar"
+    echo "/data/tools/serve/4.0.1/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -991,19 +991,31 @@ locate_ckb_flex_data_latest_dir() {
 }
 
 locate_ckb_filter_tsv() {
-    echo "/data/resources/crunch/serve/curation/ckb_filters.tsv"
+    echo "/data/resources/crunch/serve/curation/ckb_blacklist_molecular_profile.tsv"
 }
 
 locate_ckb_blacklist_molecular_profile_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_blacklist_molecular_profile_pilot.tsv"
 }
 
+locate_ckb_blacklist_molecular_profile_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_blacklist_molecular_profile.tsv"
+}
+
 locate_ckb_blacklist_studies_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_blacklist_studies_pilot.tsv"
 }
 
+locate_ckb_blacklist_studies_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_blacklist_studies.tsv"
+}
+
 locate_ckb_blacklist_evidences_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_blacklist_evidence_pilot.tsv"
+}
+
+locate_ckb_blacklist_evidences_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_blacklist_evidence.tsv"
 }
 
 locate_ckb_drug_class_curation_pilot_tsv() {
