@@ -990,10 +990,6 @@ locate_ckb_flex_data_latest_dir() {
     echo "/data/resources/custom/ckb/latest/ckb_flex_dump"
 }
 
-locate_ckb_filter_tsv() {
-    echo "/data/resources/crunch/serve/curation/ckb_blacklist_molecular_profile.tsv"
-}
-
 locate_ckb_blacklist_molecular_profile_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_blacklist_molecular_profile_pilot.tsv"
 }

@@ -7,7 +7,7 @@ output_dir="/data/output/prod_output_ckb_evidence_latest_and_iclusion"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
-ckb_filter_tsv="$(locate_ckb_filter_tsv)"
+ckb_filter_tsv="$(locate_ckb_blacklist_molecular_profile_pilot_tsv)"
 ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
 iclusion_trial_tsv="$(locate_latest_iclusion_trial_tsv)"
 iclusion_filter_tsv="$(locate_iclusion_filter_tsv)"
