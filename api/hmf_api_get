@@ -34,7 +34,6 @@ while getopts ':tlu:' flag; do
         l) source="lama";;
         u) api_host_url=$OPTARG;;
         *) print_usage >&2
-        exit 1 ;;
     esac
 done
 query=${*:$OPTIND:1} && shift
