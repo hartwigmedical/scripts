@@ -488,7 +488,7 @@ locate_next_orange_shared_data_uri_gcp() {
 }
 
 locate_next_actin_shared_data_uri_gcp() {
-    local patient$1 && shift
+    local patient=$1 && shift
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/actin"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
