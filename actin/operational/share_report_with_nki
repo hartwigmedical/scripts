@@ -12,7 +12,6 @@ extended="${SOURCE_BUCKET}/extended/${1}.actin.extended.pdf"
 
 hash="$($LOOKUP_CMD "$1")"
 for source in "$report" "$extended"; do
-  echo $source
   bn="$(basename $source)"
   ext="${bn#*.}"
   gsutil -q stat $source 
