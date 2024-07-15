@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+PROJECT="actin-nki"
+SOURCE_BUCKET="gs://${PROJECT}-analysis-pipeline-output"
+TARGET_BUCKET="gs://${PROJECT}-shared-data"
+LOOKUP_CMD="$(dirname "$0")/lookup_hash_for_actin-id"
+
+[[ $# -ne 1 ]] && echo "Provide the ACTIN id for the report" >&2 && exit 1
+
+report="${SOURCE_BUCKET}/report/${1}.actin.pdf"
+extended="${SOURCE_BUCKET}/extended/${1}.actin.extended.pdf"
+
+hash="$($LOOKUP_CMD "$1")"
+for source in "$report" "$extended"; do
+  echo $source
+  bn="$(basename $source)"
+  ext="${bn#*.}"
+  gsutil -q stat $source 
+  [[ $? -ne 0 ]] && echo "Cannot find \"$source\"" >&2 && exit 1
+  gsutil -n cp "$source" "${TARGET_BUCKET}/${hash}.${ext}"
+  echo "Copied ${hash}.${ext}"
+done
