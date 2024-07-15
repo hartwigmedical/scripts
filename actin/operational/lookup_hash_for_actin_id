@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+PROJECT="actin-nki"
+GS_URL="gs://${PROJECT}-id-state/id.state"
+
+[[ $# -ne 1 ]] && echo "Provide the ACTIN id" >&2 && exit 1
+gsutil -q stat $GS_URL 
+[[ $? -ne 0 ]] && echo "Cannot find $GS_URL" >&2 && exit 1
+gsutil cat $GS_URL | jq -er ". | to_entries | .[] | select(.value==\"$1\") | \"\(.key)\""
+[[ $? -ne 0 ]] && echo "Could not find mapping for $1" >&2 && exit 1
+
