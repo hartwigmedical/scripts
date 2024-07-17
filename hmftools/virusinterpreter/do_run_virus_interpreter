@@ -13,7 +13,7 @@ virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
 taxonomy_db_tsv="/data/resources/public/virus_interpreter/taxonomy_db.tsv"
 virus_reporting_db_tsv="/data/resources/public/virus_interpreter/virus_reporting_db.tsv"
-virus_blacklisting_db_tsv="/home/cbruel/resources/public/virus_interpreter/virus_blacklisting_db.tsv"
+virus_blacklisting_db_tsv="/data/resources/public/virus_interpreter/virus_blacklisting_db.tsv"
 tumor_sample_wgs_metrics_file=$(locate_wgs_metrics ${run_dir} ${sample_id})
 
 java -jar ${virus_interpreter_jar} \
