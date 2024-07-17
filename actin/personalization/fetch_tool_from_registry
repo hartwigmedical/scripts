@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+set -ex
+
+function do_curl() {
+    # New versions (>7.52.1) of `curl` work properly with `--oauth2-bearer` instead of the explicit setting of a header
+    # At time of writing the imager VM was using this older version without prospect of upgrade
+    token="$(gcloud auth print-access-token)"
+    curl -H "authorization: Bearer ${token}" "$@"
+}
+
+AR_URL="https://europe-west4-maven.pkg.dev/actin-build/build-registry-maven/com/hartwig/actin"
+
+[[ $# -ne 3 ]] && echo "USAGE: $0 [tool name] [tool version] [destination path]" && exit 1
+
+tool=$1
+version=$2
+destination=$3
+
+remoteDir="${AR_URL}/${tool}/system/${version}"
+
+expected_md5="$(do_curl -o - -L "${remoteDir}/system-${version}.jar.md5")"
+do_curl -o "${destination}" -L "${remoteDir}/system-${version}.jar"
+actual_md5="$(md5sum "${destination}" | awk '{print $1}')"
+[[ $actual_md5 == "" ]] && echo "No local md5" && exit 1
+if [[ $actual_md5 != "$expected_md5" ]]; then
+    echo "Checksum not as expected or version not found in Artifact Registry for ${tool} version ${version}"
+    rm "${destination}"
+    exit 1
+else
+    echo "Fetched ${tool} version ${version} (md5=${actual_md5}) to ${destination}"
+fi
