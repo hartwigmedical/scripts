@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 
 function do_curl() {
     # New versions (>7.52.1) of `curl` work properly with `--oauth2-bearer` instead of the explicit setting of a header
