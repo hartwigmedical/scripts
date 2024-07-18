@@ -60,6 +60,7 @@ patient_record_json="${patient_output_directory}/${patient}.patient_record.json"
 trial_database_directory="$(locate_actin_trial_database_directory)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
 treatment_output_directory="${base_dir}/treatment_matches"
+override_yaml="${base_dir}/override.yaml"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -patient_json ${patient_record_json} \
@@ -81,6 +82,7 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -patient_json ${patient_record_json} \
     -treatment_match_json ${treatment_match_json} \
     -output_directory ${report_output_directory} \
+    -override_yaml ${override_yaml} \
     "$@"
 
 info "Done!"
