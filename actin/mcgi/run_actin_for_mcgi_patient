@@ -10,7 +10,7 @@ if [[ -z "${patient}" ]]; then
 fi
 
 actin_jar="$(locate_actin_jar_on_vm)"
-base_dir="/data/experiments/240718_pw_mcgi_experiment"
+base_dir="/data/experiments/240718_pw_mcgi_experiment/actin_system"
 
 info "Running MCGI ACTIN clinical ingestion on ${base_dir}"
 
