@@ -13,5 +13,6 @@ output_dir="${run_dir}/virusbreakend"
 
 virus_interpreter_jar=$(locate_prod_virus_interpreter)
 
+# TODO (CB): Enable when virus interpreter is upgraded to v1.3
 error "Function doesn't work until virus interpreter has been upgraded to v1.3"
 #do_run_virus_interpreter ${run_dir} ${virus_interpreter_jar} ${output_dir}
