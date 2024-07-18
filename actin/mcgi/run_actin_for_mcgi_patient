@@ -27,6 +27,7 @@ java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt 
     -doid_json "${doid_json}" \
     -atc_tsv "${atc_tsv}" \
     -atc_overrides_tsv "${atc_overrides_tsv}" \
+    -feed_format "STANDARD_JSON" \
     -output_directory "${clinical_output_directory}" \
     "$@"
 
