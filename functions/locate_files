@@ -910,6 +910,10 @@ locate_peach_resource_dir() {
     echo "/data/dbs/peach"
 }
 
+locate_signatures_etiology_tsv() {
+  echo "/data/resources/public/sigs/signatures_etiology.tsv"
+}
+
 ############################### Ops Resources #################################
 
 locate_samplesheets_dir() {
