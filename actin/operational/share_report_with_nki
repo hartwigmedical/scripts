@@ -14,5 +14,6 @@ bn="$(basename $report)"
 ext="${bn#*.}"
 gsutil -q stat $report 
 [[ $? -ne 0 ]] && echo "Cannot find \"$report\"" >&2 && exit 1
-gsutil cp -n "$report" "${TARGET_BUCKET}/${hash}.${ext}"
-echo "Copied ${hash}.${ext}"
+gsutil cp -n "$report" "${TARGET_BUCKET}/${hash}.${ext}" && exit 0
+echo "Failed copying $report to ${hash}.${ext}" && exit 1
+

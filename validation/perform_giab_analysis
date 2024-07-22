@@ -1,0 +1,67 @@
+#!/bin/bash
+
+source message_functions || exit 1
+
+
+giab_run_name=$1
+output_file=$2
+
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Perform GIAB analysis for verification/validation purposes"
+    echo " Usage: $(basename $0) run_name output_file"
+    echo " Exmpl: $(basename $0) 240423_HMFregGIAB_FR34223330_GIAB12878 ./test.tsv"
+    echo "---"
+    echo " NOTE: It is advised to run this in background using nohup"
+    echo " Exmpl: nohup $(basename $0) 240423_HMFregGIAB_FR34223330_GIAB12878 ./test.tsv > verify.log &"
+    exit 1
+fi
+
+
+info "Download run data to /data/tmp/giab/"
+download_run_by_gcp_url -e -u gs://services-pipeline-output-prod-1/${giab_run_name} -d /data/tmp/giab/
+
+info "Perform verification/validation analysis"
+validate_giab_pipeline_run /data/tmp/giab/${giab_run_name} > /data/tmp/giab/verify_${giab_run_name}
+
+info "Getting and formatting results"
+# Get sample info
+barcode=$(echo ${giab_run_name} | cut -d _ -f3)
+sample_json=$(hmf_api_get "samples?barcode=${barcode}")
+yield=$(echo ${sample_json} | jq -r '.[] | .yld / 1000000000' | cut -d . -f1)
+q30=$(echo ${sample_json} | jq -r '.[] | .q30')
+name=$(echo ${sample_json} | jq -r '.[] | .name')
+
+# Get flowcell/sequencer info
+flowcell_run=""
+flowcell_run_name=""
+sequencer_type=""
+sequencer_name=""
+
+# Write output with general info
+echo -e "${barcode}\t${yield}\t${q30}\t${flowcell_run}\t${flowcell_run_name}\t${sequencer_type}\t${sequencer_name}\t${barcode}\t${name}\t\t\t${giab_run_name}" > ${output_file}
+echo "" >> ${output_file}
+
+# Get analysis info
+pipeline_version=$(hmf_api_get "runs?set_name=${giab_run_name}" | jq -r '.[] | .version')
+wgsmetrics_results_file=$(grep "WGSMetrics:" /data/tmp/giab/verify_${giab_run_name} | rev | cut -d" " -f1 | rev)
+rtgtools_results_file=$(grep "RTGTools:" /data/tmp/giab/verify_${giab_run_name} | rev | cut -d" " -f1 | rev)
+flagstat_results_file="/data/tmp/giab/${giab_run_name}/*/flagstat/*.flagstat"
+mapped=$(grep "mapped" ${flagstat_results_file} | head -n 1 | cut -d "(" -f 2 | cut -d "%" -f 1)
+
+# Write output with analysis info
+echo -e "PipelineVersion\t${pipeline_version}" >> ${output_file}
+echo -e "PipelineSetting\tSingleSample" >> ${output_file}
+echo -e "Mapped\t${mapped}" >> ${output_file}
+cat ${wgsmetrics_results_file} >> ${output_file}
+tail -n +3 ${rtgtools_results_file} >> ${output_file}
+
+info "Archive pipeline results of run ${giab_run_name}"
+gsutil -m rsync -r gs://services-pipeline-output-prod-1/${giab_run_name}/ gs://hmf-ops-archive/giab/pipelineruns/${giab_run_name}/
+
+info "Archive analysis results of run ${giab_run_name}"
+gsutil -m rsync -r /data/tmp/giab/${giab_run_name}/verification/ gs://hmf-ops-archive/giab/validation/sets/${giab_run_name}_Validation/
+
+info "Removing data ${giab_run_name}"
+rm -r /data/tmp/giab/${giab_run_name}
+rm /data/tmp/giab/verify_${giab_run_name}
