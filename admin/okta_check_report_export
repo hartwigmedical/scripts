@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+
+export_csv=$1
+
+[[ -n "${export_csv}" ]] || die "Provide path to exported syslog_query.csv file"
+
+function main() {
+    # syslog_query.csv is assumed to have two
+    email_column_index=$(head -1 < "${export_csv}" | tr "," "\n" | grep -n actor.alternate_id | cut -d":" -f1)
+    name_column_index=$(head -1 < "${export_csv}" | tr "," "\n" | grep -n actor.display_name | cut -d":" -f1)
+    while read -r line; do
+        isHartwig="FALSE"
+        email=$(cut -d "," -f "${email_column_index}" <<< "${line}" | tr '[:upper:]' '[:lower:]')
+        name=$(cut -d "," -f "${name_column_index}" <<< "${line}")
+        emailCleaned=${email//\"/}
+        nameCleaned=${name//\"/}
+        emailDomain=$(cut -d"@" -f2 <<< "${emailCleaned}")
+        if [[ "${emailDomain}" == "hartwigmedicalfoundation.nl" ]]; then
+            isHartwig="TRUE"
+        fi
+        printf "%s\t%s\t%s\t%s\n" "${emailCleaned}" "${nameCleaned}" "${emailDomain}" "${isHartwig}"
+    done < <(grep -v actor.alternate_id "${export_csv}") | sort | uniq
+}
+
+main
