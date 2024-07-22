@@ -883,7 +883,7 @@ locate_cuppa_classifier_pickle() {
 }
 
 locate_cuppa_ref_alt_sj_sites() {
-    echo "/data/resources/public/cuppa/37/alt_sj.selected_loci.tsv.gz"
+    echo "/data/resources/public/cuppa/37/alt_sj.selected_loci.37.tsv.gz"
 }
 
 locate_doid_json() {
