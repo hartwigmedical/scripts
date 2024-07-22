@@ -1887,7 +1887,7 @@ locate_virus_breakend_tsv() {
 
 ################################ VIRUS Interpreter #################################
 
-locate_virus_interpreter_data_directory() {
+\locate_virus_interpreter_data_directory() {
     local run_dir=$1
 
     virus_dir="${run_dir}/virus_interpreter"
