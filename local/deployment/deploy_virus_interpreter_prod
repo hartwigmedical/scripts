@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="1.2"
+version="1.4"
 
 do_deploy_prod_tool "virus-interpreter" ${version}
