@@ -18,5 +18,5 @@ info "Ingesting all shared data into ${actin_database_name}"
 
 java -cp ${actin_jar} com.hartwig.actin.database.historic.SharedDataLoaderApplicationKt \
     -shared_data_directory ${shared_data_directory} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -write_data_to_db ``-db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
