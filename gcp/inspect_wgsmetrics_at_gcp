@@ -23,10 +23,14 @@ main () {
         run_url=$(construct_run_url "${setname_or_gsurl}")
     fi
     metadata_file_url="${run_url}/metadata.json"
+    info "Reading metadata [${metadata_file_url}]"
     metadata_json=$(gsutil cat "${metadata_file_url}") || die "Unable to read metadata file [${metadata_file_url}]"
+
+    sample_names=()
     ref_sample_name=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
     tum_sample_name=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
-    sample_names=("${ref_sample_name}" "${tum_sample_name}")
+    [[ "${ref_sample_name}" != "null" ]] && sample_names+=("${ref_sample_name}")
+    [[ "${tum_sample_name}" != "null" ]] && sample_names+=("${tum_sample_name}")
 
     info "Performing cat for each sample in run and combining result into one table"
     (
