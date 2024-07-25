@@ -4,38 +4,58 @@ source message_functions || exit 1
 command -v datamash > /dev/null 2>&1 || die "Dependency not found (datamash)"
 command -v jq > /dev/null 2>&1 || die "Dependency not found (jq)"
 
-set=$1 && shift
+setname_or_gsurl=$1 && shift
 
-include_inis="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini|Targeted.ini|ShallowSeq.ini"
-exclude_buckets="research-pipeline-output-prod"
+INCLUDE_INIS="Somatic.ini|PipelineV5.ini|CPCT.ini|SingleSample.ini|Targeted.ini|ShallowSeq.ini"
+EXCLUDE_BUCKETS="research-pipeline-output-prod"
 
-[[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
+[[ -n "${setname_or_gsurl}" ]] || die "No set name or gs url provided. Exiting"
 
-info "Retrieving API runs [${include_inis}]"
-info "Excluding runs with certain buckets [${exclude_buckets}]"
-runs_json=$(
-  hmf_api_get "runs?set_name=${set}" | \
-  jq --arg inis "$include_inis" --arg buckets "$exclude_buckets" \
-  '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
-)
-run_count=$(jq 'length' <<< "${runs_json}")
+main () {
+    local run_url=""
+    if [[ "${setname_or_gsurl}" =~ ^gs:// ]]; then
+        info "Processing input as gs url [${setname_or_gsurl}]"
+        run_url="${setname_or_gsurl}"
+    else
+        info "Processing input as set name [${setname_or_gsurl}]"
+        info "Including runs with ini [${INCLUDE_INIS}]"
+        info "Excluding runs with bucket [${EXCLUDE_BUCKETS}]"
+        run_url=$(construct_run_url "${setname_or_gsurl}")
+    fi
+    metadata_file_url="${run_url}/metadata.json"
+    metadata_json=$(gsutil cat "${metadata_file_url}") || die "Unable to read metadata file [${metadata_file_url}]"
+    ref_sample_name=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    tum_sample_name=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
+    sample_names=("${ref_sample_name}" "${tum_sample_name}")
 
-run_json=$(jq '.[-1]' <<< "${runs_json}")
-bucket=$(jq -r '.bucket' <<< "${run_json}")
-metadata_file_url="gs://${bucket}/${set}/metadata.json"
-metadata_json=$(gsutil cat "${metadata_file_url}") || die "Unable to read metadata file [${metadata_file_url}]"
-ref_sample_name=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
-tum_sample_name=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
-sample_names=("${ref_sample_name}" "${tum_sample_name}")
+    info "Performing cat for each sample in run and combining result into one table"
+    (
+        header=$(gsutil cat "$(gsutil ls "${run_url}/*/bam_metrics/*.wgsmetrics" | head -1)" | grep GENOME)
+        printf "%s\t%s\n" "sample" "${header}"
+        for sample_name in "${sample_names[@]}"; do
+            file_url="${run_url}/${sample_name}/bam_metrics/${sample_name}.wgsmetrics"
+            wgsmetrics_info=$(gsutil cat "${file_url}" | grep -A1 GENOME | tail -1)
+            printf "%s\t%s\n" "${sample_name}" "${wgsmetrics_info}"
+        done
+    ) | datamash transpose | column -t
+}
 
-[[ -n "${bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
+construct_run_url () {
+    local set=$1 && shift
+    runs_json=$(
+      hmf_api_get "runs?set_name=${set}" | \
+      jq --arg inis "$INCLUDE_INIS" --arg buckets "$EXCLUDE_BUCKETS" \
+      '[.[] | select(.ini | test($inis)) | select(.bucket | test($buckets)|not)]'
+    )
+    run_count=$(jq 'length' <<< "${runs_json}")
+    [[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"
+    run_json=$(jq '.[-1]' <<< "${runs_json}")
+    bucket=$(jq -r '.bucket' <<< "${run_json}")
+    [[ -n "${bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
+    echo "gs://${bucket}/${set}"
+}
 
-info "Performing cat for each sample in run..."
-for sample_name in "${sample_names[@]}"; do
-    file_url="gs://${bucket}/${set}/${sample_name}/bam_metrics/${sample_name}.wgsmetrics"
-    info "WGSMetrics from ${file_url}:"
-    (printf "%s\t%s\n" "SAMPLE" "${sample_name}" && gsutil cat "${file_url}" | grep -A1 GENOME | datamash transpose) | column -t
-done
+main
 
-[[ "${run_count}" -eq 1 ]] || warn "Multiple runs were encountered for set (${run_count}). Results are from most recent run!"
+
 
