@@ -29,7 +29,7 @@ if [[ -z "${match_run}" ]]; then
 fi
 
 # KD: Not ideal, assume we can always map to "T" sample.
-actin_sample="${actin_patient}T"
+actin_sample="${patient}T"
 run_dir="$(locate_actin_molecular_directory_for_sample ${actin_sample})"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
