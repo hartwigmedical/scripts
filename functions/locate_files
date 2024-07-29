@@ -653,6 +653,25 @@ locate_actin_molecular_directory_for_sample() {
     echo "$(locate_actin_molecular_directory)/${sample}"
 }
 
+locate_most_recent_actin_molecular_sample() {
+    local patient=$1
+    local sample=""
+    local molecular_dir=""
+    for i in {9..1}; do
+        sample="${patient}T${i}"
+        molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+        if [[ -d "${molecular_dir}" ]]; then
+            break
+        fi
+    done
+
+    if [[ ! -d "${molecular_dir}" ]]; then
+        sample="${patient}T"
+    fi
+
+    echo ${sample}
+}
+
 locate_actin_patient_record_directory() {
     echo "/data/actin/patients"
 }
