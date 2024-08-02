@@ -33,4 +33,5 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
     -output_directory "${base_dir}" \
+    -personalization_data_path "${base_dir}/patientRecords.json" \
     "$@"
