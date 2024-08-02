@@ -10,6 +10,7 @@ groups=(
 "actin-development"
 "actin-operations"
 "actin-research"
+"hmf-aus"
 "bigquery-user"
 "data-access-monitor"
 "data-exchanger"
