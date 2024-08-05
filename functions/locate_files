@@ -779,7 +779,7 @@ locate_actin_personalization_jar() {
 }
 
 locate_ncr_dataset() {
-    echo "/data/patient_like_me/ncr/K23244.csv"
+    echo "/data/patient_like_me/ncr/latest/K2400223.csv"
 }
 
 ##################################### RNA ######################################
