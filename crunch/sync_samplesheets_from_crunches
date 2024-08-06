@@ -22,7 +22,7 @@ for server in sts1.prod-1 sts2.prod-1; do
         warn "Cannot process server ${server} because of unknown type!"
     fi
 
-    ssh ${server} find ${flowcells_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
+    ssh ${server} find ${flowcells_dir} "${flowcells_dir}/iseq" -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
     while read -r sheet_path; do
         run_path=$(dirname "${sheet_path}")
         run_name=$(basename "${run_path}")

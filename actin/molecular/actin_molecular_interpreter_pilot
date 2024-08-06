@@ -22,6 +22,7 @@ dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 
 output_directory="$(locate_actin_patient_record_directory)"
 
@@ -38,6 +39,7 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -tsg_dnds_database_path "${dnds_driver_likelihood_tsg}" \
     -ref_genome_fasta_file "${ref_genome_fasta_file}" \
     -ensembl_data_dir "${ensembl_data_dir}" \
+    -driver_gene_panel "${driver_gene_panel}" \
     -output_directory "${output_directory}" \
     "$@"
 

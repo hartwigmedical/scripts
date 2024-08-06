@@ -181,7 +181,7 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/4.0.1/serve.jar"
+    echo "/data/tools/serve/4.1.0/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -653,6 +653,25 @@ locate_actin_molecular_directory_for_sample() {
     echo "$(locate_actin_molecular_directory)/${sample}"
 }
 
+locate_most_recent_actin_molecular_sample() {
+    local patient=$1
+    local sample=""
+    local molecular_dir=""
+    for i in {9..1}; do
+        sample="${patient}T${i}"
+        molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+        if [[ -d "${molecular_dir}" ]]; then
+            break
+        fi
+    done
+
+    if [[ ! -d "${molecular_dir}" ]]; then
+        sample="${patient}T"
+    fi
+
+    echo ${sample}
+}
+
 locate_actin_patient_record_directory() {
     echo "/data/actin/patients"
 }
@@ -760,7 +779,7 @@ locate_actin_personalization_jar() {
 }
 
 locate_ncr_dataset() {
-    echo "/data/patient_like_me/ncr/K23244.csv"
+    echo "/data/patient_like_me/ncr/latest/K2400223.csv"
 }
 
 ##################################### RNA ######################################
@@ -883,7 +902,7 @@ locate_cuppa_classifier_pickle() {
 }
 
 locate_cuppa_ref_alt_sj_sites() {
-    echo "/data/resources/public/cuppa/37/alt_sj.selected_loci.tsv.gz"
+    echo "/data/resources/public/cuppa/37/alt_sj.selected_loci.37.tsv.gz"
 }
 
 locate_doid_json() {
@@ -908,6 +927,10 @@ locate_known_fusion_data_38_csv() {
 
 locate_peach_resource_dir() {
     echo "/data/dbs/peach"
+}
+
+locate_signatures_etiology_tsv() {
+  echo "/data/resources/public/sigs/signatures_etiology.tsv"
 }
 
 ############################### Ops Resources #################################
@@ -1028,6 +1051,10 @@ locate_public_missing_doids_mapping_tsv() {
 
 locate_private_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/curation/private_doids_mapping.tsv"
+}
+
+locate_ckb_regions_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_regions.tsv"
 }
 
 ############################### ROSE Resources ################################
