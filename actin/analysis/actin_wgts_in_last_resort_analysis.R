@@ -62,10 +62,20 @@ biopsyLocationRearranged <- rbind(row_to_move_1, row_to_move_2)
 biopsyLocationRearranged$biopsyLocationCurated <- factor(biopsyLocationRearranged$biopsyLocationCurated, levels = biopsyLocationRearranged$biopsyLocationCurated)
 biopsyLocationRearranged %>% ggplot(aes(x=count, y=biopsyLocationCurated)) + geom_bar(stat="identity") + theme_light()
 
-# clinical WIP
-patient %>% group_by(gender) %>% summarise(count=n())
-patient %>% group_by(birthYear) %>% summarise(count=n())
-clinicalStatus %>% group_by(who) %>% summarise(count=n())
+# clinical
+patientCount <- nrow(patient)
+patient %>% group_by(gender) %>% summarise(count=n(), percentage=round(n()/patientCount*100,1))
+
+patient <- patient %>% add_column(registrationYear = substr(patient$registrationDate,1,4))
+patient$registrationYear <- as.integer(patient$registrationYear)
+patient$birthYear <- as.integer(patient$birthYear)
+patient <- patient %>% add_column(ageAtRegistration = patient$registrationYear-patient$birthYear)
+
+median(patient$ageAtRegistration)
+min(patient$ageAtRegistration)
+max(patient$ageAtRegistration)
+
+clinicalStatus %>% group_by(who) %>% summarise(count=n(), percentage=round(n()/patientCount*100,1))
 
 ## DRIVERS
 #driverCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Drivers.csv"), sep = ",")
