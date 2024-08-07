@@ -51,6 +51,8 @@ main () {
     info "  ${TSV_PATH}"
     info "  ${VCF_PATH_37}"
     info "  ${VCF_PATH_38}"
+    info "Due to docker setup the output files are potentially root owned. If you are on a Hartwig VM fix with:"
+    info "  sudo chown -R ${USER}:users ${OUTPUT_DIR}"
 
     info "Finished with ${SCRIPT}"
 }
