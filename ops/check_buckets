@@ -13,6 +13,7 @@ PIPELINE5_BUCKETS=(
     rna-pipeline-output-prod-1
     services-pipeline-output-prod-1
     targeted-pipeline-output-prod-1
+    hmf-ops-cup-pto-archive
 )
 
 main () {
