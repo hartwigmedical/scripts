@@ -1,6 +1,7 @@
 library(dplyr)
 library(tibble)
 library(RMySQL)
+library(ggplot2)
 
 rm(list=ls())
 
@@ -29,31 +30,44 @@ drivers_gene_count <- dbGetQuery(dbActin, query_drivers_gene_count)
 
 dbDisconnect(dbActin)
 
-# Tumor type WIP
+# Tumor type
 tumorType <- tumor %>% group_by(primaryTumorLocation) %>% summarise(count=n()) %>%
   mutate(primaryTumorLocation = ifelse(count == 1 | count == 2, "Other (n<=2)", primaryTumorLocation)) %>%
   group_by(primaryTumorLocation) %>%
-  summarize_all(sum) 
+  summarize_all(sum) %>% 
+  arrange(count)
 
-tumorType$primaryTumorLocation <- factor(tumorType$primaryTumorLocation, levels = tumorType$primaryTumorLocation[order(tumorType$count)])
-tumorType %>% ggplot(aes(x=primaryTumorLocation, y=count)) + geom_bar(stat="identity") + coord_flip()
+row_to_move_1 <- tumorType[!is.na(tumorType$primaryTumorLocation) & tumorType$primaryTumorLocation=="Other (n<=2)", ]
+row_to_move_2 <- tumorType[!is.na(tumorType$primaryTumorLocation) & !tumorType$primaryTumorLocation == "Other (n<=2)", ]
+row_to_drop <- tumorType[is.na(tumorType$primaryTumorLocation), ]
 
-biopsyCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Biopsy location"), sep = ",")
-biopsy <- inner_join(tumor, biopsyCuration, by=c('biopsyLocation'))
+tumorTypeRearranged <- rbind(row_to_move_1, row_to_move_2)
+tumorTypeRearranged$primaryTumorLocation <- factor(tumorTypeRearranged$primaryTumorLocation, levels = tumorTypeRearranged$primaryTumorLocation)
+tumorTypeRearranged %>% ggplot(aes(x=count, y=primaryTumorLocation)) + geom_bar(stat="identity") + theme_light()
+
+# Biopsy location
+biopsyCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Biopsy location.csv"), sep = ",")
+biopsy <- left_join(tumor, biopsyCuration, by=c('biopsyLocation'))
 biopsyLocation <- biopsy %>% group_by(biopsyLocationCurated) %>% summarise(count=n()) %>%
   mutate(biopsyLocationCurated = ifelse(count == 1 | count == 2, "Other (n<=2)", biopsyLocationCurated)) %>%
   group_by(biopsyLocationCurated) %>%
-  summarize_all(sum) 
+  summarize_all(sum) %>%
+  arrange(count)
 
-biopsyLocation$biopsyLocationCurated <- factor(biopsyLocation$biopsyLocationCurated, levels = biopsyLocation$biopsyLocationCurated[order(biopsyLocation$count)])
-biopsyLocation %>% ggplot(aes(x=biopsyLocationCurated, y=count)) + geom_bar(stat="identity") + coord_flip()
+row_to_move_1 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
+row_to_move_2 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & !biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
+row_to_drop <- biopsyLocation[is.na(biopsyLocation$biopsyLocationCurated), ]
+
+biopsyLocationRearranged <- rbind(row_to_move_1, row_to_move_2)
+biopsyLocationRearranged$biopsyLocationCurated <- factor(biopsyLocationRearranged$biopsyLocationCurated, levels = biopsyLocationRearranged$biopsyLocationCurated)
+biopsyLocationRearranged %>% ggplot(aes(x=count, y=biopsyLocationCurated)) + geom_bar(stat="identity") + theme_light()
 
 # clinical WIP
 patient %>% group_by(gender) %>% summarise(count=n())
 patient %>% group_by(birthYear) %>% summarise(count=n())
 clinicalStatus %>% group_by(who) %>% summarise(count=n())
 
-## DRIVERS - WIP
+## DRIVERS
 #driverCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Drivers.csv"), sep = ",")
 #driver <- inner_join(drivers, driverCuration, by=c('inclusionMolecularEvents'))
 #arranged <- driver %>% group_by(inclusionMolecularEventsCurated) %>% summarise(count=n_distinct(patientId))

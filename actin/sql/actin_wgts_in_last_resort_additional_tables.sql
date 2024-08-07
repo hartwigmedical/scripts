@@ -42,5 +42,5 @@ SELECT * FROM (
     FROM virus
     WHERE isReportable)
     AS a
-ORDER BY 1,4,3,2
+ORDER BY 1,5,4,3,2
 );
