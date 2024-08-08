@@ -505,6 +505,19 @@ locate_next_actin_shared_data_uri_gcp() {
     echo ${final_uri}
 }
 
+locate_next_actin_shared_data_external_uri_gcp() {
+    local patient=$1 && shift
+
+    base_uri="$(locate_actin_shared_data_external_bucket)/${patient}/actin"
+    final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
+
+    if [[ -z "${final_uri}" ]]; then
+        error "Could not determine next actin shared data uri for ${sample}"
+    fi
+
+    echo ${final_uri}
+}
+
 determine_next_indexed_uri_gcp() {
     local base_uri=$1 && shift
 

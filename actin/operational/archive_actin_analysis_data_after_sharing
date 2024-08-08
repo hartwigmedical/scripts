@@ -11,7 +11,7 @@ fi
 
 shared_actin_data_uri="$(locate_next_actin_shared_data_uri_gcp ${patient})"
 
-emc_shared_data_bucket="$(locate_actin_shared_data_external_bucket)"
+shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp ${patient})"
 
 clinical_json="$(locate_actin_clinical_json_gcp ${patient})"
 treatment_match_json="$(locate_actin_treatment_match_json_gcp ${patient})"
@@ -24,9 +24,9 @@ if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_repor
     error "Missing ACTIN data, report or evaluation details for ${patient}"
 fi
 
-info "Sharing ACTIN data for ${patient} to ${emc_shared_data_bucket}"
-gsutil cp "${actin_report_pdf}" "${emc_shared_data_bucket}/"
-gsutil cp "${evaluation_details_tsv}" "${emc_shared_data_bucket}/"
+info "Sharing ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
+gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
+gsutil cp "${evaluation_details_tsv}" "${shared_actin_data_external_uri}/"
 
 info "Archiving ACTIN data for ${patient} to ${shared_actin_data_uri}"
 gsutil cp "${clinical_json}" "${shared_actin_data_uri}/"
