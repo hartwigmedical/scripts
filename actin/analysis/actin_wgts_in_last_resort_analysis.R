@@ -104,8 +104,9 @@ molecularSuccessful %>% filter(tumorMutationalLoad>=140) %>% nrow()
 head(driversGeneCount %>% add_column(percentage = round(driversGeneCount$sampleCount/n_successful_reports*100,1)),5)
 
 # High-driver likelihood WGS aberrations per gene (excluding fusions and viruses)
-driversSuccessfulHigh <- drivers %>% 
-  filter(driverLikelihood=='High' & sampleId %in% molecularSuccessful$sampleId) %>%
+driversSuccessfulHigh <- drivers %>% filter(driverLikelihood=='High' & sampleId %in% molecularSuccessful$sampleId)
+
+driversSuccessfulHighPerGene <- driversSuccessfulHigh %>%
   group_by(gene) %>%
   summarise(count=n_distinct(sampleId)) %>%
   mutate(gene = ifelse(count <= 5, "Other (n<=5)", gene)) %>%
@@ -113,11 +114,16 @@ driversSuccessfulHigh <- drivers %>%
   summarize_all(sum) %>% 
   arrange(count)
 
-rows_to_keep <- driversSuccessfulHigh[!is.na(driversSuccessfulHigh$gene) & !driversSuccessfulHigh$gene=="Other (n<=5)" & !driversSuccessfulHigh$gene =="NA", ]
-rows_to_drop <- driversSuccessfulHigh[is.na(driversSuccessfulHigh$gene) | driversSuccessfulHigh$gene=="Other (n<=5)" | driversSuccessfulHigh$gene =="NA", ]
+rows_to_keep <- driversSuccessfulHighPerGene[!is.na(driversSuccessfulHighPerGene$gene) & !driversSuccessfulHighPerGene$gene=="Other (n<=5)" & !driversSuccessfulHighPerGene$gene =="NA", ]
+rows_to_drop <- driversSuccessfulHighPerGene[is.na(driversSuccessfulHighPerGene$gene) | driversSuccessfulHighPerGene$gene=="Other (n<=5)" | driversSuccessfulHighPerGene$gene =="NA", ]
 
-driversSuccessfulHighRearranged <- rbind(rows_to_keep)
-driversSuccessfulHighRearranged$gene <- factor(driversSuccessfulHighRearranged$gene, levels = driversSuccessfulHighRearranged$gene)
-driversSuccessfulHighRearranged %>% ggplot(aes(x=count, y=gene)) + geom_bar(stat="identity") + theme_light()
+driversSuccessfulHighPerGeneRearranged <- rbind(rows_to_keep)
+driversSuccessfulHighPerGeneRearranged$gene <- factor(driversSuccessfulHighPerGeneRearranged$gene, levels = driversSuccessfulHighPerGeneRearranged$gene)
+driversSuccessfulHighPerGeneRearranged %>% ggplot(aes(x=count, y=gene)) + geom_bar(stat="identity") + theme_light()
 
+# Fusions and viruses
+driversSuccessfulHigh %>% 
+  filter(grepl('fusion', category)) %>% nrow()
 
+driversSuccessfulHigh %>% 
+  filter(grepl('virus', category)) %>% nrow()
