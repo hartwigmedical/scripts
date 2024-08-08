@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-output_dir="${run_dir}/virus_interpreter"
+output_dir="${run_dir}/virusbreakend_pilot"
 create_or_cleanup_dir ${output_dir}
 
 virus_interpreter_jar=$(locate_pilot_virus_interpreter)

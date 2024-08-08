@@ -41,7 +41,7 @@ locate_pilot_purple() {
 }
 
 locate_prod_virus_interpreter() {
-    echo "/data/tools/virus-interpreter/1.2/virus-interpreter.jar"
+    echo "/data/tools/virus-interpreter/1.5.0/virus-interpreter.jar"
 }
 
 locate_pilot_virus_interpreter() {
@@ -105,7 +105,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/3.6.0/orange.jar"
+    echo "/data/tools/orange/3.7.0/orange.jar"
 }
 
 locate_pilot_orange() {
