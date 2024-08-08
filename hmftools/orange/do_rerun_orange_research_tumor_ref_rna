@@ -33,7 +33,6 @@ cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
 driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
-signatures_etiology_tsv="$(locate_signatures_etiology_tsv)"
 
 ref_genome_version="37"
 pipeline_version_file="${run_dir}/pipeline.version"
@@ -98,7 +97,6 @@ java -jar ${orange_jar} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
-    -signatures_etiology_tsv "${signatures_etiology_tsv}" \
     -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
     -driver_gene_panel "${driver_gene_panel}" \
     -known_fusion_file "${known_fusion_file}" \
