@@ -1067,6 +1067,10 @@ locate_ckb_facility_zip_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_facility_zip.tsv"
 }
 
+locate_ckb_facility_filter_tsv(){
+    echo "/data/resources/crunch/serve/curation/ckb_facility_filter.tsv"
+}
+
 locate_ckb_drug_class_curation_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation_pilot.tsv"
 }
