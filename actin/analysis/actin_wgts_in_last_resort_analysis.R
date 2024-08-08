@@ -15,7 +15,7 @@ query_tumor <-"select * from tumor;"
 query_eligibleCohorts <-"select * from eligibleCohorts union select * from eligibleCohorts_addition;"
 query_molecular <-"select * from molecular;"
 query_drivers <- "select * from molecularDrivers;"
-query_drivers_per_sample <- "select m.sampleId, count(md.driverLikelihood) as highDriverCount from molecular m left join molecularDrivers md on m.sampleId=md.sampleId and driverlikelihood='high' where containsTumorCells=1 group by 1;"
+query_drivers_per_sample <- "select m.sampleId, count(md.driverLikelihood) as highDriverCount from molecular m left join molecularDrivers md on m.sampleId=md.sampleId and driverlikelihood='high' group by 1;"
 query_drivers_gene_count <- "select gene, count(distinct sampleId) as sampleCount from molecularDrivers where driverLikelihood='High' and sampleId in (select sampleId from molecular where containsTumorCells=1) group by 1 order by 2 desc;"
 
 sample <- dbGetQuery(dbActin, query_sample)
@@ -25,8 +25,8 @@ tumor <- dbGetQuery(dbActin, query_tumor)
 eligibleCohorts <- dbGetQuery(dbActin, query_eligibleCohorts)
 molecular <- dbGetQuery(dbActin, query_molecular)
 drivers <- dbGetQuery(dbActin, query_drivers)
-drivers_per_sample <- dbGetQuery(dbActin, query_drivers_per_sample)
-drivers_gene_count <- dbGetQuery(dbActin, query_drivers_gene_count)
+driversPerSample <- dbGetQuery(dbActin, query_drivers_per_sample)
+driversGeneCount <- dbGetQuery(dbActin, query_drivers_gene_count)
 
 dbDisconnect(dbActin)
 
@@ -82,12 +82,42 @@ clinicalStatus %>% group_by(who) %>% summarise(count=n(), percentage=round(n()/p
 #driver <- inner_join(drivers, driverCuration, by=c('inclusionMolecularEvents'))
 #arranged <- driver %>% group_by(inclusionMolecularEventsCurated) %>% summarise(count=n_distinct(patientId))
 
+# Successful WGS reports
+molecularSuccessful <- molecular %>% filter(containsTumorCells==1)
+n_successful_reports <- molecularSuccessful %>% nrow()
+
 # Driver events per sample
-median(drivers_per_sample$highDriverCount)
-min(drivers_per_sample$highDriverCount)
-max(drivers_per_sample$highDriverCount)
-drivers_per_sample %>% dplyr::filter(highDriverCount>0) %>% nrow()
+driversPerSuccessfulSample <- driversPerSample %>% filter(sampleId %in% molecularSuccessful$sampleId)
+
+median(driversPerSuccessfulSample$highDriverCount)
+min(driversPerSuccessfulSample$highDriverCount)
+max(driversPerSuccessfulSample$highDriverCount)
+driversPerSuccessfulSample %>% filter(highDriverCount>0) %>% nrow()
+
+# High TML, TMB, HRD and MSI
+molecularSuccessful %>% filter(isMicrosatelliteUnstable==1) %>% nrow()
+molecularSuccessful %>% filter(isHomologousRepairDeficient==1) %>% nrow()
+molecularSuccessful %>% filter(tumorMutationalBurden>=10) %>% nrow()
+molecularSuccessful %>% filter(tumorMutationalLoad>=140) %>% nrow()
 
 # Recurring genes in driver events (excluding fusions and viruses)
-sampleCount <- nrow(drivers_per_sample)
-head(drivers_gene_count %>% add_column(percentage = round(drivers_gene_count$sampleCount/sampleCount*100,1)),3)
+head(driversGeneCount %>% add_column(percentage = round(driversGeneCount$sampleCount/n_successful_reports*100,1)),5)
+
+# High-driver likelihood WGS aberrations per gene (excluding fusions and viruses)
+driversSuccessfulHigh <- drivers %>% 
+  filter(driverLikelihood=='High' & sampleId %in% molecularSuccessful$sampleId) %>%
+  group_by(gene) %>%
+  summarise(count=n_distinct(sampleId)) %>%
+  mutate(gene = ifelse(count <= 5, "Other (n<=5)", gene)) %>%
+  group_by(gene) %>%
+  summarize_all(sum) %>% 
+  arrange(count)
+
+rows_to_keep <- driversSuccessfulHigh[!is.na(driversSuccessfulHigh$gene) & !driversSuccessfulHigh$gene=="Other (n<=5)" & !driversSuccessfulHigh$gene =="NA", ]
+rows_to_drop <- driversSuccessfulHigh[is.na(driversSuccessfulHigh$gene) | driversSuccessfulHigh$gene=="Other (n<=5)" | driversSuccessfulHigh$gene =="NA", ]
+
+driversSuccessfulHighRearranged <- rbind(rows_to_keep)
+driversSuccessfulHighRearranged$gene <- factor(driversSuccessfulHighRearranged$gene, levels = driversSuccessfulHighRearranged$gene)
+driversSuccessfulHighRearranged %>% ggplot(aes(x=count, y=gene)) + geom_bar(stat="identity") + theme_light()
+
+
