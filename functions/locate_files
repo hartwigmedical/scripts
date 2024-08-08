@@ -1055,6 +1055,18 @@ locate_ckb_blacklist_evidences_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_blacklist_evidence.tsv"
 }
 
+locate_ckb_facility_city_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_facility_city.tsv"
+}
+
+locate_ckb_facility_name_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_facility_name.tsv"
+}
+
+locate_ckb_facility_zip_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_facility_zip.tsv"
+}
+
 locate_ckb_drug_class_curation_pilot_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_treatment_approach_curation_pilot.tsv"
 }
