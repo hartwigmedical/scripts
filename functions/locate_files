@@ -457,6 +457,11 @@ locate_actin_shared_data_bucket() {
     echo "gs://${project}-shared-data"
 }
 
+locate_actin_shared_data_external_bucket() {
+    project=${1:-actin-prod}
+    echo "gs://${project}-shared-data-external"
+}
+
 locate_actin_wgs_pipeline_bucket() {
     project=${1:-actin-prod}
     echo "gs://${project}-wgs-pipeline-output"
@@ -491,6 +496,19 @@ locate_next_actin_shared_data_uri_gcp() {
     local patient=$1 && shift
 
     base_uri="$(locate_actin_shared_data_bucket)/${patient}/actin"
+    final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
+
+    if [[ -z "${final_uri}" ]]; then
+        error "Could not determine next actin shared data uri for ${sample}"
+    fi
+
+    echo ${final_uri}
+}
+
+locate_next_actin_shared_data_external_uri_gcp() {
+    local patient=$1 && shift
+
+    base_uri="$(locate_actin_shared_data_external_bucket)/${patient}/actin"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
