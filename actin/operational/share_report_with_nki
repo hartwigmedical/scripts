@@ -2,7 +2,7 @@
 
 PROJECT="actin-nki"
 SOURCE_BUCKET="gs://${PROJECT}-analysis-pipeline-output"
-TARGET_BUCKET="gs://${PROJECT}-shared-data"
+TARGET_BUCKET="gs://${PROJECT}-shared-data-external"
 LOOKUP_CMD="$(dirname "$0")/lookup_hash_for_actin_id"
 
 [[ $# -ne 1 ]] && echo "Provide the ACTIN id for the report" >&2 && exit 1
