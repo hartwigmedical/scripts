@@ -9,6 +9,24 @@ cohortDescription varchar(500) NOT NULL,
 event varchar(50)
 );
 
+DROP TABLE IF EXISTS variant_addition;
+CREATE TABLE variant_addition (
+sampleId varchar(50) NOT NULL,
+isReportable boolean NOT NULL,
+gene varchar(50) NOT NULL,
+event varchar(500) NOT NULL,
+driverLikelihood varchar(50) NOT NULL
+);
+
+DROP TABLE IF EXISTS copyNumber_addition;
+CREATE TABLE copyNumber_addition (
+sampleId varchar(50) NOT NULL,
+isReportable boolean NOT NULL,
+gene varchar(50) NOT NULL,
+event varchar(500) NOT NULL,
+driverLikelihood varchar(50) NOT NULL
+);
+
 DROP TABLE IF EXISTS paperSamples;
 CREATE TABLE paperSamples (
 sampleId varchar(50) NOT NULL,
@@ -22,8 +40,16 @@ SELECT * FROM (
     FROM variant
     WHERE isReportable
 		UNION
+	SELECT sampleId, event, gene, driverLikelihood, "a_variant" as category
+    FROM variant_addition
+    WHERE isReportable
+		UNION
 	SELECT sampleId, event, gene, driverLikelihood, "b_copy_number" as category
     FROM copyNumber
+    WHERE isReportable
+		UNION
+	SELECT sampleId, event, gene, driverLikelihood, "b_copy_number" as category
+    FROM copyNumber_addition
     WHERE isReportable
 		UNION
 	SELECT sampleId, event, gene, driverLikelihood, "e_hom_disruptions" as category
