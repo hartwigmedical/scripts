@@ -14,7 +14,7 @@ print_usage(){
     echo "  $self 'patients/tumorsamples/COREDBxxxxxx'"
     echo "  $self 'statuses/frbarcodes/FRxxxxxx'"
     echo "Remarks:"
-    echo "  For more endpoints see https://github.com/hartwigmedical/LAMA."
+    echo "  For all endpoints see http://lama.prod-1/api/ui (or http://lama.pilot-1/api/ui)"
     echo ""
     exit 1
 }
