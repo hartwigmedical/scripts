@@ -23,15 +23,15 @@ if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_repor
     error "Missing ACTIN data, report or evaluation details for ${patient}"
 fi
 
-info "Sharing ACTIN report for ${patient} to ${shared_actin_data_external_uri}"
-gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
-
 info "Archiving ACTIN data for ${patient} to ${shared_actin_data_uri}"
 gsutil cp "${clinical_json}" "${shared_actin_data_uri}/"
 gsutil cp "${treatment_match_json}" "${shared_actin_data_uri}/"
 gsutil cp "${actin_report_pdf}" "${shared_actin_data_uri}/"
 gsutil cp "${evaluation_details_tsv}" "${shared_actin_data_uri}/"
 gsutil cp "${evaluation_summary_tsv}" "${shared_actin_data_uri}/"
+
+info "Sharing ACTIN report for ${patient} to ${shared_actin_data_external_uri}"
+gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
 
 orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${patient})"
 orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${patient})"
