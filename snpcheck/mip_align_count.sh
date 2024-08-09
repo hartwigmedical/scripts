@@ -22,6 +22,7 @@ print_usage(){
     exit 1
 }
 [[ -n "${fastq_dir}" && -n "${sample_identifier}" && -n "${output_dir}" ]] || print_usage
+[[ -d  "${output_dir}" ]] || die "Exit: Output directory does not exist [${output_dir}]"
 [[ $sample_identifier =~ $IDENTIFIER_REGEX ]] || die "Exit: unsupported chars in sample_identifier identifier [regex:${IDENTIFIER_REGEX}]"
 
 FASTQ_DIR=$(realpath "${fastq_dir}")
