@@ -31,32 +31,45 @@ driversGeneCount <- dbGetQuery(dbActin, query_drivers_gene_count)
 dbDisconnect(dbActin)
 
 # Tumor type
-tumorType <- tumor %>% group_by(primaryTumorLocation) %>% summarise(count=n()) %>%
+tumorType <- tumor %>% 
+  mutate(primaryTumorLocation = ifelse(primaryTumorType == "Neuroendocrine tumor", "Neuroendocrine (NET)", primaryTumorLocation)) %>%
+  group_by(primaryTumorLocation) %>% 
+  summarise(count=n()) %>%
   mutate(primaryTumorLocation = ifelse(count == 1 | count == 2, "Other (n<=2)", primaryTumorLocation)) %>%
   group_by(primaryTumorLocation) %>%
   summarize_all(sum) %>% 
   arrange(count)
 
-row_to_move_1 <- tumorType[!is.na(tumorType$primaryTumorLocation) & tumorType$primaryTumorLocation=="Other (n<=2)", ]
-row_to_move_2 <- tumorType[!is.na(tumorType$primaryTumorLocation) & !tumorType$primaryTumorLocation == "Other (n<=2)", ]
-row_to_drop <- tumorType[is.na(tumorType$primaryTumorLocation), ]
+tumorType %>% filter(is.na(tumorType$primaryTumorLocation)) %>% nrow()
+row_to_move_1 <- tumorType[tumorType$primaryTumorLocation=="Other (n<=2)", ]
+row_to_move_2 <- tumorType[!tumorType$primaryTumorLocation == "Other (n<=2)", ]
+
+#row_to_move_1 <- tumorType[!is.na(tumorType$primaryTumorLocation) & tumorType$primaryTumorLocation=="Other (n<=2)", ]
+#row_to_move_2 <- tumorType[!is.na(tumorType$primaryTumorLocation) & !tumorType$primaryTumorLocation == "Other (n<=2)", ]
+#row_to_drop <- tumorType[is.na(tumorType$primaryTumorLocation), ]
 
 tumorTypeRearranged <- rbind(row_to_move_1, row_to_move_2)
 tumorTypeRearranged$primaryTumorLocation <- factor(tumorTypeRearranged$primaryTumorLocation, levels = tumorTypeRearranged$primaryTumorLocation)
 tumorTypeRearranged %>% ggplot(aes(x=count, y=primaryTumorLocation)) + geom_bar(stat="identity") + theme_light()
 
 # Biopsy location
-biopsyCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Biopsy location.csv"), sep = ",")
+biopsyCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Paper Curation - Biopsy location.csv"), sep = ",")
 biopsy <- left_join(tumor, biopsyCuration, by=c('biopsyLocation'))
-biopsyLocation <- biopsy %>% group_by(biopsyLocationCurated) %>% summarise(count=n()) %>%
+biopsyLocation <- biopsy %>% 
+  group_by(biopsyLocationCurated) %>% 
+  summarise(count=n()) %>%
   mutate(biopsyLocationCurated = ifelse(count == 1 | count == 2, "Other (n<=2)", biopsyLocationCurated)) %>%
   group_by(biopsyLocationCurated) %>%
   summarize_all(sum) %>%
   arrange(count)
 
-row_to_move_1 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
-row_to_move_2 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & !biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
-row_to_drop <- biopsyLocation[is.na(biopsyLocation$biopsyLocationCurated), ]
+biopsyLocation %>% filter(is.na(biopsyLocation$biopsyLocationCurated)) %>% nrow()
+row_to_move_1 <- biopsyLocation[biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
+row_to_move_2 <- biopsyLocation[!biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
+
+#row_to_move_1 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
+#row_to_move_2 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & !biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
+#row_to_drop <- biopsyLocation[is.na(biopsyLocation$biopsyLocationCurated), ]
 
 biopsyLocationRearranged <- rbind(row_to_move_1, row_to_move_2)
 biopsyLocationRearranged$biopsyLocationCurated <- factor(biopsyLocationRearranged$biopsyLocationCurated, levels = biopsyLocationRearranged$biopsyLocationCurated)
