@@ -5,7 +5,7 @@ library(ggplot2)
 
 rm(list=ls())
 
-# Retrieve data ------------------------------------------------------------------
+# RETRIEVE DATA ------------------------------------------------------------------
 dbActin <- dbConnect(MySQL(), dbname='actin_paper', groups="RAnalysis")
 
 query_sample <-"select * from paperSamples;"
@@ -30,6 +30,7 @@ driversGeneCount <- dbGetQuery(dbActin, query_drivers_gene_count)
 
 dbDisconnect(dbActin)
 
+## CLINICAL ------------------------------------------------------------------
 # Tumor type
 tumorType <- tumor %>% 
   mutate(primaryTumorLocation = ifelse(primaryTumorType == "Neuroendocrine tumor", "Neuroendocrine (NET)", primaryTumorLocation)) %>%
@@ -75,26 +76,27 @@ biopsyLocationRearranged <- rbind(row_to_move_1, row_to_move_2)
 biopsyLocationRearranged$biopsyLocationCurated <- factor(biopsyLocationRearranged$biopsyLocationCurated, levels = biopsyLocationRearranged$biopsyLocationCurated)
 biopsyLocationRearranged %>% ggplot(aes(x=count, y=biopsyLocationCurated)) + geom_bar(stat="identity") + theme_light()
 
-# clinical
+# Gender, age & WHO
 patientCount <- nrow(patient)
+patient %>% filter(is.na(patient$gender)) %>% nrow()
 patient %>% group_by(gender) %>% summarise(count=n(), percentage=round(n()/patientCount*100,1))
 
 patient <- patient %>% add_column(registrationYear = substr(patient$registrationDate,1,4))
 patient$registrationYear <- as.integer(patient$registrationYear)
 patient$birthYear <- as.integer(patient$birthYear)
+
+patient %>% filter(is.na(patient$registrationYear)) %>% nrow()
+patient %>% filter(is.na(patient$birthYear)) %>% nrow()
 patient <- patient %>% add_column(ageAtRegistration = patient$registrationYear-patient$birthYear)
 
 median(patient$ageAtRegistration)
 min(patient$ageAtRegistration)
 max(patient$ageAtRegistration)
 
+clinicalStatus %>% filter(is.na(clinicalStatus$who)) %>% nrow()
 clinicalStatus %>% group_by(who) %>% summarise(count=n(), percentage=round(n()/patientCount*100,1))
 
-## DRIVERS
-#driverCuration <- read.csv(paste0(Sys.getenv("HOME"), "/hmf/tmp/Curation - Drivers.csv"), sep = ",")
-#driver <- inner_join(drivers, driverCuration, by=c('inclusionMolecularEvents'))
-#arranged <- driver %>% group_by(inclusionMolecularEventsCurated) %>% summarise(count=n_distinct(patientId))
-
+## MOLECULAR ------------------------------------------------------------------
 # Successful WGS reports
 molecularSuccessful <- molecular %>% filter(containsTumorCells==1)
 n_successful_reports <- molecularSuccessful %>% nrow()
