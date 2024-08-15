@@ -23,6 +23,7 @@ dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
+known_fusion_file="$(locate_known_fusion_data_37_csv)"
 
 output_directory="$(locate_actin_patient_record_directory)"
 
@@ -40,6 +41,7 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -ref_genome_fasta_file "${ref_genome_fasta_file}" \
     -ensembl_data_dir "${ensembl_data_dir}" \
     -driver_gene_panel "${driver_gene_panel}" \
+    -known_fusions_file "${known_fusion_file}" \
     -output_directory "${output_directory}" \
     "$@"
 
