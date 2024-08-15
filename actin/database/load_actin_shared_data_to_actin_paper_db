@@ -5,10 +5,13 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 actin_credentials="$(prod_writer_sql_credentials)"
-actin_jar="$(locate_actin_jar_on_vm)"
+actin_jar="/data/experiments/240722_nj_map_actin_shared_data/system-local-SNAPSHOT.jar"
 actin_database_name="actin_paper"
 
 shared_data_directory="/data/experiments/240722_nj_map_actin_shared_data/paper_samples"
+clinical_directory="/data/experiments/240722_nj_map_actin_shared_data/latest_clinical_for_paper"
+molecular_directory="/data/experiments/240722_nj_map_actin_shared_data/latest_molecular_for_paper"
+sql_molecular_post_process_file="/data/experiments/240722_nj_map_actin_shared_data/sql/molecular_post_process.sql"
 
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
@@ -18,5 +21,13 @@ info "Ingesting all shared data into ${actin_database_name}"
 
 java -cp ${actin_jar} com.hartwig.actin.database.historic.SharedDataLoaderApplicationKt \
     -shared_data_directory ${shared_data_directory} \
+    -clinical_directory ${clinical_directory} \
+    -molecular_directory ${molecular_directory} \
     -write_data_to_db -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
+
+info "Running post-processing on actin_paper database"
+
+execute_sql_on_actin_paper_writer ${sql_molecular_post_process_file}
+
+info "Done!"
