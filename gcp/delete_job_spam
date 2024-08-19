@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -e
+
+kubectl get job | awk 'match($4,/[0-9]{3}d/) {print $1}' | xargs -I {} kubectl delete job {}
