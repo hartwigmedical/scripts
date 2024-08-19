@@ -2,66 +2,103 @@
 
 source message_functions || exit 1
 
-command -v yq >/dev/null 2>&1 || die "Missing dependency yq"
+command -v jq >/dev/null 2>&1 || die "Missing dependency jq"
 
-groups=(
-"2faexempt"
-"actin"
-"actin-development"
-"actin-operations"
-"actin-research"
-"hmf-aus"
-"bigquery-user"
-"data-access-monitor"
-"data-exchanger"
-"data-exchanger-australia"
-"data-requests"
-"diagnostic-silo-support"
-"emc-production-support"
-"emc-sql-users"
-"linkage-silo-support"
-"hmftools_users"
-"onboarding"
-"operations"
-"pipeline-developer"
-"portal-support"
-"privileged"
-"production-support"
-"report-manager"
-"researcher"
-"secret-manager"
-)
+ORGANIZATION_DOMAIN="hartwigmedicalfoundation.nl"
 
-if [[ -n $1 ]]; then
-    groups=("$1")
-fi
+groupEmail=$1
 
-declare -A membersByGroup
-declare -A groupsByMember
+main () {
+    declare -A membersByGroup
+    declare -A groupsByMember
+    declare -A groupsProcessed
+    declare -a groups
 
-info "Gathering members of all ${#groups[@]} GCP groups known to this script"
-for group in "${groups[@]}"; do
-    group_email="${group}@hartwigmedicalfoundation.nl"
-    info "  Processing group ${group_email}"
-    members=$(gcloud identity groups memberships list --group-email "${group_email}" | yq -c)
-    members_csv=$(jq -sr '[.[].preferredMemberKey.id|split("@")[0]] | sort | join(",")' <<< "${members}")
-    membersByGroup[$group]="$members_csv"
-    while read -r member; do
-        existing_groups=${groupsByMember[$member]}
-        if [[ "${existing_groups}" != "" ]]; then
-            groupsByMember["$member"]="${existing_groups},${group}"
-        else
-            groupsByMember["$member"]="${group}"
-        fi
-    done < <(jq -sr '.[].preferredMemberKey.id|sub("@hartwigmedicalfoundation.nl";"";"i")' <<< "${members}")
-done
+    if [[ -n "${groupEmail}" ]]; then
+        groups=("${groupEmail}")
+    else
+        info "Retrieving groups of organization [${ORGANIZATION_DOMAIN}]"
+        groupsJson=$(getGroupsByOrganization "${ORGANIZATION_DOMAIN}")
+        readarray -t groups < <(jq -r '.groups[].groupKey.id' <<< "${groupsJson}" | sort )
 
-info "Printing members BY GROUP:"
-for group in "${!membersByGroup[@]}"; do
-    printf "%s: %s\n" "${group}" "${membersByGroup[$group]}"
-done | sort
+        for groupEmail in "${groups[@]}"; do
+            groupsProcessed[${groupEmail}]="present"
+        done
 
-info "Printing groups BY MEMBER:"
-for member in "${!groupsByMember[@]}"; do
-    printf "%s: %s\n" "${member}" "${groupsByMember[$member]}"
-done | sort
+        info "Checking for expected groups missing from the list"
+        while read -r expectedGroupEmail; do
+            if [[ ${groupsProcessed[${expectedGroupEmail}]} != "present" ]]; then
+                warn "  Group expected but missing: ${expectedGroupEmail}"
+            fi
+        done < <(getExpectedGroups)
+    fi
+
+    info "Gathering members for [${#groups[@]}] groups"
+    for group_email in "${groups[@]}"; do
+        group=$(cut -d"@" -f1 <<< "${group_email}")
+        info "  Processing group ${group_email}"
+        members=$(gcloud identity groups memberships list --group-email "${group_email}" --format=json)
+        members_csv=$(jq -r '[.[].preferredMemberKey.id|split("@")[0]] | sort | join(",")' <<< "${members}")
+        membersByGroup[$group]="${members_csv}"
+        while read -r member; do
+            existing_groups=${groupsByMember[${member}]}
+            if [[ "${existing_groups}" != "" ]]; then
+                groupsByMember["${member}"]="${existing_groups},${group}"
+            else
+                groupsByMember["${member}"]="${group}"
+            fi
+        done < <(jq -r '.[].preferredMemberKey.id|split("@")[0]' <<< "${members}")
+    done
+
+    info "Output:"
+    for group in "${!membersByGroup[@]}"; do
+        printf "GROUP %s: %s\n" "${group}" "${membersByGroup[$group]}"
+    done | sort
+    for member in "${!groupsByMember[@]}"; do
+        printf "MEMBER %s: %s\n" "${member}" "${groupsByMember[$member]}"
+    done | sort
+}
+
+getGroupsByOrganization () {
+    local organization=$1 && shift
+    gcloud identity groups search \
+        --labels="cloudidentity.googleapis.com/groups.discussion_forum" \
+        --organization "${organization}" \
+        --format=json
+}
+
+getExpectedGroups () {
+    local groups=(
+        "2faexempt"
+        "actin"
+        "actin-development"
+        "actin-operations"
+        "actin-research"
+        "hmf-aus"
+        "bigquery-user"
+        "data-access-monitor"
+        "data-exchanger"
+        "data-exchanger-australia"
+        "data-requests"
+        "diagnostic-silo-support"
+        "emc-production-support"
+        "emc-sql-users"
+        "linkage-silo-support"
+        "hmftools_users"
+        "onboarding"
+        "operations"
+        "pipeline-developer"
+        "portal-support"
+        "privileged"
+        "production-support"
+        "report-manager"
+        "researcher"
+        "secret-manager"
+        "negative-control"
+    )
+    for group in "${groups[@]}"; do
+        printf "%s@%s\n" "${group}" "${ORGANIZATION_DOMAIN}"
+    done
+}
+
+main
