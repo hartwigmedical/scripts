@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sampleBarcode=$1 && shift
+runDir=$1 && shift
+
+if [[ -z "${sampleBarcode}" ]]; then
+    error "No sample barcode provided. Exiting"
+fi
+
+if [[ -z "${runDir}" ]]; then
+    error "No run dir  provided. Exiting"
+fi
+
+gsutil cp gs://recon-cnv-test/${sampleBarcode}/recon-cnv/*.reconCNV.html gs://targeted-pipeline-output-prod-1/${runDir}/reporting
