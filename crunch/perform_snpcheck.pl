@@ -323,7 +323,7 @@ sub compareTwoSamples{
         push( @toprint_calls2, $call2 );
         
         ## only use autosomal chromosomes
-        if ( $chrom !~ m/^\d+$/ ){
+        if ( $chrom !~ m/^(chr)?\d+$/ ){
             $skipped++;
             push( @toprint_result, $NA_CHAR );
             push( @toprint_distan, $NA_CHAR );
