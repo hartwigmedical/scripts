@@ -14,11 +14,11 @@ ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
 ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
-ckb_regions_tsv="$(locate_ckb_regions_mcgi_tsv)"
+ckb_regions_tsv="$(locate_ckb_regions_actin_mcgi_tsv)"
 
 missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
-do_run_serve_research \
+do_run_serve_actin \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb_trials -ckb_dir ${ckb_dir} -ckb_blacklist_trial_tsv ${ckb_blacklist_studies_tsv} -ckb_region_tsv ${ckb_regions_tsv} \
     -use_ckb_evidence -ckb_dir ${ckb_dir} -ckb_blacklist_evidence_tsv ${ckb_blacklist_evidence_tsv} \

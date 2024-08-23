@@ -184,6 +184,10 @@ locate_research_serve() {
     echo "/data/tools/serve/5.0.0/serve.jar"
 }
 
+locate_actin_serve() {
+    echo "/data/tools/serve/5.0.0/serve.jar"
+}
+
 locate_pilot_serve() {
     echo "/data/experiments/pilot_tools/serve/serve.jar"
 }
@@ -1083,12 +1087,12 @@ locate_private_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/curation/private_doids_mapping.tsv"
 }
 
-locate_ckb_regions_tsv() {
-    echo "/data/resources/crunch/serve/curation/ckb_regions.tsv"
+locate_ckb_regions_actin_nl_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_regions_actin_nl.tsv"
 }
 
-locate_ckb_regions_mcgi_tsv() {
-    echo "/data/resources/crunch/serve/curation/ckb_regions_mcgi.tsv"
+locate_ckb_regions_actin_mcgi_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_regions_actin_mcgi.tsv"
 }
 
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+serve_jar="$(locate_actin_serve)"
+
+do_run_serve ${serve_jar} "$@"

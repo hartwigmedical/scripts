@@ -13,7 +13,7 @@ ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
 ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
-ckb_regions_tsv="$(locate_ckb_regions_tsv)"
+ckb_regions_tsv="$(locate_ckb_regions_actin_nl_tsv)"
 
 missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
