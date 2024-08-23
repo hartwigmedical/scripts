@@ -13,6 +13,7 @@ ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
 ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
+
 missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
 do_run_serve_pilot \
