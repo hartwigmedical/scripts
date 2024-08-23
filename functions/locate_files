@@ -1087,6 +1087,11 @@ locate_ckb_regions_tsv() {
     echo "/data/resources/crunch/serve/curation/ckb_regions.tsv"
 }
 
+locate_ckb_regions_mcgi_tsv() {
+    echo "/data/resources/crunch/serve/curation/ckb_regions_mcgi.tsv"
+}
+
+
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
