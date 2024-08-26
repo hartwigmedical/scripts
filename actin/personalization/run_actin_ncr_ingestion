@@ -9,7 +9,7 @@ output_file="$(locate_patient_reference_db_analysis_vm)"
 
 info "Running NCR ingestion on ${ncr_file}"
 
-java -Xmx16G -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngestionApplicationKt \
+java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngestionApplicationKt \
     -ncr_file ${ncr_file} \
     -output_file ${output_file}
 
