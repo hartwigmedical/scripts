@@ -378,16 +378,26 @@ locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
 }
 
-locate_extended_efficacy_json() {
-  echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
-}
-
 locate_dnds_driver_likelihood_onco() {
   echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_onco.tsv"
 }
 
 locate_dnds_driver_likelihood_tsg() {
   echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
+}
+
+########################## ACTIN CRC Development ###############################
+
+locate_extended_efficacy_json() {
+  echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
+}
+
+locate_crc_experiment_directory() {
+    echo "/data/experiments/240826_cb_crc_report_development"
+}
+
+locate_crc_personalization_reference_data() {
+    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_patients.json"
 }
 
 ############################### ACTIN Cohort ###################################

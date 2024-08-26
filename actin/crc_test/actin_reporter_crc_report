@@ -9,12 +9,14 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-base_dir="/data/experiments/240424_cb_crc_report"
+base_dir="$(locate_crc_experiment_directory)"
 
 patient_json="${base_dir}/${patient}.patient_record.json"
 treatment_match_json="${base_dir}/${patient}.treatment_match.json"
 
 actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN CRC Reporter on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -patient_json "${patient_json}" \
