@@ -3,7 +3,6 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-#  dd
 age=$1 && shift # In years, eg "62"
 who_status=$1 && shift # number between 0 and 5
 has_ras_mutation=$1 && shift # true or false
@@ -13,14 +12,14 @@ if [[ -z "${age}" || -z "${who_status}" || -z "${has_ras_mutation}" || -z "${met
     error "Missing parameters. Format should be 'age', 'who_status', 'has_ras_mutation', 'metastasis_locations'"
 fi
 
-ncr_dataset=$(locate_ncr_dataset)
-personalization_jar=$(locate_actin_personalization_jar)
+ncr_dataset="$(locate_ncr_dataset_analysis_vm)"
+personalization_jar="$(locate_actin_personalization_jar)"
 output_path="/data/patient_like_me/reports/personalized_demo.pdf"
 
 info "Starting personalization demo with age=${age}, who=${who_status}, ras=${has_ras_mutation}, metastases=${metastasis_locations}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.similarity.PersonalizationReportWriterApplicationKt \
-    -ncr_file ${ncr_dataset} \
+    -patient_file ${ncr_dataset} \
     -age ${age} \
     -who_status ${who_status} \
     -has_ras_mutation ${has_ras_mutation} \
