@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source database_functions || exit 1
+
+actin_credentials="$(prod_writer_sql_credentials)"
+personalization_jar="$(locate_actin_personalization_jar)"
+actin_database_name="actin_personalization"
+
+ncr_file="$(locate_ncr_dataset_analysis_vm)"
+
+db_user=$(extract_database_user "${actin_credentials}")
+db_pass=$(extract_database_password "${actin_credentials}")
+db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
+
+info "Loading $(basename ${ncr_file}) into ACTIN personalization database"
+
+java -cp ${personalization_jar} com.hartwig.actin.personalization.database.PersonalizationLoaderApplicationKt \
+    -ncr_file "${ncr_file}" \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
+

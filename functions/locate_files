@@ -818,6 +818,10 @@ locate_patient_reference_db_analysis_vm() {
     echo "/data/patient_like_me/personalization_db/patient_reference.json"
 }
 
+locate_actin_personalization_database_sql_script() {
+    echo "/data/patient_like_me/sql/generate_database.sql"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
