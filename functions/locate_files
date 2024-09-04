@@ -181,7 +181,7 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/5.0.0/serve.jar"
+    echo "/data/tools/serve/5.1.0/serve.jar"
 }
 
 locate_actin_serve() {
