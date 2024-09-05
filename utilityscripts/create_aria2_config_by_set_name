@@ -201,6 +201,17 @@ create_run_specific_files () {
             "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz"
             "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz.tbi"
             "${base_file_path}/purple/plot/${tum}.circos.png"
+            "${base_file_path}/purple/${tum}.purple.driver.catalog.germline.tsv"
+            "${base_file_path}/purple/${tum}.purple.driver.catalog.somatic.tsv"
+            "${base_file_path}/purple/${tum}.purple.germline.deletion.tsv"
+        )
+
+        local share_files=(
+            "${base_file_path}/linx/${tum}.linx.driver.catalog.tsv"
+            "${base_file_path}/linx/${tum}.linx.fusion.tsv"
+            "${base_file_path}/lilac/${tum}.lilac.tsv"
+            "${base_file_path}/lilac/${tum}.lilac.qc.tsv"
+            "${base_file_path}/chord/${tum}_chord_prediction.txt"
         )
 
     else
@@ -230,6 +241,14 @@ create_run_specific_files () {
             "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_driver_catalog") | .filepath')"
             "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_deletion") | .filepath')"
         )
+
+        local share_files=(
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "linx_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "linx_fusions") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "lilac_output") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "lilac_qc_metrics") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "chord_prediction") | .filepath')"
+        )
     fi
 
     # Final file list for SingleSample runs
@@ -256,6 +275,7 @@ create_run_specific_files () {
         "${bam2}"
         "${bam2_index}"
         "${purple_files[@]}"
+        "${share_files[@]}"
     )
 
     # Select file collection
