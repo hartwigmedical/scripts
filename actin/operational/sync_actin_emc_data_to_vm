@@ -9,8 +9,11 @@ if [[ "${curr_host}" == "prod-vm-operations" ]]; then
 fi
 
 info "Syncing ACTIN input and config data to local VM"
+
+actin_clinical_data_bucket="$(locate_actin_clinical_feed_input_bucket)/actin-1"
+
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
-gsutil -m rsync -x "^202" -r $(locate_actin_clinical_feed_input_bucket) $(locate_actin_clinical_input_feed_directory)
+gsutil -m rsync -x "^202" -r ${actin_clinical_data_bucket} $(locate_actin_clinical_input_feed_directory)
 # We need to convert the input feed to a format usable by downstream tools. This is done automatically in pipeline.
 check_and_convert_emc_clinical_data_dump $(locate_actin_clinical_input_feed_directory)
 
