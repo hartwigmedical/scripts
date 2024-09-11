@@ -261,7 +261,14 @@ sub processSample{
     elsif ( $submission eq $GIAB_VERIFICATION_SUBMISSION ) {
         $entity = $EXPERIMENT_ENTITY;
     }
-    
+
+    ## Reset submission and analysis type (read: output level) for specific batches from VHIO (Barcelona)
+    ## This makes sure no RNA pipeline will run and we can share the FASTQ
+    ## TODO: this should be handled in a better way but currently LAMA cannot tell the output level per isolate
+    if ( $entity eq "CORE_01" and $reporting_id =~ /^(BRIOME|TIL)/ and $analysis eq "RNAanalysis" ){
+        $analysis = 'FASTQ';
+    }
+
     my $use_existing_ref = $USE_EXISTING_REF;
     my $use_existing_tum = $USE_EXISTING_TUM;
     my $skip_recalculating_yield_ref = $SKIP_RECALCULATING_YIELD_REF;
@@ -312,7 +319,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            $name,
+            $reporting_id,
         );
     }
     elsif ( $analysis eq 'FASTQ' or $submission =~ /^HMFregINN/ ){
@@ -332,7 +339,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            $name,
+            $reporting_id,
         );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
@@ -351,7 +358,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            $name,
+            $reporting_id,
         );
     }
     elsif ( $analysis eq 'RNAanalysis' ){
@@ -373,7 +380,7 @@ sub processSample{
             $yield,
             $use_existing_ref,
             $skip_recalculating_yield_ref,
-            $name,
+            $reporting_id,
         );
     }
     elsif ( $analysis eq 'Somatic_T' ){
