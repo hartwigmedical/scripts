@@ -20,7 +20,7 @@ extended_efficacy_json="$(locate_extended_efficacy_json)"
 personalization_data_path="$(locate_crc_personalization_reference_data)"
 serve_directory="/data/resources/actin/serve_db_mcgi"
 
-output_directory="${base_mcgi_dir}/algo"
+output_directory="${base_mcgi_dir}/treatment_matches"
 actin_jar="/data/experiments/pw_mcgi_actin_experiment/actin_jar/actin.jar"
 
 info "Running ACTIN treatment matcher on ${patient}"
