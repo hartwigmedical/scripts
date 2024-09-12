@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+
+ORGANIZATION_ID="478829257309"
+
+function main() {
+    gcloud projects list --filter "parent.id=${ORGANIZATION_ID} AND parent.type=organization"
+}
+
+main
