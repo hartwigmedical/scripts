@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source io_functions || exit 1
 
-output_dir="/data/output/actin_output_mcgi"
+output_dir="$(locate_serve_output_actin_mcgi)"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"

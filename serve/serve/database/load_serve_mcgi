@@ -3,14 +3,14 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-serve_actionability_dir="/data/output/pilot_output_ckb_trials_and_ckb_evidence"
-serve_jar=$(locate_pilot_serve)
+serve_actionability_dir="$(locate_serve_output_actin_mcgi)"
+serve_jar=$(locate_actin_serve)
 
 credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
 db_pass=$(extract_database_password "${credentials}")
-db_url=$(construct_database_url "${credentials}" "serve_pilot")
+db_url=$(construct_database_url "${credentials}" "serve_mcgi")
 
 java -cp ${serve_jar} com.hartwig.serve.dao.LoadServeDatabase \
     -serve_actionability_dir ${serve_actionability_dir} \
