@@ -23,7 +23,7 @@ serve_directory="/data/resources/actin/serve_db_mcgi"
 output_directory="${base_mcgi_dir}/treatment_matches"
 actin_jar="/data/experiments/pw_mcgi_actin_experiment/actin_jar/actin.jar"
 
-info "Running ACTIN treatment matcher on ${patient}"
+info "Running ACTIN treatment matcher on ${mcgi_patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -patient_json ${patient_record_json} \
