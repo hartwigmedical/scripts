@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set -e
+
+new_version=$1 # eg 0.8.0-c9fe4a8
+
+#version1="0.8.0-797b8e1"
+#version2="0.8.0-c9fe4a8"
+
+source_repo_url="us-docker.pkg.dev/accelerated-compute/artifactory-4411761"
+target_repo_url="europe-west4-docker.pkg.dev/hmf-build/hmf-docker/project-x"
+tool1="bwa-mem-samtools-alignment:${new_version}"
+tool2="demux-collapser-with-metrics:${new_version}"
+tool3="read_collapser:${new_version}"
+tool4="metrics:${new_version}"
+tools=("${tool1}" "${tool2}" "${tool3}" "${tool4}")
+pull_account="sa-partner-data-share-4411761@accelerated-compute.iam.gserviceaccount.com"
+push_account="s.vanlieshout@hartwigmedicalfoundation.nl"
+
+function main() {
+
+    info "Sanity checks"
+    [[ -n "${new_version}" ]] || die "No version provided?"
+
+    info "Switching to pull account [${pull_account}]"
+    gcloud config set account "${pull_account}"
+
+    info "Listing the tools we will work on"
+    for tool in "${tools[@]}"; do
+        echo "  TOOL = $tool"
+    done
+
+    info "Docker pull step  [${source_repo_url}]"
+    for tool in "${tools[@]}"; do
+        info "Pulling [${tool}]" && docker image pull "${source_repo_url}/${tool}"
+    done
+
+    info "Docker tag step"
+    for tool in "${tools[@]}"; do
+        info "Tagging [${tool}]" && docker tag "${source_repo_url}/${tool}" "${target_repo_url}/${tool}"
+    done
+
+    info "Switching to push account [${push_account}]"
+    gcloud config set account "${push_account}"
+
+    info "Docker push step [${target_repo_url}]"
+    for tool in "${tools[@]}"; do
+        info "Pushing [${tool}]" && docker push "${target_repo_url}/${tool}"
+    done
+}
+
+main

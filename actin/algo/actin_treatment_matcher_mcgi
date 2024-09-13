@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+mcgi_patient=$1 && shift
+
+if [[ -z "${mcgi_patient}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+base_mcgi_dir="/data/experiments/pw_mcgi_actin_experiment/actin_system"
+patient_record_json="${base_mcgi_dir}/patients/${mcgi_patient}.patient_record.json"
+
+trial_database_directory="${base_mcgi_dir}/trials"
+treatment_directory="$(locate_actin_treatment_db_directory)"
+doid_json="$(locate_doid_json)"
+atc_tsv="$(locate_atc_tsv)"
+extended_efficacy_json="$(locate_extended_efficacy_json)"
+personalization_data_path="$(locate_crc_personalization_reference_data)"
+serve_directory="/data/resources/actin/serve_db_mcgi"
+
+output_directory="${base_mcgi_dir}/treatment_matches"
+actin_jar="/data/experiments/pw_mcgi_actin_experiment/actin_jar/actin.jar"
+
+info "Running ACTIN treatment matcher on ${mcgi_patient}"
+
+java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
+    -patient_json ${patient_record_json} \
+    -trial_database_directory ${trial_database_directory} \
+    -treatment_directory ${treatment_directory} \
+    -doid_json ${doid_json} \
+    -atc_tsv ${atc_tsv} \
+    -extended_efficacy_json ${extended_efficacy_json} \
+    -serve_directory "${serve_directory}" \
+    -personalization_data_path "${personalization_data_path}" \
+    -output_directory ${output_directory} \
+    "$@"

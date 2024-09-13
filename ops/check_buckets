@@ -6,7 +6,7 @@ YYMMDD=$(date +'%y%m%d')
 bucket=$1
 
 LOGGING_BUCKETS=(bcl-forensics-prod-1)
-RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod)
+RAW_BUCKETS=(bcl-input-prod-1 fastq-input-prod-1 ultima-input-prod projectx-input-prod)
 PIPELINE5_BUCKETS=(
     diagnostic-pipeline-output-prod-1
     research-pipeline-output-prod-1

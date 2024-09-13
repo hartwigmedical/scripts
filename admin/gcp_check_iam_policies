@@ -47,7 +47,6 @@ function list_projects() {
       "hmf-customer-portal"
       "hmf-database-development"
       "hmf-images"
-      "hmf-lama"
       "hmf-pipeline-development"
       "hmf-pipeline-prod-e45b00f2"
       "hmf-pmc"

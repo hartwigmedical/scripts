@@ -181,11 +181,11 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/5.0.0/serve.jar"
+    echo "/data/tools/serve/5.1.1/serve.jar"
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/5.0.0/serve.jar"
+    echo "/data/tools/serve/5.1.1/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -810,8 +810,12 @@ locate_actin_personalization_jar() {
     echo "/data/tools/actin-personalization/actin-personalization.jar"
 }
 
-locate_ncr_dataset_analysis_vm() {
+locate_latest_ncr_dataset_analysis_vm() {
     echo "/data/patient_like_me/ncr/latest/K2400223.csv"
+}
+
+locate_latest_ncr_dataset_bucket() {
+    echo "gs://hmf-crunch-actin-ncr-dataset/crc/delivery2/K2400223.csv"
 }
 
 locate_patient_reference_db_analysis_vm() {
@@ -1001,10 +1005,6 @@ locate_snpcheck_vcf_upload_dir() {
 
 ############################### SERVE Resources ################################
 
-locate_pilot_iclusion_trial_tsv() {
-    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
-}
-
 locate_prod_iclusion_trial_tsv() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_trials_prod.tsv"
 }
@@ -1013,16 +1013,8 @@ locate_latest_iclusion_trial_tsv() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_trials_latest.tsv"
 }
 
-locate_prod_iclusion_trial_tsv_pilot() {
-    echo "/data/resources/crunch/serve/iclusion/iclusion_trials_pilot.tsv"
-}
-
 locate_iclusion_filter_tsv() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_filters.tsv"
-}
-
-locate_iclusion_filter_pilot_tsv() {
-  echo "/data/resources/crunch/serve/iclusion/iclusion_filters_pilot.tsv"
 }
 
 locate_vicc_json() {
@@ -1111,6 +1103,16 @@ locate_public_missing_doids_mapping_tsv() {
 
 locate_private_missing_doids_mapping_tsv() {
     echo "/data/resources/crunch/serve/doid_mapping/private_doids_mapping.tsv"
+}
+
+################################ SERVE Output #################################
+
+locate_serve_output_actin_nl() {
+    echo "/data/output/actin_output_nl"
+}
+
+locate_serve_output_actin_mcgi() {
+    echo "/data/output/actin_output_mcgi"
 }
 
 ############################### ROSE Resources ################################

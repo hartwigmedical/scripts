@@ -49,7 +49,7 @@ FROM sample
          LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidNode GROUP BY 1) AS doidView
                    ON patient.id = doidView.patientId
          LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-         LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
+         LEFT JOIN first_treatment_after_biopsy as treatment ON treatment.patientId = sample.patientId
          LEFT JOIN
      (SELECT treatment.biopsyId,
              GROUP_CONCAT(drug.type SEPARATOR '/')      AS treatmentType,

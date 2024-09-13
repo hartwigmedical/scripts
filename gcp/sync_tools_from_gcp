@@ -32,6 +32,19 @@ chmod +x ${DIR}/trf/4.0.9/trf
 chmod +x ${DIR}/seqtk/1.4/seqtk
 
 find /data/tools/cuppa -maxdepth 1 -type d | egrep '[0-9]' | while read v; do
+    # Since CUPPA version 2.3 there is no cuppa-chart in the jar anymore
+    version=$(basename "$v")
+    major=$(cut -d"." -f1 <<< "$version")
+    minor=$(cut -d"." -f2 <<< "$version")
+    if [[ ! "${major}" =~ ^[0-9\.]+$ ]]; then
+        continue
+    elif [[ ! "${minor}" =~ ^[0-9\.]+$ ]]; then
+        continue
+    elif [[ "${major}" -gt 2 ]]; then
+        continue
+    elif [[ "${major}" -eq 2 && "${minor}" -gt 2 ]]; then
+        continue
+    fi
     if [[ ! -d ${v}/cuppa-chart ]]; then
         info "Extracting cuppa-chart for ${v}"
         unzip ${v}/cuppa.jar "cuppa-chart/*" -d ${v}
