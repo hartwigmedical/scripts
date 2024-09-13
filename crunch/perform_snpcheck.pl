@@ -259,7 +259,7 @@ sub printSampleGenotypesTable{
     my ( $storeObject, $vcfNames ) = @_;
     
     my @regions = sort keys %$storeObject;
-    my @chroms = map( $storeObject->{ $_ }{ 'chr' }, @regions );
+    my @chroms = map( $storeObject->{ $_ }{ 'chromosome' }, @regions );
     say "[INFO] Genomic position order: " . join( ", ", @regions );
     
     foreach my $vcfName ( @$vcfNames ){
@@ -311,7 +311,7 @@ sub compareTwoSamples{
         my $callField = 'gtCalls';
         $callField = 'gtCallsCollapsed' if $collapse_call;
         
-        my $chrom = $info->{ 'chr' };
+        my $chrom = $info->{ 'chromosome' };
         my $call1 = $info->{ $sample1 }{ $callField };
         my $call2 = $info->{ $sample2 }{ $callField };
         my $alleles1 = $info->{ $sample1 }{ 'alleles' };
@@ -323,7 +323,7 @@ sub compareTwoSamples{
         push( @toprint_calls2, $call2 );
         
         ## only use autosomal chromosomes
-        if ( $chrom !~ m/^(chr)?\d+$/ ){
+        if ( $chrom !~ m/^\d+$/ ){
             $skipped++;
             push( @toprint_result, $NA_CHAR );
             push( @toprint_distan, $NA_CHAR );
@@ -433,6 +433,9 @@ sub parseVcf{
         next if $_ =~ /^#/;
         my ( $chr, $pos, $id, $ref, $altString, $qual, $filter, $infoString, $formatString, $sampleString ) = split( "\t", $_ );
 
+        ## Remove potential "chr" in front of chromosome name to allow comparison of VCFs with and without
+        $chr =~ s/^chr//;
+
         ## if a list hash/dict with positions to keep was provided then filter
         next if $posToKeep and not exists $posToKeep->{ $chr }{ $pos };
         
@@ -478,7 +481,7 @@ sub parseVcf{
         
         ## store info at location->sample
         my $locationString = $chr.':'.$pos;
-        $storeObject->{ $locationString }{ 'chr' } = $chr;
+        $storeObject->{ $locationString }{ 'chromosome' } = $chr;
         $storeObject->{ $locationString }{ $name }{ 'gtCalls' } = $alleleCall;
         $storeObject->{ $locationString }{ $name }{ 'gtCallsCollapsed' } = $collapsedGenotype;
         $storeObject->{ $locationString }{ $name }{ 'alleles' } = \@calledAlleles;
