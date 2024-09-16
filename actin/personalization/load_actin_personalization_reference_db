@@ -7,7 +7,7 @@ actin_credentials="$(prod_writer_sql_credentials)"
 personalization_jar="$(locate_actin_personalization_jar)"
 actin_database_name="actin_personalization"
 
-ncr_file="$(locate_ncr_dataset_analysis_vm)"
+ncr_file="$(locate_latest_ncr_dataset_analysis_vm)"
 
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
