@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 remote_base_path="serve-vm-actin-1:$(locate_serve_output_actin_mcgi)"
 local_base_path="${HOME}/hmf/repos/actin-resources-private/serve_db_mcgi"
