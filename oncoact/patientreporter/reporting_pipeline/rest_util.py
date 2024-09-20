@@ -59,7 +59,7 @@ class RestClient:
 
         :param lookback_days the amount of days to look back for the report creation time.
         """
-        from_date = datetime.today().date() - timedelta(days=lookback_days)
+        from_date = (datetime.today().date() - timedelta(days=lookback_days)).strftime('%Y-%m-%dT%H:%M:%S')
         return _get_as_json(url=self._report_shared_url, params={'from_report_create_time': from_date})
 
     def get_all_relevant_runs(self, lookback_days=90):
