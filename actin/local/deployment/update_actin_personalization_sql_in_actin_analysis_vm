@@ -18,8 +18,8 @@ analysis_vm_name="actin-analysis-vm-${person}"
 analysis_vm_location_database_sql="${analysis_vm_name}:$(locate_actin_personalization_database_sql_script)"
 analysis_vm_location_views_sql="${analysis_vm_name}:$(locate_actin_personalization_database_views_sql_script)"
 
-if [[ ! -f "${database_sql}" ]]; then
-    error "Could not locate ACTIN-personalization sql. Exiting"
+if [[ ! -f "${database_sql}" || ! -f "${views_sql}" ]]; then
+    error "Could not locate expected sql files. Exiting."
 fi
 
 info "Copying ${database_sql} and ${views_sql} to ${analysis_vm_name}"
