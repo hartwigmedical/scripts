@@ -826,6 +826,10 @@ locate_actin_personalization_database_sql_script() {
     echo "/data/patient_like_me/sql/generate_database.sql"
 }
 
+locate_actin_personalization_database_views_sql_script() {
+    echo "/data/patient_like_me/sql/generate_views.sql"
+}
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
