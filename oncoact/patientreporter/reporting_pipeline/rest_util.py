@@ -67,7 +67,7 @@ class RestClient:
         Queries the 'runs' endpoint for all diagnostic runs and returns somatic, CPCT and targeted inis.
         :param lookback_days the amount of days to look back for.
         """
-        from_end_date = datetime.today().date() - timedelta(days=lookback_days)
+        from_end_date = (datetime.today().date() - timedelta(days=lookback_days)).strftime('%Y-%m-%dT%H:%M:%S')
 
         res = []
         for ini_type in ['CPCT', 'Somatic', 'Targeted']:
