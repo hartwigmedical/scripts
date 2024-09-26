@@ -8,10 +8,6 @@ NA="N/A"
 
 get_script="lama_api_get"
 
-declare -A classes_with_table_support=(["contact-groups"]=1 ["contract"]=1 ["hospitals"]=1 ["isolates"]=1 ["patient"]=1 ["report"]=1
-["status"]=1 ["statuses"]=1 ["tumor-sample"]=1 ["reference-sample"]=1 ["queries/consent"]=1 ["queries/database-loader"]=1
-["queries/patient-reporter"]=1 ["queries/registration"]=1 ["TUMOR_INFO"]=1)
-
 print_usage(){
     script=$(basename "$0")
     echo "---"
@@ -65,11 +61,6 @@ fi
 main(){
     api_class="${class}"
     api_filter="${filter}"
-
-    # Early check on table support
-    if [[ "${output_json}" == "FALSE" && "${classes_with_table_support["${class}"]}" -ne 1 ]]; then
-        die "Class has no table output support [${class}]"
-    fi
 
     # Reset class if needed
     if [[ "${class}" == "TUMOR_INFO" ]]; then
