@@ -7,34 +7,38 @@ source message_functions || exit 1
 NA="N/A"
 
 get_script="lama_api_get"
-classes_with_table_support=(contact-groups contract hospitals isolates patient report status statuses tumor-sample reference-sample
-queries/consent queries/database-loader queries/patient-reporter queries/registration TUMOR_INFO)
+
+declare -A classes_with_table_support=(["contact-groups"]=1 ["contract"]=1 ["hospitals"]=1 ["isolates"]=1 ["patient"]=1 ["report"]=1
+["status"]=1 ["statuses"]=1 ["tumor-sample"]=1 ["reference-sample"]=1 ["queries/consent"]=1 ["queries/database-loader"]=1
+["queries/patient-reporter"]=1 ["queries/registration"]=1 ["TUMOR_INFO"]=1)
 
 print_usage(){
     script=$(basename "$0")
     echo "---"
-    echo "Usage: $script [-j] <class> [<filter>]"
+    echo "Usage: $script [-jtd] <class> [<filter>]"
     echo "Examples:"
     echo " $script hospitals"
-    echo " $script tumor-samples"
+    echo " $script contracts"
+    echo " $script contact-groups"
     echo " $script tumor-sample ACTN01020001T"
-    echo " $script statuses"
     echo " $script statuses ACTN01020001T"
     echo " $script status isolation-barcode/FR30539000"
-    echo " $script queries/consents"
     echo " $script queries/consents ACTN01020001T"
     echo " $script queries/consent isolation-barcode/FR30539000"
+    echo " $script reports ACTN01020001T"
     echo " $script -j queries/registration isolation-barcode/FR30539000 | jq"
     echo " $script -j queries/patient-reporter isolation-barcode/FR30539000 | jq"
     echo " $script -j queries/database-loader isolation-barcode/FR30539000 | jq"
+    echo " $script TUMOR_INFO"
     echo "Options:"
     echo "  -j  Output raw api json content instead of TSV table"
     echo "  -t  Use testing/pilot environment as source instead of production"
     echo "  -d  Debug mode (print final class/filter before execution)"
     echo "Notes:"
-    echo "  - Classes with TSV table print support: ${classes_with_table_support[*]}"
-    echo "  - Use JSON output or script ${get_script} for all non-interactive use!"
-    echo "  - For all endpoints see http://lama.prod-1/api/ui (or http://lama.pilot-1/api/ui)"
+    echo "  - Options need to be provided before the query request"
+    echo "  - Always use JSON output format for all non-interactive use"
+    echo "  - For all available endpoints in PROD see http://lama.prod-1/api/ui"
+    echo "  - For all available endpoints in DEV see http://lama.pilot-1/api/ui"
     echo "---"
     exit 1
 }
@@ -49,19 +53,23 @@ while getopts ':jtd' flag; do
         d) print_debug='TRUE' ;;
         t) additional_get_params="-t";;
         *) print_usage >&2
-        exit 1 ;;
     esac
 done
 class=${*:$OPTIND:1} && shift # obligatory
 filter=${*:$OPTIND:1} && shift # optional
 
-if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "$class" || $1 == "-h"  || $1 == "--help" ]]; then
     print_usage >&2
 fi
 
 main(){
     api_class="${class}"
     api_filter="${filter}"
+
+    # Early check on table support
+    if [[ "${output_json}" == "FALSE" && "${classes_with_table_support["${class}"]}" -ne 1 ]]; then
+        die "Class has no table output support [${class}]"
+    fi
 
     # Reset class if needed
     if [[ "${class}" == "TUMOR_INFO" ]]; then
@@ -86,9 +94,10 @@ main(){
         debug "Script path: $0"
         debug "Input class: ${class}"
         debug "Input filter: ${filter}"
-        debug "Api query: ${api_query}"
+        debug "Api query: ${get_script} ${api_query}"
     fi
 
+    # Perform the GET
     json_result=$($get_script $additional_get_params "${api_query}") || die "Unable to get result for path [${api_query}]"
 
     # in case LAMA fails it sometimes returns HTML and no fail exit code so need to check content
