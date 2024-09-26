@@ -15,7 +15,8 @@ tool1="bwa-mem-samtools-alignment:${new_version}"
 tool2="demux-collapser-with-metrics:${new_version}"
 tool3="read_collapser:${new_version}"
 tool4="metrics:${new_version}"
-tools=("${tool1}" "${tool2}" "${tool3}" "${tool4}")
+tool5="metrics-with-alignment-metrics:${new_version}"
+tools=("${tool1}" "${tool2}" "${tool3}" "${tool4}" "${tool5}")
 pull_account="sa-partner-data-share-4411761@accelerated-compute.iam.gserviceaccount.com"
 push_account="s.vanlieshout@hartwigmedicalfoundation.nl"
 
