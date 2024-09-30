@@ -7,6 +7,7 @@ set -e
 #version1="0.8.0-797b8e1"
 version2="0.8.0-c9fe4a8"
 version3="0.8.0-20240926" # specifically for metrics-with-alignment-metrics
+version4="0.8.0-20240928" # specifically for metrics-with-alignment-metrics
 
 source_repo_url="us-docker.pkg.dev/accelerated-compute/artifactory-4411761"
 target_repo_url="europe-west4-docker.pkg.dev/hmf-build/hmf-docker/project-x"
@@ -14,7 +15,7 @@ tool1="bwa-mem-samtools-alignment:${version2}"
 tool2="demux-collapser-with-metrics:${version2}"
 tool3="read_collapser:${version2}"
 tool4="metrics:${version2}"
-tool5="metrics-with-alignment-metrics:${version3}"
+tool5="metrics-with-alignment-metrics:${version4}"
 tools=("${tool1}" "${tool2}" "${tool3}" "${tool4}" "${tool5}")
 pull_account="sa-partner-data-share-4411761@accelerated-compute.iam.gserviceaccount.com"
 push_account="s.vanlieshout@hartwigmedicalfoundation.nl"
