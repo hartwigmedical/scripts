@@ -1,20 +1,18 @@
 CREATE OR REPLACE VIEW datarequest_all AS
 SELECT amberAnonymous.hmfSampleId,
-       left(amberAnonymous.hmfSampleId, 9)                           as hmfPatientId,
-       CAST((right(left(sample.sampleId, 8), 2)) as DECIMAL)         as hospital,
+       left(amberAnonymous.hmfSampleId, 9)      AS hmfPatientId,
+       baseline.hospital,
        sample.cohortId,
        sample.sampleId,
-       left(sample.sampleId, 12)                                     AS patientId,
-       not (isnull(rnaStatistics.sampleId))                          as hasRNA,
-       sample.arrivalDate                                            as sampleArrivalDate,
-       sample.samplingDate,
+       sample.donorId                           AS patientId,
+       not (isnull(rnaStatistics.sampleId))     AS hasRNA,
+       specimen.arrivalDate                     AS sampleArrivalDate,
+       specimen.samplingDate,
        baseline.registrationDate,
        baseline.informedConsentDate,
        baseline.deathDate,
        baseline.primaryTumorLocation,
-       baseline.primaryTumorSubLocation,
        baseline.primaryTumorType,
-       baseline.primaryTumorSubType,
        baseline.primaryTumorExtraDetails,
        doidView.doids,
        baseline.gender,
@@ -43,20 +41,21 @@ SELECT amberAnonymous.hmfSampleId,
        purity.purity                                                 AS tumorPurity,
        purity.qcStatus                                               AS purpleQC,
        metric.sufficientCoverage                                     AS sufficientCoverage,
-       sample.allowInternalUse,
-       sample.allowExternalUseWithoutCheck,
-       sample.allowExternalUseWithCheck,
-       IF(allowExternalUseWithCheck = 1, ifnull(broadconsent, 0), 1) AS AllowExternalUseIRBchecked
+       specimen.allowInternalUse,
+       specimen.allowExternalUseWithoutCheck,
+       specimen.allowExternalUseWithCheck,
+       IF(specimen.allowExternalUseWithCheck = 1, ifnull(consentsIRBnki.broadconsent, 0), 1) AS AllowExternalUseIRBchecked
 FROM sample
+         INNER JOIN specimen ON sample.specimenId = specimen.specimenId
          INNER JOIN purity ON sample.sampleId = purity.sampleId AND purity.qcStatus = 'PASS'
          INNER JOIN metric ON sample.sampleId = metric.sampleId AND metric.sufficientCoverage = 1
          LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
          LEFT JOIN rnaStatistics on sample.sampleId = rnaStatistics.sampleId
-         LEFT JOIN baseline ON sample.patientId = baseline.patientId
-         LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidNode GROUP BY 1) AS doidView
-                   ON sample.patientId = doidView.patientId
-         LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-         LEFT JOIN first_treatment_after_biopsy as treatment ON treatment.patientId = sample.patientId
+         LEFT JOIN baseline ON specimen.patientId = baseline.patientId
+         LEFT JOIN (SELECT patientId, group_concat(doid separator ',') AS doids FROM doidNode GROUP BY 1) AS doidView
+                   ON specimen.patientId = doidView.patientId
+         LEFT JOIN biopsy ON biopsy.specimenId = specimen.specimenId
+         LEFT JOIN first_treatment_after_biopsy as treatment ON treatment.patientId = specimen.patientId
          LEFT JOIN
      (SELECT treatment.biopsyId,
              GROUP_CONCAT(drug.type SEPARATOR '/')      AS treatmentType,
@@ -66,4 +65,4 @@ FROM sample
       GROUP BY biopsyId) biopsyDrugs ON biopsy.id = biopsyDrugs.biopsyId
          LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId
          LEFT JOIN consentsIRBnki on left(sample.sampleId, 12) = consentsIRBnki.patientId
-where allowInternalUse = 1;
+WHERE allowInternalUse = 1;

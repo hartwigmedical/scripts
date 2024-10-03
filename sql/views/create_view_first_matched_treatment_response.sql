@@ -1,14 +1,9 @@
-CREATE OR REPLACE VIEW firstMatchedTreatmentResponse AS
-
+CREATE OR REPLACE view firstMatchedTreatmentResponse AS
 SELECT *
-FROM
-    treatmentResponse AS tr
-WHERE
-    NOT EXISTS (
-	    SELECT *
-			FROM treatmentResponse AS tr1
-		WHERE tr1.treatmentId = tr.treatmentId
-		AND tr1.responseDate <= tr.responseDate
-        AND tr1.id != tr.id
-	)
-	AND NOT(isnull(treatmentId));
+FROM treatmentResponse tr
+WHERE tr.treatmentId IS NOT NULL
+  AND NOT (exists(SELECT 1
+                  FROM treatmentResponse tr1
+                  WHERE tr1.treatmentId = tr.treatmentId
+                    AND tr1.responseDate <= tr.responseDate
+                    AND tr1.id <> tr.id));
