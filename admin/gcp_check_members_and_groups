@@ -94,7 +94,7 @@ getExpectedGroups () {
         "report-manager"
         "researcher"
         "secret-manager"
-        "negative-control"
+        "negative-control-should-give-warning"
     )
     for group in "${groups[@]}"; do
         printf "%s@%s\n" "${group}" "${ORGANIZATION_DOMAIN}"

@@ -181,11 +181,11 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/5.1.1/serve.jar"
+    echo "/data/tools/serve/5.2.0/serve.jar"
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/5.1.1/serve.jar"
+    echo "/data/tools/serve/5.2.0/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -824,6 +824,10 @@ locate_patient_reference_db_analysis_vm() {
 
 locate_actin_personalization_database_sql_script() {
     echo "/data/patient_like_me/sql/generate_database.sql"
+}
+
+locate_actin_personalization_database_views_sql_script() {
+    echo "/data/patient_like_me/sql/generate_views.sql"
 }
 
 ##################################### RNA ######################################
