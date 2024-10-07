@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW clinical_purity AS
 
 SELECT clinical.*,
-       lower(purity.gender) as gender,
+       if (clinical.clinicalGender != purity.gender, null, lower(purity.gender)) as gender,
        purity               AS tumorPurity,
        qcStatus             AS purpleQC
 FROM clinical
