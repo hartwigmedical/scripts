@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
+
+feed_format=$1 && shift
+
+if [[ -z "${feed_format}" ]]; then
+    error "Parameters missing. Exiting."
+fi
 
 feed_directory="$(locate_actin_clinical_input_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
