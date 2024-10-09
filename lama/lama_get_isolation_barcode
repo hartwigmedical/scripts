@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+providedId=$1
+
+# check if an id was provided
+
+if [[ -z ${providedId} ]] ; then
+	echo "Please provide a HMF id, hospital patient id or pathology number to get the corresponding sample isolation barcode(s)."
+	exit
+fi
+
+# get barcode for patient or PA id + trim non-alphabetic chars + separate barcodes by space when multiple barcodes
+isolation_barcode_patient_id=$(lama_api_get queries/isolation-barcodes/reporting-id/${providedId} 2> /dev/null | sed 's/[^a-zA-Z0-9]//g' | sed 's/F/  F/2g')
+isolation_barcode_pa_nr=$(lama_api_get queries/isolation-barcodes/pathology-nr/${providedId} 2> /dev/null | sed 's/[^a-zA-Z0-9]//g' | sed 's/F/  F/2g')
+# get patient id based on hmf id (no direct api endpoint)
+patient_id=$(lama_api_get patient/patient-id/${providedId} 2> /dev/null | jq -r | grep hospitalPatientId | sed 's/.*"hospitalPatientId": "\(.*\)".*/\1/')
+
+
+if [ $(echo $isolation_barcode_patient_id | wc -w) != 0 ]; then
+	echo -e "The isolation barcode(s) for sample with patient hospital-id ${providedId}: \033[1;32m ${isolation_barcode_patient_id} \033[00m"
+  exit
+
+elif [ $(echo $isolation_barcode_pa_nr | wc -w) != 0 ]; then
+	echo -e "The isolation barcode(s) for sample with pathology number ${providedId}: \033[1;32m ${isolation_barcode_pa_nr} \033[00m"
+	exit
+
+elif [ $(echo $patient_id | wc -w) != 0 ]; then
+  #get isolation barcode for patient id retrieved by hmf id
+  isolation_barcode_patient_id=$(lama_api_get queries/isolation-barcodes/reporting-id/${patient_id} 2> /dev/null | sed 's/[^a-zA-Z0-9]//g' | sed 's/F/  F/2g')
+  echo -e "The isolation barcode(s) for sample with HMF id ${providedId}: \033[1;32m ${isolation_barcode_patient_id} \033[00m"
+  exit
+
+else
+  echo "No isolation barcode found. Please make sure you provided a correct HMF id, hospital patient id or pathology number to get the corresponding sample isolation barcode(s)"
+  exit
+
+fi
