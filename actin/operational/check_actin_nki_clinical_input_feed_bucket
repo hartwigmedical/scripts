@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+gsutil ls -dl $(locate_actin_nki_clinical_feed_input_bucket)

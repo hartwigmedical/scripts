@@ -491,6 +491,10 @@ locate_actin_trial_database_bucket() {
     echo "gs://${project}-trial-pipeline-output"
 }
 
+locate_actin_nki_clinical_feed_input_bucket() {
+    echo "gs://actin-nki-clinical-pipeline-feed-input"
+}
+
 ############################## ACTIN Data GCP ##################################
 
 locate_next_orange_shared_data_uri_gcp() {
