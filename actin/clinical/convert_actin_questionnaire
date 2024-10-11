@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 questionnaire=$1 && shift
 
-if [[ -z ${questionnaire} ]]; then
+if [[ -z "${questionnaire}" ]]; then
     error "No questionnaire passed"
 fi
 

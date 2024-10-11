@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
-actin_clinical_ingestion_pilot
+source actin_config || exit 1
 
-reload_all_actin_clinical_pilot
+curr_host=$(hostname)
+if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
+    actin_clinical_ingestion_nki
+elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
+    actin_clinical_ingestion_emc
+    reload_all_actin_clinical_pilot
+else
+    error "Can only run actin clinical pipeline on either NKI or EMC ops vm"
+fi
