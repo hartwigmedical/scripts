@@ -38,4 +38,4 @@ for file in "${files_to_upload[@]}"; do
     info "Uploading ${file}"
     curl -u "${user}:${pass}" -T "${file}" "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/" || warn "Upload of file failed (${file})"
 done
-info "Finished with upload. See ${nextcloud_dir} at ${nextcloud_url} for results."
+info "Finished with upload. See ${nextcloud_dir} at ${nextcloud_url}/apps/files/?dir=/UPLOAD for results."
