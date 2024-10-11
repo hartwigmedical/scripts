@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source message_functions || exit 1
 source io_functions || exit 1
+source actin_config || exit 1
 
 earliest_date=$1 && shift
 patient_ids=$@
@@ -15,7 +16,7 @@ fi
 create_or_cleanup_dir ${working_dir}
 cd ${working_dir} || { echo "unable to cd to ${working_dir}"; exit 1; }
 
-clinical_data_feed_bucket="$(locate_actin_clinical_data_feed_bucket)"
+clinical_data_feed_bucket="$(locate_actin_clinical_data_feed_bucket $(production_actin_emc_project))"
 reference_string="${clinical_data_feed_bucket}/${earliest_date}/"
 info "Will clean directories starting with ${reference_string}"
 dirs_to_clean=$(gsutil ls ${clinical_data_feed_bucket} | while read dir; do

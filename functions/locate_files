@@ -437,62 +437,63 @@ locate_actin_cohort_treatment_match_directory() {
 ############################### ACTIN Buckets ##################################
 
 locate_actin_clinical_data_feed_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-clinical-data-feed"
 }
 
 locate_actin_clinical_feed_input_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-clinical-pipeline-feed-input"
 }
 
 locate_actin_clinical_curation_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-clinical-pipeline-curation-input"
 }
 
 locate_actin_clinical_output_bucket() {
+    # TODO Remove default
     project=${1:-actin-prod}
     echo "gs://${project}-clinical-pipeline-output"
 }
 
 locate_actin_trial_config_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-trial-pipeline-trial-input"
 }
 
 locate_actin_trial_status_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-trial-pipeline-status-input"
 }
 
 locate_actin_shared_data_bucket() {
+    # TODO Remove default
     project=${1:-actin-prod}
     echo "gs://${project}-shared-data"
 }
 
 locate_actin_shared_data_external_bucket() {
+    # TODO Remove default
     project=${1:-actin-prod}
     echo "gs://${project}-shared-data-external"
 }
 
 locate_actin_wgs_pipeline_bucket() {
+    # TODO Remove default
     project=${1:-actin-prod}
     echo "gs://${project}-wgs-pipeline-output"
 }
 
 locate_actin_analysis_bucket() {
+    # TODO Remove default
     project=${1:-actin-prod}
     echo "gs://${project}-analysis-pipeline-output"
 }
 
 locate_actin_trial_database_bucket() {
-    project=${1:-actin-prod}
+    project=${1} && shift
     echo "gs://${project}-trial-pipeline-output"
-}
-
-locate_actin_nki_clinical_feed_input_bucket() {
-    echo "gs://actin-nki-clinical-pipeline-feed-input"
 }
 
 ############################## ACTIN Data GCP ##################################
