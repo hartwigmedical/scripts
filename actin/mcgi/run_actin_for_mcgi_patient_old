@@ -3,6 +3,8 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
+# TODO (KD) Review if needed to keep (see also run_actin_for_mcgi_patient)
+
 patient=$1 && shift
 
 if [[ -z "${patient}" ]]; then
