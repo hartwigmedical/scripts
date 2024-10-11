@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+actin_patient=$1
+gcp_project=${2:-actin-prod}
+
+if [[ -z "${actin_patient}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline.pending \
+    --message="{\"patientId\": \"${actin_patient}\", \"trigger\": \"MANUAL\"}"

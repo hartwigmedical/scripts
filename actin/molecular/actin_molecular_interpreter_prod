@@ -4,17 +4,25 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-services_sample=$1 && shift
 actin_patient=$1 && shift
 
-if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
+if [[ -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-clinical_json="$(locate_actin_clinical_json ${actin_patient})"
+wgs_dir=$1 && shift
+orange_cmd=""
+if [[ ! -z "${wgs_dir}" ]]; then
+    full_wgs_dir="$(locate_actin_wgs_directory)/${wgs_dir}"
 
-wgs_dir="$(locate_actin_wgs_directory_for_sample ${services_sample})"
-orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
+    info "Using ORANGE json from ${full_wgs_dir}"
+    orange_json="$(locate_orange_no_germline_json ${full_wgs_dir})"
+    orange_cmd="-orange_json ${orange_json}"
+else
+    info "Assuming no WGS has been performed for ${actin_patient}"
+fi
+
+clinical_json="$(locate_actin_clinical_json ${actin_patient})"
 
 serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"
@@ -29,11 +37,11 @@ output_directory="$(locate_actin_patient_record_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
-info "Running ACTIN molecular interpreter on ${actin_patient} using ${services_sample}"
+info "Running ACTIN molecular interpreter on ${actin_patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \
-    -orange_json "${orange_json}" \
+    "${orange_cmd}" \
     -serve_directory "${serve_directory}" \
     -doid_json "${doid_json}" \
     -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \

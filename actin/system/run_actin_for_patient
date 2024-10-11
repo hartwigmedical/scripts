@@ -9,9 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-sample=$(locate_most_recent_actin_molecular_sample ${patient})
-
-actin_molecular_interpreter_pilot ${sample} ${patient} "$@"
+actin_molecular_interpreter_prod ${patient} "$@"
 
 echo ""
 
