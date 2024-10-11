@@ -16,7 +16,7 @@ info "Syncing trial config..."
 gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
 
 info "Syncing trial status..."
-gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_config_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
+gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
 
 info "Syncing clinical input..."
 gsutil -m rsync -x "^202" -r $(locate_actin_clinical_feed_input_bucket ${gcp_project}) $(locate_actin_clinical_input_feed_directory)
