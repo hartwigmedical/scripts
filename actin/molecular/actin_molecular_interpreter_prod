@@ -41,7 +41,7 @@ info "Running ACTIN molecular interpreter on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \
-    "${orange_cmd}" \
+    ${orange_cmd} \
     -serve_directory "${serve_directory}" \
     -doid_json "${doid_json}" \
     -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \
