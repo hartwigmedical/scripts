@@ -3,25 +3,35 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-curr_host=$(hostname)
-if [[ "${curr_host}" == "prod-vm-operations" ]]; then
-    error "ACTIN data is not supposed to synced to the prod VM"
-fi
+info "Syncing ACTIN input and config data to $(hostname)}"
 
-info "Syncing ACTIN input and config data to local VM"
+info "Cleaning up local data"
+rm -r "$(locate_actin_clinical_curation_directory)/*"
+rm -r "$(locate_actin_trial_config_directory)/*"
+rm -r "$(locate_actin_trial_status_directory)/*"
+rm -r "$(locate_actin_clinical_input_feed_directory)/*"
+rm -r "$(locate_actin_curated_clinical_directory)/*"
 
 gcp_project=$(production_actin_emc_project)
-actin_clinical_data_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})/actin-1"
+
+actin_clinical_input_feed_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})/actin-1"
 
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
-gsutil -m rsync -x "^202" -r ${actin_clinical_data_bucket} $(locate_actin_clinical_input_feed_directory)
+info "Syncing clinical curation config..."
+gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
+
+info "Syncing clinical input..."
+gsutil -m rsync -x "^202" -r ${actin_clinical_input_feed_bucket} $(locate_actin_clinical_input_feed_directory)
 # We need to convert the input feed to a format usable by downstream tools. This is done automatically in pipeline.
 check_and_convert_emc_clinical_data_dump $(locate_actin_clinical_input_feed_directory)
 
-gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
+info "Syncing trial config..."
 gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
 
-gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
-gsutil -m rsync -r $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
+info "Syncing trial status..."
+gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
+
+info "Syncing clinical output..."
+gsutil -m rsync -x "^202" -r $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
 
 info "Done"

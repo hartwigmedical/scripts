@@ -6,6 +6,13 @@ source actin_config || exit 1
 
 info "Syncing ACTIN NKI input and config data to $(hostname)"
 
+info "Cleaning up local data"
+rm -r "$(locate_actin_clinical_curation_directory)/*"
+rm -r "$(locate_actin_trial_config_directory)/*"
+rm -r "$(locate_actin_trial_status_directory)/*"
+rm -r "$(locate_actin_clinical_input_feed_directory)/*"
+rm -r "$(locate_actin_curated_clinical_directory)/*"
+
 gcp_project=$(production_actin_nki_project)
 
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
