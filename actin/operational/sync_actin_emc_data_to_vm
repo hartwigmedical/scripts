@@ -22,6 +22,6 @@ gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_proje
 gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
 
 gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
-gsutil -m rsync -r $(locate_actin_ctc_config_bucket ${gcp_project}) $(locate_actin_ctc_config_directory)
+gsutil -m rsync -r $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
 
 info "Done"

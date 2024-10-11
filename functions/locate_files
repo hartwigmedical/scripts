@@ -354,8 +354,8 @@ locate_actin_trial_config_directory() {
     echo "/data/actin/input/trial_config"
 }
 
-locate_actin_ctc_config_directory() {
-    echo "/data/actin/input/ctc_config"
+locate_actin_trial_status_directory() {
+    echo "/data/actin/input/trial_status"
 }
 
 locate_actin_serve_db() {
@@ -461,7 +461,7 @@ locate_actin_trial_config_bucket() {
     echo "gs://${project}-trial-pipeline-trial-input"
 }
 
-locate_actin_ctc_config_bucket() {
+locate_actin_trial_status_bucket() {
     project=${1:-actin-prod}
     echo "gs://${project}-trial-pipeline-status-input"
 }

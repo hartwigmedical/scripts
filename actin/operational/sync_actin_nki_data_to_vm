@@ -9,12 +9,20 @@ info "Syncing ACTIN NKI input and config data to $(hostname)"
 gcp_project=$(production_actin_nki_project)
 
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
-gsutil -m rsync -x "^202" -r $(locate_actin_clinical_feed_input_bucket ${gcp_project}) $(locate_actin_clinical_input_feed_directory)
+info "Syncing clinical curation config..."
 gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
+
+info "Syncing trial config..."
 gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
 
-gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
-gsutil -m rsync -r $(locate_actin_ctc_config_bucket ${gcp_project}) $(locate_actin_ctc_config_directory)
+info "Syncing trial status..."
+gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_config_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
+
+info "Syncing clinical input..."
+gsutil -m rsync -x "^202" -r $(locate_actin_clinical_feed_input_bucket ${gcp_project}) $(locate_actin_clinical_input_feed_directory)
+
+info "Syncing clinical output..."
+gsutil -m rsync -x "^202" -r $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
 
 info "Done"
 
