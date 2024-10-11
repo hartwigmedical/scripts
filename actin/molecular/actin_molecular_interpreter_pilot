@@ -13,8 +13,8 @@ fi
 
 clinical_json="$(locate_actin_clinical_json ${actin_patient})"
 
-molecular_dir="$(locate_actin_molecular_directory_for_sample ${services_sample})"
-orange_json="$(locate_orange_no_germline_json ${molecular_dir})"
+wgs_dir="$(locate_actin_wgs_directory_for_sample ${services_sample})"
+orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
 
 serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"

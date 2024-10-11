@@ -671,31 +671,23 @@ locate_actin_clinical_json() {
     echo "${clinical_json}"
 }
 
-locate_actin_wgs_pipeline_output_directory() {
+locate_actin_wgs_directory() {
     echo "/data/actin/wgs_pipeline_output"
 }
 
-locate_actin_wts_pipeline_output_directory() {
-    echo "/data/actin/wts_pipeline_output"
-}
-
-locate_actin_molecular_directory() {
-    echo "/data/actin/molecular"
-}
-
-locate_actin_molecular_directory_for_sample() {
+locate_actin_wgs_directory_for_sample() {
     local sample=$1 && shift
 
-    echo "$(locate_actin_molecular_directory)/${sample}"
+    echo "$(locate_actin_wgs_directory)/${sample}"
 }
 
-locate_most_recent_actin_molecular_sample() {
+locate_most_recent_actin_wgs_sample() {
     local patient=$1
     local sample=""
     local molecular_dir=""
     for i in {9..1}; do
         sample="${patient}T${i}"
-        molecular_dir=$(locate_actin_molecular_directory_for_sample ${sample})
+        molecular_dir=$(locate_actin_wgs_directory_for_sample ${sample})
         if [[ -d "${molecular_dir}" ]]; then
             break
         fi
@@ -706,6 +698,10 @@ locate_most_recent_actin_molecular_sample() {
     fi
 
     echo ${sample}
+}
+
+locate_actin_wts_directory() {
+    echo "/data/actin/wts_pipeline_output"
 }
 
 locate_actin_patient_record_directory() {

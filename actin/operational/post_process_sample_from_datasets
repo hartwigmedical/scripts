@@ -17,7 +17,7 @@ fi
 
 info "Running ACTIN molecular post-process on ${sample}"
 
-run_dir="$(locate_actin_molecular_directory_for_sample ${sample})"
+run_dir="$(locate_actin_wgs_directory_for_sample ${sample})"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
     rm -r "${run_dir}"
