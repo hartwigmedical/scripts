@@ -362,8 +362,12 @@ locate_actin_serve_db() {
     echo "/data/resources/actin/serve_db"
 }
 
-locate_actin_known_genes_tsv() {
-    echo "/data/resources/actin/serve_db/37/KnownGenes.SERVE.37.tsv"
+locate_actin_serve_db_37_json() {
+    echo "$(locate_actin_serve_db)/serve.37.json"
+}
+
+locate_actin_serve_db_38_json() {
+    echo "$(locate_actin_serve_db)/serve.38.json"
 }
 
 locate_actin_rna_sample_metadata_file() {
