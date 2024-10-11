@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Running serve actin for MCGI"
+run_serve_actin_for_mcgi
+
+info "Running serve actin for NL"
+run_serve_actin_for_nl
