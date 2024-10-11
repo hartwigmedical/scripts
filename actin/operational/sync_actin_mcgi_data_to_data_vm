@@ -3,13 +3,11 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-curr_host=$(hostname)
-
-if [[ "${curr_host}" == "prod-vm-operations" ]]; then
-    error "ACTIN data is not supposed to synced to the prod VM"
+if [[ "$(hostname)" != "data-vm-prod-2" ]]; then
+    error "ACTIN MCGI data is supposed to synced to data-vm"
 fi
 
-info "Syncing ACTIN MCGI input and config data to local VM"
+info "Syncing ACTIN MCGI input and config data to $(hostname)"
 
 mcgi_vm_dir="/data/experiments/pw_mcgi_actin_experiment"
 
