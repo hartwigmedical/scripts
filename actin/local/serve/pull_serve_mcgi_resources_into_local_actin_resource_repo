@@ -2,8 +2,9 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source actin_config || exit 1
 
-remote_base_path="serve-vm-actin-1:$(locate_serve_output_actin_mcgi)"
+remote_base_path="$(production_actin_serve_vm):$(locate_serve_output_actin_mcgi)"
 local_base_path="${HOME}/hmf/repos/actin-resources-private/serve_db_mcgi"
 
 info "Pulling SERVE resources from ${remote_base_path} into ${local_base_path}"
