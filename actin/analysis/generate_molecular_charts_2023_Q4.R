@@ -7,7 +7,7 @@ library(grid)
 library(gridExtra)
 library(DBI)
 library(RMySQL)
-dbConnect <- dbConnect(MySQL(), dbname='actin_pilot', groups="RAnalysis")
+dbConnect <- dbConnect(MySQL(), dbname='actin_emc_phase1', groups="RAnalysis")
 
 ## Count of CUP patients
 queryCUPCount <- "
@@ -17,7 +17,7 @@ inner join molecular m on m.patientId=t.patientId
 left join variant v on v.sampleId=m.sampleId
 where primaryTumorSubLocation = 'CUP' and containsTumorCells"
 queryCUPCountResult <- dbGetQuery(dbConnect, queryCUPCount)
-CUPpatients=as.integer(count(queryCUPCountResult))
+CUPpatients <- as.integer(count(queryCUPCountResult))
 
 ## Count of LR patients
 queryLRCount <- "
@@ -27,7 +27,7 @@ inner join molecular m on m.patientId=t.patientId
 left join variant v on v.sampleId=m.sampleId
 where primaryTumorSubLocation != 'CUP' and primaryTumorSubLocation is not null and containsTumorCells"
 queryLRCountResult <- dbGetQuery(dbConnect, queryLRCount)
-LRpatients=as.integer(count(queryLRCountResult))
+LRpatients <- as.integer(count(queryLRCountResult))
 
 ## Count of Altered Genes in entire cohort (Reportable)
 queryGeneCount <- "select 
