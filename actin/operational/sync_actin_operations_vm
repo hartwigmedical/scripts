@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 
+source actin_config || exit 1
 source message_functions || exit 1
-source locate_files || exit 1
+
+#gcp_project=""
+#clinical_feed_input_buck
+#if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
+#    gcp_project=$(production_actin_nki_project)
+#elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
+#    gcp_project=$(production_actin_emc_project)
+#else
+#    error "Can only run actin trial creation pipeline on either NKI or EMC ops vm"
+#fi
 
 set -e
 
