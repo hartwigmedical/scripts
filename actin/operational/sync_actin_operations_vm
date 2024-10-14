@@ -3,32 +3,12 @@
 source actin_config || exit 1
 source message_functions || exit 1
 
-#gcp_project=""
-#clinical_feed_input_buck
-#if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
-#    gcp_project=$(production_actin_nki_project)
-#elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
-#    gcp_project=$(production_actin_emc_project)
-#else
-#    error "Can only run actin trial creation pipeline on either NKI or EMC ops vm"
-#fi
-
-set -e
-
-gcp_project=${1:-actin-prod}
-
-info "Syncing ACTIN wgs pipeline output from GCP"
-gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_directory)
-gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" gs://${gcp_project}-wgs-pipeline-output-diagnostic/ /data/actin/wgs_pipeline_output_diagnostic
-
-info "Syncing ACTIN input data from GCP"
-gsutil -m rsync -r -d $(locate_actin_clinical_feed_input_bucket ${gcp_project}) $(locate_actin_clinical_input_feed_directory)
-gsutil -m rsync -r -d $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
-gsutil -m rsync -r -d $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
-gsutil -m rsync -r -d $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
-gsutil -m rsync -r -d $(locate_actin_trial_database_bucket ${gcp_project}) $(locate_actin_trial_database_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/molecular/ $(locate_actin_patient_record_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/treatment_match/ $(locate_actin_treatment_match_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/reports/ $(locate_actin_reports_directory)
-
-info "Done"
+if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
+    do_sync_actin_nki_input_data_to_vm
+    do_sync_actin_output_data_to_vm
+elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
+    do_sync_actin_emc_input_data_to_vm
+    do_sync_actin_output_data_to_vm
+else
+    error "Can only sync to EMC or NKI operations VM"
+fi

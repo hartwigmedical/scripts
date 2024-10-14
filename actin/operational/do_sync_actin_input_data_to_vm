@@ -11,25 +11,19 @@ if [[ -z "${gcp_project}" || -z "${actin_clinical_input_feed_bucket}" ]]; then
     error "Missing parameters. Exiting"
 fi
 
-info "Syncing ACTIN input and config data to $(hostname)}"
-
-info "Cleaning up local data"
-rm -r $(locate_actin_trial_config_directory)/*
-rm -r $(locate_actin_trial_status_directory)/*
-rm -r $(locate_actin_clinical_input_feed_directory)/*
-rm -r $(locate_actin_clinical_curation_directory)/*
+info "Syncing ACTIN input and config data for ${gcp_project} to $(hostname)}"
 
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
 info "Syncing trial config..."
-gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
+gsutil -m rsync -x "^202" -r -d $(locate_actin_trial_config_bucket ${gcp_project}) $(locate_actin_trial_config_directory)
 
 info "Syncing trial status..."
-gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
+gsutil -m rsync -x "^202" -r -d $(locate_actin_trial_status_bucket ${gcp_project}) $(locate_actin_trial_status_directory)
 
 info "Syncing clinical input..."
-gsutil -m rsync -x "^202" -r ${actin_clinical_input_feed_bucket} $(locate_actin_clinical_input_feed_directory)
+gsutil -m rsync -x "^202" -r -d ${actin_clinical_input_feed_bucket} $(locate_actin_clinical_input_feed_directory)
 
 info "Syncing clinical curation config..."
-gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
+gsutil -m rsync -x "^202" -r -d $(locate_actin_clinical_curation_bucket ${gcp_project}) $(locate_actin_clinical_curation_directory)
 
 info "Done"

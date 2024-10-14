@@ -489,6 +489,11 @@ locate_actin_wgs_pipeline_bucket() {
     echo "gs://${gcp_project}-wgs-pipeline-output"
 }
 
+locate_actin_wgs_diagnostic_pipeline_bucket() {
+    gcp_project=$1 && shift
+    echo "gs://${gcp_project}-wgs-pipeline-output-diagnostic"
+}
+
 locate_actin_analysis_bucket() {
     # TODO (KD) Remove default
     gcp_project=${1:-actin-prod}
@@ -703,6 +708,10 @@ locate_most_recent_actin_wgs_sample() {
     fi
 
     echo ${sample}
+}
+
+locate_actin_wgs_diagnostic_directory() {
+    echo "/data/actin/wgs_pipeline_output_diagnostic"
 }
 
 locate_actin_wts_directory() {
