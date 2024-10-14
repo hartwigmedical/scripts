@@ -13,8 +13,6 @@ source_bucket="gs://${gcp_project}-analysis-pipeline-output"
 target_bucket="gs://${gcp_project}-shared-data-external"
 lookup_cmd="$(dirname "$0")/lookup_nki_hash_for_actin_id"
 
-[[ $# -ne 1 ]] && echo "Provide the ACTIN id for the report" >&2 && exit 1
-
 report="${source_bucket}/report/${patient}.actin.pdf"
 
 hash="$(${lookup_cmd} "${patient}")"
