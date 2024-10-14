@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+########################## ACTIN GCP projects and VMs #########################
+
 pilot_actin_project() {
     echo "hmf-crunch"
 }
@@ -30,4 +32,10 @@ production_actin_serve_vm() {
 
 production_actin_serve_project() {
     echo "hmf-crunch"
+}
+
+################################ ACTIN Databases ##############################
+
+emc_phase1_sql_database_name() {
+    echo "actin_emc_phase1"
 }
