@@ -15,5 +15,7 @@ if [[ ! -d "${local_dir}" ]]; then
 fi
 
 orange_report="$(locate_actin_orange_germline_pdf_gcp ${patient})"
+orange_report_file_name="$(echo $(basename "${orange_report}"))"
+preferred_orange_report_file_name="${patient}_${orange_report_file_name}"
 
-gsutil cp ${orange_report} ${local_dir}
+gsutil cp ${orange_report} ${local_dir}/${preferred_orange_report_file_name}

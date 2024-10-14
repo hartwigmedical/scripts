@@ -13,8 +13,9 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 sample_with_cancertype="$(cat $(locate_actin_rna_sample_metadata_file) | grep ${sample})"
 
-if [[ -z ${sample_with_cancertype} ]]; then
-    error "Sample ${sample} not present in ACTIN rna sample metadata file. Exiting"
+if [[ -z "${sample_with_cancertype}" ]]; then
+    info "Sample ${sample} not present in ACTIN rna sample metadata file. Exiting"
+    exit 0
 fi
 
 download_isofox_to_run_dir ${run_dir}

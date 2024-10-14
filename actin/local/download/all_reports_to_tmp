@@ -10,7 +10,5 @@ if [[ -z "${patient}" ]]; then
 fi
 
 actin_report_to_tmp ${patient}
-
-sample=$(locate_sequenced_sample_for_actin_patient_gcp ${patient})
-orange_germline_actin_to_tmp ${sample}
-orange_no_germline_actin_to_tmp ${sample}
+orange_germline_actin_to_tmp ${patient}
+orange_no_germline_actin_to_tmp ${patient}
