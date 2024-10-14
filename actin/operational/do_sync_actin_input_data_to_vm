@@ -11,7 +11,7 @@ if [[ -z "${gcp_project}" || -z "${actin_clinical_input_feed_bucket}" ]]; then
     error "Missing parameters. Exiting"
 fi
 
-info "Syncing ACTIN input and config data for ${gcp_project} to $(hostname)}"
+info "Syncing ACTIN input and config data for ${gcp_project} to $(hostname)"
 
 # We exclude files starting with e.g. 2024 since they contain diffs between updates and we are interested in just the latest.
 info "Syncing trial config..."
