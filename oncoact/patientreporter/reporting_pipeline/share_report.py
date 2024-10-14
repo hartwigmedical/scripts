@@ -269,7 +269,6 @@ class ReportSharer:
                                                              'wgs_preparation_fail',
                                                              'wgs_preparation_fail_corrected_internal',
                                                              'wgs_preparation_fail_corrected_external',
-                                                             'wgs_tumor_processing_issue',
                                                              'wgs_tumor_processing_issue_corrected_internal',
                                                              'wgs_tumor_processing_issue_corrected_external',
                                                              'wgs_pipeline_fail',
