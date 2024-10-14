@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+
+core_db_nr=$1 && shift
+
+if [[ -z "${core_db_nr}" ]]; then
+    error "This script takes a COREDB T-number as an argument"
+fi
+
+patient_id=$(lama -j patient "${core_db_nr}" | jq .'hospitalPatientId' | tr -d '"')
+salt=$(gcloud secrets versions access "latest" --secret="nki-secret-salt" --project=$(production_actin_nki_project))
+to_hash="${patient_id}"_"${salt}"
+hashed_id=$(echo -n "${to_hash}" | openssl dgst -binary -sha256 | openssl base64 -A)
+hashed_id=${hashed_id/+/-}
+hashed_id=${hashed_id/\//_}
+
+echo -e "IDs that you might need:"
+echo -e " CORE-DB numer:\t${core_db_nr}"
+echo -e " Patient ID:\t${patient_id}"
+echo -e " Hashed ID:\t${hashed_id}"

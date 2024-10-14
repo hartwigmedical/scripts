@@ -5,7 +5,7 @@ source message_functions || exit 1
 source actin_config || exit 1
 
 if [[ $(hostname) != "data-vm-prod-2" ]]; then
-    error "EMC sync is only supported on data-vm-prod-2"
+    error "EMC data-vm sync is only supported on data-vm-prod-2"
 fi
 
 actin_clinical_input_feed_bucket="$(locate_actin_clinical_feed_input_bucket $(production_actin_emc_project))/actin-1"
