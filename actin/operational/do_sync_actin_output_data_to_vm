@@ -12,9 +12,8 @@ fi
 
 info "Syncing ACTIN wgs pipeline output for ${gcp_project} to $(hostname)"
 
-wgs_sync_command="gsutil -m rsync -r -d -x \".*\.bam$|.*\.cram$\""
-${wgs_sync_command} $(locate_actin_wgs_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_directory)
-${wgs_sync_command} $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_diagnostic_directory)
+gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_directory)
+gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_diagnostic_directory)
 
 info "Syncing ACTIN output data from for ${gcp_project} to $(hostname)"
 gsutil -m rsync -r -d $(locate_actin_trial_database_bucket ${gcp_project}) $(locate_actin_trial_database_directory)
