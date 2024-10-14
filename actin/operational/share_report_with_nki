@@ -17,7 +17,7 @@ lookup_cmd="$(dirname "$0")/lookup_nki_hash_for_actin_id"
 
 report="${source_bucket}/report/${patient}.actin.pdf"
 
-hash="$(lookup_cmd "${patient}")"
+hash="$(${lookup_cmd} "${patient}")"
 bn="$(basename ${report})"
 ext="${bn#*.}"
 gsutil -q stat ${report}
