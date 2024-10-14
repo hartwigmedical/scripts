@@ -16,6 +16,7 @@ gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket
 gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_diagnostic_directory)
 
 info "Syncing ACTIN output data from for ${gcp_project} to $(hostname)"
+gsutil -m rsync -r -d $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
 gsutil -m rsync -r -d $(locate_actin_trial_database_bucket ${gcp_project}) $(locate_actin_trial_database_directory)
 gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/molecular/ $(locate_actin_patient_record_directory)
 gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/treatment_match/ $(locate_actin_treatment_match_directory)
