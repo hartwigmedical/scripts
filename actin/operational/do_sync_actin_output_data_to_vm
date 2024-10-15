@@ -43,6 +43,11 @@ treatment_match_directory=$(locate_actin_treatment_match_directory)
 create_or_cleanup_dir ${treatment_match_directory}
 gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/algo/ ${treatment_match_directory}
 
+info "Syncing ACTIN evaluation output..."
+evaluation_directory=$(locate_actin_evaluation_directory)
+create_or_cleanup_dir ${evaluation_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/evaluation/ ${evaluation_directory}
+
 info "Syncing ACTIN reports..."
 reports_directory=$(locate_actin_reports_directory)
 create_or_cleanup_dir ${reports_directory}
