@@ -4,7 +4,7 @@ source message_functions || exit 1
 source locate_files || exit 1
 source actin_functions || exit 1
 
-dir=$(locate_actin_clinical_curation_directory)
+dir=$(locate_actin_curated_clinical_directory)
 
 info "Renaming NKI clinical records in ${dir}"
 
