@@ -8,6 +8,8 @@ if [[ -z "${dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
+info "Cleaning and converting EMC clinical data in ${dir}"
+
 digital_file_tsv="${dir}/digital_file.tsv"
 patient_tsv="${dir}/patient.tsv"
 vital_function_tsv="${dir}/vital_function.tsv"
