@@ -5,12 +5,11 @@ source locate_files || exit 1
 source io_functions || exit 1
 
 patient=$1 && shift
+clinical_json=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${clinical_json}" ]]; then
     error "Parameters missing. Exiting."
 fi
-
-clinical_json="$(locate_actin_clinical_json ${patient})"
 
 wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
 orange_cmd=""

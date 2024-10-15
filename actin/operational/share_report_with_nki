@@ -11,11 +11,10 @@ fi
 gcp_project=$(production_actin_nki_project)
 source_bucket="gs://${gcp_project}-analysis-pipeline-output"
 target_bucket="gs://${gcp_project}-shared-data-external"
-lookup_cmd="$(dirname "$0")/lookup_nki_hash_for_actin_id"
 
 report="${source_bucket}/report/${patient}.actin.pdf"
 
-hash="$(${lookup_cmd} "${patient}")"
+hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 bn="$(basename ${report})"
 ext="${bn#*.}"
 gsutil -q stat ${report}

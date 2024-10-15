@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+hashed_id=$(lookup_nki_hash_for_actin_id ${patient})
+clinical_json="$(locate_actin_clinical_json ${hashed_id})"
+
+do_run_actin_molecular_interpretation ${patient} ${clinical_json} "$@"
