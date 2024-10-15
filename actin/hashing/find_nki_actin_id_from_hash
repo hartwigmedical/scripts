@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+
+hashed_id=$1 && shift
+
+if [[ -z ${hashed_id} ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+gcp_project=$(production_actin_nki_project)
+gs_url="gs://${gcp_project}-id-state/id.state"
+
+gsutil -q stat ${gs_url}
+[[ $? -ne 0 ]] && echo "Cannot find ${gs_url}" >&2 && exit 1
+
+actin_id=$(gsutil cat ${gs_url} | jq -er ".[\"${hashed_id}\"]")
+
+[[ $? -ne 0 ]] && echo "Could not find mapping for $1" >&2 && exit 1
+
+echo "${actin_id}"
