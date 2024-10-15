@@ -9,7 +9,7 @@ if [[ -z "${dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-info "Cleaning and converting NKI clinical data in ${dir}"
+info "Renaming NKI clinical records in ${dir}"
 
 for json_file in $(ls ${dir}/*.json); do
     json_name=$(basename ${json_file})
@@ -23,7 +23,7 @@ for json_file in $(ls ${dir}/*.json); do
     fi
 
     info " Resolved ACTIN ID to be ${actin_id} for ${hashed_id}. Renaming clinical json"
-    mv "${json_file}" "${dir}/${actin_id}.json"
+    mv "${json_file}" "${dir}/${actin_id}.clinical.json"
 done
 
 info "Done!"
