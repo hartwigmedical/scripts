@@ -19,6 +19,7 @@ find_nki_actin_id_from_hash() {
         if [[ ${hashed_id} == ${hashed_id_to_find} ]]; then
             actin_id="${potential_actin_id}"
         fi
+        i=$((i + 1))
     done
 
     echo ${actin_id}
