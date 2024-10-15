@@ -7,12 +7,12 @@ source actin_config || exit 1
 
 earliest_date=$1 && shift
 patient_ids=$@
-working_dir="$(pwd)/delete_actin_clinical_data"
 
 if [[ -z "${earliest_date}" || -z "${patient_ids}" ]]; then
     error "Usage: $0 <earliest date to clean as YYMMDD> <patientID1> [<patientID2>...]"
 fi
 
+working_dir="$(pwd)/delete_actin_clinical_data"
 create_or_cleanup_dir ${working_dir}
 cd ${working_dir} || { echo "unable to cd to ${working_dir}"; exit 1; }
 
