@@ -42,6 +42,9 @@ run_actin_rna_post_process ${run_dir}
 # Load the RNA annotated data into prod db.
 load_rna_run_data_to_prod ${run_dir}
 
+# Run virus interpreter since v5.34 pipeline is no longer compatible with latest ORANGE
+run_virus_interpreter_prod ${run_dir}
+
 # Run standard ORANGE in research
 run_orange_research ${run_dir}
 
