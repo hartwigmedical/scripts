@@ -17,6 +17,6 @@ gsutil -q stat ${gs_url}
 
 actin_id=$(gsutil cat ${gs_url} | jq -er ".[\"${hashed_id}\"]")
 
-[[ $? -ne 0 ]] && echo "Could not find mapping for $1" >&2 && exit 1
+[[ $? -ne 0 ]] && echo "Could not find mapping for ${hashed_id}" >&2 && exit 1
 
 echo "${actin_id}"
