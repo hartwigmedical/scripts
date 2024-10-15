@@ -18,7 +18,7 @@ for json_file in $(ls ${dir}/*.json); do
     hashed_id=$(echo ${json_name} | cut -d "." -f 1)
 
     info "Looking up NKI ACTIN ID for ${hashed_id}"
-    actin_id=$(find_nki_actin_id_from_hash ${hashed_id})
+    actin_id=$(lookup_nki_actin_id_for_hash ${hashed_id})
 
     if [[ -z "${actin_id}" ]]; then
         error "Could not resolve ACTIN ID for NKI hash ${hashed_id}"
