@@ -29,13 +29,13 @@ actin_jar="$(locate_actin_jar_on_vm)"
 info "Running ACTIN treatment matcher on ${patient}"
 
 java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
-    -patient_json ${patient_record_json} \
-    -trial_database_directory ${trial_database_directory} \
-    -treatment_directory ${treatment_directory} \
-    -doid_json ${doid_json} \
-    -atc_tsv ${atc_tsv} \
-    -extended_efficacy_json ${extended_efficacy_json} \
-    -serve_directory "${serve_directory}" \
+    -patient_json "${patient_record_json}" \
+    -trial_database_directory "${trial_database_directory}" \
+    -treatment_directory "${treatment_directory}" \
+    -doid_json "${doid_json}" \
+    -atc_tsv "${atc_tsv}" \
+    -extended_efficacy_json "${extended_efficacy_json}" \
     -personalization_data_path "${personalization_data_path}" \
-    -output_directory ${output_directory} \
+    -serve_directory "${serve_directory}" \
+    -output_directory "${output_directory}" \
     "$@"
