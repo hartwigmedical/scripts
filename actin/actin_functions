@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 find_nki_actin_id_from_hash() {
+    # TODO (KD) Can be simplified using something like
+    # gsutil cat gs://actin-nki-id-state/id.state | jq '.' | grep $hash
+
     hashed_id_to_find=$1 && shift
     actin_id=""
     i=30
