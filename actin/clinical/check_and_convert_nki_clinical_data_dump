@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source actin_functions || exit 1
 
 dir=$1 && shift
 
@@ -13,34 +14,16 @@ info "Cleaning and converting NKI clinical data in ${dir}"
 for json_file in $(ls ${dir}/*.json); do
     json_name=$(basename ${json_file})
     hashed_id=$(echo ${json_name} | cut -d "." -f 1)
-    actin_id=$(find_actin_id ${hashed_id})
 
+    info "Looking up NKI ACTIN ID for ${hashed_id}"
+    actin_id=$(find_nki_actin_id_from_hash ${hashed_id})
+
+    if [[ -z "${actin_id}" ]]; then
+        error "Could not resolve ACTIN ID for NKI hash ${hashed_id}"
+    fi
+
+    info " Resolved ACTIN ID to be ${actin_id} for ${hashed_id}"
 #    mv "${json_file}" "${dir}/${actin_id}.json"
 done
 
-find_actin_id() {
-    hashed_id_to_find=$1 && shift
-    info "Looking up ACTIN ID for ${hashed_id_to_find}"
-    actin_id=""
-    for i in {1..1000}; do
-        potential_actin_id=""
-        if [[ $i -lt 10 ]]; then
-            potential_actin_id="NKI-LUNG-0000${i}"
-        elif [[ i -lt 100 ]]; then
-            potential_actin_id="NKI-LUNG-000${i}"
-        elif [[ i -lt 1000 ]]; then
-            potential_actin_id="NKI-LUNG-00${i}"
-        elif [[ i -lt 10000 ]]; then
-            potential_actin_id="NKI-LUNG-0${i}"
-        fi
-        info " Attempting ${potential_actin_id}..."
-        hashed_id=$(lookup_nki_hash_for_actin_id ${potential_actin_id})
-        if [[ ${hashed_id} == ${hashed_id_to_find} ]]; then
-            info "Found actin id to be ${potential_actin_id}!"
-            actin_id=${potential_actin_id}
-            break
-        fi
-    done
-
-    echo ${actin_id}
-}
+info "Done!"
