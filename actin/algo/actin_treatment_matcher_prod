@@ -23,6 +23,8 @@ personalization_path_cmd=""
 personalization_data_path="$(locate_crc_personalization_reference_data)"
 if [[ -f ${personalization_data_path} ]]; then
     personalization_path_cmd="-personalization_data_path ${personalization_data_path}"
+else
+    warn "No data for personalization found"
 fi
 
 serve_directory="$(locate_actin_serve_db)"
