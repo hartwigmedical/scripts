@@ -20,7 +20,6 @@ chmod +x ${DIR}/sambamba/0.6.5/sambamba
 chmod +x ${DIR}/sambamba/0.6.8/sambamba
 chmod +x ${DIR}/chord/60.02_1.03/extractSigPredictHRD.R
 chmod +x ${DIR}/chord/2.00_1.14/extractSigPredictHRD.R
-chmod +x ${DIR}/samtools/1.10/samtools
 chmod +x ${DIR}/samtools/1.14/samtools
 chmod +x ${DIR}/samtools/1.15/samtools
 chmod +x ${DIR}/samtools/1.18/samtools

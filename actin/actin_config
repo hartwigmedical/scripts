@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+########################## ACTIN GCP projects and VMs #########################
+
+pilot_actin_project() {
+    echo "hmf-crunch"
+}
+
+pilot_actin_vm() {
+    echo "data-vm-prod-2"
+}
+
+production_actin_emc_project() {
+    echo "actin-prod"
+}
+
+production_actin_emc_ops_vm() {
+    echo "prod-vm-operations"
+}
+
+production_actin_nki_project() {
+    echo "actin-nki"
+}
+
+production_actin_nki_ops_vm() {
+    echo "nki-vm-operations"
+}
+
+production_actin_serve_vm() {
+    echo "serve-vm-actin-1"
+}
+
+production_actin_serve_project() {
+    echo "hmf-crunch"
+}
+
+################################ ACTIN Databases ##############################
+
+emc_phase1_sql_database_name() {
+    echo "actin_emc_phase1"
+}

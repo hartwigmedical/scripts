@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+do_ingest_clinical_feed "EMC_TSV"

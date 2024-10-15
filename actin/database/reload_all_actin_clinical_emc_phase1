@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source database_functions || exit 1
+source actin_config || exit 1
+
+actin_credentials="$(prod_writer_sql_credentials)"
+actin_jar="$(locate_actin_jar_on_vm)"
+actin_database_name="$(emc_phase1_sql_database_name)"
+
+clinical_directory="$(locate_actin_curated_clinical_directory)"
+
+do_load_actin_clinical ${clinical_directory} "${actin_credentials}" ${actin_jar} ${actin_database_name}

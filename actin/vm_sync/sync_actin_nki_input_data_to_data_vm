@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+
+if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
+    error "NKI data-vm sync is only supported on pilot ACTIN VM!"
+fi
+
+do_sync_actin_nki_input_data_to_vm
+

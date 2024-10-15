@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source metadata_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+sample_with_cancertype="$(cat $(locate_actin_rna_sample_metadata_file) | grep ${sample})"
+
+if [[ -z "${sample_with_cancertype}" ]]; then
+    info "Sample ${sample} not present in ACTIN rna sample metadata file. Exiting"
+    exit 0
+fi
+
+download_isofox_to_run_dir ${run_dir}
+if [[ -d "${run_dir}/isofox" ]]; then
+    # Make sure sample is present in the sample metadata file for RNA!
+    run_cuppa_dna_rna_prod ${run_dir}
+fi
+
+download_rna_bam_to_run_dir ${run_dir}
+rna_bam_dir="$(locate_rna_bam_directory ${run_dir})"
+if [[ -d "${rna_bam_dir}" ]]; then
+    # Annotation of purple somatic variants will only work on v5.28+ pipelines
+    if [[ -d "${run_dir}/purple" ]]; then
+        cp -r "${run_dir}/purple" "${run_dir}/purple_orig"
+    fi
+
+    annotate_somatic_variants_with_rna ${run_dir}
+
+    annotated_somatic_vcf="$(locate_rna_annotated_somatic_variants ${run_dir})"
+    if [[ -f "${annotated_somatic_vcf}" ]]; then
+        info "Replacing purple somatic VCF with RNA-annotated version"
+        original_somatic_vcf="$(locate_purple_somatic_variants ${run_dir})"
+        cp "${annotated_somatic_vcf}" "${original_somatic_vcf}"
+        cp "${annotated_somatic_vcf}.tbi" "${original_somatic_vcf}.tbi"
+    fi
+
+    annotate_germline_variants_with_rna ${run_dir}
+
+    annotated_germline_vcf="$(locate_rna_annotated_germline_variants ${run_dir})"
+    if [[ -f "${annotated_germline_vcf}" ]]; then
+        info "Replacing purple germline VCF with RNA-annotated version"
+        original_germline_vcf="$(locate_purple_germline_variants ${run_dir})"
+        cp "${annotated_germline_vcf}" "${original_germline_vcf}"
+        cp "${annotated_germline_vcf}.tbi" "${original_germline_vcf}.tbi"
+    fi
+
+    # Extract the HLA regions for the RNA BAM
+    slice_rna_bam_for_hla ${run_dir}
+
+    # Rerun LILAC to produce data on DNA/RNA combined.
+    run_lilac_for_actin_dna_rna_run ${run_dir}
+
+    # Clean up RNA bam
+    rm -r ${rna_bam_dir}
+fi

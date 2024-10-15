@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+feed_format=$1 && shift
+
+if [[ -z "${feed_format}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+feed_directory="$(locate_actin_clinical_input_feed_directory)"
+curation_directory="$(locate_actin_clinical_curation_directory)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
+doid_json="$(locate_doid_json)"
+atc_tsv="$(locate_atc_tsv)"
+atc_overrides_tsv="$(locate_atc_overrides_tsv)"
+output_directory="$(locate_actin_curated_clinical_directory)"
+
+actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN Clinical on ${feed_directory} using feed format ${feed_format}"
+
+create_or_cleanup_dir "${output_directory}"
+
+java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt \
+    -feed_directory ${feed_directory} \
+    -curation_directory ${curation_directory} \
+    -treatment_directory ${treatment_directory} \
+    -doid_json ${doid_json} \
+    -atc_tsv ${atc_tsv} \
+    -atc_overrides_tsv ${atc_overrides_tsv} \
+    -output_directory ${output_directory} \
+    -feed_format ${feed_format} \
+    "$@"

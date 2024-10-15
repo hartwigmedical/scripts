@@ -12,4 +12,4 @@ fi
 vm_name="$(pilot_actin_vm)"
 vm_project="$(pilot_actin_project)"
 
-do_deploy_actin ${version} ${vm_name} ${vm_project} europe-west4-a
+do_deploy_actin ${version} ${vm_name} ${vm_project} "europe-west4-a"

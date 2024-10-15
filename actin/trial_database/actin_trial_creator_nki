@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+do_run_actin_trial_creation "nki_config_directory"

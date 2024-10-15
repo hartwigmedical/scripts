@@ -4,6 +4,8 @@ set -e
 
 source message_functions || exit 1
 
+ORGANIZATION_ID="478829257309"
+
 account_email=$1
 project_id=$2
 
@@ -15,9 +17,9 @@ function main() {
         info "Project ID provided so checking only this one [${project_id}]"
         policies "$project_id" "$account_email"
     else
-        info "No project ID provided so checking all known projects"
-        # Ugly solution to avoid output of list_projects stored as one big string
-        mapfile -t projects < <(list_projects|tr " " "\n")
+        info "No project ID provided so checking all known projects of organization [${ORGANIZATION_ID}]"
+        info "An error is returned for every project the caller account has no searchAllIamPolicies permission for"
+        mapfile -t projects < <(get_projects)
         for project_id in "${projects[@]}"; do
             policies "$project_id" "$account_email"
         done
@@ -36,29 +38,8 @@ function policies() {
           | jq --arg u "${account_email}" --arg p "${project_id}" -r '.[] | [$u, $p, .policy.bindings[].role,.resource] | @tsv'
 }
 
-function list_projects() {
-    local projects=(
-      "hmf-actin"
-      "hmf-backups-development"
-      "hmf-bigquery"
-      "hmf-build"
-      "hmf-catalog"
-      "hmf-crunch"
-      "hmf-customer-portal"
-      "hmf-database-development"
-      "hmf-images"
-      "hmf-pipeline-development"
-      "hmf-pipeline-prod-e45b00f2"
-      "hmf-pmc"
-      "hmf-olvg"
-      "hmf-ops"
-      "hmf-secrets"
-      "hmf-share"
-      "hmf-silo-diagnostic"
-      "hmf-silo-linkage"
-      "hmf-vpc-network"
-    )
-    echo "${projects[*]}"
+function get_projects() {
+    gcloud projects list --filter "parent.id=${ORGANIZATION_ID} AND parent.type=organization" --format json | jq -r '.[].projectId'
 }
 
 main

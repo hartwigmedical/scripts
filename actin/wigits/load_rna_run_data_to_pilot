@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "No run dir passed. Exiting"
+fi
+
+if [[ -d "${run_dir}/isofox" ]]; then
+    load_isofox_data_to_pilot ${run_dir}
+
+    load_rna_annotated_purple_data_to_pilot ${run_dir}
+fi

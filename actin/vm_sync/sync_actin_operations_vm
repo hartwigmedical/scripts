@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source actin_config || exit 1
+source message_functions || exit 1
+
+if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
+    do_sync_actin_nki_input_data_to_vm
+    do_sync_actin_output_data_to_vm $(production_actin_nki_project)
+elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
+    do_sync_actin_emc_input_data_to_vm
+    do_sync_actin_output_data_to_vm $(production_actin_emc_project)
+else
+    error "Can only sync to EMC or NKI operations VM"
+fi

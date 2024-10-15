@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+find_nki_actin_id_from_hash() {
+    # TODO (KD) Can be simplified using something like
+    # gsutil cat gs://actin-nki-id-state/id.state | jq '.' | grep $hash
+
+    hashed_id_to_find=$1 && shift
+    actin_id=""
+    i=30
+    while [[ i -lt 100 && -z "${actin_id}" ]]; do
+        potential_actin_id=""
+        if [[ $i -lt 10 ]]; then
+            potential_actin_id="NKI-LUNG-0000${i}"
+        elif [[ i -lt 100 ]]; then
+            potential_actin_id="NKI-LUNG-000${i}"
+        elif [[ i -lt 1000 ]]; then
+            potential_actin_id="NKI-LUNG-00${i}"
+        elif [[ i -lt 10000 ]]; then
+            potential_actin_id="NKI-LUNG-0${i}"
+        fi
+        hashed_id=$(lookup_nki_hash_for_actin_id ${potential_actin_id})
+        if [[ ${hashed_id} == ${hashed_id_to_find} ]]; then
+            actin_id="${potential_actin_id}"
+        fi
+        i=$((i + 1))
+    done
+
+    echo ${actin_id}
+}

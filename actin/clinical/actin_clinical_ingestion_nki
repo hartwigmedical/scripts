@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+do_ingest_clinical_feed "STANDARD_JSON"
+
+rename_nki_clinical_records

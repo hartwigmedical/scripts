@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+do_run_actin_trial_creation "ctc_config_directory"

@@ -2,27 +2,33 @@
 
 source locate_files || exit 1
 source metadata_functions || exit 1
+source message_functions || exit 1
 
 run_dir=$1 && shift
 virus_interpreter_jar=$1 && shift
 output_dir=$1 && shift
-purple_dir="${run_dir}/purple"
 
-sample_id=$(load_tumor_sample_from_metadata ${run_dir})
+if [[ -z "${run_dir}" || -z "${virus_interpreter_jar}" || -z "${output_dir}" ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+purple_dir="$(locate_purple_data_directory ${run_dir})"
+tumor_sample_wgs_metrics_file=$(locate_wgs_metrics ${run_dir} ${sample})
+
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
 taxonomy_db_tsv="/data/resources/public/virus_interpreter/taxonomy_db.tsv"
 virus_reporting_db_tsv="/data/resources/public/virus_interpreter/virus_reporting_db.tsv"
 virus_blacklisting_db_tsv="/data/resources/public/virus_interpreter/virus_blacklisting_db.tsv"
-tumor_sample_wgs_metrics_file=$(locate_wgs_metrics ${run_dir} ${sample_id})
 
 java -jar ${virus_interpreter_jar} \
-    -sample ${sample_id} \
+    -sample ${sample} \
+    -purple_dir ${purple_dir} \
+    -tumor_sample_wgs_metrics_file ${tumor_sample_wgs_metrics_file} \
     -virus_breakend_tsv ${virus_breakend_tsv} \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
     -virus_reporting_db_tsv ${virus_reporting_db_tsv} \
     -virus_blacklisting_db_tsv ${virus_blacklisting_db_tsv} \
-    -purple_dir ${purple_dir} \
-    -tumor_sample_wgs_metrics_file ${tumor_sample_wgs_metrics_file} \
     -output_dir ${output_dir} \
     "$@"

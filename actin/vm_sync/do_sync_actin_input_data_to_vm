@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source actin_config || exit 1
+source io_functions || exit 1
+
+gcp_project=$1 && shift
+actin_clinical_input_feed_bucket=$1 && shift
+
+if [[ -z "${gcp_project}" || -z "${actin_clinical_input_feed_bucket}" ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+info "Syncing ACTIN input and config data for ${gcp_project} to $(hostname)"
+
+info "Syncing trial config (excluding diffs)..."
+trial_config_directory=$(locate_actin_trial_config_directory)
+create_or_cleanup_dir ${trial_config_directory}
+gsutil -m rsync -x "^202" -r $(locate_actin_trial_config_bucket ${gcp_project}) ${trial_config_directory}
+
+info "Syncing trial status (excluding diffs)..."
+trial_status_directory=$(locate_actin_trial_status_directory)
+create_or_cleanup_dir ${trial_status_directory}
+gsutil -m rsync -x "^202" -r $(locate_actin_trial_status_bucket ${gcp_project}) ${trial_status_directory}
+
+info "Syncing clinical input (excluding diffs)..."
+clinical_input_directory=$(locate_actin_clinical_input_feed_directory)
+create_or_cleanup_dir ${clinical_input_directory}
+gsutil -m rsync -x "^202" -r ${actin_clinical_input_feed_bucket} ${clinical_input_directory}
+
+info "Syncing clinical curation config (excluding diffs)..."
+clinical_curation_directory=$(locate_actin_clinical_curation_directory)
+create_or_cleanup_dir ${clinical_curation_directory}
+gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) ${clinical_curation_directory}
+
+info "Done"

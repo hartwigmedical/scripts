@@ -1,0 +1,15 @@
+#!/bin/bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+
+version=$1 && shift
+
+if [[ -z "${version}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+vm_name="$(production_actin_emc_ops_vm)"
+vm_project="$(production_actin_emc_project)"
+
+do_deploy_actin ${version} ${vm_name} ${vm_project} "europe-west4-a"

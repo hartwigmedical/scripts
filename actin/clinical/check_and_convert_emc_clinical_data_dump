@@ -8,6 +8,8 @@ if [[ -z "${dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
+info "Cleaning and converting EMC clinical data in ${dir}"
+
 digital_file_tsv="${dir}/digital_file.tsv"
 patient_tsv="${dir}/patient.tsv"
 vital_function_tsv="${dir}/vital_function.tsv"
@@ -19,15 +21,41 @@ bodyweight_tsv="${dir}/bodyweight.tsv"
 questionnaire_tsv="${dir}/questionnaire.tsv"
 
 # Clean up old files if they exist
-rm "${digital_file_tsv}"
-rm "${patient_tsv}"
-rm "${vital_function_tsv}"
-rm "${medication_tsv}"
-rm "${lab_tsv}"
-rm "${surgery_tsv}"
-rm "${intolerance_tsv}"
-rm "${bodyweight_tsv}"
-rm "${questionnaire_tsv}"
+if [[ -f ${digital_file_tsv} ]]; then
+    rm "${digital_file_tsv}"
+fi
+
+if [[ -f ${patient_tsv} ]]; then
+    rm "${patient_tsv}"
+fi
+
+if [[ -f ${vital_function_tsv} ]]; then
+    rm "${vital_function_tsv}"
+fi
+
+if [[ -f ${medication_tsv} ]]; then
+    rm "${medication_tsv}"
+fi
+
+if [[ -f ${lab_tsv} ]]; then
+    rm "${lab_tsv}"
+fi
+
+if [[ -f ${surgery_tsv} ]]; then
+    rm "${surgery_tsv}"
+fi
+
+if [[ -f ${intolerance_tsv} ]]; then
+    rm "${intolerance_tsv}"
+fi
+
+if [[ -f ${bodyweight_tsv} ]]; then
+    rm "${bodyweight_tsv}"
+fi
+
+if [[ -f ${questionnaire_tsv} ]]; then
+    rm "${questionnaire_tsv}"
+fi
 
 no_consent_patients=("ACTN-01-02-0015" "ACTN-01-02-0059" "ACTN-01-02-0067" "ACTN-01-02-0073" "ACTN-01-02-0083" "ACTN-01-02-0086" \
     "ACTN-01-02-0090" "ACTN-01-02-0092" "ACTN-01-02-0096" "ACTN-01-02-0097" "ACTN-01-02-0099" "ACTN-01-02-0119" "ACTN-01-02-0128" \

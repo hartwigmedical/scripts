@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+info "Loading all molecular data into ACTIN EMC phase 1 database"
+
+for json_file in $(locate_actin_patient_record_directory)/*; do
+    patient_record_json=$(basename ${json_file})
+    patient=$(echo ${patient_record_json} | cut -d "." -f 1)
+
+    load_actin_molecular_emc_phase1 ${patient}
+done

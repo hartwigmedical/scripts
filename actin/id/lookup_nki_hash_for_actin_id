@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source actin_config || exit 1
+
+gcp_project=$(production_actin_nki_project)
+gs_url="gs://${gcp_project}-id-state/id.state"
+
+[[ $# -ne 1 ]] && echo "Provide the ACTIN id" >&2 && exit 1
+gsutil -q stat ${gs_url}
+
+[[ $? -ne 0 ]] && echo "Cannot find ${gs_url}" >&2 && exit 1
+gsutil cat ${gs_url} | jq -er ". | to_entries | .[] | select(.value==\"$1\") | \"\(.key)\""
+
+[[ $? -ne 0 ]] && echo "Could not find mapping for $1" >&2 && exit 1
+
