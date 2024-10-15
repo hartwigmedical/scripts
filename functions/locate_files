@@ -441,67 +441,79 @@ locate_actin_cohort_treatment_match_directory() {
 ############################### ACTIN Buckets ##################################
 
 locate_actin_clinical_data_feed_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-clinical-data-feed"
 }
 
 locate_actin_clinical_feed_input_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-clinical-pipeline-feed-input"
 }
 
 locate_actin_clinical_curation_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-clinical-pipeline-curation-input"
 }
 
 locate_actin_clinical_output_bucket() {
     # TODO (KD) Remove default
-    gcp_project=${1:-actin-prod}
+    local gcp_project=${1:-actin-prod}
+
     echo "gs://${gcp_project}-clinical-pipeline-output"
 }
 
 locate_actin_trial_config_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-trial-pipeline-trial-input"
 }
 
 locate_actin_trial_status_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-trial-pipeline-status-input"
 }
 
 locate_actin_shared_data_bucket() {
     # TODO (KD) Remove default
-    gcp_project=${1:-actin-prod}
+    local gcp_project=${1:-actin-prod}
+
     echo "gs://${gcp_project}-shared-data"
 }
 
 locate_actin_shared_data_external_bucket() {
     # TODO (KD) Remove default
-    gcp_project=${1:-actin-prod}
+    local gcp_project=${1:-actin-prod}
+
     echo "gs://${gcp_project}-shared-data-external"
 }
 
 locate_actin_wgs_pipeline_bucket() {
     # TODO (KD) Remove default
-    gcp_project=${1:-actin-prod}
+    local gcp_project=${1:-actin-prod}
+
     echo "gs://${gcp_project}-wgs-pipeline-output"
 }
 
 locate_actin_wgs_diagnostic_pipeline_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-wgs-pipeline-output-diagnostic"
 }
 
 locate_actin_analysis_bucket() {
     # TODO (KD) Remove default
-    gcp_project=${1:-actin-prod}
+    local gcp_project=${1:-actin-prod}
+
     echo "gs://${gcp_project}-analysis-pipeline-output"
 }
 
 locate_actin_trial_database_bucket() {
-    gcp_project=$1 && shift
+    local gcp_project=$1 && shift
+
     echo "gs://${gcp_project}-trial-pipeline-output"
 }
 
@@ -685,10 +697,22 @@ locate_actin_wgs_directory() {
     echo "/data/actin/wgs_pipeline_output"
 }
 
-locate_actin_wgs_directory_for_sample() {
-    local sample=$1 && shift
+locate_actin_wgs_directory_for_patient() {
+    local patient=$1 && shift
 
-    echo "$(locate_actin_wgs_directory)/${sample}"
+    local wgs_directories=$(find -L "${locate_actin_wgs_directory}/" -type d -name "*${patient}*")
+    if [[ -z "${wgs_directories}" ]]; then
+        error "Could not find WGS directory for ${patient}"
+    fi
+
+    # ACTIN-molecular should be able to ingest multiple WGS runs eventually.
+    for wgs_directory in "${wgs_directories[@]}"; do
+        if [[ ! -z ${wgs_directory} ]]; then
+            warn "Multiple WGS directories found for ${patient}! Selecting arbitrary one"
+        fi
+    done
+
+    echo ${wgs_directory}
 }
 
 locate_most_recent_actin_wgs_sample() {

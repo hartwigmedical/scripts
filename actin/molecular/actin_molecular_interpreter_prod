@@ -10,19 +10,17 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-wgs_dir=$1 && shift
+clinical_json="$(locate_actin_clinical_json ${patient})"
+
+wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
 orange_cmd=""
 if [[ ! -z "${wgs_dir}" ]]; then
-    full_wgs_dir="$(locate_actin_wgs_directory)/${wgs_dir}"
-
-    info "Using ORANGE json from ${full_wgs_dir}"
-    orange_json="$(locate_orange_no_germline_json ${full_wgs_dir})"
+    info "Using ORANGE json from ${wgs_dir}"
+    orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
     orange_cmd="-orange_json ${orange_json}"
 else
     info "Assuming no WGS has been performed for ${patient}"
 fi
-
-clinical_json="$(locate_actin_clinical_json ${patient})"
 
 serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"
