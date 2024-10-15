@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
-
 find_nki_actin_id_from_hash() {
     hashed_id_to_find=$1 && shift
     actin_id=""
