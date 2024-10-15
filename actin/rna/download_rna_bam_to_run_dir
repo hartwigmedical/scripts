@@ -14,7 +14,7 @@ fi
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 rna_bam_directory=$(locate_rna_bam_directory ${run_dir})
 
-rna_pipeline_output_dir="$(locate_actin_wts_pipeline_output_directory)/${tumor_sample}"
+rna_pipeline_output_dir="$(locate_actin_wts_directory)/${tumor_sample}"
 if [[ -d "${rna_pipeline_output_dir}" ]]; then
     info "Copying BAM file from ${rna_pipeline_output_dir} to ${rna_bam_directory}"
 

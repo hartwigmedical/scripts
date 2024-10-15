@@ -12,7 +12,7 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-rna_pipeline_output_dir="$(locate_actin_wts_pipeline_output_directory)/${tumor_sample}"
+rna_pipeline_output_dir="$(locate_actin_wts_directory)/${tumor_sample}"
 if [[ -d "${rna_pipeline_output_dir}" ]]; then
     info "Copying isofox data from ${rna_pipeline_output_dir} to ${run_dir}/isofox"
     cp -r "${rna_pipeline_output_dir}/isofox" "${run_dir}/"
