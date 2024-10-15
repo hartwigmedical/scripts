@@ -9,7 +9,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-output_dir="$(locate_virus_interpreter_data_directory)"
+output_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
 
 virus_interpreter_jar="$(locate_prod_virus_interpreter)"
 
