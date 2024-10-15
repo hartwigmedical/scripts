@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for d in $(find /data/repos/scripts/* -type d | grep -v '.git'); do
+for d in $(find /data/repos/scripts/* -type d | grep -v '\.git'); do
     export PATH="${PATH}:$d"
 done
 
