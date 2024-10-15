@@ -6,6 +6,12 @@ source actin_functions || exit 1
 
 dir=$(locate_actin_curated_clinical_directory)
 
+clinical_ingestion_results="${dir}/clinical_ingestion_results.json"
+if [[ -f ${clinical_ingestion_results} ]]; then
+    info "Removing ${clinical_ingestion_results}"
+    rm "${clinical_ingestion_results}"
+fi
+
 info "Renaming NKI clinical records in ${dir}"
 
 for json_file in $(ls ${dir}/*.json); do
