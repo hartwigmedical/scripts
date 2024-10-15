@@ -4,7 +4,7 @@ find_nki_actin_id_from_hash() {
     hashed_id_to_find=$1 && shift
     actin_id=""
     i=30
-    while [[ i -lt 40 && -z "${actin_id}" ]]; do
+    while [[ i -lt 100 && -z "${actin_id}" ]]; do
         potential_actin_id=""
         if [[ $i -lt 10 ]]; then
             potential_actin_id="NKI-LUNG-0000${i}"

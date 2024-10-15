@@ -22,8 +22,8 @@ for json_file in $(ls ${dir}/*.json); do
         error "Could not resolve ACTIN ID for NKI hash ${hashed_id}"
     fi
 
-    info " Resolved ACTIN ID to be ${actin_id} for ${hashed_id}"
-#    mv "${json_file}" "${dir}/${actin_id}.json"
+    info " Resolved ACTIN ID to be ${actin_id} for ${hashed_id}. Renaming clinical json"
+    mv "${json_file}" "${dir}/${actin_id}.json"
 done
 
 info "Done!"
