@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source actin_config || exit 1
 
 patient=$1 && shift
 
@@ -9,12 +10,13 @@ if [[ -z "${patient}" ]]; then
     error "Missing parameters. Exiting."
 fi
 
-local_dir="${HOME}/hmf/tmp/orange_no_germline"
+local_dir="${HOME}/hmf/tmp/orange_germline"
 if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${patient})"
+gcp_project=$(production_actin_emc_project)
+orange_report="$(locate_actin_orange_germline_pdf_gcp ${gcp_project} ${patient})"
 
 orange_report_file_name="$(echo $(basename "${orange_report}"))"
 preferred_orange_report_file_name="${patient}_${orange_report_file_name}"
