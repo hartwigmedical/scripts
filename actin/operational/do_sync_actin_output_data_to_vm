@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source actin_config || exit 1
 source message_functions || exit 1
+source io_functions || exit 1
 
 gcp_project=$1 && shift
 
@@ -10,16 +11,41 @@ if [[ -z "${gcp_project}" ]]; then
     error "Missing parameters. Exiting"
 fi
 
-info "Syncing ACTIN wgs pipeline output for ${gcp_project} to $(hostname)"
+info "Syncing ACTIN wgs pipeline and actin analysis output for ${gcp_project} to $(hostname)"
 
-gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_directory)
-gsutil -m rsync -r -d -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project}) $(locate_actin_wgs_diagnostic_directory)
+info "Syncing ACTIN wgs pipeline output..."
+actin_wgs_directory=$(locate_actin_wgs_directory)
+create_or_cleanup_dir ${actin_wgs_directory}
+gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_pipeline_bucket ${gcp_project}) ${actin_wgs_directory}
 
-info "Syncing ACTIN output data from for ${gcp_project} to $(hostname)"
-gsutil -m rsync -r -d $(locate_actin_clinical_output_bucket ${gcp_project}) $(locate_actin_curated_clinical_directory)
-gsutil -m rsync -r -d $(locate_actin_trial_database_bucket ${gcp_project}) $(locate_actin_trial_database_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/molecular/ $(locate_actin_patient_record_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/treatment_match/ $(locate_actin_treatment_match_directory)
-gsutil -m rsync -r -d $(locate_actin_analysis_bucket ${gcp_project})/reports/ $(locate_actin_reports_directory)
+info "Syncing diagnostics wgs pipeline output..."
+actin_wgs_diagnostic_directory=$(locate_actin_wgs_diagnostic_directory)
+create_or_cleanup_dir ${actin_wgs_diagnostic_directory}
+gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project}) ${actin_wgs_diagnostic_directory}
+
+info "Syncing ACTIN clinical output..."
+clinical_output_directory=$(locate_actin_curated_clinical_directory)
+create_or_cleanup_dir ${clinical_output_directory}
+gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project}) ${clinical_output_directory}
+
+info "Syncing ACTIN trial creator output..."
+trial_database_directory=$(locate_actin_trial_database_directory)
+create_or_cleanup_dir ${trial_database_directory}
+gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project}) ${trial_database_directory}
+
+info "Syncing ACTIN patient records..."
+patient_record_directory=$(locate_actin_patient_record_directory)
+create_or_cleanup_dir ${patient_record_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/molecular/ ${patient_record_directory}
+
+info "Syncing ACTIN treatment match output..."
+treatment_match_directory=$(locate_actin_treatment_match_directory)
+create_or_cleanup_dir ${treatment_match_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/treatment_match/ ${treatment_match_directory}
+
+info "Syncing ACTIN reports..."
+reports_directory=$(locate_actin_reports_directory)
+create_or_cleanup_dir ${reports_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/reports/ ${reports_directory}
 
 info "Done"
