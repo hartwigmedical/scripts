@@ -346,18 +346,6 @@ locate_actin_treatment_db_directory() {
     echo "/data/resources/actin/treatment_db"
 }
 
-locate_actin_clinical_curation_directory() {
-    echo "/data/actin/config/clinical_curation"
-}
-
-locate_actin_trial_config_directory() {
-    echo "/data/actin/config/trial_config"
-}
-
-locate_actin_trial_status_directory() {
-    echo "/data/actin/config/trial_status"
-}
-
 locate_actin_serve_db() {
     echo "/data/resources/actin/serve_db"
 }
@@ -383,17 +371,29 @@ locate_atc_overrides_tsv() {
 }
 
 locate_dnds_driver_likelihood_onco() {
-  echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_onco.tsv"
+    echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_onco.tsv"
 }
 
 locate_dnds_driver_likelihood_tsg() {
-  echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
+    echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
+}
+
+locate_actin_clinical_curation_directory() {
+    echo "/data/actin/config/clinical_curation"
+}
+
+locate_actin_trial_config_directory() {
+    echo "/data/actin/config/trial_config"
+}
+
+locate_actin_trial_status_directory() {
+    echo "/data/actin/config/trial_status"
 }
 
 ########################## ACTIN CRC Development ###############################
 
 locate_extended_efficacy_json() {
-  echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
+    echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
 }
 
 locate_crc_experiment_directory() {
@@ -411,13 +411,13 @@ locate_cohort_actin() {
 }
 
 locate_actin_cohort_pipeline_directory() {
-    sample=$1
+    local sample=$1 && shift
 
     echo "/data/experiments/ACTIN-547-daphne/pipelines/${sample}"
 }
 
 locate_actin_cohort_molecular_directory() {
-    sample=$1
+    local sample=$1 && shift
 
     echo "/data/experiments/ACTIN-547-daphne/molecular/${sample}"
 }
@@ -439,12 +439,6 @@ locate_actin_cohort_treatment_match_directory() {
 }
 
 ############################### ACTIN Buckets ##################################
-
-locate_actin_clinical_data_feed_bucket() {
-    local gcp_project=$1 && shift
-
-    echo "gs://${gcp_project}-clinical-data-feed"
-}
 
 locate_actin_clinical_feed_input_bucket() {
     local gcp_project=$1 && shift
