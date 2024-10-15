@@ -5,7 +5,7 @@ source message_functions || exit 1
 find_nki_actin_id_from_hash() {
     hashed_id_to_find=$1 && shift
     actin_id=""
-    i=1
+    i=30
     while [[ i -lt 1000 && -z "${actin_id}" ]]; do
         potential_actin_id=""
         if [[ $i -lt 10 ]]; then
