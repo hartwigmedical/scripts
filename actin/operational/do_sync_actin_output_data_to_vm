@@ -41,11 +41,11 @@ gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/molecular/ ${p
 info "Syncing ACTIN treatment match output..."
 treatment_match_directory=$(locate_actin_treatment_match_directory)
 create_or_cleanup_dir ${treatment_match_directory}
-gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/treatment_match/ ${treatment_match_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/algo/ ${treatment_match_directory}
 
 info "Syncing ACTIN reports..."
 reports_directory=$(locate_actin_reports_directory)
 create_or_cleanup_dir ${reports_directory}
-gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/reports/ ${reports_directory}
+gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/report/ ${reports_directory}
 
 info "Done"
