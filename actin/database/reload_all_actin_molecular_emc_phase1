@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 info "Loading all molecular data into ACTIN EMC phase 1 database"
 
-for json_file in $(locate_actin_patient_record_directory)/*; do
+for json_file in $(ls $(locate_actin_patient_record_directory)/*.json); do
     patient_record_json=$(basename ${json_file})
     patient=$(echo ${patient_record_json} | cut -d "." -f 1)
 

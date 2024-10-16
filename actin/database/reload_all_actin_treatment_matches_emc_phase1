@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 info "Loading all treatment match results into ACTIN EMC phase 1 database"
 
-for json_file in $(locate_actin_treatment_match_directory)/*; do
+for json_file in $(ls $(locate_actin_treatment_match_directory)/*.json); do
     treatment_match_json=$(basename ${json_file})
     patient=$(echo ${treatment_match_json} | cut -d "." -f 1)
 
