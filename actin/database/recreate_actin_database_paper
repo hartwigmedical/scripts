@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
 source database_functions || exit 1
+source message_functions || exit 1
 
-do_recreate_actin_database "$(prod_writer_sql_credentials)" "actin_paper"
+warn "This database is not supposed to be recreated, check script"
+# do_recreate_actin_database "$(prod_writer_sql_credentials)" "actin_paper"
