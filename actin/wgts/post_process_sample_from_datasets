@@ -4,20 +4,28 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
-sample=$1 && shift
+sequencing_sample=$1 && shift
+actin_sample=$1 && shift
 
-if [[ -z "${sample}" ]]; then
-    error "Parameters missing. Exiting.";
+if [[ -z "${sequencing_sample}" ]]; then
+    error "No sequencing sample passed. Exiting.";
 fi
 
-orig_run_dir="/data/datasets/${sample}"
+if [[ -z "${actin_sample}" ]]; then
+    info "Using sequencing sample ${sequencing_sample} as ACTIN sample"
+    actin_sample=${sequencing_sample}
+else
+    info "Configured to rename ${sequencing_sample} to ${actin_sample}"
+fi
+
+orig_run_dir="/data/datasets/${sequencing_sample}"
 if [[ ! -d "${orig_run_dir}" ]]; then
     error "Run dir '${orig_run_dir}' not present"
 fi
 
-info "Running ACTIN molecular post-process on ${sample}"
+info "Running ACTIN molecular post-process on ${sequencing_sample}"
 
-run_dir="$(locate_actin_wgs_directory)/${sample}"
+run_dir="$(locate_actin_wgs_directory)/${actin_sample}"
 if [[ -d "${run_dir}" ]]; then
     info "Cleaning up ${run_dir}"
     rm -r "${run_dir}"
