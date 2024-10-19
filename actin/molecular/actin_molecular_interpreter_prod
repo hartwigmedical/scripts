@@ -12,6 +12,7 @@ fi
 
 clinical_json="$(locate_actin_clinical_json ${patient})"
 
+info "Looking up WGS dir..."
 wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
 orange_cmd=""
 if [[ ! -z "${wgs_dir}" ]]; then
