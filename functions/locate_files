@@ -725,7 +725,7 @@ locate_actin_wgs_directory_for_patient() {
     local last_wgs_directory=$(echo ${wgs_directories} | awk '{print $NF}')
 
     if [[ "${last_wgs_directory}" != "${wgs_directories}" ]]; then
-        warn "Multiple WGS directories found for ${patient}: ${wgs_directories}. Taking last directory ${last_wgs_directory}"
+        warn "Multiple WGS directories found for ${patient}. Taking last directory ${last_wgs_directory}"
     fi
 
     echo "${last_wgs_directory}"
