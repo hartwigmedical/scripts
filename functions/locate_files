@@ -715,21 +715,20 @@ locate_actin_wgs_directory() {
 locate_actin_wgs_directory_for_patient() {
     local patient=$1 && shift
 
-    local wgs_directories=$(find -L "$(locate_actin_wgs_directory)/" -type d -name "*${patient}*")
+    local wgs_directories=$(ls "$(locate_actin_wgs_directory)/" | grep "${patient}")
     if [[ -z "${wgs_directories}" ]]; then
         error "Could not find WGS directory for ${patient}"
     fi
 
     # ACTIN-molecular should be able to ingest multiple WGS runs eventually.
-    wgs_directory=""
-    for directory in "${wgs_directories[@]}"; do
-        if [[ ! -z ${wgs_directory} ]]; then
-            warn "Multiple WGS directories found for ${patient}! Selecting arbitrary one"
-        fi
-        wgs_directory=${directory}
-    done
+    # Until then, we assume the last WGS dir (usually T2) is the best to take
+    local last_wgs_directory=$(echo "${wgs_directories}" | awk '{print $NF}')
 
-    echo ${wgs_directory}
+    if [[ "${last_wgs_directory}" != "${wgs_directories}" ]]; then
+        warn "Multiple WGS directories found for ${patient}: ${wgs_directories}. Taking last directory ${last_wgs_directory}"
+    fi
+
+    echo "${last_wgs_directory}"
 }
 
 locate_actin_wgs_diagnostic_directory() {
