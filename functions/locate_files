@@ -718,7 +718,7 @@ locate_actin_wgs_directory_for_patient() {
     local wgs_directory="$(locate_actin_wgs_directory)"
     local patient_wgs_directories=$(ls "${wgs_directory}" | grep "${patient}")
     if [[ -z "${patient_wgs_directories}" ]]; then
-        error "Could not find WGS directory for ${patient}"
+        warn "Could not find WGS directory for ${patient}"
     fi
 
     # ACTIN-molecular should be able to ingest multiple WGS runs eventually.
