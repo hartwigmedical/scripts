@@ -7,7 +7,7 @@ source database_functions || exit 1
 serve_db=$1 && shift
 
 # Resources
-serve_database_sql="/home/lschoenmaker/tmp/ckb_4_0_1/ckb_4_0_1_schema.sql"
+serve_database_sql="/home/lschoenmaker/tmp/ckb_4_0_1/ckb_5_3_0.sql"
 
 # Database details
 credentials=$(prod_writer_sql_credentials)
