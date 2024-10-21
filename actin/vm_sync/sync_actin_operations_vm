@@ -9,6 +9,9 @@ if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
 elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
     do_sync_actin_emc_input_data_to_vm
     do_sync_actin_output_data_to_vm $(production_actin_emc_project)
+elif [[ "$(hostname)" == $(production_actin_mcgi_ops_vm) ]]; then
+    do_sync_actin_mcgi_input_data_to_vm
+    do_sync_actin_output_data_to_vm $(production_actin_mcgi_project)
 else
-    error "Can only sync to EMC or NKI operations VM"
+    error "Can only sync to an operations VM"
 fi
