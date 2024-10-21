@@ -390,8 +390,8 @@ locate_actin_trial_status_directory() {
     echo "/data/actin/config/trial_status"
 }
 
-locate_actin_nki_config_file() {
-    echo "/data/actin/config/nki-actin-config/nki-actin-config.yaml"
+locate_actin_config_file() {
+    echo "/data/actin/config/actin-config/actin-config.yaml"
 }
 
 ########################## ACTIN CRC Development ###############################
