@@ -34,4 +34,14 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 create_or_cleanup_dir ${clinical_curation_directory}
 gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) ${clinical_curation_directory}
 
+nki_project="$(production_actin_nki_project)"
+if [ "$gcp_project" = "$nki_project" ]; then
+  info "Syncing NKI actin config file ..."
+  actin_nki_config_file="$(locate_actin_nki_config_file)"
+  actin_nki_config_directory=$(dirname "$actin_nki_config_file")
+  create_or_cleanup_dir ${actin_nki_config_directory}
+  config_map_content="$(kubectl get configmap actin-config -o jsonpath='{.data.actin-config\.yaml}')"
+  echo "$config_map_content" > "$actin_nki_config_file"
+fi
+
 info "Done"
