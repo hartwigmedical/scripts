@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source actin_config || exit 1
+
+gcp_project="$(production_actin_mcgi_project)"
+clinical_feed_input_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})"
+
+do_sync_actin_input_data_to_vm ${gcp_project} ${clinical_feed_input_bucket}
+

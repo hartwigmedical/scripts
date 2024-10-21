@@ -26,6 +26,15 @@ production_actin_nki_ops_vm() {
     echo "nki-vm-operations"
 }
 
+production_actin_mcgi_project() {
+    echo "actin-mcgi"
+}
+
+production_actin_mcgi_ops_vm() {
+    echo "mcgi-vm-operations"
+}
+
+
 production_actin_serve_vm() {
     echo "serve-vm-actin-1"
 }
