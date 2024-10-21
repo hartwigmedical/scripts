@@ -34,7 +34,7 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 create_or_cleanup_dir ${clinical_curation_directory}
 gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) ${clinical_curation_directory}
 
-if [[ "${gcp_project}" != "$(pilot_actin_project)" ]]; then
+if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
     info "Syncing actin config file ..."
 
     actin_config_file="$(locate_actin_config_file)"
@@ -44,7 +44,7 @@ if [[ "${gcp_project}" != "$(pilot_actin_project)" ]]; then
     config_map_content="$(kubectl get configmap actin-config -o jsonpath='{.data.actin-config\.yaml}')"
     echo "${config_map_content}" > "${actin_config_file}"
 else
-    warn "Cannot sync actin config file on $(pilot_actin_project), only supported on actual ops environments!"
+    warn "Cannot sync actin config file on $(pilot_actin_vm), only supported on prod ops VMs!"
 fi
 
 info "Done"
