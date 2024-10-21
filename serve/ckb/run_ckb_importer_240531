@@ -2,7 +2,7 @@
 
 source locate_files || exit 1
 
-ckb_jar="/data/tools/ckb-importer/5.0.3/ckb-importer.jar"
+ckb_jar="/data/tools/ckb-importer/5.3.0/ckb-importer.jar"
 ckb_dir="/data/resources/custom/ckb/latest/240531_ckb_flex_dump"
 
 do_run_ckb_importer ${ckb_jar} "ckb_240531" ${ckb_dir}
