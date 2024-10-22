@@ -37,14 +37,14 @@ gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_proje
 if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
     info "Syncing actin config file ..."
 
-    actin_config_file="$(locate_actin_config_file)"
-    actin_config_directory=$(dirname "${actin_config_file}")
-    create_or_cleanup_dir ${actin_config_directory}
+    environment_config_yaml="$(locate_actin_environment_config_yaml)"
+    environment_config_directory=$(dirname "${environment_config_yaml}")
+    create_or_cleanup_dir ${environment_config_directory}
 
     # This command does require the context to be set for the specific user. Way to get this is via:
     # gcloud container clusters get-credentials {env}-cluster-patient-processing --region europe-west4 --project actin-{env}
     config_map_content="$(kubectl get configmap actin-config -o jsonpath='{.data.actin-config\.yaml}')"
-    echo "${config_map_content}" > "${actin_config_file}"
+    echo "${config_map_content}" > "${environment_config_yaml}"
 else
     warn "Cannot sync actin config file on $(pilot_actin_vm), only supported on prod ops VMs!"
 fi

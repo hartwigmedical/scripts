@@ -2,6 +2,6 @@
 
 source locate_files || exit 1
 
-actin_config_file="$(locate_actin_config_file)"
+environment_config_yaml="$(locate_actin_environment_config_yaml)"
 
-do_run_actin_trial_creation "nki_config_directory" "-override_yaml" "${actin_config_file}"
+do_run_actin_trial_creation "nki_config_directory" "-override_yaml" "${environment_config_yaml}"

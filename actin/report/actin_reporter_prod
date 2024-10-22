@@ -23,6 +23,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -patient_json ${patient_record_json} \
     -treatment_match_json ${treatment_match_json} \
+    -override_yaml ${} \
     -output_directory ${output_directory} \
     "$@"
 
