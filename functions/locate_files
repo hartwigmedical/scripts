@@ -729,7 +729,12 @@ locate_actin_wgs_directory_for_patient() {
         warn "Multiple WGS directories found for ${patient}. Taking last directory ${last_patient_wgs_directory}"
     fi
 
-    echo "${wgs_directory}/${last_patient_wgs_directory}"
+    full_wgs_path=""
+    if [[ ! -z ${last_patient_wgs_directory} ]]; then
+        full_wgs_path="${wgs_directory}/${last_patient_wgs_directory}"
+    fi
+
+    echo ${full_wgs_path}
 }
 
 locate_actin_wgs_diagnostic_directory() {
