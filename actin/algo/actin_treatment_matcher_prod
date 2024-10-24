@@ -27,6 +27,14 @@ else
     warn "No data for personalization found"
 fi
 
+environment_config_yaml_cmd=""
+if [[ -f "${environment_config_yaml}" ]]; then
+    info "Using config yaml from ${environment_config_yaml}."
+    environment_config_yaml_cmd="-override_yaml ${environment_config_yaml}"
+else
+    info "No config yaml found, using default configuration."
+fi
+
 serve_directory="$(locate_actin_serve_db)"
 
 output_directory="$(locate_actin_treatment_match_directory)"
@@ -43,6 +51,7 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
     ${personalization_path_cmd} \
+    ${environment_config_yaml_cmd} \
     -serve_directory "${serve_directory}" \
     -output_directory "${output_directory}" \
     "$@"
