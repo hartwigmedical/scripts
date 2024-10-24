@@ -15,7 +15,7 @@ trial_status_directory="$(locate_actin_trial_status_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
-serve_db_json="$(locate_actin_serve_db_37_json)"
+serve_db_json="$(locate_actin_serve_db_nl_37_json)"
 output_directory="$(locate_actin_trial_database_directory)"
 
 create_or_cleanup_dir "${output_directory}"

@@ -346,16 +346,20 @@ locate_actin_treatment_db_directory() {
     echo "/data/resources/actin/treatment_db"
 }
 
-locate_actin_serve_db() {
+locate_actin_serve_db_nl() {
     echo "/data/resources/actin/serve_db"
 }
 
-locate_actin_serve_db_37_json() {
-    echo "$(locate_actin_serve_db)/serve.37.json"
+locate_actin_serve_db_nl_37_json() {
+    echo "$(locate_actin_serve_db_nl)/serve.37.json"
 }
 
-locate_actin_serve_db_38_json() {
-    echo "$(locate_actin_serve_db)/serve.38.json"
+locate_actin_serve_db_nl_38_json() {
+    echo "$(locate_actin_serve_db_nl)/serve.38.json"
+}
+
+locate_actin_serve_db_mcgi() {
+    echo "/data/resources/actin/serve_db_mcgi"
 }
 
 locate_actin_rna_sample_metadata_file() {

@@ -4,8 +4,9 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 patient=$1 && shift
+serve_directory=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${serve_directory}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
@@ -19,6 +20,7 @@ treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
+
 personalization_path_cmd=""
 personalization_data_path="$(locate_crc_personalization_reference_data)"
 if [[ -f ${personalization_data_path} ]]; then
@@ -34,8 +36,6 @@ if [[ -f "${environment_config_yaml}" ]]; then
 else
     info "No config yaml found, using default configuration."
 fi
-
-serve_directory="$(locate_actin_serve_db)"
 
 output_directory="$(locate_actin_treatment_match_directory)"
 

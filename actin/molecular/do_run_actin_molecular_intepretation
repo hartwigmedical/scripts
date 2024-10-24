@@ -2,12 +2,12 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
-source io_functions || exit 1
 
 patient=$1 && shift
+serve_directory=$1 && shift
 
-if [[ -z "${patient}" ]]; then
-    error "Parameters missing. Exiting."
+if [[ -z "${patient}" || -z "${serve_directory}" ]]; then
+    error "Parameters missing. Exiting.";
 fi
 
 clinical_json="$(locate_actin_clinical_json ${patient})"
@@ -22,7 +22,6 @@ else
     info "Assuming no WGS has been performed for ${patient}"
 fi
 
-serve_directory="$(locate_actin_serve_db)"
 doid_json="$(locate_doid_json)"
 dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"

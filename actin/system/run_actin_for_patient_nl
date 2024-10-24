@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+actin_molecular_interpreter_nl ${patient}
+
+echo ""
+
+# Pass "-run_historically" to run with historic reference data
+actin_treatment_matcher_nl ${patient} "$@"
+
+echo ""
+
+create_actin_evaluation_data_for_patient ${patient}
+
+echo ""
+
+actin_reporter_prod ${patient}
