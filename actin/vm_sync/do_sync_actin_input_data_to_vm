@@ -42,7 +42,7 @@ if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
     create_or_cleanup_dir ${environment_config_directory}
 
     # This command does require the context to be set for the specific user. Way to get this is via:
-    # gcloud container clusters get-credentials {env}-cluster-patient-processing --region europe-west4 --project actin-{env}
+    # gcloud container clusters get-credentials ${env}-cluster-patient-processing --region europe-west4 --project actin-${env}
     config_map_content="$(kubectl get configmap actin-config -o jsonpath='{.data.actin-config\.yaml}')"
     echo "${config_map_content}" > "${environment_config_yaml}"
 else
