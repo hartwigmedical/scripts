@@ -17,7 +17,7 @@ do
         patient_info=$( lama_api_get "patient/patient-id/${patient_id}" )
         hospital_code=$( echo $patient_info | jq -r '.hospitalCode' )
         reporting_id=$( echo $patient_info | jq -r '.reportingId' )
-        if [[ $hospital_code == "06" || $hospital_code == "VH" ]]
+        if [[ $hospital_code == "06" || $hospital_code == "08" || $hospital_code == "VH" ]]
         then
             echo -e "${sample_id}\t${reporting_id}"
         fi
