@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+gene=$1 && shift
+mutation=$1 && shift
+
+if [[ -z "${gene}" || -z "${mutation}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+
+actin_transvar_jar="$(locate_actin_transvar_jar_on_vm)"
+
+info "Running ACTIN transvar test application on ${gene}:${mutation}"
+
+java -cp ${actin_transvar_jar} com.hartwig.actin.tools.transvar.tools.TransvarTestApplication \
+    -gene "${gene}" \
+    -mutation "${mutation}" \
+    -ref_genome "V37" \
+    -ref_genome_fasta_file "${ref_genome_fasta_file}" \
+    -ensembl_data_dir "${ensembl_data_dir}" \
+    "$@"
+
+

@@ -8,6 +8,10 @@ locate_actin_jar_on_vm() {
     echo "/data/actin/system/actin.jar"
 }
 
+locate_actin_transvar_jar_on_vm() {
+    echo "/data/tools/actin-transvar/actin-transvar.jar"
+}
+
 locate_pilot_isofox() {
     echo "/data/experiments/pilot_tools/isofox/isofox.jar"
 }
