@@ -23,6 +23,8 @@ actin_transvar_jar="$(locate_actin_transvar_jar_on_vm)"
 
 info "Running ACTIN transvar test application on ${gene}:${mutation} using transcript ${transcript}"
 
+info ${transcript_cmd}
+
 java -cp ${actin_transvar_jar} com.hartwig.actin.tools.transvar.tools.TransvarTestApplication \
     -gene "${gene}" \
     ${transcript_cmd} \
