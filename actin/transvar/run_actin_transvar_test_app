@@ -10,6 +10,12 @@ if [[ -z "${gene}" || -z "${mutation}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
+transcript_cmd=""
+transcript=$1 && shift
+if [[ ! -z "${transcript}" ]]; then
+    transcript_cmd="-transcript ${transcript}"
+fi
+
 ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 
@@ -19,6 +25,7 @@ info "Running ACTIN transvar test application on ${gene}:${mutation}"
 
 java -cp ${actin_transvar_jar} com.hartwig.actin.tools.transvar.tools.TransvarTestApplication \
     -gene "${gene}" \
+    ${transcript_cmd} \
     -mutation "${mutation}" \
     -ref_genome "V37" \
     -ref_genome_fasta_file "${ref_genome_fasta_file}" \
