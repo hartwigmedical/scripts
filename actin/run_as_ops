@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+set -e
+
+[[ $# -ne 1 && $# -ne 2 ]] && echo "Provide the script and optionally the log" && exit 1
+log=${2:-$(basename $1).log}
+sudo -u ops bash -l -c "$1 > $log 2>&1"
+
