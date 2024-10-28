@@ -7,3 +7,6 @@ done
 mkdir -p ~/.mvn
 cp /data/repos/scripts/mvn/extensions.xml ~/.mvn/
 
+# Collection of handy aliases
+alias cronjobs='echo "# /etc/cron.d/hmfcrons" && cat /etc/cron.d/hmfcrons'
+alias format='datamash transpose | column -t'
