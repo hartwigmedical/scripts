@@ -425,25 +425,25 @@ locate_cohort_actin() {
 locate_actin_cohort_pipeline_directory() {
     local sample=$1 && shift
 
-    echo "/data/experiments/kd-actin-cohort/pipelines/${sample}"
+    echo "/data/experiments/kd_actin_cohort/pipelines/${sample}"
 }
 
 locate_actin_cohort_molecular_directory() {
     local sample=$1 && shift
 
-    echo "/data/experiments/kd-actin-cohort/molecular/${sample}"
+    echo "/data/experiments/kd_actin_cohort/molecular/${sample}"
 }
 
 locate_actin_cohort_clinical_directory() {
-    echo "/data/experiments/kd-actin-cohort/clinical"
+    echo "/data/experiments/kd_actin_cohort/clinical"
 }
 
 locate_actin_cohort_trial_database_directory() {
-    echo "/data/experiments/kd-actin-cohort/trial_database"
+    echo "/data/experiments/kd_actin_cohort/trial_database"
 }
 
 locate_actin_cohort_treatment_match_directory() {
-    echo "/data/experiments/kd-actin-cohort/treatment_matches"
+    echo "/data/experiments/kd_actin_cohort/treatment_matches"
 }
 
 locate_actin_cohort_trial_config_directory() {
