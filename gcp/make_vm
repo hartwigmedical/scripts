@@ -119,9 +119,7 @@ fi
 
 current_project=$(gcloud config get-value project) || die "Unable to get-value project"
 if [[ ! "${current_project}" == "${vm_project}" ]]; then
-    warn "Request to create VM in project ${vm_project} but current project is ${current_project}"
-    warn "Switch project (gcloud config set project ${vm_project}) and try again"
-    exit 1
+    info "VM will be created in project [${vm_project}] instead of your current project [${current_project}]"
 fi
 
 info "Checking availability of VM name (${vm_name})"
@@ -135,6 +133,7 @@ fi
 
 labels="user=${USER},cost_center=${cost_center}"
 cmd=("gcloud" "compute" "instances" "create" "${vm_name}")
+cmd+=("--project" "${vm_project}")
 cmd+=("--image" "${image_name}")
 cmd+=("--image-project" "${image_project}")
 cmd+=("--machine-type" "${machine_type}")
@@ -164,11 +163,9 @@ info "Start creating VM instance ${vm_name}"
 echo ""
 gcloud compute disks add-labels "${vm_name}" --project="${vm_project}" --zone="${zone}" --labels="${labels}"
 
-info "Useful cmds:"
-echo " gcloud compute ssh ${vm_name} --tunnel-through-iap"
-echo " gcloud compute instances list --filter='name=(${vm_name})'"
-echo " gcloud compute instances stop ${vm_name}"
-echo " gcloud compute instances start ${vm_name}"
-echo " gcloud compute instances delete --zone ${zone} -q ${vm_name}"
+info "You can use these command to :"
+echo " gcloud compute ssh ${vm_name} --project ${vm_project}"
+echo " gcloud compute instances stop --project ${vm_project} --zone ${zone} ${vm_name}"
+echo " gcloud compute instances delete --project ${vm_project} --zone ${zone} -q ${vm_name}"
 echo " https://console.cloud.google.com/compute/instances?project=${vm_project}"
 echo ""
