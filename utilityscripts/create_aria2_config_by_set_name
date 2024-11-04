@@ -53,9 +53,11 @@ function main() {
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
 
+    reporting_id=$(hmf_api_get samples?name="${tum}" | jq -r '.[] | .reporting_id' | head -n1)
+
     out_jsn_all="${out_dir}/${set_name}_runfiles.json"
     out_md5_all="${out_dir}/${set_name}_runfiles.md5"
-    out_aria="${out_dir}/${set_name}.aria.txt"
+    out_aria="${out_dir}/${set_name}_${reporting_id}.aria.txt"
     out_md5="${out_dir}/${set_name}.md5"
     out_url_int="${out_dir}/${set_name}_internal_urls.txt"
     out_url_ext="${out_dir}/${set_name}_external_urls.txt"
