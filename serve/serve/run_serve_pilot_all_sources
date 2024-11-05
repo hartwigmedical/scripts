@@ -10,8 +10,8 @@ ckb_dir="$(locate_ckb_flex_data_latest_dir)"
 ckb_molecular_profile_filter_tsv="$(locate_ckb_molecular_profile_filter_pilot_tsv)"
 ckb_evidence_filter_tsv="$(locate_ckb_evidence_filter_pilot_tsv)"
 ckb_trial_filter_tsv="$(locate_ckb_trial_filter_pilot_tsv)"
+ckb_regions_to_include_tsv="$(locate_ckb_regions_actin_nl_tsv)"
 ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
-ckb_regions_tsv="$(locate_ckb_regions_actin_nl_tsv)"
 ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
@@ -29,8 +29,8 @@ do_run_serve_pilot \
     -ckb_molecular_profile_filter_tsv ${ckb_molecular_profile_filter_tsv} \
     -ckb_evidence_filter_tsv ${ckb_evidence_filter_tsv} \
     -ckb_trial_filter_tsv ${ckb_trial_filter_tsv} \
+    -ckb_regions_to_include_tsv ${ckb_regions_to_include_tsv} \
     -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} \
-    -ckb_region_tsv ${ckb_regions_tsv} \
     -ckb_facility_curation_name_tsv ${ckb_facility_curation_name_tsv} \
     -ckb_facility_curation_zip_tsv ${ckb_facility_curation_zip_tsv} \
     -ckb_facility_curation_manual_tsv ${ckb_facility_curation_manual_tsv} \
