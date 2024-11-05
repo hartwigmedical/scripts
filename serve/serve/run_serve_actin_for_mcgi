@@ -7,9 +7,9 @@ output_dir="$(locate_serve_output_actin_mcgi)"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
-ckb_blacklist_molecular_profile_tsv="$(locate_ckb_blacklist_molecular_profile_tsv)"
-ckb_blacklist_studies_tsv="$(locate_ckb_blacklist_studies_tsv)"
-ckb_blacklist_evidence_tsv="$(locate_ckb_blacklist_evidences_tsv)"
+ckb_blacklist_molecular_profile_tsv="$(locate_ckb_molecular_profile_filter_tsv)"
+ckb_blacklist_studies_tsv="$(locate_ckb_trial_filter_tsv)"
+ckb_blacklist_evidence_tsv="$(locate_ckb_evidence_filter_tsv)"
 ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
