@@ -54,13 +54,15 @@ function main() {
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
 
     reporting_id=$(hmf_api_get samples?name="${tum}" | jq -r '.[] | .reporting_id' | head -n1)
+    set_name_without_sample_id=$(echo "${set_name}" | rev | cut -d_ -f 2- | rev)
+    file_base_name="${set_name_without_sample_id}_${reporting_id}"
 
-    out_jsn_all="${out_dir}/${set_name}_runfiles.json"
-    out_md5_all="${out_dir}/${set_name}_runfiles.md5"
-    out_aria="${out_dir}/${set_name}_${reporting_id}.aria.txt"
-    out_md5="${out_dir}/${set_name}.md5"
-    out_url_int="${out_dir}/${set_name}_internal_urls.txt"
-    out_url_ext="${out_dir}/${set_name}_external_urls.txt"
+    out_jsn_all="${out_dir}/${file_base_name}_runfiles.json"
+    out_md5_all="${out_dir}/${file_base_name}_runfiles.md5"
+    out_aria="${out_dir}/${file_base_name}_${reporting_id}.aria.txt"
+    out_md5="${out_dir}/${file_base_name}.md5"
+    out_url_int="${out_dir}/${file_base_name}_internal_urls.txt"
+    out_url_ext="${out_dir}/${file_base_name}_external_urls.txt"
     all_output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
 
     info "Details:"
