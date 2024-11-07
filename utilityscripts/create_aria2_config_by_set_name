@@ -59,7 +59,7 @@ function main() {
 
     out_jsn_all="${out_dir}/${file_base_name}_runfiles.json"
     out_md5_all="${out_dir}/${file_base_name}_runfiles.md5"
-    out_aria="${out_dir}/${file_base_name}_${reporting_id}.aria.txt"
+    out_aria="${out_dir}/${file_base_name}.aria.txt"
     out_md5="${out_dir}/${file_base_name}.md5"
     out_url_int="${out_dir}/${file_base_name}_internal_urls.txt"
     out_url_ext="${out_dir}/${file_base_name}_external_urls.txt"
