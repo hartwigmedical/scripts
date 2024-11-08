@@ -20,10 +20,8 @@ docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
-missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
 
 do_run_serve_pilot \
-    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} \
     -ckb_molecular_profile_filter_tsv ${ckb_molecular_profile_filter_tsv} \
     -ckb_evidence_filter_tsv ${ckb_evidence_filter_tsv} \

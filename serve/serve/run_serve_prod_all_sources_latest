@@ -16,7 +16,7 @@ docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 
-missing_doids_mapping_tsv="/data/resources/crunch/serve/curation/all_doids_mapping.tsv"
+missing_doids_mapping_tsv="/data/resources/crunch/serve/doid_mapping/all_doids_mapping.tsv"
 
 do_run_serve_prod \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \

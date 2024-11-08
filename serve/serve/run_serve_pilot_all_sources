@@ -17,11 +17,11 @@ ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
 
 vicc_json="$(locate_vicc_json)"
+vicc_missing_doids_mapping_tsv="$(locate_vicc_missing_doids_mapping_tsv)"
 docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
-missing_doids_mapping_tsv="/data/resources/crunch/serve/curation/all_doids_mapping.tsv"
 
 do_run_serve_pilot \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \

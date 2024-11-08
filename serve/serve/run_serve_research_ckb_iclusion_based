@@ -20,7 +20,7 @@ hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 
-missing_doids_mapping_tsv="$(locate_private_missing_doids_mapping_tsv)"
+missing_doids_mapping_tsv="$(locate_iclusion_missing_doids_mapping_tsv)"
 
 do_run_serve_research \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \

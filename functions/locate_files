@@ -1070,8 +1070,16 @@ locate_iclusion_filter_tsv() {
     echo "/data/resources/crunch/serve/iclusion/iclusion_filters.tsv"
 }
 
+locate_iclusion_missing_doids_mapping_tsv() {
+    echo "/data/resources/crunch/serve/doid_mapping/private_doids_mapping.tsv"
+}
+
 locate_vicc_json() {
     echo "/data/resources/crunch/serve/vicc/all.json"
+}
+
+locate_vicc_missing_doids_mapping_tsv() {
+    echo "/data/resources/crunch/serve/vicc/vicc_doids_mapping.tsv"
 }
 
 locate_docm_tsv() {
@@ -1148,14 +1156,6 @@ locate_ckb_regions_actin_nl_tsv() {
 
 locate_ckb_regions_actin_mcgi_tsv() {
     echo "/data/resources/crunch/serve/ckb/ckb_regions_actin_mcgi.tsv"
-}
-
-locate_public_missing_doids_mapping_tsv() {
-    echo "/data/resources/crunch/serve/doid_mapping/public_doids_mapping.tsv"
-}
-
-locate_private_missing_doids_mapping_tsv() {
-    echo "/data/resources/crunch/serve/doid_mapping/private_doids_mapping.tsv"
 }
 
 ################################ SERVE Output #################################
