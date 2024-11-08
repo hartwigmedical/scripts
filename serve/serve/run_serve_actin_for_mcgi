@@ -20,6 +20,7 @@ docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"``
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
+# TODO (CB) Remove this param when switching to v7.0.0
 missing_doids_mapping_tsv="$(locate_iclusion_missing_doids_mapping_tsv)"
 
 do_run_serve_actin \

@@ -16,15 +16,15 @@ ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
 
-vicc_json="$(locate_vicc_json)"
-vicc_missing_doids_mapping_tsv="$(locate_vicc_missing_doids_mapping_tsv)"
 docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 
+vicc_json="$(locate_vicc_json)"
+vicc_missing_doids_mapping_tsv="$(locate_vicc_missing_doids_mapping_tsv)"
+
 do_run_serve_pilot \
-    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -use_ckb -ckb_dir ${ckb_dir} \
     -ckb_molecular_profile_filter_tsv ${ckb_molecular_profile_filter_tsv} \
     -ckb_evidence_filter_tsv ${ckb_evidence_filter_tsv} \
@@ -40,5 +40,6 @@ do_run_serve_pilot \
     -use_hartwig_driver_genes \
     -use_hartwig_curated_genes -hartwig_curated_gene_tsv ${hartwig_curated_gene_tsv} \
     -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
+    -vicc_missing_doids_mapping_tsv ${vicc_missing_doids_mapping_tsv} \
     -output_dir ${output_dir} \
     "$@"
