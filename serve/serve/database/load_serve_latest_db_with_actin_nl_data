@@ -4,7 +4,7 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 serve_actionability_dir="$(locate_serve_output_actin_nl)"
-serve_jar=$(locate_actin_serve)
+serve_jar="$(locate_actin_serve)"
 
 credentials=$(prod_writer_sql_credentials)
 

@@ -4,7 +4,7 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 serve_actionability_dir="/data/output/pilot_output_ckb_trials_and_ckb_evidence_from_240531_dump_verification"
-serve_jar=$(locate_pilot_serve)
+serve_jar="$(locate_pilot_serve)"
 
 credentials=$(prod_writer_sql_credentials)
 
