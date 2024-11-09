@@ -6,10 +6,8 @@ source database_functions || exit 1
 
 serve_db=$1 && shift
 
-# Resources
 serve_database_sql="/data/resources/crunch/serve/database/generate_serve_db.sql"
 
-# Database details
 credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
