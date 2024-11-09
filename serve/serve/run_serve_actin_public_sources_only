@@ -17,7 +17,7 @@ hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
 
 do_run_serve_actin \
     -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
-    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
+    -missing_doids_mapping_tsv ${vicc_missing_doids_mapping_tsv} \
     -use_docm -docm_tsv ${docm_tsv} \
     -use_hartwig_cohort_hotspots -hartwig_cohort_hotspot_tsv ${hartwig_cohort_hotspot_tsv} \
     -use_hartwig_curated_hotspots -hartwig_curated_hotspot_tsv ${hartwig_curated_hotspot_tsv} \
