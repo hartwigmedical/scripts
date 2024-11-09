@@ -5,16 +5,18 @@ source database_functions || exit 1
 
 credentials=$(prod_writer_sql_credentials)
 
+experiments_dir="/data/experiments/cb_serve_v7_verification";
+
 serve_v6_database="serve_public"
 serve_v7_database="serve_pilot"
 
-info "Comparing SERVE v6 database '${serve_v6_databae}' with SERVE v7 database '${serve_v7_database}'"
+info "Comparing SERVE v6 database '${serve_v6_database}' with SERVE v7 database '${serve_v7_database}'"
 
 gene_query="select gene, event, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatmentapplicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableGene order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;"
 
-working_dir="/data/experiments/serve_v7_verification";
-do_execute_sql_on_database ${gene_query} ${serve_v6_database} "${credentials}" > "${working_dir}/v6_actionable_genes.tsv"
-do_execute_sql_on_database ${gene_query} ${serve_v7_database} "${credentials}" > "${working_dir}/v7_actionable_genes.tsv"
 
-info "Written output to ${working_dir}"
+do_execute_sql_on_database ${gene_query} ${serve_v6_database} "${credentials}" > "${experiments_dir}/v6_actionable_genes.tsv"
+do_execute_sql_on_database ${gene_query} ${serve_v7_database} "${credentials}" > "${experiments_dir}/v7_actionable_genes.tsv"
+
+info "Written output to ${experiments_dir}"
 
