@@ -1,6 +1,7 @@
+# New datarequest_all view for the pseudonymized research database
 CREATE OR REPLACE VIEW datarequest_all AS
-SELECT amberAnonymous.hmfSampleId,
-       left(amberAnonymous.hmfSampleId, 9)      AS hmfPatientId,
+SELECT sample.sampleId                          AS hmfSampleId,
+       sample.donorId                           AS hmfPatientId,
        baseline.hospital,
        sample.cohortId,
        sample.sampleId,
@@ -53,7 +54,6 @@ FROM sample
 #          INNER JOIN metric ON sample.sampleId = metric.sampleId AND metric.sufficientCoverage = 0
 #        In production, use:
          INNER JOIN metric ON sample.sampleId = metric.sampleId AND metric.sufficientCoverage = 1
-         LEFT JOIN amberAnonymous on sample.sampleId = amberAnonymous.sampleId AND deleted = 0
          LEFT JOIN rnaStatistics on sample.sampleId = rnaStatistics.sampleId
          LEFT JOIN baseline ON specimen.patientId = baseline.patientId
          LEFT JOIN (SELECT patientId, group_concat(doid separator ',') AS doids FROM doidNode GROUP BY 1) AS doidView

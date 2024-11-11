@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
 REGION="europe-west4"
 BILLING_PROJECT="hmf-database"
-KEY_FILE="/data/credentials/hmf-download"
 
 print_usage(){
     echo "-----"
     echo " Descr: Prints presigned BAM and BAI or CRAM and CRAI URLs for loading them into IGV."
-    echo " Usage: ${SCRIPT_NAME} \${bam-url} \${duration}"
+    echo " Usage: ${SCRIPT_NAME} <bam url> [<duration>]"
+    echo "        ${SCRIPT_NAME} gs://some/path/to.bam"
     echo "        ${SCRIPT_NAME} gs://some/path/to.bam 2h"
-    echo "        ${SCRIPT_NAME} gs://some/path/to/other.bam 2d"
-    echo "  Note: Only works on data VM"
+    echo "  Note: Requires access to the GCP secret with credentials"
     echo "-----"
     exit 1
 }
@@ -22,8 +22,12 @@ print_usage(){
 main() {
   info "Started ${SCRIPT_NAME}"
 
-  local bam_url=$1 && shift
-  local duration=$1 && shift
+  local bam_url=$1
+  local duration=${2:-2h}
+  local secret_name="${3:-gcp-hmf-download-u-hmf-database}"
+
+  info "Retrieve service account credentials required for signing [secret:${secret_name}]"
+  credentials=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
   if [[ -z "${bam_url}" || -z "${duration}" || "${bam_url}" == "-h" ]]; then
     print_usage
@@ -31,16 +35,14 @@ main() {
 
   if [[ "${bam_url}" == *.bam ]]; then
     info "Bam file:"
-    sign_url "${bam_url}" "${duration}"
-
+    sign_url "${bam_url}" "${duration}" "${credentials}"
     info "Bai file:"
-    sign_url "${bam_url}.bai" "${duration}"
+    sign_url "${bam_url}.bai" "${duration}" "${credentials}"
   elif [[ "${bam_url}" == *.cram ]]; then
     info "Cram file:"
-    sign_url "${bam_url}" "${duration}"
-
+    sign_url "${bam_url}" "${duration}" "${credentials}"
     info "Crai file:"
-    sign_url "${bam_url}.crai" "${duration}"
+    sign_url "${bam_url}.crai" "${duration}" "${credentials}"
   else
     die "Unrecognized file ending"
   fi
@@ -51,12 +53,13 @@ main() {
 sign_url() {
   local url=$1 && shift
   local duration=$1 && shift
+  local credentials=$1 && shift
 
   if [[ -z "${duration}" ]]; then
     die "Not enough arguments to ${FUNCNAME[0]}"
   fi
 
-  gsutil signurl -r "${REGION}" -b "${BILLING_PROJECT}" -d "${duration}" "${KEY_FILE}" "${url}"
+  gsutil signurl -r "${REGION}" -b "${BILLING_PROJECT}" -d "${duration}" <(echo "${credentials}") "${url}"
 }
 
 main "$@"

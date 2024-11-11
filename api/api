@@ -162,8 +162,8 @@ main(){
         printf "#%s\t%s\n" name id
         jq -r '.[] | [.name, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "accounts" ]]; then
-        printf "#%s\t%s\n" email id
-        jq -r '.[] | [.email, .id] | @tsv' <<< "${json_result}"
+        printf "#%s\t%s\t%s\n" email is_service_account id
+        jq -r '.[] | [.email, .service_account, .id] | @tsv' <<< "${json_result}"
     elif [[ "${class}" == "groups" ]]; then
         printf "#%s\t%s\t%s\t%s\n" name request active id
         jq -r '.[] | [.name, .request//"NA", .active, .id] | @tsv' <<< "${json_result}"
