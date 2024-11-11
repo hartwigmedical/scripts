@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source metadata_functions || exit 1
+
+input_vcf_file=$1 && shift
+
+if [[ -z "${input_vcf_file}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+output_dir="/data/experiments/kd_pave_manual_runs"
+
+ensembl_data_dir_37="$(locate_ensembl_data_dir_37)"
+ref_genome_37_fasta_file="$(locate_ref_genome_37_fasta_file)"
+pave_jar="$(locate_research_pave)"
+
+java -jar ${pave_jar} \
+  -vcf_file ${input_vcf_file} \
+  -ensembl_data_dir ${ensembl_data_dir_37} \
+  -ref_genome ${ref_genome_37_fasta_file} \
+  -ref_genome_version 37 \
+  -output_dir ${output_dir}
