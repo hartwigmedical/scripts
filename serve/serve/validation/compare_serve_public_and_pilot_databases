@@ -5,7 +5,7 @@ source database_functions || exit 1
 
 credentials=$(prod_writer_sql_credentials)
 
-experiments_dir="/data/experiments/cb_serve_v7_verification";
+experiments_dir="/data/experiments/cb_serve_v7_verification/public_sources_only";
 
 serve_v6_database="serve_public"
 serve_v7_database="serve_pilot"
