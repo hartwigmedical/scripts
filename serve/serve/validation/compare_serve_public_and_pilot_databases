@@ -22,34 +22,42 @@ actionable_hla_query="select hlaAllele, source, entryDate, sourceEvent, sourceUr
 
 known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation, sources from knownHotspot order by 1,2,3,4,5,6,7,8,9,10,11;"
 
+info " Comparing actionable hotspots..."
 do_execute_sql_on_database "${actionable_hotspot_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_hotspots.tsv"
 do_execute_sql_on_database "${actionable_hotspot_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_hotspots.tsv"
 diff "${experiments_dir}/v6_actionable_hotspots.tsv" "${experiments_dir}/v7_actionable_hotspots.tsv" > "${experiments_dir}/actionable_hotspots_diff.tsv"
 
+info " Comparing actionable codons..."
 do_execute_sql_on_database "${actionable_codon_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_codons.tsv"
 do_execute_sql_on_database "${actionable_codon_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_codons.tsv"
 diff "${experiments_dir}/v6_actionable_codons.tsv" "${experiments_dir}/v7_actionable_codons.tsv" > "${experiments_dir}/actionable_codons_diff.tsv"
 
+info " Comparing actionable exons..."
 do_execute_sql_on_database "${actionable_exon_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_exons.tsv"
 do_execute_sql_on_database "${actionable_exon_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_exons.tsv"
 diff "${experiments_dir}/v6_actionable_exons.tsv" "${experiments_dir}/v7_actionable_exons.tsv" > "${experiments_dir}/actionable_exons_diff.tsv"
 
+info " Comparing actionable genes..."
 do_execute_sql_on_database "${actionable_gene_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_genes.tsv"
 do_execute_sql_on_database "${actionable_gene_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_genes.tsv"
 diff "${experiments_dir}/v6_actionable_genes.tsv" "${experiments_dir}/v7_actionable_genes.tsv" > "${experiments_dir}/actionable_genes_diff.tsv"
 
+info " Comparing actionable fusions..."
 do_execute_sql_on_database "${actionable_fusion_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_fusions.tsv"
 do_execute_sql_on_database "${actionable_fusion_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_fusions.tsv"
 diff "${experiments_dir}/v6_actionable_fusions.tsv" "${experiments_dir}/v7_actionable_fusions.tsv" > "${experiments_dir}/actionable_fusions_diff.tsv"
 
+info " Comparing actionable characteristics..."
 do_execute_sql_on_database "${actionable_characteristic_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_characteristics.tsv"
 do_execute_sql_on_database "${actionable_characteristic_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_characteristics.tsv"
 diff "${experiments_dir}/v6_actionable_characteristics.tsv" "${experiments_dir}/v7_actionable_characteristics.tsv" > "${experiments_dir}/actionable_characteristics_diff.tsv"
 
+info " Comparing actionable HLA..."
 do_execute_sql_on_database "${actionable_hla_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_actionable_hla.tsv"
 do_execute_sql_on_database "${actionable_hla_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_actionable_hla.tsv"
 diff "${experiments_dir}/v6_actionable_hla.tsv" "${experiments_dir}/v7_actionable_hla.tsv" > "${experiments_dir}/actionable_hla_diff.tsv"
 
+info " Comparing known hotspots..."
 do_execute_sql_on_database "${known_hotspot_query}" "${serve_v6_database}" "${credentials}" > "${experiments_dir}/v6_known_hotspots.tsv"
 do_execute_sql_on_database "${known_hotspot_query}" "${serve_v7_database}" "${credentials}" > "${experiments_dir}/v7_known_hotspots.tsv"
 diff "${experiments_dir}/v6_known_hotspots.tsv" "${experiments_dir}/v7_known_hotspots.tsv" > "${experiments_dir}/known_hotspots_diff.tsv"
