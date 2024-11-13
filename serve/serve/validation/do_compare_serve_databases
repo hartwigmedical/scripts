@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+
+serve_database_name_1=$1 && shift
+serve_database_label_1=$1 && shift
+serve_database_name_2=$1 && shift
+serve_database_label_2=$1 && shift
+output_dir=$1 && shift
+
+if [[ -z "${serve_database_name_1}" || -z "${serve_database_label_1}" || -z "${serve_database_name_2}" || -z "${serve_database_label_2}" || -z "${output_dir}" ]]; then
+    error "Missing inputs. Exiting"
+fi
+
+credentials=$(prod_writer_sql_credentials)
+
+info "Comparing SERVE ${serve_database_label_1} database '${serve_database_name_1}' with SERVE ${serve_database_label_2} database '${serve_database_name_2}'"
+
+actionable_hotspot_query="select gene, chromosome, position, ref, alt, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableHotspot order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25;"
+actionable_codon_query="select gene, chromosome, start, end, applicableMutationType, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableCodon order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25;"
+actionable_exon_query="select gene, chromosome, start, end, applicableMutationType, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableExon order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25;"
+actionable_gene_query="select gene, event, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableGene order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22;"
+actionable_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonDown, maxExonDown, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableFusion order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26;"
+actionable_characteristic_query="select type, cutoffType, cutoff, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableCharacteristic order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23;"
+actionable_hla_query="select hlaAllele, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableHla order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;"
+
+known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation, sources from knownHotspot order by 1,2,3,4,5,6,7,8,9,10,11;"
+
+info " Comparing actionable hotspots..."
+actionable_hotspot_output_1="${output_dir}/${serve_database_label_1}_actionable_hotspots.tsv"
+actionable_hotspot_output_2="${output_dir}/${serve_database_label_2}_actionable_hotspots.tsv"
+do_execute_sql_on_database "${actionable_hotspot_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_hotspot_output_1}"
+do_execute_sql_on_database "${actionable_hotspot_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_hotspot_output_2}"
+diff "${actionable_hotspot_output_1}" "${actionable_hotspot_output_2}" > "${output_dir}/actionable_hotspots_diff.tsv"
+
+info " Comparing actionable codons..."
+actionable_codon_output_1="${output_dir}/${serve_database_label_1}_actionable_codons.tsv"
+actionable_codon_output_2="${output_dir}/${serve_database_label_2}_actionable_codons.tsv"
+do_execute_sql_on_database "${actionable_codon_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_codon_output_1}"
+do_execute_sql_on_database "${actionable_codon_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_codon_output_2}"
+diff "${actionable_codon_output_1}" "${actionable_codon_output_2}" > "${output_dir}/actionable_codons_diff.tsv"
+
+info " Comparing actionable exons..."
+actionable_exon_output_1="${output_dir}/${serve_database_label_1}_actionable_exons.tsv"
+actionable_exon_output_2="${output_dir}/${serve_database_label_2}_actionable_exons.tsv"
+do_execute_sql_on_database "${actionable_exon_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_exon_output_1}"
+do_execute_sql_on_database "${actionable_exon_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_exon_output_2}"
+diff "${actionable_exon_output_1}" "${actionable_exon_output_2}" > "${output_dir}/actionable_exons_diff.tsv"
+
+info " Comparing actionable genes..."
+actionable_gene_output_1="${output_dir}/${serve_database_label_1}_actionable_genes.tsv"
+actionable_gene_output_2="${output_dir}/${serve_database_label_2}_actionable_genes.tsv"
+do_execute_sql_on_database "${actionable_gene_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_gene_output_1}"
+do_execute_sql_on_database "${actionable_gene_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_gene_output_2}"
+diff "${actionable_gene_output_1}" "${actionable_gene_output_2}" > "${output_dir}/actionable_genes_diff.tsv"
+
+info " Comparing actionable fusions..."
+actionable_fusion_output_1="${output_dir}/${serve_database_label_1}_actionable_fusions.tsv"
+actionable_fusion_output_2="${output_dir}/${serve_database_label_2}_actionable_fusions.tsv"
+do_execute_sql_on_database "${actionable_fusion_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_fusion_output_1}"
+do_execute_sql_on_database "${actionable_fusion_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_fusion_output_1}"
+diff "${actionable_fusion_output_1}" "${actionable_fusion_output_2}" > "${output_dir}/actionable_fusions_diff.tsv"
+
+info " Comparing actionable characteristics..."
+actionable_characteristic_output_1="${output_dir}/${serve_database_label_1}_actionable_characteristics.tsv"
+actionable_characteristic_output_2="${output_dir}/${serve_database_label_2}_actionable_characteristics.tsv"
+do_execute_sql_on_database "${actionable_characteristic_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_characteristic_output_1}"
+do_execute_sql_on_database "${actionable_characteristic_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_characteristic_output_1}"
+diff "${actionable_characteristic_output_1}" "${actionable_characteristic_output_1}" > "${output_dir}/actionable_characteristics_diff.tsv"
+
+info " Comparing actionable HLA..."
+actionable_hla_output_1="${output_dir}/${serve_database_label_1}_actionable_hla.tsv"
+actionable_hla_output_2="${output_dir}/${serve_database_label_2}_actionable_hla.tsv"
+do_execute_sql_on_database "${actionable_hla_query}" "${serve_database_name_1}" "${credentials}" > "${actionable_hla_output_1}"
+do_execute_sql_on_database "${actionable_hla_query}" "${serve_database_name_2}" "${credentials}" > "${actionable_hla_output_2}"
+diff "${actionable_hla_output_1}" "${actionable_hla_output_2}" > "${output_dir}/actionable_hla_diff.tsv"
+
+info " Comparing known hotspots..."
+known_hotspot_output_1="${output_dir}/${serve_database_label_1}_known_hotspots.tsv"
+known_hotspot_output_2="${output_dir}/${serve_database_label_2}_known_hotspots.tsv"
+do_execute_sql_on_database "${known_hotspot_query}" "${serve_database_name_1}" "${credentials}" > "${known_hotspot_output_1}"
+do_execute_sql_on_database "${known_hotspot_query}" "${serve_database_name_2}" "${credentials}" > "${known_hotspot_output_2}"
+diff "${known_hotspot_output_1}" "${known_hotspot_output_2}" > "${output_dir}/known_hotspots_diff.tsv"
+
+info "Written output to ${output_dir}"
+
