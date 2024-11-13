@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+output_dir="/data/experiments/cb_serve_v7_verification/ckb_based"
+
+serve_database_name_1="serve_latest"
+serve_database_label_1="v6"
+serve_database_name_2="serve_pilot"
+serve_database_label_2="v7"
+
+do_compare_serve_databases \
+    ${serve_database_name_1} \
+    ${serve_database_label_1} \
+    ${serve_database_name_2} \
+    ${serve_database_label_2} \
+    ${output_dir}
+
