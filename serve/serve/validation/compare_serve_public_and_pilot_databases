@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
+output_dir="/data/experiments/cb_serve_v7_verification/public_sources_only"
+
 serve_database_name_1="serve_public"
 serve_database_label_1="v6"
 serve_database_name_2="serve_pilot"
 serve_database_label_2="v7"
-output_dir="/data/experiments/cb_serve_v7_verification/public_sources_only"
 
 do_compare_serve_databases \
     ${serve_database_name_1} \
