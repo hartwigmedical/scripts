@@ -8,7 +8,6 @@ biopsy_name=$1 && shift # eg TARGTO000000T
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
-key_file="/data/credentials/hmf-download"
 region="europe-west4"
 project="hmf-database"
 
@@ -39,6 +38,13 @@ internal_bam_url="gs://${bucket}/${set_name}/${biopsy_name}/aligner/${biopsy_nam
 # Sanity check (not all samples are linked to a biopsy yet in API)
 [[ "${internal_bam_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_bam_url}) for biopsy ${biopsy_name}"
 internal_bai_url="${internal_bam_url}.bai"
+
+# generate key file
+key_file="$(mktemp)"
+exec {fd}<>${key_file}
+rm ${key_file}
+key_file=/dev/fd/$fd
+gcloud secrets versions access latest --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets > $key_file
 
 signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}" | grep -v 'Signed URL' | cut -f4)
 signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}" | grep -v 'Signed URL' | cut -f4)
