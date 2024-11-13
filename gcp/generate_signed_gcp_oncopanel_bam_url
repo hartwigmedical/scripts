@@ -2,6 +2,7 @@
 
 source api_functions || exit 1
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 biopsy_name=$1 && shift # eg TARGTO000000T
 
@@ -39,15 +40,11 @@ internal_bam_url="gs://${bucket}/${set_name}/${biopsy_name}/aligner/${biopsy_nam
 [[ "${internal_bam_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_bam_url}) for biopsy ${biopsy_name}"
 internal_bai_url="${internal_bam_url}.bai"
 
-# generate key file
-key_file="$(mktemp)"
-exec {fd}<>${key_file}
-rm ${key_file}
-key_file=/dev/fd/$fd
-gcloud secrets versions access latest --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets > $key_file
+secret_name="gcp-hmf-download-u-hmf-database"
+credentials=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
-signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}" | grep -v 'Signed URL' | cut -f4)
-signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}" | grep -v 'Signed URL' | cut -f4)
+signed_bam_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_bam_url}" | grep -v 'Signed URL' | cut -f4)
+signed_bai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_bai_url}" | grep -v 'Signed URL' | cut -f4)
 
 [[ "${signed_bam_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bam_url})"
 [[ "${signed_bai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_bai_url})"

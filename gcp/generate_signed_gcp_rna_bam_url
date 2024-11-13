@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 sampleId=$1 && shift # tumor sample ID
 
@@ -38,15 +39,11 @@ print_usage(){
           die "Bai file is not present at expected location in bucket. Exiting."
     fi
 
-# generate key file
-key_file="$(mktemp)"
-exec {fd}<>${key_file}
-rm ${key_file}
-key_file=/dev/fd/$fd
-gcloud secrets versions access latest --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets > $key_file
+secret_name="gcp-hmf-download-u-hmf-database"
+credentials=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
-signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}")
-signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}")
+signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_bam_url}")
+signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_bai_url}")
 
 info "URLs for sample ID ${sampleId} (valid for ${PRESIGN_SECONDS} seconds or ${PRESIGN_DAYS} days):"
 
