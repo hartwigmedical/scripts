@@ -17,17 +17,20 @@ query_molecular <-"select * from molecular;"
 query_drivers <- "select * from molecularDrivers where (driverlikelihood='High' or category='c_fusions');"
 query_drivers_per_sample <- "select m.sampleId, count(md.driverLikelihood) as driverCount from molecular m left join molecularDrivers md on m.sampleId=md.sampleId and (driverlikelihood='High' or category='c_fusions') group by 1;"
 query_drivers_gene_count <- "select gene, count(distinct sampleId) as sampleCount from molecularDrivers where (driverlikelihood='High' or category='c_fusions') and sampleId in (select sampleId from molecular where containsTumorCells=1) group by 1 order by 2 desc;"
+query_patients_second_eval_phase <- "select * from patientsEvaluationPhase;"
+query_evaluated_trials_second_eval_phase <- "select distinct patientId, code from trialMatch t LEFT JOIN treatmentMatch tm ON tm.id = t.treatmentMatchId;"
 
 sample <- dbGetQuery(dbActin, query_sample)
 patient <- dbGetQuery(dbActin, query_patient)
 clinicalStatus <- dbGetQuery(dbActin, query_clinical_status)
 tumor <- dbGetQuery(dbActin, query_tumor)
 eligibleCohorts <- dbGetQuery(dbActin, query_eligibleCohorts)
-eligibleCohortsPts <- dbGetQuery(dbActin, query_eligibleCohorts_pts)
 molecular <- dbGetQuery(dbActin, query_molecular)
 drivers <- dbGetQuery(dbActin, query_drivers)
 driversPerSample <- dbGetQuery(dbActin, query_drivers_per_sample)
 driversGeneCount <- dbGetQuery(dbActin, query_drivers_gene_count)
+patientsSecondEvalPhase <- dbGetQuery(dbActin, query_patients_second_eval_phase)
+evaluatedTrialsSecondEvalPhase <- dbGetQuery(dbActin, query_evaluated_trials_second_eval_phase)
 
 dbDisconnect(dbActin)
 
@@ -177,8 +180,14 @@ actionableEventsSuccessfulRelevantPerEventRearranged <- rbind(rows_to_keep)
 actionableEventsSuccessfulRelevantPerEventRearranged$curated.event <- factor(actionableEventsSuccessfulRelevantPerEventRearranged$curated.event, levels = actionableEventsSuccessfulRelevantPerEventRearranged$curated.event)
 actionableEventsSuccessfulRelevantPerEventRearranged %>% ggplot(aes(x=count, y=curated.event)) + geom_bar(stat="identity") + theme_light()
 
-## COHORTS ------------------------------------------------------------------
-eligibleCohortsJoin <- left_join(eligibleCohortsPts, eligibleCohorts, by="patientId") %>% group_by(patientId) %>% summarise(a=sum(!is.na(trialId))) 
-median(eligibleCohortsJoin$a)
-min(eligibleCohortsJoin$a)
-max(eligibleCohortsJoin$a)
+## COHORTS & TRIALS NR ------------------------------------------------------------------
+eligibleCohortsJoin <- left_join(patientsSecondEvalPhase, eligibleCohorts, by="patientId") %>% group_by(patientId) %>% summarise(numberOfCohorts=sum(!is.na(trialId))) 
+median(eligibleCohortsJoin$numberOfCohorts)
+min(eligibleCohortsJoin$numberOfCohorts)
+max(eligibleCohortsJoin$numberOfCohorts)
+
+evaluatedTrialsJoinAll <- left_join(patientsSecondEvalPhase, evaluatedTrialsSecondEvalPhase, by="patientId") %>% group_by(patientId) %>% summarise(numberOfTrials=sum(!is.na(code)))
+evaluatedTrialsJoin <- evaluatedTrialsJoinAll %>% filter(numberOfTrials != 0)
+median(evaluatedTrialsJoin$numberOfTrials)
+min(evaluatedTrialsJoin$numberOfTrials)
+max(evaluatedTrialsJoin$numberOfTrials)
