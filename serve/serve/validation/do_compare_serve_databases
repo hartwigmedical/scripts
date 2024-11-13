@@ -105,8 +105,8 @@ diff "${known_exon_output_1}" "${known_exon_output_2}" > "${output_dir}/known_ex
 info " Comparing known genes..."
 known_genes_output_1="${output_dir}/${serve_database_label_1}_known_genes.tsv"
 known_genes_output_2="${output_dir}/${serve_database_label_2}_known_genes.tsv"
-do_execute_sql_on_database "${known_genes_query}" "${serve_database_name_1}" "${credentials}" > "${known_genes_output_1}"
-do_execute_sql_on_database "${known_genes_query}" "${serve_database_name_2}" "${credentials}" > "${known_genes_output_2}"
+do_execute_sql_on_database "${known_gene_query}" "${serve_database_name_1}" "${credentials}" > "${known_genes_output_1}"
+do_execute_sql_on_database "${known_gene_query}" "${serve_database_name_2}" "${credentials}" > "${known_genes_output_2}"
 diff "${known_genes_output_1}" "${known_genes_output_2}" > "${output_dir}/known_genes_diff.tsv"
 
 info " Comparing known copy numbers..."
