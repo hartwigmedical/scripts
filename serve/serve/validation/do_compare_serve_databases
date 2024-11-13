@@ -26,6 +26,11 @@ actionable_characteristic_query="select type, cutoffType, cutoff, source, entryD
 actionable_hla_query="select hlaAllele, source, entryDate, sourceEvent, sourceUrls, nctId, title, acronym, genderCriterium, countriesAndCities, hospitalsPerCity, treatment, applicableCancerType, applicableDoid, blacklistCancerTypes, efficacyDescription, evidenceYear, evidenceLevel, evidenceLevelDetails, direction, evidenceUrls from actionableHla order by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;"
 
 known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation, sources from knownHotspot order by 1,2,3,4,5,6,7,8,9,10,11;"
+known_codon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputCodonRank, sources from knownCodon order by 1,2,3,4,5,6,7,8,9,10,11;"
+known_exon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputExonRank, sources from knownExon order by 1,2,3,4,5,6,7,8,9,10,11;"
+known_gene_query="select gene, geneRole, sources from knownGene order by 1,2,3;"
+known_copy_number_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, event, sources from knownCopyNumber order by 1,2,3,4,5,6;"
+known_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonDown, maxExonDown, proteinEffect, associatedWithDrugResistance, sources from knownFusion order by 1,2,3,4,5,6,7,8,9;"
 
 info " Comparing actionable hotspots..."
 actionable_hotspot_output_1="${output_dir}/${serve_database_label_1}_actionable_hotspots.tsv"
@@ -82,6 +87,41 @@ known_hotspot_output_2="${output_dir}/${serve_database_label_2}_known_hotspots.t
 do_execute_sql_on_database "${known_hotspot_query}" "${serve_database_name_1}" "${credentials}" > "${known_hotspot_output_1}"
 do_execute_sql_on_database "${known_hotspot_query}" "${serve_database_name_2}" "${credentials}" > "${known_hotspot_output_2}"
 diff "${known_hotspot_output_1}" "${known_hotspot_output_2}" > "${output_dir}/known_hotspots_diff.tsv"
+
+info " Comparing known codons..."
+known_codon_output_1="${output_dir}/${serve_database_label_1}_known_codons.tsv"
+known_codon_output_2="${output_dir}/${serve_database_label_2}_known_codons.tsv"
+do_execute_sql_on_database "${known_codon_query}" "${serve_database_name_1}" "${credentials}" > "${known_codon_output_1}"
+do_execute_sql_on_database "${known_codon_query}" "${serve_database_name_2}" "${credentials}" > "${known_codon_output_2}"
+diff "${known_codon_output_1}" "${known_codon_output_2}" > "${output_dir}/known_codons_diff.tsv"
+
+info " Comparing known exons..."
+known_exon_output_1="${output_dir}/${serve_database_label_1}_known_exons.tsv"
+known_exon_output_2="${output_dir}/${serve_database_label_2}_known_exons.tsv"
+do_execute_sql_on_database "${known_exon_query}" "${serve_database_name_1}" "${credentials}" > "${known_exon_output_1}"
+do_execute_sql_on_database "${known_exon_query}" "${serve_database_name_2}" "${credentials}" > "${known_exon_output_2}"
+diff "${known_exon_output_1}" "${known_exon_output_2}" > "${output_dir}/known_exons_diff.tsv"
+
+info " Comparing known genes..."
+known_genes_output_1="${output_dir}/${serve_database_label_1}_known_genes.tsv"
+known_genes_output_2="${output_dir}/${serve_database_label_2}_known_genes.tsv"
+do_execute_sql_on_database "${known_genes_query}" "${serve_database_name_1}" "${credentials}" > "${known_genes_output_1}"
+do_execute_sql_on_database "${known_genes_query}" "${serve_database_name_2}" "${credentials}" > "${known_genes_output_2}"
+diff "${known_genes_output_1}" "${known_genes_output_2}" > "${output_dir}/known_genes_diff.tsv"
+
+info " Comparing known copy numbers..."
+known_copy_number_output_1="${output_dir}/${serve_database_label_1}_known_copy_numbers.tsv"
+known_copy_number_output_2="${output_dir}/${serve_database_label_2}_known_copy_numbers.tsv"
+do_execute_sql_on_database "${known_copy_number_query}" "${serve_database_name_1}" "${credentials}" > "${known_copy_number_output_1}"
+do_execute_sql_on_database "${known_copy_number_query}" "${serve_database_name_2}" "${credentials}" > "${known_copy_number_output_2}"
+diff "${known_copy_number_output_1}" "${known_copy_number_output_2}" > "${output_dir}/known_copy_numbers_diff.tsv"
+
+info " Comparing known fusions..."
+known_fusions_output_1="${output_dir}/${serve_database_label_1}_known_fusions.tsv"
+known_fusions_output_2="${output_dir}/${serve_database_label_2}_known_fusions.tsv"
+do_execute_sql_on_database "${known_fusion_query}" "${serve_database_name_1}" "${credentials}" > "${known_fusions_output_1}"
+do_execute_sql_on_database "${known_fusion_query}" "${serve_database_name_2}" "${credentials}" > "${known_fusions_output_2}"
+diff "${known_fusions_output_1}" "${known_fusions_output_2}" > "${output_dir}/known_fusions_diff.tsv"
 
 info "Written output to ${output_dir}"
 
