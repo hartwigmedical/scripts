@@ -7,7 +7,6 @@ sampleId=$1 && shift # tumor sample ID
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
-key_file="/data/credentials/hmf-download"
 region="europe-west4"
 internal_bam_url="gs://hmf-rna-analysis/samples/${sampleId}/${sampleId}.sorted.dups.bam"
 internal_bai_url="gs://hmf-rna-analysis/samples/${sampleId}/${sampleId}.sorted.dups.bam.bai"
@@ -38,6 +37,13 @@ print_usage(){
         warn "Unable to locate bam.bai file in bucket (URL='${internal_bai_url})"
           die "Bai file is not present at expected location in bucket. Exiting."
     fi
+
+# generate key file
+key_file="$(mktemp)"
+exec {fd}<>${key_file}
+rm ${key_file}
+key_file=/dev/fd/$fd
+gcloud secrets versions access latest --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets > $key_file
 
 signed_bam_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bam_url}")
 signed_bai_url=$(gsutil signurl -r "${region}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_bai_url}")

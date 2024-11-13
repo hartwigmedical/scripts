@@ -9,7 +9,6 @@ sample_type=$1 && shift # REF or TUM
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
 
-key_file="/data/credentials/hmf-download"
 region="europe-west4"
 project="hmf-database"
 
@@ -41,6 +40,13 @@ fi
 # Sanity check (not all samples are linked to a biopsy yet in API)
 [[ "${internal_cram_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_cram_url}) for ${sample_type} sample of biopsy ${biopsy_name}"
 internal_crai_url="${internal_cram_url}.crai"
+
+# create a key file 
+key_file="$(mktemp)"
+exec {fd}<>${key_file}
+rm ${key_file}
+key_file=/dev/fd/$fd
+gcloud secrets versions access latest --secret=gcp-hmf-download-u-hmf-database --project=hmf-secrets > $key_file
 
 signed_cram_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_cram_url}" | grep -v 'Signed URL' | cut -f4)
 signed_crai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_crai_url}" | grep -v 'Signed URL' | cut -f4)
