@@ -2,14 +2,15 @@
 
 source api_functions || exit 1
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 biopsy_name=$1 && shift # eg WIDE01010001T
 sample_type=$1 && shift # REF or TUM
 
 PRESIGN_SECONDS=172800
 PRESIGN_DAYS=$(expr "${PRESIGN_SECONDS}" / 60 / 60 / 24)
+SECRET_NAME="gcp-hmf-download-u-hmf-database"
 
-key_file="/data/credentials/hmf-download"
 region="europe-west4"
 project="hmf-database"
 
@@ -28,8 +29,10 @@ if [[ -z "${biopsy_name}" ]] || [[ -z "${sample_type}" ]]; then
     print_usage
 fi
 
-internal_cram_url=""
+info "Retrieve service account credentials required for signing"
+credentials=$(get_secret_from_secret_manager "${SECRET_NAME}") || die "Unable to retrieve secret (${SECRET_NAME})"
 
+internal_cram_url=""
 if [[ ${sample_type} = "REF" ]]; then
     internal_cram_url=$(locate_reference_cram "${biopsy_name}")
 elif [[ ${sample_type} = "TUM" ]]; then
@@ -42,8 +45,8 @@ fi
 [[ "${internal_cram_url}" =~ ^gs ]] || die "Internal URL has wrong format (${internal_cram_url}) for ${sample_type} sample of biopsy ${biopsy_name}"
 internal_crai_url="${internal_cram_url}.crai"
 
-signed_cram_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_cram_url}" | grep -v 'Signed URL' | cut -f4)
-signed_crai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" "${key_file}" "${internal_crai_url}" | grep -v 'Signed URL' | cut -f4)
+signed_cram_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_cram_url}" | grep -v 'Signed URL' | cut -f4)
+signed_crai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "${PRESIGN_SECONDS}s" <(echo "${credentials}") "${internal_crai_url}" | grep -v 'Signed URL' | cut -f4)
 
 [[ "${signed_cram_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_cram_url})"
 [[ "${signed_crai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_crai_url})"
