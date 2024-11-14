@@ -4,31 +4,41 @@ source message_functions || exit 1
 
 set -e
 
-#version1="0.8.0-797b8e1"
-version2="0.8.0-c9fe4a8"
-#version3="0.8.0-20240926" # specifically for metrics-with-alignment-metrics
-version4="0.8.0-20240928" # specifically for metrics-with-alignment-metrics
-
 source_repo_url="us-docker.pkg.dev/accelerated-compute/artifactory-4411761"
 target_repo_url="europe-west4-docker.pkg.dev/hmf-build/hmf-docker/project-x"
-tool1="bwa-mem-samtools-alignment:${version2}"
-tool2="demux-collapser-with-metrics:${version2}"
-tool3="read_collapser:${version2}"
-tool4="metrics:${version2}"
-tool5="metrics-with-alignment-metrics:${version4}"
-tool6="gatk:${version2}"
-tools=("${tool1}" "${tool2}" "${tool3}" "${tool4}" "${tool5}" "${tool6}")
 pull_account="sa-partner-data-share-4411761@accelerated-compute.iam.gserviceaccount.com"
-push_account="s.vanlieshout@hartwigmedicalfoundation.nl"
+
+tag="${1:-0.19.0-a508ce0}"
+
+tools=(
+    "bwa-mem-samtools:${tag}"
+    "bwa-mem-samtools-alignment:${tag}"
+    "demux-collapser-with-metrics:${tag}"
+    "fastqsplitter:${tag}"
+    "gatk:${tag}"
+    "giraffe:${tag}"
+    "metrics:${tag}"
+    "metrics-with-alignment-metrics:${tag}"
+    "nextflow-driver:${tag}"
+    "pigz:${tag}"
+    "read_collapser:${tag}"
+    "sbx-rnd-pipeline:${tag}"
+    "small-variant-caller-samtools:${tag}"
+)
 
 function main() {
+
+    current_account=$(gcloud config get account) || die "Unable to get current authenticated account [gcloud config get account]"
 
     info "Will copy docker images from x to hartwig"
     info "  SRC repo = ${source_repo_url}"
     info "  DST repo = ${target_repo_url}"
-    info "Listing the tools we will work on"
+    info "These accounts will be used:"
+    info "  PULL account = ${pull_account}"
+    info "  PUSH account = ${current_account}"
+    info "The following tools will be pulled and pushed:"
     for tool in "${tools[@]}"; do
-        info "  TOOL = $tool"
+        info "  $tool"
     done
 
     info "Press [ENTER] to continue..."
@@ -47,8 +57,8 @@ function main() {
         info "Tagging [${tool}]" && docker tag "${source_repo_url}/${tool}" "${target_repo_url}/${tool}"
     done
 
-    info "Switching to push account [${push_account}]"
-    gcloud config set account "${push_account}"
+    info "Switching to push account [${current_account}]"
+    gcloud config set account "${current_account}"
 
     info "Docker push step [${target_repo_url}]"
     for tool in "${tools[@]}"; do
