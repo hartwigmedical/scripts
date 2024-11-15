@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+release=$1 && shift
+
+if [[ -z "${release}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+current_path=$(pwd)
+
+cd "$HOME/hmf/repos/actin-resources-private/"
+
+info "Making release '${release} in actin-resources-private repo"
+
+git push
+git tag ${release}
+git push origin ${release}
+
+cd "${current_path}"
