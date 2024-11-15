@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -e
+
+source actin_config || exit 1
+
+trap 'echo "ERROR, exiting." >&2; exit 1' ERR
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Missing parameters. Exiting" >&2
+    exit 1
+fi
+
+gcp_project=$(production_actin_nki_project)
+target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
+report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
+treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")
+clinical=$(locate_actin_clinical_json_gcp "${gcp_project}" "${patient}")
+
+hash="$(lookup_nki_hash_for_actin_id "${patient}")"
+
+check_and_copy_file() {
+    local file_path=$1
+    local sub_dir=$2
+    local ext="${(basename ${file_path})#*.}"
+
+    if ! gsutil -q stat "${file_path}"; then
+        echo "Cannot find \"${file_path}\"" >&2
+        return 1
+    fi
+
+    if ! gsutil cp -n "${file_path}" "${target_bucket}/${sub_dir}/${hash}.${ext}"; then
+        echo "Failed copying ${file_path} to ${target_bucket}/${sub_dir}/${hash}.${ext}" >&2
+        return 1
+    fi
+}
+
+check_and_copy_file "${report}" "reports"
+check_and_copy_file "${treatment_match}" "algo"
+check_and_copy_file "${clinical}" "clinical"
+
+echo "Copied files to ${target_bucket}"
+exit 0
