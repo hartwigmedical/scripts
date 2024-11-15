@@ -3,6 +3,7 @@
 set -e
 
 source actin_config || exit 1
+source locate_files || exit 1
 
 trap 'echo "ERROR, exiting." >&2; exit 1' ERR
 
