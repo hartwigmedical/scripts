@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+source actin_config || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+gcp_project=$(production_actin_nki_project)
+analysis_pipeline_bucket="gs://${gcp_project}-analysis-pipeline-output"
+clinical_pipeline_bucket="gs://${gcp_project}-clinical-pipeline-output"
+target_bucket="gs://${gcp_project}-shared-data-external"
+
+report="${analysis_pipeline_bucket}/report/${patient}.actin.pdf"
+treatment_match="${analysis_pipeline_bucket}/algo/${patient}.treatment_match.json"
+clinical="${clinical_pipeline_bucket}/${patient}.clinical.json"
+
+hash="$(lookup_nki_hash_for_actin_id "${patient}")"
+bn="$(basename ${report})"
+ext="${bn#*.}"
+gsutil -q stat ${report}
+[[ $? -ne 0 ]] && echo "Cannot find \"${report}\"" >&2 && exit 1
+
+gsutil -q stat ${treatment_match}
+[[ $? -ne 0 ]] && echo "Cannot find \"${treatment_match}\"" >&2 && exit 1
+
+gsutil -q stat ${clinical}
+[[ $? -ne 0 ]] && echo "Cannot find \"${clinical}\"" >&2 && exit 1
+
+gsutil cp -n "${report}" "${target_bucket}/reports/${hash}.${ext}" && exit 0
+echo "Failed copying ${report} to ${hash}.${ext}" && exit 1
+
+gsutil cp -n "${treatment_match}" "${target_bucket}/algo/${hash}.${ext}" && exit 0
+echo "Failed copying ${treatment_match} to ${hash}.${ext}" && exit 1
+
+gsutil cp -n "${clinical}" "${target_bucket}/clinical/${hash}.${ext}" && exit 0
+echo "Failed copying ${clinical} to ${hash}.${ext}" && exit 1
+
