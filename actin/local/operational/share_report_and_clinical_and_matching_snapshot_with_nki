@@ -14,21 +14,17 @@ if [[ -z "${patient}" ]]; then
 fi
 
 gcp_project=$(production_actin_nki_project)
-analysis_pipeline_bucket="gs://${gcp_project}-analysis-pipeline-output"
-clinical_pipeline_bucket="gs://${gcp_project}-clinical-pipeline-output"
-target_bucket="gs://${gcp_project}-shared-data-external"
-
-report="${analysis_pipeline_bucket}/report/${patient}.actin.pdf"
-treatment_match="${analysis_pipeline_bucket}/algo/${patient}.treatment_match.json"
-clinical="${clinical_pipeline_bucket}/${patient}.clinical.json"
+target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
+report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
+treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")
+clinical=$(locate_actin_clinical_json_gcp "${gcp_project}" "${patient}")
 
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
 check_and_copy_file() {
     local file_path=$1
     local sub_dir=$2
-    local bn="$(basename ${file_path})"
-    local ext="${bn#*.}"
+    local ext="${(basename ${file_path})#*.}"
 
     if ! gsutil -q stat "${file_path}"; then
         echo "Cannot find \"${file_path}\"" >&2
