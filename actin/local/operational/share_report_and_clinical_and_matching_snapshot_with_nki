@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-set -o pipefail
 
 source actin_config || exit 1
 source locate_files || exit 1
@@ -14,24 +13,6 @@ if [[ -z "${patient}" ]]; then
     error "Missing parameters. Exiting" >&2
     exit 1
 fi
-
-assign_and_validate_variable() {
-    local result
-    result=$1
-    if [[ "${result}" == *"Could not locate"* ]]; then
-        echo "[ERROR] ${result}" >&2
-        exit 1
-    fi
-    echo "$result"
-}
-
-gcp_project=$(assign_and_validate_variable "$(production_actin_nki_project)")
-target_bucket=$(assign_and_validate_variable "$(locate_actin_shared_data_external_bucket "${gcp_project}")")
-report=$(assign_and_validate_variable "$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")")
-treatment_match=$(assign_and_validate_variable "$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")")
-record=$(assign_and_validate_variable "$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")")
-
-hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
 check_and_copy_file() {
     local file_path=$1
@@ -49,9 +30,19 @@ check_and_copy_file() {
     fi
 }
 
+gcp_project=$(production_actin_nki_project)
+target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
+
+report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${report}" "reports"
+
+treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${treatment_match}" "algo"
+
+record=$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${record}" "record"
+
+hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
 echo "Copied files to ${target_bucket}"
 exit 0
