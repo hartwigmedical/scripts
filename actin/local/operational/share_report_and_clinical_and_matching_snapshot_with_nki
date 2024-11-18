@@ -16,10 +16,10 @@ if [[ -z "${patient}" ]]; then
 fi
 
 gcp_project=$(production_actin_nki_project)
-target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}") || exit 1
-report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}") || exit 1
-treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}") || exit 1
-record=$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}") || exit 1
+target_bucket=$(bash -c "locate_actin_shared_data_external_bucket ${gcp_project}") || exit 1
+report=$(bash -c "locate_actin_report_pdf_gcp ${gcp_project} ${patient}") || exit 1
+treatment_match=$(bash -c "locate_actin_treatment_match_json_gcp ${gcp_project} ${patient}") || exit 1
+record=$(bash -c "locate_actin_patient_record_json_gcp ${gcp_project} ${patient}") || exit 1
 
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
