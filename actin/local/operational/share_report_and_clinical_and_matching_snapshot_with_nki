@@ -32,6 +32,7 @@ check_and_copy_file() {
 
 gcp_project=$(production_actin_nki_project)
 target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
+hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
 report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${report}" "reports"
@@ -41,8 +42,6 @@ check_and_copy_file "${treatment_match}" "algo"
 
 record=$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${record}" "record"
-
-hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
 echo "Copied files to ${target_bucket}"
 exit 0
