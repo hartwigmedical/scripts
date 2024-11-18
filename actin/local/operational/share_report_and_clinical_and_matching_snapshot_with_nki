@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -o pipefail
 
 source actin_config || exit 1
 source locate_files || exit 1
@@ -18,7 +19,7 @@ gcp_project=$(production_actin_nki_project)
 target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}") || exit 1
 report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}") || exit 1
 treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}") || exit 1
-clinical=$(locate_actin_clinical_json_gcp "${gcp_project}" "${patient}") || exit 1
+record=$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}") || exit 1
 
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 
@@ -40,7 +41,7 @@ check_and_copy_file() {
 
 check_and_copy_file "${report}" "reports"
 check_and_copy_file "${treatment_match}" "algo"
-check_and_copy_file "${clinical}" "clinical"
+check_and_copy_file "${record}" "record"
 
 echo "Copied files to ${target_bucket}"
 exit 0
