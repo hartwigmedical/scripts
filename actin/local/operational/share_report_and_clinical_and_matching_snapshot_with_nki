@@ -18,7 +18,7 @@ fi
 assign_and_validate_variable() {
     local result
     result=$1
-    if [[ "${result}" == *"[ERROR]"* ]]; then
+    if [[ "${result}" == *"Could not locate"* ]]; then
         echo "[ERROR] ${result}" >&2
         exit 1
     fi
