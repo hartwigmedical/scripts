@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 source actin_config || exit 1
 source locate_files || exit 1
