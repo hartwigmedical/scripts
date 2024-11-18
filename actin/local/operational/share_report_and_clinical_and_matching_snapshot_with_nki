@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
 
 source actin_config || exit 1
 source locate_files || exit 1
@@ -17,14 +16,13 @@ fi
 
 gcp_project=$(production_actin_nki_project)
 target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
-echo "Starting lookup_nki_hash_for_actin_id with patient: $1"
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
-echo "Hash returned: $hash"
 
 check_and_copy_file() {
     local file_path=$1
     local sub_dir=$2
-    local ext="${(basename ${file_path})#*.}"
+    local bn="$(basename ${file_path})"
+    local ext="${bn#*.}"
 
     if ! gsutil -q stat "${file_path}"; then
         echo "Cannot find \"${file_path}\"" >&2
@@ -36,9 +34,8 @@ check_and_copy_file() {
         return 1
     fi
 }
-echo "Starting to locate report"
+
 report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
-echo "Starting to copy report"
 check_and_copy_file "${report}" "reports"
 
 treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")
