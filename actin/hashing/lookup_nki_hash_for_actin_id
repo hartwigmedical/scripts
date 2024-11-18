@@ -12,4 +12,4 @@ gsutil -q stat ${gs_url}
 gsutil cat ${gs_url} | jq -er ". | to_entries | .[] | select(.value==\"$1\") | \"\(.key)\""
 
 [[ $? -ne 0 ]] && echo "Could not find mapping for $1" >&2 && exit 1
-
+exit 0
