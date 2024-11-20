@@ -300,16 +300,16 @@ create_run_specific_files () {
         die "Unknown run type (${run_type})"
     fi
 
-    info "Creating signed URLs for all files"
-    signurl_payload=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "${secret}") "${file_selection[@]}")
-
     info "Creating md5sum file ($out_md5)"
     gs_file_info=$(gsutil ls -L "${file_selection[@]}") || die "Unable to retrieve gs file listing! Exiting."
     md5sums_info=$(parse_md5sums_from_file_listing "$gs_file_info") || die "Unable to parse md5sums from gs file listing! Exiting."
     echo "$md5sums_info" > "$out_md5" || die "Unable to create md5 output file! Exiting."
 
     info "Creating ${out_aria} (and intermediate files)"
-    echo "$signurl_payload" | grep -v 'URL' | while read -r line; do
+    for share_file in "${file_selection[@]}"; do
+        info "Creating signed URL for files ${share_file}"
+        signurl_payload=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "${secret}") "${share_file}")
+        line=$(echo "$signurl_payload" | grep -v 'URL')
         gs_url=$(echo "$line" | cut -f1)
         signed_url=$(echo "$line" | cut -f4)
         file_name=$(basename "${gs_url}")
