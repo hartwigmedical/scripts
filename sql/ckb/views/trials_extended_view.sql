@@ -16,4 +16,4 @@ SELECT DISTINCT
     LEFT JOIN indicationClinicalTrial ON indicationClinicalTrial.clinicalTrialId = clinicalTrial.id
     LEFT JOIN indication ON indicationClinicalTrial.indicationId = indication.id
     GROUP BY 1,2,3,4,5,6,7,8
-)
+);
