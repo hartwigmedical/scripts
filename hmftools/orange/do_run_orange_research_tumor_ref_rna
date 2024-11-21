@@ -55,6 +55,8 @@ cuppa_dir="$(locate_cuppa_dna_rna_output_directory ${run_dir})"
 if [[ ! -d "${cuppa_dir}" ]]; then
     cuppa_dir="$(locate_cuppa_dna_output_directory ${run_dir})"
 fi
+#TODO (KD): Remove
+cuppa_dir="${run_dir}/cuppa_pilot"
 
 sigs_dir="$(locate_sigs_data_directory ${run_dir})"
 
