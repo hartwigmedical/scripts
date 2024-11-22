@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-source iclusion_functions || exit 1
-
-iclusion_api_credentials=$(iclusion_credentials)
-
-do_request_iclusion_object "studies" "${iclusion_api_credentials}"

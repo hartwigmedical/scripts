@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+
+LABELS="cloudidentity.googleapis.com/groups.discussion_forum"
+ORGANIZATION_ID="478829257309"
+
+function main() {
+    json=$(gcloud identity groups search --organization "${ORGANIZATION_ID}" --format=json --labels="${LABELS}") || die "Failed gcloud cmd"
+    jq -r '.groups[] | [.groupKey.id, " (", .displayName, ")"] | join("")' <<< "${json}"
+}
+
+main
