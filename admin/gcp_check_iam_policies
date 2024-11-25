@@ -18,7 +18,7 @@ function main() {
         policies "$project_id" "$account_email"
     else
         info "No project ID provided so checking all known projects of organization [${ORGANIZATION_ID}]"
-        info "An error is returned for every project the caller account has no searchAllIamPolicies permission for"
+        info "For every project the caller account has no searchAllIamPolicies permission for an err is returned"
         mapfile -t projects < <(get_projects)
         for project_id in "${projects[@]}"; do
             policies "$project_id" "$account_email"
