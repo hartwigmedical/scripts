@@ -8,14 +8,15 @@ if [[ -z ${sample} ]]; then
     error "No sample name provided"
 fi
 
-run_id=$( hmf_api_get "reports/created" | jq '.[] | select(.sample_name == "'${sample}'") | .run_id' | tail -1 )
-set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
+
+#run_id=$( hmf_api_get "reports/created" | jq '.[] | select(.sample_name == "'${sample}'") | .run_id' | tail -1 )
+#set_name=$( hmf_api_get 'runs/'${run_id}'' | jq -r '.set | .name' )
 
 gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "mkdir temp; mkdir temp_cup; \
-gsutil cp gs://patient-reporter-final-prod-1/${sample}*report*.pdf ~/temp; \
-gsutil cp gs://patient-reporter-final-prod-1/${sample}*oncoact*.json ~/temp; \
-gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ~/temp; \
-gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/cuppa/${sample}*_cup_report.pdf ~/temp_cup;"
+gsutil cp gs://patient-reporter-final-prod-1/*${sample}*report*.pdf ~/temp; \
+gsutil cp gs://patient-reporter-final-prod-1/*${sample}*oncoact*.json ~/temp;"
+#gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/orange/${sample}*.orange.pdf ~/temp; \
+#gsutil cp gs://diagnostic-pipeline-output-prod-1/${set_name}/cuppa/${sample}*_cup_report.pdf ~/temp_cup;"
 
 echo ""
 echo "Do you want to copy the final OncoAct report and json? y or n"
@@ -25,19 +26,19 @@ if [[ ${answer_report} == "y" ]]; then
     gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*n.json ~/
 fi
 
-echo ""
-echo "Do you want to copy the ORANGE report? y or n"
-read answer_orange
-if [[ ${answer_orange} == "y" ]]; then
-    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*orange.pdf ~/
-fi
-
-echo ""
-echo "Do you want to copy the CUPPA RUO report? y or n"
-read answer_cuppa_ruo
-if [[ ${answer_cuppa_ruo} == "y" ]]; then
-    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp_cup/${sample}*_cup_report.pdf ~/
-fi
+#echo ""
+#echo "Do you want to copy the ORANGE report? y or n"
+#read answer_orange
+#if [[ ${answer_orange} == "y" ]]; then
+#    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp/${sample}*orange.pdf ~/
+#fi
+#
+#echo ""
+#echo "Do you want to copy the CUPPA RUO report? y or n"
+#read answer_cuppa_ruo
+#if [[ ${answer_cuppa_ruo} == "y" ]]; then
+#    gcloud compute scp --project="hmf-ops" --zone="europe-west4-a" --recurse "ops-vm-prod-2":~/temp_cup/${sample}*_cup_report.pdf ~/
+#fi
 
 gcloud compute ssh --zone "europe-west4-a" "ops-vm-prod-2"  --tunnel-through-iap --project "hmf-ops" --command "rm -r ~/temp/ 2>&1; rm -r ~/temp_cup/ 2>&1"
 
