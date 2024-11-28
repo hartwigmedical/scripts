@@ -23,7 +23,7 @@ FOR_001_FILE_2024="HMF-FOR-001 Received samples 2024 v5.15.xlsm"
 FOR_001_FILE_2023="HMF-FOR-001 Received Samples 2023 v5.14.xlsx" # Remove once not needed any longer
 
 FOR_002_FILE_2024="HMF-FOR-002 Sample in process 2024 v4.8.xlsm"
-FOR_002_FILE_2023="HMF-FOR-002 Sample in process 2023 v4.7.xlsx"# Remove once not needed any longer
+FOR_002_FILE_2023="HMF-FOR-002 Sample in process 2023 v4.7.xlsx" # Remove once not needed any longer
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
