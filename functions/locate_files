@@ -359,11 +359,11 @@ locate_actin_serve_db_nl() {
 }
 
 locate_actin_serve_db_nl_37_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.37.json"
+    echo "$(locate_actin_serve_db_nl)/serve.json"
 }
 
 locate_actin_serve_db_nl_38_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.38.json"
+    echo "$(locate_actin_serve_db_nl)/serve.json"
 }
 
 locate_actin_serve_db_mcgi() {
