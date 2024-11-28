@@ -9,5 +9,4 @@ local_base_path="${HOME}/hmf/repos/actin-resources-private/serve_db_mcgi"
 
 info "Pulling SERVE resources from ${remote_base_path} into ${local_base_path}"
 
-gcloud compute --project hmf-crunch scp ${remote_base_path}/*37*json ${local_base_path}/
-gcloud compute --project hmf-crunch scp ${remote_base_path}/*38*json ${local_base_path}/
+gcloud compute --project hmf-crunch scp ${remote_base_path}/*json ${local_base_path}/
