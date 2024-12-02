@@ -16,7 +16,7 @@ treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
 atc_overrides_tsv="$(locate_atc_overrides_tsv)"
-output_directory="$(locate_actin_curated_clinical_directory)"
+output_directory="/data/actin/clinical/curated_pilot"
 drug_interactions_tsv="/data/resources/actin/medication/drug_interactions.tsv"
 qt_prolongating_tsv="/data/resources/actin/medication/qt_prolongating.tsv"
 
