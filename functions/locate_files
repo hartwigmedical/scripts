@@ -382,6 +382,14 @@ locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
 }
 
+locate_drug_interactions_tsv() {
+    echo "/data/resources/actin/medication/drug_interactions.tsv"
+}
+
+locate_qt_prolongating_tsv() {
+  echo "/data/resources/actin/medication/qt_prolongating.tsv"
+}
+
 locate_dnds_driver_likelihood_onco() {
     echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_onco.tsv"
 }
