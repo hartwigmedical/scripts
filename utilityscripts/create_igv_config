@@ -95,15 +95,15 @@ create_igv_config () {
     tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
     tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
 
-    internal_urls=("${ref_bam}" "${ref_bai}" "${tum_bam}" "${tum_bai}")
-
     info "Requesting signed URLs"
-    signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${internal_urls[@]}")
-
-    ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${signurl_payload}")
-    ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${signurl_payload}")
-    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${signurl_payload}")
-    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${signurl_payload}")
+    ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
+    ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
+    tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
+    tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
+    ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
+    ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
+    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
+    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
 
     info "Creating output file [${out_file}]"
     {
