@@ -262,7 +262,7 @@ sub addLamaSamples{
         }
 
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW|QUAL|TUMA)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW|QUAL|TUMA)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R|P){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
@@ -313,7 +313,7 @@ sub addLamaSamples{
             $dna_reference_samples_by_name{ $sample_name } = \%sample_to_store;
             $final_target_yield = 100;
         }
-        elsif ($isolation_type eq 'Plasma') {
+        elsif ($isolation_type eq 'Plasma' or $isolation_type eq 'CF_DNA' or $isolation_type eq 'CF_DNA_ISOLATE') {
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
@@ -474,6 +474,9 @@ sub parseLamaPatients {
         foreach my $sample (@{$patient->{referenceSamples}}) {
             processSampleOfLamaPatient($patient, $sample, 'reference', \%store);
         }
+        foreach my $sample (@{$patient->{plasmaSamples}}) {
+            processSampleOfLamaPatient($patient, $sample, 'plasma', \%store);
+        }
     }
     return \%store;
 }
@@ -497,6 +500,10 @@ sub processSampleOfLamaPatient {
     }
     elsif( $sample_origin eq 'reference' ){
         $sample_field_translations = $name_dict->{lama_patient_reference_sample_dict};
+        @sampleBarcodes = ($sample->{sampleBarcode});
+    }
+    elsif( $sample_origin eq 'plasma' ){
+        $sample_field_translations = $name_dict->{lama_patient_plasma_sample_dict};
         @sampleBarcodes = ($sample->{sampleBarcode});
     }
     else{
@@ -1428,6 +1435,13 @@ sub getFieldNameTranslations{
         'contractCode'    => 'contract_code'
     );
 
+    my %lama_patient_plasma_sample_dict = (
+        'sopVersion'      => 'sop_version',
+        'arrivalHmf'      => 'arrival_date',
+        'sampleBarcode'   => 'sample_barcode',
+        'contractCode'    => 'contract_code'
+    );
+
     my %lama_isolation_isolate_dict = (
         'sampleBarcode' => 'sample_barcode',
         'isolationBarcode' => 'isolation_barcode',
@@ -1516,6 +1530,7 @@ sub getFieldNameTranslations{
         'lama_patient_tumor_sample_tumor_type_dict' => \%lama_patient_tumor_sample_tumor_type_dict,
         'lama_patient_tumor_sample_biopsy_dict' => \%lama_patient_tumor_sample_biopsy_dict,
         'lama_patient_reference_sample_dict' => \%lama_patient_reference_sample_dict,
+        'lama_patient_plasma_sample_dict' => \%lama_patient_plasma_sample_dict,
         'lama_isolation_isolate_dict' => \%lama_isolation_isolate_dict,
         'lama_libraryprep_library_dict' => \%lama_libraryprep_library_dict,
         'lama_status_dict' => \%lama_status_dict,
