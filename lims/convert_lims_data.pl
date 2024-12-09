@@ -991,7 +991,7 @@ sub addExcelSamples{
             $analysis_type = 'FASTQ';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
-        elsif ( $analysis_type eq 'Labonly' ){
+        elsif ( $analysis_type eq 'Lab only' or $analysis_type eq 'Labonly' ){
             $analysis_type = 'LabOnly';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
