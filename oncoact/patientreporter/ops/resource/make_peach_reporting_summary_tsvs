@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source /home/lschoenmaker/scripts/functions/locate_files || exit 1
-source /home/lschoenmaker/scripts/functions/message_functions || exit 1
+source locate_files || exit 1
+source essage_functions || exit 1
 
 print_usage() {
   echo ""
