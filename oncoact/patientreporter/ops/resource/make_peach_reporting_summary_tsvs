@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
-source message_functions || exit 1
+source /data/repos/scripts/functions/locate_files || exit 1
+source /data/repos/scripts/functions/message_functions || exit 1
 
 print_usage() {
   echo ""
