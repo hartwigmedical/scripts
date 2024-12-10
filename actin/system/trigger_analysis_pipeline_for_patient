@@ -3,9 +3,9 @@
 source message_functions || exit 1
 
 patient=$1
-gcp_project=${2:-actin-prod}
+gcp_project=$2
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
