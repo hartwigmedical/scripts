@@ -14,10 +14,10 @@ orange_dir="${bucket}/${set}/orange_no_germline/"
 
 temp_folder_path_file=$( pwd )"/temp_cp_orange_${set}"
 mkdir $temp_folder_path_file
-orange_pdf=$( ls $temp_path_orange | grep pdf)
-gsutil cp ${orange_pdf} $temp_folder_path_file/
+gsutil cp "${orange_dir}/*orange.pdf" $temp_folder_path_file/
 
 temp_path_orange=$( pwd )"/temp_cp_orange_${set}/orange_no_germline"
+orange_pdf=$( ls $temp_path_orange | grep pdf)
 
 
 info "Uploading orange data to Nextcloud."
