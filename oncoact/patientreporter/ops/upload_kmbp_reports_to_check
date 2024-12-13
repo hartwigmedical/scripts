@@ -18,10 +18,10 @@ gsutil cp "${orange_dir}/*orange.pdf" $temp_folder_path_file/
 
 orange_pdf=$( ls $temp_folder_path_file | grep "orange.pdf")
 
-info "Uploading orange data to Nextcloud for isolation_barcode \033[1;32m ${isolation_barcode} \033[00m"
+echo -e "Uploading orange data to Nextcloud for isolation_barcode \033[1;32m ${isolation_barcode} \033[00m"
 do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_folder_path_file/${orange_pdf}"
 rm -r $temp_folder_path_file
 
-info "Uploading oncoact report to Nextcloud for viewing for sample_barcode \033[1;32m ${tumor_sample_barcode} \033[00m"
+echo -e "Uploading oncoact report to Nextcloud for viewing for sample_barcode \033[1;32m ${tumor_sample_barcode} \033[00m"
 
 python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${tumor_sample_barcode}
