@@ -10,7 +10,7 @@ nextcloud_dir="STAGING/New-Reports-Viewing/orange"
 bucket="gs://diagnostic-pipeline-output-prod-1"
 set=$(api -j runs 'barcode='${isolation_barcode}'&ini=Somatic.ini&status=Validated&context=DIAGNOSTIC' | jq .[].set.name | tr -d '"')
 tumor_sample_barcode=$(lama_get_patient_reporter_data ${isolation_barcode} | jq .tumorSampleBarcode | tr -d '"')
-orange_dir="${bucket}/${set}/orange_no_germline/"
+orange_dir="${bucket}/${set}/orange_no_germline"
 
 temp_folder_path_file=$( pwd )"/temp_cp_orange_${set}"
 mkdir $temp_folder_path_file
@@ -18,7 +18,6 @@ gsutil cp "${orange_dir}/*orange.pdf" $temp_folder_path_file/
 
 temp_path_orange=$( pwd )"/temp_cp_orange_${set}/orange_no_germline"
 orange_pdf=$( ls $temp_path_orange | grep pdf)
-
 
 info "Uploading orange data to Nextcloud."
 do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_path_orange/${orange_pdf}"
