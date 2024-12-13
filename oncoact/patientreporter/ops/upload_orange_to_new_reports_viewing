@@ -8,8 +8,8 @@ isolation_barcode=$1 && shift
 
 nextcloud_dir="STAGING/New-Reports-Viewing/orange"
 bucket="gs://diagnostic-pipeline-output-prod-1"
-set=$(api -j runs 'barcode=${isolation_barcode}&ini=Somatic.ini&status=Validated&context=DIAGNOSTIC' | jq .[].set.name) | tr -d '"'
-tumor_sample_barcode=$(lama_get_patient_reporter_data ${isolation_barcode} | jq .tumorSampleBarcode) | tr -d '"'
+set=$(api -j runs 'barcode=${isolation_barcode}&ini=Somatic.ini&status=Validated&context=DIAGNOSTIC' | jq .[].set.name | tr -d '"')
+tumor_sample_barcode=$(lama_get_patient_reporter_data ${isolation_barcode} | jq .tumorSampleBarcode | tr -d '"')
 orange_dir="${bucket}/${set}/orange_no_germline/"
 
 temp_folder_path_file=$( pwd )"/temp_cp_orange_${set}"
