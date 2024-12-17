@@ -16,8 +16,8 @@ TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/machines/00 LIMS"
 
-FOR_001_FILE="HMF-FOR-001 Test Received samples 2025 v5.16.xlsm" # Update once versions are known
-FOR_002_FILE="HMF-FOR-002 Test Sample in process 2025 v4.9.xlsm" # Update once versions are known
+FOR_001_FILE="HMF-FOR-001 Received samples 2025 v5.16.xlsm" # Update once versions are known
+FOR_002_FILE="HMF-FOR-002 Sample in process 2025 v4.9.xlsm" # Update once versions are known
 
 FOR_001_FILE_2024="HMF-FOR-001 Received samples 2024 v5.15.xlsm"
 FOR_001_FILE_2023="HMF-FOR-001 Received Samples 2023 v5.14.xlsx" # Remove once not needed any longer
