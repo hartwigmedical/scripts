@@ -54,3 +54,6 @@ WHERE t.reportedType IN ('KNOWN_PAIR', 'PROMISCUOUS_3', 'PROMISCUOUS_5', 'EXON_D
 
 # HRD cannot be determined
 select modified, chord.sampleId, hrStatus from chord inner join purity on purity.sampleId = chord.sampleId where hrStatus = "CANNOT_BE_DETERMINED" order by modified desc;
+
+# germline variant without tumor support
+select * from germlineVariant where reported and variantCopyNumber <= 0.5
