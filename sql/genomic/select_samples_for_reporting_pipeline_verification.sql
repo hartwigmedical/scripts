@@ -27,7 +27,7 @@ WHERE t.driver IN ('AMP', 'DEL', 'DISRUPTION', 'HOM_DEL_DISRUPTION')
     WHERE driver IN ('AMP', 'DEL', 'DISRUPTION', 'HOM_DEL_DISRUPTION')
     GROUP BY sampleId
     HAVING COUNT(DISTINCT driver) = 4
-  );
+  ) order by t.modified desc;
 
 # germline deletion
 select *  from  driverCatalog
@@ -50,10 +50,10 @@ WHERE t.reportedType IN ('KNOWN_PAIR', 'PROMISCUOUS_3', 'PROMISCUOUS_5', 'EXON_D
     WHERE reportedType IN ('KNOWN_PAIR', 'PROMISCUOUS_3', 'PROMISCUOUS_5', 'EXON_DEL_DUP') and reported
     GROUP BY sampleId
     HAVING COUNT(DISTINCT reportedType) = 1
-  );
+  ) order by modified desc;
 
 # HRD cannot be determined
 select modified, chord.sampleId, hrStatus from chord inner join purity on purity.sampleId = chord.sampleId where hrStatus = "CANNOT_BE_DETERMINED" order by modified desc;
 
 # germline variant without tumor support
-select * from germlineVariant where reported and variantCopyNumber <= 0.5
+select * from germlineVariant where reported and variantCopyNumber <= 0.5 order by modified desc;
