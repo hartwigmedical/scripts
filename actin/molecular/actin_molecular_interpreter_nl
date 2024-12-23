@@ -9,7 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-serve_directory="$(locate_actin_serve_db_nl)"
+serve_directory="$(locate_actin_serve_directory)"
 
 do_run_actin_molecular_interpretation "${patient}" "${serve_directory}" "$@"
 

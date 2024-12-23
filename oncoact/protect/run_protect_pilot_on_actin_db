@@ -9,7 +9,7 @@ if [[ -z "${run_dir}" ]]; then
     error "No run dir provided. Exiting"
 fi
 
-serve_directory="$(locate_actin_serve_db_nl)"
+serve_directory="$(locate_actin_serve_directory)"
 
 output_dir="${run_dir}/protect_pilot"
 protect_jar=$(locate_pilot_protect)

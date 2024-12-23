@@ -53,4 +53,9 @@ reports_directory=$(locate_actin_reports_directory)
 create_or_cleanup_dir ${reports_directory}
 gsutil -m rsync -r $(locate_actin_analysis_bucket ${gcp_project})/report/ ${reports_directory}
 
+info "Syncing SERVE output..."
+serve_directory=$(locate_actin_serve_directory)
+create_or_cleanup_dir ${serve_directory}
+gsutil -m rsync -r $(locate_actin_serve_bucket ${gcp_project}) ${serve_directory}
+
 info "Done"

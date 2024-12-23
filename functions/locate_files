@@ -354,22 +354,6 @@ locate_actin_treatment_db_directory() {
     echo "/data/resources/actin/treatment_db"
 }
 
-locate_actin_serve_db_nl() {
-    echo "/data/resources/actin/serve_db"
-}
-
-locate_actin_serve_db_nl_37_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.json"
-}
-
-locate_actin_serve_db_nl_38_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.json"
-}
-
-locate_actin_serve_db_mcgi() {
-    echo "/data/resources/actin/serve_db_mcgi"
-}
-
 locate_actin_rna_sample_metadata_file() {
     echo "/data/resources/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
@@ -528,6 +512,12 @@ locate_actin_trial_database_bucket() {
     local gcp_project=$1 && shift
 
     echo "gs://${gcp_project}-trial-pipeline-output"
+}
+
+locate_actin_serve_bucket() {
+    local gcp_project=$1 && shift
+
+    echo "gs://${gcp_project}-serve-pipeline-output"
 }
 
 ############################## ACTIN Data GCP ##################################
@@ -863,6 +853,10 @@ locate_actin_evaluation_summary() {
     fi
 
     echo "${evaluation_summary_tsv}"
+}
+
+locate_actin_serve_directory() {
+    echo "/data/actin/serve"
 }
 
 ############################ ACTIN Personalization #############################
