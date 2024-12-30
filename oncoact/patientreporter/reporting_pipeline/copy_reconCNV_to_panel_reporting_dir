@@ -2,15 +2,18 @@
 
 source message_functions || exit 1
 
-sampleBarcode=$1 && shift
-runDir=$1 && shift
+isolation_barcode=$1 && shift
 
-if [[ -z "${sampleBarcode}" ]]; then
-    error "No sample barcode provided. Exiting"
+if [[ -z "${isolation_barcode}" ]]; then
+    error "No isolation barcode provided. Exiting"
 fi
 
-if [[ -z "${runDir}" ]]; then
-    error "No run dir  provided. Exiting"
-fi
+set=$(api -j runs 'barcode='${isolation_barcode}'&ini=Targeted.ini&status=Finished&context=DIAGNOSTIC' | jq .[].set.name | tr -d '"')
+tumor_sample_barcode=$(lama_get_patient_reporter_data ${isolation_barcode} | jq .tumorSampleBarcode | tr -d '"' | tr '[:upper:]' '[:lower:]')
 
-gsutil cp gs://recon-cnv-test/${sampleBarcode}/recon-cnv/*.reconCNV.html gs://targeted-pipeline-output-prod-1/${runDir}/reporting
+echo -e "Isolation barcode: \033[1;32m ${isolation_barcode} \033[00m"
+echo -e "Sample barcode: \033[1;32m ${tumor_sample_barcode} \033[00m"
+echo -e "Set name: \033[1;32m ${set} \033[00m"
+
+gsutil cp gs://panel-vis-files/recon-cnv/${tumor_sample_barcode}/*.reconCNV.html gs://targeted-pipeline-output-prod-1/${set}/reporting
+gsutil cp gs://panel-vis-files/sage-visualisations/${tumor_sample_barcode}/sage-visualisation/*.sage.visualisation.zip gs://targeted-pipeline-output-prod-1/${set}/reporting
