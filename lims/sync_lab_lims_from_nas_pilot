@@ -16,16 +16,22 @@ TMP_DIR="${DAY_DIR}/tmp"
 SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/machines/00 LIMS"
 
-FOR_001_FILE="HMF-FOR-001 Received samples 2024 v5.15.xlsm"
-FOR_001_FILE_2023="HMF-FOR-001 Received Samples 2023 v5.14.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2024 v4.8.xlsm"
-FOR_002_FILE_2023="HMF-FOR-002 Sample in process 2023 v4.7.xlsx"
+FOR_001_FILE="HMF-FOR-001 Received samples 2025 v5.16.xlsm" # Update once versions are known
+FOR_002_FILE="HMF-FOR-002 Sample in process 2025 v4.9.xlsm" # Update once versions are known
+
+FOR_001_FILE_2024="HMF-FOR-001 Received samples 2024 v5.15.xlsm"
+FOR_001_FILE_2023="HMF-FOR-001 Received Samples 2023 v5.14.xlsx" # Remove once not needed any longer
+
+FOR_002_FILE_2024="HMF-FOR-002 Sample in process 2024 v4.8.xlsm"
+FOR_002_FILE_2023="HMF-FOR-002 Sample in process 2023 v4.7.xlsx" # Remove once not needed any longer
 
 NAS_FILES=(
   "${NAS_DIR}/${FOR_001_FILE}"
-  "${NAS_DIR}/${FOR_001_FILE_2023}"
+  "${NAS_DIR}/${FOR_001_FILE_2024}"
+  "${NAS_DIR}/${FOR_001_FILE_2023}" # Remove once not needed any longer
   "${NAS_DIR}/${FOR_002_FILE}"
-  "${NAS_DIR}/${FOR_002_FILE_2023}"
+  "${NAS_DIR}/${FOR_002_FILE_2024}"
+  "${NAS_DIR}/${FOR_002_FILE_2023}" # Remove once not needed any longer
 )
 
 LAMA_BUCKET="lama-export"
@@ -77,7 +83,17 @@ main() {
     excel_sheet_to_tsv "${for002_source}" "${for002_proc_txt}" "1" "5"
 
     # We need to support the files from previous year until lab team has finished with updates
-    info "Converting input files to text formats for previous year"
+    info "Converting input files to text formats for previous year 2024"
+    for001_source_2024="${TMP_DIR}/${FOR_001_FILE_2024}"
+    for002_source_2024="${TMP_DIR}/${FOR_002_FILE_2024}"
+    for001_samp_txt_2024="${DAY_DIR}/2024_for001_samples.tsv"
+    for001_subm_txt_2024="${DAY_DIR}/2024_for001_submissions.tsv"
+    for002_proc_txt_2024="${DAY_DIR}/2024_for002_processing.tsv"
+    excel_sheet_to_tsv "${for001_source_2024}" "${for001_subm_txt_2024}" "1" "5"
+    excel_sheet_to_tsv "${for001_source_2024}" "${for001_samp_txt_2024}" "2" "2"
+    excel_sheet_to_tsv "${for002_source_2024}" "${for002_proc_txt_2024}" "1" "5"
+
+    info "Converting input files to text formats for previous year 2023"
     for001_source_2023="${TMP_DIR}/${FOR_001_FILE_2023}"
     for002_source_2023="${TMP_DIR}/${FOR_002_FILE_2023}"
     for001_samp_txt_2023="${DAY_DIR}/2023_for001_samples.tsv"

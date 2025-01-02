@@ -14,7 +14,7 @@ if [[ -z "${run_dir_ref}" || -z "${run_dir_new}" || -z "${output_id}" || -z "${o
     error "Inputs missing. Exiting";
 fi
 
-info "Running compar on COLO829 ${run_dir_ref} versus ${run_dir_new}"
+info "Running compar on ${run_dir_ref} versus ${run_dir_new}"
 
 compar_jar="/data/experiments/pilot_tools/compar/compar.jar"
 
@@ -26,7 +26,8 @@ sample=$(load_tumor_sample_from_metadata ${run_dir_ref})
 driver_gene_panel=$(locate_driver_gene_panel_37_tsv)
 
 # TODO (KD): Include CUPPA or change to ALL once CUPPA v2 is supported in compar
-categories="PURITY,DRIVER,SOMATIC_VARIANT,GERMLINE_VARIANT,GERMLINE_DELETION,GERMLINE_SV,FUSION,DISRUPTION,CHORD,LILAC"
+#categories="PURITY,DRIVER,SOMATIC_VARIANT,GERMLINE_VARIANT,GERMLINE_DELETION,GERMLINE_SV,FUSION,DISRUPTION,CHORD,LILAC"
+categories="CUPPA"
 
 java -jar ${compar_jar} \
     -sample "${sample}" \

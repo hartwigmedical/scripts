@@ -294,7 +294,7 @@ create_run_specific_files () {
     elif [[ ${run_type} == "SingleSample" ]]; then
         file_selection=("${single_sample_files[@]}")
     elif [[ ${run_type} == "Fastq" ]]; then
-        mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[].filepath' )
+        mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[] | select(.filename != "") | .filepath')
         file_selection=("${all_file_paths[@]}")
     else
         die "Unknown run type (${run_type})"

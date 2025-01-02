@@ -81,6 +81,10 @@ my $LAMA_SAMPLESTATUS_JSON = $LATEST_DIR . '/Statuses.json';
 my $LAMA_CONTRACTS_JSON = $LATEST_DIR . '/Contracts.json';
 
 # Files from previous years
+my $SUBM_TSV_2024 = $LATEST_DIR . '/2024_for001_submissions.tsv';
+my $SAMP_TSV_2024 = $LATEST_DIR . '/2024_for001_samples.tsv';
+my $PROC_TSV_2024 = $LATEST_DIR . '/2024_for002_processing.tsv';
+
 my $SUBM_TSV_2023 = $LATEST_DIR . '/2023_for001_submissions.tsv';
 my $SAMP_TSV_2023 = $LATEST_DIR . '/2023_for001_samples.tsv';
 my $PROC_TSV_2023 = $LATEST_DIR . '/2023_for002_processing.tsv';
@@ -111,6 +115,7 @@ my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json';
 my @ALL_INPUT_FILES = (
     $LAMA_ISOLATION_JSON, $LAMA_PATIENT_JSON, $LAMA_LIBRARYPREP_JSON, $LAMA_SAMPLESTATUS_JSON,
     $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV, $FOR_001_CONT_TSV,
+    $SUBM_TSV_2024, $SAMP_TSV_2024, $PROC_TSV_2024,
     $SUBM_TSV_2023, $SAMP_TSV_2023, $PROC_TSV_2023,
     $SUBM_TSV_2022, $SAMP_TSV_2022, $PROC_TSV_2022,
     $SUBM_TSV_2021, $SAMP_TSV_2021, $PROC_TSV_2021,
@@ -151,6 +156,7 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2021, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2022, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2023, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2024, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
@@ -159,6 +165,7 @@ $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2020'}, 'submission', 0
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2021'}, 'submission', 0, $SUBM_TSV_2021, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2022'}, 'submission', 0, $SUBM_TSV_2022, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2023'}, 'submission', 0, $SUBM_TSV_2023, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2024'}, 'submission', 0, $SUBM_TSV_2024, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
@@ -168,6 +175,7 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2021'}, 'sample_id',  1, $SAMP_TSV_2021, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2022'}, 'sample_id',  1, $SAMP_TSV_2022, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2023'}, 'sample_id',  1, $SAMP_TSV_2023, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2024'}, 'sample_id',  1, $SAMP_TSV_2024, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 my $lama_status = parseLamaSampleStatus($LAMA_SAMPLESTATUS_JSON);
@@ -262,7 +270,7 @@ sub addLamaSamples{
         }
 
         my ($patient_id, $study, $center, $tum_or_ref);
-        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW|QUAL|TUMA)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
+        my $name_regex = '^((CPCT|DRUP|WIDE|ACTN|CORE|SHRP|GAYA|TARG|OMIC|OPTC|GLOW|QUAL|TUMA)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R|P){1}';
         if ($sample_name =~ /$name_regex/ms) {
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
             $sample_to_store{label} = $study;
@@ -313,7 +321,7 @@ sub addLamaSamples{
             $dna_reference_samples_by_name{ $sample_name } = \%sample_to_store;
             $final_target_yield = 100;
         }
-        elsif ($isolation_type eq 'Plasma') {
+        elsif ($isolation_type eq 'Plasma' or $isolation_type eq 'CF_DNA' or $isolation_type eq 'CF_DNA_ISOLATE') {
             $analysis_type = 'PlasmaAnalysis'; # Plasma from blood
         }
         else {
@@ -474,6 +482,9 @@ sub parseLamaPatients {
         foreach my $sample (@{$patient->{referenceSamples}}) {
             processSampleOfLamaPatient($patient, $sample, 'reference', \%store);
         }
+        foreach my $sample (@{$patient->{plasmaSamples}}) {
+            processSampleOfLamaPatient($patient, $sample, 'plasma', \%store);
+        }
     }
     return \%store;
 }
@@ -497,6 +508,10 @@ sub processSampleOfLamaPatient {
     }
     elsif( $sample_origin eq 'reference' ){
         $sample_field_translations = $name_dict->{lama_patient_reference_sample_dict};
+        @sampleBarcodes = ($sample->{sampleBarcode});
+    }
+    elsif( $sample_origin eq 'plasma' ){
+        $sample_field_translations = $name_dict->{lama_patient_plasma_sample_dict};
         @sampleBarcodes = ($sample->{sampleBarcode});
     }
     else{
@@ -984,7 +999,7 @@ sub addExcelSamples{
             $analysis_type = 'FASTQ';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
-        elsif ( $analysis_type eq 'Labonly' ){
+        elsif ( $analysis_type eq 'Lab only' or $analysis_type eq 'Labonly' ){
             $analysis_type = 'LabOnly';
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
@@ -1323,7 +1338,8 @@ sub getFieldNameTranslations{
 
     my %SUBM_DICT_2022 = %SUBM_DICT_2021;
     my %SUBM_DICT_2023 = %SUBM_DICT_2022;
-    my %SUBM_DICT = %SUBM_DICT_2023;
+    my %SUBM_DICT_2024 = %SUBM_DICT_2023;
+    my %SUBM_DICT = %SUBM_DICT_2024;
 
     # Columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
@@ -1369,17 +1385,16 @@ sub getFieldNameTranslations{
     $SAMP_DICT_2021{"ShallowSeq_required"} = 'shallowseq';
     my %SAMP_DICT_2022 = %SAMP_DICT_2021;
     my %SAMP_DICT_2023 = %SAMP_DICT_2022;
-    my %SAMP_DICT = %SAMP_DICT_2023;
+    my %SAMP_DICT_2024 = %SAMP_DICT_2023;
+    my %SAMP_DICT = %SAMP_DICT_2024;
 
     # Columns In Process sheet (HMF-FOR-002)
-    my %PROC_DICT_2022 = (
+    my %PROC_DICT = (
         'Sample_ID'         => 'sample_id', # eg FR12345678
         'Sample_name'       => 'sample_name', # eg CPCT1234567R
         'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
         'Sop_tracking_code' => 'lab_sop_versions',
     );
-    my %PROC_DICT_2023 = %PROC_DICT_2022;
-    my %PROC_DICT = %PROC_DICT_2023;
 
     my %lama_patient_dict = (
         '_id' => 'lama_patient_object_id',
@@ -1425,6 +1440,13 @@ sub getFieldNameTranslations{
         'sampleBarcode'   => 'sample_barcode',
         'submissionNr'    => 'submission',
         'originalBarcode' => 'original_barcode',
+        'contractCode'    => 'contract_code'
+    );
+
+    my %lama_patient_plasma_sample_dict = (
+        'sopVersion'      => 'sop_version',
+        'arrivalHmf'      => 'arrival_date',
+        'sampleBarcode'   => 'sample_barcode',
         'contractCode'    => 'contract_code'
     );
 
@@ -1494,6 +1516,7 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2024' => \%SUBM_DICT_2024,
         'SUBM_2023' => \%SUBM_DICT_2023,
         'SUBM_2022' => \%SUBM_DICT_2022,
         'SUBM_2021' => \%SUBM_DICT_2021,
@@ -1501,6 +1524,7 @@ sub getFieldNameTranslations{
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2024' => \%SAMP_DICT_2024,
         'SAMP_2023' => \%SAMP_DICT_2023,
         'SAMP_2022' => \%SAMP_DICT_2022,
         'SAMP_2021' => \%SAMP_DICT_2021,
@@ -1508,14 +1532,13 @@ sub getFieldNameTranslations{
         'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
-        'PROC_2023' => \%PROC_DICT_2023,
-        'PROC_2022' => \%PROC_DICT_2022,
         'lama_content_translations_by_field_name' => \%lama_content_translations_by_field_name,
         'lama_patient_dict' => \%lama_patient_dict,
         'lama_patient_tumor_sample_dict' => \%lama_patient_tumor_sample_dict,
         'lama_patient_tumor_sample_tumor_type_dict' => \%lama_patient_tumor_sample_tumor_type_dict,
         'lama_patient_tumor_sample_biopsy_dict' => \%lama_patient_tumor_sample_biopsy_dict,
         'lama_patient_reference_sample_dict' => \%lama_patient_reference_sample_dict,
+        'lama_patient_plasma_sample_dict' => \%lama_patient_plasma_sample_dict,
         'lama_isolation_isolate_dict' => \%lama_isolation_isolate_dict,
         'lama_libraryprep_library_dict' => \%lama_libraryprep_library_dict,
         'lama_status_dict' => \%lama_status_dict,

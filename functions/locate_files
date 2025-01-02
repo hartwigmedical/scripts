@@ -185,11 +185,11 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/6.0.0/serve.jar"
+    echo "/data/tools/serve/7.4.0/serve.jar"
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/6.1.0/serve.jar"
+    echo "/data/tools/serve/7.4.0/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -354,22 +354,6 @@ locate_actin_treatment_db_directory() {
     echo "/data/resources/actin/treatment_db"
 }
 
-locate_actin_serve_db_nl() {
-    echo "/data/resources/actin/serve_db"
-}
-
-locate_actin_serve_db_nl_37_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.37.json"
-}
-
-locate_actin_serve_db_nl_38_json() {
-    echo "$(locate_actin_serve_db_nl)/serve.38.json"
-}
-
-locate_actin_serve_db_mcgi() {
-    echo "/data/resources/actin/serve_db_mcgi"
-}
-
 locate_actin_rna_sample_metadata_file() {
     echo "/data/resources/actin/rna_cohort/actin_sample_cohort_mapping.csv"
 }
@@ -380,6 +364,14 @@ locate_atc_tsv() {
 
 locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
+}
+
+locate_drug_interactions_tsv() {
+    echo "/data/resources/actin/medication/drug_interactions.tsv"
+}
+
+locate_qt_prolongating_tsv() {
+  echo "/data/resources/actin/medication/qt_prolongating.tsv"
 }
 
 locate_dnds_driver_likelihood_onco() {
@@ -520,6 +512,12 @@ locate_actin_trial_database_bucket() {
     local gcp_project=$1 && shift
 
     echo "gs://${gcp_project}-trial-pipeline-output"
+}
+
+locate_actin_serve_bucket() {
+    local gcp_project=$1 && shift
+
+    echo "gs://${gcp_project}-serve-pipeline-output"
 }
 
 ############################## ACTIN Data GCP ##################################
@@ -857,6 +855,10 @@ locate_actin_evaluation_summary() {
     echo "${evaluation_summary_tsv}"
 }
 
+locate_actin_serve_directory() {
+    echo "/data/actin/serve"
+}
+
 ############################ ACTIN Personalization #############################
 
 locate_actin_personalization_jar() {
@@ -1115,7 +1117,7 @@ locate_ckb_molecular_profile_filter_pilot_tsv() {
 }
 
 locate_ckb_molecular_profile_filter_tsv() {
-    echo "/data/resources/crunch/serve/ckb/ckb_blacklist_molecular_profile.tsv"
+    echo "/data/resources/crunch/serve/ckb/ckb_molecular_profile_filter.tsv"
 }
 
 locate_ckb_evidence_filter_pilot_tsv() {
@@ -1123,7 +1125,7 @@ locate_ckb_evidence_filter_pilot_tsv() {
 }
 
 locate_ckb_evidence_filter_tsv() {
-    echo "/data/resources/crunch/serve/ckb/ckb_blacklist_evidence.tsv"
+    echo "/data/resources/crunch/serve/ckb/ckb_evidence_filter.tsv"
 }
 
 locate_ckb_trial_filter_pilot_tsv() {
@@ -1131,7 +1133,7 @@ locate_ckb_trial_filter_pilot_tsv() {
 }
 
 locate_ckb_trial_filter_tsv() {
-    echo "/data/resources/crunch/serve/ckb/ckb_blacklist_studies.tsv"
+    echo "/data/resources/crunch/serve/ckb/ckb_trial_filter.tsv"
 }
 
 locate_ckb_facility_curation_name_tsv() {

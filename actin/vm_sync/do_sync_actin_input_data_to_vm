@@ -34,6 +34,11 @@ clinical_curation_directory=$(locate_actin_clinical_curation_directory)
 create_or_cleanup_dir ${clinical_curation_directory}
 gsutil -m rsync -x "^202" -r $(locate_actin_clinical_curation_bucket ${gcp_project}) ${clinical_curation_directory}
 
+info "Syncing SERVE output..."
+serve_directory=$(locate_actin_serve_directory)
+create_or_cleanup_dir ${serve_directory}
+gsutil -m rsync -r $(locate_actin_serve_bucket ${gcp_project}) ${serve_directory}
+
 if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
     info "Syncing actin config file ..."
 

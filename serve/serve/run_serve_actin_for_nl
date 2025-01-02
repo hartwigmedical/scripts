@@ -7,27 +7,26 @@ output_dir="$(locate_serve_output_actin_nl)"
 create_or_cleanup_dir ${output_dir}
 
 ckb_dir="$(locate_ckb_flex_data_latest_dir)"
-ckb_blacklist_molecular_profile_tsv="$(locate_ckb_molecular_profile_filter_tsv)"
-ckb_blacklist_studies_tsv="$(locate_ckb_trial_filter_tsv)"
-ckb_blacklist_evidence_tsv="$(locate_ckb_evidence_filter_tsv)"
+ckb_molecular_profile_filter_tsv="$(locate_ckb_molecular_profile_filter_tsv)"
+ckb_evidence_filter_tsv="$(locate_ckb_evidence_filter_tsv)"
+ckb_trial_filter_tsv="$(locate_ckb_trial_filter_tsv)"
+ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
+ckb_regions_to_include_tsv="$(locate_ckb_regions_actin_nl_tsv)"
 ckb_facility_curation_name_tsv="$(locate_ckb_facility_curation_name_tsv)"
 ckb_facility_curation_zip_tsv="$(locate_ckb_facility_curation_zip_tsv)"
 ckb_facility_curation_manual_tsv="$(locate_ckb_facility_curation_manual_tsv)"
-ckb_drug_curation_tsv="$(locate_ckb_drug_curation_tsv)"
-ckb_regions_tsv="$(locate_ckb_regions_actin_nl_tsv)"
 
 docm_tsv="$(locate_docm_tsv)"
 hartwig_cohort_hotspot_tsv="$(locate_hartwig_cohort_hotspots_tsv)"
 hartwig_curated_hotspot_tsv="$(locate_hartwig_curated_hotspots_tsv)"
 hartwig_curated_gene_tsv="$(locate_hartwig_curated_genes_tsv)"
-# TODO (CB) Remove this param when switching to v7.0.0
-missing_doids_mapping_tsv="$(locate_iclusion_missing_doids_mapping_tsv)"
 
 do_run_serve_actin \
-    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
-    -use_ckb_trials -ckb_dir ${ckb_dir} -ckb_blacklist_trial_tsv ${ckb_blacklist_studies_tsv} -ckb_region_tsv ${ckb_regions_tsv} \
-    -use_ckb_evidence -ckb_dir ${ckb_dir} -ckb_blacklist_evidence_tsv ${ckb_blacklist_evidence_tsv} \
-    -ckb_blacklist_molecular_profile_tsv ${ckb_blacklist_molecular_profile_tsv} \
+    -use_ckb -ckb_dir ${ckb_dir} \
+    -ckb_molecular_profile_filter_tsv ${ckb_molecular_profile_filter_tsv} \
+    -ckb_evidence_filter_tsv ${ckb_evidence_filter_tsv} \
+    -ckb_trial_filter_tsv ${ckb_trial_filter_tsv} \
+    -ckb_regions_to_include_tsv ${ckb_regions_to_include_tsv} \
     -ckb_drug_curation_tsv ${ckb_drug_curation_tsv} \
     -ckb_facility_curation_name_tsv ${ckb_facility_curation_name_tsv} \
     -ckb_facility_curation_zip_tsv ${ckb_facility_curation_zip_tsv} \

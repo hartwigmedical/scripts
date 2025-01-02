@@ -7,7 +7,8 @@ source message_functions || exit 1
 ORGANIZATION_ID="478829257309"
 
 function main() {
-    gcloud projects list --filter "parent.id=${ORGANIZATION_ID} AND parent.type=organization"
+    projects=$(gcloud projects list --filter "parent.id=${ORGANIZATION_ID} AND parent.type=organization" --format=json)
+    jq -r '.[] | [.projectNumber,.projectId] | @tsv' <<< "$projects"
 }
 
 main

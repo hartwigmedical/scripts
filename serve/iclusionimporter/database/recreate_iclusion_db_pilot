@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-do_recreate_iclusion_database iclusion_pilot
