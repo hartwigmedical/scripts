@@ -212,14 +212,14 @@ class StatusChecker:
         creds = creds_result.stdout.strip()
         #Construct SQL query
         sql_query = (
-            "SELECT sampleId, gene, minCopyNumber, maxCopyNumber"
+            "SELECT sampleId, gene, minCopyNumber, maxCopyNumber "
             "FROM geneCopyNumber"
-            f"WHERE sampleId = '{reporting_id}' AND gene = 'MTAP'"
-            "AND EXISTS ("
-            "SELECT 1"
-            "FROM geneCopyNumber AS sub"
-            f"WHERE sub.sampleId = '{reporting_id}'"
-            "AND sub.gene = 'CDKN2A'"
+            f"WHERE sampleId = '{reporting_id}' AND gene = 'MTAP' "
+            "AND EXISTS ( "
+            "SELECT 1 "
+            "FROM geneCopyNumber AS sub "
+            f"WHERE sub.sampleId = '{reporting_id}' "
+            "AND sub.gene = 'CDKN2A' "
             "AND (sub.minCopyNumber < 0.5 OR sub.maxCopyNumber < 0.5))"
         )
         query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
