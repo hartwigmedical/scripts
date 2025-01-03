@@ -8,14 +8,9 @@ def main():
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('sample_barcode')
     argument_parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
-    argument_parser.add_argument('--publish', default=False, action='store_true',
-                                 help='whether to publish to portal or not')
-    argument_parser.add_argument('--notify-users', default=False, action='store_true',
-                                 help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
-    ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                        notify_users=args.notify_users)
+    ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report()
 
 
 class ReportSharer:
@@ -36,12 +31,10 @@ class ReportSharer:
         self.run_id = self.report_created_record['run_id']
         self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
 
-    def share_report(self, publish_to_portal, notify_users):
+    def share_report(self):
         """
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
 
-        :param publish_to_portal: whether to publish a pub/sub message to portal.
-        :param notify_users: setting this to true will email the users regarding the portal update.
         """
         if not self.run:
             self._prompt_user_no_run()
@@ -51,12 +44,15 @@ class ReportSharer:
         self._delete_old_artifacts_in_portal_bucket()
         self._delete_old_artifacts_in_gcp_share_bucket()
 
-        self._copy_files_to_remote_buckets(publish_to_portal=publish_to_portal)
+        publish_to_portal_and_notify = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'reportSettings']['isSharedThroughPortal']
+
+        self._copy_files_to_remote_buckets(publish_to_portal=publish_to_portal_and_notify)
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
-                                                       publish_to_portal=publish_to_portal,
-                                                       notify_users=notify_users)
+                                                       publish_to_portal=publish_to_portal_and_notify,
+                                                       notify_users=publish_to_portal_and_notify)
         print("API response:", response)
 
         delete_response = self._delete_run_from_reporting_pipeline()
@@ -136,6 +132,8 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
     def _share_wgs_report(self, report_blobs):
+        share_germline_data_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+            'reportSettings']['shareGermlineData']
         molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
                                                       file_names=self._molecular_files())
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
@@ -146,10 +144,12 @@ class ReportSharer:
         print(f"Sharing a total of '{len(molecular_blobs)}' molecular files with the portal")
         for blob in molecular_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket, target_sub_folder='RUO')
-        print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
-        for blob in germline_blobs:
-            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
-                                      target_sub_folder='RUO_germline')
+
+        if share_germline_data_portal:
+            print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
+            for blob in germline_blobs:
+                self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
+                                          target_sub_folder='RUO_germline')
 
     def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
