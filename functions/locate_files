@@ -367,7 +367,7 @@ locate_atc_overrides_tsv() {
 }
 
 locate_icd_tsv() {
-    echo "/data/resources/actin/international_disease_classification/SimpleTabulation-ICD-11-MMS-en.tsv"
+    echo "/data/resources/actin/icd/SimpleTabulation-ICD-11-MMS-en.tsv"
 }
 
 locate_drug_interactions_tsv() {
