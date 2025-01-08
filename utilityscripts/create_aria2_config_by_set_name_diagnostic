@@ -40,7 +40,7 @@ secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retr
 function main() {
     runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_json=$(echo "${runs_json}" | jq '[.[] | select(.context == "DIAGNOSTIC")]')
-    echo "Retrieved runs_json:"
+    echo "Retrieved runs_json :"
     echo "${runs_json}" | jq .
 
     runs_count=$(jq '. | length' <<< "${runs_json}")
