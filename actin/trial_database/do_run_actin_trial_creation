@@ -13,6 +13,7 @@ fi
 trial_config_directory="$(locate_actin_trial_config_directory)"
 trial_status_directory="$(locate_actin_trial_status_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
+icd_tsv=$(locate_icd_tsv)
 doid_json="$(locate_doid_json)"
 atc_tsv="$(locate_atc_tsv)"
 serve_db_json="$(locate_actin_serve_directory)/serve.json"
@@ -26,6 +27,7 @@ java -cp ${actin_jar} com.hartwig.actin.trial.TrialCreatorApplicationKt \
     -${trial_status_directory_param} ${trial_status_directory} \
     -trial_config_directory ${trial_config_directory} \
     -treatment_directory ${treatment_directory} \
+    -icd_tsv ${icd_tsv} \
     -doid_json ${doid_json} \
     -atc_tsv ${atc_tsv} \
     -serve_db_json ${serve_db_json} \

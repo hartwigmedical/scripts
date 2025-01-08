@@ -366,6 +366,10 @@ locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
 }
 
+locate_icd_tsv() {
+    echo "/data/resources/actin/icd/SimpleTabulation-ICD-11-MMS-en.tsv"
+}
+
 locate_drug_interactions_tsv() {
     echo "/data/resources/actin/medication/drug_interactions.tsv"
 }
