@@ -218,9 +218,22 @@ class StatusChecker:
         )
         query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
         output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
-        if f'{output.stdout}' != '':
-            warnings.append('The MTAP copynumber info is as follows:'
-                            f'{output.stdout}')
+    # Process the output
+        if output.stdout.strip():
+            lines = output.stdout.strip().split('\n')
+            if len(lines) > 1:  # Ensure there are both headers and data
+                headers = lines[0].split('\t')
+                values = lines[1].split('\t')
+
+                # Combine headers and values into key-value pairs
+                key_value_pairs = [f"{header}: {value}" for header, value in zip(headers, values)]
+
+                # Create the readable output
+                readable_output = ", ".join(key_value_pairs)
+                warnings.append(f"The MTAP copynumber info is as follows: {readable_output}")
+            else:
+                warnings.append("The MTAP copynumber info could not be retrieved or is incomplete.")
+
         return warnings
     def _get_health_checker_related_warnings(self, report_record):
         warnings = []
