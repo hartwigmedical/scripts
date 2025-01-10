@@ -8,14 +8,9 @@ def main():
     argument_parser = argparse.ArgumentParser()
     argument_parser.add_argument('sample_barcode')
     argument_parser.add_argument('--profile', choices=['pilot', 'preview', 'prod'], default='pilot')
-    argument_parser.add_argument('--publish', default=False, action='store_true',
-                                 help='whether to publish to portal or not')
-    argument_parser.add_argument('--notify-users', default=False, action='store_true',
-                                 help='whether to email the users of the share event')
     args = argument_parser.parse_args()
 
-    ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report(publish_to_portal=args.publish,
-                                                                                        notify_users=args.notify_users)
+    ReportSharer(sample_barcode=args.sample_barcode, profile=args.profile).share_report()
 
 
 class ReportSharer:
@@ -36,12 +31,10 @@ class ReportSharer:
         self.run_id = self.report_created_record['run_id']
         self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
 
-    def share_report(self, publish_to_portal, notify_users):
+    def share_report(self):
         """
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
 
-        :param publish_to_portal: whether to publish a pub/sub message to portal.
-        :param notify_users: setting this to true will email the users regarding the portal update.
         """
         if not self.run:
             self._prompt_user_no_run()
@@ -51,12 +44,26 @@ class ReportSharer:
         self._delete_old_artifacts_in_portal_bucket()
         self._delete_old_artifacts_in_gcp_share_bucket()
 
-        self._copy_files_to_remote_buckets(publish_to_portal=publish_to_portal)
+        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
+
+        if "reportSettings" not in lama:
+            print("key reportSettings is not present")
+            exit(1)
+        else:
+            report_settings = lama["reportSettings"]
+
+        if "isSharedThroughPortal" not in report_settings:
+            print("isSharedThroughPortal is not present")
+            exit(1)
+        else:
+            is_shared_through_portal = report_settings['isSharedThroughPortal']
+
+        self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal, report_settings=report_settings, lama=lama)
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
-                                                       publish_to_portal=publish_to_portal,
-                                                       notify_users=notify_users)
+                                                       publish_to_portal=is_shared_through_portal,
+                                                       notify_users=is_shared_through_portal)
         print("API response:", response)
 
         delete_response = self._delete_run_from_reporting_pipeline()
@@ -93,7 +100,7 @@ class ReportSharer:
         print(f"deleting runs with sample barcode '{self.sample_barcode}' from reporting pipeline")
         return self.rest_client.delete_finished_execution(self.sample_barcode)
 
-    def _copy_files_to_remote_buckets(self, publish_to_portal):
+    def _copy_files_to_remote_buckets(self, publish_to_portal, report_settings, lama):
         report_blobs = self._get_report_blobs()
         self._archive_blobs(report_blobs)
         if publish_to_portal:
@@ -104,7 +111,7 @@ class ReportSharer:
             elif self._is_panel():
                 self._share_panel_report(report_blobs)
             else:
-                self._share_wgs_report(report_blobs)
+                self._share_wgs_report(report_blobs, report_settings, lama)
 
     def _archive_blobs(self, blobs):
         print(f"Copying {len(blobs)} blobs to the archive bucket")
@@ -135,21 +142,47 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob, self.portal_bucket, target_sub_folder='RUO')
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
-    def _share_wgs_report(self, report_blobs):
+    def _share_wgs_report(self, report_blobs, report_settings, lama):
+        if "shareGermlineData" not in report_settings:
+            print("shareGermlineData is not present")
+            exit(1)
+        else:
+            share_germline_data = report_settings['shareGermlineData']
+
+        if "reportingId" not in lama:
+            print("reportingId is not present")
+            exit(1)
+        else:
+            reporting_id = lama['reportingId']
+
+        if "hospitalSampleLabel" not in lama:
+            print("hospitalSampleLabel is not present")
+            exit(1)
+        else:
+            hospital_sample_label = lama['hospitalSampleLabel']
+
+        if hospital_sample_label is not None:
+            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
+        else:
+            converted_reporting_id = f"{reporting_id}"
+
+
         molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
-                                                      file_names=self._molecular_files())
+                                                      file_names=self._molecular_files(converted_reporting_id))
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
-                                                     file_names=self._germline_files())
+                                                     file_names=self._germline_files(converted_reporting_id))
         print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
         print(f"Sharing a total of '{len(molecular_blobs)}' molecular files with the portal")
         for blob in molecular_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket, target_sub_folder='RUO')
-        print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
-        for blob in germline_blobs:
-            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
-                                      target_sub_folder='RUO_germline')
+
+        if share_germline_data:
+            print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
+            for blob in germline_blobs:
+                self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
+                                          target_sub_folder='RUO_germline')
 
     def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
@@ -181,17 +214,8 @@ class ReportSharer:
             ".reconCNV.html"
         }
 
-    def _molecular_files(self):
+    def _molecular_files(self, converted_reporting_id):
         set_name = self._set_name()
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
 
         return {
             "purple.driver.catalog.somatic.tsv",
@@ -202,17 +226,8 @@ class ReportSharer:
             f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf"
         }
 
-    def _germline_files(self):
+    def _germline_files(self, converted_reporting_id):
         set_name = self._set_name()
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
 
         return {
             "purple.germline.vcf.gz",
