@@ -44,15 +44,15 @@ class ReportSharer:
         self._delete_old_artifacts_in_portal_bucket()
         self._delete_old_artifacts_in_gcp_share_bucket()
 
-        publish_to_portal_and_notify = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
+        is_shared_through_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
             'reportSettings']['isSharedThroughPortal']
 
-        self._copy_files_to_remote_buckets(publish_to_portal=publish_to_portal_and_notify)
+        self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal)
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
-                                                       publish_to_portal=publish_to_portal_and_notify,
-                                                       notify_users=publish_to_portal_and_notify)
+                                                       publish_to_portal=is_shared_through_portal,
+                                                       notify_users=is_shared_through_portal)
         print("API response:", response)
 
         delete_response = self._delete_run_from_reporting_pipeline()
