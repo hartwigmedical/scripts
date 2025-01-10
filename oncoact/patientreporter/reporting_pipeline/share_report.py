@@ -50,15 +50,15 @@ class ReportSharer:
             print("key reportSettings is not present")
             exit(1)
         else:
-            reportSettings = lama["reportSettings"]
+            report_settings = lama["reportSettings"]
 
-        if "isSharedThroughPortal" not in reportSettings:
+        if "isSharedThroughPortal" not in report_settings:
             print("isSharedThroughPortal is not present")
             exit(1)
         else:
-            is_shared_through_portal = reportSettings['isSharedThroughPortal']
+            is_shared_through_portal = report_settings['isSharedThroughPortal']
 
-        self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal)
+        self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal, report_settings=report_settings, lama=lama)
 
         print('Updating api')
         response = self.rest_client.post_report_shared(report_created_id=self.report_created_record['id'],
@@ -100,7 +100,7 @@ class ReportSharer:
         print(f"deleting runs with sample barcode '{self.sample_barcode}' from reporting pipeline")
         return self.rest_client.delete_finished_execution(self.sample_barcode)
 
-    def _copy_files_to_remote_buckets(self, publish_to_portal):
+    def _copy_files_to_remote_buckets(self, publish_to_portal, report_settings, lama):
         report_blobs = self._get_report_blobs()
         self._archive_blobs(report_blobs)
         if publish_to_portal:
@@ -111,7 +111,7 @@ class ReportSharer:
             elif self._is_panel():
                 self._share_panel_report(report_blobs)
             else:
-                self._share_wgs_report(report_blobs)
+                self._share_wgs_report(report_blobs, report_settings, lama)
 
     def _archive_blobs(self, blobs):
         print(f"Copying {len(blobs)} blobs to the archive bucket")
@@ -142,18 +142,35 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob, self.portal_bucket, target_sub_folder='RUO')
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
-    def _share_wgs_report(self, report_blobs):
-        is_shared_through_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportSettings']
-        if "shareGermlineData" not in is_shared_through_portal:
+    def _share_wgs_report(self, report_blobs, report_settings, lama):
+        if "shareGermlineData" not in report_settings:
             print("shareGermlineData is not present")
             exit(1)
         else:
-            share_germline_data = is_shared_through_portal['shareGermlineData']
+            share_germline_data = report_settings['shareGermlineData']
+
+        if "reportingId" not in lama:
+            print("reportingId is not present")
+            exit(1)
+        else:
+            reporting_id = lama['reportingId']
+
+        if "hospitalSampleLabel" not in lama:
+            print("hospitalSampleLabel is not present")
+            exit(1)
+        else:
+            hospital_sample_label = lama['hospitalSampleLabel']
+
+        if hospital_sample_label is not None:
+            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
+        else:
+            converted_reporting_id = f"{reporting_id}"
+
 
         molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
-                                                      file_names=self._molecular_files())
+                                                      file_names=self._molecular_files(converted_reporting_id))
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
-                                                     file_names=self._germline_files())
+                                                     file_names=self._germline_files(converted_reporting_id))
         print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
@@ -197,25 +214,8 @@ class ReportSharer:
             ".reconCNV.html"
         }
 
-    def _molecular_files(self):
+    def _molecular_files(self, converted_reporting_id):
         set_name = self._set_name()
-        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
-        if "reportingId" not in lama:
-            print("reportingId is not present")
-            exit(1)
-        else:
-            reporting_id = lama['reportingId']
-
-        if "hospitalSampleLabel" not in lama:
-            print("hospitalSampleLabel is not present")
-            exit(1)
-        else:
-            hospital_sample_label = lama['hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
 
         return {
             "purple.driver.catalog.somatic.tsv",
@@ -226,26 +226,8 @@ class ReportSharer:
             f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf"
         }
 
-    def _germline_files(self):
+    def _germline_files(self, converted_reporting_id):
         set_name = self._set_name()
-
-        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
-        if "reportingId" not in lama:
-            print("reportingId is not present")
-            exit(1)
-        else:
-            reporting_id = lama['reportingId']
-
-        if "hospitalSampleLabel" not in lama:
-            print("hospitalSampleLabel is not present")
-            exit(1)
-        else:
-            hospital_sample_label = lama['hospitalSampleLabel']
-
-        if hospital_sample_label is not None:
-            converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
-        else:
-            converted_reporting_id = f"{reporting_id}"
 
         return {
             "purple.germline.vcf.gz",
