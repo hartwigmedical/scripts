@@ -44,8 +44,19 @@ class ReportSharer:
         self._delete_old_artifacts_in_portal_bucket()
         self._delete_old_artifacts_in_gcp_share_bucket()
 
-        is_shared_through_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportSettings']['isSharedThroughPortal']
+        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
+
+        if "reportSettings" not in lama:
+            print("key reportSettings is not present")
+            exit(1)
+        else:
+            reportSettings = lama["reportSettings"]
+
+        if "isSharedThroughPortal" not in reportSettings:
+            print("isSharedThroughPortal is not present")
+            exit(1)
+        else:
+            is_shared_through_portal = reportSettings['isSharedThroughPortal']
 
         self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal)
 
@@ -132,8 +143,13 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
     def _share_wgs_report(self, report_blobs):
-        share_germline_data_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportSettings']['shareGermlineData']
+        is_shared_through_portal = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])['reportSettings']
+        if "shareGermlineData" not in is_shared_through_portal:
+            print("shareGermlineData is not present")
+            exit(1)
+        else:
+            share_germline_data = is_shared_through_portal['shareGermlineData']
+
         molecular_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
                                                       file_names=self._molecular_files())
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
@@ -145,7 +161,7 @@ class ReportSharer:
         for blob in molecular_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket, target_sub_folder='RUO')
 
-        if share_germline_data_portal:
+        if share_germline_data:
             print(f"Sharing a total of '{len(germline_blobs)}' germline files with the portal")
             for blob in germline_blobs:
                 self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
@@ -183,10 +199,18 @@ class ReportSharer:
 
     def _molecular_files(self):
         set_name = self._set_name()
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'hospitalSampleLabel']
+        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
+        if "reportingId" not in lama:
+            print("reportingId is not present")
+            exit(1)
+        else:
+            reporting_id = lama['reportingId']
+
+        if "hospitalSampleLabel" not in lama:
+            print("hospitalSampleLabel is not present")
+            exit(1)
+        else:
+            hospital_sample_label = lama['hospitalSampleLabel']
 
         if hospital_sample_label is not None:
             converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
@@ -204,10 +228,19 @@ class ReportSharer:
 
     def _germline_files(self):
         set_name = self._set_name()
-        reporting_id = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'reportingId']
-        hospital_sample_label = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])[
-            'hospitalSampleLabel']
+
+        lama = self.rest_client.get_lama_patient_reporter_data(self.report_created_record['barcode'])
+        if "reportingId" not in lama:
+            print("reportingId is not present")
+            exit(1)
+        else:
+            reporting_id = lama['reportingId']
+
+        if "hospitalSampleLabel" not in lama:
+            print("hospitalSampleLabel is not present")
+            exit(1)
+        else:
+            hospital_sample_label = lama['hospitalSampleLabel']
 
         if hospital_sample_label is not None:
             converted_reporting_id = f"{reporting_id}-{hospital_sample_label}"
