@@ -201,7 +201,8 @@ class StatusChecker:
                 self._get_virus_names(report_record) +
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
-                self._get_protect_warnings(report_record))
+                self._get_protect_warnings(report_record) +
+                self._get_MTAP_cn(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -238,6 +239,56 @@ class StatusChecker:
         if 'WARN' in virusintrprtr_log:
             warnings.append('A warning was found in the virusintrprtr log. '
                             f'See: {virusintrprtr_log}')
+        return warnings
+
+    def _get_MTAP_cn(self, report_record):
+        warnings = []
+        #get reporting id
+        used_lama_data = self._get_lama_data_used_for_report(report_record)
+        patient_id = "reportingId"
+        patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
+        pathology_id = "hospitalSampleLabel"
+        pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
+        if pathology_id_value:
+            reporting_id = f"{patient_id_value}-{pathology_id_value}"
+        else:
+            reporting_id = patient_id_value
+        #Get credentials for sql
+        command = 'bash -i -c "source database_functions && get_secret_from_secret_manager mysql-diagnostic-patients-sql-prod-1-reader"'
+        creds_result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        creds = creds_result.stdout.strip()
+        #Construct SQL query
+        sql_query = (
+            "SELECT gc.sampleId, gc.gene, gc.minCopyNumber, gc.maxCopyNumber "
+            "FROM geneCopyNumber gc "
+            "WHERE gc.gene = 'MTAP' "
+            f"AND gc.sampleId = '{reporting_id}' "
+            "AND EXISTS ("
+            "  SELECT 1 "
+            "  FROM geneCopyNumber gc2 "
+            "  WHERE gc2.sampleId = gc.sampleId "
+            "  AND gc2.gene = 'CDKN2A' "
+            "  AND gc2.minCopyNumber < 0.5"
+            ")"
+        )
+        query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
+        output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
+        # Process the output
+        if output.stdout.strip():
+            lines = output.stdout.strip().split('\n')
+            if len(lines) > 1:  # Ensure there are both headers and data
+                headers = lines[0].split('\t')
+                values = lines[1].split('\t')
+
+                # Combine headers and values into key-value pairs
+                key_value_pairs = [f"{header}: {value}" for header, value in zip(headers, values)]
+
+                # Create the readable output
+                readable_output = ", ".join(key_value_pairs)
+                warnings.append(f"The MTAP copynumber info is as follows: {readable_output}")
+            else:
+                warnings.append("The MTAP copynumber info could not be retrieved or is incomplete.")
+
         return warnings
 
     def _get_health_checker_related_warnings(self, report_record):
