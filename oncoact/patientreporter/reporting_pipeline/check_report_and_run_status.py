@@ -245,14 +245,21 @@ class StatusChecker:
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
+
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
+
         pathology_id = "hospitalSampleLabel"
         pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
-        if pathology_id_value:
+
+        if pathology_id_value and patient_id_value:
             reporting_id = f"{patient_id_value}-{pathology_id_value}"
-        else:
+        elif patient_id_value:
             reporting_id = patient_id_value
+        else:
+            warnings.append(f"Both reportingId and hospitalSampleLabel are missing in lama data for {report_record['barcode']}.")
+            return warnings
+
         #Get credentials for sql
         command = 'bash -i -c "source database_functions && get_secret_from_secret_manager mysql-diagnostic-patients-sql-prod-1-reader"'
         creds_result = subprocess.run(command, shell=True, text=True, capture_output=True)
