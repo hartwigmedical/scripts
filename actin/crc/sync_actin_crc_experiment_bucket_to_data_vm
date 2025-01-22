@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+base_dir="$(locate_crc_experiment_directory)"
+
+info "Syncing ACTIN CRC experiment bucket to ${base_dir}"
+
+gsutil cp gs://actin-crc-experiment/* ${base_dir}/

@@ -2,6 +2,10 @@
 
 patient="ACTN02020001"
 
+actin_molecular_interpreter_crc_experiment ${patient}
+
+echo ""
+
 actin_treatment_matcher_crc_experiment ${patient}
 
 echo ""

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+base_dir="$(locate_crc_experiment_directory)"
+
+clinical_json="${base_dir}/${patient}.clinical.json"
+if [[ -z "${clinical_json}" ]]; then
+    error "No clinical record json found for ${patient}."
+fi
+
+serve_directory="$(locate_actin_serve_directory)"
+doid_json="$(locate_doid_json)"
+dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
+dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
+ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
+known_fusion_file="$(locate_known_fusion_data_37_csv)"
+
+actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN molecular interpreter on ${patient}"
+
+java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
+    -clinical_json "${clinical_json}" \
+    -serve_directory "${serve_directory}" \
+    -doid_json "${doid_json}" \
+    -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \
+    -tsg_dnds_database_path "${dnds_driver_likelihood_tsg}" \
+    -ref_genome_fasta_file "${ref_genome_fasta_file}" \
+    -ensembl_data_dir "${ensembl_data_dir}" \
+    -driver_gene_panel "${driver_gene_panel}" \
+    -known_fusions_file "${known_fusion_file}" \
+    -output_directory "${output_directory}" \
+    "$@"
+
