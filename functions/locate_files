@@ -409,7 +409,7 @@ locate_extended_efficacy_json() {
 }
 
 locate_crc_experiment_directory() {
-    echo "/data/experiments/240826_cb_crc_report_development"
+    echo "/data/actin/crc_report_development"
 }
 
 locate_crc_personalization_reference_data() {
