@@ -37,5 +37,4 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -personalization_data_path "${personalization_data_path}" \
     -serve_directory "${serve_directory}" \
     -output_directory "${base_dir}" \
-    -profile "CRC" \
     "$@"
