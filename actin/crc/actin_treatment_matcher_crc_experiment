@@ -16,6 +16,7 @@ patient_json="${base_dir}/${patient}.patient_record.json"
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
+icd_tsv="$(locate_icd_tsv)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
 personalization_data_path="$(locate_crc_personalization_reference_data)"
@@ -30,6 +31,7 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -trial_database_directory "${trial_database_directory}" \
     -treatment_directory "${treatment_directory}" \
     -doid_json "${doid_json}" \
+    -icd_tsv "${icd_tsv}" \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
     -personalization_data_path "${personalization_data_path}" \
