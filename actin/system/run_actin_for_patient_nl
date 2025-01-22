@@ -9,7 +9,7 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-actin_molecular_interpreter_nl ${patient}
+actin_molecular_interpreter ${patient}
 
 echo ""
 

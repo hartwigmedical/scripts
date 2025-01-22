@@ -4,13 +4,15 @@ source message_functions || exit 1
 source locate_files || exit 1
 
 patient=$1 && shift
-serve_directory=$1 && shift
 
-if [[ -z "${patient}" || -z "${serve_directory}" ]]; then
-    error "Parameters missing. Exiting.";
+if [[ -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
 fi
 
 clinical_json="$(locate_actin_clinical_json ${patient})"
+if [[ -z "${clinical_json}" ]]; then
+    error "No clinical record json found for ${patient}."
+fi
 
 wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
 orange_cmd=""
@@ -22,6 +24,7 @@ else
     info "Assuming no WGS has been performed for ${patient}"
 fi
 
+serve_directory="$(locate_actin_serve_directory)"
 doid_json="$(locate_doid_json)"
 dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
@@ -49,5 +52,4 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -known_fusions_file "${known_fusion_file}" \
     -output_directory "${output_directory}" \
     "$@"
-
 
