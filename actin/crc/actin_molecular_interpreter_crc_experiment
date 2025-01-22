@@ -39,6 +39,6 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -ensembl_data_dir "${ensembl_data_dir}" \
     -driver_gene_panel "${driver_gene_panel}" \
     -known_fusions_file "${known_fusion_file}" \
-    -output_directory "${output_directory}" \
+    -output_directory "${base_dir}" \
     "$@"
 
