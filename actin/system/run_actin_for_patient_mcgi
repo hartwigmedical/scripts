@@ -14,7 +14,7 @@ actin_molecular_interpreter_mcgi ${patient}
 echo ""
 
 # Pass "-run_historically" to run with historic reference data
-actin_treatment_matcher_mcgi ${patient} "$@"
+actin_treatment_matcher ${patient} "$@"
 
 echo ""
 

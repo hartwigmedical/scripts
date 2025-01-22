@@ -4,9 +4,8 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 patient=$1 && shift
-serve_directory=$1 && shift
 
-if [[ -z "${patient}" || -z "${serve_directory}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
@@ -21,6 +20,7 @@ doid_json="$(locate_doid_json)"
 icd_tsv="$(locate_icd_tsv)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
+serve_directory="$(locate_actin_serve_directory)"
 
 personalization_path_cmd=""
 personalization_data_path="$(locate_crc_personalization_reference_data)"
