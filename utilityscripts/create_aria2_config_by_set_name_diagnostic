@@ -1,0 +1,406 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+source secrets_functions || exit 1
+
+command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
+command -v jq > /dev/null || die "Dependency jq not found"
+command -v base64 > /dev/null || die "Dependency base64 not found"
+command -v xxd > /dev/null || die "Dependency xxd not found"
+
+script_name=$(basename "$0")
+
+set_name=$1
+out_dir=${2:-.}
+
+if [[ -z "${set_name}" ]]; then
+    echo "-----"
+    echo " Usage: $script_name {name-of-set}"
+    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1"
+    echo "        $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 /path/to/out_dir"
+    echo "-----"
+    exit 1
+fi
+
+[[ -d "${out_dir}" ]] || die "Output dir does not exist (${out_dir})"
+[[ -w "${out_dir}" ]] || die "Output dir is not writable (${out_dir})"
+
+info "Start of ${script_name}"
+
+secret_name="gcp-hmf-share-u-hmf-share"
+billing_project="hmf-ops"
+service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
+
+current_gcp_account=$(gcloud config get-value account)
+[[ "${current_gcp_account}" == "${service_account}" ]] || die "Not logged in as ${service_account}"
+secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
+
+function main() {
+    runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
+    runs_json=$(echo "${runs_json}" | jq '[.[] | select(.context == "DIAGNOSTIC")]')
+    echo "Retrieved runs_json :"
+    echo "${runs_json}" | jq .
+
+    runs_count=$(jq '. | length' <<< "${runs_json}")
+    [[ "${runs_count}" -eq 1 ]] || die "Currently only sets are supported with exactly one run (found ${runs_count}). Exiting"
+
+    run_json=$(echo "${runs_json}" | jq -r '.[-1]')
+    bucket=$(jq -r '.bucket' <<< "${run_json}")
+    entity_id=$(jq -r '.set.entity_id' <<< "${run_json}")
+    status=$(jq -r '.status' <<< "${run_json}")
+    context=$(jq -r '.context' <<< "${run_json}")
+    pip=$(jq -r '.version' <<< "${run_json}")
+    ini=$(jq -r '.ini' <<< "${run_json}")
+    ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
+    oid=$(jq -r '.id' <<< "${run_json}") # object id in api
+
+    if [[ "${tum}" != "null" ]]; then
+      reporting_id=$(hmf_api_get samples?name="${tum}" | jq -r '.[] | .reporting_id' | head -n1)
+    else
+      reporting_id=$(hmf_api_get samples?name="${ref}" | jq -r '.[] | .reporting_id' | head -n1)
+    fi
+    set_name_without_sample_id=$(echo "${set_name}" | rev | cut -d_ -f 2- | rev)
+    file_base_name="${set_name_without_sample_id}_${reporting_id}"
+
+    out_jsn_all="${out_dir}/${file_base_name}_runfiles.json"
+    out_md5_all="${out_dir}/${file_base_name}_runfiles.md5"
+    out_aria="${out_dir}/${file_base_name}.aria.txt"
+    out_md5="${out_dir}/${file_base_name}.md5"
+    out_url_int="${out_dir}/${file_base_name}_internal_urls.txt"
+    out_url_ext="${out_dir}/${file_base_name}_external_urls.txt"
+    all_output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
+
+    info "Details:"
+    info "  RunName: ${set_name} (oid=${oid})"
+    info "  RunStat: ${status}"
+    info "  IniName: ${ini}"
+    info "  TumName: ${tum}"
+    info "  RefName: ${ref}"
+    info "  PipeVsn: ${pip}"
+    info "  Bucket:  ${bucket}"
+    info "  Entity:  ${entity_id}"
+
+    # Deleting existing files is required as new content is appended in instead of overwritten
+    info "Deleting any existing files"
+    rm -f "${all_output_files[@]}"
+
+    # Get the file objects for one run by id
+    info "Collecting API information"
+    files_json=$(hmf_api_get "files?run_id=${oid}")
+    file_count=$(jq 'length' <<< "${files_json}")
+
+    # Temporary way to use FASTQ entries instead of files for specific submission
+    # if [[ "${ini}" == "FastQ.ini" ]]; then
+    #     files_json=$(construct_files_json_from_fastqs "${set_name}")
+    # fi
+
+    # Virtual samples potentially have zero yield and therefore no files but other FASTQ runs are expected to always have files
+    if [[ "${file_count}" -eq 0 && "${ini}" == "FastQ.ini" ]]; then
+        if [[ "${set_name}" =~ VirtualSample[0-9]+ ]]; then
+            info "Found 0 files in API for run ${set_name} but is a virtual sample so possible"
+            return 1
+        else
+            die "Found 0 files in API for FastQ.ini run ${set_name} (files?run_id=${oid})!!!"
+        fi
+    fi
+
+    output_type=$(determine_output_type_by_ini "$ini") || die "Unknown ini (${ini})"
+    info "Output type configure to ${output_type} files"
+
+    # Create run type agnostic info files
+    create_json_file "${files_json}" "${out_jsn_all}"
+    create_md5sums_file "${files_json}" "${out_md5_all}"
+
+    # Create the run type specific subset files
+    create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${set_name}" "${bucket}" "${ref}" "${tum}" "${pip}" "${output_type}" \
+        || die "Something wrong with creating run specific files. Exiting."
+
+    # At this point all output should exist so check
+    info "Output files:"
+    for output_file in "${all_output_files[@]}"; do
+        if [[ ! -f "${output_file}" ]]; then
+            die "Output file ${output_file} not found!"
+        else
+            line_count=$(wc -l "${output_file}" | cut -d" " -f1)
+            info "  ${output_file} (${line_count} lines)"
+        fi
+    done
+
+    # Last sanity check on final output
+    url_count=$(grep -c https < "${out_aria}")
+    line_count=$(wc -l < "${out_aria}")
+    [[ $((url_count*5)) -eq $line_count ]] || die "Unexpected line count [$line_count with $url_count urls] in aria output!"
+
+    info "Finished with ${script_name}"
+}
+
+construct_files_json_from_fastqs () {
+    local set_name=$1 && shift
+    local files=()
+    set_json=$(hmf_api_get "sets?name=${set_name}") || die "Unable to get set"
+    sample_oid=$(jq -r '.[-1].samples[-1].id' <<< "${set_json}")
+    fastq_json=$(hmf_api_get "fastq?sample_id=${sample_oid}" | jq  '[.[] | select(.qc_pass == true)]')
+    while read -r fastq_pair; do
+        bucket=$(jq -r '.bucket' <<< "${fastq_pair}")
+        [[ -n "${bucket}" ]] || continue
+        name_r1=$(jq -r '.name_r1' <<< "${fastq_pair}")
+        name_r2=$(jq -r '.name_r2' <<< "${fastq_pair}")
+        hash_r1=$(jq -r '.hash_r1' <<< "${fastq_pair}")
+        hash_r2=$(jq -r '.hash_r2' <<< "${fastq_pair}")
+        if [[ -n "${name_r1}" ]]; then
+            files+=("{\"filepath\": \"gs://${bucket}/${name_r1}\", \"filename\": \"${name_r1}\", \"hash\": \"${hash_r1}\"}")
+        fi
+        if [[ -n "${name_r2}" ]]; then
+            files+=("{\"filepath\": \"gs://${bucket}/${name_r2}\", \"filename\": \"${name_r2}\", \"hash\": \"${hash_r2}\"}")
+        fi
+    done < <(jq -c '.[]' <<< "${fastq_json}")
+    echo "[$(join_by "," "${files[@]}")]"
+}
+
+create_run_specific_files () {
+    local json=$1 && shift
+    local out_md5=$1 && shift
+    local out_aria=$1 && shift
+    local out_url_int=$1 && shift
+    local out_url_ext=$1 && shift
+    local set_name=$1 && shift
+    local bucket=$1 && shift
+    local ref=$1 && shift
+    local tum=$1 && shift
+    local pip=$1 && shift
+    local run_type=$1 && shift
+    local minor_version=""
+
+    if [[ "${run_type}" == "Fastq" ]]; then
+        pip="Fastq"
+    elif [[ "${pip}" =~ ^5\.[0-9]+$ ]]; then
+        minor_version=$(echo "${pip}" | cut -d"." -f2)
+    elif [[ "${pip}" =~ ^5\.[0-9]+.[0-9]+$ ]]; then
+        minor_version=$(echo "${pip}" | cut -d"." -f2)
+    else
+        die "Pipeline version string has unknown format (${pip})"
+        exit 1
+    fi
+
+    # From pipeline v5.10 onwards CRAM replaced BAM (but DIAGNOSTIC context still has BAM format as final alignments file)
+    if [[ "${pip}" == "Fastq" ]]; then
+        # For fastq type runs no pipeline output is available
+        bam1="undef"
+        bam1_index="undef"
+        bam2="undef"
+        bam2_index="undef"
+    elif [[ "${context}" == "SERVICES" ]]; then
+        base_file_path="gs://${bucket}/${set_name}"
+
+        bam1="${base_file_path}/${tum}/cram/${tum}.cram"
+        bam2="${base_file_path}/${ref}/cram/${ref}.cram"
+        bam1_index="${bam1}.crai"
+        bam2_index="${bam2}.crai"
+
+        local purple_files=(
+            "${base_file_path}/purple/purple.version"
+            "${base_file_path}/purple/${tum}.purple.cnv.somatic.tsv"
+            "${base_file_path}/purple/${tum}.purple.cnv.gene.tsv"
+            "${base_file_path}/purple/${tum}.purple.purity.tsv"
+            "${base_file_path}/purple/${tum}.purple.purity.range.tsv"
+            "${base_file_path}/purple/${tum}.purple.qc"
+            "${base_file_path}/purple/${tum}.purple.sv.vcf.gz"
+            "${base_file_path}/purple/${tum}.purple.sv.vcf.gz.tbi"
+            "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz"
+            "${base_file_path}/purple/${tum}.purple.somatic.vcf.gz.tbi"
+            "${base_file_path}/purple/plot/${tum}.circos.png"
+            "${base_file_path}/purple/${tum}.purple.driver.catalog.germline.tsv"
+            "${base_file_path}/purple/${tum}.purple.driver.catalog.somatic.tsv"
+            "${base_file_path}/purple/${tum}.purple.germline.deletion.tsv"
+        )
+
+        local share_files=(
+            "${base_file_path}/linx/${tum}.linx.driver.catalog.tsv"
+            "${base_file_path}/linx/${tum}.linx.fusion.tsv"
+            "${base_file_path}/lilac/${tum}.lilac.tsv"
+            "${base_file_path}/lilac/${tum}.lilac.qc.tsv"
+            "${base_file_path}/chord/${tum}_chord_prediction.txt"
+        )
+
+    else
+        bam1=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | head -n1)
+        bam2=$(echo "${json}" | jq -r '.[] | select(.datatype == "aligned_reads") | .filepath' | tail -n1)
+        if [[ "${minor_version}" -lt 10 || "${context}" == "DIAGNOSTIC" ]]; then
+            bam1_index="${bam1}.bai"
+            bam2_index="${bam2}.bai"
+        else
+            bam1_index="${bam1}.crai"
+            bam2_index="${bam2}.crai"
+        fi
+
+        local purple_files=(
+            "$(echo ${json} | jq -r '.[] | select(.filename == "purple.version") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_copy_number") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.cnv\\.gene\\.tsv")) | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_purity") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.filename|test(".+\\.purple\\.purity\\.range\\.tsv")) | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_qc") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "structural_variants_purple") | .filepath').tbi"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "somatic_variants_purple") | .filepath').tbi"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_circos_plot") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_somatic_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "purple_germline_deletion") | .filepath')"
+        )
+
+        local share_files=(
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "linx_driver_catalog") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "linx_fusions") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "lilac_output") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "lilac_qc_metrics") | .filepath')"
+            "$(echo ${json} | jq -r '.[] | select(.datatype == "chord_prediction") | .filepath')"
+        )
+    fi
+
+    # Final file list for SingleSample runs
+    local single_sample_files=(
+        "${bam1}"
+        "${bam1_index}"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath')"
+        "$(echo ${json} | jq -r '.[] | select(.datatype == "germline_variants") | .filepath').tbi"
+    )
+
+    # Final file list for ShallowSeq runs
+    local shallow_files=(
+        "${bam1}"
+        "${bam1_index}"
+        "${bam2}"
+        "${bam2_index}"
+        "${purple_files[@]}"
+    )
+
+    # Final file list for Somatic runs
+    local somatic_files=(
+        "${bam1}"
+        "${bam1_index}"
+        "${bam2}"
+        "${bam2_index}"
+        "${purple_files[@]}"
+        "${share_files[@]}"
+    )
+
+    # Select file collection
+    if [[ ${run_type} == "Somatic" ]]; then
+        file_selection=("${somatic_files[@]}")
+    elif [[ ${run_type} == "ShallowSeq" ]]; then
+        file_selection=("${shallow_files[@]}")
+    elif [[ ${run_type} == "SingleSample" ]]; then
+        file_selection=("${single_sample_files[@]}")
+    elif [[ ${run_type} == "Fastq" ]]; then
+        mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[] | select(.filename != "") | .filepath')
+        file_selection=("${all_file_paths[@]}")
+    else
+        die "Unknown run type (${run_type})"
+    fi
+
+    info "Creating md5sum file ($out_md5)"
+    gs_file_info=$(gsutil ls -L "${file_selection[@]}") || die "Unable to retrieve gs file listing! Exiting."
+    md5sums_info=$(parse_md5sums_from_file_listing "$gs_file_info") || die "Unable to parse md5sums from gs file listing! Exiting."
+    echo "$md5sums_info" > "$out_md5" || die "Unable to create md5 output file! Exiting."
+
+    info "Creating ${out_aria} (and intermediate files)"
+    for share_file in "${file_selection[@]}"; do
+        info "Creating signed URL for files ${share_file}"
+        signurl_payload=$(gsutil signurl -r europe-west4 -b "${billing_project}" -d 7d <(echo "${secret}") "${share_file}")
+        line=$(echo "$signurl_payload" | grep -v 'URL')
+        gs_url=$(echo "$line" | cut -f1)
+        signed_url=$(echo "$line" | cut -f4)
+        file_name=$(basename "${gs_url}")
+
+        target_file_name="${file_name}"
+        if [[ ${run_type} == "Fastq" ]]; then
+            # Replace sample barcode with sample name in FASTQ target
+            [[ $(tr -d -c '_' <<< "${set_name}" | wc -m) -eq 3 ]] || die "Fastq set name does not contain 3 underscores (${set_name})"
+            sample_name=$(echo "${set_name}" | rev | cut -d"_" -f1 | rev)
+            target_file_name="${sample_name}_${file_name#*_}"
+        fi
+
+        # Get file specific md5 hash
+        info "  Processing file ${file_name} (download name: ${target_file_name})"
+        md5sum=$(tr -s " " < "$out_md5" | awk -F" " -v name="$file_name" '$2 == name' | cut -d" " -f1)
+
+        # Final checks before writing record
+        [[ "${signed_url}" =~ ^https ]] || die "Pre-signed URL does not start with https (${signed_url})"
+        [[ -n "${set_name}" ]] || die "Dir not defined for aria config (${set_name})"
+        [[ -n "${target_file_name}" ]] || die "Target file name not defined for aria config (${set_name})"
+        [[ -n "${md5sum}" ]] || die "Md5sum not defined for aria config (${set_name})"
+
+        # Print aria2 config for one file (see also https://aria2.github.io/manual/en/html/aria2c.html#input-file)
+        {
+          echo "${signed_url}"
+          echo "  dir=${set_name}"
+          echo "  out=${target_file_name}"
+          echo "  checksum=md5=${md5sum}"
+          echo ""
+        } >> "${out_aria}"
+
+        # Write urls
+        echo "${gs_url}" >> "${out_url_int}"
+        echo "${signed_url}" >> "${out_url_ext}"
+    done
+}
+
+retrieve_runs_by_set () {
+    local set_name=$1 && shift
+    local ini_exclude="Rerun.ini"
+    local buk_exclude="^research-pipeline"
+    runs_json=$(hmf_api_get "runs?set_name=${set_name}") || return 1
+    jq --arg ini "^${ini_exclude}" --arg buk "^${buk_exclude}" \
+      '[.[] | select(.bucket//"NA"|test($buk)|not) | select(.ini//"NA"|test($ini)|not)]' <<< "${runs_json}" || return 1
+}
+
+create_json_file () {
+    local json_text=$1 && shift
+    local out_file=$1 && shift
+    info "Creating ${out_file}"
+    echo "${json_text}" | jq '.' > "${out_file}"
+}
+
+create_md5sums_file () {
+    local json_text=$1 && shift
+    local out_file=$1 && shift
+    info "Creating ${out_file}"
+    echo "${json_text}" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > "${out_file}"
+    echo "${json_text}" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> "${out_file}"
+}
+
+parse_md5sums_from_file_listing () {
+    local file_listing_info=$1
+    # Hexadecimal to base64 from https://gist.github.com/analogist/f74d28b5f00ae3db0cd7f0870f7bad90
+    echo "${file_listing_info}" | awk 'BEGIN { \
+    decode = "base64 -d | xxd -p | tr -d \"\\n\"";} \
+    function basename(file) {sub(".*/", "", file); sub("\:$", "", file); return file} \
+    /Hash \(md5\)/ { print $3 | decode; close(decode); \
+    printf "  %s\n",basename(gs_url) } \
+    /^gs:\/\// { gs_url = $0 }'
+}
+
+determine_output_type_by_ini () {
+    local ini=$1 && shift
+    if [[ "${ini}" == "FastQ.ini" || "${ini}" == "Rna.ini" ]]; then
+        echo "Fastq"
+    elif [[ "${ini}" == "Somatic.ini" ]]; then
+        echo "Somatic"
+    elif [[ "${ini}" == "SingleSample.ini" ]]; then
+        echo "SingleSample"
+    elif [[ "${ini}" == "ShallowSeq.ini" ]]; then
+        echo "ShallowSeq"
+    else
+        return 1
+    fi
+}
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
+main

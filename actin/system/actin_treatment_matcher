@@ -4,9 +4,8 @@ source locate_files || exit 1
 source message_functions || exit 1
 
 patient=$1 && shift
-serve_directory=$1 && shift
 
-if [[ -z "${patient}" || -z "${serve_directory}" ]]; then
+if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
@@ -18,12 +17,14 @@ fi
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
 doid_json="$(locate_doid_json)"
+icd_tsv="$(locate_icd_tsv)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
+serve_directory="$(locate_actin_serve_directory)"
 
 personalization_path_cmd=""
 personalization_data_path="$(locate_crc_personalization_reference_data)"
-if [[ -f ${personalization_data_path} ]]; then
+if [[ -f "${personalization_data_path}" ]]; then
     personalization_path_cmd="-personalization_data_path ${personalization_data_path}"
 else
     warn "No data for personalization found"
@@ -49,10 +50,11 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -trial_database_directory "${trial_database_directory}" \
     -treatment_directory "${treatment_directory}" \
     -doid_json "${doid_json}" \
+    -icd_tsv "${icd_tsv}" \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
     ${personalization_path_cmd} \
-    ${environment_config_yaml_cmd} \
     -serve_directory "${serve_directory}" \
+    ${environment_config_yaml_cmd} \
     -output_directory "${output_directory}" \
     "$@"

@@ -2,6 +2,7 @@
 
 source locate_files || exit 1
 source message_functions || exit 1
+source secrets_functions || exit 1
 
 # also works on crams
 
@@ -13,7 +14,7 @@ if [[ -z "${gcp_bam_url}" || -z "${slicing_bed}" || -z "${output_bam}" ]]; then
     error "Not all input params provided. Needs gcp_bam_url, slicing_bed, and output_bam. Exiting"
 fi
 
-key_file="/data/credentials/hmf-download"
+secret_name="gcp-hmf-download-u-hmf-database"
 region="europe-west4"
 project="hmf-database"
 presign_seconds=28800  # 8 hours
@@ -28,14 +29,16 @@ else
   die "Unrecognized file ending. Should be .bam or .cram: ${gcp_bam_url}"
 fi
 
+info "Retrieve service account credentials required for signing [secret:${secret_name}]"
+credentials=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
 info "Signing URL's"
 signed_bam_url=$( \
-  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bam_url}" | grep -v 'Signed URL' | cut -f4 \
+  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" <(echo "${credentials}") "${gcp_bam_url}" | grep -v 'Signed URL' | cut -f4 \
 ) || die "Could not get signed bam url"
 
 signed_bai_url=$( \
-  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" "${key_file}" "${gcp_bai_url}" | grep -v 'Signed URL' | cut -f4 \
+  gsutil signurl -r "${region}" -b "${project}" -d "${presign_seconds}s" <(echo "${credentials}") "${gcp_bai_url}" | grep -v 'Signed URL' | cut -f4 \
 ) || die "Could not get signed bai url"
 
 info "Creating slice using ${slicing_bed}"

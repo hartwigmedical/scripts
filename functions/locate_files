@@ -366,6 +366,10 @@ locate_atc_overrides_tsv() {
     echo "/data/resources/actin/atc_config/atc_overrides.tsv"
 }
 
+locate_icd_tsv() {
+    echo "/data/resources/actin/icd/SimpleTabulation-ICD-11-MMS-en.tsv"
+}
+
 locate_drug_interactions_tsv() {
     echo "/data/resources/actin/medication/drug_interactions.tsv"
 }
@@ -405,7 +409,7 @@ locate_extended_efficacy_json() {
 }
 
 locate_crc_experiment_directory() {
-    echo "/data/experiments/240826_cb_crc_report_development"
+    echo "/data/actin/crc_report_development"
 }
 
 locate_crc_personalization_reference_data() {
