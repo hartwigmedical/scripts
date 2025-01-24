@@ -46,4 +46,3 @@ elif [[ "${process}" -eq "share" ]]; then
 else
     error "Unknown process type is used as input"
 fi
-
