@@ -24,21 +24,21 @@ if [[ (-z "${process}" && -z "${sampleBarcode}") ||  $process == "help" ]]; then
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-elif [[ "${process}" -ne "check_reports" && -z "${sampleBarcode}" ]]; then
+elif [[ "${process}" != "check_reports" && -z "${sampleBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
 fi
 
-if [[ "${process}" -eq "check_reports" ]]; then
+if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
-elif [[ "${process}" -eq "panel_data" ]]; then
+elif [[ "${process}" == "panel_data" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
-elif [[ "${process}" -eq "fail_report" ]]; then
+elif [[ "${process}" == "fail_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" -eq "override_report" ]]; then
+elif [[ "${process}" == "override_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_override_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" -eq "upload" ]]; then
+elif [[ "${process}" == "upload" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
-elif [[ "${process}" -eq "share" ]]; then
+elif [[ "${process}" == "share" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode}
 else
     error "Unknown process type is used as input"
