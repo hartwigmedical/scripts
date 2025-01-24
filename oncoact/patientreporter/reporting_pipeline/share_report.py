@@ -69,6 +69,11 @@ class ReportSharer:
         delete_response = self._delete_run_from_reporting_pipeline()
         print("Reporting pipeline response:", delete_response)
 
+        if is_shared_through_portal:
+            print("Report is shared through portal")
+        else:
+            print("Reports should be shared through nextcloud")
+
         print("Done!")
 
     def _prompt_user_no_run(self):
