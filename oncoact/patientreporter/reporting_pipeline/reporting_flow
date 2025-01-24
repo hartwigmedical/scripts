@@ -9,10 +9,6 @@ print_usage(){
     script=$(basename "$0")
     echo "---"
     echo "Usage: process $samplebarcode"
-    echo " Mode 1: $script <class> # no filter returns all records of class"
-    echo " Mode 2: $script <class> <contains-no-equal-sign> # filter by default 'name' key"
-    echo " Mode 3: $script <class> <filter-key=filter-value> # filter by specifying exact query (requires '=' in query)"
-    echo " Mode 4 [DEPRECATED]: $script <class> <filter-value> <filter-key> # filter by specifying key to filter on"
     echo "Usage:"
     echo " $script check_reports" #Check for processing all reports
     echo " $script panel_data FB123" #Generate panel data
@@ -25,13 +21,9 @@ print_usage(){
 
 if [[ (-z "${process}" && -z "${sampleBarcode}") || $1 == "-h" || $1 == "--help" ]]; then
     print_usage >&2
-fi
-
-if [[ -z "${process}" ]]; then
+elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-fi
-
-if [[ "${process}" -eq "check_reports" && -z "${sampleBarcode}" ]]; then
+elif [[ "${process}" -eq "check_reports" && -z "${sampleBarcode}" ]]; then
     error "No sampleBarcode  provided. Exiting"
 fi
 
