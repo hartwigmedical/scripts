@@ -10,6 +10,7 @@ print_usage(){
     echo "---"
     echo "Usage: process $samplebarcode"
     echo "Usage:"
+    echo " $script help" #For find the usage of this script
     echo " $script check_reports" #Check for processing all reports
     echo " $script panel_data FB123" #Generate panel data
     echo " $script fail_report FB123" #Generate fail reports
@@ -19,12 +20,12 @@ print_usage(){
     exit 1
 }
 
-if [[ (-z "${process}" && -z "${sampleBarcode}") || $1 == "-h" || $1 == "--help" ]]; then
+if [[ (-z "${process}" && -z "${sampleBarcode}") ||  $process == "help" ]]; then
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-elif [[ "${process}" -eq "check_reports" && -z "${sampleBarcode}" ]]; then
-    error "No sampleBarcode  provided. Exiting"
+elif [[ "${process}" -ne "check_reports" && -z "${sampleBarcode}" ]]; then
+    error "No sampleBarcode provided. Exiting"
 fi
 
 if [[ "${process}" -eq "check_reports" ]]; then
