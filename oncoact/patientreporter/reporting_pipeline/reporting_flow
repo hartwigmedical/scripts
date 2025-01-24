@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+process=$1 && shift
+sampleBarcode=$1 && shift
+
+if [[ -z "${process}" ]]; then
+    error "No process provided. Exiting"
+fi
+
+if [[ "${process}" -eq "check_reports" && -z "${sampleBarcode}" ]]; then
+    error "No sampleBarcode  provided. Exiting"
+fi
+
+print_usage(){
+    script=$(basename "$0")
+    echo "---"
+    echo "Usage: process $samplebarcode"
+    echo " Mode 1: $script <class> # no filter returns all records of class"
+    echo " Mode 2: $script <class> <contains-no-equal-sign> # filter by default 'name' key"
+    echo " Mode 3: $script <class> <filter-key=filter-value> # filter by specifying exact query (requires '=' in query)"
+    echo " Mode 4 [DEPRECATED]: $script <class> <filter-value> <filter-key> # filter by specifying key to filter on"
+    echo "Usage:"
+    echo " $script check_reports" #Check for processing all reports
+    echo " $script panel_data FB123" #Generate panel data
+    echo " $script fail_report FB123" #Generate fail reports
+    echo " $script override_report FB123" #Generate override reports
+    echo " $script upload FB123" #Upload reports to nextcloud
+    echo " $script share FB123" #Share reports + archive
+    exit 1
+}
+
+if [[ "${process}" -eq "check_reports" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
+elif [[ "${process}" -eq "panel_data" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
+elif [[ "${process}" -eq "fail_report" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" -eq "override_report" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_override_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" -eq "upload" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
+elif [[ "${process}" -eq "share" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode}
+else
+    error "Unknown process type is used as input"
+fi
+
