@@ -3,30 +3,38 @@
 source message_functions || exit 1
 
 process=$1 && shift
-sampleBarcode=$1 && shift
+isolationBarcode=$1 && shift
 
 print_usage(){
     script=$(basename "$0")
     echo "---"
-    echo "Usage: process $samplebarcode"
+    echo "Usage: process $isolationBarcode"
     echo "Usage:"
     echo " $script help" #For find the usage of this script
     echo " $script check_reports" #Check for processing all reports
-    echo " $script panel_data FB123" #Generate panel data
-    echo " $script fail_report FB123" #Generate fail reports
-    echo " $script override_report FB123" #Generate override reports
-    echo " $script upload FB123" #Upload reports to nextcloud
-    echo " $script share FB123" #Share reports + archive
+    echo " $script panel_data FR123" #Generate panel data
+    echo " $script fail_report FR123" #Generate fail reports
+    echo " $script override_report FR123" #Generate override reports
+    echo " $script upload FR123" #Upload reports to nextcloud
+    echo " $script share_wgs FR123" #Share wgs reports + archive
+    echo " $script share_panel FR123" #Share panel reports + archive
     exit 1
 }
 
-if [[ (-z "${process}" && -z "${sampleBarcode}") ||  $process == "help" ]]; then
+if [[ (-z "${process}" && -z "${isolationBarcode}") ||  $process == "help" ]]; then
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-elif [[ "${process}" != "check_reports" && -z "${sampleBarcode}" ]]; then
+
+if [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
+else
+  echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
+  echo -e "Sample barcode: \033[1;32m ${sampleBarcode} \033[00m"
+  sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode)
 fi
+
+echo -e "Process mode: \033[1;32m $process \033[00m"
 
 if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
@@ -38,7 +46,9 @@ elif [[ "${process}" == "override_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_override_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "upload" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
-elif [[ "${process}" == "share" ]]; then
+elif [[ "${process}" == "share_wgs" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" == "share_panel" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 else
     error "Unknown process type is used as input"
