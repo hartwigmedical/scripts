@@ -33,7 +33,7 @@ fi
 echo -e "Process mode: \033[1;32m $process \033[00m"
 
 if [[ $isolationBarcode != "" ]]; then
-    sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode)
+    sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode | tr -d '"')
     echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
     echo -e "Sample barcode: \033[1;32m ${sampleBarcode} \033[00m"
 fi
