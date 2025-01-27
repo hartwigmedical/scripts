@@ -25,19 +25,17 @@ if [[ (-z "${process}" && -z "${isolationBarcode}") ||  $process == "help" ]]; t
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-    exit
-fi
-
-if [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
+elif  [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
-    exit
-else
-  sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode)
-  echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
-  echo -e "Sample barcode: \033[1;32m ${sampleBarcode} \033[00m"
 fi
 
 echo -e "Process mode: \033[1;32m $process \033[00m"
+
+if [[ $isolationBarcode != "" ]]; then
+    sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode)
+    echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
+    echo -e "Sample barcode: \033[1;32m ${sampleBarcode} \033[00m"
+fi
 
 if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
