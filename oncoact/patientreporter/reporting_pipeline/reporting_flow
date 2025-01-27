@@ -25,6 +25,7 @@ if [[ (-z "${process}" && -z "${isolationBarcode}") ||  $process == "help" ]]; t
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
+fi
 
 if [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
