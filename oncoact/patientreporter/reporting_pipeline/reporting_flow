@@ -42,6 +42,7 @@ if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
 elif [[ "${process}" == "panel_data" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
 elif [[ "${process}" == "fail_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "override_report" ]]; then
