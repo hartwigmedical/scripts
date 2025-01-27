@@ -25,10 +25,12 @@ if [[ (-z "${process}" && -z "${isolationBarcode}") ||  $process == "help" ]]; t
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
+    exit
 fi
 
 if [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
+    exit
 else
   sampleBarcode=$(lama_get_patient_reporter_data ${isolationBarcode} | jq .tumorSampleBarcode)
   echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
