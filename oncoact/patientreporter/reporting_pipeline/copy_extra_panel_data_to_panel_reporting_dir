@@ -14,10 +14,11 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
 fi
 
 set=$(api -j runs 'barcode='${isolation_barcode}'&ini=Targeted.ini&status=Finished&context=DIAGNOSTIC' | jq .[].set.name | tr -d '"')
+tumor_sample_barcode_lowercase=$(echo  $tumor_sample_barcode | tr '[:upper:]' '[:lower:]')
 
 echo -e "Isolation barcode: \033[1;32m ${isolation_barcode} \033[00m"
-echo -e "Sample barcode: \033[1;32m ${tumor_sample_barcode} \033[00m"
+echo -e "Sample barcode: \033[1;32m ${tumor_sample_barcode_lowercase} \033[00m"
 echo -e "Set name: \033[1;32m ${set} \033[00m"
 
-gsutil cp gs://panel-vis-files/recon-cnv/${tumor_sample_barcode}/recon-cnv/*.reconCNV.html gs://targeted-pipeline-output-prod-1/${set}/reporting
-gsutil cp gs://panel-vis-files/sage-visualisations/${tumor_sample_barcode}/sage-visualisation/*.sage.visualisation.zip gs://targeted-pipeline-output-prod-1/${set}/reporting
+gsutil cp gs://panel-vis-files/recon-cnv/${tumor_sample_barcode_lowercase}/recon-cnv/*.reconCNV.html gs://targeted-pipeline-output-prod-1/${set}/reporting
+gsutil cp gs://panel-vis-files/sage-visualisations/${tumor_sample_barcode_lowercase}/sage-visualisation/*.sage.visualisation.zip gs://targeted-pipeline-output-prod-1/${set}/reporting

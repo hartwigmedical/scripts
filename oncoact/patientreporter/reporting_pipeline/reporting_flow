@@ -54,6 +54,8 @@ elif [[ "${process}" == "share_wgs" ]]; then
 elif [[ "${process}" == "share_panel" ]]; then
     copy_extra_panel_data_to_panel_reporting_dir ${isolationBarcode} ${sampleBarcode}
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" == "share_panel_fail" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "upload_kmbp_report" ]]; then
         upload_kmbp_reports_to_check ${isolationBarcode}
 else
