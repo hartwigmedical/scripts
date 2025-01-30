@@ -70,3 +70,36 @@ SELECT * FROM (
     AS a
 ORDER BY 1,5,4,3,2
 );
+
+CREATE OR REPLACE VIEW trialEvaluation
+AS (
+SELECT  referenceDate, referenceDateIsLive, patientId, trialMatch.code AS trialId, trialMatch.acronym AS trialAcronym, trialMatch.open AS trialOpen,
+        IF(trialMatch.id IN (SELECT trialMatchId FROM cohortMatch),1,0) AS trialHasCohorts, trialMatch.isEligible AS isEligibleTrial,
+        cohortMatch.code AS cohortId, cohortMatch.description AS cohortDescription, cohortMatch.open AS cohortOpen,
+        cohortMatch.slotsAvailable AS cohortSlotsAvailable, cohortMatch.blacklist AS cohortIgnore, cohortMatch.isEligible AS isEligibleCohort,
+        eligibility AS eligibilityRule, result, recoverable,
+        inclusionMolecularEvents, exclusionMolecularEvents
+    FROM trialMatch
+    LEFT JOIN evaluation ON trialMatch.id = evaluation.trialMatchId
+    INNER JOIN treatmentMatch ON treatmentMatch.id = trialMatch.treatmentMatchId
+    LEFT JOIN cohortMatch ON trialMatch.id = cohortMatch.trialMatchId AND cohortMatch.Id = evaluation.cohortMatchId
+UNION
+SELECT  referenceDate, referenceDateIsLive, patientId, trialMatch.code AS trialId, trialMatch.acronym AS trialAcronym, trialMatch.open AS trialOpen,
+        IF(trialMatch.id IN (SELECT trialMatchId FROM cohortMatch),1,0) AS trialHasCohorts, trialMatch.isEligible AS isEligibleTrial,
+        cohortMatch.code AS cohortId, cohortMatch.description AS cohortDescription, cohortMatch.open AS cohortOpen,
+        cohortMatch.slotsAvailable AS cohortSlotsAvailable, cohortMatch.blacklist AS cohortIgnore, cohortMatch.isEligible AS isEligibleCohort,
+        NULL AS eligibilityRule, NULL AS result, NULL as recoverable,
+        NULL AS inclusionMolecularEvents, NULL AS exclusionMolecularEvents
+    FROM cohortMatch
+    INNER JOIN trialMatch ON trialMatch.id = cohortMatch.trialMatchId
+    INNER JOIN treatmentMatch ON treatmentMatch.id = trialMatch.treatmentMatchId
+    WHERE cohortMatch.id NOT IN (SELECT DISTINCT cohortMatchId FROM evaluation WHERE NOT isnull(cohortMatchId))
+    ORDER BY patientId, cohortId);
+
+CREATE OR REPLACE VIEW eligibleCohorts
+AS (
+SELECT DISTINCT patientId, trialId, trialAcronym, cohortDescription, group_concat(DISTINCT(IF(inclusionMolecularEvents<>"", inclusionMolecularEvents, null)) SEPARATOR ';') AS event
+    FROM trialEvaluation
+    WHERE ((isEligibleTrial AND NOT trialHasCohorts AND trialOpen) OR (isEligibleTrial AND isEligibleCohort AND cohortOpen AND NOT cohortIgnore))
+    GROUP BY patientId, trialId, trialAcronym, cohortDescription
+);
