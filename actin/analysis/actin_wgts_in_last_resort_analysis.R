@@ -14,9 +14,8 @@ query_clinical_status <-"select * from clinicalStatus;"
 query_tumor <-"select * from tumor;"
 query_eligibleCohorts <-"select * from eligibleCohorts union select * from eligibleCohorts_addition;"
 query_molecular <-"select * from molecular;"
-query_drivers <- "select * from molecularDrivers where (driverlikelihood='High' or category='c_fusions');"
-query_drivers_per_sample <- "select m.sampleId, count(md.driverLikelihood) as driverCount from molecular m left join molecularDrivers md on m.sampleId=md.sampleId and (driverlikelihood='High' or category='c_fusions') group by 1;"
-query_drivers_gene_count <- "select gene, count(distinct sampleId) as sampleCount from molecularDrivers where (driverlikelihood='High' or category='c_fusions') and sampleId in (select sampleId from molecular where containsTumorCells=1) group by 1 order by 2 desc;"
+query_drivers <- "select * from molecularDrivers;"
+query_drivers_gene_count <- "select gene, count(distinct sampleId) as sampleCount from molecularDrivers where driverlikelihood='High' and sampleId in (select sampleId from molecular where containsTumorCells=1) group by 1 order by 2 desc;"
 query_patients_second_eval_phase <- "select * from patientsEvaluationPhase;"
 query_evaluated_trials_second_eval_phase <- "select distinct patientId, code from trialMatch t LEFT JOIN treatmentMatch tm ON tm.id = t.treatmentMatchId;"
 
@@ -27,7 +26,6 @@ tumor <- dbGetQuery(dbActin, query_tumor)
 eligibleCohorts <- dbGetQuery(dbActin, query_eligibleCohorts)
 molecular <- dbGetQuery(dbActin, query_molecular)
 drivers <- dbGetQuery(dbActin, query_drivers)
-driversPerSample <- dbGetQuery(dbActin, query_drivers_per_sample)
 driversGeneCount <- dbGetQuery(dbActin, query_drivers_gene_count)
 patientsSecondEvalPhase <- dbGetQuery(dbActin, query_patients_second_eval_phase)
 evaluatedTrialsSecondEvalPhase <- dbGetQuery(dbActin, query_evaluated_trials_second_eval_phase)
@@ -51,10 +49,6 @@ tumorType %>% filter(is.na(tumorType$primaryTumorLocation)) %>% nrow()
 row_to_move_1 <- tumorType[tumorType$primaryTumorLocation=="Other (n<=2)", ]
 row_to_move_2 <- tumorType[!tumorType$primaryTumorLocation == "Other (n<=2)", ]
 
-#row_to_move_1 <- tumorType[!is.na(tumorType$primaryTumorLocation) & tumorType$primaryTumorLocation=="Other (n<=2)", ]
-#row_to_move_2 <- tumorType[!is.na(tumorType$primaryTumorLocation) & !tumorType$primaryTumorLocation == "Other (n<=2)", ]
-#row_to_drop <- tumorType[is.na(tumorType$primaryTumorLocation), ]
-
 tumorTypeRearranged <- rbind(row_to_move_1, row_to_move_2)
 tumorTypeRearranged$primaryTumorLocation <- factor(tumorTypeRearranged$primaryTumorLocation, levels = tumorTypeRearranged$primaryTumorLocation)
 tumorTypeRearranged %>% ggplot(aes(x=count, y=primaryTumorLocation)) + geom_bar(stat="identity") + theme_light()
@@ -73,10 +67,6 @@ biopsyLocation <- biopsy %>%
 biopsyLocation %>% filter(is.na(biopsyLocation$biopsyLocationCurated)) %>% nrow()
 row_to_move_1 <- biopsyLocation[biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
 row_to_move_2 <- biopsyLocation[!biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
-
-#row_to_move_1 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & biopsyLocation$biopsyLocationCurated=="Other (n<=2)", ]
-#row_to_move_2 <- biopsyLocation[!is.na(biopsyLocation$biopsyLocationCurated) & !biopsyLocation$biopsyLocationCurated == "Other (n<=2)", ]
-#row_to_drop <- biopsyLocation[is.na(biopsyLocation$biopsyLocationCurated), ]
 
 biopsyLocationRearranged <- rbind(row_to_move_1, row_to_move_2)
 biopsyLocationRearranged$biopsyLocationCurated <- factor(biopsyLocationRearranged$biopsyLocationCurated, levels = biopsyLocationRearranged$biopsyLocationCurated)
@@ -107,13 +97,17 @@ clinicalStatus %>% group_by(who) %>% summarise(count=n(), percentage=round(n()/p
 molecularSuccessful <- molecular %>% filter(containsTumorCells==1)
 n_successful_reports <- molecularSuccessful %>% nrow()
 
-# Driver events per sample (only selecting successful samples)
-driversPerSuccessfulSample <- driversPerSample %>% filter(sampleId %in% molecularSuccessful$sampleId)
+# Filter for relevant drivers
+driversFiltered <- drivers %>% filter(category=='c_fusions' | driverLikelihood=='High') %>% filter(sampleId %in% molecularSuccessful$sampleId)
 
-median(driversPerSuccessfulSample$driverCount)
-min(driversPerSuccessfulSample$driverCount)
-max(driversPerSuccessfulSample$driverCount)
-driversPerSuccessfulSample %>% filter(driverCount>0) %>% nrow()
+# Drivers per successful sample
+driversPerSample <- driversFiltered %>% group_by(sampleId) %>% summarise(count = n())
+driversPerSampleOverview <- molecularSuccessful %>% left_join(driversPerSample, by='sampleId') %>% mutate(count = ifelse(is.na(count), 0, count)) %>% select(sampleId, count)
+
+median(driversPerSampleOverview$count)
+min(driversPerSampleOverview$count)
+max(driversPerSampleOverview$count)
+driversPerSampleOverview %>% filter(count>0) %>% nrow()
 
 # High TML, TMB, HRD and MSI
 molecularSuccessful %>% filter(isMicrosatelliteUnstable==1) %>% nrow()
@@ -125,9 +119,7 @@ molecularSuccessful %>% filter(tumorMutationalLoad>=140) %>% nrow()
 head(driversGeneCount %>% add_column(percentage = round(driversGeneCount$sampleCount/n_successful_reports*100,1)),5)
 
 # High-driver likelihood WGS aberrations per gene (excluding fusions and viruses) + plot
-driversSuccessfulRelevant <- drivers %>% filter(sampleId %in% molecularSuccessful$sampleId)
-
-driversSuccessfulRelevantPerGene <- driversSuccessfulRelevant %>%
+driversFilteredPerGene <- driversFiltered %>%
   group_by(gene) %>%
   summarise(count=n_distinct(sampleId)) %>%
   mutate(gene = ifelse(count <= 5, "Other (n<=5)", gene)) %>%
@@ -135,35 +127,35 @@ driversSuccessfulRelevantPerGene <- driversSuccessfulRelevant %>%
   summarize_all(sum) %>% 
   arrange(count)
 
-rows_to_keep <- driversSuccessfulRelevantPerGene[!is.na(driversSuccessfulRelevantPerGene$gene) & !driversSuccessfulRelevantPerGene$gene=="Other (n<=5)" & !driversSuccessfulRelevantPerGene$gene =="NA", ]
+rows_to_keep <- driversFilteredPerGene[!is.na(driversFilteredPerGene$gene) & !driversFilteredPerGene$gene=="Other (n<=5)" & !driversFilteredPerGene$gene =="NA", ]
 
-driversSuccessfulRelevantPerGeneRearranged <- rbind(rows_to_keep)
-driversSuccessfulRelevantPerGeneRearranged$gene <- factor(driversSuccessfulRelevantPerGeneRearranged$gene, levels = driversSuccessfulRelevantPerGeneRearranged$gene)
-driversSuccessfulRelevantPerGeneRearranged %>% ggplot(aes(x=count, y=gene)) + geom_bar(stat="identity") + theme_light()
+driversFilteredPerGene <- rbind(rows_to_keep)
+driversFilteredPerGene$gene <- factor(driversFilteredPerGene$gene, levels = driversFilteredPerGene$gene)
+driversFilteredPerGene %>% ggplot(aes(x=count, y=gene)) + geom_bar(stat="identity") + theme_light()
 
 # Fusions and viruses
-driversSuccessfulRelevant %>% 
+driversFiltered %>% 
   filter(grepl('fusion', category)) %>% nrow()
 
-driversSuccessfulRelevant %>% 
+driversFiltered %>% 
   filter(grepl('fusion', category)) %>% select(sampleId) %>% n_distinct()
 
-driversSuccessfulRelevant %>% 
-  filter(grepl('fusion', category) & driverLikelihood == 'High') 
+driversFiltered %>% 
+  filter(grepl('fusion', category) & driverLikelihood == 'High') %>% nrow()
 
-driversSuccessfulRelevant %>% 
+driversFiltered %>% 
   filter(grepl('virus', category)) %>% nrow()
 
-driversSuccessfulRelevant %>% 
+driversFiltered %>% 
   filter(grepl('virus', category)) %>% select(sampleId) %>% n_distinct()
 
 # Actionable events plot
-actionableEventsSuccessfulRelevant <- actionableEvents %>% filter(sampleId %in% molecularSuccessful$sampleId)
+actionableEventsFiltered <- actionableEvents %>% filter(sampleId %in% molecularSuccessful$sampleId)
 
-actionableEventsSuccessfulRelevant %>% 
+actionableEventsFiltered %>% 
   filter(potentially.actionable. == 'Yes') %>% select(sampleId) %>% n_distinct()
 
-actionableEventsSuccessfulRelevantPerEvent <- actionableEventsSuccessfulRelevant %>%
+actionableEventsFilteredPerEvent <- actionableEventsFiltered %>%
   filter(potentially.actionable. == 'Yes') %>%
   group_by(curated.event) %>%
   summarise(count=n_distinct(sampleId)) %>%
@@ -172,13 +164,13 @@ actionableEventsSuccessfulRelevantPerEvent <- actionableEventsSuccessfulRelevant
   summarize_all(sum) %>% 
   arrange(count)
 
-actionableEventsSuccessfulRelevantPerEvent %>% tail(6)
+actionableEventsFilteredPerEvent %>% tail(6)
 
-rows_to_keep <- actionableEventsSuccessfulRelevantPerEvent[!is.na(actionableEventsSuccessfulRelevantPerEvent$curated.event) & !actionableEventsSuccessfulRelevantPerEvent$curated.event=="Other (n<=5)", ]
+rows_to_keep <- actionableEventsFilteredPerEvent[!is.na(actionableEventsFilteredPerEvent$curated.event) & !actionableEventsFilteredPerEvent$curated.event=="Other (n<=5)", ]
 
-actionableEventsSuccessfulRelevantPerEventRearranged <- rbind(rows_to_keep)
-actionableEventsSuccessfulRelevantPerEventRearranged$curated.event <- factor(actionableEventsSuccessfulRelevantPerEventRearranged$curated.event, levels = actionableEventsSuccessfulRelevantPerEventRearranged$curated.event)
-actionableEventsSuccessfulRelevantPerEventRearranged %>% ggplot(aes(x=count, y=curated.event)) + geom_bar(stat="identity") + theme_light()
+actionableEventsFilteredPerEventRearranged <- rbind(rows_to_keep)
+actionableEventsFilteredPerEventRearranged$curated.event <- factor(actionableEventsFilteredPerEventRearranged$curated.event, levels = actionableEventsFilteredPerEventRearranged$curated.event)
+actionableEventsFilteredPerEventRearranged %>% ggplot(aes(x=count, y=curated.event)) + geom_bar(stat="identity") + theme_light()
 
 ## COHORTS & TRIALS NR ------------------------------------------------------------------
 eligibleCohortsJoin <- left_join(patientsSecondEvalPhase, eligibleCohorts, by="patientId") %>% group_by(patientId) %>% summarise(numberOfCohorts=sum(!is.na(trialId))) 
