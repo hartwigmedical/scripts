@@ -12,6 +12,7 @@ print_usage(){
     echo "Usage:"
     echo " $script help" #For find the usage of this script
     echo " $script check_reports" #Check for processing all reports
+    echo " $script check_pipelines" #Check for processing reporting pipelines
     echo " $script panel_data FR123" #Generate panel data
     echo " $script fail_report FR123" #Generate fail reports
     echo " $script override_report FR123" #Generate override reports
@@ -28,7 +29,7 @@ if [[ (-z "${process}" && -z "${isolationBarcode}") ||  $process == "help" ]]; t
     print_usage >&2
 elif [[ -z "${process}" ]]; then
     error "No process provided. Exiting"
-elif  [[ "${process}" != "check_reports" && -z "${isolationBarcode}" ]]; then
+elif  [[ ("${process}" != "check_reports" || "${process}" != "check_pipelines") && -z "${isolationBarcode}" ]]; then
     error "No sampleBarcode provided. Exiting"
 fi
 
@@ -42,6 +43,8 @@ fi
 
 if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
+elif [[ "${process}" == "check_pipelines" ]]; then
+    check_process_pipelines
 elif [[ "${process}" == "panel_data" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
