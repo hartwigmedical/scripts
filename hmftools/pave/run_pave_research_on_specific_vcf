@@ -9,7 +9,7 @@ if [[ -z "${input_vcf_file}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-output_dir="/data/experiments/kd_pave_manual_runs"
+output_dir="/data/experiments/is_ls_hotspot_checker"
 
 ensembl_data_dir_37="$(locate_ensembl_data_dir_37)"
 ref_genome_37_fasta_file="$(locate_ref_genome_37_fasta_file)"
