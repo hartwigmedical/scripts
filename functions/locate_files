@@ -181,15 +181,15 @@ locate_pilot_ckb_importer() {
 }
 
 locate_prod_serve() {
-    echo "/data/tools/serve/2.4.0/serve.jar"
+    echo "/data/tools/serve/4.0.2/serve.jar"
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/7.4.0/serve.jar"
+    echo "/data/tools/serve/7.4.1/serve.jar"
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/7.4.0/serve.jar"
+    echo "/data/tools/serve/7.4.1/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -409,7 +409,7 @@ locate_extended_efficacy_json() {
 }
 
 locate_crc_experiment_directory() {
-    echo "/data/experiments/240826_cb_crc_report_development"
+    echo "/data/actin/crc_report_development"
 }
 
 locate_crc_personalization_reference_data() {
