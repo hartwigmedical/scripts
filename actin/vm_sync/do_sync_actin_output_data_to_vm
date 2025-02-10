@@ -28,11 +28,6 @@ clinical_output_directory=$(locate_actin_curated_clinical_directory)
 create_or_cleanup_dir ${clinical_output_directory}
 gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project}) ${clinical_output_directory}
 
-info "Syncing ACTIN trial creator output..."
-trial_database_directory=$(locate_actin_trial_database_directory)
-create_or_cleanup_dir ${trial_database_directory}
-gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project}) ${trial_database_directory}
-
 info "Syncing ACTIN patient records..."
 patient_record_directory=$(locate_actin_patient_record_directory)
 create_or_cleanup_dir ${patient_record_directory}
