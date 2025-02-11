@@ -3,26 +3,24 @@
 wd <- paste0(Sys.getenv("HOME"), "/Downloads/")
 
 #add new quartile
-Q3_2021 <- c(210701, 210930)
-Q4_2021 <- c(211001, 211231)
-Q1_2022 <- c(220101, 220331)
-Q2_2022 <- c(220401, 220630)
-Q3_2022 <- c(220701, 220930)
-Q4_2022 <- c(221001, 221231)
 Q1_2023 <- c(230101, 230331)
 Q2_2023 <- c(230401, 230630)
 Q3_2023 <- c(230701, 230930)
 Q4_2023 <- c(231001, 231231)
+Q1_2024 <- c(240101, 240331)
+Q2_2024 <- c(240401, 240630)
+Q3_2024 <- c(240701, 240930)
+Q4_2024 <- c(241001, 241231)
 
 #add new quartile
-names <- c("2023 Q4", "2023 Q3", "2023 Q2", "2023 Q1", "2022 Q4", "2022 Q3", "2022 Q2", "2022 Q1", "2021 Q4", "2021 Q3")
-quartiles <- list(Q4_2023, Q3_2023, Q2_2023, Q1_2023, Q4_2022, Q3_2022, Q2_2022, Q1_2022, Q4_2021, Q3_2021)
+names <- c("2024 Q4", "2024 Q3", "2024 Q2", "2024 Q1", "2023 Q4", "2023 Q3", "2023 Q2", "2023 Q1")
+quartiles <- list(Q4_2024, Q3_2024, Q2_2024, Q1_2024, Q4_2023, Q3_2023, Q2_2023, Q1_2023)
 
 
 # Getting started ---------------------------------------------------------
 setwd(wd)
-filename_WGS <- "ACTIN WGS+WTS Benefit Tracking - WGS.tsv"
-filename_WTS <- "ACTIN WGS+WTS Benefit Tracking - WTS.tsv"
+filename_WGS <- "EMC ACTIN WGS+WTS Benefit Tracking - WGS.tsv"
+filename_WTS <- "EMC ACTIN WGS+WTS Benefit Tracking - WTS.tsv"
 benefit_tracking_WGS <- read.table(file=filename_WGS, sep = '\t', header = TRUE)
 benefit_tracking_WTS <- read.table(file=filename_WTS, sep = '\t', header = TRUE)
 
@@ -41,8 +39,8 @@ colnames(LR_CUP) <- names
 total_nr_biopsies <- sum(LR_CUP)
 total_nr_biopsies_LR <- sum(LR_CUP[1,])
 total_nr_biopsies_CUP <- sum(LR_CUP[2,])
-total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1] & !is.nan(benefit_tracking_WGS$WGS.report.date), select = X)
-total_nr_patients_value <- length(unique(total_nr_patients$X))
+total_nr_patients <- subset(benefit_tracking_WGS, benefit_tracking_WGS$WGS.report.date <= quartiles[[1]][2] & benefit_tracking_WGS$WGS.report.date >= quartiles[[length(quartiles)]][1] & !is.nan(benefit_tracking_WGS$WGS.report.date), select = Patient.ID)
+total_nr_patients_value <- length(unique(total_nr_patients$Patient.ID))
 
 pdf(file= paste0(wd,"LR_CUP.pdf"), width = 10, height = 7)
 par(mar=c(5,5,5,5),mfrow=c(1,1))
@@ -265,7 +263,7 @@ if (sum(no_slots, non_WGS_pref, not_fit, not_willing, not_effective, not_meeting
 }
 
 colnames(impact_category) <- impact_category_columns
-order_indices <- order(impact_category[1,], decreasing=FALSE)
+order_indices <- order(as.numeric(impact_category), decreasing=FALSE)
 impact_category_ordered <- impact_category[, order_indices]
 
 pdf(file= paste0(wd,"WGS_impact_category.pdf"), width = 20, height = 7)
