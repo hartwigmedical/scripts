@@ -9,16 +9,42 @@ if [[ -z ${OPANumber} ]]; then
 fi
 
 currentDate=$(date +%Y-%m-%d)
-# shellcheck disable=SC2140
+
 fileName="${OPANumber}"_"${currentDate}.txt"
 fileLocalPath="${HOME}/tmp/${fileName}"
 touch ${fileLocalPath}
 
 gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
 
-echo "${fileName} is uploaded to the GCP bucket"
-gsutil cp ${fileLocalPath} ${gcp_bucket_file}
+echo "Filtering data and saving to ${fileLocalPath}"
 
-echo "${fileName} is removed"
+# Set target_ts to 3 days ago in unix format
+target_ts=$(date -d "2 days ago" +%s)
+
+# Filter the data, only printing the first two columns, and write to the local file before uploading
+api reports/shared | awk -F'\t' -v target_ts="$target_ts" -v output_file="$fileLocalPath" '
+function to_timestamp(date) {
+    if (date == "" || date == "share_time") return 0  # Skip empty dates or column name
+    date = substr(date, 1, 10) " " substr(date, 12, 8)  # Replace T with space
+    gsub(/^ +| +$/, "", date)  # Remove leading/trailing spaces
+    # Converting the Date to Unix Timestamp
+    cmd = "date -d \"" date "\" +%s"
+    cmd | getline ts
+    close(cmd)
+    return ts
+}
+{
+    ts = to_timestamp($8)
+    if (ts > target_ts && $2 ~ /TARGT/) {
+        print $1 >> output_file  # Only print the first column
+    }
+}
+'
+
+gsutil cp ${fileLocalPath} ${gcp_bucket_file}
+echo "${fileName} is uploaded to the GCP bucket"
+
 rm ${fileLocalPath}
+echo "${fileName} is removed"
+
 echo "Done!"
