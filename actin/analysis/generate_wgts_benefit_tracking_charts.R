@@ -3,6 +3,12 @@
 wd <- paste0(Sys.getenv("HOME"), "/Downloads/")
 
 #add new quartile
+Q3_2021 <- c(210701, 210930)
+Q4_2021 <- c(211001, 211231)
+Q1_2022 <- c(220101, 220331)
+Q2_2022 <- c(220401, 220630)
+Q3_2022 <- c(220701, 220930)
+Q4_2022 <- c(221001, 221231)
 Q1_2023 <- c(230101, 230331)
 Q2_2023 <- c(230401, 230630)
 Q3_2023 <- c(230701, 230930)
@@ -13,8 +19,8 @@ Q3_2024 <- c(240701, 240930)
 Q4_2024 <- c(241001, 241231)
 
 #add new quartile
-names <- c("2024 Q4", "2024 Q3", "2024 Q2", "2024 Q1", "2023 Q4", "2023 Q3", "2023 Q2", "2023 Q1")
-quartiles <- list(Q4_2024, Q3_2024, Q2_2024, Q1_2024, Q4_2023, Q3_2023, Q2_2023, Q1_2023)
+names <- c("2024 Q4", "2024 Q3", "2024 Q2", "2024 Q1", "2023 Q4", "2023 Q3", "2023 Q2", "2023 Q1", "2022 Q4", "2022 Q3", "2022 Q2", "2022 Q1", "2021 Q4", "2021 Q3")
+quartiles <- list(Q4_2024, Q3_2024, Q2_2024, Q1_2024, Q4_2023, Q3_2023, Q2_2023, Q1_2023, Q4_2022, Q3_2022, Q2_2022, Q1_2022, Q4_2021, Q3_2021)
 
 
 # Getting started ---------------------------------------------------------
@@ -158,9 +164,9 @@ colnames(tat_calendar) <- names
 average_tat <- mean(benefit_tracking_WGS$TAT...calendar.days.)
 
 pdf(file= paste0(wd,"TAT_calendar_days.pdf"), width = 10, height = 7)
-barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue")
+barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue", las = 2)
 grid(nx=NA,ny=NULL,lty=1,col="gray",lwd=1)
-barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue", add=TRUE)
+barplot(as.matrix(rev(tat_calendar)), ylab = "TAT calendar days", ylim = c(0,max(tat_calendar)+1), col = "blue", add=TRUE, las = 2)
 invisible(dev.off())
 
 tat_calendar_this_quartile <- tat_calendar[1, 1]
