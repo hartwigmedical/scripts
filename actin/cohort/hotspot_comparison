@@ -17,7 +17,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 
 info "Running ACTIN hotspot comparison for ${run_dir}"
 
-java -cp ${actin_jar} com.hartwig.actin.molecular.hotspotcomparison.HotspotComparisonApplication \
+java -cp ${actin_jar} com.hartwig.actin.molecular.hotspotcomparison.HotspotComparisonApplicationKt \
     -orange_json "$orange_json" \
     -serve_directory "${serve_directory}" \
     -output_directory "${output_dir}" \
