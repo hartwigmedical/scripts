@@ -18,7 +18,7 @@ else
     info "Assuming no WGS has been performed for ${run_dir}"
 fi
 
-base_dir="/home/cbruel/hotspot_comparison_test"
+base_dir="${run_dir}/hotspot_comparison"
 
 serve_directory="$(locate_actin_serve_directory)"
 
