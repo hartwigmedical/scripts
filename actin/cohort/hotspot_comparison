@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+orange_cmd=""
+if [[ ! -z "${run_dir}" ]]; then
+    info "Using ORANGE json from ${run_dir}"
+    orange_json="$(locate_orange_no_germline_json ${run_dir})"
+    orange_cmd="-orange_json ${orange_json}"
+else
+    info "Assuming no WGS has been performed for ${run_dir}"
+fi
+
+base_dir="/home/cbruel/hotspot_comparison_test"
+
+serve_directory="$(locate_actin_serve_directory)"
+
+actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN hotspot comparison for ${run_dir}"
+
+java -cp ${actin_jar} com.hartwig.actin.molecular.hotspotcomparison.HotspotComparisonApplication \
+    ${orange_cmd} \
+    -serve_directory "${serve_directory}" \
+    -output_directory "${base_dir}" \
+    "$@"
+
