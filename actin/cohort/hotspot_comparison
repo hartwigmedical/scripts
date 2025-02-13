@@ -12,6 +12,7 @@ fi
 orange_json="$(locate_orange_no_germline_json ${run_dir})"
 serve_directory="$(locate_actin_serve_directory)"
 output_dir="${run_dir}/hotspot_comparison"
+mkdir -p "${output_dir}"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
