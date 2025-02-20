@@ -55,6 +55,10 @@ doid_resolve_comparison() {
     echo -e "$patient_record\t$resolved_doid" >> "$output_file"
 }
 
-for i in $(ls "$input_directory"/*.json); do
-    doid_resolve_comparison "$i"
+for i in "$input_directory"/*.json; do
+    if [ -e "$i" ]; then
+        doid_resolve_comparison "$i"
+    else
+        echo "No JSON files found in the directory."
+    fi
 done
