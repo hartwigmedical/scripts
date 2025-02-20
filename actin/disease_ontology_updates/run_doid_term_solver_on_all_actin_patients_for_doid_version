@@ -21,6 +21,12 @@ fi
 echo "Using DOID JSON: ${doid_json}"
 echo "Output file: ${output_file}"
 
+output_dir=$(dirname "${output_file}")
+if [[ ! -d "${output_dir}" ]]; then
+    echo "Creating output directory: ${output_dir}"
+    mkdir -p "${output_dir}"
+fi
+
 [[ -f "${output_file}" ]] || touch "${output_file}"
 
 local input_directory = /data/actin/patients/
