@@ -29,7 +29,7 @@ fi
 
 [[ -f "${output_file}" ]] || touch "${output_file}"
 
-input_directory ="/data/actin/patients/"
+input_directory="/data/actin/patients/"
 echo "Using all patient_record JSONs from: ${input_directory}"
 
 doid_resolve_comparison() {
