@@ -68,5 +68,6 @@ run_doid_resolver_on_all_patients() {
     done
 }
 
-nohup bash -c "run_doid_resolver_on_all_patients" > "$log_file" 2>&1 &
+nohup bash -c "$(declare -f run_doid_resolver_on_all_patients); run_doid_resolver_on_all_patients" > "$log_file" 2>&1 &
+
 echo "Process started in the background (nohup). Check 'tail -f $log_file' for progress."
