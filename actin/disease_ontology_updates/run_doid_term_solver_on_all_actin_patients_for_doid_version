@@ -52,7 +52,7 @@ doid_resolve_comparison() {
         resolved_doid="null"
     fi
 
-    echo "[INFO] Adding to output-file: $patient_record\t$resolved_doid"
+    echo "[INFO] Adding to output-file: $patient_record with doid $resolved_doid"
     echo -e "$patient_record\t$resolved_doid" >> "$output_file"
 }
 
