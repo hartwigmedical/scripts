@@ -4,7 +4,7 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 print_usage() {
-    echo "Usage: $0 [doid_json] [output_file]"
+    echo "Usage: $0 [output_file] [doid_json] "
     echo "  output_file     Exact path to the output file - with .tsv extension"
     echo "  doid_json       Path to the DOID JSON file (default: result of locate_doid_json)"
 }
@@ -68,5 +68,5 @@ run_doid_resolver_on_all_patients() {
     done
 }
 
-nohup run_doid_resolver_on_all_patients > "$log_file" 2>&1 &
+nohup bash -c "run_doid_resolver_on_all_patients" > "$log_file" 2>&1 &
 echo "Process started in the background (nohup). Check 'tail -f $log_file' for progress."
