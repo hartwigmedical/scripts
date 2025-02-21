@@ -29,9 +29,6 @@ fi
 
 [[ -f "${output_file}" ]] || touch "${output_file}"
 
-log_file="${output_file%.tsv}_log.txt"
-[[ -f "${log_file}" ]] || touch "${log_file}"
-
 input_directory="/data/actin/patients/"
 echo "Using all patient_record JSONs from: ${input_directory}"
 
@@ -55,19 +52,14 @@ doid_resolve_comparison() {
         resolved_doid="null"
     fi
 
+    echo "[INFO] Adding to output-file: $patient_record\t$resolved_doid"
     echo -e "$patient_record\t$resolved_doid" >> "$output_file"
 }
 
-run_doid_resolver_on_all_patients() {
-    for i in "$input_directory"/*.json; do
-        if [ -e "$i" ]; then
-            doid_resolve_comparison "$i"
-        else
-            echo "No JSON files found in the directory."
-        fi
-    done
-}
-
-nohup bash -c "$(declare -f run_doid_resolver_on_all_patients); run_doid_resolver_on_all_patients" > "$log_file" 2>&1 &
-
-echo "Process started in the background (nohup). Check 'tail -f $log_file' for progress."
+for i in "$input_directory"/*.json; do
+    if [ -e "$i" ]; then
+        doid_resolve_comparison "$i"
+    else
+        echo "No JSON files found in the directory."
+    fi
+done
