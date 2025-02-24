@@ -9,7 +9,7 @@ def run_bash_command(command: str) -> str:
 batch = sys.argv[1]
 
 body="""workflow: "panel-plot"
-version: "1.1.0"
+version: "1.1.2"
 params:\n"""
 
 relevant_buckets = run_bash_command('gsutil ls gs://targeted-pipeline-output-prod-1/ | grep ' + batch).split("\n")
