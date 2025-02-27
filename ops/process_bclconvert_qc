@@ -196,11 +196,11 @@ function process_samples () {
                 die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
         fi
         # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
-        # Note: Only specific inis: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+        # Note: Only specific inis.
         api_run=$(
           hmf_api_get "runs?barcode=${sample_id}" | \
           jq '[.[] | select(.bucket//"NA"|test("research-pipeline")|not)]' | \
-          jq '[.[] | select(.ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51 or .ini_id==55)]' | \
+          jq '[.[] | select(.ini | IN("CPCT.ini", "SingleSample.ini", "Somatic.ini", "FastQ.ini", "ShallowSeq.ini", "Rna.ini", "Targeted.ini"))]' | \
           jq -r '.[] | [.status,.ini,.set.name] | @tsv' | \
           tail -1
         )
