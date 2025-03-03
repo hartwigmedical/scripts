@@ -47,7 +47,6 @@ elif [[ "${process}" == "check_pipelines" ]]; then
     check_process_pipelines
 elif [[ "${process}" == "panel_data" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
 elif [[ "${process}" == "fail_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "override_report" ]]; then
