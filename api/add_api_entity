@@ -7,8 +7,9 @@ add_db=$2
 
 if [[ -z "$1" || -z "$2" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo "Usage: $(basename $0) <entity> <add_to_db>"
+    echo "Usage: $(basename $0) <entity> <add_to_db> [bucket]"
     echo "Exmpl: $(basename $0) CPCT_AVL true"
+    echo "Exmpl: $(basename $0) HMFreg2133 false hmf-output-services"
     echo "---"
     exit 1
 fi
@@ -22,5 +23,12 @@ if [[ ${add_db} != true && ${add_db} != false ]]; then
 fi
 
 info "Adding entity ${entity} to API"
-data_string=$(printf '{"name": "%s", "add_to_db": %s}' ${entity} ${add_db})
+if [[ -z "$3" ]]; then
+    info "Bucket not set, will be kept null"
+    data_string=$(printf '{"name": "%s", "add_to_db": %s}' ${entity} ${add_db})
+else
+    bucket=$3
+    data_string=$(printf '{"name": "%s", "add_to_db": %s, "bucket": %s}' ${entity} ${add_db} ${bucket})
+fi
+
 curl -H "Content-Type: application/json" -H "Accept: application/json" -X POST http://api.prod-1/hmf/v1/entities --data "${data_string}"

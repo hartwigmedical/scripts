@@ -73,6 +73,8 @@ print_shallow_qc_for_run() {
     metadata_json=$(gsutil cat ${run_url}/metadata.json || die "Unable to retrieve metadata info from (${run_url})")
     ref_reporting_id=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
     tum_reporting_id=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
+    ref_isolation_barcode=$(jq -r '.reference.barcode' <<< "${metadata_json}")
+    tum_isolation_barcode=$(jq -r '.tumor.barcode' <<< "${metadata_json}")
 
     amb_dir="${run_url}/amber"
     pur_dir="${run_url}/purple"
@@ -130,13 +132,16 @@ print_shallow_qc_for_run() {
     qc_stat=$(echo "${pqc_file_content}" | grep QCStatus | cut -f2)
 
     ## calculate yield to add in GBase
-    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_rds}" "${ref_exc}") \
+    ref_yield=$(get_yield "${ref_rds}" "${ref_exc}")
+    ref_add_yield=$(get_add_yield "${REF_TARGET_YIELD}" "${ref_yield}") \
             || die "Could not determine REF yield to add for run for set ${set_name}"
     if [[ ${ref_cov%%.*} -gt ${REF_COV_MINIMUM_REQUIREMENT} ]]; then
         # Already has enough yield
         ref_add_yield="${ADD_YIELD_NOT_APPLICABLE}"
     fi
-    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_rds}" "${tum_exc}") \
+
+    tum_yield=$(get_yield "${tum_rds}" "${tum_exc}")
+    tum_add_yield=$(get_add_yield "${TUM_TARGET_YIELD}" "${tum_yield}") \
             || die "Could not determine TUM yield to add for run for set ${set_name}"
 
     ## Determine full sequencing status
@@ -145,15 +150,15 @@ print_shallow_qc_for_run() {
     ref_cov_check=$(echo "${ref_cov} >= 8.0"| bc -l)
     fails_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -v FAIL_NO_TUMOR | grep -c FAIL_)
     if [[ ${amb_qc} != *"FAIL"* ]] && [[ ${qc_stat} != *"FAIL"* ]] && [[ ${purity_check} -eq 1 ]]; then
-        to_seq="yes"
+        to_seq="PASS"
     elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 1 && ${ref_cov_check} -eq 1 ]]; then
-        to_seq="no"
+        to_seq="FAIL"
     elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 0 || ${ref_cov_check} -eq 0 ]]; then
         warn "Sample set ${set_name} needs investigating, likely additional sequencing needed"
-        to_seq="addseq"
+        to_seq="ADD_SEQ"
     else
         warn "Sample set ${set_name} needs investigating"
-        to_seq="else"
+        to_seq="OTHER"
     fi
 
     echo "${set_name} ${to_seq} ${amb_qc}"
@@ -164,24 +169,30 @@ print_shallow_qc_for_run() {
         "${status}" "${amb_qc}" "${pip_vsn}" "${pur_vsn}" "${ref_cov}" "${tum_cov}" \
         "${ref_rds}" "${tum_rds}" "${ref_map}" "${tum_map}" \
         "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}" >> "${tmp_file}"
+
+    # POST to LAMA
+    data_string=$(printf '{"tumorIsolationBarcode": "%s", "referenceIsolationBarcode": %s, "purpleStatus": [%s], "purpleFitMethod": %s, "amberStatus": %s, "tumorCellPurity": %s, "shallowSequencingStatus": %s}' ${tum_isolation_barcode} ${ref_isolation_barcode} ${qc_stat} ${status} ${amb_qc} ${purity} ${to_seq})
+    curl -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/shallow-result -d "${data_string}"
 }
 
-get_add_yield() {
-    local target_yield=$1 && shift
+get_yield() {
     local reads=$1 && shift
     local exc=$1 && shift
-
-    if [[ -z ${exc} ]]; then
-        die "Not enough arguments for ${FUNCNAME[0]}: ${target_yield}, ${reads}, ${exc}"
-    fi
 
     if [[ ${exc:0:2} != "0." ]]; then
         die "Calculation only works if exc is between 0 and 1: exc=${exc}"
     fi
 
-    # Calculation of current yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
-    current_yield=$(python3 "${CALC_YIELD_SCRIPT}" --read_count "${reads}" --excluded_base_percentage "${exc}") || \
+    # Calculation of yield is ((1-exc) * reads * BASES_PER_READ / BASES_PER_GBASE)
+    yield=$(python3 "${CALC_YIELD_SCRIPT}" --read_count "${reads}" --excluded_base_percentage "${exc}") || \
           die "Could not calculate current yield from read count ${reads} and exc ${exc}"
+
+    echo "${yield}"
+}
+
+get_add_yield() {
+    local target_yield=$1 && shift
+    local current_yield=$1 && shift
 
     add_yield=$(( target_yield-current_yield ))
 
