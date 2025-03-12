@@ -1020,6 +1020,11 @@ locate_doid_json() {
     echo "/data/resources/public/disease_ontology/doid.json"
 }
 
+locate_doid_json_for_orange_3_7() {
+    # TODO (KD): Delete function and resource when ORANGE v3.8 is released and used on data-vm
+    echo "/data/actin/doid_for_orange_v3_7/doid.json"
+}
+
 locate_driver_gene_panel_37_tsv() {
     echo "/data/resources/public/gene_panel/37/DriverGenePanel.37.tsv"
 }

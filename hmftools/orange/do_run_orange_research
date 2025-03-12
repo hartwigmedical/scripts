@@ -18,7 +18,7 @@ create_or_cleanup_dir ${output_dir}
 
 orange_jar="$(locate_research_orange)"
 
-doid_json="$(locate_doid_json)"
+doid_json="$(locate_doid_json_for_orange_3_7)"
 cohort_mapping_tsv="$(locate_cohort_mapping_tsv)"
 cohort_percentiles_tsv="$(locate_cohort_percentiles_tsv)"
 driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
