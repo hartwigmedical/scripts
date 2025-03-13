@@ -223,8 +223,8 @@ function process_samples () {
             "${flowcell_name}" "${submission}" "${sample_id}" "${sample_nm}" "${reporting_id}" "${ini}" "${status_info}" "NA" "${set_name}"
 
         # POST to LAMA
-        data_string=$(printf '{"flowcell": "%s", "isolationBarcode": %s, "yield": %s, "q30": %s}' ${flowcell_id} ${sample_id} ${yld_seq_gbase} ${q30_seq})
-        curl -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/sequencing-result -d "${data_string}"
+        data_string=$(printf '{"flowcell": "%s", "isolationBarcode": "%s", "yield": %s, "q30": %s}' ${flowcell_id} ${sample_id} ${yld_seq_gbase} ${q30_seq})
+        curl -s -S -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/sequencing-result -d "${data_string}"
     done | sort -k2,2 -k4,4
 }
 
