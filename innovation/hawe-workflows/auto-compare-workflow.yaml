@@ -1,6 +1,6 @@
 name: "auto-compare"
 version: "0.1.0"
-storagePath: "gs://auto-compare-output"  # output location for logs or intermediate files
+storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth_bucket
     location: "${truth_bucket_uri}"
