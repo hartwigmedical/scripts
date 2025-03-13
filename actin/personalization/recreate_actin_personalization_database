@@ -5,7 +5,8 @@ source database_functions || exit 1
 source locate_files || exit 1
 
 actin_credentials="$(prod_writer_sql_credentials)"
-actin_database_name="actin_personalization"
+# TODO (KD) Switch back to "actin_personalization" once ACTIN-1656 is merged
+actin_database_name="actin_personalization_v2"
 
 # NOTE: Make sure the below location contains the actual SQL you want to use!
 actin_database_sql="$(locate_actin_personalization_database_sql_script)"

@@ -5,7 +5,8 @@ source database_functions || exit 1
 
 actin_credentials="$(prod_writer_sql_credentials)"
 personalization_jar="$(locate_actin_personalization_jar)"
-actin_database_name="actin_personalization"
+# TODO (KD) Switch back to "actin_personalization" once ACTIN-1656 is merged
+actin_database_name="actin_personalization_v2"
 
 ncr_file="$(locate_latest_ncr_dataset_analysis_vm)"
 
