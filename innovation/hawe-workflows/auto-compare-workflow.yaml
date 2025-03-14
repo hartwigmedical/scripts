@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.1.0"
+version: "0.1.1"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth_bucket
@@ -22,7 +22,7 @@ stages:
         TARGET_BUCKET="/in/target_bucket"
         RUN_ID=${run_id}
         REF_VERSION=${ref_version}
-        OPTIONAL_ARGS=${compar_optional_arguments}
+        OPTIONAL_ARGS='${compar_optional_arguments}'
 
         # Additional parameters
         COMPAR_JAR="compar_v1.3.0.jar"  # This jar is included in the Docker image.

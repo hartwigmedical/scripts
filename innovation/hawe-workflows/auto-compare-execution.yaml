@@ -1,6 +1,6 @@
 name: "esvee-fix-truth"
 workflow: "auto-compare"
-version: "0.1.0"
+version: "0.1.1"
 params:
   truth_bucket_uri: "gs://sv-rerun-533"
   target_bucket_uri: "gs://inn-222-v6-beta39"
