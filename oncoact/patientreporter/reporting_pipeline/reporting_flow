@@ -57,7 +57,15 @@ elif [[ "${process}" == "share_wgs" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "share_panel" ]]; then
     copy_extra_panel_data_to_panel_reporting_dir ${isolationBarcode} ${sampleBarcode}
+
+    # Check if the previous command was successful
+    if [[ $? -ne 0 ]]; then
+        error "Not all panel data available for this sample. Aborting."
+        exit 1
+    fi
+
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
+
 elif [[ "${process}" == "share_panel_fail" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "upload_kmbp_report" ]]; then
