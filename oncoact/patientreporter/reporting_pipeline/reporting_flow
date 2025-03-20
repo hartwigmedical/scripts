@@ -60,7 +60,7 @@ elif [[ "${process}" == "share_panel" ]]; then
 
     # Check if the previous command was successful
     if [[ $? -ne 0 ]]; then
-        error "Not all panel data available for this sample. Aborting."
+        echo -e "\033[1;31m Error: Not all panel data available for this sample. Aborting. \033[0m"
         exit 1
     fi
 
