@@ -171,8 +171,9 @@ print_shallow_qc_for_run() {
         "${ref_exc}" "${tum_exc}" "${ref_dup}" "${tum_dup}" >> "${tmp_file}"
 
     # POST to LAMA
-    data_string=$(printf '{"tumorIsolationBarcode": "%s", "referenceIsolationBarcode": %s, "purpleStatus": [%s], "purpleFitMethod": %s, "amberStatus": %s, "tumorCellPurity": %s, "shallowSequencingStatus": %s}' ${tum_isolation_barcode} ${ref_isolation_barcode} ${qc_stat} ${status} ${amb_qc} ${purity} ${to_seq})
-    curl -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/shallow-result -d "${data_string}"
+   qc_stat=$(echo ${qc_stat} | sed 's/,/","/g')
+   data_string=$(printf '{"tumorIsolationBarcode": "%s", "referenceIsolationBarcode": "%s", "purpleStatus": ["%s"], "purpleFitMethod": "%s", "amberStatus": "%s", "tumorCellPurity": %s, "shallowSequencingStatus": "%s"}' ${tum_isolation_barcode} ${ref_isolation_barcode} ${qc_stat} ${status} ${amb_qc} ${purity} ${to_seq})
+   curl -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/shallow-result -d "${data_string}"
 }
 
 get_yield() {
