@@ -15,11 +15,10 @@ fi
 if [[ -z "${sample}" ]]; then
     error "No sample passed. Exiting"
 fi
-protect_evidence_tsv=$(find -L /home/lschoenmaker/tmp/verifications/verification_reporting_pipeline_v1.0.5_ckb_clinical_trials/reporting_pipeline_data_v5_update/verification/${run}/protect -type f -name "protect.tsv")
+protect_evidence_tsv=$(find -L /data/experiments/verification/verification_reporting_gene_panel_1_0_6/pilot_beta13/${run}/protect -type f -name "protect.tsv")
 
-
-database="protect_pilot"
-credentials=$(prod_writer_sql_credentials)
-patient_db_jar="/data/experiments/pilot_tools/patient-db/oncoact-db-jar-with-dependencies.jar"
+database="hmfpatients_pilot"
+credentials=$(diagnostic_writer_sql_credentials)
+patient_db_jar="/data/experiments/pilot_tools/database_oncoact/database-jar-with-dependencies.jar"
 
 do_load_protect_data ${sample} ${protect_evidence_tsv} ${database} "${credentials}" ${patient_db_jar}
