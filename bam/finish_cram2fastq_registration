@@ -19,11 +19,19 @@ if [[ $(hmf_api_get "samples?barcode=${org_barcode}" | jq length) == 0 ]]; then
     die "Original barcode is not in api"
 fi
 
+new_barcode_lower=$(echo "new_barcode" | tr '[:upper:]' '[:lower:]')
+
+info "Renaming newly generated fastq to correct barcodes"
+for fastq_file in $(gcloud storage ls "gs://hmf-cram2fastq/${new_barcode_lower}_FASTQ/cram2fastq/output_fq/*fastq.gz")
+do
+  gcloud storage mv "${fastq_file}" "${fastq_file//SAMPLE/${new_barcode}}"
+done
+
 info "Moving newly generated fastq to fastq-input-prod-1 bucket"
-gsutil -m cp "gs://hmf-cram2fastq/${new_barcode}_FASTQ/*fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
+gcloud storage -m cp "gs://hmf-cram2fastq/${new_barcode_lower}_FASTQ/cram2fastq/output_fq/*fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
 
 info "register new barcode fastq in api"
-manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode}_FASTQ" "${org_barcode}" || die "Could not register new fastq"
+manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_lower}_FASTQ/cram2fastq/output_fq" "${org_barcode}" || die "Could not register new fastq"
 
 info "Patching new barcode q30 and yield with original barcode values in api"
 patch_api_sample_q30_yld_from_source_sample "${org_barcode}" "${new_barcode}" || die "Could not patch api"
@@ -33,4 +41,4 @@ org_vcf=$(find_snpcheck_vcf -r "${org_barcode}" | grep "gs://snpcheck-prod-1/snp
 new_vcf="${org_vcf//${org_barcode}/${new_barcode}}"
 
 info "Copy original vcf to new vcf"
-gsutil cp "${org_vcf}" "${new_vcf}" || die "Could not copy vcf"
+gcloud storage cp "${org_vcf}" "${new_vcf}" || die "Could not copy vcf"
