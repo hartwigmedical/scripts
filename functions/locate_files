@@ -893,6 +893,15 @@ locate_actin_personalization_database_views_sql_script() {
     echo "/data/patient_like_me/sql/generate_views.sql"
 }
 
+locate_actin_personalization_table_builder_python_script() {
+    echo "/data/patient_like_me/sql/distant_metastasis_overview_builder.py"
+}
+
+locate_actin_personalization_table_aggregator_python_script() {
+    echo "/data/patient_like_me/sql/distant_metastasis_overview_aggregator.py"
+}
+
+
 ##################################### RNA ######################################
 
 locate_rna_bam_directory() {
