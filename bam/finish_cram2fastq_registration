@@ -19,12 +19,11 @@ if [[ $(hmf_api_get "samples?barcode=${org_barcode}" | jq length) == 0 ]]; then
     die "Original barcode is not in api"
 fi
 
-new_barcode_lower=$(echo "new_barcode" | tr '[:upper:]' '[:lower:]')
+new_barcode_lower=$(echo "${new_barcode}" | tr '[:upper:]' '[:lower:]')
 
 info "Renaming newly generated fastq to correct barcodes"
 for fastq_file in $(gcloud storage ls "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq/*.fastq.gz")
 do
-  echo ${fastq_file}
   gcloud storage mv "${fastq_file}" "${fastq_file//SAMPLE/${new_barcode}}"
 done
 
