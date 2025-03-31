@@ -19,7 +19,7 @@ sage_jar="$(locate_research_sage)"
 resource_dir="/data/resources/public"
 bucket_dir="/data/resources/bucket"
 
-# TODO (KD): Rename 'load_bqr' to 'bqr_load' in SAGE release after 3.4.1
+# TODO: Change tumor_bam and reference_bam path
 java -Xmx48G -jar ${sage_jar} \
     -tumor "${tumor_sample}" \
     -tumor_bam "${run_dir}/${tumor_sample}/aligner/${tumor_sample}.bam" \
@@ -32,7 +32,7 @@ java -Xmx48G -jar ${sage_jar} \
     -ref_genome "${bucket_dir}/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta" \
     -ref_genome_version "V37" \
     -ensembl_data_dir "${resource_dir}/ensembl_data_cache/37/" \
-    -load_bqr \
+    -bqr_load \
     -vis_variants "${specific_variants}" \
     -specific_regions "${specific_regions}" \
     -output_vcf "${run_dir}/sage_somatic/${tumor_sample}.sage.somatic.vcf.gz"
