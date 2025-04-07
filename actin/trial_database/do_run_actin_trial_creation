@@ -4,12 +4,6 @@ source locate_files || exit 1
 source io_functions || exit 1
 source message_functions || exit 1
 
-trial_status_directory_param=$1 && shift
-
-if [[ -z "${trial_status_directory_param}" ]]; then
-    error "Missing parameters. Exiting"
-fi
-
 trial_config_directory="$(locate_actin_trial_config_directory)"
 trial_status_directory="$(locate_actin_trial_status_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
