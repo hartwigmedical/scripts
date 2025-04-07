@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Trigger ACTIN SERVE pipeline by copying a file from the hmf-crunch-resources 
-# bucket to the pipelie input buckets
+# bucket to the pipeline input buckets
 
 usage() {
     echo "Usage: $0 <date-string> [id]"
