@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-pull_serve_mcgi_resources_into_local_actin_resource_repo
-pull_serve_nl_resources_into_local_actin_resource_repo
