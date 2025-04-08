@@ -9,7 +9,7 @@ def run_bash_command(command: str) -> str:
 batch = sys.argv[1]
 
 body="""workflow: "sage-visualisation"
-version: "0.1.7"
+version: "0.1.8"
 params:\n"""
 
 relevant_buckets = run_bash_command('gsutil ls gs://targeted-pipeline-output-prod-1/ | grep ' + batch).split("\n")
