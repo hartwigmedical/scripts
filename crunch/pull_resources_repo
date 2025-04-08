@@ -6,8 +6,8 @@ source locate_files || exit 1
 repo=$1
 [[ -z ${repo} ]] && die "$(basename $0) requires a repo resources name as an argument"
 
-if [ ${repo} != "ops" -a ${repo} != "crunch" -a ${repo} != "private" -a ${repo} != "public" -a ${repo} != "actin" ] ; then
-    die "Only allowed to be used on ops ,crunch, actin, private and public resources repos. Other repos are set to a fixed version on purpose."
+if [ ${repo} != "ops" -a ${repo} != "crunch" -a ${repo} != "private" -a ${repo} != "public" -a ${repo} != "actin" -a ${repo} != "reporting-resources" ]; then
+    die "Only allowed to be used on ops, crunch, actin, private/public resources and reporting-resources repos. Other repos are set to a fixed version on purpose."
 fi
 
 pull_repo $(locate_resources_repo_dir "${repo}")
