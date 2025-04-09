@@ -36,5 +36,5 @@ RUN wget https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.
 RUN mkdir -p /scripts
 COPY create_excel_compar.py /scripts
 COPY extract_pipeline_output.py /scripts
-COPY common-resources-public/gene_panel/37/DriverGenePanel.37.tsv /data/resources/gene_panel/
-COPY common-resources-public/gene_panel/38/DriverGenePanel.38.tsv /data/resources/gene_panel/
+COPY DriverGenePanel.37.tsv /data/resources/gene_panel/ # Find a clever way to retrieve these automatically, now update manually!!!
+COPY DriverGenePanel.38.tsv /data/resources/gene_panel/ # Find a clever way to retrieve these automatically, now update manually!!!
