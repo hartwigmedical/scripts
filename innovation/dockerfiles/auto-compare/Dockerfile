@@ -30,11 +30,12 @@ RUN pip install --no-cache-dir \
 SHELL ["bash", "-c"]
 
 # Get COMPAR jar
-RUN wget https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.3.0/compar_v1.3.0.jar 
+RUN wget -O compar.jar https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.3.3/compar_v1.3.3.jar
 
 # Copy workflow scripts into the container.
 RUN mkdir -p /scripts
 COPY create_excel_compar.py /scripts
 COPY extract_pipeline_output.py /scripts
-COPY DriverGenePanel.37.tsv /data/resources/gene_panel/ # Find a clever way to retrieve these automatically, now update manually!!!
-COPY DriverGenePanel.38.tsv /data/resources/gene_panel/ # Find a clever way to retrieve these automatically, now update manually!!!
+# Find a clever way to retrieve these automatically, now update manually!!!
+COPY DriverGenePanel.37.tsv /data/resources/gene_panel/
+COPY DriverGenePanel.38.tsv /data/resources/gene_panel/

@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.1.5"
+version: "0.1.6"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -11,7 +11,7 @@ externalInputs:
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.7"
+    version: "0.0.8"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -40,7 +40,7 @@ stages:
         fi
 
         # Additional parameters
-        COMPAR_JAR="compar_v1.3.2.jar"  # This jar is included in the Docker image.
+        COMPAR_JAR="compar.jar"  # This jar is included in the Docker image.
         # Select the driver gene panel based on the reference version.
         if [ "$REF_VERSION" == "37" ]; then
             DRIVER_GENE_PANEL="/data/resources/gene_panel/DriverGenePanel.37.tsv"
@@ -268,7 +268,7 @@ stages:
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.6"
+    version: "0.0.8"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -313,7 +313,7 @@ stages:
 
   - name: "retrieve-output"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.6"
+    version: "0.0.8"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -396,7 +396,7 @@ stages:
 
   - name: "igv-visualize"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.6"
+    version: "0.0.8"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |

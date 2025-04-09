@@ -1,6 +1,6 @@
 name: "rerun-quickcheck"
 workflow: "auto-compare"
-version: "0.1.5"
+version: "0.1.6"
 params:
   truth_bucket_uri: "gs://hg38-pilot-v6-38"
   target_bucket_uri: "gs://hartwig-analyses/dna-6.0/"
