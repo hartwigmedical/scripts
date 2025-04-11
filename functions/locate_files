@@ -1254,7 +1254,7 @@ locate_wgs_metrics() {
         if [[ -z ${metrics_file} ]]; then
             metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
             if [[ -z "${metrics_file}" ]]; then
-                metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}.bam_metric.summary.tsv")
+                metrics_file=${metrics_dir_v5}
             fi
         fi
     fi
