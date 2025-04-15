@@ -18,9 +18,9 @@ if [[ -z "${output_directory}" ]]; then
     exit 1
 fi
 
-if [[ ! -d "${output_dir}" ]]; then
-    echo "Creating output directory: ${output_dir}"
-    mkdir -p "${output_dir}"
+if [[ ! -d "${output_directory}" ]]; then
+    echo "Creating output directory: ${output_directory}"
+    mkdir -p "${output_directory}"
 fi
 
 echo "Using DOID JSON file: ${doid_json}"
