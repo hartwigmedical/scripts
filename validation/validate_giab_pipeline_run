@@ -136,7 +136,7 @@ else
 fi
 
 info "Running RTGtools vcfeval (${rtg_out_name})"
-$rtg vcfeval \
+$rtg RTG_MEM=8g vcfeval \
     --template "${rtg_sdf_path}" \
     --threads=8 \
     --baseline="${truth_vcf_path_snv}" \

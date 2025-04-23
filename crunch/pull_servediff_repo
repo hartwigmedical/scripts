@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pull_source_repo "serve-diff" || exit 1

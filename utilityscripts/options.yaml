@@ -1,0 +1,17 @@
+gcp:
+  project: hmf-crunch
+  region: europe-west4
+serviceAccount:
+  kubernetesServiceAccount: hmf-crunch-sa
+  gcpEmailAddress: hmf-crunch@hmf-crunch.iam.gserviceaccount.com
+cluster: research-cluster-prod-1
+cmek: projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001
+image: eu.gcr.io/hmf-build/pipeline5:[version_pipeline]
+outputBucket: [output-bucket-here]
+batch:
+  size: '1'
+argumentOverrides:
+  image_project: [image_project]
+  image_name: [image_name]
+  ref_genome_version: [ref_version]
+  cost_center_label: [cost-center-here]

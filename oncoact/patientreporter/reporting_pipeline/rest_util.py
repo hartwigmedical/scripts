@@ -70,7 +70,7 @@ class RestClient:
         from_end_date = (datetime.today().date() - timedelta(days=lookback_days)).strftime('%Y-%m-%dT%H:%M:%S')
 
         res = []
-        for ini_type in ['CPCT', 'Somatic', 'Targeted']:
+        for ini_type in ['Somatic', 'Targeted']:
             res += _get_as_json(self._runs_url, params={'ini': f'{ini_type}.ini',
                                                         'context': 'DIAGNOSTIC',
                                                         'from_enddate': from_end_date})

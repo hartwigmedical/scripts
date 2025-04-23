@@ -18,7 +18,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 molecular_tissue_origin_txt=$(locate_cuppa_conclusion_txt ${run_dir})
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 virus_annotation_tsv=$(locate_virus_annotation_tsv ${run_dir})
-sigs_dir=$(locate_sigs_dir ${run_dir})
+sigs_dir=$(locate_sigs_data_directory ${run_dir})
 lilac_results=$(locate_lilac_results ${run_dir})
 lilac_qc=$(locate_lilac_qc ${run_dir})
 

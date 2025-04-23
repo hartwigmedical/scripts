@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source database_functions || exit 1
+source locate_files || exit 1
+
+actin_credentials="$(prod_writer_sql_credentials)"
+actin_database_name="actin_personalization_v2"
+
+actin_database_python="$(locate_actin_personalization_table_builder_python_script)"
+
+db_host=$(extract_database_host "${actin_credentials}")
+db_port=$(extract_database_port "${actin_credentials}")
+db_user=$(extract_database_user "${actin_credentials}")
+db_pass=$(extract_database_password "${actin_credentials}")
+
+info "Running distant metastasis overview builder (Python)"
+
+python3 ${actin_database_python} \
+    --db_host "${db_host}" \
+    --db_port "${db_port}" \
+    --db_user "${db_user}" \
+    --db_password "${db_pass}" \
+    --db_name "${actin_database_name}" \
+    --table_name "distantMetastasisOverview" || exit 1

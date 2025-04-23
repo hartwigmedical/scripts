@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source actin_config || exit 1
+source message_functions || exit 1
+source io_functions || exit 1
+
+gcp_project=$1 && shift
+
+if [[ -z "${gcp_project}" ]]; then
+    error "Missing parameters. Exiting"
+fi
+
+info "Syncing ACTIN trials for ${gcp_project} to $(hostname)"
+
+output_directory=$(locate_actin_trial_database_directory)
+gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project}) ${output_directory}
+
+info "Done"

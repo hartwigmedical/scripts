@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+# Trigger ACTIN SERVE pipeline by copying a file from the hmf-crunch-resources 
+# bucket to the pipeline input buckets
+
+usage() {
+    echo "Usage: $0 <date-string> [id]"
+    echo "  <date-string>  : Date in the format YYYYMMDD (e.g., 20250131)"
+    echo "  [id]           : Optional short target bucket id, e.g. 'prod' or 'nki'. If omitted, the file is copied to all targets."
+    exit 1
+}
+
+if [ "$#" -lt 1 ]; then
+    echo "Error: Missing date string."
+    usage
+fi
+
+DATE="$1"
+TARGET_ID="$2"
+
+SOURCE_BUCKET="gs://hmf-crunch-resources/ckb"
+FILE_NAME="api-export-${DATE}.zip"
+SOURCE_FILE="${SOURCE_BUCKET}/${FILE_NAME}"
+
+VALID_IDS=("prod" "nki" "mcgi")
+
+copy_to_bucket() {
+    local id="$1"
+    local dest_bucket="gs://actin-${id}-serve-pipeline-input"
+    echo "Copying ${SOURCE_FILE} to ${dest_bucket}"
+    gsutil cp "${SOURCE_FILE}" "${dest_bucket}"
+}
+
+if [ -n "${TARGET_ID}" ]; then
+    if [[ ! " ${VALID_IDS[@]} " =~ " ${TARGET_ID} " ]]; then
+        echo "Error: Invalid target id '${TARGET_ID}'. Valid ids are: ${VALID_IDS[*]}"
+        exit 1
+    fi
+    copy_to_bucket "${TARGET_ID}"
+else
+    for id in "${VALID_IDS[@]}"; do
+        copy_to_bucket "${id}"
+    done
+fi

@@ -16,7 +16,7 @@ fi
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
-doid_json="$(locate_doid_json)"
+doid_json="$(locate_actin_doid_json)"
 icd_tsv="$(locate_icd_tsv)"
 atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"

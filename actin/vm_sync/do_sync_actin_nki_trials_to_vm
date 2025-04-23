@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source actin_config || exit 1
+
+gcp_project="$(production_actin_nki_project)"
+
+do_sync_actin_trials_to_vm ${gcp_project}
+

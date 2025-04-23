@@ -23,14 +23,19 @@ check_and_copy_file() {
     local sub_dir=$2
     local bn="$(basename ${file_path})"
     local ext="${bn#*.}"
+    local target_path="${target_bucket}/${sub_dir}/${hash}.${ext}"
 
     if ! gsutil -q stat "${file_path}"; then
         echo "Cannot find \"${file_path}\"" >&2
         return 1
     fi
 
-    if ! gsutil cp -n "${file_path}" "${target_bucket}/${sub_dir}/${hash}.${ext}"; then
-        echo "Failed copying ${file_path} to ${target_bucket}/${sub_dir}/${hash}.${ext}" >&2
+    if gsutil -q stat "${target_path}"; then
+        echo "Overwriting existing file: ${target_path}"
+    fi
+
+    if ! gsutil cp "${file_path}" "${target_path}"; then
+        echo "Failed copying ${file_path} to ${target_path}" >&2
         return 1
     fi
 }

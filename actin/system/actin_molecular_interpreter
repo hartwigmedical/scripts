@@ -25,7 +25,7 @@ else
 fi
 
 serve_directory="$(locate_actin_serve_directory)"
-doid_json="$(locate_doid_json)"
+doid_json="$(locate_actin_doid_json)"
 dnds_driver_likelihood_onco="$(locate_dnds_driver_likelihood_onco)"
 dnds_driver_likelihood_tsg="$(locate_dnds_driver_likelihood_tsg)"
 ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"

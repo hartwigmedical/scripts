@@ -8,7 +8,7 @@ source_repo_url="us-docker.pkg.dev/accelerated-compute/artifactory-4411761"
 target_repo_url="europe-west4-docker.pkg.dev/hmf-build/hmf-docker/project-x"
 pull_account="sa-partner-data-share-4411761@accelerated-compute.iam.gserviceaccount.com"
 
-tag="${1:-0.19.0-a508ce0}"
+tag="${1:-0.27.0-d7c6b75}"
 
 tools=(
     "bwa-mem-samtools:${tag}"
@@ -20,11 +20,13 @@ tools=(
     "metrics:${tag}"
     "metrics-with-alignment-metrics:${tag}"
     "nextflow-driver:${tag}"
+    "metrics-alignment-metrics-rc:${tag}"
+    "metrics-alignment-metrics-gdc:${tag}"
     "pigz:${tag}"
-    "read_collapser:${tag}"
     "sbx-rnd-pipeline:${tag}"
     "small-variant-caller-samtools:${tag}"
 )
+
 
 function main() {
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-output_dir="/data/experiments/cb_serve_v7_verification/ckb_based"
+output_dir="/data/experiments/cb_serve_verification/"
 
 serve_database_name_1="serve_latest"
-serve_database_label_1="v6"
+serve_database_label_1="current"
 serve_database_name_2="serve_pilot"
-serve_database_label_2="v7"
+serve_database_label_2="new"
 
 do_compare_serve_databases \
     ${serve_database_name_1} \

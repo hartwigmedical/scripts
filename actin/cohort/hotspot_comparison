@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    error "Parameters missing. Exiting"
+fi
+
+orange_json="$(locate_orange_no_germline_json ${run_dir})"
+serve_directory="$(locate_actin_serve_directory)"
+output_dir="${run_dir}/hotspot_comparison"
+mkdir -p "${output_dir}"
+
+actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN hotspot comparison for ${run_dir}"
+
+java -cp ${actin_jar} com.hartwig.actin.molecular.hotspotcomparison.HotspotComparisonApplicationKt \
+    -orange_json "$orange_json" \
+    -serve_directory "${serve_directory}" \
+    -output_directory "${output_dir}" \
+    "$@"
+

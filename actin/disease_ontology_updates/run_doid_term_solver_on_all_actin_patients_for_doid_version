@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source database_functions || exit 1
+
+print_usage() {
+    echo "Usage: $0 [output_file] [doid_json] "
+    echo "  output_file     Exact path to the output file - with .tsv extension"
+    echo "  doid_json       Path to the DOID JSON file (default: result of locate_doid_json)"
+}
+
+orange_jar="$(locate_pilot_orange)"
+output_file=$1 && shift
+doid_json=${1:-$(locate_doid_json)}
+shift
+
+if [[ -z "${output_file}" ]]; then
+    echo "Error: Missing output_file argument. Exiting." >&2
+    print_usage
+    exit 1
+fi
+
+echo "Using DOID JSON: ${doid_json}"
+echo "Output file: ${output_file}"
+
+output_dir=$(dirname "${output_file}")
+if [[ ! -d "${output_dir}" ]]; then
+    echo "Creating output directory: ${output_dir}"
+    mkdir -p "${output_dir}"
+fi
+
+[[ -f "${output_file}" ]] || touch "${output_file}"
+
+input_directory="/data/actin/patients/"
+echo "Using all patient_record JSONs from: ${input_directory}"
+
+doid_resolve_comparison() {
+    local patient_record="$1"
+    local doid
+
+    doid=$(jq -r 'first(.tumor.doids[] // empty)' "$patient_record" 2>/dev/null)
+
+    if [ -z "$doid" ]; then
+        doid="null"
+    fi
+
+    if [ "$doid" != "null" ]; then
+        doid_resolver_output=$(java -cp "$orange_jar" com.hartwig.hmftools.common.doid.tools.DoidTermResolverApp \
+            -doid_json "$doid_json" \
+	    -doid_to_resolve "$doid" 2>&1)
+
+        resolved_doid=$(echo "$doid_resolver_output" | sed -n "s/.*'\([^']*\)'.*/\1/p")
+    else
+        resolved_doid="null"
+    fi
+
+    echo "[INFO] Adding to output-file: $patient_record with doid $resolved_doid"
+    echo -e "$patient_record\t$resolved_doid" >> "$output_file"
+}
+
+for i in "$input_directory"*.json; do
+    if [ -e "$i" ]; then
+        doid_resolve_comparison "$i"
+    else
+        echo "No JSON files found in the directory."
+    fi
+done
