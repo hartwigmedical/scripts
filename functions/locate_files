@@ -109,7 +109,7 @@ locate_prod_orange() {
 }
 
 locate_research_orange() {
-    echo "/data/tools/orange/3.7.0/orange.jar"
+    echo "/data/tools/orange/4.0.0/orange.jar"
 }
 
 locate_pilot_orange() {
@@ -1027,11 +1027,6 @@ locate_cuppa_ref_alt_sj_sites() {
 
 locate_doid_json() {
     echo "/data/resources/public/disease_ontology/doid.json"
-}
-
-locate_doid_json_for_orange_3_7() {
-    # TODO (KD): Delete function and resource when ORANGE v3.8 is released and used on data-vm
-    echo "/data/actin/doid_for_orange_v3_7/doid.json"
 }
 
 locate_driver_gene_panel_37_tsv() {
