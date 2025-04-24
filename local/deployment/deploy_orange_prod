@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="4.0.0"
+version="4.0.1"
 
 do_deploy_prod_tool "orange" ${version}
