@@ -15,12 +15,12 @@ if [[ $selected_dir ]]; then
 	selected_path="$transformed_feed_directory/$selected_dir"
 
 	for json in "$selected_path"/*"json"; do
-		palga=$(jq '.tumorDetails["rawPathologyReport"]' $json)
+		palga=$(jq '.tumorDetails["rawPathologyReport"]' "$json")
 		echo -e "\nFrom PALGA:\n$palga"
 		echo -e "\nExtracted molecular tests:"
-		jq '.molecularTests[] | {test, results: [.results[].freeText]}' $json
+		jq '.molecularTests[] | {test, results: [.results[].freeText]}' "$json"
 		echo -e "\nAdditional info:"
-		jq '{warnings,unclassifiedText}' $json.info
+		jq '{warnings,unclassifiedText}' "$json.info"
 	done
 
 	read -p "Proceed? (y/N) " proceed

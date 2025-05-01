@@ -27,6 +27,6 @@ read -p "Which run would you like to pull? " choice
 selected_gs_path=$(echo "$runs" | sed -n "${choice}p")
 
 if [[ $selected_gs_path ]]; then
-	gcloud storage cp -r $selected_gs_path $transformed_feed_directory/
+	gcloud storage cp -r "$selected_gs_path" $transformed_feed_directory/
 	echo "Copied $selected_gs_path to $transformed_feed_directory/"
 fi
