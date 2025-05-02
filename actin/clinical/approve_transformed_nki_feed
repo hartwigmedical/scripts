@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
-
 transformed_feed_directory="/data/actin/clinical/transformed_feed"
 
 mkdir -p $transformed_feed_directory
@@ -15,12 +13,14 @@ if [[ $selected_dir ]]; then
 	selected_path="$transformed_feed_directory/$selected_dir"
 
 	for json in "$selected_path"/*"json"; do
-		palga=$(jq '.tumorDetails["rawPathologyReport"]' "$json")
+		palga=$(jq '.tumorDetails["pathology"][].rawPathologyReport' "$json")
 		echo -e "\nFrom PALGA:\n$palga"
 		echo -e "\nExtracted molecular tests:"
 		jq '.molecularTests[] | {test, results: [.results[].freeText]}' "$json"
-		echo -e "\nAdditional info:"
-		jq '{warnings,unclassifiedText}' "$json.info"
+		warnings=$(jq '.warnings' "$json.info")
+		echo -e "\nExtraction warnings:\n$warnings"
+		unclassified=$(jq '.unclassifiedText' "$json.info")
+		echo -e "\nUnclassified text:\n$unclassified"
 	done
 
 	read -p "Proceed? (y/N) " proceed

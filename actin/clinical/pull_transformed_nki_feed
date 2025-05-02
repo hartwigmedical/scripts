@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source locate_files || exit 1
-
 transformed_feed_directory="/data/actin/clinical/transformed_feed"
 
 mkdir -p $transformed_feed_directory
