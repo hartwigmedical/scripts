@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+transformed_feed_directory="/data/actin/clinical/transformed_feed"
+
+mkdir -p $transformed_feed_directory
+transformed_contents=$(ls $transformed_feed_directory)
+echo "Transformed feed records in $transformed_feed_directory:"
+echo "$transformed_contents" | nl
+read -p "Which run would you like to approve? " choice
+
+selected_dir=$(echo "$transformed_contents" | sed -n "${choice}p")
+if [[ $selected_dir ]]; then
+	selected_path="$transformed_feed_directory/$selected_dir"
+
+	for json in "$selected_path"/*"json"; do
+		palga=$(jq '.tumorDetails["pathology"][].rawPathologyReport' "$json")
+		echo -e "\nFrom PALGA:\n$palga"
+		echo -e "\nExtracted molecular tests:"
+		jq '.molecularTests[] | {test, results: [.results[].freeText]}' "$json"
+		warnings=$(jq '.warnings' "$json.info")
+		echo -e "\nExtraction warnings:\n$warnings"
+		unclassified=$(jq '.unclassifiedText' "$json.info")
+		echo -e "\nUnclassified text:\n$unclassified"
+	done
+
+	read -p "Proceed? (y/N) " proceed
+	if [[ "$proceed" == "y" || "$proceed" == "Y" ]]; then
+		gs_path="gs://actin-nki-clinical-feed-transformed/current/"
+		gcloud storage rm "$gs_path**"
+		gcloud storage cp -r "$selected_path/*" $gs_path
+		echo "Replaced $gs_path with the contents of $selected_path"
+
+		read -p "Would you like to delete local copy $selected_path? (y/N) " response
+		if [[ "$response" == "y" || "$response" == "Y" ]]; then
+			rm -rf "$selected_path"
+			echo "Deleted $selected_path"
+		fi
+	fi
+fi
