@@ -35,5 +35,8 @@ if [[ $selected_dir ]]; then
 			rm -rf "$selected_path"
 			echo "Deleted $selected_path"
 		fi
+
+		gcloud pubsub topics publish projects/actin-nki/topics/clinical-ingestion.required \
+		  --message="{\"name\": \"upload.complete\",\"timeCreated\":\"$(date -uIseconds)\",\"bucket\":\"actin-nki-clinical-feed-transformed\"}"
 	fi
 fi
