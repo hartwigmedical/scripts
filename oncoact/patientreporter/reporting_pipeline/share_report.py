@@ -56,7 +56,7 @@ class ReportSharer:
             print("isSharedThroughPortal is not present")
             exit(1)
         else:
-            is_shared_through_portal = "true"
+            is_shared_through_portal = report_settings['isSharedThroughPortal']
 
         self._copy_files_to_remote_buckets(publish_to_portal=is_shared_through_portal, report_settings=report_settings, lama=lama)
 
