@@ -24,7 +24,7 @@ gs_path="actin-nki-clinical-feed-transformed"
 runs=$(gcloud storage ls gs://${gs_path} | grep "${gs_path}/2")
 
 echo "${runs}" | nl
-read -p "Which run would you like to pull? " choice
+read -p "Which run would you like to pull (fill in the ID)? " choice
 selected_gs_path=$(echo "${runs}" | sed -n "${choice}p")
 
 if [[ ${selected_gs_path} ]]; then
