@@ -706,6 +706,10 @@ locate_actin_clinical_input_feed_directory() {
     echo "/data/actin/clinical/input_feed"
 }
 
+locate_actin_transformed_feed_directory() {
+    echo "/data/actin/clinical/transformed_feed"
+}
+
 locate_actin_curated_clinical_directory() {
     echo "/data/actin/clinical/curated"
 }

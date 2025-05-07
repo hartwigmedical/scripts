@@ -1,30 +1,33 @@
 #!/usr/bin/env bash
 
-transformed_feed_directory="/data/actin/clinical/transformed_feed"
+source message_functions || exit 1
+source locate_files || exit 1
 
-mkdir -p $transformed_feed_directory
-transformed_contents=$(ls $transformed_feed_directory)
-if [[ $transformed_contents ]]; then
-	echo -ne "Some previous transformed feed records exist in $transformed_feed_directory:\n$transformed_contents\nDelete them? (y/N) "
+transformed_feed_directory=$(locate_actin_transformed_feed_directory)
+
+mkdir -p "${transformed_feed_directory}"
+transformed_contents=$(ls ${transformed_feed_directory})
+if [[ ${transformed_contents} ]]; then
+	echo -ne "Some previous transformed feed records exist in ${transformed_feed_directory}:\n${transformed_contents}\nDelete them? (y/N) "
 	read -r response
-        if [[ "$response" == "y" || "$response" == "Y" ]]; then
-		rm -rf "$transformed_feed_directory"
-		mkdir -p $transformed_feed_directory
-		echo "Emptied $transformed_feed_directory."
+        if [[ "${response}" == "y" || "${response}" == "Y" ]]; then
+		rm -rf "${transformed_feed_directory}"
+		mkdir -p ${transformed_feed_directory}
+		info "Emptied ${transformed_feed_directory}."
 	fi
 else
-	echo "No previous transformed feed found in $transformed_feed_directory"
+	info "No previous transformed feed found in ${transformed_feed_directory}"
 fi
 
 echo -e "\nTransformed feed records in cloud:"
 gs_path="actin-nki-clinical-feed-transformed"
-runs=$(gcloud storage ls gs://$gs_path | grep "$gs_path/2")
+runs=$(gcloud storage ls gs://${gs_path} | grep "${gs_path}/2")
 
-echo "$runs" | nl
+echo "${runs}" | nl
 read -p "Which run would you like to pull? " choice
-selected_gs_path=$(echo "$runs" | sed -n "${choice}p")
+selected_gs_path=$(echo "${runs}" | sed -n "${choice}p")
 
-if [[ $selected_gs_path ]]; then
-	gcloud storage cp -r "$selected_gs_path" $transformed_feed_directory/
-	echo "Copied $selected_gs_path to $transformed_feed_directory/"
+if [[ ${selected_gs_path} ]]; then
+	gcloud storage cp -r "${selected_gs_path}" ${transformed_feed_directory}/
+	info "Copied ${selected_gs_path} to ${transformed_feed_directory}/"
 fi
