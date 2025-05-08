@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.1.6"
+version: "0.1.7"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -18,9 +18,6 @@ stages:
         #!/usr/bin/env bash
         set -eo pipefail
 
-        # Debug: Print the incoming value of map_sample from the environment.
-        echo "[DEBUG] Incoming value of map_sample: '${map_sample}'"
-
         # Internal working variables; external variables are referenced as ${run_id}, etc.
         WORK_DIR="/tmp/work"
         TRUTH_BUCKET="/in/truth-bucket"
@@ -29,6 +26,7 @@ stages:
         RUN_ID=${run_id}
         REF_VERSION=${ref_version}
         OPTIONAL_ARGS='${compar_optional_arguments}'
+        SAMPLE_LINK='${sample_link}'
 
         # Mapping of truth samples to target samples, assuming target samples are new hartwig_numbers and truth samples are old sample ids.
         if [[ ${map_sample} == "true" ]]; then
@@ -66,6 +64,7 @@ stages:
         echo "Using driver gene panel: $DRIVER_GENE_PANEL"
         echo "Optional compar arguments: $OPTIONAL_ARGS"
         echo "Mapping samples: $MAP_SAMPLE"
+        echo "Sample list json: $SAMPLE_LINK"
 
         main() {
             echo "[INFO] Starting COMPAR execution"
@@ -80,6 +79,7 @@ stages:
             create_dir "$RENAMED_TARGET_RUNS_DIR" || echo "[ERROR] Could not create target runs dir"
             symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR" || echo "[ERROR] Could not symlink target runs"
 
+            # Determine the path for the sample_id.csv file.
             SAMPLE_ID_FILE="$OUTPUT_DIR/sample_ids.csv"
             if [[ -f "$SAMPLE_ID_FILE" ]]; then
                 echo "[WARN] Sample ID file exists: $SAMPLE_ID_FILE. Skipping creation."
@@ -88,64 +88,136 @@ stages:
                 # Write CSV header.
                 echo "SampleId,GermlineSampleId,RefSampleId,RefGermlineSampleId,NewSampleId,NewGermlineSampleId" > "$SAMPLE_ID_FILE"
                 
-                # Iterate over each truth run directory (the folder name is based on the tumor sample id).
-                for truth_dir in $(ls "$RENAMED_TRUTH_RUNS_DIR"); do
-                    echo "[DEBUG] Processing truth directory: $truth_dir"
-                    truth_path="$RENAMED_TRUTH_RUNS_DIR/$truth_dir"
-                    truth_metadata="$truth_path/metadata.json"
-                    if [[ ! -f "$truth_metadata" ]]; then
-                        echo "[WARN] metadata.json not found in $truth_path, skipping."
-                        continue
-                    fi
+                # If a mapping dictionary is provided via the SAMPLE_LINK variable, use it.
+                if [[ -n "$SAMPLE_LINK" ]]; then
+                    echo "[INFO] Using provided sample mapping dictionary from SAMPLE_LINK."
 
-                    # Extract old sample IDs from truth metadata.
-                    truth_ref=$(jq -r '.reference.sampleName' "$truth_metadata")
-                    truth_tumor=$(jq -r '.tumor.sampleName' "$truth_metadata")
-                    echo "[DEBUG] From truth metadata: truth_ref='$truth_ref', truth_tumor='$truth_tumor'"
+                    # Debug: list actual entries (symlinks) under truth/target
+                    echo "[DEBUG] RENAMED_TRUTH_RUNS_DIR = $RENAMED_TRUTH_RUNS_DIR"
+                    echo "[DEBUG]   entries in TRUTH:"
+                    ls -l $RENAMED_TRUTH_RUNS_DIR | sed 's/^/    /'
 
-                    # Determine new sample id from mapping if enabled.
-                    if [[ "$MAP_SAMPLE" == "true" ]]; then
-                        lower_tumor=$(echo "$truth_tumor" | tr '[:upper:]' '[:lower:]')
-                        mapping_file="$EXECUTION_BUCKET/$lower_tumor/execution-definition.yaml"
-                        echo "[DEBUG] Looking for mapping file at: $mapping_file"
-                        if [[ -f "$mapping_file" ]]; then
-                            echo "[DEBUG] Found mapping file for sample '$truth_tumor'"
-                            new_mapped=$(grep 'hartwig_number:' "$mapping_file" | head -n1 | sed -E 's/.*hartwig_number:[[:space:]]*"?([^"]+)"?.*/\1/')
-                            echo "[DEBUG] Extracted new sample id from mapping: '$new_mapped'"
-                            if [[ -z "$new_mapped" ]]; then
-                                echo "[WARN] New sample id empty in mapping for '$truth_tumor'; using truth tumor id"
-                                new_mapped="$truth_tumor"
+                    echo "[DEBUG] RENAMED_TARGET_RUNS_DIR = $RENAMED_TARGET_RUNS_DIR"
+                    echo "[DEBUG]   entries in TARGET:"
+                    ls -l $RENAMED_TARGET_RUNS_DIR | sed 's/^/    /'
+
+                    # Iterate each mapping
+                    echo $SAMPLE_LINK | jq -c 'to_entries[]' | while read -r ENTRY; do
+                        TRUTH_ID=$(echo $ENTRY | jq -r '.key')
+                        echo "[DEBUG] Processing TRUTH_ID = '$TRUTH_ID'"
+
+                        # Match symlinks (drop -type d so we catch links too)
+                        TRUTH_DIR=$(find $RENAMED_TRUTH_RUNS_DIR -maxdepth 1 -name "$TRUTH_ID*" | head -n1)
+                        echo "[DEBUG]   find returned TRUTH_DIR = '$TRUTH_DIR'"
+
+                        if [ -z "$TRUTH_DIR" ]; then
+                            echo "[WARN] No matching truth directory for: $TRUTH_ID" >&2
+                            continue
+                        fi
+
+                        # Loop targets for this truth entry
+                        echo $ENTRY | jq -r '.value[]' | while read -r TARGET_ID; do
+                            echo "[DEBUG]   Processing TARGET_ID = '$TARGET_ID'"
+
+                            TARGET_DIR=$(find $RENAMED_TARGET_RUNS_DIR -maxdepth 1 -name "$TARGET_ID*" | head -n1)
+                            echo "[DEBUG]     find returned TARGET_DIR = '$TARGET_DIR'"
+
+                            if [ -z "$TARGET_DIR" ]; then
+                                echo "[WARN] No matching target directory for: $TARGET_ID" >&2
+                                continue
+                            fi
+
+                            TRUTH_METADATA=$TRUTH_DIR/metadata.json
+                            TARGET_METADATA=$TARGET_DIR/metadata.json
+                            echo "[DEBUG]     TRUTH_METADATA = $TRUTH_METADATA"
+                            echo "[DEBUG]     TARGET_METADATA = $TARGET_METADATA"
+
+                            if [ ! -f $TRUTH_METADATA ]; then
+                                echo "[WARN] metadata.json missing in $TRUTH_DIR" >&2
+                                continue
+                            fi
+                            if [ ! -f $TARGET_METADATA ]; then
+                                echo "[WARN] metadata.json missing in $TARGET_DIR" >&2
+                                continue
+                            fi
+
+                            TRUTH_TUMOR=$(jq -r .tumor.sampleName $TRUTH_METADATA)
+                            TRUTH_REF=$(jq -r .reference.sampleName $TRUTH_METADATA)
+                            if [ "$TRUTH_REF" = "null" ] || [ -z "$TRUTH_REF" ]; then
+                                TRUTH_REF=$TRUTH_TUMOR
+                            fi
+
+                            TARGET_TUMOR=$(jq -r .tumor.sampleName $TARGET_METADATA)
+                            TARGET_REF=$(jq -r .reference.sampleName $TARGET_METADATA)
+                            if [ "$TARGET_REF" = "null" ] || [ -z "$TARGET_REF" ]; then
+                                TARGET_REF=$TARGET_TUMOR
+                            fi
+
+                            echo "[INFO] Writing CSV row: $TRUTH_TUMOR,$TRUTH_REF → $TARGET_TUMOR,$TARGET_REF"
+                            echo $TARGET_TUMOR,$TARGET_TUMOR,$TRUTH_TUMOR,$TRUTH_REF,$TARGET_TUMOR,$TARGET_REF \
+                                >> $SAMPLE_ID_FILE
+                        done
+                    done
+                else
+                    # Original logic to auto-generate the sample_id.csv file if no mapping is provided.
+                    for TRUTH_DIR in $(ls "$RENAMED_TRUTH_RUNS_DIR"); do
+                        echo "[DEBUG] Processing truth directory: $TRUTH_DIR"
+                        truth_path="$RENAMED_TRUTH_RUNS_DIR/$TRUTH_DIR"
+                        truth_metadata="$truth_path/metadata.json"
+                        if [[ ! -f "$truth_metadata" ]]; then
+                            echo "[WARN] metadata.json not found in $truth_path, skipping."
+                            continue
+                        fi
+
+                        # Extract old sample IDs from truth metadata.
+                        TRUTH_REF=$(jq -r '.reference.sampleName' "$truth_metadata")
+                        TRUTH_TUMOR=$(jq -r '.tumor.sampleName' "$truth_metadata")
+                        echo "[DEBUG] From truth metadata: TRUTH_REF='$TRUTH_REF', TRUTH_TUMOR='$TRUTH_TUMOR'"
+
+                        # Determine new sample id from mapping if enabled.
+                        if [[ "$MAP_SAMPLE" == "true" ]]; then
+                            lower_tumor=$(echo "$TRUTH_TUMOR" | tr '[:upper:]' '[:lower:]')
+                            mapping_file="$EXECUTION_BUCKET/$lower_tumor/execution-definition.yaml"
+                            echo "[DEBUG] Looking for mapping file at: $mapping_file"
+                            if [[ -f "$mapping_file" ]]; then
+                                echo "[DEBUG] Found mapping file for sample '$TRUTH_TUMOR'"
+                                new_mapped=$(grep 'hartwig_number:' "$mapping_file" | head -n1 | sed -E 's/.*hartwig_number:[[:space:]]*"?([^"]+)"?.*/\1/')
+                                echo "[DEBUG] Extracted new sample id from mapping: '$new_mapped'"
+                                if [[ -z "$new_mapped" ]]; then
+                                    echo "[WARN] New sample id empty in mapping for '$TRUTH_TUMOR'; using truth tumor id"
+                                    new_mapped="$TRUTH_TUMOR"
+                                fi
+                            else
+                                echo "[WARN] Mapping file not found for sample '$TRUTH_TUMOR' at $mapping_file; using truth tumor id"
+                                new_mapped="$TRUTH_TUMOR"
                             fi
                         else
-                            echo "[WARN] Mapping file not found for sample '$truth_tumor' at $mapping_file; using truth tumor id"
-                            new_mapped="$truth_tumor"
+                            new_mapped="$TRUTH_TUMOR"
                         fi
-                    else
-                        new_mapped="$truth_tumor"
-                    fi
 
-                    echo "[DEBUG] Mapped sample id for target lookup: '$new_mapped'"
+                        echo "[DEBUG] Mapped sample id for target lookup: '$new_mapped'"
 
-                    # Check if the target folder contains the directory for the new sample id.
-                    target_dir="$RENAMED_TARGET_RUNS_DIR/$new_mapped"
-                    if [[ ! -d "$target_dir" ]]; then
-                        echo "[WARN] Skipping sample '$truth_tumor' because target directory '$new_mapped' does not exist."
-                        continue
-                    fi
+                        # Check if the target folder contains the directory for the new sample id.
+                        TARGET_DIR="$RENAMED_TARGET_RUNS_DIR/$new_mapped"
+                        if [[ ! -d "$TARGET_DIR" ]]; then
+                            echo "[WARN] Skipping sample '$TRUTH_TUMOR' because target directory '$new_mapped' does not exist."
+                            continue
+                        fi
 
-                    # From target metadata, extract target tumor and reference sample ids.
-                    target_metadata="$target_dir/metadata.json"
-                    if [[ ! -f "$target_metadata" ]]; then
-                        echo "[WARN] metadata.json not found in target directory '$target_dir', skipping sample."
-                        continue
-                    fi
-                    target_tumor=$(jq -r '.tumor.sampleName' "$target_metadata")
-                    target_ref=$(jq -r '.reference.sampleName' "$target_metadata")
-                    echo "[DEBUG] From target metadata: target_tumor='$target_tumor', target_ref='$target_ref'"
+                        # From target metadata, extract target tumor and reference sample ids.
+                        TARGET_METADATA="$TARGET_DIR/metadata.json"
+                        if [[ ! -f "$TARGET_METADATA" ]]; then
+                            echo "[WARN] metadata.json not found in target directory '$TARGET_DIR', skipping sample."
+                            continue
+                        fi
+                        TARGET_TUMOR=$(jq -r '.tumor.sampleName' "$target_metadata")
+                        TARGET_REF=$(jq -r '.reference.sampleName' "$target_metadata")
+                        echo "[DEBUG] From target metadata: target_tumor='$TARGET_TUMOR', TARGET_REF='$TARGET_REF'"
 
-                    # Write CSV line:
-                    echo "$truth_tumor,$truth_ref,$truth_tumor,$truth_ref,$target_tumor,$target_ref" >> "$SAMPLE_ID_FILE"
-                done
+                        # Write CSV line.
+                        echo "$TRUTH_TUMOR,$TRUTH_REF,$TRUTH_TUMOR,$TRUTH_REF,$TARGET_TUMOR,$TARGET_REF" >> "$SAMPLE_ID_FILE"
+                    done
+                fi
             fi
 
             echo "[INFO] Sample ID file created:"
