@@ -11,12 +11,13 @@ command -v jq > /dev/null || die "Dependency jq not found"
 script_name=$(basename "$0")
 
 set_name=$1
+tumor_ref=$1
 out_dir=${2:-.}
 
 if [[ -z "${set_name}" ]]; then
     echo "-----"
-    echo " Usage: $script_name {name-of-set} [{output-dir}]"
-    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1"
+    echo " Usage: $script_name {name-of-set} {boolean-of-tumorref} [{output-dir}]"
+    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 true"
     echo " Remarks:"
     echo "   - Currently only works for DIAGNOSTIC runs"
     echo "   - Will take most recent run of the set"
@@ -57,7 +58,9 @@ function main() {
     bucket=$(jq -r '.bucket' <<< "${run_json}")
     status=$(jq -r '.status' <<< "${run_json}")
     ini=$(jq -r '.ini' <<< "${run_json}")
-    ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    if [[ $tumor_ref ]]; then
+      ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    fi
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
     run_url="gs://${bucket}/${set_name}"
@@ -66,7 +69,9 @@ function main() {
 
     info "Collecting sample names from metadata json"
     metadata_json=$(gsutil cat "${metadata_json_url}") || die "Unable to read metadata json [${metadata_json_url}]"
-    ref_tag=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    if [[ $tumor_ref ]]; then
+      ref_tag=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    fi
     tum_tag=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
 
     info "Details:"
@@ -74,14 +79,23 @@ function main() {
     info "  IniName: ${ini}"
     info "   Bucket: ${bucket}"
     info "   Status: ${status}"
-    info "  RefName: ${ref}"
+
+    if [[ $tumor_ref ]]; then
+      info "  RefName: ${ref}"
+      info "   RefTag: ${ref_tag}"
+    fi
+
     info "  TumName: ${tum}"
-    info "   RefTag: ${ref_tag}"
     info "   TumTag: ${tum_tag}"
 
-    create_igv_config "${out_file}" "${run_url}" "${ref_tag}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+    if [[ $tumor_ref ]]; then
+      create_igv_config "${out_file}" "${run_url}" "${ref_tag}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+    else
+      create_igv_config "${out_file}" "${run_url}" "" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+    fi
 
     info "Finished with ${script_name}"
+
 }
 
 create_igv_config () {
@@ -90,24 +104,28 @@ create_igv_config () {
     local ref=$1 && shift
     local tum=$1 && shift
 
-    ref_bam="${run_base_url}/${ref}/aligner/${ref}.bam"
-    ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
+    info "Requesting signed URLs"
+    if [[ $tumor_ref ]]; then
+      ref_bam="${run_base_url}/${ref}/aligner/${ref}.bam"
+      ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
+      ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
+      ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
+      ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
+      ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
+    fi
+
     tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
     tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
-
-    info "Requesting signed URLs"
-    ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
-    ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
     tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
     tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
-    ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
-    ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
     tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
     tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
 
     info "Creating output file [${out_file}]"
     {
-      echo "load ${ref_bam_url} index=${ref_bai_url}"
+      if [[ $tumor_ref ]]; then
+        echo "load ${ref_bam_url} index=${ref_bai_url}"
+      fi
       echo "load ${tum_bam_url} index=${tum_bai_url}"
       echo "goto TP53"
       echo "collapse"
