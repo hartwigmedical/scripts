@@ -12,7 +12,7 @@ script_name=$(basename "$0")
 
 set_name=$1
 tumor_ref=$1
-out_dir=${2:-.}
+out_dir=${3:-.}
 
 if [[ -z "${set_name}" ]]; then
     echo "-----"
