@@ -35,10 +35,3 @@ manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_l
 
 info "Patching new barcode q30 and yield with original barcode values in api"
 patch_api_sample_q30_yld_from_source_sample "${org_barcode}" "${new_barcode}" || die "Could not patch api"
-
-info "Finding vcf file"
-org_vcf=$(find_snpcheck_vcf -r "${org_barcode}" | grep "gs://snpcheck-prod-1/snpcheckvcfs/" | head -n 1) || die "Could not find vcf"
-new_vcf="${org_vcf//${org_barcode}/${new_barcode}}"
-
-info "Copy original vcf to new vcf"
-gcloud storage cp "${org_vcf}" "${new_vcf}" || die "Could not copy vcf"

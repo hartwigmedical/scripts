@@ -19,7 +19,6 @@ fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
-tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
 purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
@@ -40,8 +39,7 @@ do_run_orange_research \
     "$@" \
     ${pipeline_version_cmd} \
     -experiment_type "PANEL" \
-    -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
-    -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
+    -tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
     -sage_dir "${sage_somatic_dir}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \

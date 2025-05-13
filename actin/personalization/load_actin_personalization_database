@@ -14,7 +14,7 @@ db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
 db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
 
-info "Loading $(basename ${reference_patients_json}) into ACTIN personalization database"
+info "Loading reference patients into ACTIN personalization database"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.database.PersonalizationLoaderApplicationKt \
     -reference_patients_json "${reference_patients_json}" \
