@@ -11,13 +11,13 @@ mkdir $temp_folder_path_file
 for path  in $(gsutil ls ${bucket})
 do
   report=$(gsutil ls ${path}patient-reporter/ | grep .pdf)
-  echo ${report}
+  #echo ${report}
   postfix=$(echo ${path#*-} | tr -d "/")
   gsutil cp ${report}  $temp_folder_path_file/
   name=$(echo ${report} | awk -F '/' '{print $6}')
-  echo ${name}
+  #echo ${name}
   mv $temp_folder_path_file/${name}  $temp_folder_path_file/${postfix}_${name}
-  echo ${postfix}_${name}
+  #echo ${postfix}_${name}
   do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$temp_folder_path_file/${postfix}_${name}"
 done
 
