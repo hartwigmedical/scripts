@@ -12,14 +12,14 @@ if [[ -z "${age}" || -z "${who_status}" || -z "${has_ras_mutation}" || -z "${met
     error "Missing parameters. Format should be 'age', 'who_status', 'has_ras_mutation', 'metastasis_locations'"
 fi
 
-reference_patients_json="$(locate_patient_reference_db_analysis_vm)"
+reference_entry_json="$(locate_personalization_reference_db_analysis_vm)"
 personalization_jar="$(locate_actin_personalization_jar)"
 output_path="/data/patient_like_me/reports/personalized_demo.pdf"
 
 info "Starting personalization demo with age=${age}, who=${who_status}, ras=${has_ras_mutation}, metastases=${metastasis_locations}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.similarity.PersonalizationReportWriterApplicationKt \
-    -reference_patients_json ${reference_patients_json} \
+    -reference_entry_json ${reference_entry_json} \
     -age ${age} \
     -who_status ${who_status} \
     -has_ras_mutation ${has_ras_mutation} \

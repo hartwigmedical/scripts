@@ -877,16 +877,16 @@ locate_actin_personalization_jar() {
     echo "/data/tools/actin-personalization/actin-personalization.jar"
 }
 
-locate_latest_ncr_dataset_analysis_vm() {
-    echo "/data/patient_like_me/ncr/latest/K2400223.csv"
+locate_latest_ncr_crc_dataset_analysis_vm() {
+    echo "/data/patient_like_me/sources/ncr/latest_crc/K2400223.csv"
 }
 
 locate_latest_ncr_dataset_bucket() {
     echo "gs://hmf-crunch-actin-ncr-dataset/crc/delivery2/K2400223.csv"
 }
 
-locate_patient_reference_db_analysis_vm() {
-    echo "/data/patient_like_me/personalization_db/patient_reference.json"
+locate_personalization_reference_db_analysis_vm() {
+    echo "/data/patient_like_me/reference_db/reference_entries.json"
 }
 
 locate_actin_personalization_database_sql_script() {
@@ -896,15 +896,6 @@ locate_actin_personalization_database_sql_script() {
 locate_actin_personalization_database_views_sql_script() {
     echo "/data/patient_like_me/sql/generate_views.sql"
 }
-
-locate_actin_personalization_table_builder_python_script() {
-    echo "/data/patient_like_me/sql/distant_metastasis_overview_builder.py"
-}
-
-locate_actin_personalization_table_aggregator_python_script() {
-    echo "/data/patient_like_me/sql/distant_metastasis_overview_aggregator.py"
-}
-
 
 ##################################### RNA ######################################
 
