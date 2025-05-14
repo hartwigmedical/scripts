@@ -73,7 +73,7 @@ class ArtifactGenerator:
 
 
 
-    def _get_germline_reportable_genes(fn):
+    def _get_germline_reportable_genes(self,fn):
         germline_reportable_genes = []
         fh = open(fn,'r')
 
@@ -82,7 +82,7 @@ class ArtifactGenerator:
             germline_reportable_genes.append(lines)
         return germline_reportable_genes
 
-    def _get_gene_from_line(line):
+    def _get_gene_from_line(self,line):
         arr = line.split('\t')
         arr2 = arr[7].split(';')
 
@@ -100,6 +100,9 @@ class ArtifactGenerator:
         metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
 
+        gene_list_path = '/data/resources/reporting-resources/panel/genenames.pass.pon.csv'
+        germline_genes = self._get_germline_reportable_genes(gene_list_path)
+
         with gzip.open(f"{input_folder}purple/{pipelineSampleName}.purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
                 if "REPORTED" in line or (len(line) > 0 and line[0] == '#'):
@@ -107,14 +110,15 @@ class ArtifactGenerator:
                 if len(line) > 0 and line[0] == '#':
                     annotated_res.append(line)
                 else:
+                    arr = line.split('\t')
                     if arr[6] == "PASS":
                        annotated_res.append(line)
 
-                    elif (not 'PONArtefact' in arr[6]) and (_get_gene_from_line(line) in _get_germline_reportable_genes('genenames.pass.pon.csv')):
-                       gene = _get_gene_from_line(line)
+                    elif (not 'PONArtefact' in arr[6]) and (self._get_gene_from_line(line) in germline_genes):
+                       gene = self._get_gene_from_line(line)
                        annotated_res.append(line)
 
-        if res:
+        if reported_res:
             with open(f"{output_folder}{pipelineSampleName}.reported.somatic.vcf", 'x') as file:
                 file.writelines(reported_res)
         if annotated_res:
