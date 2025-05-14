@@ -249,6 +249,7 @@ runSampleQcReport<-function()
     # SNVs by gene and coding effect
     
     somaticVcf = readVcf(sampleSomaticVcf)
+    somaticVcf=somaticVcf[rowRanges(somaticVcf)$FILTER=="PASS",] #only consider variants annotated with PASS
     somaticVariants = vcf_data_frame(somaticVcf)
 
     # extract gene impact
