@@ -247,7 +247,8 @@ def determine_remarks(
         remarks.append(
             f"De coverage van dit sample is te laag: "
             f"slechts {percent_exons_median_coverage_at_least_100:.2f}% van de exonen heeft median coverage minstens 100x, "
-            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100}% zou moeten zijn."
+            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100}% zou moeten zijn. "
+            f"Hierdoor kunnen varianten gemist worden."
         )
 
     if run_data.purple_qc.qc_status != "PASS":
