@@ -129,8 +129,8 @@ runSampleQcReport<-function()
     driverGenes = dplyr::inner_join(ensemblGenes, driverGenePanel, by="gene")
 
     # filter genes of interest for OncoPanel. Check: "Proposed validation gene list" in Oncopanel > CNV validation
-    # 12 genes for DELs
-    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1')
+    # 15 genes for DELs
+    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1','MTAP','KEAP1','SMAD4')
     # 17 genes for AMPS
     reportGenesAmplification = c('AR','CCNE1','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MDM2','MET','MYC','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1','FGFR1')
 

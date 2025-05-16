@@ -146,8 +146,8 @@ runSampleQcDeamination<-function()
     #                     'KRAS','PTPN11','HNF1A','POLE','FLT3','RB1','AKT1','IDH2','CDH1','TP53','ERBB2','SMAD4','STK11','GNA11','JAK3','SRC','GNAS','SMARCB1')
 
     # filter genes of interest for OncoPanel. Check: "Proposed validation gene list" in Oncopanel > CNV validation
-    # 10 genes for DELs
-    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A')
+    # 15 genes for DELs
+    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1','MTAP','KEAP1','SMAD4')
     # 17 genes for AMPS
     reportGenesAmplification = c('AR','CCNE1','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MDM2','MET','MYC','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1','FGFR1')
     # notes: MST1R is removed from the list, since it is not in Hartwig's driver gene panel
