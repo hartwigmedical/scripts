@@ -3,7 +3,7 @@ First, check Artifact Registry in hmf-build for what version numbers have alread
 
 Build an image and push it:
 ```shell script
-docker build . -t europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/${name}:${version}
+docker build ${directory_with_docker_file} -t europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/${name}:${version}
 docker push europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/${name}:${version}
 ```
 e.g:

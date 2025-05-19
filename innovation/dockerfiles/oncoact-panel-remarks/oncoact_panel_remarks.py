@@ -11,6 +11,10 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Tuple, Dict, Set
 
+WARN_HIGH_COPY_NUMBER_NOISE = "WARN_HIGH_COPY_NUMBER_NOISE"
+WARN_DELETED_GENES = "WARN_DELETED_GENES"
+FAIL_NO_TUMOR = "FAIL_NO_TUMOR"
+FAIL_CONTAMINATION = "FAIL_CONTAMINATION"
 
 CHR_X = "chrX"
 CHR_X_NON_PAR_START = 2781479
@@ -32,7 +36,7 @@ BASES_PER_GBASE = 1000000000
 TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
 TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 95.
 
-AMPLIFICATIONS_DESCRIPTION = "amplifications"
+AMPLIFICATIONS_DESCRIPTION = "amplificaties"
 
 
 @dataclass(frozen=True, eq=True)
@@ -255,25 +259,25 @@ def determine_remarks(
         remarks.append(
             f"De Purple QC status van dit sample is {run_data.purple_qc.qc_status}."
         )
-        if "FAIL_CONTAMINATION" in run_data.purple_qc.qc_status:
+        if FAIL_CONTAMINATION in run_data.purple_qc.qc_status:
             remarks.append(
-                f"'FAIL_CONTAMINATION' komt doordat er volgens het algoritme {run_data.purple_qc.contamination}% contaminatie aanwezig is.")
-        elif "FAIL_NO_TUMOR" in run_data.purple_qc.qc_status:
+                f"'{FAIL_CONTAMINATION}' komt doordat er volgens het algoritme {run_data.purple_qc.contamination}% contaminatie aanwezig is.")
+        if FAIL_NO_TUMOR in run_data.purple_qc.qc_status:
             remarks.append(
-                f"'FAIL_NO_TUMOR' betekent dat er volgens het algoritme geen of slechts zeer weinig tumor aanwezig is in het sample. "
+                f"'{FAIL_NO_TUMOR}' betekent dat er volgens het algoritme geen of slechts zeer weinig tumor aanwezig is in het sample. "
                 f"Dit zou kunnen komen doordat dit een normal sample of een zeer laag purity sample is, "
                 f"of doordat dit een rustig type tumor is waarvoor onze purity schatter niet goed werkt.")
-        elif "WARN_DELETED_GENES" in run_data.purple_qc.qc_status or "WARN_HIGH_COPY_NUMBER_NOISE" in run_data.purple_qc.qc_status:
-            if "WARN_DELETED_GENES" in run_data.purple_qc.qc_status and "WARN_HIGH_COPY_NUMBER_NOISE" in run_data.purple_qc.qc_status:
-                sentence_start = "'WARN_DELETED_GENES' en 'WARN_HIGH_COPY_NUMBER_NOISE' betekenen"
-            elif "WARN_DELETED_GENES" in run_data.purple_qc.qc_status:
-                sentence_start = "'WARN_DELETED_GENES' betekent"
+        if WARN_DELETED_GENES in run_data.purple_qc.qc_status or WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
+            if WARN_DELETED_GENES in run_data.purple_qc.qc_status and WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
+                sentence_start = f"'{WARN_DELETED_GENES}' en '{WARN_HIGH_COPY_NUMBER_NOISE}' betekenen"
+            elif WARN_DELETED_GENES in run_data.purple_qc.qc_status:
+                sentence_start = f"'{WARN_DELETED_GENES}' betekent"
             else:
-                sentence_start = "'WARN_HIGH_COPY_NUMBER_NOISE' betekent"
+                sentence_start = f"'{WARN_HIGH_COPY_NUMBER_NOISE}' betekent"
             remarks.append(
                 f"{sentence_start} dat er indicaties zijn dat de gekozen purity en/of ploidy voor dit sample niet correct zijn."
             )
-            if "WARN_HIGH_COPY-NUMBER_NOISE" in run_data.purple_qc.qc_status:
+            if WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
                 remarks.append("Om deze reden worden amplificaties en deleties alleen gecalld met SV support.")
             else:
                 remarks.append("Om deze reden worden deleties alleen gecalld met SV support.")
@@ -285,13 +289,13 @@ def determine_remarks(
     percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / max(len(run_data.amber_baf_points), 1)
     if run_data.purple_qc.amber_gender == "MALE" and percent_baf_points_in_x_outside_par > 0.5:
         remarks.append(
-            f"Door het relatief hoge aantal BAF punten op chromosoom X (aantal: {baf_points_in_x_outside_par}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
+            f"Door het relatief hoge aantal BAF punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
             f"is de gender call van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
         )
 
     if run_data.purple_qc.amber_gender == "FEMALE" and percent_baf_points_in_x_outside_par < 1.5:
         remarks.append(
-            f"Door het relatief lage aantal BAF punten op chromosoom X (aantal: {baf_points_in_x_outside_par}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
+            f"Door het relatief lage aantal BAF punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
             f"is de gender call van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
         )
 
@@ -303,10 +307,10 @@ def determine_remarks(
         purity_too_low.add("MSI")
 
     if run_data.purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
-        purity_too_low.add("small variants")
+        purity_too_low.add("kleine varianten")
 
     if run_data.purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
-        purity_too_low.add("deletions")
+        purity_too_low.add("deleties")
 
     if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
         purity_too_low.add(AMPLIFICATIONS_DESCRIPTION)
@@ -314,7 +318,7 @@ def determine_remarks(
     if purity_too_low:
         remarks.append(
             f"De purity van dit sample ({run_data.purple_qc.purity*100:.2f}%) is te laag "
-            f"voor betrouwbaar callen van {pretty_listing(purity_too_low)}."
+            f"voor het betrouwbaar callen van {pretty_listing(purity_too_low)}."
         )
 
     amp_drivers_needing_manual_curation = [
@@ -647,7 +651,7 @@ def pretty_listing(things: Set[str]) -> str:
         pretty_list_string = ", ".join(sorted_things[:-1])
         pretty_list_string += f" en {sorted_things[-1]}"
     elif len(sorted_things) == 1:
-        pretty_list_string = f"{sorted_things[0]} en {sorted_things[1]}"
+        pretty_list_string = f"{sorted_things[0]}"
     else:
         pretty_list_string = ""
     return pretty_list_string
