@@ -27,7 +27,7 @@ echo "Using DOID JSON file: ${doid_json}"
 echo "Output directory: ${output_directory}"
 
 orange_jar="$(locate_pilot_orange)"
-cohort_mapping_tsv=$(locate_cohort_mapping_tsv)
+cohort_mapping_tsv="/home/cbruel/cohort_mapping.tsv"
 
 credentials=$(prod_reader_sql_credentials)
 db_user=$(extract_database_user "${credentials}")
