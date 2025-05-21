@@ -229,7 +229,8 @@ class ReportSharer:
             "purple.somatic.vcf.gz",
             "purple.sv.vcf.gz",
             "linx.fusion.tsv",
-            f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf"
+            f"{set_name}/orange_no_germline/{converted_reporting_id}.orange.pdf",
+            f"{set_name}/purple/{converted_reporting_id}.purple.cnv.gene.tsv"
         }
 
     def _germline_files(self, converted_reporting_id):
