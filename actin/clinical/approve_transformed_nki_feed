@@ -9,10 +9,10 @@ if [[ ! -d "${transformed_feed_directory}" ]]; then
     error "${transformed_feed_directory} not found. Exiting"
 fi
 
-transformed_contents=$(ls ${transformed_feed_directory})
+transformed_contents=$(ls "${transformed_feed_directory}")
 info "Transformed feed records in ${transformed_feed_directory}:"
 echo "${transformed_contents}" | nl
-read -p "Which run would you like to approve? " choice
+read -r -p "Which run would you like to approve? " choice
 
 selected_dir=$(echo "${transformed_contents}" | sed -n "${choice}p")
 if [[ ${selected_dir} ]]; then
@@ -31,14 +31,15 @@ if [[ ${selected_dir} ]]; then
 		echo -e "\nUnclassified text:\n${unclassified}"
 	done
 
-	read -p "Proceed? (y/N) " proceed
+	read -r -p "Proceed? (y/N) " proceed
 	if [[ "${proceed}" == "y" || "${proceed}" == "Y" ]]; then
 		gs_path="gs://actin-nki-clinical-feed-transformed/current/"
 		gcloud storage rm "${gs_path}**"
 		gcloud storage cp -r "${selected_path}/*" ${gs_path}
+		echo "${selected_dir}" | gcloud storage cp - "${gs_path}transformed_feed_directory.txt"
 		info "Replaced ${gs_path} with the contents of ${selected_path}"
 
-		read -p "Would you like to delete local copy ${selected_path}? (y/N) " response
+		read -r -p "Would you like to delete local copy ${selected_path}? (y/N) " response
 		if [[ "${response}" == "y" || "${response}" == "Y" ]]; then
 			rm -rf "${selected_path}"
 			info "Deleted ${selected_path}"
