@@ -23,6 +23,8 @@ if [[ ${selected_dir} ]]; then
 		echo -e "\nFrom PALGA:\n${palga}"
 		echo -e "\nExtracted sequencing tests:"
 		jq '.sequencingTests[] | {name, results: [.results[]]}' "${json}"
+		echo -e "\nExtracted IHC tests:"
+		jq '.ihcTests[] | .name' "${json}"
 		warnings=$(jq '.warnings' "${json}.info")
 		echo -e "\nExtraction warnings:\n${warnings}"
 		unclassified=$(jq '.unclassifiedText' "${json}.info")
