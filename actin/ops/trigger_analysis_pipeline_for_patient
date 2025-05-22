@@ -1,13 +1,27 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
 
 patient=$1
 gcp_project=$2
 
+forceUseHartwigSequencing="false"
+shift 2
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force_use_hartwig_sequencing)
+            forceUseHartwigSequencing="true"
+            ;;
+        *)
+            echo "Unknown option, only --force_use_hartwig_sequencing is supported: $1."
+            exit 1
+            ;;
+    esac
+    shift
+done
+
 if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
-    error "Parameters missing. Exiting.";
+    echo "Parameters missing. Exiting.";
 fi
 
-gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline.pending \
-    --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\"}"
+gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline.pwolfe.pending \
+    --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\", \"forceUseHartwigSequencing\": \"${forceUseHartwigSequencing}\"}"
