@@ -29,6 +29,10 @@ if [[ ${selected_dir} ]]; then
 		echo -e "\nExtraction warnings:\n${warnings}"
 		unclassified=$(jq '.unclassifiedText' "${json}.info")
 		echo -e "\nUnclassified text:\n${unclassified}"
+		if jq -e ".classifiedText // empty" "${json}.info" > /dev/null; then
+			echo -e "\nClassified other conditions:"
+			jq '.classifiedText' "${json}.info"
+		fi
 	done
 
 	read -r -p "Proceed? (y/N) " proceed
