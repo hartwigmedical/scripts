@@ -19,6 +19,8 @@ if [[ ${selected_dir} ]]; then
 	selected_path="${transformed_feed_directory}/${selected_dir}"
 
 	for json in "${selected_path}"/*"json"; do
+	  hashed_id=$(jq -r '.patientDetails.patientId' "${json}")
+		echo -e "\nPatient $hashed_id ($(lookup_nki_actin_id_for_hash "$hashed_id")):\n"
 		palga=$(jq '.tumorDetails["pathology"][].rawPathologyReport' "${json}")
 		echo -e "\nFrom PALGA:\n${palga}"
 		echo -e "\nExtracted sequencing tests:"
