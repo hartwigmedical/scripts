@@ -15,10 +15,8 @@ if [[ -z "${tumor_barcode}" ]]; then
     exit 1
 fi
 
-echo "INFO: Tumor Barcode: ${tumor_barcode}"
 
 # --- 1. Query Hartwig API /runs endpoint ---
-echo "INFO: Querying Hartwig API for 'DIAGNOSTIC' context runs with barcode ${tumor_barcode}..."
 hartwig_api_url="http://api.prod-1/hmf/v1/runs?barcode=${tumor_barcode}"
 # We fetch all runs for the barcode, then filter by context and startTime in jq
 hartwig_response=$(curl --fail -s -L "${hartwig_api_url}")
@@ -52,26 +50,6 @@ ref_isolation_barcode=$(echo "${hartwig_response}" | jq -r '
     end
 ')
 
-if [[ -z "${ref_isolation_barcode}" ]]; then
-    echo "WARNING: Could not find a 'ref_isolation_barcode' from the latest 'DIAGNOSTIC' context Hartwig API run for tumor barcode ${tumor_barcode}." >&2
-    echo "WARNING: This could be because no 'DIAGNOSTIC' runs were found, no such runs had a 'startTime', or the latest valid run lacked a 'ref_isolation_barcode'." >&2
-
-    # Ask user if they want to continue
-    read -r -p "No reference sample barcode found. Do you want to continue with only the tumor barcode? (y/N): " choice
-    case "$choice" in
-      y|Y )
-        echo "INFO: Proceeding with only the tumor barcode as per user confirmation."
-        # ref_isolation_barcode is already empty, so LAMA call will be tumor-only
-        ;;
-      * ) # Anything else, including just pressing Enter (which defaults to No)
-        echo "INFO: User chose not to continue. Exiting."
-        exit 0 # Graceful exit as it's a user choice
-        ;;
-    esac
-else
-    echo "INFO: Found Reference Isolation Barcode from latest 'DIAGNOSTIC' context run: ${ref_isolation_barcode}"
-fi
-
 # --- 3. Query LAMA API ---
 lama_api_url_base="http://lama.prod-1/api/queries/patient-reporter"
 lama_query_params="tumor-isolation-barcode=${tumor_barcode}"
@@ -81,7 +59,6 @@ if [[ -n "${ref_isolation_barcode}" ]]; then
 fi
 
 final_lama_url="${lama_api_url_base}?${lama_query_params}"
-echo "INFO: Querying LAMA API: ${final_lama_url}"
 
 # Perform the LAMA API call and pretty-print JSON output
 lama_response=$(curl -s -L "${final_lama_url}") # No --fail, to allow jq to process potential JSON error bodies from LAMA
@@ -99,7 +76,6 @@ elif [[ -z "${lama_response}" ]]; then
     exit 1
 fi
 
-echo "INFO: LAMA API Response:"
 echo "${lama_response}" | jq .
 jq_exit_code=$?
 
