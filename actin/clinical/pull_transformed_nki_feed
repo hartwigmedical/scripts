@@ -6,13 +6,13 @@ source locate_files || exit 1
 transformed_feed_directory=$(locate_actin_transformed_feed_directory)
 
 mkdir -p "${transformed_feed_directory}"
-transformed_contents=$(ls ${transformed_feed_directory})
+transformed_contents=$(ls "${transformed_feed_directory}")
 if [[ ${transformed_contents} ]]; then
 	echo -ne "Some previous transformed feed records exist in ${transformed_feed_directory}:\n${transformed_contents}\nDelete them? (y/N) "
 	read -r response
         if [[ "${response}" == "y" || "${response}" == "Y" ]]; then
 		rm -rf "${transformed_feed_directory}"
-		mkdir -p ${transformed_feed_directory}
+		mkdir -p "${transformed_feed_directory}"
 		info "Emptied ${transformed_feed_directory}."
 	fi
 else
@@ -24,10 +24,20 @@ gs_path="actin-nki-clinical-feed-transformed"
 runs=$(gcloud storage ls gs://${gs_path} | grep "${gs_path}/2")
 
 echo "${runs}" | nl
-read -p "Which run would you like to pull (fill in the ID)? " choice
+read -rp "Which run would you like to pull (fill in the ID)? " choice
 selected_gs_path=$(echo "${runs}" | sed -n "${choice}p")
 
 if [[ ${selected_gs_path} ]]; then
-	gcloud storage cp -r "${selected_gs_path}" ${transformed_feed_directory}/
-	info "Copied ${selected_gs_path} to ${transformed_feed_directory}/"
+	path_without_trailing_slash="${selected_gs_path::-1}"
+	child_path="${path_without_trailing_slash##*/}"
+	mkdir -p "${transformed_feed_directory}/${child_path}"
+
+	file_list="$(gcloud storage ls "${selected_gs_path}")"
+	for shared in $(gcloud storage ls gs://actin-nki-shared-data-external/record); do
+		filename="${shared##*/}"
+		file_list=$(echo "${file_list}" | grep -v "${filename%%.*}")
+	done
+
+	gcloud storage cp ${file_list} "${transformed_feed_directory}/${child_path}/"
+	info "Copied ${selected_gs_path} to ${transformed_feed_directory}/. Previously-shared patients were omitted."
 fi
