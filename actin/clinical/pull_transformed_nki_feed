@@ -2,7 +2,9 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source actin_config || exit 1
 
+gcp_project=$(production_actin_nki_project)
 transformed_feed_directory=$(locate_actin_transformed_feed_directory)
 
 mkdir -p "${transformed_feed_directory}"
@@ -20,7 +22,7 @@ else
 fi
 
 echo -e "\nTransformed feed records in cloud:"
-gs_path="actin-nki-clinical-feed-transformed"
+gs_path="${gcp_project}-clinical-feed-transformed"
 runs=$(gcloud storage ls gs://${gs_path} | grep "${gs_path}/2")
 
 echo "${runs}" | nl
@@ -33,7 +35,8 @@ if [[ ${selected_gs_path} ]]; then
 	mkdir -p "${transformed_feed_directory}/${child_path}"
 
 	file_list="$(gcloud storage ls "${selected_gs_path}")"
-	for shared in $(gcloud storage ls gs://actin-nki-shared-data-external/record); do
+	shared_data_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
+	for shared in $(gcloud storage ls "${shared_data_bucket}/record"); do
 		filename="${shared##*/}"
 		file_list=$(echo "${file_list}" | grep -v "${filename%%.*}")
 	done
