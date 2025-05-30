@@ -30,19 +30,17 @@ read -rp "Which run would you like to pull (fill in the ID)? " choice
 selected_gs_path=$(echo "${runs}" | sed -n "${choice}p")
 
 if [[ ${selected_gs_path} ]]; then
-	file_list="$(gcloud storage ls "${selected_gs_path}")"
+	all_files=$(gcloud storage ls "${selected_gs_path}")
 	shared_data_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
-	for shared in $(gcloud storage ls "${shared_data_bucket}/record"); do
-		filename="${shared##*/}"
-		file_list=$(echo "${file_list}" | grep -v "${filename%%.*}")
-	done
+	exclusions=$(gcloud storage ls "${shared_data_bucket}/record" | xargs -Ixxx -n1 basename xxx ".patient_record.json")
+	filtered_files=$(echo "${all_files}" | grep -vf <(echo -e "${exclusions}"))
 
-	if [[ -n "${file_list[*]}" ]]; then
+	if [[ -n "${filtered_files[*]}" ]]; then
 		path_without_trailing_slash="${selected_gs_path::-1}"
 		child_path="${path_without_trailing_slash##*/}"
 		mkdir -p "${transformed_feed_directory}/${child_path}"
 
-		gcloud storage cp ${file_list} "${transformed_feed_directory}/${child_path}/"
+		gcloud storage cp ${filtered_files} "${transformed_feed_directory}/${child_path}/"
 		info "Copied ${selected_gs_path} to ${transformed_feed_directory}/. Previously-shared patients were omitted."
 	else
 		info "No files to copy after previously-shared patients were omitted."
