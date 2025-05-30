@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.1.7"
+version: "0.1.8"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -26,6 +26,7 @@ stages:
         RUN_ID=${run_id}
         REF_VERSION=${ref_version}
         OPTIONAL_ARGS='${compar_optional_arguments}'
+        read -r -a OPTIONAL_ARGS_ARRAY <<< "$OPTIONAL_ARGS"
         SAMPLE_LINK='${sample_link}'
 
         # Mapping of truth samples to target samples, assuming target samples are new hartwig_numbers and truth samples are old sample ids.
@@ -62,7 +63,7 @@ stages:
         echo "TARGET_INPUT_DIR: $TARGET_INPUT_DIR"
         echo "OUTPUT_DIR: $OUTPUT_DIR"
         echo "Using driver gene panel: $DRIVER_GENE_PANEL"
-        echo "Optional compar arguments: $OPTIONAL_ARGS"
+        echo "Optional compar arguments: ${OPTIONAL_ARGS_ARRAY[@]}"
         echo "Mapping samples: $MAP_SAMPLE"
         echo "Sample list json: $SAMPLE_LINK"
 
@@ -249,7 +250,7 @@ stages:
                   -output_id "$OUTPUT_ID" \
                   -log_debug \
                   -threads 16 \
-                  $OPTIONAL_ARGS || echo "[ERROR] COMPAR Reported failed"
+                  "${OPTIONAL_ARGS_ARRAY[@]}" || echo "[ERROR] COMPAR Reported failed"
             fi
 
             COMPAR_ALL_OUTPUT_DIR="$OUTPUT_DIR/all"
@@ -271,7 +272,7 @@ stages:
                   -output_id "$OUTPUT_ID" \
                   -log_debug \
                   -threads 16 \
-                  $OPTIONAL_ARGS || echo "[ERROR] COMPAR ALL failed"
+                  "${OPTIONAL_ARGS_ARRAY[@]}" || echo "[ERROR] COMPAR ALL failed"
             fi
 
             echo "[INFO] Finished running COMPAR"
