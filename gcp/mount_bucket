@@ -54,7 +54,7 @@ fi
 info "Mounting ${bucket_name} to ${target_directory}"
 
 if [[ ! -d "${target_directory}" ]]; then
-    mkdir -p "${target_directory}" || die "Could not create target directory: ${target_directory}"
+    sudo mkdir -p "${target_directory}" || die "Could not create target directory: ${target_directory}"
 fi
 
 sudo /usr/bin/gcsfuse -o "${mount_options}" --implicit-dirs "${bucket_name}" "${target_directory}" || die "Could not mount bucket"
