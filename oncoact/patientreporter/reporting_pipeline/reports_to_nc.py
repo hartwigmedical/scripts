@@ -33,7 +33,6 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
 
     reports = [report_file for report_file in report_created['report_files'] if
                report_file['datatype'] in {'report_pdf', 'report_json', 'report_xml'}]
-
     temp_dir_path = f'{os.path.expanduser("~")}/temp'
 
     try:
@@ -49,11 +48,14 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     client = Client()
 
     for report in reports:
+        print(report)
         path = report['path']
+        print(path)
         remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, path)
         blob_file = get_file_name_from_blob_name(blob.name)
 
         destination_file_name = f'{temp_dir_path}/{blob_file}'
+        print(destination_file_name)
         with open(destination_file_name, 'xb') as file:
             blob.download_to_file(file)
 
