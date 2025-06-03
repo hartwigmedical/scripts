@@ -327,9 +327,7 @@ class StatusChecker:
     def _get_virus_warnings(self, report_record):
         warnings = []
         #get reporting id
-        print(report_record)
         used_lama_data = self._get_lama_data_used_for_report(report_record)
-        print(used_lama_data)
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
@@ -377,15 +375,12 @@ class StatusChecker:
         return warnings
 
     def _get_report_blob(self, report_record, datatype, fallback_blob=None):
-        print(datatype)
         path = _get_report_file_path_or_none(report_record, datatype=datatype)
-        print(path)
         if fallback_blob and path is None:  # fallback to hardcoded solution (old samples rely on this)
-            print(fallback_blob)
             sample_barcode = report_record["sample_barcode"].lower()
-            print(sample_barcode)
-            path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
-            print(path)
+            path_corr = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/corr-{fallback_blob}"
+            if path_corr is None:
+                path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
 
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
         return blob
