@@ -328,7 +328,7 @@ class StatusChecker:
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
-
+        print(used_lama_data)
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
