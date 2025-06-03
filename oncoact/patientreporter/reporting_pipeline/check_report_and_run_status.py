@@ -378,8 +378,8 @@ class StatusChecker:
         path = _get_report_file_path_or_none(report_record, datatype=datatype)
         if fallback_blob and path is None:  # fallback to hardcoded solution (old samples rely on this)
             sample_barcode = report_record["sample_barcode"].lower()
-            path_corr = f"gs://{self.oncoact_bucket.name}/corr-{sample_barcode}/{fallback_blob}"
-            if path_corr is None:
+            path = f"gs://{self.oncoact_bucket.name}/corr-{sample_barcode}/{fallback_blob}"
+            if path is None:
                 path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
 
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
