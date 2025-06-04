@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.1.8"
+version: "0.1.10"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -11,7 +11,7 @@ externalInputs:
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.8"
+    version: "0.0.10"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -341,7 +341,7 @@ stages:
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.8"
+    version: "0.0.10"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -386,7 +386,7 @@ stages:
 
   - name: "retrieve-output"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.8"
+    version: "0.0.10"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -469,7 +469,7 @@ stages:
 
   - name: "igv-visualize"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.8"
+    version: "0.0.10"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |

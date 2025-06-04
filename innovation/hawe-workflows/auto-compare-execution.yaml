@@ -1,6 +1,6 @@
 name: "hotfix-check"
 workflow: "auto-compare"
-version: "0.1.8"
+version: "0.1.10"
 params:
   truth_bucket_uri: "gs://reporting-hotfix-output/"
   target_bucket_uri: "gs://reporting-hotfix-output-tmp/"
