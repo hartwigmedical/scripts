@@ -11,6 +11,8 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Tuple, Dict, Set
 
+CRLF2_GENE_NAME = "CRLF2"
+
 WARN_HIGH_COPY_NUMBER_NOISE = "WARN_HIGH_COPY_NUMBER_NOISE"
 WARN_DELETED_GENES = "WARN_DELETED_GENES"
 FAIL_NO_TUMOR = "FAIL_NO_TUMOR"
@@ -323,8 +325,7 @@ def determine_remarks(
 
     amp_drivers_needing_manual_curation = [
         driver for driver in run_data.drivers
-        if (driver.driver_type == DriverType.AMP) and
-           driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD
+        if driver.driver_type == DriverType.AMP and driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD and driver.gene_name != CRLF2_GENE_NAME
     ]
     if amp_drivers_needing_manual_curation:
         gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers_needing_manual_curation])
@@ -332,10 +333,10 @@ def determine_remarks(
 
     crlf2_amp_present = any(
         driver for driver in run_data.drivers
-        if driver.driver_type == DriverType.AMP and driver.gene_name == "CRLF2"
+        if driver.driver_type == DriverType.AMP and driver.gene_name == CRLF2_GENE_NAME
     )
     if crlf2_amp_present and not AMPLIFICATIONS_DESCRIPTION in purity_too_low:
-        remarks.append(f"De CRLF2 amplificatie is onbetrouwbaar.")
+        remarks.append(f"De {CRLF2_GENE_NAME} amplificatie is onbetrouwbaar.")
 
     partial_amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP]
     if partial_amp_drivers:
