@@ -13,5 +13,3 @@ java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngesti
     -ncr_file ${ncr_file} \
     -output_file ${output_file} \
     "$@"
-
-info "Done!"

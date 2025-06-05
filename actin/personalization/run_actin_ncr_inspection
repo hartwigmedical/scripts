@@ -10,5 +10,4 @@ info "Running NCR inspection on ${ncr_file}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrInspectionApplicationKt \
     -ncr_file ${ncr_file} \
-
-info "Done!"
+    "$@"
