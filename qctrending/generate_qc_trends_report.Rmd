@@ -630,3 +630,13 @@ datatable(sample_qc_info,
           options = list(dom='Bfrtip', buttons=c('csv', 'excel'), pageLength=15, lengthChange=FALSE)
           )
 ```
+### Run QC Info
+```{r data_run, echo=FALSE}
+datatable(run_qc_info,
+          selection="multiple",
+          escape=FALSE,
+          extensions='Buttons',
+          rownames=TRUE,
+          options = list(dom='Bfrtip', buttons=c('csv', 'excel'), pageLength=15, lengthChange=FALSE)
+)
+```
