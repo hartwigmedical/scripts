@@ -11,6 +11,7 @@ info "Running NCR ingestion on ${ncr_file}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngestionApplicationKt \
     -ncr_file ${ncr_file} \
-    -output_file ${output_file}
+    -output_file ${output_file} \
+    "$@"
 
 info "Done!"
