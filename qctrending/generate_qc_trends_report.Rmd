@@ -415,14 +415,14 @@ cov_plot <- basic_plot(
               "type"
             ) +
             geom_hline(yintercept=90, linetype="dashed")
-ggplotly(q30_plot)
+ggplotly(cov_plot)
 
 basic_table(coefficients_annotation(run_qc_info, "date", "cov", "type"))
 ```
 </div>
 <div class = "column">
 ```{r run_tumor_bqr_rate, echo=FALSE}
-cov_plot <- basic_plot(
+bqr_plot <- basic_plot(
               run_qc_info,
               "bqr",
               "Rate",
@@ -432,7 +432,7 @@ cov_plot <- basic_plot(
               "type"
             ) +
             geom_hline(yintercept=0.1, linetype="dashed")
-ggplotly(q30_plot)
+ggplotly(bqr_plot)
 
 basic_table(coefficients_annotation(run_qc_info, "date", "bqr", "type"))
 ```
