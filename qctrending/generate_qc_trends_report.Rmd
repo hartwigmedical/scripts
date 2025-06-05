@@ -100,9 +100,9 @@ diagnostic_flowcell_qc_info <- diagnostic_sample_qc_info[!duplicated(diagnostic_
 nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondiagnostic_sample_qc_info$flowcell),]
 
 # Run QC Info
-run_info <- as.data.frame(read.csv("/data/tmp/run_qc.csv", sep=",", header=T, na.strings=c("", "NA", "N/A")))
-run_info$timestamp <- as.Date(run_info$timestamp, format = '%Y-%m-%dT%H:%M:%S')
-run_info$type <- as.factor(run_info$type)
+run_qc_info <- as.data.frame(read.csv("/data/tmp/run_qc.csv", sep=",", header=T, na.strings=c("", "NA", "N/A")))
+run_qc_info$timestamp <- as.Date(run_qc_info$timestamp, format = '%Y-%m-%dT%H:%M:%S')
+run_qc_info$type <- as.factor(run_qc_info$type)
 
 # Lab Failures QC Info
 iso_fail_info <- read.table(params$iso_fail_file, sep = '\t', header = TRUE)
