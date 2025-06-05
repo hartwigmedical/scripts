@@ -419,6 +419,8 @@ ggplotly(q30_plot)
 
 basic_table(coefficients_annotation(run_qc_info, "date", "cov", "type"))
 ```
+</div>
+<div class = "column">
 ```{r run_tumor_bqr_rate, echo=FALSE}
 cov_plot <- basic_plot(
               run_qc_info,
@@ -434,6 +436,8 @@ ggplotly(q30_plot)
 
 basic_table(coefficients_annotation(run_qc_info, "date", "bqr", "type"))
 ```
+</div>
+</div>
 
 # Stats
 
