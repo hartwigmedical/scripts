@@ -101,7 +101,7 @@ nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondi
 
 # Run QC Info
 run_qc_info <- as.data.frame(read.csv("/data/tmp/run_qc.csv", sep=",", header=T, na.strings=c("", "NA", "N/A")))
-run_qc_info$timestamp <- as.Date(run_qc_info$timestamp, format = '%Y-%m-%dT%H:%M:%S')
+run_qc_info$date <- as.Date(run_qc_info$date, format = '%Y-%m-%dT%H:%M:%S')
 run_qc_info$type <- as.factor(run_qc_info$type)
 
 # Lab Failures QC Info
@@ -417,7 +417,7 @@ cov_plot <- basic_plot(
             geom_hline(yintercept=90, linetype="dashed")
 ggplotly(q30_plot)
 
-basic_table(coefficients_annotation(run_qc_info, "timestamp", "cov", "type"))
+basic_table(coefficients_annotation(run_qc_info, "date", "cov", "type"))
 ```
 ```{r run_tumor_bqr_rate, echo=FALSE}
 cov_plot <- basic_plot(
@@ -432,7 +432,7 @@ cov_plot <- basic_plot(
             geom_hline(yintercept=0.1, linetype="dashed")
 ggplotly(q30_plot)
 
-basic_table(coefficients_annotation(run_qc_info, "timestamp", "bqr", "type"))
+basic_table(coefficients_annotation(run_qc_info, "date", "bqr", "type"))
 ```
 
 # Stats
