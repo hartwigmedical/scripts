@@ -11,17 +11,21 @@ command -v jq > /dev/null || die "Dependency jq not found"
 script_name=$(basename "$0")
 
 set_name=$1
-out_dir=${2:-.}
+tumor_ref=$2
 
-if [[ -z "${set_name}" ]]; then
+if [[ (-z "${set_name}" && -z "${tumor_ref}")]]; then
     echo "-----"
-    echo " Usage: $script_name {name-of-set} [{output-dir}]"
-    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1"
+    echo " Usage: $script_name {name-of-set} {tumor_ref}"
+    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 true"
+    echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 false"
     echo " Remarks:"
     echo "   - Currently only works for DIAGNOSTIC runs"
     echo "   - Will take most recent run of the set"
+    echo "   - Param 'tumor_ref' is set to 'true' the BAM will generate for tumor/ref. When it is set to 'false' the BAM will only generate for tumor."
     echo "-----"
     exit 1
+elif [[ (-z "${set_name}" || -z "${tumor_ref}") ]]; then
+    error "No 'set name' or 'tumor ref' is provided. Exiting"
 fi
 
 region="europe-west4"
@@ -45,8 +49,6 @@ function main() {
     [[ "$(gcloud config get-value account)" == "${service_account}" ]] || die "Not logged in as ${service_account}"
     secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
-    [[ -d "${out_dir}" ]] || die "Output dir does not exist (${out_dir})"
-
     runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
 
@@ -57,15 +59,22 @@ function main() {
     bucket=$(jq -r '.bucket' <<< "${run_json}")
     status=$(jq -r '.status' <<< "${run_json}")
     ini=$(jq -r '.ini' <<< "${run_json}")
+    if [[ $tumor_ref == "true" ]]; then
+          ref=$(jq -r '.set.ref_sample' <<< "${run_json}")
+    fi
     tum=$(jq -r '.set.tumor_sample' <<< "${run_json}")
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
     run_url="gs://${bucket}/${set_name}"
     metadata_json_url="${run_url}/metadata.json"
-    out_file="${out_dir}/${tum}_run-${oid}_igv-config.txt"
 
     info "Collecting sample names from metadata json"
     metadata_json=$(gsutil cat "${metadata_json_url}") || die "Unable to read metadata json [${metadata_json_url}]"
+    if [[ $tumor_ref == "true" ]]; then
+          ref_tag=$(jq -r '.reference.sampleName' <<< "${metadata_json}")
+    fi
     tum_tag=$(jq -r '.tumor.sampleName' <<< "${metadata_json}")
+
+    out_file="${HOME}/${tum_tag}_run-${oid}-igv-config.txt"
 
     info "Details:"
     info "  RunName: ${set_name} (oid=${oid})"
@@ -74,21 +83,40 @@ function main() {
     info "   Status: ${status}"
     info "  TumName: ${tum}"
     info "   TumTag: ${tum_tag}"
-
-    create_igv_config "${out_file}" "${run_url}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
-
+    if [[ $tumor_ref == "true" ]]; then
+      if [[ $ref != "null" ]]; then
+        info "  RefName: ${ref}"
+        info "  RefTag: ${ref_tag}"
+        create_igv_config "${out_file}" "${run_url}" "${ref_tag}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+      else
+        info "No reference data is available for panel data!"
+        exit 1
+      fi
+    else
+      create_igv_config "${out_file}" "${run_url}" "" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+    fi
     info "Finished with ${script_name}"
 }
 
 create_igv_config () {
     local out_file=$1 && shift
     local run_base_url=$1 && shift
+    local ref=$1 && shift
     local tum=$1 && shift
 
+    ref_bam="${run_base_url}/${ref}/aligner/${ref}.bam"
+    ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
     tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
     tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
 
     info "Requesting signed URLs"
+    if [[ $tumor_ref == "true" ]]; then
+          ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
+          ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
+          ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
+          ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
+    fi
+
     tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
     tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
     tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
@@ -96,6 +124,9 @@ create_igv_config () {
 
     info "Creating output file [${out_file}]"
     {
+      if [[ $tumor_ref == "true" ]]; then
+        echo "load ${ref_bam_url} index=${ref_bai_url}"
+      fi
       echo "load ${tum_bam_url} index=${tum_bai_url}"
       echo "goto TP53"
       echo "collapse"
