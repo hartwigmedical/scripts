@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+if [[ $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Gathers run QC data and append to file"
+    echo " Usage: $(basename $0)"
+    echo " Exmpl: $(basename $0)"
+    echo "---"
+    exit 1
+fi
+
+gsutil cp gs://hmf-ops-data/qctrending/run_qc.csv /data/tmp/run_qc.csv || die "Could not fetch run QC data"
+
+timedate=$(date +%Y-%m-%d -d "-8 days")
+
+runs=$(hmf_api_get "runs?ini=Somatic.ini&context=DIAGNOSTIC" | jq -r --arg d ${timedate} '.[] | select(.endTime > $d) | .set.name')
+for setname in ${runs}
+do
+  timestamp=$(hmf_api_get "runs?ini=Somatic.ini&context=DIAGNOSTIC&set_name=${setname}" | jq -r '.[].endTime')
+
+  tum_cov_path=$(gsutil ls gs://diagnostic-pipeline-output-prod-1/${setname}/*/bam_metrics/*.wgsmetrics | grep -v ref)
+  ref_cov_path=$(gsutil ls gs://diagnostic-pipeline-output-prod-1/${setname}/*/bam_metrics/*.wgsmetrics | grep ref)
+  tum_cov=$(gsutil cat ${tum_cov_path} | head -n 3 | tail -n 1 | cut -f 4)
+  ref_cov=$(gsutil cat ${ref_cov_path} | head -n 3 | tail -n 1 | cut -f 4)
+
+  tum_bqr_path=$(gsutil ls gs://diagnostic-pipeline-output-prod-1/${setname}/sage_somatic/*.sage.bqr.tsv | grep -v ref)
+  ref_bqr_path=$(gsutil ls gs://diagnostic-pipeline-output-prod-1/${setname}/sage_somatic/*.sage.bqr.tsv | grep ref)
+  tum_bqr=$(gsutil cat ${tum_bqr_path} | awk -F'\t' '{weight=($1==$2)?0:1; sum_weight+=weight*$4; sum_count+=$4} END {print sum_weight/sum_count}')
+  ref_bqr=$(gsutil cat ${ref_bqr_path} | awk -F'\t' '{weight=($1==$2)?0:1; sum_weight+=weight*$4; sum_count+=$4} END {print sum_weight/sum_count}')
+
+  echo "${setname},${timestamp},tumor,${tum_cov},${tum_bqr}" >> /data/tmp/run_qc.csv
+  echo "${setname},${timestamp},ref,${ref_cov},${ref_bqr}" >> /data/tmp/run_qc.csv
+done
+
+sort -ur /data/tmp/run_qc.csv > /data/tmp/run_qc_tmp.csv
+mv -f /data/tmp/run_qc_tmp.csv /data/tmp/run_qc.csv
+
+gsutil cp /data/tmp/run_qc.csv gs://hmf-ops-data/qctrending/run_qc.csv || die "Could not push run QC data"
+rm /data/tmp/run_qc.csv
