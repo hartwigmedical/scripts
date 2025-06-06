@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
+patient=$1 && shift
+gcp_project=$1 && shift
 
-patient=$1
-gcp_project=$2
+if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
+    echo "Parameters missing. Exiting.";
+fi
 
 forceUseHartwigSequencing="false"
-shift 2
 while [[ $# -gt 0 ]]; do
     case $1 in
         --force_use_hartwig_sequencing)
@@ -18,10 +20,6 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
-
-if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
-    echo "Parameters missing. Exiting.";
-fi
 
 gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline.pending \
     --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\", \"forceUseHartwigSequencing\": \"${forceUseHartwigSequencing}\"}"
