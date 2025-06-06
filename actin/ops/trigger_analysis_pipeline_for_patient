@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 patient=$1 && shift
 gcp_project=$1 && shift
 
 if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
-    echo "Parameters missing. Exiting.";
+    error "Parameters missing. Exiting.";
 fi
 
 forceUseHartwigSequencing="false"
@@ -14,8 +16,7 @@ while [[ $# -gt 0 ]]; do
             forceUseHartwigSequencing="true"
             ;;
         *)
-            echo "Unknown option, only --force_use_hartwig_sequencing is supported: $1."
-            exit 1
+            error "Unknown option, only --force_use_hartwig_sequencing is supported: $1."
             ;;
     esac
     shift
