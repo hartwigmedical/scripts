@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
+
 source message_functions || exit 1
 
 info "Step 1: Recreating base ACTIN personalization database schema..."
-./recreate_actin_personalization_database || exit 1
+recreate_actin_personalization_database
 
-info "Step 2: Loading NCR dataset into ACTIN personalization database..."
-./load_actin_personalization_database || exit 1
+info "Step 2: Creating ACTIN personalization views..."
+recreate_actin_personalization_database_views
 
-info "Step 3: Building distant metastasis overview (Python tables)..."
-./recreate_actin_personalization_database_python_tables || exit 1
-
-info "Step 4: Creating ACTIN personalization views..."
-./recreate_actin_personalization_database_views || exit 1
+info "Step 3: Loading NCR dataset into ACTIN personalization database..."
+load_actin_personalization_database
 
 info "ACTIN personalization database has been successfully recreated and loaded!"
