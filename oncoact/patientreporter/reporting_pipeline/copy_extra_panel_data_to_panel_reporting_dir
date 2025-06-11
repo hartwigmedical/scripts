@@ -23,6 +23,7 @@ echo -e "Set name: \033[1;32m ${set} \033[00m"
 # Define file paths
 recon_cnv_path="gs://panel-vis-files/recon-cnv/${tumor_sample_barcode_lowercase}/recon-cnv/*.reconCNV.html"
 sage_visualisation_path="gs://panel-vis-files/sage-visualisations/${tumor_sample_barcode_lowercase}/sage-visualisation/*.sage.visualisation.zip"
+chord_path="path"
 
 # Check if files exist before copying
 if ! gsutil stat ${recon_cnv_path}; then
@@ -35,6 +36,12 @@ if ! gsutil stat ${sage_visualisation_path}; then
     exit 1
 fi
 
+if ! gsutil stat ${chord_path}; then
+    error "Chord file does not exist: ${chord_path}. Exiting."
+    exit 1
+fi
+
 # Copy files if they exist
 gsutil cp ${recon_cnv_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
 gsutil cp ${sage_visualisation_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
+gsutil cp ${chord_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
