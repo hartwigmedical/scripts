@@ -19,4 +19,4 @@ info "Rebuilding ACTIN personalization db '${actin_database_name}' on '${db_host
 
 mysql ${actin_database_name} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${actin_database_sql}
 
-info "Done!"c
+info "Done!"
