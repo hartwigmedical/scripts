@@ -426,7 +426,7 @@ bqr_plot <- basic_plot(
               run_qc_info,
               "bqr",
               "% BQR",
-              10,
+              2.5,
               "BQR Error Rate",
               qc_date_range,
               "type"
