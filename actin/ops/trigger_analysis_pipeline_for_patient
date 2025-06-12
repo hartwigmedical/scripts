@@ -9,6 +9,15 @@ if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
+if [[ "${gcp_project}" == "actin-emc" ]]; then
+    if [[ $# -eq 0 || "$1" == --* ]]; then
+        error "Namespace parameter required for 'actin-emc'."
+        exit 1
+    fi
+    namespace=$1
+    shift
+fi
+
 forceUseHartwigSequencing="false"
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -22,5 +31,11 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline.pending \
+if [[ -n "${namespace}" ]]; then
+    topic_suffix="-${namespace}"
+else
+    topic_suffix=""
+fi
+
+gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline${topic_suffix}.pending \
     --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\", \"forceUseHartwigSequencing\": \"${forceUseHartwigSequencing}\"}"
