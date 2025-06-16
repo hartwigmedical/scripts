@@ -35,82 +35,95 @@ copy_file_gcp() {
 }
 
 main() {
-  while getopts ':s:b:v:r:j:w:o:t:' flag; do … done   # same flag parsing
+    while getopts ':s:b:v:r:j:w:o:t:' flag; do
+        case "${flag}" in
+            s) sample_name=$OPTARG ;;
+            b) input_bam=$OPTARG ;;
+            v) input_vcf=$OPTARG ;;
+            r) ref_genome_fasta=$OPTARG ;;
+            j) sage_jar=$OPTARG ;;
+            w) working_dir=$OPTARG ;;
+            o) output_bucket_dir=$OPTARG ;;
+            t) threads=$OPTARG ;;
+            *) print_usage ;;
+        esac
+    done
 
-  # sanity-check required args …
-  if [[ -z ${threads} ]]; then threads=$(nproc); fi
+    [[ -z ${sample_name}        || -z ${input_bam}        || -z ${input_vcf} \
+     || -z ${ref_genome_fasta}  || -z ${sage_jar}         || -z ${working_dir} \
+     || -z ${output_bucket_dir} ]] && { info "Missing required arg(s)"; print_usage; }
 
-  info "SAGE-append ► ${sample_name}"
-  output_vcf_in_bucket="${output_bucket_dir}/${sample_name}.coverage_per_base.vcf.gz"
+    [[ -z ${threads} ]] && threads=$(nproc)
 
-  # object-exists test (gcloud storage returns exit-code 0 on hit, 1 on miss) :contentReference[oaicite:2]{index=2}
-  gcloud --quiet storage ls "${output_vcf_in_bucket}" >/dev/null 2>&1
-  [[ $? -eq 0 ]] && { info "Output already present — skip."; exit 0; }
+    info "SAGE-append ► ${sample_name}"
+    output_vcf_in_bucket="${output_bucket_dir}/${sample_name}.coverage_per_base.vcf.gz"
 
-  ##########################################################################
-  # ↓ Everything below just swaps to the new copy_file_gcp helper
-  ##########################################################################
-  local_input_bam="${working_dir}/$(basename "${input_bam}")"
-  [[ -f ${local_input_bam} ]] || {
-    info "Download BAM";  copy_file_gcp "${input_bam}" "${local_input_bam}" "${threads}";
-  }
+    # Skip work if output already exists
+    gcloud --quiet storage ls "${output_vcf_in_bucket}" >/dev/null 2>&1
+    [[ $? -eq 0 ]] && { info "Output exists — skipping ${sample_name}"; exit 0; }
 
-  input_bai="${input_bam}.bai"
-  local_input_bai="${working_dir}/$(basename "${input_bai}")"
-  [[ -f ${local_input_bai} ]] || {
-    info "Download BAI";  copy_file_gcp "${input_bai}" "${local_input_bai}" "${threads}";
-  }
+    mkdir -p "${working_dir}" || die "mkdir ${working_dir} failed"
 
-  local_input_vcf="${working_dir}/$(basename "${input_vcf}")"
-  [[ -f ${local_input_vcf} ]] || {
-    info "Download VCF";  copy_file_gcp "${input_vcf}" "${local_input_vcf}" "${threads}";
-  }
+    ######################## Download inputs ##################################
+    local_input_bam="${working_dir}/$(basename "${input_bam}")"
+    [[ -f ${local_input_bam} ]] || { info "↓ BAM";  copy_file_gcp "${input_bam}" "${local_input_bam}" "${threads}"; }
 
-  local_ref_genome_fasta="${working_dir}/$(basename "${ref_genome_fasta}")"
-  [[ -f ${local_ref_genome_fasta} ]] || {
-    info "Download FASTA"; copy_file_gcp "${ref_genome_fasta}" "${local_ref_genome_fasta}" "${threads}";
-  }
+    input_bai="${input_bam}.bai"
+    local_input_bai="${working_dir}/$(basename "${input_bai}")"
+    [[ -f ${local_input_bai} ]] || { info "↓ BAI";  copy_file_gcp "${input_bai}" "${local_input_bai}" "${threads}"; }
 
-  ref_genome_fasta_fai="${ref_genome_fasta}.fai"
-  local_ref_genome_fasta_fai="${working_dir}/$(basename "${ref_genome_fasta_fai}")"
-  [[ -f ${local_ref_genome_fasta_fai} ]] || {
-    info "Download FASTA .fai"; copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}";
-  }
+    local_input_vcf="${working_dir}/$(basename "${input_vcf}")"
+    [[ -f ${local_input_vcf} ]] || { info "↓ VCF";  copy_file_gcp "${input_vcf}" "${local_input_vcf}" "${threads}"; }
 
-  ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
-  ref_genome_fasta_dict="${ref_genome_fasta_dict/.fna/.dict}"
-  local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
-  [[ -f ${local_ref_genome_fasta_dict} ]] || {
-    info "Download FASTA .dict"; copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}";
-  }
+    local_ref_genome_fasta="${working_dir}/$(basename "${ref_genome_fasta}")"
+    [[ -f ${local_ref_genome_fasta} ]] || {
+        info "↓ FASTA"
+        copy_file_gcp "${ref_genome_fasta}" "${local_ref_genome_fasta}" "${threads}"
+    }
 
-  local_sage_jar="${working_dir}/$(basename "${sage_jar}")"
-  [[ -f ${local_sage_jar} ]] || {
-    info "Download SAGE jar"; copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}";
-  }
+    ref_genome_fasta_fai="${ref_genome_fasta}.fai"
+    local_ref_genome_fasta_fai="${working_dir}/$(basename "${ref_genome_fasta_fai}")"
+    [[ -f ${local_ref_genome_fasta_fai} ]] || {
+        info "↓ FASTA.fai"
+        copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}"
+    }
 
-  local_output_vcf="${working_dir}/${sample_name}.coverage.vcf.gz"
-  if [[ ! -f "${local_output_vcf}" ]]; then
-    info "Run SAGE append"
-    java -Xms4G -Xmx16G -cp "${local_sage_jar}" \
-      com.hartwig.hmftools.sage.append.SageAppendApplication \
-      -reference "${sample_name}" \
-      -reference_bam "${local_input_bam}" \
-      -ref_genome "${local_ref_genome_fasta}" \
-      -ref_genome_version 38 \
-      -input_vcf "${local_input_vcf}" \
-      -output_vcf "${local_output_vcf}" \
-      -threads "${threads}" \
-      || die "SAGE append failed"
-  fi
+    ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
+    ref_genome_fasta_dict="${ref_genome_fasta_dict/.fna/.dict}"
+    local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
+    [[ -f ${local_ref_genome_fasta_dict} ]] || {
+        info "↓ FASTA.dict"
+        copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}"
+    }
 
-  info "Upload output VCF"
-  copy_file_gcp "${local_output_vcf}" "${output_bucket_dir}/$(basename "${local_output_vcf}")" "${threads}"
+    local_sage_jar="${working_dir}/$(basename "${sage_jar}")"
+    [[ -f ${local_sage_jar} ]] || { info "↓ SAGE JAR"; copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}"; }
 
-  info "Clean up"
-  rm -f "${local_output_vcf}" "${local_input_bam}" "${local_input_bai}"
+    ############################ Run SAGE #####################################
+    local_output_vcf="${working_dir}/${sample_name}.coverage.vcf.gz"
+    if [[ ! -f ${local_output_vcf} ]]; then
+        info "▶ Running SAGE append"
+        java -Xms4G -Xmx16G -cp "${local_sage_jar}" \
+            com.hartwig.hmftools.sage.append.SageAppendApplication \
+            -reference           "${sample_name}" \
+            -reference_bam       "${local_input_bam}" \
+            -ref_genome          "${local_ref_genome_fasta}" \
+            -ref_genome_version  38 \
+            -input_vcf           "${local_input_vcf}" \
+            -output_vcf          "${local_output_vcf}" \
+            -threads             "${threads}" \
+            || die "SAGE append failed for ${sample_name}"
+    fi
 
-  info "Done with ${sample_name}"
+    ############################ Upload result ################################
+    info "↑ Upload VCF"
+    copy_file_gcp "${local_output_vcf}" "${output_bucket_dir}/$(basename "${local_output_vcf}")" "${threads}"
+
+    ############################ Clean-up #####################################
+    info "✂ Cleanup"
+    rm -f "${local_output_vcf}" "${local_input_bam}" "${local_input_bai}"
+
+    info "✔ Finished ${sample_name}"
 }
 
 main "$@" || die "script failed"
