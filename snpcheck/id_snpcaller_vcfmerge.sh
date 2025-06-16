@@ -2,17 +2,21 @@
 exec > "$HOME/script.log" 2>&1
 set -euo pipefail
 
-# Usage check
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: <setname> <bucket-name>"
-  echo "Ex: 123456_HMFregCORE_FS12345678_CORE0100000 research-pipeline-output-prod-1"
-  echo "Bucket-name is optional, defaults to diagnostic-pipeline-output-prod-1"
+# Usage check, only permit 1 or 3 arguments
+if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
+  echo "Usage: <setname> <input-bucket-name> <output-bucket-name>"
+  echo "Ex: 123456_HMFregCORE_FS12345678_CORE0100000 research-pipeline-output-prod-1 example-output-bucket"
+  echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)"
+  echo "NOTE: When specifying a bucket, both input and output buckets must be provided."
   exit 1
 fi
 
 setname=$1
 DEFAULT_BUCKET="diagnostic-pipeline-output-prod-1"
 BUCKET_NAME=${2:-$DEFAULT_BUCKET}
+
+DEFAULT_OUTPUT_BUCKET="wgs-combined-snps-vcfs"
+OUTPUT_BUCKET_NAME=${3:-$DEFAULT_OUTPUT_BUCKET}
 
 # Mount dirs
 MOUNT_POINT_BAM="$HOME/testdir/"
@@ -195,7 +199,7 @@ awk -v tum="$tumor_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
 ' "$HOME/${MERGED_OUTPUT_VCF}" > "$HOME/${FINAL_OUTPUT_VCF}"
 
 # Copy output to bucket used in share script production
-gsutil cp "$HOME/${FINAL_OUTPUT_VCF}" "gs://wgs-combined-snps-vcfs/${setname}/${FINAL_OUTPUT_VCF}" || {
+gsutil cp "$HOME/${FINAL_OUTPUT_VCF}" "gs://${OUTPUT_BUCKET_NAME}/${setname}/${FINAL_OUTPUT_VCF}" || {
   echo "Error: Failed to upload VCF"
   exit 1
 }
@@ -219,5 +223,5 @@ rm $HOME/${FINAL_OUTPUT_VCF}
 rm $HOME/${SNP_OUTPUT_VCF}
 rm $HOME/hartwig_snpfile_tum.vcf
 
-gsutil cp $HOME/script.log gs://wgs-combined-snps-vcfs/${setname}/${SAMPLE_BARCODE}_merge_script.log
+gsutil cp $HOME/script.log gs://${OUTPUT_BUCKET_NAME}/${setname}/${SAMPLE_BARCODE}_merge_script.log
 rm $HOME/script.log
