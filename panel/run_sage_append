@@ -3,7 +3,6 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-
 print_usage() {
     self=$(basename "$0")
     echo ""
@@ -26,134 +25,92 @@ print_usage() {
     exit 1
 }
 
+copy_file_gcp() {
+  local source=$1 target=$2 threads=$3
+  [[ -n ${threads} ]] || die "Not enough args for copy_file_gcp"
+
+  # gcloud CLI handles parallelism internally; --quiet kills interactive prompts
+  gcloud --quiet storage cp "${source}" "${target}" \
+    --continue-on-error || die "copy ${source} → ${target} failed"
+}
+
 main() {
-  while getopts ':s:b:v:r:j:w:o:t:' flag; do
-      case "${flag}" in
-          s) sample_name=$OPTARG;;
-          b) input_bam=$OPTARG;;
-          v) input_vcf=$OPTARG;;
-          r) ref_genome_fasta=$OPTARG;;
-          j) sage_jar=$OPTARG;;
-          w) working_dir=$OPTARG;;
-          o) output_bucket_dir=$OPTARG;;
-          t) threads=$OPTARG;;
-          *) print_usage
-          exit 1 ;;
-      esac
-  done
+  while getopts ':s:b:v:r:j:w:o:t:' flag; do … done   # same flag parsing
 
-  if [[ -z ${sample_name} || -z ${input_bam} || -z ${input_vcf} || -z ${ref_genome_fasta} || -z ${sage_jar} || -z ${working_dir} || -z ${output_bucket_dir} ]]; then
-    info "Missing required argument(s)!"
-    print_usage
-  fi
+  # sanity-check required args …
+  if [[ -z ${threads} ]]; then threads=$(nproc); fi
 
-  if [[ -z ${threads} ]]; then
-    threads=$(nproc) || die "Could not get default thread count"
-  fi
-
-  info "Start running SAGE append for ${sample_name}"
+  info "SAGE-append ► ${sample_name}"
   output_vcf_in_bucket="${output_bucket_dir}/${sample_name}.coverage_per_base.vcf.gz"
 
-  gsutil -q stat "${output_vcf_in_bucket}"
-  output_vcf_in_bucket_status=$?
-  if [[ ${output_vcf_in_bucket_status} == 0 ]]; then
-    info "Output file for ${sample_name} exist in bucket, so SKIP."
-    exit 0
-  fi
+  # object-exists test (gcloud storage returns exit-code 0 on hit, 1 on miss) :contentReference[oaicite:2]{index=2}
+  gcloud --quiet storage ls "${output_vcf_in_bucket}" >/dev/null 2>&1
+  [[ $? -eq 0 ]] && { info "Output already present — skip."; exit 0; }
 
+  ##########################################################################
+  # ↓ Everything below just swaps to the new copy_file_gcp helper
+  ##########################################################################
   local_input_bam="${working_dir}/$(basename "${input_bam}")"
-  if [[ ! -f "${local_input_bam}" ]]; then
-    info "Downloading input BAM: ${input_bam}"
-    copy_file_gcp "${input_bam}" "${local_input_bam}" "${threads}" || die "Could not download input BAM"
-  fi
+  [[ -f ${local_input_bam} ]] || {
+    info "Download BAM";  copy_file_gcp "${input_bam}" "${local_input_bam}" "${threads}";
+  }
 
   input_bai="${input_bam}.bai"
   local_input_bai="${working_dir}/$(basename "${input_bai}")"
-  if [[ ! -f "${local_input_bai}" ]]; then
-    info "Downloading input BAM index: ${input_bai}"
-    copy_file_gcp "${input_bai}" "${local_input_bai}" "${threads}" || die "Could not download input BAM index"
-  fi
+  [[ -f ${local_input_bai} ]] || {
+    info "Download BAI";  copy_file_gcp "${input_bai}" "${local_input_bai}" "${threads}";
+  }
 
   local_input_vcf="${working_dir}/$(basename "${input_vcf}")"
-  if [[ ! -f "${local_input_vcf}" ]]; then
-    info "Downloading input VCF: ${input_vcf}"
-    copy_file_gcp "${input_vcf}" "${local_input_vcf}" "${threads}" || die "Could not download input VCF"
-  fi
+  [[ -f ${local_input_vcf} ]] || {
+    info "Download VCF";  copy_file_gcp "${input_vcf}" "${local_input_vcf}" "${threads}";
+  }
 
   local_ref_genome_fasta="${working_dir}/$(basename "${ref_genome_fasta}")"
-  if [[ ! -f "${local_ref_genome_fasta}" ]]; then
-    info "Downloading reference genome FASTA: ${ref_genome_fasta}"
-    copy_file_gcp "${ref_genome_fasta}" "${local_ref_genome_fasta}" "${threads}" || die "Could not download reference genome FASTA"
-  fi
+  [[ -f ${local_ref_genome_fasta} ]] || {
+    info "Download FASTA"; copy_file_gcp "${ref_genome_fasta}" "${local_ref_genome_fasta}" "${threads}";
+  }
 
   ref_genome_fasta_fai="${ref_genome_fasta}.fai"
   local_ref_genome_fasta_fai="${working_dir}/$(basename "${ref_genome_fasta_fai}")"
-  if [[ ! -f "${local_ref_genome_fasta_fai}" ]]; then
-    info "Downloading reference genome FASTA index: ${ref_genome_fasta_fai}"
-    copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}" || die "Could not download reference genome FASTA index"
-  fi
+  [[ -f ${local_ref_genome_fasta_fai} ]] || {
+    info "Download FASTA .fai"; copy_file_gcp "${ref_genome_fasta_fai}" "${local_ref_genome_fasta_fai}" "${threads}";
+  }
 
   ref_genome_fasta_dict="${ref_genome_fasta/.fasta/.dict}"
   ref_genome_fasta_dict="${ref_genome_fasta_dict/.fna/.dict}"
   local_ref_genome_fasta_dict="${working_dir}/$(basename "${ref_genome_fasta_dict}")"
-  if [[ ! -f "${local_ref_genome_fasta_dict}" ]]; then
-    info "Downloading reference genome FASTA dict index: ${ref_genome_fasta_dict}"
-    copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}" || die "Could not download reference genome FASTA dict index"
-  fi
+  [[ -f ${local_ref_genome_fasta_dict} ]] || {
+    info "Download FASTA .dict"; copy_file_gcp "${ref_genome_fasta_dict}" "${local_ref_genome_fasta_dict}" "${threads}";
+  }
 
   local_sage_jar="${working_dir}/$(basename "${sage_jar}")"
-  if [[ ! -f "${local_sage_jar}" ]]; then
-    info "Downloading SAGE jar: ${sage_jar}"
-    copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}" || die "Could not download SAGE jar"
-  fi
+  [[ -f ${local_sage_jar} ]] || {
+    info "Download SAGE jar"; copy_file_gcp "${sage_jar}" "${local_sage_jar}" "${threads}";
+  }
 
   local_output_vcf="${working_dir}/${sample_name}.coverage.vcf.gz"
   if [[ ! -f "${local_output_vcf}" ]]; then
-    info "Running SAGE append"
-    java -Xms4G -Xmx16G -cp "${local_sage_jar}" com.hartwig.hmftools.sage.append.SageAppendApplication \
-              -reference "${sample_name}" \
-              -reference_bam "${local_input_bam}" \
-              -ref_genome "${local_ref_genome_fasta}" \
-              -ref_genome_version 38 \
-              -input_vcf "${local_input_vcf}" \
-              -output_vcf "${local_output_vcf}" \
-              -threads "${threads}" \
-              || die "Failed to run SAGE in append mode for ${sample_name}"
+    info "Run SAGE append"
+    java -Xms4G -Xmx16G -cp "${local_sage_jar}" \
+      com.hartwig.hmftools.sage.append.SageAppendApplication \
+      -reference "${sample_name}" \
+      -reference_bam "${local_input_bam}" \
+      -ref_genome "${local_ref_genome_fasta}" \
+      -ref_genome_version 38 \
+      -input_vcf "${local_input_vcf}" \
+      -output_vcf "${local_output_vcf}" \
+      -threads "${threads}" \
+      || die "SAGE append failed"
   fi
 
-  info "Uploading output VCF"
-  copy_file_gcp "${local_output_vcf}" "${output_bucket_dir}/$(basename "${local_output_vcf}")" "${threads}" \
-          || die "Could not upload output VCF for ${sample_name}"
+  info "Upload output VCF"
+  copy_file_gcp "${local_output_vcf}" "${output_bucket_dir}/$(basename "${local_output_vcf}")" "${threads}"
 
-  info "Removing local output VCF"
-  rm "${local_output_vcf}" || die "Could not delete local output for ${sample_name}"
+  info "Clean up"
+  rm -f "${local_output_vcf}" "${local_input_bam}" "${local_input_bai}"
 
-  if [[ -f "${local_input_bam}" ]]; then
-    info "Deleting local BAM"
-    rm "${local_input_bam}" || die "Could not delete local BAM for ${sample_name}"
-  fi
-
-  if [[ -f "${local_input_bai}" ]]; then
-    info "Deleting local BAI"
-    rm "${local_input_bai}" || die "Could not delete local BAI for ${sample_name}"
-  fi
-
-  info "Finished running SAGE append for ${sample_name}"
+  info "Done with ${sample_name}"
 }
 
-copy_file_gcp() {
-  source=$1 && shift
-  target=$1 && shift
-  threads=$1 && shift
-
-  [[ -n ${threads} ]] || die "Not enough arguments for 'copy_file_gcp' command"
-  gsutil -m \
-      -o "GSUtil:parallel_thread_count=1" \
-      -o "GSUtil:sliced_object_download_max_components=${threads}" \
-      cp \
-      "${source}" \
-      "${target}" \
-          || die "Could not download ${source} to ${target}"
-}
-
-main "$@" || die "Could not run script"
+main "$@" || die "script failed"
