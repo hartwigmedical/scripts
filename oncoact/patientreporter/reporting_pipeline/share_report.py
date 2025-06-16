@@ -189,24 +189,12 @@ class ReportSharer:
             for blob in germline_blobs:
                 self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
                                           target_sub_folder='RUO_germline')
-            import subprocess
-
-        # Create + share merged vcf files with id snps
-        try:
-            set_name = self._set_name()
-            print(f"Running combine_vcfs.sh with set_name: {set_name}")
-            subprocess.run(["bash", "id_snpcaller_vcfmerge", set_name], check=True)
-        except subprocess.CalledProcessError as e:
-            print(f"Snp check + vcf combine shell script failed: {e}")
-            return
-
-        # Prepare expected VCF file name
-        combined_vcf_filename = f"{self.sample_barcode}_merged_final.vcf"
-        combined_vcf_files = {combined_vcf_filename}
+        import subprocess
 
         # Get blob from the 'wgs-combined-snps-vcfs' bucket
         vcf_bucket = self.storage_client.bucket("wgs-combined-snps-vcfs")
-        combined_vcf_blobs = self._get_blobs_from_bucket(bucket=vcf_bucket, file_names=combined_vcf_files)
+        combined_vcf_file = f"{self.sample_barcode}_reported_variants_and_snps_combined.vcf"
+        combined_vcf_blobs = self._get_blobs_from_bucket(bucket=vcf_bucket, file_names=combined_vcf_file)
 
         # If found, copy it to the portal
         if combined_vcf_blobs:
