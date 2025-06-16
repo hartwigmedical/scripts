@@ -23,7 +23,7 @@ echo -e "Set name: \033[1;32m ${set} \033[00m"
 # Define file paths
 recon_cnv_path="gs://panel-vis-files/recon-cnv/${tumor_sample_barcode_lowercase}/recon-cnv/*.reconCNV.html"
 sage_visualisation_path="gs://panel-vis-files/sage-visualisations/${tumor_sample_barcode_lowercase}/sage-visualisation/*.sage.visualisation.zip"
-chord_path="path"
+chord_path="gs://panel-vis-files/vchord/${tumor_sample_barcode_lowercase}/vchord/*.vchord.prediction.tsv"
 
 # Check if files exist before copying
 if ! gsutil stat ${recon_cnv_path}; then
