@@ -25,6 +25,7 @@ CHR_X_NON_PAR_END = 156030895
 TSV_SEPARATOR = "\t"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
+VCHORD_MIN_PURITY_THRESHOLD = Decimal("0.30")
 DEL_MIN_PURITY_THRESHOLD = Decimal("0.30")
 AMP_MIN_PURITY_THRESHOLD = Decimal("0.20")
 TMB_MIN_PURITY_THRESHOLD = Decimal("0.10")
@@ -316,6 +317,9 @@ def determine_remarks(
 
     if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
         purity_too_low.add(AMPLIFICATIONS_DESCRIPTION)
+
+    if run_data.purple_qc.purity < VCHORD_MIN_PURITY_THRESHOLD:
+        purity_too_low.add("HRD")
 
     if purity_too_low:
         remarks.append(
