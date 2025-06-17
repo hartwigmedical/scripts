@@ -105,6 +105,8 @@ run_qc_info$date <- as.Date(run_qc_info$date, format = '%Y-%m-%dT%H:%M:%S')
 run_qc_info$type <- as.factor(run_qc_info$type)
 run_qc_info$bqr <- run_qc_info$bqr * 100
 
+run_qc_max_bqr_range <- ceiling(run_qc_info$bqr) + 0.5
+
 # Lab Failures QC Info
 iso_fail_info <- read.table(params$iso_fail_file, sep = '\t', header = TRUE)
 if (nrow(iso_fail_info) >= 1) {
@@ -426,12 +428,11 @@ bqr_plot <- basic_plot(
               run_qc_info,
               "bqr",
               "% BQR",
-              2.5,
+              NA,
               "BQR Error Rate",
               qc_date_range,
               "type"
-            ) +
-            geom_hline(yintercept=1, linetype="dashed")
+            )
 ggplotly(bqr_plot)
 
 basic_table(coefficients_annotation(run_qc_info, "date", "bqr", "type"))
