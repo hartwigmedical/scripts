@@ -152,55 +152,66 @@ IFS=$'\t' read -r -a headers <<< "$header_line"
 
 tumor_col=-1
 na_col=-1
+ref_col=-1
 
-# Identify tumor and NA column indexes
+## Identify Tumor, NA and ref column indices
 for i in "${!headers[@]}"; do
   col="${headers[$i]}"
   if [[ "$col" == "NA" ]]; then
     na_col=$i
-  elif [[ "$col" != *"-ref" && "$col" != "FORMAT" && "$col" != "#CHROM" && "$col" != "POS" && "$col" != "ID" && "$col" != "REF" && "$col" != "ALT" && "$col" != "QUAL" && "$col" != "FILTER" && "$col" != "INFO" ]]; then
+  elif [[ "$col" == *"-ref" ]]; then
+    ref_col=$i
+  elif [[ "$col" != "FORMAT" && "$col" != "#CHROM" && "$col" != "POS" && "$col" != "ID" && "$col" != "REF" && "$col" != "ALT" && "$col" != "QUAL" && "$col" != "FILTER" && "$col" != "INFO" ]]; then
     tumor_col=$i
   fi
 done
 
+## Check if NA and tumor column were found
 if [[ $tumor_col -eq -1 || $na_col -eq -1 ]]; then
   echo "Error: Could not find both tumor and NA columns in the merged VCF."
   exit 1
 fi
 
-# Convert 0-based to 1-based for awk
+## Convert 0-based to 1-based indexing for awk
 tumor_col_awk=$((tumor_col + 1))
 na_col_awk=$((na_col + 1))
+ref_col_awk=$((ref_col + 1))
 
-# Apply replacement logic
+## Step 1: Copy snp genotype (na) col to tumor if tumor col no variant call
 awk -v tum="$tumor_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
   /^##/ { print; next }
+  /^#CHROM/ { print; next }
+  {
+    if ($tum == "./." && $na != "./." && $na != "") {
+      $tum = $na
+    }
+    print
+  }
+' "$HOME/${MERGED_OUTPUT_VCF}" > "$HOME/temp_with_na_corrected.vcf"
+
+## Step 2: Remove ref and NA cols
+awk -v ref="$ref_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
+  /^##/ { print; next }
   /^#CHROM/ {
-    # Print header line, skip the NA column
     for (i = 1; i <= NF; i++) {
-      if (i != na) {
-        printf("%s%s", $i, (i < NF && (i + 1 != na) ? OFS : ORS))
+      if (i != ref && i != na) {
+        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
       }
     }
     next
   }
   {
-    # If TUM is missing but NA has value, copy NA to TUM
-    if ($tum == "./." && $na != "./." && $na != "") {
-      $tum = $na
-    }
-    # Print all fields except the NA column
     for (i = 1; i <= NF; i++) {
-      if (i != na) {
-        printf("%s%s", $i, (i < NF && (i + 1 != na) ? OFS : ORS))
+      if (i != ref && i != na) {
+        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
       }
     }
   }
-' "$HOME/${MERGED_OUTPUT_VCF}" > "$HOME/${FINAL_OUTPUT_VCF}"
+' "$HOME/temp_with_na_corrected.vcf" > "$HOME/${FINAL_OUTPUT_VCF}"
 
 # Copy output to bucket used in share script production
 gsutil cp "$HOME/${FINAL_OUTPUT_VCF}" "gs://${OUTPUT_BUCKET_NAME}/${setname}/${FINAL_OUTPUT_VCF}" || {
-  echo "Error: Failed to upload VCF"
+  echo "Error: Failed to upload VCF to output bucket"
   exit 1
 }
 
@@ -222,6 +233,7 @@ rm $HOME/${MERGED_OUTPUT_VCF}
 rm $HOME/${FINAL_OUTPUT_VCF}
 rm $HOME/${SNP_OUTPUT_VCF}
 rm $HOME/hartwig_snpfile_tum.vcf
+rm $HOME/temp_with_na_corrected.vcf
 
 gsutil cp $HOME/script.log gs://${OUTPUT_BUCKET_NAME}/${setname}/${SAMPLE_BARCODE}_merge_script.log
 rm $HOME/script.log
