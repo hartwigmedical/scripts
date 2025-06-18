@@ -8,31 +8,25 @@ REF_GENOME_VERSION=$3
 PIPELINE_VERSION=$4
 BUILD_VERSION=$5
 
-MODE_GENOME="genome"
 MODE_HMFTOOLS="hmftools"
 MODE_PANEL="panel"
+MODE_GENOME="genome"
 
-## This script is to be run on data-vm-prod-2
-
-## Run commands
-# bash build_resources_oa_v2.2.0.sh hmftools /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 37 v2.2.0 1
-# bash build_resources_oa_v2.2.0.sh panel    /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 37 v2.2.0 1
-# bash build_resources_oa_v2.2.0.sh hmftools /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 38 v2.2.0 1
-# bash build_resources_oa_v2.2.0.sh panel    /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 38 v2.2.0 1
+REF_GENOME_VERSION_37="37"
+REF_GENOME_VERSION_38="38"
 
 print_usage() {
-	echo ""
-	echo "Description:"
-	echo "  This script copies required resources files for Oncoanalyser to a destination dir, and packages them up into tars."
-	echo "  Note, the destination dir must already exist."
-	echo ""
+    echo ""
+    echo "Description:"
+    echo "  This script copies required resources files for Oncoanalyser to a destination dir, and packages them up into tars."
+    echo ""
     echo "Usage:"
     echo "  bash $0 <mode> <dest_dir> <ref_genome_version> <pipeline_version> <build_version>"
     echo ""
     echo "Arguments:"
-    echo "  mode                One of: 'hmftools', 'genome', 'panel'"
-    echo "  dest_dir            Destination directory for resource output"
-    echo "  ref_genome_version  Reference genome version, must be '37' or '38'"
+    echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
+    echo "  dest_dir            Destination directory for resource output (must be existing)"
+    echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
     echo "  pipeline_version    Pipeline version string, e.g. 'v2.2.0'"
     echo "  build_version       Build version number, e.g. '1'"
     echo ""
@@ -52,14 +46,14 @@ if [[ $# -ne 5 ]]; then
     exit 1
 fi
 
-if [[ ${REF_GENOME_VERSION} != "37" && ${REF_GENOME_VERSION} != "38" ]]; then
-    echo "Error: Valid reference genome versions are '37' or '38'."
+if [[ ${REF_GENOME_VERSION} != ${REF_GENOME_VERSION_37} && ${REF_GENOME_VERSION} != ${REF_GENOME_VERSION_38} ]]; then
+    echo "Error: Valid reference genome versions are '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'."
     print_usage
     exit 1
 fi
 
-if [[ ${MODE} != "hmftools" && ${MODE} != "genome" && ${MODE} != "panel" ]]; then
-    echo "Error: Valid modes are 'hmftools', 'genome' or 'panel'."
+if [[ ${MODE} != ${MODE_HMFTOOLS} && ${MODE} != ${MODE_PANEL} && ${MODE} != ${MODE_GENOME} ]]; then
+    echo "Error: Valid modes are '${MODE_HMFTOOLS}', '${MODE_PANEL}' or '${MODE_GENOME}'."
     print_usage
     exit 1
 fi
@@ -123,7 +117,7 @@ copy_files_ref_genome (){
 	echo "## Copying genome files"
 	echo "## --------------------"
 
-	if [[ ${REF_GENOME_VERSION} == "37" ]]; then
+	if [[ ${REF_GENOME_VERSION} == ${REF_GENOME_VERSION_37} ]]; then
 		GENOME_FASTA='Homo_sapiens.GRCh37.GATK.illumina.fasta'
 	else
 		GENOME_FASTA='GRCh38_masked_exclusions_alts_hlas.fasta'
@@ -189,7 +183,7 @@ copy_files_hmftools (){
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/mappability_150.${REF_GENOME_VERSION}.bed.gz  ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/msi_jitter_sites.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
 
-	if [[ "${REF_GENOME_VERSION}" == "37" ]]; then
+	if [[ "${REF_GENOME_VERSION}" == ${REF_GENOME_VERSION_37} ]]; then
 		cp -vnLr ${COMMON_RESOURCES_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz             ${VARIANTS_DIR}
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz    ${VARIANTS_DIR}
 	else
@@ -248,7 +242,7 @@ copy_files_hmftools (){
 	echo "## --------------------------"
 	RNA_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/rna/
 
-	if [[ ${REF_GENOME_VERSION} == "37" ]]; then
+	if [[ ${REF_GENOME_VERSION} == ${REF_GENOME_VERSION_37} ]]; then
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.alt_sj_cohort.37.csv               ${RNA_DIR}
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.gene_distribution.37.csv           ${RNA_DIR}
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.transcript_medians.37.csv          ${MISC_DIR}/neo/tpm_cohort/
