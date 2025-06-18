@@ -118,7 +118,7 @@ fi
 
 echo "TUM snp vcf: ${SNP_VCF_TUM}"
 
-cp ${SNP_VCF_PATH} $HOME/hartwig_snpfile_tum.vcf
+cp ${SNP_VCF_TUM} $HOME/hartwig_snpfile_tum.vcf
 
 # Get and filter germline + somatic vcf molecular pipeline
 somatic_vcf=$(ls ${MOUNT_POINT_BAM}${setname}/purple/*.purple.somatic.vcf.gz)
