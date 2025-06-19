@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-latest_prediction_docker_image="ef3026084c33"
+latest_prediction_docker_image="c3e68e8adbe0"
 
-# (KODU): Latest docker image is 0.28.0-beta.6. You can pull via this command:
-#   docker pull europe-west4-docker.pkg.dev/actin-build/build-registry-docker/actin-personalization-prediction:0.28.0-beta.6
-#
-# If your docker can't access gcloud yet, run the following command:
-#   gcloud auth configure-docker europe-west4-docker.pkg.dev
+# (KODU): Latest docker image ID refers to 0.28.0. You can pull via this command:
+#   pull_prediction_docker_with_version 0.28.0
 
 docker run \
     -v ~/hmf/tmp:/out \
