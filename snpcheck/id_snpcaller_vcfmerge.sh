@@ -30,6 +30,18 @@ SAMPLE_BARCODE=$(lama_get_patient_reporter_data ${ISOLATION_BARCODE} | jq .tumor
 echo "Extracted ISOLATION_BARCODE: $ISOLATION_BARCODE"
 echo "Retrieved SAMPLE_BARCODE from LAMA: $SAMPLE_BARCODE"
 
+# Get converted reporting id for sharing
+HOSPITAL_SAMPLE_LABEL=$(lama_get_patient_reporter_data "${ISOLATION_BARCODE}" | jq -r .hospitalSampleLabel)
+REPORTING_ID=$(lama_get_patient_reporter_data "${ISOLATION_BARCODE}" | jq -r .reportingId)
+
+if [[ -n "$HOSPITAL_SAMPLE_LABEL" && "$HOSPITAL_SAMPLE_LABEL" != "null" ]]; then
+    CONVERTED_REPORTING_ID="${REPORTING_ID}-${HOSPITAL_SAMPLE_LABEL}"
+else
+    CONVERTED_REPORTING_ID="${REPORTING_ID}"
+fi
+
+echo "Converted reporting id: $CONVERTED_REPORTING_ID"
+
 # Paths relative to bucket root
 REFERENCE="${MOUNT_POINT_REFGENOME}/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 INTERVALS="/data/resources/reporting-resources/snps/id_snps_intervals.hg37.bed"
@@ -39,7 +51,7 @@ echo "SNP intervals path: $INTERVALS"
 # Temp file names
 SNP_OUTPUT_VCF="${SAMPLE_BARCODE}_snp_genotype_output.vcf"
 MERGED_OUTPUT_VCF="${SAMPLE_BARCODE}_merged.vcf"
-FINAL_OUTPUT_VCF="${SAMPLE_BARCODE}_reported_variants_and_snps_combined.vcf"
+FINAL_OUTPUT_VCF="${CONVERTED_REPORTING_ID}_reported_variants_and_snps_combined.vcf"
 
 # GATK jar location
 GATK="/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar"
@@ -235,5 +247,5 @@ rm $HOME/${SNP_OUTPUT_VCF}
 rm $HOME/hartwig_snpfile_tum.vcf
 rm $HOME/temp_with_na_corrected.vcf
 
-gsutil cp $HOME/script.log gs://${OUTPUT_BUCKET_NAME}/${setname}/${SAMPLE_BARCODE}_merge_script.log
+gsutil cp $HOME/script.log gs://${OUTPUT_BUCKET_NAME}/${setname}/${CONVERTED_REPORTING_ID}_merge_script.log
 rm $HOME/script.log
