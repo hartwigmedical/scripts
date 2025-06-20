@@ -390,6 +390,10 @@ locate_dnds_driver_likelihood_tsg() {
     echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
 }
 
+locate_panel_specifications_file() {
+  echo "/data/resources/actin/panel_specifications/panel_specifications.tsv"
+}
+
 locate_actin_clinical_curation_directory() {
     echo "/data/actin/config/clinical_curation"
 }
