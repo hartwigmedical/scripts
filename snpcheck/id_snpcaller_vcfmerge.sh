@@ -51,7 +51,7 @@ echo "SNP intervals path: $INTERVALS"
 # Temp file names
 SNP_OUTPUT_VCF="${SAMPLE_BARCODE}_snp_genotype_output.vcf"
 MERGED_OUTPUT_VCF="${SAMPLE_BARCODE}_merged.vcf"
-FINAL_OUTPUT_VCF="${CONVERTED_REPORTING_ID}_reported_variants_and_snps_combined.vcf"
+FINAL_OUTPUT_VCF="${CONVERTED_REPORTING_ID}.reported.variants.and.snps.vcf"
 
 # GATK jar location
 GATK="/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar"

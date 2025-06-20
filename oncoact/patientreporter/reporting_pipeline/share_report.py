@@ -193,7 +193,7 @@ class ReportSharer:
 
         # Get blob from the 'wgs-combined-snps-vcfs' bucket
         vcf_bucket = self.storage_client.bucket("wgs-combined-snps-vcfs")
-        combined_vcf_file = f"{converted_reporting_id}_reported_variants_and_snps_combined.vcf"
+        combined_vcf_file = f"{converted_reporting_id}.reported.variants.and.snps.vcf"
         combined_vcf_blobs = self._get_blobs_from_bucket(bucket=vcf_bucket, file_names=combined_vcf_file)
 
         # If found, copy it to the portal
