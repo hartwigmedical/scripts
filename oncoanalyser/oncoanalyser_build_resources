@@ -21,7 +21,7 @@ print_usage() {
     echo "  This script copies required resources files for Oncoanalyser to a destination dir, and packages them up into tars."
     echo ""
     echo "Usage:"
-    echo "  bash $0 <mode> <dest_dir> <ref_genome_version> <pipeline_version> <build_version>"
+    echo "  bash oncoanalyser_build_resources <mode> <dest_dir> <ref_genome_version> <pipeline_version> <build_version>"
     echo ""
     echo "Arguments:"
     echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
@@ -31,7 +31,7 @@ print_usage() {
     echo "  build_version       Build version number, e.g. '1'"
     echo ""
     echo "Examples:"
-    echo "  bash $0 hmftools /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 37 v2.2.0 1"
+    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 38 v2.2.0 1"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<pipeline_version>--<build_version>.tar.gz"
@@ -243,13 +243,13 @@ copy_files_hmftools (){
 	RNA_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/rna/
 
 	if [[ ${REF_GENOME_VERSION} == ${REF_GENOME_VERSION_37} ]]; then
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.alt_sj_cohort.37.csv               ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.gene_distribution.37.csv           ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.transcript_medians.37.csv          ${MISC_DIR}/neo/tpm_cohort/
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.alt_sj_cohort.37.csv.gz            ${RNA_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.gene_distribution.37.csv.gz        ${RNA_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.transcript_medians.37.csv.gz       ${MISC_DIR}/neo/tpm_cohort/
 	else
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.alt_sj_cohort.csv           ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.gene_distribution.csv       ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.transcript_distribution.csv ${MISC_DIR}/neo/tpm_cohort/
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.alt_sj_cohort.csv.gz        ${RNA_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.gene_distribution.csv.gz    ${RNA_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.transcript_medians.csv.gz   ${MISC_DIR}/neo/tpm_cohort/
 	fi
 
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_100_exp_gc_ratios.${REF_GENOME_VERSION}.csv       ${RNA_DIR}
