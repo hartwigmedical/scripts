@@ -12,6 +12,7 @@ fi
 base_dir="$(locate_crc_experiment_directory)"
 
 patient_json="${base_dir}/${patient}.patient_record.json"
+treatment_efficacy_prediction_json="${base_dir}/${patient}.treatment_efficacy_prediction.fake.json"
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"
@@ -35,6 +36,7 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
     -personalization_data_path "${personalization_data_path}" \
+    -treatment_efficacy_prediction_json "${treatment_efficacy_prediction_json}" \
     -serve_directory "${serve_directory}" \
     -output_directory "${base_dir}" \
     "$@"
