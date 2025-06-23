@@ -189,7 +189,6 @@ class ReportSharer:
             for blob in germline_blobs:
                 self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
                                           target_sub_folder='RUO_germline')
-        import subprocess
 
         # Get blob from the 'wgs-combined-snps-vcfs' bucket
         vcf_bucket = self.storage_client.bucket("wgs-combined-snps-vcfs")
