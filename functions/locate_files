@@ -466,6 +466,12 @@ locate_actin_clinical_feed_input_bucket() {
     echo "gs://${gcp_project}-clinical-pipeline-feed-input"
 }
 
+locate_actin_transformed_feed_bucket() {
+    local gcp_project=$1 && shift
+
+    echo "gs://${gcp_project}-clinical-feed-transformed"
+}
+
 locate_actin_clinical_curation_bucket() {
     local gcp_project=$1 && shift
 

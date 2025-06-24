@@ -29,10 +29,15 @@ trial_database_directory=$(locate_actin_trial_database_directory)
 create_or_cleanup_dir ${trial_database_directory}
 gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project}) ${trial_database_directory}
 
-info "Syncing clinical input (excluding diffs)..."
-clinical_input_directory=$(locate_actin_clinical_input_feed_directory)
-create_or_cleanup_dir ${clinical_input_directory}
-gsutil -m rsync -x "^202" -r ${actin_clinical_input_feed_bucket} ${clinical_input_directory}
+info "Syncing feed input (excluding diffs)..."
+feed_input_directory=$(locate_actin_clinical_input_feed_directory)
+create_or_cleanup_dir ${feed_input_directory}
+gsutil -m rsync -x "^202" -r ${actin_clinical_input_feed_bucket} ${feed_input_directory}
+
+info "Syncing (current) transformed feed..."
+transformed_feed_directory=$(locate_actin_transformed_feed_directory)
+create_or_cleanup_dir ${transformed_feed_directory}
+gsutil -m rsync -x "^202" -r $(locate_actin_transformed_feed_bucket ${gcp_project})/current ${transformed_feed_directory}
 
 info "Syncing clinical curation config (excluding diffs)..."
 clinical_curation_directory=$(locate_actin_clinical_curation_directory)
