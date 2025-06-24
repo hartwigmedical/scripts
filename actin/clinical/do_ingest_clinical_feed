@@ -10,16 +10,16 @@ if [[ -z "${feed_format}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-feed_directory="$(locate_actin_clinical_input_feed_directory)"
+feed_directory="$(locate_actin_transformed_feed_directory)"
 curation_directory="$(locate_actin_clinical_curation_directory)"
-treatment_directory="$(locate_actin_treatment_db_directory)"
-icd_tsv=$(locate_icd_tsv)
 doid_json="$(locate_actin_doid_json)"
-atc_tsv="$(locate_atc_tsv)"
-atc_overrides_tsv="$(locate_atc_overrides_tsv)"
-output_directory="$(locate_actin_curated_clinical_directory)"
+icd_tsv=$(locate_icd_tsv)
 drug_interactions_tsv="$(locate_drug_interactions_tsv)"
 qt_prolongating_tsv="$(locate_qt_prolongating_tsv)"
+atc_tsv="$(locate_atc_tsv)"
+atc_overrides_tsv="$(locate_atc_overrides_tsv)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
+output_directory="$(locate_actin_curated_clinical_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
@@ -30,13 +30,13 @@ create_or_cleanup_dir "${output_directory}"
 java -cp ${actin_jar} com.hartwig.actin.clinical.ClinicalIngestionApplicationKt \
     -feed_directory ${feed_directory} \
     -curation_directory ${curation_directory} \
-    -treatment_directory ${treatment_directory} \
-    -icd_tsv ${icd_tsv} \
     -doid_json ${doid_json} \
+    -icd_tsv ${icd_tsv} \
     -drug_interactions_tsv ${drug_interactions_tsv} \
     -qt_prolongating_tsv ${qt_prolongating_tsv} \
     -atc_tsv ${atc_tsv} \
     -atc_overrides_tsv ${atc_overrides_tsv} \
+    -treatment_directory ${treatment_directory} \
     -output_directory ${output_directory} \
     -feed_format ${feed_format} \
     "$@"
