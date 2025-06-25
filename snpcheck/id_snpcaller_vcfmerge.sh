@@ -1,6 +1,4 @@
 #!/bin/bash
-exec > "$HOME/script.log" 2>&1
-set -euo pipefail
 
 # Usage check, only permit 1 or 3 arguments
 if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
@@ -11,6 +9,11 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
   exit 1
 fi
 
+# Redirect output to log
+exec > "$HOME/script.log" 2>&1
+set -euo pipefail
+
+# Define in- and output buckets
 setname=$1
 DEFAULT_BUCKET="diagnostic-pipeline-output-prod-1"
 BUCKET_NAME=${2:-$DEFAULT_BUCKET}
@@ -18,7 +21,7 @@ BUCKET_NAME=${2:-$DEFAULT_BUCKET}
 DEFAULT_OUTPUT_BUCKET="wgs-combined-snps-vcfs"
 OUTPUT_BUCKET_NAME=${3:-$DEFAULT_OUTPUT_BUCKET}
 
-# Mount dirs
+# Define mount directories
 MOUNT_POINT_BAM="$HOME/testdir/"
 MOUNT_POINT_REFGENOME="$HOME/refgenometmp/"
 echo "Mount point for BAM files: $MOUNT_POINT_BAM"

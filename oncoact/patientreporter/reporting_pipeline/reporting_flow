@@ -55,6 +55,7 @@ elif [[ "${process}" == "upload" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
 elif [[ "${process}" == "share_wgs" ]]; then
     setname=$(api runs "ini=Somatic.ini&status=Validated&context=DIAGNOSTIC&barcode=${isolationBarcode}" | awk 'NR==2 { print $1 }')
+    echo "Creating reported.variants.and.snps.vcf (can take 10+ seconds)..."
     id_snpcaller_vcfmerge.sh ${setname}
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "share_panel" ]]; then
