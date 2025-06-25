@@ -1,17 +1,15 @@
 name: "auto-compare"
-version: "0.1.10"
-storagePath: "gs://auto-compare-output"
+version: "0.1.6"
+storagePath: "gs://auto-compare-output/"
 externalInputs:
   - name: truth-bucket
     location: "${truth_bucket_uri}"
   - name: target-bucket
     location: "${target_bucket_uri}"
-  - name: execution-bucket
-    location: "gs://rerun-dna-6-0-executions/from-fastq/"
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.10"
+    version: "0.1.2"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -27,19 +25,11 @@ stages:
         REF_VERSION=${ref_version}
         OPTIONAL_ARGS='${compar_optional_arguments}'
         read -r -a OPTIONAL_ARGS_ARRAY <<< "$OPTIONAL_ARGS"
-        SAMPLE_LINK='${sample_link}'
-
-        # Mapping of truth samples to target samples, assuming target samples are new hartwig_numbers and truth samples are old sample ids.
-        if [[ ${map_sample} == "true" ]]; then
-            echo "[DEBUG] Map sample mode is enabled."
-            MAP_SAMPLE="true"
-        else
-            echo "[DEBUG] Map sample mode is disabled."
-            MAP_SAMPLE="false"
-        fi
+        SAMPLE_LINK=$sample_link
 
         # Additional parameters
         COMPAR_JAR="compar.jar"  # This jar is included in the Docker image.
+        
         # Select the driver gene panel based on the reference version.
         if [ "$REF_VERSION" == "37" ]; then
             DRIVER_GENE_PANEL="/data/resources/gene_panel/DriverGenePanel.37.tsv"
@@ -64,7 +54,6 @@ stages:
         echo "OUTPUT_DIR: $OUTPUT_DIR"
         echo "Using driver gene panel: $DRIVER_GENE_PANEL"
         echo "Optional compar arguments: ${OPTIONAL_ARGS_ARRAY[@]}"
-        echo "Mapping samples: $MAP_SAMPLE"
         echo "Sample list json: $SAMPLE_LINK"
 
         main() {
@@ -88,9 +77,9 @@ stages:
                 echo "[INFO] Creating sample ID file: $SAMPLE_ID_FILE"
                 # Write CSV header.
                 echo "SampleId,GermlineSampleId,RefSampleId,RefGermlineSampleId,NewSampleId,NewGermlineSampleId" > "$SAMPLE_ID_FILE"
-                
-                # If a mapping dictionary is provided via the SAMPLE_LINK variable, use it.
-                if [[ -n "$SAMPLE_LINK" ]]; then
+
+                # If a non-empty mapping dictionary is provided via the SAMPLE_LINK variable, use it.
+                if [[ -n "$SAMPLE_LINK" && "$SAMPLE_LINK" != "{}" ]]; then
                     echo "[INFO] Using provided sample mapping dictionary from SAMPLE_LINK."
 
                     # Debug: list actual entries (symlinks) under truth/target
@@ -107,7 +96,7 @@ stages:
                         TRUTH_ID=$(echo $ENTRY | jq -r '.key')
                         echo "[DEBUG] Processing TRUTH_ID = '$TRUTH_ID'"
 
-                        # Match symlinks (drop -type d so we catch links too)
+                        # Match symlinks (catch dirs and links)
                         TRUTH_DIR=$(find $RENAMED_TRUTH_RUNS_DIR -maxdepth 1 -name "$TRUTH_ID*" | head -n1)
                         echo "[DEBUG]   find returned TRUTH_DIR = '$TRUTH_DIR'"
 
@@ -160,7 +149,7 @@ stages:
                         done
                     done
                 else
-                    # Original logic to auto-generate the sample_id.csv file if no mapping is provided.
+                    # Auto-generate the sample_id.csv file if no mapping is provided.
                     for TRUTH_DIR in $(ls "$RENAMED_TRUTH_RUNS_DIR"); do
                         echo "[DEBUG] Processing truth directory: $TRUTH_DIR"
                         truth_path="$RENAMED_TRUTH_RUNS_DIR/$TRUTH_DIR"
@@ -170,50 +159,25 @@ stages:
                             continue
                         fi
 
-                        # Extract old sample IDs from truth metadata.
+                        # Extract sample IDs from truth metadata.
                         TRUTH_REF=$(jq -r '.reference.sampleName' "$truth_metadata")
                         TRUTH_TUMOR=$(jq -r '.tumor.sampleName' "$truth_metadata")
                         echo "[DEBUG] From truth metadata: TRUTH_REF='$TRUTH_REF', TRUTH_TUMOR='$TRUTH_TUMOR'"
 
-                        # Determine new sample id from mapping if enabled.
-                        if [[ "$MAP_SAMPLE" == "true" ]]; then
-                            lower_tumor=$(echo "$TRUTH_TUMOR" | tr '[:upper:]' '[:lower:]')
-                            mapping_file="$EXECUTION_BUCKET/$lower_tumor/execution-definition.yaml"
-                            echo "[DEBUG] Looking for mapping file at: $mapping_file"
-                            if [[ -f "$mapping_file" ]]; then
-                                echo "[DEBUG] Found mapping file for sample '$TRUTH_TUMOR'"
-                                new_mapped=$(grep 'hartwig_number:' "$mapping_file" | head -n1 | sed -E 's/.*hartwig_number:[[:space:]]*"?([^"]+)"?.*/\1/')
-                                echo "[DEBUG] Extracted new sample id from mapping: '$new_mapped'"
-                                if [[ -z "$new_mapped" ]]; then
-                                    echo "[WARN] New sample id empty in mapping for '$TRUTH_TUMOR'; using truth tumor id"
-                                    new_mapped="$TRUTH_TUMOR"
-                                fi
-                            else
-                                echo "[WARN] Mapping file not found for sample '$TRUTH_TUMOR' at $mapping_file; using truth tumor id"
-                                new_mapped="$TRUTH_TUMOR"
-                            fi
-                        else
-                            new_mapped="$TRUTH_TUMOR"
-                        fi
-
-                        echo "[DEBUG] Mapped sample id for target lookup: '$new_mapped'"
-
-                        # Check if the target folder contains the directory for the new sample id.
-                        TARGET_DIR="$RENAMED_TARGET_RUNS_DIR/$new_mapped"
+                        TARGET_DIR="$RENAMED_TARGET_RUNS_DIR/$TRUTH_TUMOR"
                         if [[ ! -d "$TARGET_DIR" ]]; then
-                            echo "[WARN] Skipping sample '$TRUTH_TUMOR' because target directory '$new_mapped' does not exist."
+                            echo "[WARN] Skipping sample '$TRUTH_TUMOR' because target directory '$TRUTH_TUMOR' does not exist."
                             continue
                         fi
 
-                        # From target metadata, extract target tumor and reference sample ids.
                         TARGET_METADATA="$TARGET_DIR/metadata.json"
                         if [[ ! -f "$TARGET_METADATA" ]]; then
                             echo "[WARN] metadata.json not found in target directory '$TARGET_DIR', skipping sample."
                             continue
                         fi
-                        TARGET_TUMOR=$(jq -r '.tumor.sampleName' "$target_metadata")
-                        TARGET_REF=$(jq -r '.reference.sampleName' "$target_metadata")
-                        echo "[DEBUG] From target metadata: target_tumor='$TARGET_TUMOR', TARGET_REF='$TARGET_REF'"
+                        TARGET_TUMOR=$(jq -r '.tumor.sampleName' "$TARGET_METADATA")
+                        TARGET_REF=$(jq -r '.reference.sampleName' "$TARGET_METADATA")
+                        echo "[DEBUG] From target metadata: TARGET_TUMOR='$TARGET_TUMOR', TARGET_REF='$TARGET_REF'"
 
                         # Write CSV line.
                         echo "$TRUTH_TUMOR,$TRUTH_REF,$TRUTH_TUMOR,$TRUTH_REF,$TARGET_TUMOR,$TARGET_REF" >> "$SAMPLE_ID_FILE"
@@ -224,12 +188,6 @@ stages:
             echo "[INFO] Sample ID file created:"
             cat "$SAMPLE_ID_FILE"
 
-            # Set somatic unfiltered vcf new location based on if running against hartwig_numbers
-            if [[ ${map_sample} == "true" ]]; then
-                SOMATIC_UNFILTERED_VCF_NEW="$RENAMED_TARGET_RUNS_DIR/*/sage/somatic/*.sage.somatic.vcf.gz"
-            else
-                SOMATIC_UNFILTERED_VCF_NEW="$RENAMED_TARGET_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz"
-            fi
 
             COMPAR_REPORTED_OUTPUT_DIR="$OUTPUT_DIR/reported"
             if [[ -d "$COMPAR_REPORTED_OUTPUT_DIR" ]]; then
@@ -341,7 +299,7 @@ stages:
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.10"
+    version: "0.1.2"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -361,7 +319,7 @@ stages:
         echo "Input directory: $COMPAR_INPUT_DIR"
         echo "Output Excel file: $OUTPUT_FILE"
 
-        python3 /scripts/create_excel_compar.py "$COMPAR_INPUT_DIR" "$OUTPUT_FILE" "$TRUTH_BUCKET"
+        python3 /scripts/create_excel_compar.py "$COMPAR_INPUT_DIR" "$OUTPUT_FILE"
 
         # Copy the Excel file to /tmp/output for transfer.
         cp "$OUTPUT_FILE" /out/
@@ -383,121 +341,3 @@ stages:
     inputStages:
       - execute-compar
       - truth-bucket
-
-  - name: "retrieve-output"
-    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.10"
-    command: "bash /config/run.sh"
-    configFiles:
-      run.sh: |
-        #!/usr/bin/env bash
-        set -eo pipefail
-
-        WORK_DIR="/tmp/work"
-        mkdir -p $WORK_DIR
-        RUN_ID=${run_id}
-
-        COMPAR_BASE_DIR="/in/execute-compar/compar_${run_id}"
-        COMPAR_DIR="$COMPAR_BASE_DIR/reported"
-        # Mount the truth_bucket and target_bucket directly.
-        REF_DIR="/in/truth-bucket/"
-        NEW_DIR="/in/target-bucket/"
-        OUTPUT_FILE="$WORK_DIR/extracted_output.tsv"
-
-        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting output extraction..."
-        echo "COMPAR_DIR: $COMPAR_DIR"
-        echo "REF_DIR: $REF_DIR"
-        echo "NEW_DIR: $NEW_DIR"
-        echo "Output file: $OUTPUT_FILE"
-
-        # --- Dynamically determine the v6 flag based on pipeline version ---
-        # Take the first directory from REF_DIR.
-        SAMPLE_DIR=$(find "$REF_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)
-        if [ -z "$SAMPLE_DIR" ]; then
-            echo "No sample directory found in REF_DIR: $REF_DIR"
-            exit 1
-        fi
-
-        # Set the full path to run.log in the sample directory.
-        SAMPLE_LOG_FILE="$SAMPLE_DIR/run.log"
-        echo "Using run log file: $SAMPLE_LOG_FILE"
-
-        # Extract the pipeline version from the run.log file.
-        PIPELINE_VERSION=$(grep "Version of pipeline5 is" "$SAMPLE_LOG_FILE" | sed -n 's/.*\[\(.*\)\].*/\1/p')
-        echo "Extracted pipeline version: $PIPELINE_VERSION"
-        MAJOR_VERSION=$(echo "$PIPELINE_VERSION" | cut -d. -f1)
-        if [[ "$MAJOR_VERSION" -ge 6 ]]; then
-            V6_FLAG="--v6"
-        else
-            V6_FLAG=""
-        fi
-        echo "Using V6 flag: $V6_FLAG"
-
-        python3 /scripts/extract_pipeline_output.py \
-          --compar_dir "$COMPAR_DIR" \
-          --ref_dir "$REF_DIR" \
-          --new_dir "$NEW_DIR" \
-          --output_file "$OUTPUT_FILE" \
-          $V6_FLAG
-
-        OUTPUT_FILE_MUTATION="$WORK_DIR/extracted_output_mutation.tsv"
-        OUTPUT_FILE_DISRUPTION="$WORK_DIR/extracted_output_disruption.tsv"
-        OUTPUT_FILE_CNV="$WORK_DIR/extracted_output_cnv.tsv"
-
-        cp "$OUTPUT_FILE_MUTATION" /out/
-        cp "$OUTPUT_FILE_DISRUPTION" /out/
-        cp "$OUTPUT_FILE_CNV" /out/
-
-        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Output extraction completed."
-    options:
-      backoffLimit: 2
-      annotations:
-        gke-gcsfuse/ephemeral-storage-request: 50Gi # Can be optimized?
-      stageTimeoutMinutes: 180
-      resources:
-        requests:
-          cpu: 16
-          memory: 32Gi 
-          storage: 50Gi # Can be optimized?
-      node:
-        spot: true
-        pool: "n2d-standard-32-pool-1"
-    inputStages:
-      - execute-compar
-      - truth-bucket
-      - target-bucket
-
-  - name: "igv-visualize"
-    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.0.10"
-    command: "bash /config/run.sh"
-    configFiles:
-      run.sh: |
-        #!/usr/bin/env bash
-        set -eo pipefail
-
-        WORK_DIR="/tmp/work"
-        RUN_ID=${run_id}
-
-        OUTPUT_DIR="$WORK_DIR/compar_$RUN_ID"
-        
-        echo "Launching IGV visualization based on output in $OUTPUT_DIR"
-        # TODO: Implement IGV visualization steps here
-        
-        echo "IGV visualization stage completed"
-        # cp [any IGV output files] /out/
-    options:
-      backoffLimit: 2
-      annotations:
-        gke-gcsfuse/ephemeral-storage-request: 5Gi
-      stageTimeoutMinutes: 60
-      resources:
-        requests:
-          cpu: 8
-          memory: 4Gi
-          storage: 5Gi
-      node:
-        spot: true
-        pool: "n2d-standard-16-pool-1"
-    inputStages:
-      - execute-compar
