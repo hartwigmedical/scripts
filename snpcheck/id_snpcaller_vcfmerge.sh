@@ -7,11 +7,11 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
   echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)"
   echo "NOTE: When specifying a bucket, both input and output buckets must be provided."
   exit 1
+else
+  # Redirect output to log only after usage validated
+  exec > "$HOME/script.log" 2>&1
+  set -euo pipefail
 fi
-
-# Redirect output to log
-exec > "$HOME/script.log" 2>&1
-set -euo pipefail
 
 # Define in- and output buckets
 setname=$1
