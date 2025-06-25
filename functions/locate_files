@@ -421,7 +421,7 @@ locate_crc_experiment_directory() {
 }
 
 locate_crc_personalization_reference_data() {
-    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_patients.json"
+    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
 }
 
 ############################### ACTIN Cohort ###################################
