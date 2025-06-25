@@ -268,8 +268,8 @@ def determine_remarks(
         if FAIL_NO_TUMOR in run_data.purple_qc.qc_status:
             remarks.append(
                 f"'{FAIL_NO_TUMOR}' betekent dat er volgens het algoritme geen of slechts zeer weinig tumor aanwezig is in het sample. "
-                f"Dit zou kunnen komen doordat dit een normal sample of een zeer laag purity sample is, "
-                f"of doordat dit een rustig type tumor is waarvoor onze purity schatter niet goed werkt.")
+                f"Dit zou kunnen komen doordat dit een normal sample of een zeer laag mTCP sample is, "
+                f"of doordat dit een rustig type tumor is waarvoor onze mTCP schatter niet goed werkt.")
         if WARN_DELETED_GENES in run_data.purple_qc.qc_status or WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
             if WARN_DELETED_GENES in run_data.purple_qc.qc_status and WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
                 sentence_start = f"'{WARN_DELETED_GENES}' en '{WARN_HIGH_COPY_NUMBER_NOISE}' betekenen"
@@ -278,7 +278,7 @@ def determine_remarks(
             else:
                 sentence_start = f"'{WARN_HIGH_COPY_NUMBER_NOISE}' betekent"
             remarks.append(
-                f"{sentence_start} dat er indicaties zijn dat de gekozen purity en/of ploidy voor dit sample niet correct zijn."
+                f"{sentence_start} dat er indicaties zijn dat de gekozen mTCP en/of ploidy voor dit sample niet correct zijn."
             )
             if WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
                 remarks.append("Om deze reden worden amplificaties en deleties alleen gecalld met SV support.")
@@ -323,7 +323,7 @@ def determine_remarks(
 
     if purity_too_low:
         remarks.append(
-            f"De purity van dit sample ({run_data.purple_qc.purity*100:.2f}%) is te laag "
+            f"De mTCP van dit sample ({run_data.purple_qc.purity*100:.2f}%) is te laag "
             f"voor het betrouwbaar callen van {pretty_listing(purity_too_low)}."
         )
 
