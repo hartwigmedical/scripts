@@ -1043,11 +1043,11 @@ locate_driver_gene_panel_38_tsv() {
 }
 
 locate_known_fusion_data_37_csv() {
-    echo "/data/resources/public/fusions/37/known_fusion_data.37.csv"
+    echo "/data/resources/public/sv/37/known_fusion_data.37.csv"
 }
 
 locate_known_fusion_data_38_csv() {
-    echo "/data/resources/public/fusions/38/known_fusion_data.38.csv"
+    echo "/data/resources/public/sv/38/known_fusion_data.38.csv"
 }
 
 locate_peach_resource_dir() {
