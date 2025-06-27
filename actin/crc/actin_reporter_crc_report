@@ -11,7 +11,7 @@ fi
 
 base_dir="$(locate_crc_experiment_directory)"
 
-environment_config_yaml="${base_dir}/config/actin-crc-config.yaml"
+crc_environment_config_yaml="${base_dir}/config/actin-crc-config.yaml"
 
 patient_json="${base_dir}/${patient}.patient_record.json"
 treatment_match_json="${base_dir}/${patient}.treatment_match.json"
@@ -24,7 +24,7 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -patient_json "${patient_json}" \
     -treatment_match_json "${treatment_match_json}" \
     -output_directory "${base_dir}" \
-    -override_yaml "${environment_config_yaml}" \
+    -override_yaml "${crc_environment_config_yaml}" \
     "$@"
 
 echo ""
@@ -34,6 +34,6 @@ java -cp ${actin_jar} com.hartwig.actin.report.ReporterApplicationKt \
     -treatment_match_json "${treatment_match_json}" \
     -output_directory "${base_dir}" \
     -enable_extended_mode \
-    -override_yaml "${environment_config_yaml}" \
+    -override_yaml "${crc_environment_config_yaml}" \
     "$@"
 
