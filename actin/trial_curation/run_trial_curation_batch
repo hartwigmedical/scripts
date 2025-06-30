@@ -13,7 +13,7 @@ nct_ids=(
     'NCT04626635'
 )
 
-source /opt/anaconda3/etc/profile.d/conda.sh
+source /opt/miniconda3/etc/profile.d/conda.sh
 conda activate trial_curator
 
 export OPENAI_API_KEY="YOUR_API_KEY"
