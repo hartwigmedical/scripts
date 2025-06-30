@@ -45,7 +45,7 @@ stages:
         
         
         gatk CollectWgsMetrics -I $INPUT_BAM_FILE -R $REFERENCE_GENOME -O $GATK_WORK_DIR/${sample_id}.wgs.metrics.txt \
-               --INTERVALS $INTERVAL &
+               --INTERVALS $INTERVAL
         
         echo "$(date +"%Y-%m-%d %H:%M:%S") Copying output"
         cp -r $GATK_WORK_DIR/${sample_id}.wgs.metrics.txt /out/
