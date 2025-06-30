@@ -1196,6 +1196,14 @@ locate_serve_output_actin_mcgi() {
     echo "/data/output/actin_output_mcgi"
 }
 
+locate_serve_output_actin_pipeline_nl() {
+    echo "/data/output/actin_pipeline_output_nl"
+}
+
+locate_serve_output_actin_pipeline_mcgi() {
+    echo "/data/output/actin_pipeline_output_mcgi"
+}
+
 ############################### ROSE Resources ################################
 
 locate_actionability_database_tsv() {
