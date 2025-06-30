@@ -1,0 +1,53 @@
+name: "wgs-metrics"
+version: "0.0.4"
+storagePath: "gs://gatk-wgs-metrics"
+externalInputs:
+  - name: bam-folder
+    location: "${bam_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: interval-folder
+    location: "gs://hmf-crunch-innovation/info/gatk"
+stages:
+  - name: "gatk"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/gatk"
+    version: "4.6.2.0"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 360
+      resources:
+        resourceProfile: "high"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        
+        set -eo pipefail
+        
+        INPUT_PATH="/tmp/input"
+        OUTPUT_PATH="/tmp/output"
+        INPUT_BAM_FILE="/in/bam-folder/${sample_id}.bam"
+        INPUT_BAI_FILE="/in/bam-folder/${sample_id}.bam.bai"
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt"
+        REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        GATK_WORK_DIR=${sample_id}_gatk
+        
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Creating tmp directories [$LOG_INFO]"
+        mkdir -p "$INPUT_PATH" "$OUTPUT_PATH"
+
+        mkdir -p "$GATK_WORK_DIR"
+        
+        
+        gatk CollectWgsMetrics -I $INPUT_BAM_FILE -R $REFERENCE_GENOME -O $GATK_WORK_DIR/${sample_id}.wgs.metrics.txt \
+               --INTERVALS $INTERVAL &
+        
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Copying output"
+        cp -r $GATK_WORK_DIR/${sample_id}.wgs.metrics.txt /out/
+        
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Finished with gatk workflow"
