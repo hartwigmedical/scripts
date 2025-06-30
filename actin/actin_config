@@ -11,7 +11,7 @@ pilot_actin_vm() {
 }
 
 production_actin_emc_project() {
-    echo "actin-prod"
+    echo "actin-emc"
 }
 
 production_actin_emc_ops_vm() {
