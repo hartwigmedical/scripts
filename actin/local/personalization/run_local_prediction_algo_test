@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+latest_prediction_docker_image="c3e68e8adbe0"
+
+# (KODU): Latest docker image ID refers to 0.28.0. You can pull via this command:
+#   pull_prediction_docker_with_version 0.28.0
+
+docker run \
+    -v ~/hmf/tmp:/out \
+    -v ~/hmf/repos/actin-personalization/prediction/src/test/python/:/data \
+    -v ~/hmf/repos/actin-resources-private/personalization/:/resources \
+    ${latest_prediction_docker_image} \
+     /data/testReferenceObject.json \
+     /out/output.json \
+     --trained_path /resources/prediction_model \
+     --treatment_config /resources/treatment_combinations.json

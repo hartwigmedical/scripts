@@ -172,7 +172,12 @@ class RestClient:
 
     def get_lama_patient_reporter_data(self, isolation_barcode):
         runs = self.get_runs_by_tumor_isolation_barcode(isolation_barcode)
-        latest_run = sorted([r for r in runs if r.get('context') == 'DIAGNOSTIC' and r.get('startTime')], key=lambda r: r['startTime'])[-1]
+        sorted_runs = sorted([r for r in runs if r.get('context') == 'DIAGNOSTIC' and r.get('startTime')], key=lambda r: r['startTime'])
+        if sorted_runs:
+            latest_run = sorted_runs[-1]
+        else:
+            latest_run = None
+
         ref_isolation_barcode = latest_run.get('set', {}).get('ref_isolation_barcode') if latest_run else None
         url = f'api/queries/patient-reporter?tumor-isolation-barcode={isolation_barcode}'
         if ref_isolation_barcode:

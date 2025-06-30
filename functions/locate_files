@@ -390,6 +390,10 @@ locate_dnds_driver_likelihood_tsg() {
     echo "/data/resources/actin/dnds_config/dnds_driver_likelihood_tsg.tsv"
 }
 
+locate_panel_specifications_file() {
+  echo "/data/resources/actin/panel_specifications/panel_specifications.tsv"
+}
+
 locate_actin_clinical_curation_directory() {
     echo "/data/actin/config/clinical_curation"
 }
@@ -417,7 +421,7 @@ locate_crc_experiment_directory() {
 }
 
 locate_crc_personalization_reference_data() {
-    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_patients.json"
+    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
 }
 
 ############################### ACTIN Cohort ###################################
@@ -460,6 +464,12 @@ locate_actin_clinical_feed_input_bucket() {
     local gcp_project=$1 && shift
 
     echo "gs://${gcp_project}-clinical-pipeline-feed-input"
+}
+
+locate_actin_transformed_feed_bucket() {
+    local gcp_project=$1 && shift
+
+    echo "gs://${gcp_project}-clinical-feed-transformed"
 }
 
 locate_actin_clinical_curation_bucket() {
@@ -1033,11 +1043,11 @@ locate_driver_gene_panel_38_tsv() {
 }
 
 locate_known_fusion_data_37_csv() {
-    echo "/data/resources/public/fusions/37/known_fusion_data.37.csv"
+    echo "/data/resources/public/sv/37/known_fusion_data.37.csv"
 }
 
 locate_known_fusion_data_38_csv() {
-    echo "/data/resources/public/fusions/38/known_fusion_data.38.csv"
+    echo "/data/resources/public/sv/38/known_fusion_data.38.csv"
 }
 
 locate_peach_resource_dir() {
@@ -1184,6 +1194,14 @@ locate_serve_output_actin_nl() {
 
 locate_serve_output_actin_mcgi() {
     echo "/data/output/actin_output_mcgi"
+}
+
+locate_serve_output_actin_pipeline_nl() {
+    echo "/data/output/actin_pipeline_output_nl"
+}
+
+locate_serve_output_actin_pipeline_mcgi() {
+    echo "/data/output/actin_pipeline_output_mcgi"
 }
 
 ############################### ROSE Resources ################################

@@ -176,6 +176,7 @@ class ReportSharer:
                                                       file_names=self._molecular_files(converted_reporting_id))
         germline_blobs = self._get_blobs_from_bucket(bucket=self.pipeline_output_bucket,
                                                      file_names=self._germline_files(converted_reporting_id))
+
         print(f"Sharing {len(report_blobs)} report files with the portal")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket)
@@ -188,6 +189,19 @@ class ReportSharer:
             for blob in germline_blobs:
                 self._copy_blob_to_bucket(blob=blob, destination_bucket=self.portal_bucket,
                                           target_sub_folder='RUO_germline')
+
+        # Get blob from the 'wgs-combined-snps-vcfs' bucket
+        vcf_bucket = self.storage_client.bucket("wgs-combined-snps-vcfs")
+        combined_vcf_file = f"{converted_reporting_id}.reported.variants.and.snps.vcf"
+        combined_vcf_blobs = self._get_blobs_from_bucket(bucket=vcf_bucket, file_names=combined_vcf_file)
+
+        # If found, copy it to the portal
+        if combined_vcf_blobs:
+            print(f"Sharing combined VCF file: {combined_vcf_blobs[0].name}")
+            self._copy_blob_to_bucket(blob=combined_vcf_blobs[0], destination_bucket=self.portal_bucket, target_sub_folder="RUO")
+        else:
+            print(f"No combined VCF file found for {converted_reporting_id}")
+
 
     def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
@@ -217,7 +231,8 @@ class ReportSharer:
             "purple.cnv.somatic.tsv",
             "orange.pdf",
             ".reconCNV.html",
-            ".sage.visualisation.zip"
+            ".sage.visualisation.zip",
+            ".vchord.prediction.tsv"
         }
 
     def _molecular_files(self, converted_reporting_id):

@@ -24,6 +24,7 @@ ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
 ensembl_data_dir="$(locate_ensembl_data_dir_37)"
 driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
+panel_specifications_file="$(locate_panel_specifications_file)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
@@ -39,6 +40,7 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -ensembl_data_dir "${ensembl_data_dir}" \
     -driver_gene_panel "${driver_gene_panel}" \
     -known_fusions_file "${known_fusion_file}" \
+    -panel_specifications_file "${panel_specifications_file}" \
     -output_directory "${base_dir}" \
     "$@"
 

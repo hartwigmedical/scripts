@@ -1,0 +1,8 @@
+---
+name: COLO829TARG3v1
+workflow: sage-rerun
+version: 0.0.1
+params:
+  run_uri: gs://targeted-v6-verification/COLO829TARG3v1-jt-trgt-ver/COLO829TARG3v1/aligner/
+  resources_uri: gs://targeted-v6-verification/tmp_resources
+  sample_id: COLO829TARG3v1
