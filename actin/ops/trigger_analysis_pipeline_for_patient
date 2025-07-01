@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -n "${namespace}" ]]; then
-    topic_suffix="-${namespace}"
+    topic_suffix=".${namespace}"
 else
     topic_suffix=""
 fi
