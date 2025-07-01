@@ -1,5 +1,5 @@
 name: "wgs-metrics"
-version: "0.0.5"
+version: "0.0.6"
 storagePath: "gs://gatk-wgs-metrics"
 externalInputs:
   - name: bam-folder
@@ -34,6 +34,93 @@ stages:
         INPUT_BAM_FILE="/in/bam-folder/${sample_id}.bam"
         INPUT_BAI_FILE="/in/bam-folder/${sample_id}.bam.bai"
         REF_FOLDER="ref-folder"
-=        
+
         SAMPLE_ID="${sample_id}"
         ./gatk.sh $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID
+
+  - name: "collectwgsmetrics_mq0"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 360
+      resources:
+        resourceProfile: "high"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${sample_id}.bam"
+        INPUT_BAI_FILE="/in/bam-folder/${sample_id}.bam.bai"
+        REF_FOLDER="ref-folder"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 0 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID
+
+  - name: "collectwgsmetrics_hc"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 360
+      resources:
+        resourceProfile: "high"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt" #replace
+        
+        INPUT_BAM_FILE="/in/bam-folder/${sample_id}.bam"
+        INPUT_BAI_FILE="/in/bam-folder/${sample_id}.bam.bai"
+        REF_FOLDER="ref-folder"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID
+  - name: "collectwgsmetrics_hc_mq0"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 360
+      resources:
+        resourceProfile: "high"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt" #replace
+        
+        INPUT_BAM_FILE="/in/bam-folder/${sample_id}.bam"
+        INPUT_BAI_FILE="/in/bam-folder/${sample_id}.bam.bai"
+        REF_FOLDER="ref-folder"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 0 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID
+        
