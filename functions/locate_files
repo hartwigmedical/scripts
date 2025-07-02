@@ -8,6 +8,10 @@ locate_actin_jar_on_vm() {
     echo "/data/actin/system/actin.jar"
 }
 
+locate_actin_clinical_jar_on_vm() {
+    echo "/data/actin/system/actin-clinical.jar"
+}
+
 locate_actin_transvar_jar_on_vm() {
     echo "/data/tools/actin-transvar/actin-transvar.jar"
 }
@@ -422,6 +426,10 @@ locate_base_crc_experiment_directory() {
 
 locate_crc_experiment_real_patients_directory() {
     echo "$(locate_base_crc_experiment_directory)/real_patients"
+}
+
+locate_crc_experiment_test_patients_directory() {
+    echo "$(locate_base_crc_experiment_directory)/test_patients"
 }
 
 locate_crc_actin_environment_config() {

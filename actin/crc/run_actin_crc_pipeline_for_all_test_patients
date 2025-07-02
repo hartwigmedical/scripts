@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+base_dir=$(locate_crc_experiment_test_patients_directory)
+
+java -cp $(locate_actin_clinical_jar_on_vm) com.hartwig.actin.clinical.util.BuildCrcClinicalFromTsvKt \
+    -input_tsv "${base_dir}/input/patients.tsv" \
+    -output_directory ${base_dir}
+    
+    
