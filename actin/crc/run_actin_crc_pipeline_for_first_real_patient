@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+patient="ACTN02020001"
+
+actin_molecular_interpreter_crc_real_patient ${patient}
+
+echo ""
+
+actin_treatment_matcher_crc_real_patient ${patient}
+
+echo ""
+
+actin_reporter_crc_real_patient ${patient}

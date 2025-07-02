@@ -416,12 +416,20 @@ locate_extended_efficacy_json() {
     echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
 }
 
-locate_crc_experiment_directory() {
+locate_base_crc_experiment_directory() {
     echo "/data/actin/crc_report_development"
 }
 
+locate_crc_experiment_real_patients_directory() {
+    echo "$(locate_base_crc_experiment_directory)/real_patients"
+}
+
+locate_crc_actin_environment_config() {
+    echo "$(locate_base_crc_experiment_directory)/config/actin-crc-config.yaml"
+}
+
 locate_crc_personalization_reference_data() {
-    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
+    echo "$(locate_base_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
 }
 
 ############################### ACTIN Cohort ###################################
