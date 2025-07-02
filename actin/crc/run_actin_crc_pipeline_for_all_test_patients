@@ -5,8 +5,8 @@ source message_functions || exit 1
 source io_functions || exit 1
 
 base_dir=$(locate_crc_experiment_test_patients_directory)
-working_dir="${base_dir}/outputs"
 
+working_dir="${base_dir}/outputs"
 create_or_cleanup_dir "${working_dir}"
 
 java -cp $(locate_actin_clinical_jar_on_vm) com.hartwig.actin.clinical.util.BuildCrcClinicalFromTsvKt \
