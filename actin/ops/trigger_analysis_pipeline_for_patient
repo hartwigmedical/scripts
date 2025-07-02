@@ -18,11 +18,11 @@ if [[ "${gcp_project}" == "actin-emc" ]]; then
     shift
 fi
 
-forceUseHartwigSequencing="false"
+force_use_hartwig_sequencing="false"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --force_use_hartwig_sequencing)
-            forceUseHartwigSequencing="true"
+            force_use_hartwig_sequencing="true"
             ;;
         *)
             error "Unknown option, only --force_use_hartwig_sequencing is supported: $1."
@@ -38,4 +38,4 @@ else
 fi
 
 gcloud pubsub topics publish projects/${gcp_project}/topics/analysis-pipeline${topic_suffix}.pending \
-    --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\", \"forceUseHartwigSequencing\": \"${forceUseHartwigSequencing}\"}"
+    --message="{\"patientId\": \"${patient}\", \"trigger\": \"MANUAL\", \"forceUseHartwigSequencing\": \"${force_use_hartwig_sequencing}\"}"
