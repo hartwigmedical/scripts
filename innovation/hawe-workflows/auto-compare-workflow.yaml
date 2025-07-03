@@ -1,11 +1,13 @@
 name: "auto-compare"
-version: "0.1.6"
-storagePath: "gs://auto-compare-output/"
+version: "0.2.4"
+storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
     location: "${truth_bucket_uri}"
   - name: target-bucket
     location: "${target_bucket_uri}"
+  - name: sample-id-bucket
+    location: "${sample_id_bucket_uri}"
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
@@ -26,6 +28,7 @@ stages:
         OPTIONAL_ARGS='${compar_optional_arguments}'
         read -r -a OPTIONAL_ARGS_ARRAY <<< "$OPTIONAL_ARGS"
         SAMPLE_LINK=$sample_link
+        SAMPLE_ID_CSV_URI="/in/sample-id-bucket/${sample_id_file_name}"
 
         # Additional parameters
         COMPAR_JAR="compar.jar"  # This jar is included in the Docker image.
@@ -55,185 +58,93 @@ stages:
         echo "Using driver gene panel: $DRIVER_GENE_PANEL"
         echo "Optional compar arguments: ${OPTIONAL_ARGS_ARRAY[@]}"
         echo "Sample list json: $SAMPLE_LINK"
+        echo "External sample_id.csv: ${SAMPLE_ID_CSV_URI:-<none>}"
 
         main() {
-            echo "[INFO] Starting COMPAR execution"
-            create_dir "$OUTPUT_DIR" || echo "[ERROR] Could not create output dir: $OUTPUT_DIR"
+            create_dir "$OUTPUT_DIR"
 
-            # Create renamed directories for truth and target runs.
-            RENAMED_TRUTH_RUNS_DIR="$OUTPUT_DIR/truth"
-            create_dir "$RENAMED_TRUTH_RUNS_DIR" || echo "[ERROR] Could not create truth runs dir"
-            symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR" "$RENAMED_TRUTH_RUNS_DIR" || echo "[ERROR] Could not symlink truth runs"
+            # rename truth/target runs to tumor-sample names
+            RENAMED_TRUTH_RUNS_DIR="$OUTPUT_DIR/truth";  create_dir "$RENAMED_TRUTH_RUNS_DIR"
+            symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR"  "$RENAMED_TRUTH_RUNS_DIR"
 
-            RENAMED_TARGET_RUNS_DIR="$OUTPUT_DIR/target"
-            create_dir "$RENAMED_TARGET_RUNS_DIR" || echo "[ERROR] Could not create target runs dir"
-            symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR" || echo "[ERROR] Could not symlink target runs"
+            RENAMED_TARGET_RUNS_DIR="$OUTPUT_DIR/target"; create_dir "$RENAMED_TARGET_RUNS_DIR"
+            symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR"
 
-            # Determine the path for the sample_id.csv file.
-            SAMPLE_ID_FILE="$OUTPUT_DIR/sample_ids.csv"
-            if [[ -f "$SAMPLE_ID_FILE" ]]; then
-                echo "[WARN] Sample ID file exists: $SAMPLE_ID_FILE. Skipping creation."
+            # SAMPLE_ID_FILE logic
+            if [[ -n "$SAMPLE_ID_CSV_URI" ]]; then
+                echo "[INFO] Using provided sample_id.csv from \$sample_id_csv_uri"
+                SAMPLE_ID_FILE="$SAMPLE_ID_CSV_URI"
             else
-                echo "[INFO] Creating sample ID file: $SAMPLE_ID_FILE"
-                # Write CSV header.
-                echo "SampleId,GermlineSampleId,RefSampleId,RefGermlineSampleId,NewSampleId,NewGermlineSampleId" > "$SAMPLE_ID_FILE"
-
-                # If a non-empty mapping dictionary is provided via the SAMPLE_LINK variable, use it.
-                if [[ -n "$SAMPLE_LINK" && "$SAMPLE_LINK" != "{}" ]]; then
-                    echo "[INFO] Using provided sample mapping dictionary from SAMPLE_LINK."
-
-                    # Debug: list actual entries (symlinks) under truth/target
-                    echo "[DEBUG] RENAMED_TRUTH_RUNS_DIR = $RENAMED_TRUTH_RUNS_DIR"
-                    echo "[DEBUG]   entries in TRUTH:"
-                    ls -l $RENAMED_TRUTH_RUNS_DIR | sed 's/^/    /'
-
-                    echo "[DEBUG] RENAMED_TARGET_RUNS_DIR = $RENAMED_TARGET_RUNS_DIR"
-                    echo "[DEBUG]   entries in TARGET:"
-                    ls -l $RENAMED_TARGET_RUNS_DIR | sed 's/^/    /'
-
-                    # Iterate each mapping
-                    echo $SAMPLE_LINK | jq -c 'to_entries[]' | while read -r ENTRY; do
-                        TRUTH_ID=$(echo $ENTRY | jq -r '.key')
-                        echo "[DEBUG] Processing TRUTH_ID = '$TRUTH_ID'"
-
-                        # Match symlinks (catch dirs and links)
-                        TRUTH_DIR=$(find $RENAMED_TRUTH_RUNS_DIR -maxdepth 1 -name "$TRUTH_ID*" | head -n1)
-                        echo "[DEBUG]   find returned TRUTH_DIR = '$TRUTH_DIR'"
-
-                        if [ -z "$TRUTH_DIR" ]; then
-                            echo "[WARN] No matching truth directory for: $TRUTH_ID" >&2
-                            continue
-                        fi
-
-                        # Loop targets for this truth entry
-                        echo $ENTRY | jq -r '.value[]' | while read -r TARGET_ID; do
-                            echo "[DEBUG]   Processing TARGET_ID = '$TARGET_ID'"
-
-                            TARGET_DIR=$(find $RENAMED_TARGET_RUNS_DIR -maxdepth 1 -name "$TARGET_ID*" | head -n1)
-                            echo "[DEBUG]     find returned TARGET_DIR = '$TARGET_DIR'"
-
-                            if [ -z "$TARGET_DIR" ]; then
-                                echo "[WARN] No matching target directory for: $TARGET_ID" >&2
-                                continue
-                            fi
-
-                            TRUTH_METADATA=$TRUTH_DIR/metadata.json
-                            TARGET_METADATA=$TARGET_DIR/metadata.json
-                            echo "[DEBUG]     TRUTH_METADATA = $TRUTH_METADATA"
-                            echo "[DEBUG]     TARGET_METADATA = $TARGET_METADATA"
-
-                            if [ ! -f $TRUTH_METADATA ]; then
-                                echo "[WARN] metadata.json missing in $TRUTH_DIR" >&2
-                                continue
-                            fi
-                            if [ ! -f $TARGET_METADATA ]; then
-                                echo "[WARN] metadata.json missing in $TARGET_DIR" >&2
-                                continue
-                            fi
-
-                            TRUTH_TUMOR=$(jq -r .tumor.sampleName $TRUTH_METADATA)
-                            TRUTH_REF=$(jq -r .reference.sampleName $TRUTH_METADATA)
-                            if [ "$TRUTH_REF" = "null" ] || [ -z "$TRUTH_REF" ]; then
-                                TRUTH_REF=$TRUTH_TUMOR
-                            fi
-
-                            TARGET_TUMOR=$(jq -r .tumor.sampleName $TARGET_METADATA)
-                            TARGET_REF=$(jq -r .reference.sampleName $TARGET_METADATA)
-                            if [ "$TARGET_REF" = "null" ] || [ -z "$TARGET_REF" ]; then
-                                TARGET_REF=$TARGET_TUMOR
-                            fi
-
-                            echo "[INFO] Writing CSV row: $TRUTH_TUMOR,$TRUTH_REF → $TARGET_TUMOR,$TARGET_REF"
-                            echo $TARGET_TUMOR,$TARGET_TUMOR,$TRUTH_TUMOR,$TRUTH_REF,$TARGET_TUMOR,$TARGET_REF \
-                                >> $SAMPLE_ID_FILE
-                        done
-                    done
-                else
-                    # Auto-generate the sample_id.csv file if no mapping is provided.
-                    for TRUTH_DIR in $(ls "$RENAMED_TRUTH_RUNS_DIR"); do
-                        echo "[DEBUG] Processing truth directory: $TRUTH_DIR"
-                        truth_path="$RENAMED_TRUTH_RUNS_DIR/$TRUTH_DIR"
-                        truth_metadata="$truth_path/metadata.json"
-                        if [[ ! -f "$truth_metadata" ]]; then
-                            echo "[WARN] metadata.json not found in $truth_path, skipping."
-                            continue
-                        fi
-
-                        # Extract sample IDs from truth metadata.
-                        TRUTH_REF=$(jq -r '.reference.sampleName' "$truth_metadata")
-                        TRUTH_TUMOR=$(jq -r '.tumor.sampleName' "$truth_metadata")
-                        echo "[DEBUG] From truth metadata: TRUTH_REF='$TRUTH_REF', TRUTH_TUMOR='$TRUTH_TUMOR'"
-
-                        TARGET_DIR="$RENAMED_TARGET_RUNS_DIR/$TRUTH_TUMOR"
-                        if [[ ! -d "$TARGET_DIR" ]]; then
-                            echo "[WARN] Skipping sample '$TRUTH_TUMOR' because target directory '$TRUTH_TUMOR' does not exist."
-                            continue
-                        fi
-
-                        TARGET_METADATA="$TARGET_DIR/metadata.json"
-                        if [[ ! -f "$TARGET_METADATA" ]]; then
-                            echo "[WARN] metadata.json not found in target directory '$TARGET_DIR', skipping sample."
-                            continue
-                        fi
-                        TARGET_TUMOR=$(jq -r '.tumor.sampleName' "$TARGET_METADATA")
-                        TARGET_REF=$(jq -r '.reference.sampleName' "$TARGET_METADATA")
-                        echo "[DEBUG] From target metadata: TARGET_TUMOR='$TARGET_TUMOR', TARGET_REF='$TARGET_REF'"
-
-                        # Write CSV line.
-                        echo "$TRUTH_TUMOR,$TRUTH_REF,$TRUTH_TUMOR,$TRUTH_REF,$TARGET_TUMOR,$TARGET_REF" >> "$SAMPLE_ID_FILE"
-                    done
-                fi
+                SAMPLE_ID_FILE="$OUTPUT_DIR/sample_ids.csv"
+                build_sample_id_csv   # only runs when user didn't supply a file
             fi
-
-            echo "[INFO] Sample ID file created:"
+            echo "[INFO] sample_id.csv → $SAMPLE_ID_FILE"
             cat "$SAMPLE_ID_FILE"
 
+            run_compar "reported" "REPORTABLE"
+            run_compar "all"      "DETAILED"
 
-            COMPAR_REPORTED_OUTPUT_DIR="$OUTPUT_DIR/reported"
-            if [[ -d "$COMPAR_REPORTED_OUTPUT_DIR" ]]; then
-                echo "[WARN] Skipping COMPAR Reported; output directory exists"
+            echo "[INFO] COMPAR done"
+        }
+
+        build_sample_id_csv() {
+            echo "[INFO] Building sample_id.csv"
+            echo "SampleId,GermlineSampleId,RefSampleId,RefGermlineSampleId,NewSampleId,NewGermlineSampleId" >"$SAMPLE_ID_FILE"
+
+            if [[ -n "$SAMPLE_LINK" && "$SAMPLE_LINK" != "{}" ]]; then
+                # use provided mapping
+                echo "$SAMPLE_LINK" | jq -c 'to_entries[]' | while read -r e; do
+                TRUTH_ID=$(echo "$e" | jq -r '.key')
+                TRUTH_DIR=$(find "$RENAMED_TRUTH_RUNS_DIR" -maxdepth 1 -name "$TRUTH_ID*" | head -n1) || continue
+                echo "$e" | jq -r '.value[]' | while read -r TARGET_ID; do
+                    TARGET_DIR=$(find "$RENAMED_TARGET_RUNS_DIR" -maxdepth 1 -name "$TARGET_ID*" | head -n1) || continue
+                    write_csv_row "$TRUTH_DIR" "$TARGET_DIR"
+                done
+                done
             else
-                create_dir "$COMPAR_REPORTED_OUTPUT_DIR" || echo "[ERROR] Could not create COMPAR reported output dir"
-                echo "[INFO] Running COMPAR Reported"
-                java -jar "$COMPAR_JAR" \
-                  -sample_id_file "$SAMPLE_ID_FILE" \
-                  -categories "ALL" \
-                  -match_level "REPORTABLE" \
-                  -driver_gene_panel "$DRIVER_GENE_PANEL" \
-                  -sample_dir_ref "$RENAMED_TRUTH_RUNS_DIR/*" \
-                  -sample_dir_new "$RENAMED_TARGET_RUNS_DIR/*" \
-                  -somatic_unfiltered_vcf_ref "$RENAMED_TRUTH_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz" \
-                  -somatic_unfiltered_vcf_new "$SOMATIC_UNFILTERED_VCF_NEW" \
-                  -output_dir "$COMPAR_REPORTED_OUTPUT_DIR" \
-                  -output_id "$OUTPUT_ID" \
-                  -log_debug \
-                  -threads 16 \
-                  "${OPTIONAL_ARGS_ARRAY[@]}" || echo "[ERROR] COMPAR Reported failed"
+                # auto mapping
+                for TRUTH_DIR in "$RENAMED_TRUTH_RUNS_DIR"/*/; do
+                TARGET_DIR="$RENAMED_TARGET_RUNS_DIR/$(basename "$TRUTH_DIR")"
+                [[ -d "$TARGET_DIR" ]] || { echo "[WARN] Missing target for $(basename "$TRUTH_DIR")"; continue; }
+                write_csv_row "$TRUTH_DIR" "$TARGET_DIR"
+                done
             fi
+            }
 
-            COMPAR_ALL_OUTPUT_DIR="$OUTPUT_DIR/all"
-            if [[ -d "$COMPAR_ALL_OUTPUT_DIR" ]]; then
-                echo "[WARN] Skipping COMPAR ALL; output directory exists"
-            else
-                create_dir "$COMPAR_ALL_OUTPUT_DIR" || echo "[ERROR] Could not create COMPAR ALL output dir"
-                echo "[INFO] Running COMPAR ALL"
-                java -jar "$COMPAR_JAR" \
-                  -sample_id_file "$SAMPLE_ID_FILE" \
-                  -categories "ALL" \
-                  -match_level "DETAILED" \
-                  -driver_gene_panel "$DRIVER_GENE_PANEL" \
-                  -sample_dir_ref "$RENAMED_TRUTH_RUNS_DIR/*" \
-                  -sample_dir_new "$RENAMED_TARGET_RUNS_DIR/*" \
-                  -somatic_unfiltered_vcf_ref "$RENAMED_TRUTH_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz" \
-                  -somatic_unfiltered_vcf_new "$SOMATIC_UNFILTERED_VCF_NEW" \
-                  -output_dir "$COMPAR_ALL_OUTPUT_DIR" \
-                  -output_id "$OUTPUT_ID" \
-                  -log_debug \
-                  -threads 16 \
-                  "${OPTIONAL_ARGS_ARRAY[@]}" || echo "[ERROR] COMPAR ALL failed"
-            fi
+        write_csv_row() {
+            local TD=$1; local ND=$2
+            local TRUTH_MD="$TD/metadata.json";   local TARGET_MD="$ND/metadata.json"
+            [[ -f "$TRUTH_MD" && -f "$TARGET_MD" ]] || { echo "[WARN] metadata.json missing"; return; }
 
-            echo "[INFO] Finished running COMPAR"
+            local TT TR TR2 NT NR
+            TT=$(jq -r '.tumor.sampleName'     "$TRUTH_MD")
+            TR=$(jq -r '.reference.sampleName' "$TRUTH_MD"); [[ "$TR" == "null" || -z "$TR" ]] && TR=$TT
+            NT=$(jq -r '.tumor.sampleName'     "$TARGET_MD")
+            NR=$(jq -r '.reference.sampleName' "$TARGET_MD"); [[ "$NR" == "null" || -z "$NR" ]] && NR=$NT
+
+            echo "$TT,$TT,$TT,$TR,$NT,$NR" >>"$SAMPLE_ID_FILE"
+        }
+        
+        run_compar() {
+            local MODE_DIR="$OUTPUT_DIR/$1"; local MATCH="$2"
+            [[ -d "$MODE_DIR" ]] && { echo "[WARN] Skip $1 (exists)"; return; }
+
+            create_dir "$MODE_DIR"
+            echo "[INFO] COMPAR $1"
+            java -jar "$COMPAR_JAR" \
+                -sample_id_file "$SAMPLE_ID_FILE" \
+                -categories "ALL" \
+                -match_level "$MATCH" \
+                -driver_gene_panel "$DRIVER_GENE_PANEL" \
+                -sample_dir_ref "$RENAMED_TRUTH_RUNS_DIR/*" \
+                -sample_dir_new "$RENAMED_TARGET_RUNS_DIR/*" \
+                -somatic_unfiltered_vcf_ref "$RENAMED_TRUTH_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz" \
+                -somatic_unfiltered_vcf_new "$SOMATIC_UNFILTERED_VCF_NEW" \
+                -output_dir "$MODE_DIR" \
+                -output_id "$OUTPUT_ID" \
+                -log_debug \
+                -threads 16 \
+                "${OPTIONAL_ARGS_ARRAY[@]}"
         }
 
         symlink_runs_to_tumor_name() {
@@ -295,7 +206,7 @@ stages:
     inputStages:
       - truth-bucket
       - target-bucket
-      - execution-bucket
+      - sample-id-bucket
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
