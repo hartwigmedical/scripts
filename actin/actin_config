@@ -14,6 +14,14 @@ production_actin_emc_project() {
     echo "actin-emc"
 }
 
+actin_emc_tm_progene_study_namespace() {
+    echo "tm-progene-study"
+}
+
+actin_emc_tm_phase1_soc_namespace() {
+    echo "tm-phase1-soc"
+}
+
 production_actin_emc_ops_vm() {
     echo "emc-vm-operations"
 }

@@ -40,7 +40,8 @@ check_and_copy_file() {
     fi
 }
 
-report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
+# TODO (AE): Populate namespace
+report=$(locate_actin_report_pdf_gcp "${gcp_project}" "" "${patient}")
 check_and_copy_file "${report}" "reports"
 
 treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")

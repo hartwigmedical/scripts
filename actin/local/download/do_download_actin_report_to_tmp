@@ -5,6 +5,7 @@ source locate_files || exit 1
 
 patient=$1 && shift
 gcp_project=$1 && shift
+namespace=$1 && shift
 
 if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
     error "Missing parameters. Exiting."
@@ -15,6 +16,6 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-actin_report="$(locate_actin_report_pdf_gcp ${gcp_project} ${patient})"
+actin_report="$(locate_actin_report_pdf_gcp "${gcp_project}" "${namespace}" "${patient}")"
 
 gsutil cp ${actin_report} ${local_dir}

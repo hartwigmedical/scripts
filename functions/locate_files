@@ -543,8 +543,14 @@ locate_actin_wgs_diagnostic_pipeline_bucket() {
 
 locate_actin_analysis_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-analysis-pipeline-output"
+    namespace_append=""
+    if [[ ! -z "${namespace}" ]]; then
+        namespace_append="-${namespace}"
+    fi
+    
+    echo "gs://${gcp_project}-analysis-pipeline-output${namespace_append}"
 }
 
 locate_actin_trial_database_bucket() {
@@ -695,9 +701,10 @@ locate_actin_treatment_match_json_gcp() {
 
 locate_actin_report_pdf_gcp() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
     local patient=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/report/${patient}.actin.pdf"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket "${gcp_project}" "${namespace}")/report/${patient}.actin.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN report PDF")
 }
