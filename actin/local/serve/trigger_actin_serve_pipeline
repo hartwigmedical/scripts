@@ -28,7 +28,7 @@ VALID_IDS_WITH_NAMESPACES=(
   "prod:"
   "nki:"
   "mcgi:"
-  "emc:actin actin-study actin-trial"
+  "emc:tm-progene-study"
 )
 
 get_namespaces_for_id() {
