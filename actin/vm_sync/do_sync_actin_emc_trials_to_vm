@@ -3,6 +3,11 @@
 source locate_files || exit 1
 source actin_config || exit 1
 
+namespace=$1 && shift
 gcp_project="$(production_actin_emc_project)"
 
-do_sync_actin_trials_to_vm ${gcp_project}
+if [[ -z "${namespace}" ]]; then
+    error "Missing namespace [$(actin_emc_namespaces)]"
+fi
+
+do_sync_actin_trials_to_vm ${gcp_project} ${namespace}
