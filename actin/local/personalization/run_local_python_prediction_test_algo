@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
+personalization_repo_dir="${HOME}/hmf/repos/actin-personalization"
 prediction_venv="${HOME}/hmf/prediction_3_11_venv"
-cd "${HOME}/hmf/repos/actin-personalization"
 
 # If the venv is not up to date, or does not exist, create it first using 
 # python3 -m venv ${prediction_venv} 
@@ -10,8 +10,9 @@ cd "${HOME}/hmf/repos/actin-personalization"
 
 source ${prediction_venv}/bin/activate
 
-python3 ${HOME}/hmf/repos/actin-personalization/prediction/src/main/python/run_prediction.py \
-     ${HOME}/hmf/repos/actin-personalization/prediction/src/test/python/testCrcPatientRecord.json \
+cd "${personalization_repo_dir}"
+python3 ${personalization_repo_dir}/prediction/src/main/python/run_prediction.py \
+     ${personalization_repo_dir}/prediction/src/test/python/testCrcPatientRecord.json \
      ${HOME}/hmf/tmp/output.json \
      --trained_path "${HOME}/hmf/repos/actin-resources-private/personalization/prediction_model" \
      --treatment_config "${HOME}/hmf/repos/actin-resources-private/personalization/treatment_combinations.json"
