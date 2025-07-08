@@ -10,6 +10,10 @@ do_run_actin_molecular_interpreter_crc ${base_dir} ${patient}
 
 echo ""
 
+do_run_actin_efficacy_prediction_crc ${base_dir} ${patient}
+
+echo ""
+
 do_run_actin_treatment_matcher_crc ${base_dir} ${patient}
 
 echo ""

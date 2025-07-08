@@ -17,9 +17,9 @@ for clinical_record_file in ${working_dir}/*; do
     clinical_record_json=$(basename ${clinical_record_file})
     patient=$(echo ${clinical_record_json} | cut -d "." -f 1)
     
-    do_run_actin_efficacy_prediction_crc ${working_dir} ${patient}
-    
     do_run_actin_molecular_interpreter_crc ${working_dir} ${patient}
+    
+    do_run_actin_efficacy_prediction_crc ${working_dir} ${patient}
     
     do_run_actin_treatment_matcher_crc ${working_dir} ${patient}
     
