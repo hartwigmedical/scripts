@@ -11,7 +11,7 @@ if [[ -z "${base_dir}" || -z "${patient}" ]]; then
 fi
 
 patient_json="${base_dir}/${patient}.patient_record.json"
-treatment_efficacy_prediction_json="${base_dir}/${patient}.treatment_efficacy_prediction.fake.json"
+treatment_efficacy_prediction_json="${base_dir}/${patient}.treatment_efficacy_prediction.json"
 
 trial_database_directory="$(locate_actin_trial_database_directory)"
 treatment_directory="$(locate_actin_treatment_db_directory)"

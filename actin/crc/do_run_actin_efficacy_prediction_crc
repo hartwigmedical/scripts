@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+base_dir=$1 && shift
+patient=$1 && shift
+
+if [[ -z "${base_dir}" || -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+
+latest_prediction_docker_image="fd3ecc963057"
+
+# (KODU): Latest docker image ID refers to 0.29.0. You can pull via this command:
+#   pull_prediction_docker_with_version 0.29.0
+#   docker images
+     
+patient_json="${base_dir}/${patient}.patient_record.json"
+
+info "Running ACTIN CRC Prediction on ${patient}"
+
+docker run \
+    -v ${base_dir}:/out \
+    -v ${base_dir}:/data \
+    -v /data/resources/actin/personalization/:/resources \
+    ${latest_prediction_docker_image} \
+     "/data/${patient}.patient_record.json" \
+     "/out/${patient}.treatment_efficacy_prediction.json" \
+     --trained_path /resources/prediction_model \
+     --treatment_config /resources/treatment_combinations.json
