@@ -272,8 +272,6 @@ cop_files_panel (){
 	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/read_93_exp_counts.${REF_GENOME_VERSION}.csv                  ${TSO500_DIR}/rna_resources/
 	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv               ${TSO500_DIR}/rna_resources/
 	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/tso500_rna_gene_ids.csv                                       ${TSO500_DIR}/rna_resources/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/ActionableCodingPanel.tso500.${REF_GENOME_VERSION}.bed.gz     ${TSO500_DIR}/variants/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/CoverageCodingPanel.tso500.${REF_GENOME_VERSION}.bed.gz       ${TSO500_DIR}/variants/
 	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz             ${TSO500_DIR}/variants/
 
 }

@@ -5,9 +5,14 @@ source locate_files || exit 1
 source actin_config || exit 1
 
 patient=$1 && shift
+namespace=$1 && shift
 
 if [[ -z "${patient}" ]]; then
-    error "Missing parameters. Exiting."
+    error "Missing patient parameter. Exiting."
+fi
+
+if [[ -z "${namespace}" ]]; then
+    error "Missing namespace [$(actin_emc_namespaces)]"
 fi
 
 local_dir="${HOME}/hmf/tmp/orange_no_germline"
@@ -16,7 +21,7 @@ if [[ ! -d "${local_dir}" ]]; then
 fi
 
 gcp_project=$(production_actin_emc_project)
-orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project} ${patient})"
+orange_report="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project} ${patient} ${namespace})"
 
 orange_report_file_name="$(echo $(basename "${orange_report}"))"
 preferred_orange_report_file_name="${patient}_${orange_report_file_name}"

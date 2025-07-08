@@ -18,6 +18,7 @@ print_usage(){
     echo " $script override_report FR123" #Generate override reports
     echo " $script upload FR123" #Upload reports to nextcloud
     echo " $script share_wgs FR123" #Share wgs reports + archive
+    echo " $script share_wgs_fail FR123" #Share wgs reports fail + archive
     echo " $script share_panel FR123" #Share panel reports + archive
     echo " $script share_panel_fail FR123" #Share panel fail reports + archive
     echo " $script upload_kmbp_report FR123" #Share panel reports + archive
@@ -57,6 +58,8 @@ elif [[ "${process}" == "share_wgs" ]]; then
     setname=$(api runs "ini=Somatic.ini&status=Validated&context=DIAGNOSTIC&barcode=${isolationBarcode}" | awk 'NR==2 { print $1 }')
     echo "Creating reported.variants.and.snps.vcf (can take 10+ seconds)..."
     id_snpcaller_vcfmerge.sh ${setname}
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" == "share_wgs_fail" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "share_panel" ]]; then
     copy_extra_panel_data_to_panel_reporting_dir ${isolationBarcode} ${sampleBarcode}

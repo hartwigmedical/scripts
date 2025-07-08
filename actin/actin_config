@@ -14,8 +14,32 @@ production_actin_emc_project() {
     echo "actin-emc"
 }
 
-production_actin_emc_ops_vm() {
-    echo "emc-vm-operations"
+actin_emc_tm_progene_study_namespace() {
+    echo "tm-progene-study"
+}
+
+actin_emc_tm_phase1_soc_namespace() {
+    echo "tm-phase1-soc"
+}
+
+actin_emc_pers_crc_study_namespace() {
+    echo "pers-crc-study"
+}
+
+actin_emc_namespaces() {
+    echo "$(actin_emc_tm_progene_study_namespace), $(actin_emc_tm_phase1_soc_namespace), $(actin_emc_pers_crc_study_namespace)"
+}
+
+production_actin_emc_tm_progene_study_ops_vm() {
+    echo "emc-$(actin_emc_tm_progene_study_namespace)-vm-operations"
+}
+
+production_actin_emc_tm_phase1_soc_ops_vm() {
+    echo "emc-$(actin_emc_tm_phase1_soc_namespace)-vm-operations"
+}
+
+production_actin_emc_pers_crc_study_ops_vm() {
+    echo "emc-$(actin_emc_pers_crc_study_namespace)-vm-operations"
 }
 
 production_actin_nki_project() {
