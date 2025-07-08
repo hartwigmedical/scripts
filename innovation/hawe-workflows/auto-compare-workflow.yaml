@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.2.4"
+version: "0.2.5"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -7,7 +7,7 @@ externalInputs:
   - name: target-bucket
     location: "${target_bucket_uri}"
   - name: sample-id-bucket
-    location: "${sample_id_bucket_uri}"
+    location: "gs://auto-compare-output/sample_id_files/"
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
@@ -71,7 +71,7 @@ stages:
             symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR"
 
             # SAMPLE_ID_FILE logic
-            if [[ -n "$SAMPLE_ID_CSV_URI" ]]; then
+            if [[ -n "${sample_id_file_name}" && "${sample_id_file_name}" != "{}" ]]; then
                 echo "[INFO] Using provided sample_id.csv from \$sample_id_csv_uri"
                 SAMPLE_ID_FILE="$SAMPLE_ID_CSV_URI"
             else
@@ -91,7 +91,7 @@ stages:
             echo "[INFO] Building sample_id.csv"
             echo "SampleId,GermlineSampleId,RefSampleId,RefGermlineSampleId,NewSampleId,NewGermlineSampleId" >"$SAMPLE_ID_FILE"
 
-            if [[ -n "$SAMPLE_LINK" && "$SAMPLE_LINK" != "{}" ]]; then
+            if [[ -n "${sample_id_file_name}" && "${sample_id_file_name}" != "{}" ]]; then
                 # use provided mapping
                 echo "$SAMPLE_LINK" | jq -c 'to_entries[]' | while read -r e; do
                 TRUTH_ID=$(echo "$e" | jq -r '.key')
