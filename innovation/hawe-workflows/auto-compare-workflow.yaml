@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.2.5"
+version: "0.2.6"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -22,13 +22,12 @@ stages:
         WORK_DIR="/tmp/work"
         TRUTH_BUCKET="/in/truth-bucket"
         TARGET_BUCKET="/in/target-bucket"
-        EXECUTION_BUCKET="/in/execution-bucket"
         RUN_ID=${run_id}
         REF_VERSION=${ref_version}
         OPTIONAL_ARGS='${compar_optional_arguments}'
         read -r -a OPTIONAL_ARGS_ARRAY <<< "$OPTIONAL_ARGS"
-        SAMPLE_LINK=$sample_link
-        SAMPLE_ID_CSV_URI="/in/sample-id-bucket/${sample_id_file_name}"
+        SAMPLE_LINK='${sample_link}'
+        SAMPLE_ID_CSV_URI='/in/sample-id-bucket/${sample_id_file_name}'
 
         # Additional parameters
         COMPAR_JAR="compar.jar"  # This jar is included in the Docker image.
