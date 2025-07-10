@@ -1,0 +1,42 @@
+#!/bin/bash
+# Custom git subcommand: git tp
+# Usage: git tp [tag-name]
+# If no arguments are provided, it outputs the latest 10 tags and exits.
+
+set -e
+
+if [ "$#" -eq 0 ]; then
+  # Fetch all tags
+  git fetch --tags
+
+  # Get the latest 10 tags sorted by commit date
+  TAGS=$(git tag --sort=committerdate | tail -n 10)
+
+  # Check if any tags exist
+  if [ -z "$TAGS" ]; then
+    echo "No tags found in the repository."
+    exit 1
+  fi
+
+  echo "$TAGS"
+  exit 0
+fi
+
+# Use the provided argument as the tag name
+TAG_NAME=$1
+
+git push
+
+# Create the tag
+git tag "$TAG_NAME"
+
+# Push the tag
+git push origin "$TAG_NAME"
+
+# Confirm success
+if [ $? -eq 0 ]; then
+  echo "Tag '$TAG_NAME' created and pushed successfully."
+else
+  echo "Failed to create or push tag '$TAG_NAME'."
+  exit 1
+fi
