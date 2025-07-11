@@ -217,8 +217,7 @@ class ReportSharer:
             "purple.cnv.somatic.tsv",
             "orange.pdf",
             ".reconCNV.html",
-            ".sage.visualisation.zip",
-            "-igv-config.txt"
+            ".sage.visualisation.zip"
         }
 
     def _molecular_files(self, converted_reporting_id):

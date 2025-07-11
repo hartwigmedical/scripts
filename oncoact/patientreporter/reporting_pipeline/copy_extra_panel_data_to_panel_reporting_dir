@@ -43,4 +43,3 @@ fi
 # Copy files if they exist
 gsutil cp ${recon_cnv_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
 gsutil cp ${sage_visualisation_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
-gsutil cp "${HOME}/${patientId}_run-*-igv-config.txt" gs://targeted-pipeline-output-prod-1/${set}/reporting

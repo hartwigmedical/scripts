@@ -40,8 +40,6 @@ if [[ $isolationBarcode != "" ]]; then
     echo -e "Isolation barcode: \033[1;32m ${isolationBarcode} \033[00m"
     echo -e "Sample barcode: \033[1;32m ${sampleBarcode} \033[00m"
 fi
-set=$(api -j runs 'barcode='${isolationBarcode}'&ini=Targeted.ini&status=Finished&context=DIAGNOSTIC' | jq .[].set.name | tr -d '"')
-echo -e "Set name: \033[1;32m ${set} \033[00m"
 
 if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
@@ -58,7 +56,6 @@ elif [[ "${process}" == "upload" ]]; then
 elif [[ "${process}" == "share_wgs" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "share_panel" ]]; then
-    create_igv_config ${set} false
     copy_extra_panel_data_to_panel_reporting_dir ${isolationBarcode} ${sampleBarcode}
 
     # Check if the previous command was successful
