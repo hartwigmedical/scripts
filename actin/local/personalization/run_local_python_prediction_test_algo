@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 personalization_repo_dir="${HOME}/hmf/repos/actin-personalization"
 prediction_venv="${HOME}/hmf/prediction_3_11_venv"
+
+input_patient_record=$1 && shift
+
+if [[ -z "${input_patient_record}" ]]; then
+    input_patient_record="${personalization_repo_dir}/prediction/src/test/resources/crc_patient_record.json"
+    info "No input patient record provided. Using default test record '${input_patient_record}'"
+fi
 
 # If the venv is not up to date, or does not exist, create it first using 
 # python3 -m venv ${prediction_venv} 
@@ -11,8 +20,8 @@ prediction_venv="${HOME}/hmf/prediction_3_11_venv"
 source ${prediction_venv}/bin/activate
 
 cd "${personalization_repo_dir}"
-python3 ${personalization_repo_dir}/prediction/src/main/python/run_prediction.py \
-     ${personalization_repo_dir}/prediction/src/test/resources/crc_patient_record.json \
-     ${HOME}/hmf/tmp/output.json \
+python3 "${personalization_repo_dir}/prediction/src/main/python/run_prediction.py" \
+     "${input_patient_record}" \
+     "${HOME}/hmf/tmp/output.json" \
      --trained_path "${HOME}/hmf/repos/actin-resources-private/personalization/prediction_model" \
      --treatment_config "${HOME}/hmf/repos/actin-resources-private/personalization/treatment_combinations.json"
