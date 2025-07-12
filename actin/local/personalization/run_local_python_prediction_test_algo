@@ -12,7 +12,7 @@ source ${prediction_venv}/bin/activate
 
 cd "${personalization_repo_dir}"
 python3 ${personalization_repo_dir}/prediction/src/main/python/run_prediction.py \
-     ${personalization_repo_dir}/prediction/src/test/python/testCrcPatientRecord.json \
+     ${personalization_repo_dir}/prediction/src/test/resources/crc_patient_record.json \
      ${HOME}/hmf/tmp/output.json \
      --trained_path "${HOME}/hmf/repos/actin-resources-private/personalization/prediction_model" \
      --treatment_config "${HOME}/hmf/repos/actin-resources-private/personalization/treatment_combinations.json"
