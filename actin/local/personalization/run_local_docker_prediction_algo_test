@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-latest_prediction_docker_image="fd3ecc963057"
+latest_prediction_docker_image="58ae445cb743"
 
-# (KODU): Latest docker image ID refers to 0.29.0. You can pull via this command:
-#   pull_prediction_docker_with_version 0.29.0
+# (KODU): Latest docker image ID refers to 0.29.1. You can pull via this command:
+#   pull_prediction_docker_with_version 0.29.1
 #   docker images
 
 docker run \
@@ -11,7 +11,7 @@ docker run \
     -v ~/hmf/repos/actin-personalization/prediction/src/test/resources/:/data \
     -v ~/hmf/repos/actin-resources-private/personalization/:/resources \
     ${latest_prediction_docker_image} \
-     /data/crc_patient_record.json \
-     /out/output.json \
-     --trained_path /resources/prediction_model \
-     --treatment_config /resources/treatment_combinations.json
+     "/data/crc_patient_record.json" \
+     "/out/output.json" \
+     --trained_path "/resources/prediction_model" \
+     --treatment_config "/resources/treatment_combinations.json"
