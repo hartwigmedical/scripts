@@ -28,16 +28,16 @@ print_usage() {
     echo "  dest_dir            Destination directory for resource output (must be existing)"
     echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
     echo "  pipeline_version    Pipeline version string, e.g. 'v2.2.0'"
-    echo "  build_version       Build version number, e.g. '1'"
+    echo "  build_version       Build version number, e.g. '2'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/ 38 v2.2.0 1"
+    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20250714_build_resources_2.2.0--2/ 38 v2.2.0 2"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<pipeline_version>--<build_version>.tar.gz"
     echo ""
     echo "Example output:"
-    echo "  /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/38/hmf_pipeline_resources.38_v2.2.0--1.tar.gz"
+    echo "  /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/38/hmf_pipeline_resources.38_v2.2.0--2.tar.gz"
 }
 
 if [[ $# -ne 5 ]]; then
@@ -68,11 +68,11 @@ echo "Pipeline version: ${PIPELINE_VERSION}"
 echo "## --------------------------------"
 
 ## Cloud source repo: common-resources-public
-# commit b1d41433fe4cc57c6ece37590f3f5065be921dea (HEAD -> master, origin/master, origin/HEAD)
+# commit d5b3de39d9d028e7bad7c9c0670c4dd43e33380f (HEAD -> master, origin/master, origin/HEAD)
 # Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Tue Jun 17 15:58:46 2025 +1000
+# Date:   Mon Jul 7 10:15:39 2025 +1000
 # 
-#     DEV-4145: updated SV PON files using 1000 v38 samples, Esvee v1.1, and lift-over for v37
+#     DEV-4145: updated Lilac allele definitions and cohort frequences for v1.8
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
