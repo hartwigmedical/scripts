@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source actin_config|| exit 1
 
 patient=$1 && shift
 gcp_project=$1 && shift
@@ -9,9 +10,10 @@ if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-if [[ "${gcp_project}" == "actin-emc" ]]; then
+
+if [[ "${gcp_project}" == "$(production_actin_emc_project)" ]]; then
     if [[ $# -eq 0 || "$1" == --* ]]; then
-        error "Namespace parameter required for 'actin-emc'."
+        error "Namespace parameter required for '$(production_actin_emc_project)'."
         exit 1
     fi
     namespace=$1
