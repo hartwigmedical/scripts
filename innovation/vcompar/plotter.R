@@ -16,12 +16,19 @@ myFiles<-sort(list.files()[grepl(list.files(), pattern = "000") & grepl(list.fil
 
 
 for(i in 1:length(myFiles)){
+  cat("Reading file:",myFiles[i], "\n")
+  # check if any non-comment lines
+  if (!any(grepl("^[^#[:space:]]", readLines(myFiles[i])))) {
+    next
+  }
+
   example <-read.table(myFiles[i])
   colnames(example) <-c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT","REF","TUM")
   formatS <- strsplit(as.character(example$FORMAT[1]),":")[[1]]
   colV <- which(formatS == "AF")
   colN <- sapply(strsplit(as.character(example$TUM[1]),":"), length)
   vafs <- as.numeric(matrix(unlist(strsplit(as.character(example$TUM),":")), ncol=colN, byrow=TRUE)[,colV])
+  
   if (i == 1){
     png(paste0(args[i],"_",TypeName,"_Vaf.png"), height = 768, width = 1024)
     hist(vafs, breaks=500, main = paste0(args[i],"_only"))

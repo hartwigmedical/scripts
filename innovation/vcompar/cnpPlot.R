@@ -2,14 +2,13 @@
 # Author: Teoman Deger
 # -----------------------./
 args = commandArgs(trailingOnly=TRUE)
-setwd("/home/tdeger/coloOldvNew/")
 
 suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
 
 #sanity checks
-if (length(args)!=5) {
-  stop("plotter requires 5 arguments, not all were found", call.=FALSE)
+if (length(args)!=7) {
+  stop("plotter requires 7 arguments, not all were found", call.=FALSE)
 }
 
 file1<-args[1]
@@ -17,10 +16,12 @@ file2<-args[2]
 file3<-args[3]
 file4<-args[4]
 refGen<-args[5]
+setwd(args[6])
+genomeLengths<-args[7]
 
-chromosome_data <- read.table("genome_length.txt", header= TRUE)
+chromosome_data <- read.table(genomeLengths, header= TRUE)
 if (refGen == "hg19"){
-  chromosome_data <- chromosome_data[,c("chromosome","length.hg19","length_cumsum.hg19")] 
+  chromosome_data <- chromosome_data[,c("chromosome","length.hg19","length_cumsum.hg19")]
 } else if (refGen == "hg38"){
   chromosome_data <- chromosome_data[,c("chromosome","length.hg38","length_cumsum.hg38")]
 } else {
@@ -38,11 +39,11 @@ data_right <- data_right [, 1:7]
 segm_right <- read.table(file4, header = TRUE)
 
 ######### LEFT SIDE
-colnames(data_left) <- c("chromosome",	"position",	"referenceReadCount",	"tumorReadCount",	"referenceGCRatio",	"tumorGCRatio", "referenceGCDiploidRatio")
+colnames(data_left) <- c("chromosome",	"position",	"referenceReadCount",	"tumorReadCount",	"referenceGCRatio", "tumorGCRatio", "referenceGCDiploidRatio")
 data_left[(data_left$tumorGCRatio == -1),colnames(data_left)=="tumorGCRatio"] <-NA
 merged_data_left <- merge(data_left, chromosome_data, by = "chromosome")
 merged_data_left$adjusted_position <- merged_data_left$position + merged_data_left$length_cumsum
-final_data_left <- merged_data_left[, c("chromosome", "adjusted_position", "referenceReadCount", "tumorReadCount", 
+final_data_left <- merged_data_left[, c("chromosome", "adjusted_position", "referenceReadCount", "tumorReadCount",
                                         "referenceGCRatio", "tumorGCRatio", "referenceGCDiploidRatio")]
 colnames(segm_left) <- c("sampleID",	"chromosome",	"arm",	"start.pos",	"end.pos",	"n.probes", "mean")
 merged_segm_left <- merge(segm_left, chromosome_data, by = "chromosome")
@@ -57,11 +58,12 @@ rm(segm_left)
 rm(merged_segm_left)
 
 ######## RIGHT SIDE
-colnames(data_right) <- c("chromosome",	"position",	"referenceReadCount",	"tumorReadCount",	"referenceGCRatio",	"tumorGCRatio", "referenceGCDiploidRatio")
+colnames(data_right) <- c(
+    "chromosome",	"position",	"referenceReadCount", "tumorReadCount", "referenceGCRatio", "tumorGCRatio", "referenceGCDiploidRatio")
 data_right[(data_right$tumorGCRatio == -1),colnames(data_right)=="tumorGCRatio"] <-NA
 merged_data_right <- merge(data_right, chromosome_data, by = "chromosome")
 merged_data_right$adjusted_position <- merged_data_right$position + merged_data_right$length_cumsum
-final_data_right <- merged_data_right[, c("chromosome", "adjusted_position", "referenceReadCount", "tumorReadCount", 
+final_data_right <- merged_data_right[, c("chromosome", "adjusted_position", "referenceReadCount", "tumorReadCount",
                                           "referenceGCRatio", "tumorGCRatio", "referenceGCDiploidRatio")]
 colnames(segm_right) <- c("sampleID",	"chromosome",	"arm",	"start.pos",	"end.pos",	"n.probes", "mean")
 merged_segm_right <- merge(segm_right, chromosome_data, by = "chromosome")
@@ -94,10 +96,9 @@ rm(final_segm_left)
 rm(final_data_right)
 rm(final_segm_right)
 
-
 ### Base Dot Plot
 p <- ggplot(combined_df, aes(x = adjusted_position, y = log2tumorGCRatio, color = source)) +
-  geom_point(shape = 46, linewidth = 1, alpha = 0.05) + 
+  geom_point(shape = 46, linewidth = 1, alpha = 0.05) +
   labs(title = "Comparison of Outcomes",
        x = "X Axis Position",
        y = "Outcome Values") +
@@ -108,8 +109,8 @@ p <- ggplot(combined_df, aes(x = adjusted_position, y = log2tumorGCRatio, color 
 
 # Add Lines for Calls
 p <- p + geom_segment(data = combined_seg,
-                      aes(x = adjusted_start, xend = adjusted_end, 
-                          y = mean, yend = mean, color = group), 
+                      aes(x = adjusted_start, xend = adjusted_end,
+                          y = mean, yend = mean, color = group),
                       size = 1.2, inherit.aes = FALSE) +  # Separate color scale for segments
   scale_color_manual(values = c("dfLeft" = "grey69", "dfRight" = "grey32", "left" = "darkblue", "right" = "darkred")) +
   #scale_color_manual(values = c("left" = "darkblue", "right" = "darkred"), name = "Group") +  # Custom color for lines

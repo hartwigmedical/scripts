@@ -35,9 +35,11 @@ readIn3 <- read_vcfs_as_granges(myFiles[4], paste0(name1,"_",name2,"_shared_2"),
 
 
 TriNucleotidePlotter <- function(ref,new,ref_genome,firstName,secondName){
-  refmm <- mut_matrix(ref, ref_genome)
-  newmm <- mut_matrix(new, ref_genome)
-  plot_compare_profiles(refmm[,1], newmm[,1], profile_name=c(firstName,secondName))
+  if(length(ref) > 0 & length(new) > 0 & any(elementNROWS(ref) > 0) & any(elementNROWS(new) > 0)) {  
+    refmm <- mut_matrix(ref, ref_genome)
+    newmm <- mut_matrix(new, ref_genome)
+    plot_compare_profiles(refmm[,1], newmm[,1], profile_name=c(firstName,secondName))
+  }
 }
 
 out<-TriNucleotidePlotter(readIn0, readIn1, genomeVer, name1, name2)
