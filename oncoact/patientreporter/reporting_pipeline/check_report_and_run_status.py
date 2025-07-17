@@ -401,7 +401,7 @@ class StatusChecker:
         sql_query = (
             "SELECT sampleId, qcStatus, purity, minPurity,maxPurity, ploidy, minPloidy, maxPloidy, maxPurity-minPurity as range_purity, maxPloidy-minPloidy as range_ploidy "
             "FROM purity "
-            "WHERE sampleId = '{reporting_id}' AND qcStatus NOT LIKE '%FAIL_NO_TUMOR%' AND (maxPurity-minPurity > 0.3 or maxPloidy-minPloidy > 3) "
+            "WHERE sampleId = '{reporting_id}' AND qcStatus NOT LIKE '%FAIL_NO_TUMOR%'"
         )
         query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
         output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
