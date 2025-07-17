@@ -113,12 +113,12 @@ fi
 
 
 if [ "${runMode}" -eq 2 ]; then
-  cobDat1="${file1}/cobalt/*.cobalt.ratio.tsv.gz"
+  cobDat1=$(echo "${file1}/cobalt/"*.cobalt.ratio.tsv.gz)
   cobDat1L=$(ls "$cobDat1")
   cdName=$(basename "${cobDat1L}" .cobalt.ratio.tsv.gz)
   cobSeg1="${file1}/cobalt/${cdName}.cobalt.ratio.pcf"
 
-  cobDat2="${file2}/cobalt/*.cobalt.ratio.tsv.gz"
+  cobDat2=$(echo "${file2}/cobalt/"*.cobalt.ratio.tsv.gz)
   cobDat2L=$(ls "$cobDat2")
   cdName=$(basename "${cobDat2L}" .cobalt.ratio.tsv.gz)
   cobSeg2="${file2}/cobalt/${cdName}.cobalt.ratio.pcf"
@@ -273,41 +273,41 @@ if [ "${runMode}" -eq 4 ]; then
   echo -e "${refOnly}\t${shared}\t${newOnly}"
 
   #extract all final Vars
-  $bcftools view "${isecDir}/0000.vcf"-Oz -o "${workingDir}/only_12.vcf.gz"
+  $bcftools view "${isecDir}/0000.vcf" -Oz -o "${workingDir}/only_12.vcf.gz"
   $bcftools index "${workingDir}/only_12.vcf.gz"
-  $bcftools view "${isecDir}/0001.vcf"-Oz -o "${workingDir}/only_34.vcf.gz"
+  $bcftools view "${isecDir}/0001.vcf" -Oz -o "${workingDir}/only_34.vcf.gz"
   $bcftools index "${workingDir}/only_34.vcf.gz"
   $bcftools view "${isecDir}/0002.vcf" -Oz -o "${workingDir}/shared_all.vcf.gz"
   $bcftools index "${workingDir}/shared_all.vcf.gz"
 
   #extract old-only regions from old-files
   $bcftools isec -f "PASS" "${workingDir}/only_12.vcf.gz" "${file1}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_12_1.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_12_1.vcf.gz"
   $bcftools index "${workingDir}/only_12_1.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/only_12.vcf.gz" "${file2}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_12_2.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_12_2.vcf.gz"
   $bcftools index "${workingDir}/only_12_2.vcf.gz"
 
   #extract new-only regions from new-files
   $bcftools isec -f "PASS" "${workingDir}/only_34.vcf.gz" "${file3}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_34_3.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_34_3.vcf.gz"
   $bcftools index "${workingDir}/only_34_3.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/only_34.vcf.gz" "${file4}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_34_4.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_34_4.vcf.gz"
   $bcftools index "${workingDir}/only_34_4.vcf.gz"
 
   #extract shared lists from all
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file1}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_1.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_1.vcf.gz"
   $bcftools index "${workingDir}/shared_all_1.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file2}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_2.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_2.vcf.gz"
   $bcftools index "${workingDir}/shared_all_2.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file3}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_3.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_3.vcf.gz"
   $bcftools index "${workingDir}/shared_all_3.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file4}/purple/"*.purple.germline.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_4.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_4.vcf.gz"
   $bcftools index "${workingDir}/shared_all_4.vcf.gz"
 
   "${scriptDir}/shrdPlotter.R" GLVars "${workingDir}" > /dev/null 2>&1
@@ -360,41 +360,41 @@ if [ "${runMode}" -eq 4 ]; then
   "${scriptDir}/triNucPlot.R" Old_shrd New_shrd SomVars "$hgVersion" "${isecDir}" > /dev/null 2>&1
 
   #extract all final Vars
-  $bcftools view "${isecDir}/0000.vcf"-Oz -o "${workingDir}/only_12.vcf.gz"
+  $bcftools view "${isecDir}/0000.vcf" -Oz -o "${workingDir}/only_12.vcf.gz"
   $bcftools index "${workingDir}/only_12.vcf.gz"
-  $bcftools view "${isecDir}/0001.vcf"-Oz -o "${workingDir}/only_34.vcf.gz"
+  $bcftools view "${isecDir}/0001.vcf" -Oz -o "${workingDir}/only_34.vcf.gz"
   $bcftools index "${workingDir}/only_34.vcf.gz"
-  $bcftools view "${isecDir}/0002.vcf"-Oz -o "${workingDir}/shared_all.vcf.gz"
+  $bcftools view "${isecDir}/0002.vcf" -Oz -o "${workingDir}/shared_all.vcf.gz"
   $bcftools index "${workingDir}/shared_all.vcf.gz"
 
   #extract old-only regions from old-files
   $bcftools isec -f "PASS" "${workingDir}/only_12.vcf.gz" "${file1}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_12_1.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_12_1.vcf.gz"
   $bcftools index "${workingDir}/only_12_1.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/only_12.vcf.gz" "${file2}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_12_2.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_12_2.vcf.gz"
   $bcftools index "${workingDir}/only_12_2.vcf.gz"
 
   #extract new-only regions from new-files
   $bcftools isec -f "PASS" "${workingDir}/only_34.vcf.gz" "${file3}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_34_3.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_34_3.vcf.gz"
   $bcftools index "${workingDir}/only_34_3.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/only_34.vcf.gz" "${file4}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/only_34_4.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/only_34_4.vcf.gz"
   $bcftools index "${workingDir}/only_34_4.vcf.gz"
 
   #extract shared lists from all
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file1}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_1.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_1.vcf.gz"
   $bcftools index "${workingDir}/shared_all_1.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file2}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_2.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_2.vcf.gz"
   $bcftools index "${workingDir}/shared_all_2.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file3}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_3.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_3.vcf.gz"
   $bcftools index "${workingDir}/shared_all_3.vcf.gz"
   $bcftools isec -f "PASS" "${workingDir}/shared_all.vcf.gz" "${file4}/purple/"*.purple.somatic.vcf.gz -p "${isecDir}"
-  $bcftools view "${isecDir}/0003.vcf"-Oz -o "${workingDir}/shared_all_4.vcf.gz"
+  $bcftools view "${isecDir}/0003.vcf" -Oz -o "${workingDir}/shared_all_4.vcf.gz"
   $bcftools index "${workingDir}/shared_all_4.vcf.gz"
 
   "${scriptDir}/shrdPlotter.R" SomVars "${workingDir}" > /dev/null 2>&1
@@ -423,7 +423,7 @@ SomDrS=$(grep -c -v "^#" "${isecDir}/0002.vcf")  #shared_refdata
 echo -e "${name1}_only\tShared\t${name2}_only"
 echo -e "${SomDrR}\t${SomDrS}\t${SomDrN}"
 #cat ~/coloOldvNew/isec/0003.vcf | grep -c -v "^#"  #shared_newdata
-$bcftools view "${isecDir}/0002.vcf"-Oz -o "${workingDir}/shared_somdri_12.vcf.gz"
+$bcftools view "${isecDir}/0002.vcf" -Oz -o "${workingDir}/shared_somdri_12.vcf.gz"
 $bcftools index "${workingDir}/shared_somdri_12.vcf.gz"
 
 if [ "${runMode}" -eq 4 ]; then
@@ -438,7 +438,7 @@ if [ "${runMode}" -eq 4 ]; then
   echo -e "${name1}_only\tShared\t${name2}_only"
   echo -e "${SomDrR}\t${SomDrS}\t${SomDrN}"
   #cat ~/coloOldvNew/isec/0003.vcf | grep -c -v "^#"  #shared_newdata
-  $bcftools view "${isecDir}/0002.vcf"-Oz -o "${workingDir}/shared_somdri_34.vcf.gz"
+  $bcftools view "${isecDir}/0002.vcf" -Oz -o "${workingDir}/shared_somdri_34.vcf.gz"
   $bcftools index "${workingDir}/shared_somdri_34.vcf.gz"
 
   $bcftools isec -f "PASS" "${workingDir}/shared_somdri_12.vcf.gz" "${workingDir}/shared_somdri_34.vcf.gz" -p "${isecDir}"
