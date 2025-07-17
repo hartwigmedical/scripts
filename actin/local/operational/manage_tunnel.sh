@@ -47,6 +47,13 @@ for var in PROJECT CLUSTER POD_NAME REMOTE_APPLICATION_PORT LOCAL_APPLICATION_PO
   [[ -z ${!var} ]] && echo "$var must be specified in [$config_file]" && exit 1
 done
 
+if [[ "$PROJECT" == "actin-emc" ]]; then
+  [[ -z ${NAMESPACE} ]] && echo "NAMESPACE must be specified in [$config_file] when PROJECT is actin-emc" && exit 1
+fi
+
+namespace=""
+[[ -n "$NAMESPACE" ]] && namespace="--namespace $NAMESPACE"
+
 action="$2"
 [[ $action != "start" && $action != "stop" ]] && echo "Provide a verb (either \"start\" or \"stop\")" && exit 1
 
@@ -67,7 +74,7 @@ else
     echo "Establishing tunnel to $instance"
     $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$local_tunnel_port:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
     echo "Forwarding $REMOTE_APPLICATION_PORT to localhost:$LOCAL_APPLICATION_PORT for ${POD_NAME}"
-    k8 $local_tunnel_port port-forward $(k8 $port get pods | grep $POD_NAME | awk '{print $1}') \
+    k8 $local_tunnel_port port-forward $(k8 $port get pods $namespace | grep $POD_NAME | awk '{print $1}') \
         "$LOCAL_APPLICATION_PORT:$REMOTE_APPLICATION_PORT" &
     echo "Tunnel started; access $POD_NAME at http://localhost:$LOCAL_APPLICATION_PORT"
 fi
