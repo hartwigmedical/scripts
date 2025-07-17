@@ -91,8 +91,8 @@ echo "##########################################################################
 
 file1=${folderNames[0]}
 file2=${folderNames[1]}
-name1=$(echo "${folderNames[0]}" | awk -F '/' '{ print $(NF-1) }')
-name2=$(echo "${folderNames[1]}" | awk -F '/' '{ print $(NF-1) }')
+name1=$(echo "${folderNames[0]}" | awk -F '/' '{ print $(NF) }')
+name2=$(echo "${folderNames[1]}" | awk -F '/' '{ print $(NF) }')
 
 isecDir="${workingDir}/isec"
 
@@ -106,8 +106,8 @@ echo "runMode is ${runMode}"
 if [ "${runMode}" -eq 4 ]; then
   file3=${folderNames[2]}
   file4=${folderNames[3]}
-  name3=$(echo "${folderNames[2]}" | awk -F '/' '{ print $(NF-1) }')
-  name4=$(echo "${folderNames[3]}" | awk -F '/' '{ print $(NF-1) }')
+  name3=$(echo "${folderNames[2]}" | awk -F '/' '{ print $(NF) }')
+  name4=$(echo "${folderNames[3]}" | awk -F '/' '{ print $(NF) }')
   echo "cobalt-plotter wont run in runmode=4"
 fi
 
