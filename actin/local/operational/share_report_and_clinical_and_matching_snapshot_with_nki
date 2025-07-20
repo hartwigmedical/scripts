@@ -40,6 +40,7 @@ check_and_copy_file() {
     fi
 }
 
+# AE TODO UPDATE structure of shared bucket
 report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
 check_and_copy_file "${report}" "reports"
 

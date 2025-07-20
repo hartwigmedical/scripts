@@ -15,6 +15,7 @@ if [[ -z "${namespace}" ]]; then
     error "Missing namespace [$(actin_emc_namespaces)]"
 fi
 
+# AE TODO Review structure of shared bucket
 gcp_project=$(production_actin_emc_project)
 shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${gcp_project} ${patient} ${namespace})"
 
