@@ -35,7 +35,7 @@ orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp "${gcp_proje
 orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
 
 if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" ]]; then
-    warn "Skipping archiving of ORANGE data for ${patient} as they do not exist"
+    warn "Skipping copying of ORANGE data for ${patient} as they do not exist"
 else
     sample=$(locate_sequenced_sample_for_actin_patient_gcp "${gcp_project}" "${patient}" "${namespace}")
     info "Copying ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_uri}"
