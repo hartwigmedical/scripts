@@ -1,54 +1,37 @@
 #!/usr/bin/env bash
 
-set -e
-
 source actin_config || exit 1
 source locate_files || exit 1
-
-trap 'echo "ERROR, exiting." >&2; exit 1' ERR
 
 patient=$1 && shift
 
 if [[ -z "${patient}" ]]; then
-    error "Missing parameters. Exiting" >&2
+    error "Missing patient parameter. Exiting"
     exit 1
 fi
 
 gcp_project=$(production_actin_nki_project)
-target_bucket=$(locate_actin_shared_data_external_bucket "${gcp_project}")
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
+shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${hash}")"
 
-check_and_copy_file() {
-    local file_path=$1
-    local sub_dir=$2
-    local bn="$(basename ${file_path})"
-    local ext="${bn#*.}"
-    local target_path="${target_bucket}/${sub_dir}/${hash}.${ext}"
-
-    if ! gsutil -q stat "${file_path}"; then
-        echo "Cannot find \"${file_path}\"" >&2
-        return 1
-    fi
-
-    if gsutil -q stat "${target_path}"; then
-        echo "Overwriting existing file: ${target_path}"
-    fi
-
-    if ! gsutil cp "${file_path}" "${target_path}"; then
-        echo "Failed copying ${file_path} to ${target_path}" >&2
-        return 1
-    fi
+rename_and_copy_file() {
+    local source_path=$1
+    local filename="$(basename "${source_path}")"
+    local extension="${filename#*.}"
+    gsutil cp "${source_path}" "${shared_actin_data_external_uri}/${hash}.${extension}"
 }
 
-# AE TODO UPDATE structure of shared bucket
-report=$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")
-check_and_copy_file "${report}" "reports"
+actin_report_pdf="$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")"
+patient_record_json="$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")"
+treatment_match_json="$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")"
 
-treatment_match=$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")
-check_and_copy_file "${treatment_match}" "algo"
+if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" ]]; then
+    error "Missing ACTIN data or report for ${patient}"
+fi
 
-record=$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")
-check_and_copy_file "${record}" "record"
+info "Archiving ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
+rename_and_copy_file "${patient_record_json}"
+rename_and_copy_file "${treatment_match_json}"
+rename_and_copy_file "${actin_report_pdf}"
 
-echo "Copied files to ${target_bucket}"
-exit 0
+echo "Copied files to ${shared_actin_data_external_uri}"

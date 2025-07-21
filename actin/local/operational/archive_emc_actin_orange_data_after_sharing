@@ -15,13 +15,12 @@ if [[ -z "${namespace}" ]]; then
     error "Missing namespace [$(actin_emc_namespaces)]"
 fi
 
-# AE TODO Review structure of shared bucket
 gcp_project=$(production_actin_emc_project)
-shared_orange_data_uri="$(locate_next_orange_shared_data_uri_gcp ${gcp_project} ${patient} ${namespace})"
+shared_external_orange_data_uri="$(locate_next_orange_shared_data_external_uri_gcp ${gcp_project} ${patient} ${namespace})"
 
 orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${gcp_project} ${patient} ${namespace})"
 orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project} ${patient} ${namespace})"
 
-info "Archiving ORANGE (no germline) data for ${patient} to ${shared_orange_data_uri}"
-gsutil cp "${orange_no_germline_json}" "${shared_orange_data_uri}/"
-gsutil cp "${orange_no_germline_pdf}" "${shared_orange_data_uri}/"
+info "Archiving ORANGE (no germline) data for ${patient} to ${shared_external_orange_data_uri}"
+gsutil cp "${orange_no_germline_json}" "${shared_external_orange_data_uri}/"
+gsutil cp "${orange_no_germline_pdf}" "${shared_external_orange_data_uri}/"
