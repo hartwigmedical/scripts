@@ -31,13 +31,13 @@ print_usage() {
     echo "  build_version       Build version number, e.g. '2'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20250714_build_resources_2.2.0--2/ 38 v2.2.0 2"
+    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20250721_build_resources_2.2.0--3/ 38 v2.2.0 3"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<pipeline_version>--<build_version>.tar.gz"
     echo ""
     echo "Example output:"
-    echo "  /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/38/hmf_pipeline_resources.38_v2.2.0--2.tar.gz"
+    echo "  /data/experiments/oncoanalyser/20250618_build_resources_2.2.0/38/hmf_pipeline_resources.38_v2.2.0--3.tar.gz"
 }
 
 if [[ $# -ne 5 ]]; then
@@ -68,21 +68,16 @@ echo "Pipeline version: ${PIPELINE_VERSION}"
 echo "## --------------------------------"
 
 ## Cloud source repo: common-resources-public
-# commit d5b3de39d9d028e7bad7c9c0670c4dd43e33380f (HEAD -> master, origin/master, origin/HEAD)
+# commit 143ae7f187d31af48ba8123dc113ae9337b22913 (HEAD -> master, origin/master, origin/HEAD)
 # Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Mon Jul 7 10:15:39 2025 +1000
+# Date:   Mon Jul 21 12:38:41 2025 +1000
 # 
-#     DEV-4145: updated Lilac allele definitions and cohort frequences for v1.8
+#     DEV-4145: added missing TSO500 RNA files
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
 ## Used for big files that are too unwieldy to track with git in common-resources-public
 COMMON_RESOURCES_PATH=/data/resources/bucket
-
-## !NOTE! This dir is not a mirror of gs://hmf-crunch-resources. 
-## TSO500 dirs were manually downloaded
-## gsutil -m cp -r "gs://hmf-crunch-resources/tso500/*" /data/resources/crunch/tso500
-CRUNCH_RESOURCES_PATH=/data/resources/crunch
 
 echo ""
 echo "## ----------------------------"
@@ -106,7 +101,7 @@ if [[ $MODE == $MODE_HMFTOOLS ]]; then
 fi
 
 if [[ $MODE == $MODE_PANEL ]]; then
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/{common,copy_number,rna_resources,variants}
+	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/
 fi
 
 
@@ -256,24 +251,26 @@ copy_files_hmftools (){
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_151_exp_counts.${REF_GENOME_VERSION}.csv          ${RNA_DIR}
 }
 
-cop_files_panel (){
+copy_files_panel (){
 	echo ""
 	echo "## --------------------------"
 	echo "## Copying TSO500 panel files"
 	echo "## --------------------------"
 	TSO500_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/
 
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/DriverGenePanel.tso500.${REF_GENOME_VERSION}.tsv              ${TSO500_DIR}/common/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv         ${TSO500_DIR}/copy_number/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/target_regions_definition.tso500.${REF_GENOME_VERSION}.bed.gz ${TSO500_DIR}/copy_number/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/target_regions_msi_indels.tso500.${REF_GENOME_VERSION}.tsv    ${TSO500_DIR}/copy_number/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/target_regions_ratios.tso500.${REF_GENOME_VERSION}.tsv        ${TSO500_DIR}/copy_number/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv    ${TSO500_DIR}/rna_resources/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/read_93_exp_counts.${REF_GENOME_VERSION}.csv                  ${TSO500_DIR}/rna_resources/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv               ${TSO500_DIR}/rna_resources/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/tso500_rna_gene_ids.csv                                       ${TSO500_DIR}/rna_resources/
-	cp -vnLr ${CRUNCH_RESOURCES_PATH}/tso500/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz             ${TSO500_DIR}/variants/
-
+	## DNA / common
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/driver_genes.tso500.${REF_GENOME_VERSION}.tsv              ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz          ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz       ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv      ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/tmb_ratio.tso500.${REF_GENOME_VERSION}.tsv                 ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/msi_indels.tso500.${REF_GENOME_VERSION}.tsv                ${TSO500_DIR}
+	
+	## RNA
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/tso500_rna_gene_ids.csv                                                          ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv                        ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv                     ${TSO500_DIR}
 }
 
 if [[ $MODE == $MODE_GENOME ]]; then
@@ -285,7 +282,7 @@ if [[ $MODE == $MODE_HMFTOOLS ]]; then
 fi
 
 if [[ $MODE == $MODE_PANEL ]]; then
-	cop_files_panel
+	copy_files_panel
 fi
 
 
