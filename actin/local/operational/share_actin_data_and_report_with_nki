@@ -29,7 +29,7 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
     error "Missing ACTIN data or report for ${patient}"
 fi
 
-info "Archiving ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
+info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 rename_and_copy_file "${patient_record_json}"
 rename_and_copy_file "${treatment_match_json}"
 rename_and_copy_file "${actin_report_pdf}"

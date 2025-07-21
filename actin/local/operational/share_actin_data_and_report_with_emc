@@ -26,7 +26,7 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
     error "Missing ACTIN data or report for ${patient}"
 fi
 
-info "Archiving ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
+info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 gsutil cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
@@ -38,7 +38,7 @@ if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" ]]; then
     warn "Skipping archiving of ORANGE data for ${patient} as they do not exist"
 else
     sample=$(locate_sequenced_sample_for_actin_patient_gcp "${gcp_project}" "${patient}" "${namespace}")
-    info "Archiving ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_uri}"
+    info "Copying ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_uri}"
     gsutil cp "${orange_no_germline_json}" "${shared_actin_data_external_uri}/"
     gsutil cp "${orange_no_germline_pdf}" "${shared_actin_data_external_uri}/"
 fi
