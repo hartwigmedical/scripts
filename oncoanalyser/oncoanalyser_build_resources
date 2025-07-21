@@ -68,21 +68,16 @@ echo "Pipeline version: ${PIPELINE_VERSION}"
 echo "## --------------------------------"
 
 ## Cloud source repo: common-resources-public
-# commit d5b3de39d9d028e7bad7c9c0670c4dd43e33380f (HEAD -> master, origin/master, origin/HEAD)
+# commit 143ae7f187d31af48ba8123dc113ae9337b22913 (HEAD -> master, origin/master, origin/HEAD)
 # Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Mon Jul 7 10:15:39 2025 +1000
+# Date:   Mon Jul 21 12:38:41 2025 +1000
 # 
-#     DEV-4145: updated Lilac allele definitions and cohort frequences for v1.8
+#     DEV-4145: added missing TSO500 RNA files
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
 ## Used for big files that are too unwieldy to track with git in common-resources-public
 COMMON_RESOURCES_PATH=/data/resources/bucket
-
-## !NOTE! This dir is not a mirror of gs://hmf-crunch-resources. 
-## TSO500 dirs were manually downloaded
-## gsutil -m cp -r "gs://hmf-crunch-resources/tso500/*" /data/resources/crunch/tso500
-CRUNCH_RESOURCES_PATH=/data/resources/crunch
 
 echo ""
 echo "## ----------------------------"
