@@ -6,6 +6,7 @@ source actin_config || exit 1
 
 patient=$1 && shift
 namespace=$1 && shift
+sync_orange=${1:-true}
 
 if [[ -z "${patient}" ]]; then
     error "Parameter patient missing. Exiting.";
@@ -13,6 +14,12 @@ fi
 
 if [[ -z "${namespace}" ]]; then
     error "Missing namespace [$(actin_emc_namespaces)]"
+fi
+
+sync_orange=$(echo "$sync_orange" | tr '[:upper:]' '[:lower:]')
+if [[ "$sync_orange" != "true" && "$sync_orange" != "false" ]]; then
+  echo "Invalid value for sync_orange: '$sync_orange'. Expected 'true' or 'false'."
+  exit 1
 fi
 
 gcp_project=$(production_actin_emc_project)
@@ -30,6 +37,11 @@ info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 gsutil cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
+
+if [[ "$sync_orange" == "false" ]]; then
+  info "Skipping copying of ORANGE data for ${patient}"
+  exit 0
+fi
 
 orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp "${gcp_project}" "${patient}" "${namespace}")"
 orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
