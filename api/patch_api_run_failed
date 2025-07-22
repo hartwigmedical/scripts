@@ -17,7 +17,7 @@ if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 info "Querying api to find run by name (${run_name})"
-runs_json=$(hmf_api_get "runs?set_name=${run_name}&context=DIAGNOSTIC"")
+runs_json=$(hmf_api_get "runs?set_name=${run_name}&context=DIAGNOSTIC")
 count=$(echo "${runs_json}" | jq length)
 [[ "${count}" -eq 1 ]] || die "Amount of runs found for ${run_name} is not 1 (${count})"
 
