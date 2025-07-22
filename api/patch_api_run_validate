@@ -17,7 +17,7 @@ if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 info "Querying api to select non research-pipeline runs by set name (${set_name})"
-runs_json=$(hmf_api_get "runs?set_name=${set_name}" | jq '[.[] | select( .bucket | contains("research-pipeline") | not)]')
+runs_json=$(hmf_api_get "runs?set_name=${set_name}&context=DIAGNOSTIC")
 count=$(echo "${runs_json}" | jq length)
 
 while read -r run_info; do
