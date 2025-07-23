@@ -1,6 +1,6 @@
-name: "remarks-250620-2"
+name: "remarks-250711-2"
 workflow: "oncoact-panel-remarks"
-version: "0.0.1-beta.16"
+version: "0.0.1-beta.18"
 params:
   input_bucket_uri: "gs://targeted-pipeline-output-prod-1/"
-  run_names: "250620*"
+  run_names: "250711*"
