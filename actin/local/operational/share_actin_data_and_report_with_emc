@@ -23,7 +23,6 @@ if [[ "$sync_orange" != "true" && "$sync_orange" != "false" ]]; then
 fi
 
 gcp_project=$(production_actin_emc_project)
-shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${patient}" "${namespace}")"
 
 actin_report_pdf="$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
 patient_record_json="$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}" "${namespace}")"
@@ -33,10 +32,19 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
     error "Missing ACTIN data or report for ${patient}"
 fi
 
-info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
-gsutil cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
-gsutil cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
-gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
+shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${patient}" "${namespace}")"
+version_folder=$(basename "${shared_actin_data_external_uri%/}")
+shared_actin_data_external_latest_uri="${shared_actin_data_external_uri/%${version_folder}/}latest"
+
+if [[ "$version_folder" != "1" ]]; then
+  info "Moving ACTIN data from $shared_actin_data_external_latest_uri to $shared_actin_data_external_uri"
+  gsutil -m mv "$shared_actin_data_external_latest_uri/\*" "$shared_actin_data_external_uri/"
+fi
+
+info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_latest_uri}"
+gsutil cp "${patient_record_json}" "${shared_actin_data_external_latest_uri}/"
+gsutil cp "${treatment_match_json}" "${shared_actin_data_external_latest_uri}/"
+gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_latest_uri}/"
 
 if [[ "$sync_orange" == "false" ]]; then
   info "Skipping copying of ORANGE data for ${patient}"
@@ -50,7 +58,7 @@ if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" ]]; then
     warn "Skipping copying of ORANGE data for ${patient} as they do not exist"
 else
     sample=$(locate_sequenced_sample_for_actin_patient_gcp "${gcp_project}" "${patient}" "${namespace}")
-    info "Copying ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_uri}"
-    gsutil cp "${orange_no_germline_json}" "${shared_actin_data_external_uri}/"
-    gsutil cp "${orange_no_germline_pdf}" "${shared_actin_data_external_uri}/"
+    info "Copying ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_latest_uri}"
+    gsutil cp "${orange_no_germline_json}" "${shared_actin_data_external_latest_uri}/"
+    gsutil cp "${orange_no_germline_pdf}" "${shared_actin_data_external_latest_uri}/"
 fi
