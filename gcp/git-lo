@@ -1,0 +1,16 @@
+#!/bin/bash
+# Custom git subcommand: git lo
+# Usage: git lo
+# Outputs the percentage of lines owned by each author in the repository.
+
+git ls-files -z | while IFS= read -r -d '' file; do
+  # Skip binary files
+  if git check-attr --stdin binary <<< "$file" | grep -q 'binary: set'; then
+    continue # Skip binary files
+  # Apply regex filter if provided
+  elif [ -n "$1" ] && [[ "$file" =~ $1 ]]; then
+    continue
+  fi
+  git blame --line-porcelain "$file" 2>/dev/null | LC_ALL=C sed -n 's/^author //p'
+done | sort | uniq -c | sort -nr
+

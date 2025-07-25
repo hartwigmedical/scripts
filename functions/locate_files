@@ -8,6 +8,10 @@ locate_actin_jar_on_vm() {
     echo "/data/actin/system/actin.jar"
 }
 
+locate_actin_clinical_jar_on_vm() {
+    echo "/data/actin/system/actin-clinical.jar"
+}
+
 locate_actin_transvar_jar_on_vm() {
     echo "/data/tools/actin-transvar/actin-transvar.jar"
 }
@@ -416,13 +420,30 @@ locate_extended_efficacy_json() {
     echo "/data/resources/actin/ckb_extended_efficacy/extended_efficacy_evidence_output.json"
 }
 
-locate_crc_experiment_directory() {
+locate_base_crc_experiment_directory() {
     echo "/data/actin/crc_report_development"
 }
 
-locate_crc_personalization_reference_data() {
-    echo "$(locate_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
+locate_crc_experiment_real_patients_directory() {
+    echo "$(locate_base_crc_experiment_directory)/real_patients"
 }
+
+locate_crc_experiment_test_patients_directory() {
+    echo "$(locate_base_crc_experiment_directory)/test_patients"
+}
+
+locate_crc_actin_environment_config() {
+    echo "$(locate_base_crc_experiment_directory)/config/actin-crc-config.yaml"
+}
+
+locate_crc_personalization_reference_data() {
+    echo "$(locate_base_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
+}
+
+locate_crc_actin_fake_predictions() {
+    echo "$(locate_base_crc_experiment_directory)/fake_predictions/treatment_efficacy_prediction.fake.json"
+}
+
 
 ############################### ACTIN Cohort ###################################
 
@@ -462,80 +483,93 @@ locate_actin_cohort_trial_config_directory() {
 
 locate_actin_clinical_feed_input_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-clinical-pipeline-feed-input"
+    echo "gs://${gcp_project}-clinical-pipeline-feed-input${namespace:+-$namespace}"
 }
 
 locate_actin_transformed_feed_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-clinical-feed-transformed"
+    echo "gs://${gcp_project}-clinical-feed-transformed${namespace:+-$namespace}"
 }
 
 locate_actin_clinical_curation_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-clinical-pipeline-curation-input"
+    echo "gs://${gcp_project}-clinical-pipeline-curation-input${namespace:+-$namespace}"
 }
 
 locate_actin_clinical_output_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-clinical-pipeline-output"
+    echo "gs://${gcp_project}-clinical-pipeline-output${namespace:+-$namespace}"
 }
 
 locate_actin_trial_config_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-trial-pipeline-trial-input"
+    echo "gs://${gcp_project}-trial-pipeline-trial-input${namespace:+-$namespace}"
 }
 
 locate_actin_trial_status_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-trial-pipeline-status-input"
+    echo "gs://${gcp_project}-trial-pipeline-status-input${namespace:+-$namespace}"
 }
 
 locate_actin_shared_data_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-shared-data"
+    echo "gs://${gcp_project}-shared-data${namespace:+-$namespace}"
 }
 
 locate_actin_shared_data_external_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-shared-data-external"
+    echo "gs://${gcp_project}-shared-data-external${namespace:+-$namespace}"
 }
 
 locate_actin_wgs_pipeline_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-wgs-pipeline-output"
+    echo "gs://${gcp_project}-wgs-pipeline-output${namespace:+-$namespace}"
 }
 
 locate_actin_wgs_diagnostic_pipeline_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-wgs-pipeline-output-diagnostic"
+    echo "gs://${gcp_project}-wgs-pipeline-output-diagnostic${namespace:+-$namespace}"
 }
 
 locate_actin_analysis_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-analysis-pipeline-output"
+    echo "gs://${gcp_project}-analysis-pipeline-output${namespace:+-$namespace}"
 }
 
 locate_actin_trial_database_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-trial-pipeline-output"
+    echo "gs://${gcp_project}-trial-pipeline-output${namespace:+-$namespace}"
 }
 
 locate_actin_serve_bucket() {
     local gcp_project=$1 && shift
+    local namespace=$1 && shift
 
-    echo "gs://${gcp_project}-serve-pipeline-output"
+    echo "gs://${gcp_project}-serve-pipeline-output${namespace:+-$namespace}"
 }
 
 ############################## ACTIN Data GCP ##################################
@@ -543,8 +577,9 @@ locate_actin_serve_bucket() {
 locate_next_orange_shared_data_uri_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    base_uri="$(locate_actin_shared_data_bucket ${gcp_project})/${patient}/orange"
+    base_uri="$(locate_actin_shared_data_bucket ${gcp_project} ${namespace})/${patient}/orange"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
@@ -557,8 +592,9 @@ locate_next_orange_shared_data_uri_gcp() {
 locate_next_actin_shared_data_uri_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    base_uri="$(locate_actin_shared_data_bucket ${gcp_project})/${patient}/actin"
+    base_uri="$(locate_actin_shared_data_bucket ${gcp_project} ${namespace})/${patient}/actin"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
@@ -571,8 +607,9 @@ locate_next_actin_shared_data_uri_gcp() {
 locate_next_actin_shared_data_external_uri_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    base_uri="$(locate_actin_shared_data_external_bucket ${gcp_project})/${patient}/actin"
+    base_uri="$(locate_actin_shared_data_external_bucket ${gcp_project} ${namespace})/${patient}/actin"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
@@ -601,9 +638,10 @@ locate_sequenced_sample_for_actin_patient_gcp() {
     # NOTE: We assume that there is one unique pipeline run for an ACTIN patient.
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
     local sequenced_sample=""
-    local pipeline_report_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project})/*${patient}*"
+    local pipeline_report_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project} ${namespace})/*${patient}*"
     local orange_report_uri=$(gsutil ls "${pipeline_report_uri}/orange_no_germline/*.orange.pdf")
     if gsutil ls "${orange_report_uri}" >/dev/null 2>&1; then
         orange_report=$(basename ${orange_report_uri})
@@ -618,9 +656,10 @@ locate_sequenced_sample_for_actin_patient_gcp() {
 locate_actin_orange_germline_pdf_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient})
-    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project})/*${patient}*/orange/${sample}.orange.pdf"
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project} ${namespace})/*${patient}*/orange/${sample}.orange.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE germline pdf")
 }
@@ -628,9 +667,10 @@ locate_actin_orange_germline_pdf_gcp() {
 locate_actin_orange_no_germline_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient})
-    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project})/*${patient}*/orange_no_germline/${sample}.orange.json"
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project} ${namespace})/*${patient}*/orange_no_germline/${sample}.orange.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline json")
 }
@@ -638,9 +678,10 @@ locate_actin_orange_no_germline_json_gcp() {
 locate_actin_orange_no_germline_pdf_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient})
-    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project})/*${patient}*/orange_no_germline/${sample}.orange.pdf"
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
+    local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project} ${namespace})/*${patient}*/orange_no_germline/${sample}.orange.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline pdf")
 }
@@ -648,8 +689,9 @@ locate_actin_orange_no_germline_pdf_gcp() {
 locate_actin_clinical_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_clinical_output_bucket ${gcp_project})/${patient}.clinical.json"
+    local report_gsutil_uri="$(locate_actin_clinical_output_bucket ${gcp_project} ${namespace})/${patient}.clinical.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "clinical json")
 }
@@ -657,8 +699,9 @@ locate_actin_clinical_json_gcp() {
 locate_actin_patient_record_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/molecular/${patient}.patient_record.json"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/molecular/${patient}.patient_record.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "patient record json")
 }
@@ -666,8 +709,9 @@ locate_actin_patient_record_json_gcp() {
 locate_actin_treatment_match_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/algo/${patient}.treatment_match.json"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/algo/${patient}.treatment_match.json"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "treatment match json")
 }
@@ -675,8 +719,9 @@ locate_actin_treatment_match_json_gcp() {
 locate_actin_report_pdf_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/report/${patient}.actin.pdf"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket "${gcp_project}" "${namespace}")/report/${patient}.actin.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN report PDF")
 }
@@ -684,8 +729,9 @@ locate_actin_report_pdf_gcp() {
 locate_actin_evaluation_details_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/evaluation/${patient}.evaluation.details.tsv"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/evaluation/${patient}.evaluation.details.tsv"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation details")
 }
@@ -693,8 +739,9 @@ locate_actin_evaluation_details_gcp() {
 locate_actin_evaluation_summary_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
+    local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project})/evaluation/${patient}.evaluation.summary.tsv"
+    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/evaluation/${patient}.evaluation.summary.tsv"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation summary")
 }

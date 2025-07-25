@@ -6,11 +6,19 @@ source message_functions || exit 1
 if [[ "$(hostname)" == $(production_actin_nki_ops_vm) ]]; then
     do_sync_actin_nki_input_data_to_vm
     do_sync_actin_output_data_to_vm $(production_actin_nki_project)
-    do_sync_actin_nki_trials_to_vm $(production_actin_nki_project)
-elif [[ "$(hostname)" == $(production_actin_emc_ops_vm) ]]; then
-    do_sync_actin_emc_input_data_to_vm
-    do_sync_actin_output_data_to_vm $(production_actin_emc_project)
-    do_sync_actin_emc_trials_to_vm $(production_actin_nki_project)
+    do_sync_actin_nki_trials_to_vm
+elif [[ "$(hostname)" == $(production_actin_emc_tm_progene_study_ops_vm) ]]; then
+    do_sync_actin_emc_input_data_to_vm $(actin_emc_tm_progene_study_namespace)
+    do_sync_actin_output_data_to_vm $(production_actin_emc_project) $(actin_emc_tm_progene_study_namespace)
+    do_sync_actin_emc_trials_to_vm $(actin_emc_tm_progene_study_namespace)
+elif [[ "$(hostname)" == $(production_actin_emc_tm_phase1_soc_ops_vm) ]]; then
+    do_sync_actin_emc_input_data_to_vm $(actin_emc_tm_phase1_soc_namespace)
+    do_sync_actin_output_data_to_vm $(production_actin_emc_project) $(actin_emc_tm_phase1_soc_namespace)
+    do_sync_actin_emc_trials_to_vm $(actin_emc_tm_phase1_soc_namespace)
+elif [[ "$(hostname)" == $(production_actin_emc_pers_crc_study_ops_vm) ]]; then
+    do_sync_actin_emc_input_data_to_vm $(actin_emc_pers_crc_study_namespace)
+    do_sync_actin_output_data_to_vm $(production_actin_emc_project) $(actin_emc_pers_crc_study_namespace)
+    do_sync_actin_emc_trials_to_vm $(actin_emc_pers_crc_study_namespace)
 elif [[ "$(hostname)" == $(production_actin_mcgi_ops_vm) ]]; then
     do_sync_actin_mcgi_input_data_to_vm
     do_sync_actin_output_data_to_vm $(production_actin_mcgi_project)

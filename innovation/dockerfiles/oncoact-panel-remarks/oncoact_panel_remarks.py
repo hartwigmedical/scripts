@@ -33,6 +33,10 @@ MSI_MIN_PURITY_THRESHOLD = Decimal("0.10")
 SOMATIC_VARIANT_MIN_PURITY_THRESHOLD = Decimal("0.10")
 
 DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
+MAX_DELETION_SIZE = 10000000
+VALIDATED_DELETION_GENES = {
+    "PALB2", "RAD51B", "RAD51C", "BRCA1", "BRCA2", "CDKN2A", "TP53", "CREBBP", "EP300", "ARID1A", "RB1", "PTEN", "MTAP", "KEAP1", "SMAD4"
+}
 GENES_EXCLUDED_FROM_DESIGN = {"SPATA31A7", "LINC01001", "U2AF1"}
 
 BASES_PER_GBASE = 1000000000
@@ -131,6 +135,24 @@ class PurpleQc:
 
 
 @dataclass(frozen=True, eq=True)
+class GeneCopyNumber:
+    chromosome: str
+    start: int
+    end: int
+    gene_name: str
+    min_copy_number: Decimal
+    max_copy_number: Decimal
+    transcript: str
+    is_canonical: bool
+    depth_window_count: int
+    min_region_start: int
+    min_region_end: int
+
+    def determine_min_region_length(self) -> int:
+        return self.min_region_end - self.min_region_start + 1
+
+
+@dataclass(frozen=True, eq=True)
 class ExonMedianCoverage:
     gene_name: str
     chromosome: str
@@ -150,6 +172,7 @@ class AmberBafPoint:
 class RunData:
     drivers: Tuple[Driver, ...]
     purple_qc: PurpleQc
+    gene_copy_numbers: Tuple[GeneCopyNumber, ...]
     exon_median_coverages: Tuple[ExonMedianCoverage, ...]
     amber_baf_points: Tuple[AmberBafPoint, ...]
 
@@ -347,10 +370,49 @@ def determine_remarks(
         gene_name_string = ", ".join(sorted(driver.gene_name for driver in partial_amp_drivers))
         remarks.append(f"Partiële amplificaties zijn niet gevalideerd: {gene_name_string}.")
 
+    maybe_missed_deletion_genes = determine_genes_with_potentially_missed_deletions(run_data)
+    if maybe_missed_deletion_genes:
+        gene_summary_lines = {
+            f"{gene} ({pretty_base_count(determine_minimum_min_region_length(gene, run_data))})"
+            for gene in maybe_missed_deletion_genes
+        }
+        remarks.append(
+            f"Er zijn mogelijk deleties gemist. "
+            f"Potentiële deleties worden weggefilterd als ze minstens 10Mb beslaan, maar dit is niet altijd juist: "
+            f"{pretty_listing(gene_summary_lines)}."
+        )
+
     if not remarks:
         remarks.append("Geen opmerkingen.")
 
     return remarks
+
+
+def determine_genes_with_potentially_missed_deletions(run_data: RunData) -> Set[str]:
+    maybe_missed_deletion_genes = set()
+    for deletion_gene in VALIDATED_DELETION_GENES:
+        for gene_copy_number in find_relevant_gene_copy_numbers(deletion_gene, run_data):
+            has_deletion_cn = gene_copy_number.min_copy_number < DELETION_COPY_NUMBER_THRESHOLD
+            deletion_would_be_too_large = gene_copy_number.determine_min_region_length() > MAX_DELETION_SIZE
+            matching_del_driver_calls = [
+                driver for driver in run_data.drivers if driver.gene_name == deletion_gene and driver.driver_type == DriverType.DEL
+            ]
+            if has_deletion_cn and deletion_would_be_too_large and not matching_del_driver_calls:
+                maybe_missed_deletion_genes.add(deletion_gene)
+    return maybe_missed_deletion_genes
+
+
+def determine_minimum_min_region_length(gene: str, run_data: RunData) -> int:
+    relevant_gene_copy_numbers = find_relevant_gene_copy_numbers(gene, run_data)
+    return min(gcn.determine_min_region_length() for gcn in relevant_gene_copy_numbers)
+
+
+def find_relevant_gene_copy_numbers(gene: str, run_data: RunData) -> List[GeneCopyNumber]:
+    relevant_gene_copy_numbers = [copy_number for copy_number in run_data.gene_copy_numbers if copy_number.gene_name == gene]
+    if len(relevant_gene_copy_numbers) != 1 and len(relevant_gene_copy_numbers) != 2:
+        # CDKN2A can have two entries
+        raise ValueError(f"Found unexpected number of '{gene}' gene copy number for sample: {len(relevant_gene_copy_numbers)}")
+    return relevant_gene_copy_numbers
 
 
 def determine_relevant_pipeline_directories(input_directory: Path, run_names: str) -> Set[Path]:
@@ -388,6 +450,8 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     drivers = load_drivers(local_directory, tumor_name)
     logging.info("Load sample qc info")
     purple_qc = load_purple_qc(local_directory, tumor_name)
+    logging.info("Load gene copy numbers")
+    gene_copy_numbers = load_gene_copy_numbers(local_directory, tumor_name)
     logging.info("Load exon median coverages")
     exon_median_coverages = load_exon_median_coverages(local_directory, tumor_name)
     logging.info("Load Amber BAF points")
@@ -395,6 +459,7 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
     run_data = RunData(
         tuple(drivers),
         purple_qc,
+        tuple(gene_copy_numbers),
         tuple(exon_median_coverages),
         tuple(amber_baf_points),
     )
@@ -484,6 +549,54 @@ def get_sage_exon_median_from_line(line: str, header: str) -> ExonMedianCoverage
         median_depth,
     )
     return exon_median_coverage
+
+
+def load_gene_copy_numbers(local_directory: Path, tumor_name: str) -> List[GeneCopyNumber]:
+    purple_cnv_gene_path = local_directory / "purple" / f"{tumor_name}.purple.cnv.gene.tsv"
+    return load_gene_copy_numbers_from_file(purple_cnv_gene_path)
+
+
+def load_gene_copy_numbers_from_file(purple_cnv_gene_path: Path) -> List[GeneCopyNumber]:
+    gene_copy_numbers = []
+    with open(purple_cnv_gene_path, "r") as in_f:
+        header = next(in_f)
+        for line in in_f:
+            gene_copy_number = get_gene_copy_number_from_line(line, header)
+            gene_copy_numbers.append(gene_copy_number)
+    return gene_copy_numbers
+
+
+def get_gene_copy_number_from_line(line: str, header: str) -> GeneCopyNumber:
+    split_header = header.replace("\n", "").split(TSV_SEPARATOR)
+
+    split_line = line.replace("\n", "").split(TSV_SEPARATOR)
+
+    chromosome = split_line[split_header.index("chromosome")]
+    gene_name = split_line[split_header.index("gene")]
+    transcript = split_line[split_header.index("transcriptId")]
+    is_canonical = get_bool_from_string(split_line[split_header.index("isCanonical")])
+    start = int(split_line[split_header.index("start")])
+    end = int(split_line[split_header.index("end")])
+    min_copy_number = Decimal(split_line[split_header.index("minCopyNumber")])
+    max_copy_number = Decimal(split_line[split_header.index("maxCopyNumber")])
+    depth_window_count = int(split_line[split_header.index("depthWindowCount")])
+    min_region_start = int(split_line[split_header.index("minRegionStart")])
+    min_region_end = int(split_line[split_header.index("minRegionEnd")])
+
+    gene_copy_number = GeneCopyNumber(
+        chromosome,
+        start,
+        end,
+        gene_name,
+        min_copy_number,
+        max_copy_number,
+        transcript,
+        is_canonical,
+        depth_window_count,
+        min_region_start,
+        min_region_end,
+    )
+    return gene_copy_number
 
 
 def load_purple_qc(local_directory: Path, tumor_name: str) -> PurpleQc:
@@ -660,6 +773,15 @@ def pretty_listing(things: Set[str]) -> str:
     else:
         pretty_list_string = ""
     return pretty_list_string
+
+
+def pretty_base_count(count: int) -> str:
+    if count >= 1000000:
+        return f"{count/1000000:.1f}MB"
+    elif count >= 1000:
+        return f"{count/1000:.1f}KB"
+    else:
+        return f"{count}B"
 
 
 def convert_bases_to_rounded_gbases(base_count: int) -> Decimal:

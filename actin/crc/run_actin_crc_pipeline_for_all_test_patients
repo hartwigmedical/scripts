@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source io_functions || exit 1
+
+base_dir=$(locate_crc_experiment_test_patients_directory)
+
+working_dir="${base_dir}/outputs"
+create_or_cleanup_dir "${working_dir}"
+
+java -cp $(locate_actin_clinical_jar_on_vm) com.hartwig.actin.clinical.util.BuildCrcClinicalFromTsvKt \
+    -input_tsv "${base_dir}/input/patients.tsv" \
+    -output_directory "${working_dir}"
+
+for clinical_record_file in ${working_dir}/*; do
+    clinical_record_json=$(basename ${clinical_record_file})
+    patient=$(echo ${clinical_record_json} | cut -d "." -f 1)
+    
+    do_run_actin_molecular_interpreter_crc ${working_dir} ${patient}
+    
+    do_run_actin_efficacy_prediction_crc ${working_dir} ${patient}
+    
+    do_run_actin_treatment_matcher_crc ${working_dir} ${patient}
+    
+    do_run_actin_reporter_crc ${working_dir} ${patient}
+done
+    
+    
+    
+    

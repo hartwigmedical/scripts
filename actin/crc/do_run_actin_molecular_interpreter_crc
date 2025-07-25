@@ -3,13 +3,12 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
+base_dir=$1 && shift
 patient=$1 && shift
 
-if [[ -z "${patient}" ]]; then
+if [[ -z "${base_dir}" || -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
-
-base_dir="$(locate_crc_experiment_directory)"
 
 clinical_json="${base_dir}/${patient}.clinical.json"
 if [[ -z "${clinical_json}" ]]; then

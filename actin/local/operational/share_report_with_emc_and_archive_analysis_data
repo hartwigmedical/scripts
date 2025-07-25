@@ -5,20 +5,25 @@ source message_functions || exit 1
 source actin_config || exit 1
 
 patient=$1 && shift
+namespace=$1 && shift
 
 if [[ -z "${patient}" ]]; then
-    error "Parameters missing. Exiting.";
+    error "Parameter patient missing. Exiting.";
+fi
+
+if [[ -z "${namespace}" ]]; then
+    error "Missing namespace [$(actin_emc_namespaces)]"
 fi
 
 gcp_project=$(production_actin_emc_project)
-shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp ${gcp_project} ${patient})"
-shared_actin_data_uri="$(locate_next_actin_shared_data_uri_gcp ${gcp_project} ${patient})"
+shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp ${gcp_project} ${patient} ${namespace})"
+shared_actin_data_uri="$(locate_next_actin_shared_data_uri_gcp ${gcp_project} ${patient} ${namespace})"
 
-actin_report_pdf="$(locate_actin_report_pdf_gcp ${gcp_project} ${patient})"
-clinical_json="$(locate_actin_clinical_json_gcp ${gcp_project} ${patient})"
-treatment_match_json="$(locate_actin_treatment_match_json_gcp ${gcp_project} ${patient})"
-evaluation_details_tsv="$(locate_actin_evaluation_details_gcp ${gcp_project} ${patient})"
-evaluation_summary_tsv="$(locate_actin_evaluation_summary_gcp ${gcp_project} ${patient})"
+actin_report_pdf="$(locate_actin_report_pdf_gcp ${gcp_project} ${patient} ${namespace})"
+clinical_json="$(locate_actin_clinical_json_gcp ${gcp_project} ${patient} ${namespace})"
+treatment_match_json="$(locate_actin_treatment_match_json_gcp ${gcp_project} ${patient} ${namespace})"
+evaluation_details_tsv="$(locate_actin_evaluation_details_gcp ${gcp_project} ${patient} ${namespace})"
+evaluation_summary_tsv="$(locate_actin_evaluation_summary_gcp ${gcp_project} ${patient} ${namespace})"
 
 if [[ -z "${clinical_json}" || -z "${treatment_match_json}" || -z "${actin_report_pdf}" ||
     -z "${evaluation_details_tsv}" || -z "${evaluation_summary_tsv}" ]]; then
@@ -35,11 +40,11 @@ gsutil cp "${evaluation_summary_tsv}" "${shared_actin_data_uri}/"
 info "Sharing ACTIN report for ${patient} to ${shared_actin_data_external_uri}"
 gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
 
-orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${gcp_project} ${patient})"
-orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project} ${patient})"
-patient_record_json="$(locate_actin_patient_record_json_gcp ${gcp_project} ${patient})"
+orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp ${gcp_project} ${patient} ${namespace})"
+orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project} ${patient} ${namespace})"
+patient_record_json="$(locate_actin_patient_record_json_gcp ${gcp_project} ${patient} ${namespace})"
 
-sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient})
+sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
 
 if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" && -z "${patient_record_json}" ]]; then
     warn "Skipping archiving of ORANGE data and ACTIN patient record for ${patient} as they do not exist"

@@ -1,11 +1,11 @@
-name: "hotfix-check"
+name: "genomescan"
 workflow: "auto-compare"
-version: "0.1.10"
+version: "0.2.6"
 params:
-  truth_bucket_uri: "gs://reporting-hotfix-output/"
-  target_bucket_uri: "gs://reporting-hotfix-output-tmp/"
+  truth_bucket_uri: "gs://hartwig-output-genomescan-truth"
+  target_bucket_uri: "gs://hartwig-output-genomescan"
+  sample_id_file_name: "genomescan_sample_ids.csv"
   ref_version: "37"
-  run_id: "hotfix-check"
-  compar_optional_arguments: '-write_detailed -include_matches'
-  map_sample: "false"
-  sample_link: '{"COLO829v003T": ["COLO829v003T"], "COREDB011988T": ["COREDB011988T"]}'
+  run_id: "genomescan"
+  compar_optional_arguments: '-write_detailed -include_matches -tumor_flagstat_dir_ref */flagstat -tumor_flagstat_dir_new */flagstat -germline_flagstat_dir_ref \$/flagstat -germline_flagstat_dir_new \$/flagstat'
+  sample_link: ""
