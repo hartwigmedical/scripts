@@ -9,17 +9,13 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting.";
 fi
 
-actin_molecular_interpreter ${patient}
+actin_molecular_interpreter "${patient}"
 
 echo ""
 
 # Pass "-run_historically" to run with historic reference data
-actin_treatment_matcher ${patient} "$@"
+actin_treatment_matcher "${patient}" "$@"
 
 echo ""
 
-create_actin_evaluation_data_for_patient ${patient}
-
-echo ""
-
-actin_reporter_prod ${patient}
+actin_reporter_prod "${patient}"
