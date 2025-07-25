@@ -393,8 +393,6 @@ class StatusChecker:
             warnings.append(f"Both reportingId and hospitalSampleLabel are missing in lama data for {report_record['barcode']}.")
             return warnings
 
-        print(reporting_id)
-
         #Get credentials for sql
         command = 'bash -i -c "source database_functions && get_secret_from_secret_manager mysql-diagnostic-patients-sql-prod-1-reader"'
         creds_result = subprocess.run(command, shell=True, text=True, capture_output=True)
@@ -409,7 +407,7 @@ class StatusChecker:
 
         query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
         output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
-        print(output)
+
         # Process the output
         if output.stdout.strip():
             lines = output.stdout.strip().split('\n')
