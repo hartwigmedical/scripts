@@ -148,6 +148,9 @@ class GeneCopyNumber:
     min_region_start: int
     min_region_end: int
 
+    def determine_min_region_length(self) -> int:
+        return self.min_region_end - self.min_region_start + 1
+
 
 @dataclass(frozen=True, eq=True)
 class ExonMedianCoverage:
@@ -367,25 +370,11 @@ def determine_remarks(
         gene_name_string = ", ".join(sorted(driver.gene_name for driver in partial_amp_drivers))
         remarks.append(f"Partiële amplificaties zijn niet gevalideerd: {gene_name_string}.")
 
-    maybe_missed_deletion_gene_to_min_region_length = {}
-    for deletion_gene in sorted(VALIDATED_DELETION_GENES):
-        relevant_gene_copy_numbers = [copy_number for copy_number in run_data.gene_copy_numbers if copy_number.gene_name == deletion_gene]
-        if len(relevant_gene_copy_numbers) != 1 and len(relevant_gene_copy_numbers) != 2:
-            # CDKN2A can have two entries
-            raise ValueError(f"Found unexpected number of '{deletion_gene}' gene copy number for sample: {len(relevant_gene_copy_numbers)}")
-
-        for gene_copy_number in relevant_gene_copy_numbers:
-            min_region_length = gene_copy_number.min_region_end - gene_copy_number.min_region_start + 1
-            matching_del_driver_calls = [
-                driver for driver in run_data.drivers if driver.gene_name == deletion_gene and driver.driver_type == DriverType.DEL
-            ]
-            if gene_copy_number.min_copy_number < DELETION_COPY_NUMBER_THRESHOLD and min_region_length > MAX_DELETION_SIZE and not matching_del_driver_calls:
-                maybe_missed_deletion_gene_to_min_region_length[deletion_gene] = min_region_length
-
-    if maybe_missed_deletion_gene_to_min_region_length:
+    maybe_missed_deletion_genes = determine_genes_with_potentially_missed_deletions(run_data)
+    if maybe_missed_deletion_genes:
         gene_summary_lines = {
-            f"{gene} ({pretty_base_count(maybe_missed_deletion_gene_to_min_region_length[gene])})"
-            for gene in maybe_missed_deletion_gene_to_min_region_length.keys()
+            f"{gene} ({pretty_base_count(determine_minimum_min_region_length(gene, run_data))})"
+            for gene in maybe_missed_deletion_genes
         }
         remarks.append(
             f"Er zijn mogelijk deleties gemist. "
@@ -397,6 +386,33 @@ def determine_remarks(
         remarks.append("Geen opmerkingen.")
 
     return remarks
+
+
+def determine_genes_with_potentially_missed_deletions(run_data: RunData) -> Set[str]:
+    maybe_missed_deletion_genes = set()
+    for deletion_gene in VALIDATED_DELETION_GENES:
+        for gene_copy_number in find_relevant_gene_copy_numbers(deletion_gene, run_data):
+            has_deletion_cn = gene_copy_number.min_copy_number < DELETION_COPY_NUMBER_THRESHOLD
+            deletion_would_be_too_large = gene_copy_number.determine_min_region_length() > MAX_DELETION_SIZE
+            matching_del_driver_calls = [
+                driver for driver in run_data.drivers if driver.gene_name == deletion_gene and driver.driver_type == DriverType.DEL
+            ]
+            if has_deletion_cn and deletion_would_be_too_large and not matching_del_driver_calls:
+                maybe_missed_deletion_genes.add(deletion_gene)
+    return maybe_missed_deletion_genes
+
+
+def determine_minimum_min_region_length(gene: str, run_data: RunData) -> int:
+    relevant_gene_copy_numbers = find_relevant_gene_copy_numbers(gene, run_data)
+    return min(gcn.determine_min_region_length() for gcn in relevant_gene_copy_numbers)
+
+
+def find_relevant_gene_copy_numbers(gene: str, run_data: RunData) -> List[GeneCopyNumber]:
+    relevant_gene_copy_numbers = [copy_number for copy_number in run_data.gene_copy_numbers if copy_number.gene_name == gene]
+    if len(relevant_gene_copy_numbers) != 1 and len(relevant_gene_copy_numbers) != 2:
+        # CDKN2A can have two entries
+        raise ValueError(f"Found unexpected number of '{gene}' gene copy number for sample: {len(relevant_gene_copy_numbers)}")
+    return relevant_gene_copy_numbers
 
 
 def determine_relevant_pipeline_directories(input_directory: Path, run_names: str) -> Set[Path]:
