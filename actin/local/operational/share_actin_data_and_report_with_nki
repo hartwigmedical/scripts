@@ -13,14 +13,12 @@ fi
 gcp_project=$(production_actin_nki_project)
 hash="$(lookup_nki_hash_for_actin_id "${patient}")"
 shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${hash}")"
-version_folder=$(basename "${shared_actin_data_external_uri%/}")
-shared_actin_data_external_latest_uri="${shared_actin_data_external_uri/%${version_folder}/}latest"
 
 rename_and_copy_file() {
     local source_path=$1
     local filename="$(basename "${source_path}")"
     local extension="${filename#*.}"
-    gsutil cp "${source_path}" "${shared_actin_data_external_latest_uri}/${hash}.${extension}"
+    gsutil cp "${source_path}" "${shared_actin_data_external_uri}/${hash}.${extension}"
 }
 
 actin_report_pdf="$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")"
@@ -31,14 +29,9 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
     error "Missing ACTIN data or report for ${patient}"
 fi
 
-if [[ "$version_folder" != "1" ]]; then
-  info "Moving ACTIN data from $shared_actin_data_external_latest_uri to $shared_actin_data_external_uri"
-  gsutil -m mv "$shared_actin_data_external_latest_uri/\*" "$shared_actin_data_external_uri/"
-fi
-
-info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_latest_uri}"
+info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 rename_and_copy_file "${patient_record_json}"
 rename_and_copy_file "${treatment_match_json}"
 rename_and_copy_file "${actin_report_pdf}"
 
-echo "Copied files to ${shared_actin_data_external_latest_uri}"
+echo "Copied files to ${shared_actin_data_external_uri}"
