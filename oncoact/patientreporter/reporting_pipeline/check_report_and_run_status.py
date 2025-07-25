@@ -399,7 +399,7 @@ class StatusChecker:
         creds = creds_result.stdout.strip()
         #Construct SQL query
         sql_query = (
-            "SELECT sampleId, qcStatus, purity, minPurity,maxPurity, ploidy, minPloidy, maxPloidy, maxPurity-minPurity as range_purity, maxPloidy-minPloidy as range_ploidy "
+            "SELECT sampleId, qcStatus, purity, minPurity,maxPurity, ploidy, minPloidy, maxPloidy, round(maxPurity-minPurity, 2) as range_purity, round(maxPloidy-minPloidy,2) as range_ploidy "
             "FROM purity "
             "WHERE qcStatus NOT LIKE '%FAIL_NO_TUMOR%'"
             f"AND sampleId = '{reporting_id}' "
