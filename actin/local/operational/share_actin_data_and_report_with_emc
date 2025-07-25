@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source message_functions || exit 1
 source actin_config || exit 1
+source shared_data_functions || exit 1
 
 patient=$1 && shift
 namespace=$1 && shift
@@ -37,6 +38,8 @@ info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 gsutil cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
 gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
+
+write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 
 if [[ "$sync_orange" == "false" ]]; then
   info "Skipping copying of ORANGE data for ${patient}"

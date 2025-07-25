@@ -3,6 +3,7 @@
 source locate_files || exit 1
 source message_functions || exit 1
 source actin_config || exit 1
+source shared_data_functions || exit 1
 
 patient=$1 && shift
 namespace=$1 && shift
@@ -24,3 +25,5 @@ orange_no_germline_pdf="$(locate_actin_orange_no_germline_pdf_gcp ${gcp_project}
 info "Copying ORANGE (no germline) data and report for ${patient} to ${shared_external_orange_data_uri}"
 gsutil cp "${orange_no_germline_json}" "${shared_external_orange_data_uri}/"
 gsutil cp "${orange_no_germline_pdf}" "${shared_external_orange_data_uri}/"
+
+write_shared_data_latest_path_manifest "${shared_external_orange_data_uri}"

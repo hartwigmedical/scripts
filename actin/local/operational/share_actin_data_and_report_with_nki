@@ -2,6 +2,7 @@
 
 source actin_config || exit 1
 source locate_files || exit 1
+source shared_data_functions || exit 1
 
 patient=$1 && shift
 
@@ -33,5 +34,7 @@ info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 rename_and_copy_file "${patient_record_json}"
 rename_and_copy_file "${treatment_match_json}"
 rename_and_copy_file "${actin_report_pdf}"
+
+write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 
 echo "Copied files to ${shared_actin_data_external_uri}"
