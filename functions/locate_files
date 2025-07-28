@@ -523,13 +523,6 @@ locate_actin_trial_status_bucket() {
     echo "gs://${gcp_project}-trial-pipeline-status-input${namespace:+-$namespace}"
 }
 
-locate_actin_shared_data_bucket() {
-    local gcp_project=$1 && shift
-    local namespace=$1 && shift
-
-    echo "gs://${gcp_project}-shared-data${namespace:+-$namespace}"
-}
-
 locate_actin_shared_data_external_bucket() {
     local gcp_project=$1 && shift
     local namespace=$1 && shift
@@ -574,34 +567,19 @@ locate_actin_serve_bucket() {
 
 ############################## ACTIN Data GCP ##################################
 
-locate_next_orange_shared_data_uri_gcp() {
+locate_next_orange_shared_data_external_uri_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
     local namespace=$1 && shift
 
-    base_uri="$(locate_actin_shared_data_bucket ${gcp_project} ${namespace})/${patient}/orange"
+    base_uri="$(locate_actin_shared_data_external_bucket ${gcp_project} ${namespace})/${patient}/orange"
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
         error "Could not determine next orange shared data uri for ${patient}"
     fi
 
-    echo ${final_uri}
-}
-
-locate_next_actin_shared_data_uri_gcp() {
-    local gcp_project=$1 && shift
-    local patient=$1 && shift
-    local namespace=$1 && shift
-
-    base_uri="$(locate_actin_shared_data_bucket ${gcp_project} ${namespace})/${patient}/actin"
-    final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
-
-    if [[ -z "${final_uri}" ]]; then
-        error "Could not determine next actin shared data uri for ${sample}"
-    fi
-
-    echo ${final_uri}
+    echo "${final_uri}"
 }
 
 locate_next_actin_shared_data_external_uri_gcp() {
@@ -613,10 +591,10 @@ locate_next_actin_shared_data_external_uri_gcp() {
     final_uri="$(determine_next_indexed_uri_gcp ${base_uri})"
 
     if [[ -z "${final_uri}" ]]; then
-        error "Could not determine next actin shared data uri for ${sample}"
+        error "Could not determine next actin shared data external uri for ${patient}"
     fi
 
-    echo ${final_uri}
+    echo "${final_uri}"
 }
 
 determine_next_indexed_uri_gcp() {
@@ -686,16 +664,6 @@ locate_actin_orange_no_germline_pdf_gcp() {
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline pdf")
 }
 
-locate_actin_clinical_json_gcp() {
-    local gcp_project=$1 && shift
-    local patient=$1 && shift
-    local namespace=$1 && shift
-
-    local report_gsutil_uri="$(locate_actin_clinical_output_bucket ${gcp_project} ${namespace})/${patient}.clinical.json"
-
-    echo $(locate_actin_blob ${report_gsutil_uri} "clinical json")
-}
-
 locate_actin_patient_record_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
@@ -724,26 +692,6 @@ locate_actin_report_pdf_gcp() {
     local report_gsutil_uri="$(locate_actin_analysis_bucket "${gcp_project}" "${namespace}")/report/${patient}.actin.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN report PDF")
-}
-
-locate_actin_evaluation_details_gcp() {
-    local gcp_project=$1 && shift
-    local patient=$1 && shift
-    local namespace=$1 && shift
-
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/evaluation/${patient}.evaluation.details.tsv"
-
-    echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation details")
-}
-
-locate_actin_evaluation_summary_gcp() {
-    local gcp_project=$1 && shift
-    local patient=$1 && shift
-    local namespace=$1 && shift
-
-    local report_gsutil_uri="$(locate_actin_analysis_bucket ${gcp_project} ${namespace})/evaluation/${patient}.evaluation.summary.tsv"
-
-    echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN evaluation summary")
 }
 
 locate_actin_blob() {
@@ -886,42 +834,6 @@ locate_actin_report_pdf() {
     fi
 
     echo "${report_pdf}"
-}
-
-locate_actin_evaluation_directory() {
-    echo "/data/actin/evaluation"
-}
-
-locate_actin_evaluation_details() {
-    local patient=$1 && shift
-    local evaluation_dir=$(locate_actin_evaluation_directory)
-
-    if [[ ! -d "${evaluation_dir}" ]]; then
-        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
-    fi
-
-    local evaluation_details_tsv="${evaluation_dir}/${patient}.evaluation.details.tsv"
-    if [[ ! -f ${evaluation_details_tsv} ]]; then
-        error "Could not locate ACTIN evaluation details tsv for patient '${patient}'"
-    fi
-
-    echo "${evaluation_details_tsv}"
-}
-
-locate_actin_evaluation_summary() {
-    local patient=$1 && shift
-    local evaluation_dir=$(locate_actin_evaluation_directory)
-
-    if [[ ! -d "${evaluation_dir}" ]]; then
-        error "Unable to locate ACTIN evaluation directory '${evaluation_dir}'"
-    fi
-
-    local evaluation_summary_tsv="${evaluation_dir}/${patient}.evaluation.summary.tsv"
-    if [[ ! -f ${evaluation_summary_tsv} ]]; then
-        error "Could not locate ACTIN evaluation summary tsv for patient '${patient}'"
-    fi
-
-    echo "${evaluation_summary_tsv}"
 }
 
 locate_actin_serve_directory() {
@@ -1343,7 +1255,7 @@ locate_flagstats() {
         error "Unable to locate flagstats file for ${sample} in run ${run_dir}."
     fi
 
-    echo ${flagstats_file}
+    echo "${flagstats_file}"
 }
 
 ##################################### AMBER ####################################
@@ -1356,7 +1268,7 @@ locate_amber_directory() {
         error "Unable to locate AMBER directory in ${run_dir}."
     fi
 
-    echo ${amber_dir}
+    echo "${amber_dir}"
 }
 
 ###################################### SAGE ####################################
@@ -1390,7 +1302,7 @@ locate_sage_filtered_somatic_variants() {
     if [[ -z "${somatic_vcf}" ]]; then
         error "Unable to locate sage filtered somatic variants in ${run_dir}."
     fi
-    echo ${somatic_vcf}
+    echo "${somatic_vcf}"
 }
 
 locate_sage_full_somatic_variants() {
@@ -1409,7 +1321,7 @@ locate_sage_full_somatic_variants() {
     if [[ -z "${somatic_vcf}" ]]; then
         error "Unable to locate sage full somatic variants in ${run_dir}."
     fi
-    echo ${somatic_vcf}
+    echo "${somatic_vcf}"
 }
 
 locate_sage_bqr_tsv() {
@@ -1428,7 +1340,7 @@ locate_sage_bqr_tsv() {
         error "Unable to locate BQR TSV for ${sample} in ${run_dir}."
     fi
 
-    echo ${bqr_tsv}
+    echo "${bqr_tsv}"
 }
 
 locate_sage_bqr_plot() {
@@ -1449,7 +1361,7 @@ locate_sage_bqr_plot() {
     if [[ -z "${bqr_plot}" ]]; then
         error "Unable to locate BQR plot for ${sample} in ${run_dir}."
     fi
-    echo ${bqr_plot}
+    echo "${bqr_plot}"
 }
 
 locate_sage_germline_data_directory() {
@@ -1472,7 +1384,7 @@ locate_sage_germline_gene_coverage() {
     if [[ -z "${gene_coverage_tsv}" ]]; then
         error "Unable to locate SAGE germline gene coverage in ${run_dir}."
     fi
-    echo ${gene_coverage_tsv}
+    echo "${gene_coverage_tsv}"
 }
 
 ##################################### PURPLE ###################################
@@ -1505,7 +1417,7 @@ locate_purple_purity() {
     if [[ -z "${purple_purity_tsv}" ]]; then
         error "Unable to locate purple purity in ${run_dir}."
     fi
-    echo ${purple_purity_tsv}
+    echo "${purple_purity_tsv}"
 }
 
 locate_purple_pilot_purity() {
@@ -1520,7 +1432,7 @@ locate_purple_pilot_purity() {
     if [[ -z "${purple_purity_tsv}" ]]; then
         error "Unable to locate purple pilot purity in ${run_dir}."
     fi
-    echo ${purple_purity_tsv}
+    echo "${purple_purity_tsv}"
 }
 
 locate_purple_qc() {
@@ -1529,7 +1441,7 @@ locate_purple_qc() {
     if [[ -z "${purple_qc_file}" ]]; then
         error "Unable to locate purple qc in ${run_dir}."
     fi
-    echo ${purple_qc_file}
+    echo "${purple_qc_file}"
 }
 
 locate_purple_somatic_driver_catalog() {
@@ -1538,7 +1450,7 @@ locate_purple_somatic_driver_catalog() {
     if [[ -z "${purple_somatic_driver_tsv}" ]]; then
         error "Unable to locate purple somatic driver catalog in ${run_dir}."
     fi
-    echo ${purple_somatic_driver_tsv}
+    echo "${purple_somatic_driver_tsv}"
 }
 
 locate_purple_somatic_copynumber_tsv() {
@@ -1547,7 +1459,7 @@ locate_purple_somatic_copynumber_tsv() {
     if [[ -z "${purple_somatic_copynumber_tsv}" ]]; then
         error "Unable to locate purple somatic copynumbers in ${run_dir}."
     fi
-    echo ${purple_somatic_copynumber_tsv}
+    echo "${purple_somatic_copynumber_tsv}"
 }
 
 locate_purple_gene_copynumbers() {
@@ -1556,7 +1468,7 @@ locate_purple_gene_copynumbers() {
     if [[ -z "${purple_gene_copynumbers}" ]]; then
         error "Unable to locate purple gene copynumbers in ${run_dir}."
     fi
-    echo ${purple_gene_copynumbers}
+    echo "${purple_gene_copynumbers}"
 }
 
 locate_purple_pilot_gene_copynumbers() {
@@ -1571,7 +1483,7 @@ locate_purple_pilot_gene_copynumbers() {
     if [[ -z "${purple_gene_copynumbers}" ]]; then
         error "Unable to locate purple pilot gene copynumbers in ${run_dir}."
     fi
-    echo ${purple_gene_copynumbers}
+    echo "${purple_gene_copynumbers}"
 }
 
 locate_purple_somatic_variants() {
@@ -1580,7 +1492,7 @@ locate_purple_somatic_variants() {
     if [[ -z "${somatic_vcf}" ]]; then
         error "Unable to locate purple somatic variants in ${run_dir}."
     fi
-    echo ${somatic_vcf}
+    echo "${somatic_vcf}"
 }
 
 locate_purple_somatic_variants_panel() {
@@ -1589,7 +1501,7 @@ locate_purple_somatic_variants_panel() {
     if [[ -z "${somatic_vcf}" ]]; then
         error "Unable to locate purple somatic variants in ${run_dir}."
     fi
-    echo ${somatic_vcf} | tr "/" " " | awk '{print $NF}'
+    echo "${somatic_vcf}" | tr "/" " " | awk '{print $NF}'
 }
 
 locate_purple_pilot_somatic_variants() {
@@ -1605,7 +1517,7 @@ locate_purple_pilot_somatic_variants() {
         error "Unable to locate purple pilot somatic variants in ${run_dir}."
     fi
 
-    echo ${somatic_vcf}
+    echo "${somatic_vcf}"
 }
 
 locate_purple_circos_plot() {
@@ -1614,7 +1526,7 @@ locate_purple_circos_plot() {
     if [[ -z "${circos_plot}" ]]; then
         error "Unable to locate purple circos plot in ${run_dir}."
     fi
-    echo ${circos_plot}
+    echo "${circos_plot}"
 }
 
 locate_purple_pilot_circos_plot() {
@@ -1629,7 +1541,7 @@ locate_purple_pilot_circos_plot() {
     if [[ -z "${circos_plot}" ]]; then
         error "Unable to locate purple pilot circos plot in ${run_dir}."
     fi
-    echo ${circos_plot}
+    echo "${circos_plot}"
 }
 
 ################################ PURPLE Germline ###############################
@@ -1640,7 +1552,7 @@ locate_purple_germline_variants() {
     if [[ -z "${germline_vcf}" ]]; then
         error "Unable to locate purple germline variants in ${run_dir}."
     fi
-    echo ${germline_vcf}
+    echo "${germline_vcf}"
 }
 
 locate_purple_pilot_germline_variants() {
@@ -1656,7 +1568,7 @@ locate_purple_pilot_germline_variants() {
     if [[ -z "${germline_vcf}" ]]; then
         error "Unable to locate purple pilot germline variants in ${run_dir}."
     fi
-    echo ${germline_vcf}
+    echo "${germline_vcf}"
 }
 
 locate_purple_germline_deletions() {
@@ -1665,7 +1577,7 @@ locate_purple_germline_deletions() {
     if [[ -z "${purple_germline_deletion_tsv}" ]]; then
         error "Unable to locate purple germline deletions in ${run_dir}."
     fi
-    echo ${purple_germline_deletion_tsv}
+    echo "${purple_germline_deletion_tsv}"
 }
 
 locate_purple_germline_driver_catalog() {
@@ -1685,7 +1597,7 @@ locate_purple_structural_variants() {
     if [[ -z "${structural_vcf}" ]]; then
         error "Unable to locate purple structural variants in ${run_dir}."
     fi
-    echo ${structural_vcf}
+    echo "${structural_vcf}"
 }
 
 locate_purple_pilot_structural_variants() {
@@ -1700,7 +1612,7 @@ locate_purple_pilot_structural_variants() {
     if [[ -z "${structural_vcf}" ]]; then
         error "Unable to locate purple pilot structural variants in ${run_dir}."
     fi
-    echo ${structural_vcf}
+    echo "${structural_vcf}"
 }
 
 locate_gripss_structural_variants() {
@@ -1720,7 +1632,7 @@ locate_gripss_structural_variants() {
     if [[ -z "${structural_vcf}" ]]; then
         error "Unable to locate GRIPSS structural variants in ${run_dir}."
     fi
-    echo ${structural_vcf}
+    echo "${structural_vcf}"
 }
 
 locate_gripss_recovery_candidates() {
@@ -1736,7 +1648,7 @@ locate_gripss_recovery_candidates() {
     if [[ -z "${structural_vcf}" ]]; then
         error "Unable to locate GRIPSS recovery variants in ${run_dir}."
     fi
-    echo ${structural_vcf}
+    echo "${structural_vcf}"
 }
 
 ##################################### LINX #####################################
@@ -1764,7 +1676,7 @@ locate_linx_fusions() {
     if [[ -z "${fusion_tsv}" ]]; then
         error "Unable to locate linx fusions tsv in ${run_dir}."
     fi
-    echo ${fusion_tsv}
+    echo "${fusion_tsv}"
 }
 
 locate_linx_breakends() {
@@ -1773,7 +1685,7 @@ locate_linx_breakends() {
     if [[ -z "${disruption_tsv}" ]]; then
         error "Unable to locate linx disruptions tsv in ${run_dir}."
     fi
-    echo ${disruption_tsv}
+    echo "${disruption_tsv}"
 }
 
 locate_linx_driver_catalog() {
@@ -1782,7 +1694,7 @@ locate_linx_driver_catalog() {
     if [[ -z "${driver_catalog_tsv}" ]]; then
         error "Unable to locate linx drivers catalog in ${run_dir}."
     fi
-    echo ${driver_catalog_tsv}
+    echo "${driver_catalog_tsv}"
 }
 
 locate_linx_drivers() {
@@ -1791,7 +1703,7 @@ locate_linx_drivers() {
     if [[ -z "${driver_tsv}" ]]; then
         error "Unable to locate linx drivers in ${run_dir}."
     fi
-    echo ${driver_tsv}
+    echo "${driver_tsv}"
 }
 
 locate_linx_structural_variants() {
@@ -1800,7 +1712,7 @@ locate_linx_structural_variants() {
     if [[ -z "${structural_variant_tsv}" ]]; then
         error "Unable to locate linx structural variant tsv in ${run_dir}."
     fi
-    echo ${structural_variant_tsv}
+    echo "${structural_variant_tsv}"
 }
 
 ################################# LINX GERMLINE ################################
@@ -1811,7 +1723,7 @@ locate_linx_germline_data_directory() {
     if [[ ! -d "${linx_germline_data_directory}" ]]; then
         error "Unable to locate linx germline data directory in ${run_dir}."
     fi
-    echo ${linx_germline_data_directory}
+    echo "${linx_germline_data_directory}"
 }
 
 locate_linx_germline_disruptions() {
@@ -1820,7 +1732,7 @@ locate_linx_germline_disruptions() {
     if [[ -z "${germline_disruption_tsv}" ]]; then
         error "Unable to locate linx germline disruptions in ${run_dir}."
     fi
-    echo ${germline_disruption_tsv}
+    echo "${germline_disruption_tsv}"
 }
 
 ##################################### LILAC ####################################
@@ -1859,7 +1771,7 @@ locate_lilac_hla_bam_for_sample() {
     if [[ -z "${hla_bam}" ]]; then
         error "Unable to locate lilac HLA BAM for ${sample} in ${run_dir}."
     fi
-    echo ${hla_bam}
+    echo "${hla_bam}"
 }
 
 
@@ -1872,7 +1784,7 @@ locate_rose_pilot() {
     if [[ -z "${rose_tsv}" ]]; then
         error "Unable to locate rose pilot tsv in ${run_dir}."
     fi
-    echo ${rose_tsv}
+    echo "${rose_tsv}"
 }
 
 locate_rose() {
@@ -1881,7 +1793,7 @@ locate_rose() {
     if [[ -z "${rose_tsv}" ]]; then
         error "Unable to locate rose tsv in ${run_dir}."
     fi
-    echo ${rose_tsv}
+    echo "${rose_tsv}"
 }
 
 #################################### ISOFOX ####################################
@@ -1898,7 +1810,7 @@ locate_isofox_summary() {
     if [[ -z "${summary_csv}" ]]; then
         error "Unable to locate isofox summary csv in ${run_dir}."
     fi
-    echo ${summary_csv}
+    echo "${summary_csv}"
 }
 
 locate_isofox_gene_data() {
@@ -1907,7 +1819,7 @@ locate_isofox_gene_data() {
     if [[ -z "${gene_data_csv}" ]]; then
         error "Unable to locate isofox gene data csv in ${run_dir}."
     fi
-    echo ${gene_data_csv}
+    echo "${gene_data_csv}"
 }
 
 locate_isofox_pass_fusions() {
@@ -1916,7 +1828,7 @@ locate_isofox_pass_fusions() {
     if [[ -z "${pass_fusions_csv}" ]]; then
         error "Unable to locate isofox pass fusions csv in ${run_dir}."
     fi
-    echo ${pass_fusions_csv}
+    echo "${pass_fusions_csv}"
 }
 
 locate_isofox_alt_splice_junctions() {
@@ -1925,7 +1837,7 @@ locate_isofox_alt_splice_junctions() {
     if [[ -z "${alt_splice_junc_csv}" ]]; then
         error "Unable to locate isofox alt splice junction csv in ${run_dir}."
     fi
-    echo ${alt_splice_junc_csv}
+    echo "${alt_splice_junc_csv}"
 }
 
 ##################################### Sigs #####################################
@@ -1944,7 +1856,7 @@ locate_sigs_allocation_tsv() {
     if [[ -z "${sigs_allocation_tsv}" ]]; then
         error "Unable to locate sigs allocation tsv in ${run_dir}."
     fi
-    echo ${sigs_allocation_tsv}
+    echo "${sigs_allocation_tsv}"
 }
 
 locate_sigs_pilot_dir() {
@@ -1975,7 +1887,7 @@ locate_gatk_germline_variants() {
         error "Unable to locate GATK germline VCF in ${run_dir}."
     fi
 
-    echo ${germline_vcf}
+    echo "${germline_vcf}"
 }
 
 #################################### PEACH #####################################
@@ -2082,7 +1994,7 @@ locate_chord_prediction() {
     if [[ -z "${chord_prediction_file}" ]]; then
         error "Unable to locate CHORD prediction file in ${run_dir}."
     fi
-    echo ${chord_prediction_file}
+    echo "${chord_prediction_file}"
 }
 
 locate_chord_pilot_prediction() {
@@ -2091,7 +2003,7 @@ locate_chord_pilot_prediction() {
     if [[ -z "${chord_prediction_file}" ]]; then
         error "Unable to locate pilot CHORD prediction file in ${run_dir}."
     fi
-    echo ${chord_prediction_file}
+    echo "${chord_prediction_file}"
 }
 
 ################################ VIRUSBreakend #################################
@@ -2102,7 +2014,7 @@ locate_virus_breakend_tsv() {
     if [[ -z "${virus_breakend_tsv}" ]]; then
         error "Unable to locate virus breakend conclusion tsv in ${run_dir}."
     fi
-    echo ${virus_breakend_tsv}
+    echo "${virus_breakend_tsv}"
 }
 
 ################################ VIRUS Interpreter #################################
@@ -2115,7 +2027,7 @@ locate_virus_interpreter_data_directory() {
         virus_dir="${run_dir}/virusintrprtr"
     fi
 
-    echo ${virus_dir}
+    echo "${virus_dir}"
 }
 
 locate_virus_annotation_tsv_pilot() {
@@ -2129,7 +2041,7 @@ locate_virus_annotation_tsv_pilot() {
         error "Unable to locate pilot virus annotation TSV in ${run_dir}."
     fi
 
-    echo ${virus_annotation_tsv}
+    echo "${virus_annotation_tsv}"
 }
 
 locate_virus_annotation_tsv() {
@@ -2144,7 +2056,7 @@ locate_virus_annotation_tsv() {
     if [[ -z "${virus_annotation_tsv}" ]]; then
         error "Unable to locate virus annotation TSV in ${run_dir}."
     fi
-    echo ${virus_annotation_tsv}
+    echo "${virus_annotation_tsv}"
 }
 
 ############################## iClusion importer ###############################
@@ -2180,7 +2092,7 @@ locate_cuppa_features_tsv() {
     if [[ -z "${features_tsv}" ]]; then
         error "Unable to locate cuppa features tsv in ${cuppa_dir}."
     fi
-    echo ${features_tsv}
+    echo "${features_tsv}"
 }
 
 locate_cuppa_vis_data_tsv() {
@@ -2189,7 +2101,7 @@ locate_cuppa_vis_data_tsv() {
     if [[ -z "${vis_data_tsv}" ]]; then
         error "Unable to locate cuppa vis data tsv in ${cuppa_dir}."
     fi
-    echo ${vis_data_tsv}
+    echo "${vis_data_tsv}"
 }
 
 locate_cuppa_chart_plot() {
@@ -2199,7 +2111,7 @@ locate_cuppa_chart_plot() {
     if [[ -z "${plot}" ]]; then
         error "Unable to locate cuppa chart in ${run_dir}."
     fi
-    echo ${plot}
+    echo "${plot}"
 }
 
 locate_cuppa_conclusion_txt() {
@@ -2209,7 +2121,7 @@ locate_cuppa_conclusion_txt() {
     if [[ -z "${conclusion_txt}" ]]; then
         error "Unable to locate cuppa conclusion in ${run_dir}."
     fi
-    echo ${conclusion_txt}
+    echo "${conclusion_txt}"
 }
 
 ################################### PROTECT ####################################
@@ -2220,7 +2132,7 @@ locate_protect_evidence() {
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT evidence tsv in ${run_dir}."
     fi
-    echo ${protect_evidence_tsv}
+    echo "${protect_evidence_tsv}"
 }
 
 locate_protect_evidence_old() {
@@ -2229,7 +2141,7 @@ locate_protect_evidence_old() {
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT evidence tsv in ${run_dir}."
     fi
-    echo ${protect_evidence_tsv}
+    echo "${protect_evidence_tsv}"
 }
 
 locate_protect_evidence_pilot() {
@@ -2238,7 +2150,7 @@ locate_protect_evidence_pilot() {
     if [[ -z "${protect_evidence_tsv}" ]]; then
         error "Unable to locate PROTECT pilot evidence tsv in ${run_dir}."
     fi
-    echo ${protect_evidence_tsv}
+    echo "${protect_evidence_tsv}"
 }
 
 #################################### ORANGE ####################################
@@ -2256,7 +2168,7 @@ locate_orange_json() {
         error "Unable to locate ORANGE json in ${run_dir}."
     fi
 
-    echo ${orange_json}
+    echo "${orange_json}"
 }
 
 locate_orange_no_germline_json() {
@@ -2272,7 +2184,7 @@ locate_orange_no_germline_json() {
         error "Unable to locate ORANGE no-germline json in ${run_dir}."
     fi
 
-    echo ${orange_no_germline_json}
+    echo "${orange_no_germline_json}"
 }
 
 locate_orange_json_pilot() {
@@ -2288,7 +2200,7 @@ locate_orange_json_pilot() {
         error "Unable to locate ORANGE pilot json in ${run_dir}."
     fi
 
-    echo ${orange_json}
+    echo "${orange_json}"
 }
 
 locate_orange_no_germline_json_pilot() {
@@ -2304,7 +2216,7 @@ locate_orange_no_germline_json_pilot() {
         error "Unable to locate ORANGE no-germline pilot json in ${run_dir}."
     fi
 
-    echo ${orange_no_germline_json}
+    echo "${orange_no_germline_json}"
 }
 
 locate_orange_pdf() {
@@ -2320,7 +2232,7 @@ locate_orange_pdf() {
         error "Unable to locate ORANGE pdf in ${run_dir}."
     fi
 
-    echo ${orange_pdf}
+    echo "${orange_pdf}"
 }
 
 locate_orange_no_germline_pdf() {
@@ -2336,7 +2248,7 @@ locate_orange_no_germline_pdf() {
         error "Unable to locate ORANGE no-germline pdf in ${run_dir}."
     fi
 
-    echo ${orange_no_germline_pdf}
+    echo "${orange_no_germline_pdf}"
 }
 
 ##################################### LIMS #####################################
