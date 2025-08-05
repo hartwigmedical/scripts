@@ -52,6 +52,7 @@ java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicatio
     -driver_gene_panel "${driver_gene_panel}" \
     -known_fusions_file "${known_fusion_file}" \
     -panel_specifications_file "${panel_specifications_file}" \
+    -used_combined_profiles_efficacy_evidence 1 \
     -output_directory "${output_directory}" \
     "$@"
 
