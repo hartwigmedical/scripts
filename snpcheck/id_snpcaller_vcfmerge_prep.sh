@@ -71,7 +71,6 @@ echo "$SAMPLE_BARCODE" > "$INPUT_DIR/sample_barcode.txt"
 echo "$CONVERTED_REPORTING_ID" > "$INPUT_DIR/converted_reporting_id.txt"
 echo "$OUTPUT_BUCKET_NAME" > "$INPUT_DIR/output_bucket.txt"
 cp "/data/tools/gatk/3.8.0/GenomeAnalysisTK.jar" "$INPUT_DIR/GenomeAnalysisTK.jar"
-cp "/usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/jre/bin/java" "$INPUT_DIR/java"
 
 gsutil cp -r "${INPUT_DIR}" "gs://${OUTPUT_BUCKET_NAME}/${setname}/"
 gsutil cp  "$INPUT_DIR/prepare_inputs.log" "gs://${OUTPUT_BUCKET_NAME}/${setname}/"

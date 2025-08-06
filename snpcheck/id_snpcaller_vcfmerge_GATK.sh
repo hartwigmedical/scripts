@@ -13,8 +13,8 @@ CONVERTED_REPORTING_ID=$(gsutil cat "$INPUT_DIR/converted_reporting_id.txt")
 OUTPUT_BUCKET_NAME=$(gsutil cat "$INPUT_DIR/output_bucket.txt")
 
 # define BAM_TUM path
-BAM_TUM=#add location
-REFERENCE=#add location
+BAM_TUM="gs://diagnostic-pipeline-output-prod-1/${setname}/${converted_reporting_id}/aligner/${converted_reporting_id}.bam"
+REFERENCE="gs://common-resources/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 
 # Copy input files to local
 gsutil cp "$INPUT_DIR/id_snps_intervals.hg37.bed" "$LOCAL_INPUT_DIR/id_snps_intervals.hg37.bed"
@@ -22,7 +22,6 @@ gsutil cp "$INPUT_DIR/hartwig_snpfile_tum.vcf" "$LOCAL_INPUT_DIR/hartwig_snpfile
 gsutil cp "$INPUT_DIR/*.purple.germline.vcf.gz" "$LOCAL_INPUT_DIR/"
 gsutil cp "$INPUT_DIR/*.purple.somatic.vcf.gz" "$LOCAL_INPUT_DIR/"
 gsutil cp "$INPUT_DIR/GenomeAnalysisTK.jar" "$LOCAL_INPUT_DIR/GenomeAnalysisTK.jar"
-gsutil cp "$INPUT_DIR/java" "$LOCAL_INPUT_DIR/java"
 
 # Create input file vars
 INTERVALS="$LOCAL_INPUT_DIR/id_snps_intervals.hg37.bed"
@@ -30,7 +29,7 @@ SNP_VCF_TUM="$LOCAL_INPUT_DIR/hartwig_snpfile_tum.vcf"
 GERMLINE_VCF=$(ls $LOCAL_INPUT_DIR/*.purple.germline.vcf.gz | head -n 1)
 SOMATIC_VCF=$(ls $LOCAL_INPUT_DIR/*.purple.somatic.vcf.gz | head -n 1)
 GATK="$LOCAL_INPUT_DIR/GenomeAnalysisTK.jar"
-JAVA="$LOCAL_INPUT_DIR/java"
+JAVA=#location java
 
 # Create output file name vars
 SNP_OUTPUT_VCF="${LOCAL_INPUT_DIR}/${SAMPLE_BARCODE}_snp_genotype_output.vcf"
