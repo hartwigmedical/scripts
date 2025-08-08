@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+write_shared_data_latest_path_manifest() {
+  latest_path="$1"
+
+  if [[ -z "${latest_path}" ]]; then
+    echo "Missing path to latest"
+    return 1
+  fi
+
+  manifest_path="${latest_path%/*}/manifest.json"
+  printf '{"latest_path": "%s"}' "${latest_path}" | gsutil cp - "${manifest_path}"
+  echo "Manifest written to ${manifest_path}"
+}
