@@ -12,7 +12,8 @@ if [[ -z "${patient}" ]]; then
 fi
 
 if [[ -z "${namespace}" ]]; then
-    error "Missing namespace [$(actin_emc_namespaces)]"
+    namespace="tm-progene-study"
+    info "Missing namespace, assuming '${namespace}' from [$(actin_emc_namespaces)]"
 fi
 
 local_dir="${HOME}/hmf/tmp/orange_no_germline"
