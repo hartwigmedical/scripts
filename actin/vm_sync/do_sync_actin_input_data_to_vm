@@ -66,11 +66,11 @@ if [[ $(hostname) != "$(pilot_actin_vm)" ]]; then
 
     # This command does require the context to be set for the specific user. Way to get this is via:
     # gcloud container clusters get-credentials ${env}-cluster-patient-processing --region europe-west4 --project actin-${env}
-    config_map_content="$(kubectl get configmap actin-config -n ${namespace} -o jsonpath='{.data.actin-config\.yaml}')"
+    config_map_content="$(kubectl get configmap actin-config -n ${namespace:-default} -o jsonpath='{.data.actin-config\.yaml}')"
 
     if [[ -z "${config_map_content}" ]]; then
         echo "WARNING: failed to fetch environment_config_yaml. File is empty. Retrying..."
-        config_map_content="$(kubectl get configmap actin-config -n ${namespace} -o jsonpath='{.data.actin-config\.yaml}')"
+        config_map_content="$(kubectl get configmap actin-config -n ${namespace:-default} -o jsonpath='{.data.actin-config\.yaml}')"
 
         if [[ -z "${config_map_content}" ]]; then
             error "Second try to fetch environment_config_yaml failed. File remains empty."
