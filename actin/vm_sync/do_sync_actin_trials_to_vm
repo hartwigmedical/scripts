@@ -21,7 +21,9 @@ fi
 
 info "Syncing ACTIN trials for ${gcp_project} ${namespace} to $(hostname)"
 
-output_directory=$(locate_actin_trial_database_directory)
-gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project} ${namespace}) ${output_directory}
+trial_db_directory="$(locate_actin_trial_database_directory)"
+create_or_cleanup_dir ${trial_db_directory}
+
+gsutil -m rsync -r $(locate_actin_trial_database_bucket ${gcp_project} ${namespace}) ${trial_db_directory}
 
 info "Done"
