@@ -8,7 +8,10 @@ write_shared_data_latest_path_manifest() {
     return 1
   fi
 
+  latest_path="${latest_path%/}"
+  latest_version="${latest_path##*/}"
   manifest_path="${latest_path%/*}/manifest.json"
-  printf '{"latest_path": "%s"}' "${latest_path}" | gsutil cp - "${manifest_path}"
+
+  printf '{"latest_version": "%s", "latest_path": "%s/"}' "${latest_version}" "${latest_path}" | gsutil cp - "${manifest_path}"
   echo "Manifest written to ${manifest_path}"
 }
