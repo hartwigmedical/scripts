@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-accept_new_actin_regression_report "LUNG-01"
-accept_new_actin_regression_report "CRC-01"
+do_accept_new_actin_regression_report "LUNG-01"
+do_accept_new_actin_regression_report "CRC-01"

@@ -4,6 +4,10 @@ source message_functions || exit 1
 
 patient=$1
 
+if [[ -z "${patient}" ]]; then
+    error "Missing patient parameter input. Exiting."
+fi
+
 info "Copying new test regression reports to ACTIN source resources for ${patient}"
 
 base_dir="$HOME/hmf/repos/actin/system"
