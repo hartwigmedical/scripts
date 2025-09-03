@@ -256,7 +256,7 @@ class StatusChecker:
         creds = creds_result.stdout.strip()
         #Construct SQL query
         sql_query = (
-            "SELECT sampleId, virusName, qcSattus, integrations, interpretation, reported, likelihood "
+            "SELECT sampleId, virusName, qcStatus, integrations, interpretation, reported, likelihood "
             "FROM virusAnnotation"
             "WHERE reported =0  "
             f"AND sampleId = '{reporting_id}'"
