@@ -233,7 +233,6 @@ class StatusChecker:
         return warnings
 
     def _get_virus_names(self, report_record):
-        print("test virus")
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
@@ -264,7 +263,6 @@ class StatusChecker:
         )
         query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
         output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
-        print(output)
         # Process the output
         if output.stdout.strip():
             lines = output.stdout.strip().split('\n')
