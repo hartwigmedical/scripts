@@ -258,7 +258,7 @@ class StatusChecker:
         #Construct SQL query
         sql_query = (
             "SELECT sampleId, virusName, qcStatus, integrations, interpretation, reported, likelihood "
-            "FROM virusAnnotation"
+            "FROM virusAnnotation "
             "WHERE reported =0  "
             f"AND sampleId = '{reporting_id}'"
         )
