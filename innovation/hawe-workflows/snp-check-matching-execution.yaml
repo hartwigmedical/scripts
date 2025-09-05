@@ -1,0 +1,118 @@
+name: HD_10
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-167_HD_10-ppm018-CATCATCGATTCGAT/
+  sample_id: 420836-167_HD_10-ppm018-CATCATCGATTCGAT
+---
+name: HD_11
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-167_HD_11-ppm019-CTGTGAATATGCGAT/
+  sample_id: 420836-167_HD_11-ppm019-CTGTGAATATGCGAT
+---
+name: HD_12
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-167_HD_12-ppm020-CAGAAGCTGCATGAGAT/
+  sample_id: 420836-167_HD_12-ppm020-CAGAAGCTGCATGAGAT
+---
+name: HD_9
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-167_HD_9-ppm017-CTCTGTATTGCAGAT/
+  sample_id: 420836-167_HD_9-ppm017-CTCTGTATTGCAGAT
+---
+name: Colo829R
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-Colo829R-ppm021-CGCATCCTCACAGAT/
+  sample_id: 420836-Colo829R-ppm021-CGCATCCTCACAGAT
+---
+name: Colo829T
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-Colo829T-ppm022-CACAACATATCAGAT/
+  sample_id: 420836-Colo829T-ppm022-CACAACATATCAGAT
+---
+name: FR34199193
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-FR34199193-ppm023-CACATCAGCTCAATGAT/
+  sample_id: 420836-FR34199193-ppm023-CACATCAGCTCAATGAT
+---
+name: FR34199195
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420836-20250731_1517/420836-FR34199195-ppm024-CATGCATATAATGCGAT/
+  sample_id: 420836-FR34199195-ppm024-CATGCATATAATGCGAT
+---
+name: HD_1
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_1-ppm089-CATGCAGATGGCGAGAT/
+  sample_id: 420970-167_HD_1-ppm089-CATGCAGATGGCGAGAT
+---
+name: HD_2
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_2-ppm090-CTTCATGCATCTCAGAT/
+  sample_id: 420970-167_HD_2-ppm090-CTTCATGCATCTCAGAT
+---
+name: HD_3
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_3-ppm091-CATGCAAGTGTGATGAT/
+  sample_id: 420970-167_HD_3-ppm091-CATGCAAGTGTGATGAT
+---
+name: HD_4
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_4-ppm092-CTGTTCGCTGCAGAT/
+  sample_id: 420970-167_HD_4-ppm092-CTGTTCGCTGCAGAT
+---
+name: HD_5
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_5-ppm093-CTCAGATCCTGCATGAT/
+  sample_id: 420970-167_HD_5-ppm093-CTCAGATCCTGCATGAT
+---
+name: HD_6
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_6-ppm094-CACACAGATAATGAT/
+  sample_id: 420970-167_HD_6-ppm094-CACACAGATAATGAT
+---
+name: HD_7
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/420970-20250814_1508/420970-167_HD_7-ppm095-CGATGCTCTGGCGAT/
+  sample_id: 420970-167_HD_7-ppm095-CGATGCTCTGGCGAT
+---
+name: HD-14
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/421018-20250709_1240/421018-167_HD-14-ppm050-CACAATGTGCGCGAT/
+  sample_id: 421018-167_HD-14-ppm050-CACAATGTGCGCGAT
+---
+name: HD_13
+workflow: snp-check-matching
+version: 0.0.1-beta1
+params:
+  cram_folder_uri: gs://ultima-input-prod/421018-20250709_1240/421018-167_HD_13-ppm049-CTATGCACCATCGAT/
+  sample_id: 421018-167_HD_13-ppm049-CTATGCACCATCGAT

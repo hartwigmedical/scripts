@@ -1,0 +1,125 @@
+name: "snp-check-matching"
+version: "0.0.1-beta1"
+storagePath: "gs://snp-check-matching-output"
+externalInputs:
+  - name: cram-folder
+    location: "${cram_folder_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+stages:
+  - name: "run-amber"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
+    version: "1.0.1"
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        # Internal working variables; external variables are referenced as ${sample_id}, etc.
+        INPUT_CRAM="/in/cram-folder/${sample_id}.cram"
+        REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+
+        # Additional parameters
+        AMBER_JAR="amber.jar"  # This jar is included in the Docker image.
+    
+        # Derive internal paths based on external inputs
+        OUTPUT_DIR="amber_output_${sample_id}"
+
+        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting AMBER with RUN_ID: $RUN_ID"
+
+        java -jar /opt/amber/amber.jar  \
+            -loci /data/resources/Amber.snpcheck.38.vcf  \
+            -reference ${sample_id} \
+            -reference_bam $INPUT_CRAM \
+            -ref_genome $REFERENCE_GENOME \
+            -ref_genome_version 38 \
+            -output_dir $OUTPUT_DIR \
+            -threads 8
+
+        # Copy AMBER outputs to /tmp/output so that hawe can transfer them.
+        cp -r "$OUTPUT_DIR" /out/
+        
+        echo "AMBER run completed"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 400Gi # Can be optimized?
+      stageTimeoutMinutes: 120
+      resources:
+        requests:
+          cpu: 8
+          memory: 16Gi 
+          storage: 400Gi # Can be optimized?
+      node:
+        spot: true
+        pool: "n2d-standard-16-pool-1"
+    inputStages:
+      - cram-folder
+      - ref-folder
+
+  - name: "get-genotypes"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
+    version: "1.0.1"
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        AMBER_SNP_VCF="/in/run-amber/amber_output_${sample_id}/${sample_id}.amber.snp.vcf.gz"
+        SNPCHECK_VCF="/data/resources/Amber.snpcheck.38.vcf" #Included in dockerfile
+        OUTPUT_FILE="sample_match_${sample_id}.tsv"
+
+        ls /in/
+        ls /in/run-amber/
+        ls /in/run-amber/amber_output_${sample_id}/
+
+        # Set variables for database connection
+        DB_HOST="patients.sql.prod-1"
+        DB_USER="writer"
+        DB_PASS="$RESEARCH_DB_WRITER_PASS"
+        DB_PORT="3306"
+        DB_NAME="hmfpatients60"
+
+        echo "$DB_HOST"
+        echo "$DB_USER"
+        echo "pass: $RESEARCH_DB_WRITER_PASS"
+
+        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting sample matching"
+        echo "Input directory: $AMBER_INPUT_DIR"
+        echo "Output tsv file: $OUTPUT_FILE"
+
+        # Run the Python sample matching script with the retrieved credentials. Python script included in dockerfile
+        python3 /data/scripts/match_amber_sample.py \
+            --vcf "$AMBER_SNP_VCF" \
+            --snp_check_vcf "$SNPCHECK_VCF" \
+            --sample_id "${sample_id}" \
+            --output_file "$OUTPUT_FILE" \
+            --db_host "$DB_HOST" \
+            --db_user "$DB_USER" \
+            --db_pass "$DB_PASS" \
+            --db_name "$DB_NAME" \
+            --db_port "$DB_PORT" \
+
+        # Copy the tsv file to /tmp/output for transfer.
+        cp "$OUTPUT_FILE" /out/
+
+        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Finished sample matching stage"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 50Gi
+      stageTimeoutMinutes: 60
+      resources:
+        requests:
+          cpu: 8
+          memory: 16Gi
+          storage: 50Gi
+      node:
+        spot: true
+        pool: "n2d-standard-16-pool-1"
+    secrets:
+      - RESEARCH_DB_WRITER_PASS
+    inputStages:
+      - run-amber
