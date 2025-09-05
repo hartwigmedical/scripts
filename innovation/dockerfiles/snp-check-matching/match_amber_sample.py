@@ -27,17 +27,19 @@ def derive_genotype_from_record(sample_record):
         # If format fields are missing, we cannot determine the genotype
         return GENOTYPE_MAP["DO_NOT_MATCH"]
     
-    print("Total coverage: ", total_coverage, "Ref_count:", ref_count, "Alt_count:", alt_count)
+    #print("Total coverage: ", total_coverage, "Ref_count:", ref_count, "Alt_count:", alt_count)
 
     # Rule: Minimum depth must be >= 10
     if total_coverage < 10:
         return GENOTYPE_MAP["DO_NOT_MATCH"]
 
     # Rule: To call homozygous, one allele count must equal total coverage.
+    homozygous_ref_diff = total_coverage-ref_count
     if ref_count == total_coverage and alt_count == 0:
         return GENOTYPE_MAP["HOM_REF"]
 
-    if alt_count == total_coverage and ref_count == 0:
+    homozygous_alt_diff = total_coverage-alt_count
+    if alt_count == total_coverage <= 1 and ref_count == 0:
         return GENOTYPE_MAP["HOM_ALT"]
 
     # Rule: To call heterozygous, allele fraction must be between 0.4 and 0.65
@@ -84,7 +86,6 @@ def derive_genotypes_from_vcf(vcf_path, ordered_loci):
     for record in vcf_file.fetch():
         pos_tuple = (record.chrom, record.pos)
         genotype = derive_genotype_from_record(record.samples[0])
-        print(genotype)
         vcf_genotypes[pos_tuple] = genotype
 
     # Build the final, ordered list of 100 genotypes
@@ -119,14 +120,35 @@ def find_matches_in_db(new_sample_genotypes, db_config):
     for index, db_sample in db_df.iterrows():
         db_genotypes = db_sample[f"site1":f"site100"].values.astype(int)
 
-        match_count = sum(g1 == g2 for g1, g2 in zip(new_sample_genotypes, db_genotypes))
+        # --- NEW LOGIC IS HERE ---
+        match_count = 0
+        comparable_sites = 0
 
-        # If the match count is 80 or more, add it to our list of results
-        if match_count >= 80:
-            all_matches.append((db_sample['sampleId'], match_count))
+        for g1, g2 in zip(new_sample_genotypes, db_genotypes):
+            # A site is only comparable if at least one of the genotypes is not 0 (DO_NOT_MATCH)
+            if g1 != 0 and g2 != 0:
+                comparable_sites += 1
+                # A match occurs if the genotypes are identical AND they are not 0
+                if g1 == g2:
+                    match_count += 1
 
-    # Sort results by match count, descending
-    all_matches.sort(key=lambda x: x[1], reverse=True)
+        # Calculate match percentage, avoiding division by zero
+        if comparable_sites > 0:
+            match_percentage = (match_count / comparable_sites) * 100
+        else:
+            match_percentage = 0
+        
+        # If the match percentage is 80% or more, add it to our results
+        if match_percentage >= 80:
+            all_matches.append({
+                "matched_id": db_sample['sampleId'],
+                "match_count": match_count,
+                "comparable_sites": comparable_sites,
+                "match_percentage": round(match_percentage, 2)
+            })
+
+    # Sort results by match percentage, descending
+    all_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
     return all_matches
 
 
@@ -162,18 +184,31 @@ def main():
 
     # Step 4: Write the results to the specified TSV file
     with open(args.output_file, 'w', newline='') as f_out:
-        writer = csv.writer(f_out, delimiter='\t')
+        # Define the header for the more informative output
+        header = ['original_sampleId', 'matched_sampleId', 'match_percentage', 'match_count', 'comparable_sites']
+        writer = csv.DictWriter(f_out, fieldnames=header, delimiter='\t')
 
-        # Write header
-        writer.writerow(['original_sampleId', 'matched_sampleId', 'match_count'])
+        writer.writeheader()
 
         if not found_matches:
-            # If no matches were found, write a single line indicating this
-            writer.writerow([args.sample_id, 'NO_MATCH', 0])
+            # If no matches, write a default row
+            writer.writerow({
+                'original_sampleId': args.sample_id,
+                'matched_sampleId': 'NO_MATCH',
+                'match_percentage': 0,
+                'match_count': 0,
+                'comparable_sites': 'N/A'
+            })
         else:
             # Write all found matches to the file
-            for matched_id, match_count in found_matches:
-                writer.writerow([args.sample_id, matched_id, match_count])
+            for match in found_matches:
+                writer.writerow({
+                    'original_sampleId': args.sample_id,
+                    'matched_sampleId': match['matched_id'],
+                    'match_percentage': match['match_percentage'],
+                    'match_count': match['match_count'],
+                    'comparable_sites': match['comparable_sites']
+                })
 
     print(f"Results successfully written to {args.output_file}")
 

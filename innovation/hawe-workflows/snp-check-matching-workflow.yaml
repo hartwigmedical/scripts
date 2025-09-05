@@ -1,5 +1,5 @@
 name: "snp-check-matching"
-version: "0.0.1-beta1"
+version: "0.0.1"
 storagePath: "gs://snp-check-matching-output"
 externalInputs:
   - name: cram-folder
@@ -9,7 +9,7 @@ externalInputs:
 stages:
   - name: "run-amber"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
-    version: "1.0.1"
+    version: "1.0.2"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -60,7 +60,7 @@ stages:
 
   - name: "get-genotypes"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
-    version: "1.0.1"
+    version: "1.0.2"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
