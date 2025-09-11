@@ -81,6 +81,8 @@ cd $DEST_DB_PATH
 mkdir -p $DEST_DB_PATH/kraken2-db
 kraken2-build --download-taxonomy      --db $DEST_DB_PATH/kraken2-db --threads 16
 kraken2-build --download-library viral --db $DEST_DB_PATH/kraken2-db --threads 16
+kraken2-build --download-library human --db $DEST_DB_PATH/kraken2-db --threads 16
+## Human sequences need to be added. Otherwise the virusbreakend output VCF will be empty (no integrations found)
 
 ## Output of the above kraken2-build commands
 #
@@ -112,6 +114,8 @@ kraken2-build --download-library viral --db $DEST_DB_PATH/kraken2-db --threads 1
 ## Download more sequences NCBI --------------------------------
 mkdir -p $DEST_DB_PATH/supplementary
 
+## !WARNING!
+## This query will download ~2GB of data and can take several hours
 QUERY='Viruses[Organism]'
 QUERY+=' NOT cellular organisms[ORGN]'
 QUERY+=' NOT wgs[PROP]'
@@ -125,7 +129,7 @@ esearch -db nuccore -query "$QUERY" | efetch -format fasta > $DEST_DB_PATH/suppl
 ## !WARNING!
 ## The RefSeq viral database is continuously updated and can be unstable.
 ## As of 2024-06-18 (date of building the previous virusbreakend DB), HPV33 was missing from RefSeq
-## As of 2025-09-09 (date of building the latest virusbreakend DB), HPV33 was restored in RefSeq
+## As of 2025-09-11 (date of building the latest virusbreakend DB), HPV33 was restored in RefSeq
 
 ## Download table of viral neighbour genomes and their associated RefSeq genome --------------------------------
 
@@ -145,9 +149,11 @@ gsutil cp gs://hmf-crunch-resources/virus/virusbreakend_db/2024-06-18_virus-huma
 mkdir -p $DEST_DB_PATH/virusbreakend-db/
 mkdir -p $DEST_DB_PATH/virusbreakend-db/taxonomy
 mkdir -p $DEST_DB_PATH/virusbreakend-db/library/viral
+mkdir -p $DEST_DB_PATH/virusbreakend-db/library/human
 
 ln -sf $DEST_DB_PATH/kraken2-db/taxonomy/*      $DEST_DB_PATH/virusbreakend-db/taxonomy/
 ln -sf $DEST_DB_PATH/kraken2-db/library/viral/* $DEST_DB_PATH/virusbreakend-db/library/viral/
+ln -sf $DEST_DB_PATH/kraken2-db/library/human/* $DEST_DB_PATH/virusbreakend-db/library/human/
 
 # Add supplementary files
 ln -sf $DEST_DB_PATH/supplementary/taxid10239.nbr $DEST_DB_PATH/virusbreakend-db
@@ -166,25 +172,34 @@ for f in $(find $DEST_DB_PATH/ -name '*.fna') ; do
 	samtools faidx $f
 done
 
-## Structure of the virusbreakend DB
-# virusbreakend-db/
+## Structure of the virusbreakend DB after the above commands
+# virusbreakend-db
 # ├── hash.k2d
 # ├── library
 # │   ├── added
-# │   │   ├── R3Zb6bBcQ6.fna
-# │   │   ├── R3Zb6bBcQ6.fna.dict
-# │   │   ├── R3Zb6bBcQ6.fna.fai
-# │   │   ├── R3Zb6bBcQ6.fna.masked
+# │   │   ├── hFZ5FM3Zgd.fna
+# │   │   ├── hFZ5FM3Zgd.fna.dict
+# │   │   ├── hFZ5FM3Zgd.fna.fai
+# │   │   ├── hFZ5FM3Zgd.fna.masked
 # │   │   ├── prelim_map.txt
-# │   │   └── prelim_map_iQ6EnJUQLZ.txt
+# │   │   └── prelim_map_VvONseDUPx.txt
+# │   ├── human
+# │   │   ├── assembly_summary.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/assembly_summary.txt
+# │   │   ├── library.fna -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/library.fna
+# │   │   ├── library.fna.dict
+# │   │   ├── library.fna.fai
+# │   │   ├── library.fna.masked -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/library.fna.masked
+# │   │   ├── manifest.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/manifest.txt
+# │   │   ├── prelim_map.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/prelim_map.txt
+# │   │   └── x -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/human/x
 # │   └── viral
 # │       ├── assembly_summary.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/assembly_summary.txt
 # │       ├── library.fna -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/library.fna
 # │       ├── library.fna.dict
-# │       ├── library.fna.fai
+# │       ├── library.fna.fai -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/library.fna.fai
 # │       ├── library.fna.masked -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/library.fna.masked
 # │       ├── manifest.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/manifest.txt
-# │       └── prelim_map.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/prelim_map.txt
+# │       └── prelim_map.txt -> /data/output/virusbreakend-db_2025-09-09//kraken2-db/library/viral/prelim_map.txt
 # ├── opts.k2d
 # ├── seqid2taxid.map
 # ├── taxid10239.nbr -> /data/output/virusbreakend-db_2025-09-09//supplementary/taxid10239.nbr
@@ -212,9 +227,9 @@ done
 # gcloud auth login
 
 ## Selectively copy files as not all are required
-BUCKET_PATH=gs://hmf-crunch-resources/virus/virusbreakend_db/2025-09-09_fixed-missing-hpv33
+BUCKET_PATH=gs://hmf-crunch-resources/virus/virusbreakend_db/2025-09-11_fixed-missing-hpv33
 gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/*" $BUCKET_PATH
 gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/library/viral/*.fna*" "$BUCKET_PATH/library/viral/"
 gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/library/added/*.fna*" "$BUCKET_PATH/library/added/"
-gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/taxonomy/nodes.dmp" "$BUCKET_PATH/taxonomy"
-gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/taxonomy/taxdump.tar.gz" "$BUCKET_PATH/taxonomy"
+gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/taxonomy/nodes.dmp" "$BUCKET_PATH/taxonomy/"
+gsutil -m cp "$DEST_DB_PATH/virusbreakend-db/taxonomy/taxdump.tar.gz" "$BUCKET_PATH/taxonomy/"
