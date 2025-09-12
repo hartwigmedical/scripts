@@ -10,10 +10,10 @@ if [[ -z "${base_dir}" || -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-latest_prediction_docker_image="58ae445cb743"
+latest_prediction_docker_image="e40bbe2593df"
 
-# (KODU): Latest docker image ID refers to 0.29.1. You can pull via this command:
-#   pull_prediction_docker_with_version 0.29.1
+# (KODU): Latest docker image ID refers to 0.30.3. You can pull via this command:
+#   pull_prediction_docker_with_version 0.30.3
 #   docker images
      
 patient_json="${base_dir}/${patient}.patient_record.json"
