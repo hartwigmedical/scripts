@@ -22,14 +22,6 @@ atc_tsv="$(locate_atc_tsv)"
 extended_efficacy_json="$(locate_extended_efficacy_json)"
 serve_directory="$(locate_actin_serve_directory)"
 
-personalization_path_cmd=""
-personalization_data_path="$(locate_crc_personalization_reference_data)"
-if [[ -f "${personalization_data_path}" ]]; then
-    personalization_path_cmd="-personalization_data_path ${personalization_data_path}"
-else
-    warn "No data for personalization found"
-fi
-
 environment_config_yaml_cmd=""
 environment_config_yaml="$(locate_actin_environment_config_yaml)"
 if [[ -f "${environment_config_yaml}" ]]; then
@@ -53,7 +45,6 @@ java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
     -icd_tsv "${icd_tsv}" \
     -atc_tsv "${atc_tsv}" \
     -extended_efficacy_json "${extended_efficacy_json}" \
-    ${personalization_path_cmd} \
     -serve_directory "${serve_directory}" \
     ${environment_config_yaml_cmd} \
     -output_directory "${output_directory}" \
