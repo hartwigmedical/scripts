@@ -80,6 +80,7 @@ function main() {
     out_file="${HOME}/${tum_tag}_run-${oid}-igv-config.txt"
 
     info "Details:"
+    info "  Duration: ${duration}"
     info "  RunName: ${set_name} (oid=${oid})"
     info "  IniName: ${ini}"
     info "   Bucket: ${bucket}"
