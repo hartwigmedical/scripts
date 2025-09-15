@@ -234,7 +234,7 @@ class ReportSharer:
             ".sage.visualisation.zip",
             ".vchord.prediction.tsv",
             ".gnomad.pon.vcf",
-            ".vchord.prediction.tsv"
+            ".-igv-config.txt"
         }
 
     def _molecular_files(self, converted_reporting_id):
