@@ -48,3 +48,14 @@ fi
 # Copy files if they exist
 gsutil cp ${recon_cnv_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
 gsutil cp ${sage_visualisation_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
+
+configFileName=$(create_igv_config ${set} false | grep -oP '\/[^\]]+')
+
+if ! gsutil stat ${configFileName}; then
+    error "Chord file does not exist: ${configFileName}. Exiting."
+    exit 1
+fi
+
+
+gsutil cp ${configFileName} gs://targeted-pipeline-output-prod-1/${set}/reporting
+rm $configFileName
