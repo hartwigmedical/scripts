@@ -122,7 +122,7 @@ class ArtifactGenerator:
             with open(f"{output_folder}{pipelineSampleName}.reported.somatic.vcf", 'x') as file:
                 file.writelines(reported_res)
         if annotated_res:
-            with open(f"{output_folder}{pipelineSampleName}.pon.gnomad.vcf", 'x') as file:
+            with open(f"{output_folder}{pipelineSampleName}.gnomad.pon.vcf", 'x') as file:
                 file.writelines(annotated_res)
     def _download_required_resources(self, download_to):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()

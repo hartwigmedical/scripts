@@ -218,7 +218,7 @@ class ReportSharer:
             "orange.pdf",
             ".reconCNV.html",
             ".sage.visualisation.zip",
-            ".pon.gnomad.vcf"
+            ".gnomad.pon.vcf"
         }
 
     def _molecular_files(self, converted_reporting_id):
