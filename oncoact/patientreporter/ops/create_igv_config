@@ -29,7 +29,7 @@ elif [[ (-z "${set_name}" || -z "${tumor_ref}") ]]; then
 fi
 
 region="europe-west4"
-duration="1d"
+duration="7d"
 secret_name=""
 billing_project=""
 service_account=""
@@ -131,7 +131,7 @@ create_igv_config () {
       echo "goto TP53"
       echo "collapse"
       echo "colorBy READ_STRAND"
-    } > "${out_file}"
+    } > "${HOME}/${out_file}"
 }
 
 retrieve_runs_by_set () {
