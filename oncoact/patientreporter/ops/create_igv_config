@@ -31,7 +31,6 @@ elif [[ (-z "${set_name}" || -z "${tumor_ref}") ]]; then
 fi
 
 region="europe-west4"
-duration=${duration}
 duration=${3:-1d}
 secret_name=""
 billing_project=""
