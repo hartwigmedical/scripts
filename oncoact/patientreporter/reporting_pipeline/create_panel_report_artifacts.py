@@ -115,7 +115,6 @@ class ArtifactGenerator:
                        annotated_res.append(line)
 
                     elif (not 'PONArtefact' in arr[6]) and (self._get_gene_from_line(line) in germline_genes):
-                       gene = self._get_gene_from_line(line)
                        annotated_res.append(line)
 
         if reported_res:
@@ -124,6 +123,7 @@ class ArtifactGenerator:
         if annotated_res:
             with open(f"{output_folder}{pipelineSampleName}.gnomad.pon.vcf", 'x') as file:
                 file.writelines(annotated_res)
+
     def _download_required_resources(self, download_to):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()
 
