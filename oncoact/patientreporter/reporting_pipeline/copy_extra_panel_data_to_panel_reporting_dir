@@ -40,11 +40,6 @@ if ! gsutil stat ${sage_visualisation_path}; then
     exit 1
 fi
 
-if ! gsutil stat ${chord_path}; then
-    error "Chord file does not exist: ${chord_path}. Exiting."
-    exit 1
-fi
-
 # Copy files if they exist
 gsutil cp ${recon_cnv_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
 gsutil cp ${sage_visualisation_path} gs://targeted-pipeline-output-prod-1/${set}/reporting
@@ -52,7 +47,7 @@ gsutil cp ${sage_visualisation_path} gs://targeted-pipeline-output-prod-1/${set}
 configFileName=$(create_igv_config ${set} false | grep -oP '\/[^\]]+')
 
 if ! gsutil stat ${configFileName}; then
-    error "Chord file does not exist: ${configFileName}. Exiting."
+    error "configFileName does not exist: ${configFileName}. Exiting."
     exit 1
 fi
 
