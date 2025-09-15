@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+patient="ACTN02020001"
+
+base_dir="$(locate_crc_experiment_real_patients_directory)"
+
+do_run_actin_molecular_interpreter_crc ${base_dir} ${patient}
+
+echo ""
+
+do_run_actin_efficacy_prediction_crc ${base_dir} ${patient}
+
+echo ""
+
+do_run_actin_treatment_matcher_crc ${base_dir} ${patient}
+
+echo ""
+
+do_run_actin_reporter_crc ${base_dir} ${patient}

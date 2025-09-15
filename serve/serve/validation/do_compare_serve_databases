@@ -25,12 +25,12 @@ actionable_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonD
 actionable_characteristic_query="select type, cutoffType, cutoff, sourceDate, sourceEvent, sourceUrls from actionableCharacteristic order by 1,2,3,4,5,6;"
 actionable_hla_query="select hlaAllele, sourceDate, sourceEvent, sourceUrls from actionableHla order by 1,2,3,4;"
 
-known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation from knownHotspot where !(proteinEffect = 'UNKNOWN' and sources = 'CKB') order by 1,2,3,4,5,6,7,8,9,10;"
-known_codon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputCodonRank from knownCodon where !(proteinEffect = 'UNKNOWN' and sources = 'CKB') order by 1,2,3,4,5,6,7,8,9,10;"
-known_exon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputExonRank from knownExon where !(proteinEffect = 'UNKNOWN' and sources = 'CKB') order by 1,2,3,4,5,6,7,8,9,10;"
+known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation from knownHotspot order by 1,2,3,4,5,6,7,8,9,10;"
+known_codon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputCodonRank from knownCodon order by 1,2,3,4,5,6,7,8,9,10;"
+known_exon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputExonRank from knownExon order by 1,2,3,4,5,6,7,8,9,10;"
 known_gene_query="select gene, geneRole from knownGene order by 1,2;"
-known_copy_number_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, event from knownCopyNumber where !(proteinEffect = 'UNKNOWN' and sources = 'CKB') order by 1,2,3,4,5;"
-known_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonDown, maxExonDown, proteinEffect, associatedWithDrugResistance from knownFusion where !(proteinEffect = 'UNKNOWN' and sources = 'CKB') order by 1,2,3,4,5,6,7,8;"
+known_copy_number_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, event from knownCopyNumber order by 1,2,3,4,5;"
+known_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonDown, maxExonDown, proteinEffect, associatedWithDrugResistance from knownFusion order by 1,2,3,4,5,6,7,8;"
 
 info " Comparing actionable hotspots..."
 actionable_hotspot_output_1="${output_dir}/${serve_database_label_1}_actionable_hotspots.tsv"

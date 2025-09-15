@@ -33,7 +33,6 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
 
     reports = [report_file for report_file in report_created['report_files'] if
                report_file['datatype'] in {'report_pdf', 'report_json', 'report_xml'}]
-
     temp_dir_path = f'{os.path.expanduser("~")}/temp'
 
     try:

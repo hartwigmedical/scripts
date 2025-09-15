@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+base_dir=$1 && shift
+patient=$1 && shift
+
+if [[ -z "${base_dir}" || -z "${patient}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+patient_json="${base_dir}/${patient}.patient_record.json"
+treatment_efficacy_prediction_json="${base_dir}/${patient}.treatment_efficacy_prediction.json"
+
+trial_database_directory="$(locate_actin_trial_database_directory)"
+treatment_directory="$(locate_actin_treatment_db_directory)"
+doid_json="$(locate_doid_json)"
+icd_tsv="$(locate_icd_tsv)"
+atc_tsv="$(locate_atc_tsv)"
+extended_efficacy_json="$(locate_extended_efficacy_json)"
+serve_directory="$(locate_actin_serve_directory)"
+
+actin_jar="$(locate_actin_jar_on_vm)"
+
+info "Running ACTIN CRC treatment matcher on ${patient}"
+
+java -cp ${actin_jar} com.hartwig.actin.algo.TreatmentMatcherApplicationKt \
+    -patient_json "${patient_json}" \
+    -trial_database_directory "${trial_database_directory}" \
+    -treatment_directory "${treatment_directory}" \
+    -doid_json "${doid_json}" \
+    -icd_tsv "${icd_tsv}" \
+    -atc_tsv "${atc_tsv}" \
+    -extended_efficacy_json "${extended_efficacy_json}" \
+    -treatment_efficacy_prediction_json "${treatment_efficacy_prediction_json}" \
+    -serve_directory "${serve_directory}" \
+    -output_directory "${base_dir}" \
+    "$@"

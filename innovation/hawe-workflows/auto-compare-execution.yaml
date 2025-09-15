@@ -1,10 +1,11 @@
-name: "rerun-quickcheck"
+name: "genomescan"
 workflow: "auto-compare"
-version: "0.1.6"
+version: "0.2.6"
 params:
-  truth_bucket_uri: "gs://hg38-pilot-v6-38"
-  target_bucket_uri: "gs://hartwig-analyses/dna-6.0/"
-  ref_version: "38"
-  run_id: "rerun-check"
-  compar_optional_arguments: '-write_detailed -linx_dir_new linx/somatic_annotations -linx_germline_dir_new linx/germline_annotations -virus_dir_new virusinterpreter -tumor_bam_metrics_dir_new bamtools/*_bamtools -germline_bam_metrics_dir_new bamtools/*-ref_bamtools -tumor_flagstat_dir_new bamtools/*_bamtools -germline_flagstat_dir_new bamtools/*-ref_bamtools -snp_genotype_dir_new snp_genotype/*-ref' 
-  map_sample: "true"
+  truth_bucket_uri: "gs://hartwig-output-genomescan-truth"
+  target_bucket_uri: "gs://hartwig-output-genomescan"
+  sample_id_file_name: "genomescan_sample_ids.csv"
+  ref_version: "37"
+  run_id: "genomescan"
+  compar_optional_arguments: '-write_detailed -include_matches -tumor_flagstat_dir_ref */flagstat -tumor_flagstat_dir_new */flagstat -germline_flagstat_dir_ref \$/flagstat -germline_flagstat_dir_new \$/flagstat'
+  sample_link: ""

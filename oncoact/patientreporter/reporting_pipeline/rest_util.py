@@ -82,6 +82,9 @@ class RestClient:
         """
         return _get_as_json(f'{self._runs_url}/{run_id}')
 
+    def get_runs_by_tumor_isolation_barcode(self, tumor_isolation_barcode):
+        return _get_as_json(f'{self._runs_url}?barcode={tumor_isolation_barcode}')
+
     def get_yield(self, barcode):
         """
         Gets the sample information at sample barcode
@@ -168,7 +171,19 @@ class RestClient:
         return _delete_as_json(f'{self._reporting_pipeline_url}/report-executions', params={'sample_barcode': sample_barcode})
 
     def get_lama_patient_reporter_data(self, isolation_barcode):
-        return _get_as_json(f"{self._lama_url}/api/queries/patient-reporter/isolation-barcode/{isolation_barcode}")
+        runs = self.get_runs_by_tumor_isolation_barcode(isolation_barcode)
+        sorted_runs = sorted([r for r in runs if r.get('context') == 'DIAGNOSTIC' and r.get('startTime')], key=lambda r: r['startTime'])
+        if sorted_runs:
+            latest_run = sorted_runs[-1]
+        else:
+            latest_run = None
+
+        ref_isolation_barcode = latest_run.get('set', {}).get('ref_isolation_barcode') if latest_run else None
+        url = f'api/queries/patient-reporter?tumor-isolation-barcode={isolation_barcode}'
+        if ref_isolation_barcode:
+            url += f'&reference-isolation-barcode={ref_isolation_barcode}'
+
+        return _get_as_json(f"{self._lama_url}/{url}")
 
 
 def _get_as_json(url, params=None):

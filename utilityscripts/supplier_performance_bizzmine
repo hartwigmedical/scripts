@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-api_url=$"https://api.bizzmine.cloud/collection/ContractManagement/"
+api_url="https://api.bizzmine.cloud/collection/ContractManagement/"
 api_token=$( gcloud secrets versions access "latest" --secret=bizzmine-api-token-lama --project=hmf-secrets )
 #curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq
 

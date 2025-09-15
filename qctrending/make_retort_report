@@ -33,6 +33,7 @@ scriptdir=$(dirname $(realpath "$0"))
 
 info "Gather data"
 gsutil cp gs://hmf-ops-data/qctrending/HMF-FOR-096.csv /data/tmp/HMF-FOR-096.csv || die "Could not fetch GIAB data"
+gsutil cp gs://hmf-ops-data/qctrending/run_qc.csv /data/tmp/run_qc.csv || die "Could not fetch run QC data"
 python3 ${scriptdir}/gather_flowcell_sample_data.py -s ${startDate} -e ${endDate} -o ${outDataFile} || die "Could not gather data"
 echo -e "sample\tsample type\tdate\tisolation status" > ${outIsoFailFile}
 lama statuses | cut -f1,2,5,6 | grep FAILED_FINAL | grep TUMOR_TISSUE | awk -F "\t" -v sDate="$startDate" -v eDate="$endDate" '$3 >= sDate && $3 <= eDate' >> ${outIsoFailFile}
@@ -43,3 +44,4 @@ info "Generate report"
 Rscript -e "rmarkdown::render('${scriptdir}/generate_qc_trends_report.Rmd', intermediates_dir='/data/tmp/', knit_root_dir='/data/tmp/', output_file='${outReportFile}', params=list(data_file='${outDataFile}', iso_fail_file='${outIsoFailFile}', prep_fail_file='${outPrepFailFile}'))" || die "Could not generate report"
 
 rm /data/tmp/HMF-FOR-096.csv
+rm /data/tmp/run_qc.csv

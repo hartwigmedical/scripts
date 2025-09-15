@@ -99,6 +99,14 @@ flowcell_qc_info <- sample_qc_info[!duplicated(sample_qc_info$flowcell),]
 diagnostic_flowcell_qc_info <- diagnostic_sample_qc_info[!duplicated(diagnostic_sample_qc_info$flowcell),]
 nondiagnostic_flowcell_qc_info <- nondiagnostic_sample_qc_info[!duplicated(nondiagnostic_sample_qc_info$flowcell),]
 
+# Run QC Info
+run_qc_info <- as.data.frame(read.csv("/data/tmp/run_qc.csv", sep=",", header=T, na.strings=c("", "NA", "N/A")))
+run_qc_info$date <- as.Date(run_qc_info$date, format = '%Y-%m-%dT%H:%M:%S')
+run_qc_info$type <- as.factor(run_qc_info$type)
+run_qc_info$bqr <- run_qc_info$bqr * 100
+
+run_qc_max_bqr_range <- ceiling(run_qc_info$bqr) + 0.5
+
 # Lab Failures QC Info
 iso_fail_info <- read.table(params$iso_fail_file, sep = '\t', header = TRUE)
 if (nrow(iso_fail_info) >= 1) {
@@ -396,6 +404,42 @@ basic_table(coefficients_annotation(nondiagnostic_sample_qc_info, "date", "sampl
 </div>
 </div>
 
+# Run
+<div class = "row">
+<div class = "column">
+```{r run_median_coverage, echo=FALSE}
+cov_plot <- basic_plot(
+              run_qc_info,
+              "cov",
+              "Coverage",
+              NA,
+              "Median Coverage",
+              qc_date_range,
+              "type"
+            )
+ggplotly(cov_plot)
+
+basic_table(coefficients_annotation(run_qc_info, "date", "cov", "type"))
+```
+</div>
+<div class = "column">
+```{r run_tumor_bqr_rate, echo=FALSE}
+bqr_plot <- basic_plot(
+              run_qc_info,
+              "bqr",
+              "% BQR",
+              NA,
+              "BQR Error Rate",
+              qc_date_range,
+              "type"
+            )
+ggplotly(bqr_plot)
+
+basic_table(coefficients_annotation(run_qc_info, "date", "bqr", "type"))
+```
+</div>
+</div>
+
 # Stats
 
 Number of flowcells: `r nrow(flowcell_qc_info)`
@@ -586,4 +630,14 @@ datatable(sample_qc_info,
           rownames=TRUE,
           options = list(dom='Bfrtip', buttons=c('csv', 'excel'), pageLength=15, lengthChange=FALSE)
           )
+```
+### Run QC Info
+```{r data_run, echo=FALSE}
+datatable(run_qc_info,
+          selection="multiple",
+          escape=FALSE,
+          extensions='Buttons',
+          rownames=TRUE,
+          options = list(dom='Bfrtip', buttons=c('csv', 'excel'), pageLength=15, lengthChange=FALSE)
+)
 ```

@@ -31,8 +31,8 @@ info "Extracting peach information to tsv files"
 make_peach_reporting_summary_tsvs --input ${report_resources_dir}/peach.json --output_dir ${archive_dir_oncoact}
 
 info "Extracting gene transcript information to tsv file"
-Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/resource/generate_transcriptlist_oncoact.R
-Rscript /data/repos/scripts/oncoact/patientreporter/ops-vm/resource/generate_transcriptlist_oncopanel.R
+Rscript /data/repos/scripts/oncoact/patientreporter/ops/resource/generate_transcriptlist_oncoact.R
+Rscript /data/repos/scripts/oncoact/patientreporter/ops/resource/generate_transcriptlist_oncopanel.R
 
 #files oncoact
 info "Collecting oncoAct tumor WGS data"

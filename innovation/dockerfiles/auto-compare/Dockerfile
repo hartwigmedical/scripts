@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-dev \
+    curl \
     build-essential \
     libhts-dev \
     libbz2-dev \
@@ -30,12 +31,10 @@ RUN pip install --no-cache-dir \
 SHELL ["bash", "-c"]
 
 # Get COMPAR jar
-RUN wget -O compar.jar https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.3.3/compar_v1.3.3.jar
+RUN wget -O compar.jar https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.3.4/compar_v1.3.4.jar
 
 # Copy workflow scripts into the container.
 RUN mkdir -p /scripts
 COPY create_excel_compar.py /scripts
-COPY extract_pipeline_output.py /scripts
-# Find a clever way to retrieve these automatically, now update manually!!!
 COPY DriverGenePanel.37.tsv /data/resources/gene_panel/
 COPY DriverGenePanel.38.tsv /data/resources/gene_panel/

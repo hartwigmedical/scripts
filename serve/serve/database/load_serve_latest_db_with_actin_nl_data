@@ -3,8 +3,14 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-serve_actionability_dir="$(locate_serve_output_actin_nl)"
+serve_actionability_dir="$(locate_serve_output_actin_pipeline_nl)"
+if [[ ! -d "${serve_actionability_dir}" ]]; then
+    mkdir -p "${serve_actionability_dir}"
+fi
+
 serve_jar="$(locate_actin_serve)"
+
+gsutil cp gs://actin-emc-serve-pipeline-output-tm-progene-study/* ${serve_actionability_dir}/
 
 credentials=$(prod_writer_sql_credentials)
 

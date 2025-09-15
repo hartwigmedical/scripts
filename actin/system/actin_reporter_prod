@@ -23,7 +23,7 @@ actin_jar="$(locate_actin_jar_on_vm)"
 environment_config_yaml_cmd=""
 environment_config_yaml="$(locate_actin_environment_config_yaml)"
 if [[ -f "${environment_config_yaml}" ]]; then
-    info "Using config yaml from ${environment_config_yaml}."
+    info "Using config yaml from ${environment_config_yaml}"
     environment_config_yaml_cmd="-override_yaml ${environment_config_yaml}"
 else
     info "No config yaml found, using default configuration."

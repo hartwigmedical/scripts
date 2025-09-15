@@ -20,7 +20,6 @@ def get_bucket_and_blob_from_gs_path(storage_client: Client, gs_path: str) -> (B
     groups = match.groups()
     bucket_name = groups[0]
     blob_name = groups[1][1:] if groups[1] else None  # the [1:] is to remove the leading slash from the blob name
-
     bucket: Bucket = storage_client.bucket(bucket_name=bucket_name)
     blob: Blob = bucket.get_blob(blob_name=blob_name)
 

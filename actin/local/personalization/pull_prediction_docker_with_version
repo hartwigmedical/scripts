@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+version=$1 && shift
+
+if [[ -z "${version}" ]]; then
+    error "Parameters missing. Exiting.";
+fi
+
+info "Pulling personalization docker with version ${version}"
+
+# If your docker can't access gcloud yet, run the following command:
+#   gcloud auth configure-docker europe-west4-docker.pkg.dev
+
+docker pull europe-west4-docker.pkg.dev/actin-build/build-registry-docker/actin-personalization-prediction:${version}

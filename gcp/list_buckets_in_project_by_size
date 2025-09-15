@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# List all buckets in the project
+buckets=$(gcloud storage buckets list --format="json(storage_url)" --project=hmf-crunch | jq -r '.[].storage_url')
+
+# Loop through each bucket and get its total size using gsutil
+for bucket in $buckets; do
+  # Use gsutil to calculate the total size of the bucket
+  size=$(gsutil du -sh $bucket | awk '{print $1, $2}')
+
+  # Output the bucket name and its size
+  echo "\"$bucket\",\"$size\""
+done

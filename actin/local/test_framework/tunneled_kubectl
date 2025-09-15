@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+remote_port=8888
+
+HTTPS_PROXY=localhost:${remote_port} kubectl "$@"

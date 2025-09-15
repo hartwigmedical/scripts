@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+script="${HOME}/hmf/repos/actin-integration-test/manage_tunnel.sh"
+
+${script} start

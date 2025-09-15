@@ -1,0 +1,219 @@
+name: "wgs-metrics"
+version: "0.0.9"
+storagePath: "gs://gatk-wgs-metrics"
+externalInputs:
+  - name: bam-folder
+    location: "${bam_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/37/"
+  - name: interval-folder
+    location: "gs://hmf-crunch-innovation/info/gatk"
+stages:
+  - name: "cov"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.19.txt"
+  
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+
+  - name: "cov-mq0"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.19.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 0 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+
+  - name: "cov-hc"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn_hcr_19_3.2.2.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+
+  - name: "cov-hc-mq0"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn_hcr_19_3.2.2.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 0 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+  - name: "cov-hla-mq0"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/hla.37.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 0 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+  - name: "cov-hla"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/hla.37.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+  - name: "mmetrics"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn_hcr_19_3.2.2.txt"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./collectMM.sh $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE
+        

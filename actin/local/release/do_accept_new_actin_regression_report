@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+patient=$1
+
+if [[ -z "${patient}" ]]; then
+    error "Missing patient parameter input. Exiting."
+fi
+
+info "Copying new test regression reports to ACTIN source resources for ${patient}"
+
+base_dir="$HOME/hmf/repos/actin/system"
+
+cp "${base_dir}/target/test-classes/EXAMPLE-${patient}.actin.pdf" "${base_dir}/src/test/resources/example_reports/"
+cp "${base_dir}/target/test-classes/EXAMPLE-${patient}.actin.extended.pdf" "${base_dir}/src/test/resources/example_reports/"
+
+info "Done (don't forget to push!)"

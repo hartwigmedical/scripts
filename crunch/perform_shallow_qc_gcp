@@ -172,6 +172,7 @@ print_shallow_qc_for_run() {
 
     # POST to LAMA
    qc_stat=$(echo ${qc_stat} | sed 's/,/","/g')
+   purity=$(echo "${purity} * 100" | bc )
    data_string=$(printf '{"tumorIsolationBarcode": "%s", "referenceIsolationBarcode": "%s", "purpleStatus": ["%s"], "purpleFitMethod": "%s", "amberStatus": "%s", "tumorCellPurity": %s, "shallowSequencingStatus": "%s"}' ${tum_isolation_barcode} ${ref_isolation_barcode} ${qc_stat} ${status} ${amb_qc} ${purity} ${to_seq})
    curl -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/shallow-result -d "${data_string}"
 }

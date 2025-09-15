@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+bucket_name=""
+target_directory=""
+allow_writes="false"
+
+print_usage() {
+    script=$(basename "$0")
+    echo ""
+    echo "Description: Mounts a bucket with gcsfuse"
+    echo "Usage: ${script} -b <bucket-name> [-t <target-directory>]"
+    echo "Examples:"
+    echo "    ${script} -b gs://bucket/"
+    echo "    ${script} -b bucket -t /mnt/bucket -w"
+    echo ""
+    echo "Options:"
+    echo "  -b bucket_name         Name of bucket to mount. Can start with 'gs://' and/or end in trailing slash, but doesn't have to."
+    echo "  -t target_directory    Directory to mount the bucket to. Defaults to /mnt/\${bucket_name}."
+    echo "  -w allow_writes        Mount bucket in way that allows writes. Default is read-only."
+    echo ""
+    exit 1
+}
+
+while getopts ':b:t:w' flag; do
+    case "${flag}" in
+        b) bucket_name=${OPTARG} ;;
+        t) target_directory=${OPTARG} ;;
+        w) allow_writes="true" ;;
+        *) warn "Incorrect options provided" && print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${bucket_name}" || $1 == "" || "$1" == "-h" || "$1" == "--help" ]]; then
+    print_usage
+fi
+
+# strip starting "gs://" and trailing slash if applicable
+bucket_name="${bucket_name#"gs://"}"
+bucket_name="${bucket_name%"/"}"
+
+if [[ -z ${target_directory} ]]; then
+    target_directory="/mnt/${bucket_name}"
+fi
+
+if [[ "${allow_writes}" == "true" ]]; then
+    mount_options="allow_other"
+else
+    mount_options="allow_other,ro"
+fi
+
+info "Mounting ${bucket_name} to ${target_directory}"
+
+if [[ ! -d "${target_directory}" ]]; then
+    sudo mkdir -p "${target_directory}" || die "Could not create target directory: ${target_directory}"
+fi
+
+sudo /usr/bin/gcsfuse -o "${mount_options}" --implicit-dirs "${bucket_name}" "${target_directory}" || die "Could not mount bucket"

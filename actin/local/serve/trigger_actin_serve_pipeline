@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-# Trigger ACTIN SERVE pipeline by copying a file from the hmf-crunch-resources 
-# bucket to the pipeline input buckets
+# Trigger ACTIN SERVE pipeline by copying a file from the hmf-crunch-resources bucket to the pipeline input buckets
 
 usage() {
     echo "Usage: $0 <date-string> [id]"
     echo "  <date-string>  : Date in the format YYYYMMDD (e.g., 20250131)"
-    echo "  [id]           : Optional short target bucket id, e.g. 'prod' or 'nki'. If omitted, the file is copied to all targets."
+    echo "  [id]           : Optional short target bucket id, e.g. 'emc' or 'nki'. If omitted, the file is copied to all targets."
     exit 1
 }
 
@@ -22,11 +21,31 @@ SOURCE_BUCKET="gs://hmf-crunch-resources/ckb"
 FILE_NAME="api-export-${DATE}.zip"
 SOURCE_FILE="${SOURCE_BUCKET}/${FILE_NAME}"
 
-VALID_IDS=("prod" "nki" "mcgi")
+VALID_IDS=("nki" "mcgi" "emc")
+VALID_IDS_WITH_NAMESPACES=(
+    "nki:"
+    "mcgi:"
+    "emc:tm-progene-study"
+)
+
+get_namespaces_for_id() {
+    local id="$1"
+    for entry in "${VALID_IDS_WITH_NAMESPACES[@]}"; do
+        local key="${entry%%:*}"
+        local val="${entry#*:}"
+        if [[ "$key" == "$id" ]]; then
+            echo "$val"
+            return
+        fi
+    done
+    return 1
+}
 
 copy_to_bucket() {
     local id="$1"
-    local dest_bucket="gs://actin-${id}-serve-pipeline-input"
+    local namespace="$2"
+    local suffix="${namespace:+-$namespace}"
+    local dest_bucket="gs://actin-${id}-serve-pipeline-input${suffix}"
     echo "Copying ${SOURCE_FILE} to ${dest_bucket}"
     gsutil cp "${SOURCE_FILE}" "${dest_bucket}"
 }
@@ -36,9 +55,25 @@ if [ -n "${TARGET_ID}" ]; then
         echo "Error: Invalid target id '${TARGET_ID}'. Valid ids are: ${VALID_IDS[*]}"
         exit 1
     fi
-    copy_to_bucket "${TARGET_ID}"
+    namespaces=$(get_namespaces_for_id "${TARGET_ID}")
+    if [ -z "$namespaces" ]; then
+        copy_to_bucket "${TARGET_ID}" ""
+    else
+        for ns in $namespaces; do
+            copy_to_bucket "${TARGET_ID}" "$ns"
+        done
+    fi
 else
-    for id in "${VALID_IDS[@]}"; do
-        copy_to_bucket "${id}"
+    for entry in "${VALID_IDS_WITH_NAMESPACES[@]}"; do
+        id="${entry%%:*}"
+        namespaces="${entry#*:}"
+
+        if [ -z "$namespaces" ]; then
+            copy_to_bucket "$id" ""
+        else
+            for ns in $namespaces; do
+                copy_to_bucket "$id" "$ns"
+            done
+        fi
     done
 fi
