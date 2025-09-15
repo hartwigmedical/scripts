@@ -15,13 +15,14 @@ tumor_ref=$2
 
 if [[ (-z "${set_name}" && -z "${tumor_ref}")]]; then
     echo "-----"
-    echo " Usage: $script_name {name-of-set} {tumor_ref}"
+    echo " Usage: $script_name {name-of-set} {tumor_ref} {duration}"
     echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 true"
     echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 false"
     echo " Remarks:"
     echo "   - Currently only works for DIAGNOSTIC runs"
     echo "   - Will take most recent run of the set"
     echo "   - Param 'tumor_ref' is set to 'true' the BAM will generate for tumor/ref. When it is set to 'false' the BAM will only generate for tumor."
+    echo "   - Param 'duration' is set to '1d'. When this argument is set this duration will be used, with a maximal duration of 7d"
     echo "-----"
     exit 1
 elif [[ (-z "${set_name}" || -z "${tumor_ref}") ]]; then
@@ -29,7 +30,7 @@ elif [[ (-z "${set_name}" || -z "${tumor_ref}") ]]; then
 fi
 
 region="europe-west4"
-duration="1d"
+duration=${3:-1d}
 secret_name=""
 billing_project=""
 service_account=""
