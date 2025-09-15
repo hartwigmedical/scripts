@@ -233,7 +233,8 @@ class ReportSharer:
             ".reconCNV.html",
             ".sage.visualisation.zip",
             ".vchord.prediction.tsv",
-            ".gnomad.pon.vcf"
+            ".gnomad.pon.vcf",
+            ".vchord.prediction.tsv"
         }
 
     def _molecular_files(self, converted_reporting_id):
