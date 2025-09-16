@@ -16,7 +16,7 @@ duration=$3
 
 if [[ (-z "${set_name}" && -z "${tumor_ref}")]]; then
     echo "-----"
-    echo " Usage: $script_name {name-of-set} {tumor_ref}" {duration}
+    echo " Usage: $script_name {name-of-set} {tumor_ref} {duration}"
     echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 true"
     echo " Exmpl: $script_name 210319_HMFregXXXX_FR30729774_FR23588534_Sample1 false"
     echo " Remarks:"
