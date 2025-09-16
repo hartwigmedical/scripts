@@ -45,7 +45,6 @@ class ArtifactGenerator:
         upload_to_nextcloud(output_folder)
         self._copy_output_to_bucket(output_folder=output_folder)
 
-
     def _generate_input_and_output_folders(self):
         home_dir = os.path.expanduser('~')
         path = f'{home_dir}/tmp/{self._sample_barcode}/panel_artifacts'
@@ -72,19 +71,58 @@ class ArtifactGenerator:
 
         subprocess.run(['Rscript', script_location, pipelineSampleName, input_folder, output_folder], check=False)
 
+
+
+    def _get_germline_reportable_genes(self,fn):
+        germline_reportable_genes = []
+        fh = open(fn,'r')
+
+        for lines in fh:
+            lines = lines.rstrip('\n')
+            germline_reportable_genes.append(lines)
+        return germline_reportable_genes
+
+    def _get_gene_from_line(self,line):
+        arr = line.split('\t')
+        arr2 = arr[7].split(';')
+
+        for i in arr2:
+            if i[0:6]=='IMPACT':
+                arr3 = i.split(',')
+                arr4 = arr3[0].split('=')
+                return(arr4[1])
+        return('')
+
     def _generate_vcf(self, input_folder, output_folder):
-        res = []
+        reported_res = []
+        annotated_res = []
+
         metaDataFile = open(f"{input_folder}metadata.json", "r")
         pipelineSampleName = json.load(metaDataFile)["tumor"]["sampleName"]
+
+        gene_list_path = '/data/resources/reporting-resources/panel/genenames.pass.pon.csv'
+        germline_genes = self._get_germline_reportable_genes(gene_list_path)
 
         with gzip.open(f"{input_folder}purple/{pipelineSampleName}.purple.somatic.vcf.gz", 'rt') as file:
             for line in file.readlines():
                 if "REPORTED" in line or (len(line) > 0 and line[0] == '#'):
-                    res.append(line)
+                    reported_res.append(line)
+                if len(line) > 0 and line[0] == '#':
+                    annotated_res.append(line)
+                else:
+                    arr = line.split('\t')
+                    if arr[6] == "PASS":
+                       annotated_res.append(line)
 
-        if res:
+                    elif (not 'PONArtefact' in arr[6]) and (self._get_gene_from_line(line) in germline_genes):
+                       annotated_res.append(line)
+
+        if reported_res:
             with open(f"{output_folder}{pipelineSampleName}.reported.somatic.vcf", 'x') as file:
-                file.writelines(res)
+                file.writelines(reported_res)
+        if annotated_res:
+            with open(f"{output_folder}{pipelineSampleName}.gnomad.pon.vcf", 'x') as file:
+                file.writelines(annotated_res)
 
     def _download_required_resources(self, download_to):
         required_resources: list[Blob] = self._get_required_resources_as_blobs()
@@ -105,7 +143,7 @@ class ArtifactGenerator:
             "purple.somatic.vcf.gz",
             "purple.cnv.gene.tsv",
             "sage.exon.medians.tsv",
-            ".wgsmetrics",
+            "genenames.pass.pon.csv",
             "metadata.json"
         }
         run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))

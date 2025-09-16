@@ -12,6 +12,7 @@ script_name=$(basename "$0")
 
 set_name=$1
 tumor_ref=$2
+duration=$3
 
 if [[ (-z "${set_name}" && -z "${tumor_ref}")]]; then
     echo "-----"
