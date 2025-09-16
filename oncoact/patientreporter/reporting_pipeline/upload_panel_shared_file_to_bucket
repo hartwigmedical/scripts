@@ -35,7 +35,7 @@ function to_timestamp(date) {
 }
 {
     ts = to_timestamp($8)
-    if (ts > target_ts && $2 ~ /TARGT/) {
+    if (ts > target_ts && $2 ~ /TARGT/ && !seen[$1]++) {
         print $1 >> output_file  # Only print the first column
     }
 }
