@@ -81,10 +81,9 @@ def copy_template_file(output_file: str):
 
 def place_general_field_info(output_file: str, general_info: List[str], user_name: str):
     text = open_file(output_file)
-    order_fields = ("{field_client_name}", "{field_client_email}", "{field_data_email}",
-                    "{field_dvo}", "{field_submission}", "{field_sample_count}",
-                    "{field_output_level}", "{field_yield_generated}",
-                    "{field_create_date}", "{field_checked_by}")
+    order_fields = ("{field_client_name}", "{field_client_email}", "{field_data_email}", "{field_dvo}",
+                    "{field_sample_count}", "{field_output_level}", "{field_yield_generated}", "{field_create_date}",
+                    "{field_checked_by}")
     for field, value in zip(order_fields, general_info + [get_date_today(), user_name]):
         text = text.replace(field, value)
     close_file(output_file, text)
