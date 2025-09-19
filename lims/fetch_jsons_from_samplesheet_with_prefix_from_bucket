@@ -68,21 +68,29 @@ else # Normal case
     SHEETS_LOC=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
     JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
     LOGS_LOC=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
-    create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
-    sources=$(ls "${local_sheets_dir}/${prefix}*SampleSheet*")
-    for sheet in ${sources}
-    do
-        fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
-    done < ${create_log}
 
-    register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
-    info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
-    info "TODO: If all OK you can register them in API with:"
-    info " nohup register_all_ready_jsons > ${register_log} &"
-    info ""
-    info "TODO: Afterwards you can check the registration success rate with:"
-    info " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "
-    info ""
-    info "TODO: If successful, clean up logs and jsons with:"
-    info " move_registration_jsons_and_logs ${prefix} ${curr_date}"
+    preexisting_json_count=$(find "${JSONS_LOC}" -maxdepth 1 -name "*.json" | wc -l)
+    if [[ ${preexisting_json_count} -gt 0 ]]; then
+        warn "Pre existing JSON's found in unregistered json dir. Investigate them.: dir=${JSONS_LOC}"
+        warn "Move or remove them if necessary. If not, continue with the following command:"
+        info " fetch_jsons_from_samplesheet_with_prefix_from_bucket -p \"${prefix}\""
+    else
+        create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
+        sources=$(ls "${local_sheets_dir}/${prefix}*SampleSheet*")
+        for sheet in ${sources}
+        do
+            fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
+        done < ${create_log}
+
+        register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
+        info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
+        info "TODO: If all OK you can register them in API with:"
+        info " nohup register_all_ready_jsons > ${register_log} &"
+        info ""
+        info "TODO: Afterwards you can check the registration success rate with:"
+        info " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "
+        info ""
+        info "TODO: If successful, clean up logs and jsons with:"
+        info " move_registration_jsons_and_logs ${prefix} ${curr_date}"
+    fi
 fi
