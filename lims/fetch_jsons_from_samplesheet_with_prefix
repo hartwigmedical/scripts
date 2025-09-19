@@ -6,21 +6,19 @@ source locate_files || exit 1
 usage() {
     echo "---"
     echo " Descr: Fetch run registration jsons for entire samplesheet"
-    echo " Notes: Test mode (-t) allows for multiple 'prefixes', Normal mode only uses first one"
-    echo " Usage: $(basename $0) [-t] -p <string>"
-    echo " Exmpl: $(basename $0) -p 250812"
-    echo " Exmpl: $(basename $0) -t -p NO25-0156 -p NO25-0157"
+    echo " Usage: $(basename $0) -s <string> -j <string>"
+    echo " Exmpl: $(basename $0) -s /path/to/samplesheet -j /path/to/output/jsons"
     echo "---"
     exit 1
 }
 
-while getopts ":p:t:h:" opt; do
+while getopts ":j:s:h:" opt; do
     case "${opt}" in
-        p)
-            prefix+=("${OPTARG}")
+        j)
+            j=${OPTARG}
             ;;
-        t)
-            t=${OPTARG}
+        s)
+            s=${OPTARG}
             ;;
         h)
             usage
@@ -32,50 +30,19 @@ while getopts ":p:t:h:" opt; do
 done
 shift $((OPTIND-1))
 
-curr_date=$(date +'%y%m%d')
-
-if [ -n "${t}" ]; then # Testing case
-    info "Using test modes, log will be written to user home directory"
-    SHEETS_LOC="/data/tmp/registration_test/samplesheet"
-    JSONS_LOC="/data/tmp/registration_test/log"
-    LOGS_LOC="/data/tmp/registration_test/json"
-    create_log="${HOME}/${curr_date}_create_jsons_for_testing"
-    for sheet in "${prefix[@]}";
-    do
-      copy_file_from_nas "/volume1/worksheets/${sheet}/SampleSheet.csv" "${SHEETS_LOC}/${sheet}_SampleSheet.csv" || warn "Could not get SampleSheet for ${sheet}"
-    done
-    sources=$(ls "${SHEETS_LOC}"/*SampleSheet.csv)
-else # Normal case
-    SHEETS_LOC=$(locate_samplesheets_dir) || die "Could not find local samplesheets dir path"
-    JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
-    LOGS_LOC=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
-    create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
-    sources=$(ls "${SHEETS_LOC}"/"${prefix}"*SampleSheet*)
+if [[ -z ${s} || -z ${j} ]]; then
+    usage
 fi
 
-for item in ${sources}; do
-    if [[ ! -f ${item} ]]; then
-        die "SampleSheet ${item} does not exist"
-    fi
-    start=$(cat ${item} | grep -n Data], | cut -d: -f1)
-    col_num=$(tail -n +$(( ${start} + 1 )) ${item} | head -n 1 | tr -s ',' '\n' | nl -nln |  grep "Sample_ID" | cut -f1)
-    barcodes=$(tail -n +$(( ${start} + 2 )) ${item} | cut -d',' -f${col_num} | sed '/^[[:space:]]*$/d' | tr -s '\n' ' ')
-    for barcode in ${barcodes}; do
-        fetch_register_json -b ${barcode} -o ${JSONS_LOC}
-    done
-done > "${create_log}"
+SHEET_LOC=${s}
+JSONS_LOC=${j}
 
-if [ -n "${t}" ]; then # Testing case
-    rm /data/tmp/registration_test/*/*
-else # Normal case
-    register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
-    info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
-    info "TODO: If all OK you can register them in API with:"
-    info " nohup register_all_ready_jsons > ${register_log} &"
-    info ""
-    info "TODO: Afterwards you can check the registration success rate with:"
-    info " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "
-    info ""
-    info "TODO: If successful, clean up logs and jsons with:"
-    info " move_registration_jsons_and_logs ${prefix} ${curr_date}"
+if [[ ! -f ${SHEET_LOC} ]]; then
+    die "SampleSheet ${SHEET_LOC} does not exist"
 fi
+start=$(cat ${SHEET_LOC} | grep -n Data], | cut -d: -f1)
+col_num=$(tail -n +$(( ${start} + 1 )) ${SHEET_LOC} | head -n 1 | tr -s ',' '\n' | nl -nln |  grep "Sample_ID" | cut -f1)
+barcodes=$(tail -n +$(( ${start} + 2 )) ${SHEET_LOC} | cut -d',' -f${col_num} | sed '/^[[:space:]]*$/d' | tr -s '\n' ' ')
+for barcode in ${barcodes}; do
+    fetch_register_json -b ${barcode} -o ${JSONS_LOC}
+done
