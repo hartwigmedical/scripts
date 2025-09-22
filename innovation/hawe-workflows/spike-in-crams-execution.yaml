@@ -1,9 +1,9 @@
-name: "COREDB010017-tf0.1-seed123"
+name: "colo-tf0.1-seed123"
 workflow: "spike-in-crams"
 version: "1.0.0-beta1"
 params:
   # --- File config ---
-  sample_id: COREDB010017
+  sample_id: colo
   output_bucket: "gs://cfdna-testing/spike-in-cfdna/rerun-60x"
   tumor_cram_bucket: "gs://cfdna-testing/spike-in-cfdna/input-files"
   tumor_cram_file: "tumor-45x.cram"
