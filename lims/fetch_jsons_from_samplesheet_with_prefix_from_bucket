@@ -78,7 +78,7 @@ else # Normal case
         info " fetch_jsons_from_samplesheet_with_prefix_from_bucket -p \"${prefix}\""
     else
         create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
-        sources=$(ls "${local_sheets_dir}/${prefix}*SampleSheet*")
+        sources=$(ls "${local_sheets_dir}/${prefix}"*SampleSheet*)
         for sheet in ${sources}
         do
             fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
