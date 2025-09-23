@@ -41,7 +41,7 @@ if [[ ! "$req_yield" =~ ^[[:digit:]]+$ ]]; then
     die "Required yield [$req_yield] contains more than just digits"
 fi
 
-measured_yield=$(echo "api_samples_json" | jq '[.[] | select(.status=="Ready" or .status=="Deleted") | .yld] | add')
+measured_yield=$(echo "${api_samples_json}" | jq '[.[] | select(.status=="Ready" or .status=="Deleted") | .yld] | add')
 measured_yield_gbase=$((measured_yield / 1000000000))
 if [[ "${measured_yield_gbase}" -lt "${req_yield}" ]]; then
     warn "INSUFFICIENT YIELD: Submission requires ${req_yield} GBase in total but currently has ${measured_yield_gbase} GBase!"

@@ -30,14 +30,18 @@ runs_json="${runs_file/.txt/.json}"
 [[ ! -e "${out_path}" ]] || die "Output dir exists already (${out_path})"
 mkdir -p "${out_path}" || die "Unable to create output dir (${out_path})"
 
+
 # Gather submission info from LAMA
-lama_json=$(curl -s -X 'GET' -H 'accept: */*' "http://lama.prod-1/api/hss/order-confirmation/${confirmation_order}") || die "Could not get data from LAMA for confirmation order ${confirmation_order}"
-p_type=$(jq -r '.servicesSamples | .[] | length' <<< "${lama_json}")
-p_count=$(jq -r '.servicesSamples | .[0].dataOutputLevel' <<< "${lama_json}")
-r_name=$(jq -r '.reportContacts.name' <<< "${lama_json}")
-r_mail=$(jq -r '.reportContacts.email' <<< "${lama_json}")
-d_name=$(jq -r '.dataContacts.name' <<< "${lama_json}")
-d_mail=$(jq -r '.dataContacts.email' <<< "${lama_json}")
+lama_data=$(curl -s -X 'GET' -H 'accept: */*' "http://lama.prod-1/api/hss/order-confirmation/${confirmation_order}") || die "Could not get data from LAMA for confirmation order ${confirmation_order}"
+echo "${lama_data}" > "${lama_json}"
+
+p_type=$(echo "${lama_data}" | jq -r '.servicesSamples | length')
+p_count=$(echo "${lama_data}" | jq -r '.servicesSamples | .[0].dataOutputLevel')
+r_name=$(echo "${lama_data}" | jq -r '.reportContacts | .[] | .name')
+r_mail=$(echo "${lama_data}" | jq -r '.reportContacts | .[] | .email')
+d_name=$(echo "${lama_data}" | jq -r '.dataContacts | .[] | .name')
+d_mail=$(echo "${lama_data}" | jq -r '.dataContacts| .[] | .email')
+
 
 # Get sample info from HMF API
 info "Querying HMF API to get sample status"
@@ -75,11 +79,11 @@ printf '%s\n' " # Project metadata table for report (${pdf_name})" \
         yldR=$(echo "${line}" | cut -f3)
         yldM=$(echo "${line}" | cut -f4)
         name=$(echo "${line}" | cut -f5)
-        date=$(cat ${lama_json} | jq -r '.servicesSamples | .[] | select( .barcode == \"${barc}\" ) | .arrivalDate')
+        date=$(echo "${lama_data}" | jq -r --arg barcode "${barc}" '.servicesSamples | .[] | select( .barcode == $barcode ) | .arrivalDate')
         q30M=$(printf "%'.1f\n" "${q30M}") # q30 with one decimal
         yldR=$(printf "%'.f\n" "$((yldR / 1000000))") # yield to MBase
         yldM=$(printf "%'.f\n" "$((yldM / 1000000))") # yield to MBase
-        printf "%s\t" "${barc}" "${q30M}" "${yldR}" "${yldM}" "${name}" "${date}"
+        echo -e "${barc}\t${q30M}\t${yldR}\t${yldM}\t${name}\t${date}"
     done < <(echo "${api_samples_json}" | jq -rc '.[] | [.barcode,.q30,.yld_req,.yld,.name] | @tsv')
 } >> "${repo_file}"
 
@@ -93,10 +97,11 @@ printf '%s\n' " # Project metadata table for report (${pdf_name})" \
     echo "#   Data Contact = ${d_name} (${d_mail})"
 } >> "${log_file}"
 
+
 info "Inspect output files:"
 info " cd ${out_path}"
 info " cat ${log_file}"
-info " cat ${lama_json} | jq"
+info " cat ${lama_json}"
 info " cat ${samp_file}"
 info " cat ${runs_file}"
 echo ""
