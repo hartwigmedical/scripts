@@ -189,11 +189,11 @@ locate_prod_serve() {
 }
 
 locate_research_serve() {
-    echo "/data/tools/serve/8.3.2/serve.jar"
+    echo "/data/tools/serve/8.4.1/serve.jar"
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/8.3.2/serve.jar"
+    echo "/data/tools/serve/8.4.1/serve.jar"
 }
 
 locate_pilot_serve() {
@@ -434,14 +434,6 @@ locate_crc_experiment_test_patients_directory() {
 
 locate_crc_actin_environment_config() {
     echo "$(locate_base_crc_experiment_directory)/config/actin-crc-config.yaml"
-}
-
-locate_crc_personalization_reference_data() {
-    echo "$(locate_base_crc_experiment_directory)/personalization_db/crc_reference_entries.json"
-}
-
-locate_crc_actin_fake_predictions() {
-    echo "$(locate_base_crc_experiment_directory)/fake_predictions/treatment_efficacy_prediction.fake.json"
 }
 
 

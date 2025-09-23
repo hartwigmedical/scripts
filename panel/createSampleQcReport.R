@@ -78,7 +78,6 @@ runSampleQcReport<-function()
     sampleGeneCnFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.cnv.gene.tsv')
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
-    bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
 #    excludedFile = 'textfile.txt'
     excludedFile = '/data/resources/ops/panel/excludedExons.tsv'
 
@@ -90,7 +89,6 @@ runSampleQcReport<-function()
     check_file(samplePurityFile)
     check_file(sampleSomaticVcf)
     check_file(driverGenePanel)
-    check_file(bamMetricsFile)
     print("files present")
     check_file(excludedFile)
 
@@ -131,8 +129,8 @@ runSampleQcReport<-function()
     driverGenes = dplyr::inner_join(ensemblGenes, driverGenePanel, by="gene")
 
     # filter genes of interest for OncoPanel. Check: "Proposed validation gene list" in Oncopanel > CNV validation
-    # 12 genes for DELs
-    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1')
+    # 15 genes for DELs
+    reportGenesDeletions = c('PALB2', 'RAD51B', 'RAD51C', 'BRCA1', 'BRCA2', 'CDKN2A', 'TP53', 'CREBBP', 'EP300', 'ARID1A', 'PTEN', 'RB1','MTAP','KEAP1','SMAD4')
     # 17 genes for AMPS
     reportGenesAmplification = c('AR','CCNE1','EGFR','ERBB2','FGFR2','FLT4','KDR','KIT','MDM2','MET','MYC','PDGFRA','PDGFRB','PIK3CA','RAF1','ROS1','FGFR1')
 
@@ -246,13 +244,12 @@ runSampleQcReport<-function()
       theme(legend.position='none',axis.text.y=element_blank(),text = element_text(size = 12),axis.text.x = element_text(size = 12),plot.margin=unit(nonGeneMargins,'cm')) +
       labs(title='Exon Median Coverage (log2)', x='',y='',size=12)
 
-    # metrics
 
-    bamMetrics=read.table(bamMetricsFile,header=T,comment.char='#',sep="\t", nrow=1)
 
     # SNVs by gene and coding effect
     
     somaticVcf = readVcf(sampleSomaticVcf)
+    somaticVcf=somaticVcf[rowRanges(somaticVcf)$FILTER=="PASS",] #only consider variants annotated with PASS
     somaticVariants = vcf_data_frame(somaticVcf)
 
     # extract gene impact

@@ -265,8 +265,9 @@ sub processSample{
     ## Reset submission and analysis type (read: output level) for specific batches from VHIO (Barcelona)
     ## This makes sure no RNA pipeline will run and we can share the FASTQ
     ## TODO: this should be handled in a better way but currently LAMA cannot tell the output level per isolate
-    if ( $entity eq "CORE_01" and $reporting_id =~ /^(BRIOME|TIL)/ and $analysis eq "RNAanalysis" ){
+    if ( $entity eq "CORE_01" and $reporting_id =~ /^(BRIOME|TIL|CUP|VDH)/ and $analysis eq "RNAanalysis" ){
         $analysis = 'FASTQ';
+        sayWarn("RNA sample from VHIO ($name; $barcode) detected, changed to FASTQ output. Remember to send data out after sequencing")
     }
 
     my $use_existing_ref = $USE_EXISTING_REF;

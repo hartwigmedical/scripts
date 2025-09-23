@@ -1,0 +1,29 @@
+name: "colo-tf0.1-seed123"
+workflow: "spike-in-crams"
+version: "1.0.0-beta1"
+params:
+  # --- File config ---
+  sample_id: colo
+  output_bucket: "gs://cfdna-testing/spike-in-cfdna/rerun-60x"
+  tumor_cram_bucket: "gs://cfdna-testing/spike-in-cfdna/input-files"
+  tumor_cram_file: "tumor-45x.cram"
+  normal_cram_bucket: "gs://cfdna-testing/spike-in-cfdna/input-files"
+  normal_cram_file: "normal-60x.cram"
+  reference_bucket: "gs://common-resources/reference_genome/38"
+  reference_file: "Homo_sapiens_assembly38.alt.masked.fasta"
+
+  # --- Subsampling Parameters ---
+  current_tumor_fraction: 0.4323
+  ## tumor fraction is exact tumor fraction ranging from 0 - 100%
+  target_tumor_fraction_pct: 0.1
+  target_coverage: 60
+  seed: 123
+  
+  # --- Biological Constants ---
+  tumor_ploidy: 2.86
+  total_genome_length: 3300000000
+  avg_read_length: 170
+
+  # --- Technical Parameters ---
+  ## TO CHECK
+  threads: 28

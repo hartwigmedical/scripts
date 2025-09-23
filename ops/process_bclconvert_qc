@@ -196,6 +196,10 @@ function process_samples () {
           yld_seq_gbase=$("${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "${req_gbase}") || \
                 die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded like ${req_gbase}: ${yld}"
         fi
+        #Ensure yield is formatted to 2 decimals for LAMA.
+        yld_seq_gbase_lama=$("${ROUNDING_SCRIPT}" --base_count "${yld_seq_base_count}" --round_like "1.23")  || \
+                die "Could not convert yld_seq_base_count for ${sample_id} to gbase rounded with 2 decimals"
+
         # Note: Samples-for-database have two runs (diagnostic and research). We can ignore the research one.
         # Note: Only specific inis.
         api_run=$(
@@ -223,7 +227,7 @@ function process_samples () {
             "${flowcell_name}" "${submission}" "${sample_id}" "${sample_nm}" "${reporting_id}" "${ini}" "${status_info}" "NA" "${set_name}"
 
         # POST to LAMA
-        data_string=$(printf '{"flowcell": "%s", "isolationBarcode": "%s", "yield": %s, "q30": %s}' ${flowcell_id} ${sample_id} ${yld_seq_gbase} ${q30_seq})
+        data_string=$(printf '{"flowcell": "%s", "isolationBarcode": "%s", "yield": %s, "q30": %s}' ${flowcell_id} ${sample_id} ${yld_seq_gbase_lama} ${q30_seq})
         curl -s -S -H "Content-Type: application/json" -H "Accept: */*" -X POST http://lama.prod-1/api/sequencing/sequencing-result -d "${data_string}"
     done | sort -k2,2 -k4,4
 }

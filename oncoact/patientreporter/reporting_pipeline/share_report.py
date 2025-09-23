@@ -232,7 +232,9 @@ class ReportSharer:
             "orange.pdf",
             ".reconCNV.html",
             ".sage.visualisation.zip",
-            ".vchord.prediction.tsv"
+            ".vchord.prediction.tsv",
+            ".gnomad.pon.vcf",
+            "-igv-config.txt"
         }
 
     def _molecular_files(self, converted_reporting_id):
