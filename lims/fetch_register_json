@@ -55,8 +55,6 @@ if [ -n "${o}"  ]; then
     fi
 fi
 
-echo "${out_path}"
-
 # Standard
 info "Fetching data for ${barcode}"
 ask_request_body=$(echo -e "{\"isolationBarcode\": \"${barcode}\"}")
