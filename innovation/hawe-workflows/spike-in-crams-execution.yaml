@@ -1,6 +1,6 @@
 name: "colo-tf0.1-seed123"
 workflow: "spike-in-crams"
-version: "1.0.0-beta1"
+version: "1.0.1"
 params:
   # --- File config ---
   sample_id: colo
