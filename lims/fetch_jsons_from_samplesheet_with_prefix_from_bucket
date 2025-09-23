@@ -48,7 +48,7 @@ if [ -n "${t}" ]; then # Testing case
     JSONS_LOC="/data/tmp/registration_test/log"
     LOGS_LOC="/data/tmp/registration_test/json"
     create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
-    sources=$(ls "${local_sheets_dir}/*SampleSheet.csv")
+    sources=$(ls "${local_sheets_dir}/*/SampleSheet.csv")
     for sheet in ${sources}
     do
         fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
