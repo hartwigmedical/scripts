@@ -13,7 +13,7 @@ api_samples_json=$(hmf_api_get "samples?submission=${confirmation_order}" | jq '
 api_runs_json=$(hmf_api_get "runs?set_name_contains=${confirmation_order}")
 
 lama_analysis_type=$(echo "${lama_json}" | jq -r '.servicesSamples | .[0].dataOutputLevel')
-lama_total_samples=$(echo "${lama_json}" | jq '.servicesSamples | .[] | length')
+lama_total_samples=$(echo "${lama_json}" | jq '.servicesSamples | length')
 
 api_total_samples=$(echo "${api_samples_json}" | jq 'length')
 api_total_runs=$(echo "${api_runs_json}" | jq 'length')
