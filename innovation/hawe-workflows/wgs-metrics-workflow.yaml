@@ -1,6 +1,6 @@
 name: "wgs-metrics"
-version: "0.1.0"
-storagePath: "gs://gatk-wgs-metrics"
+version: "0.1.1"
+storagePath: "gs://gatk-wgs-metrics/"
 externalInputs:
   - name: bam-folder
     location: "${bam_uri}"
@@ -149,7 +149,7 @@ stages:
         #!/usr/bin/env bash
         set -eo pipefail
         
-        INTERVAL="/in/interval-folder/hla.38.txt"
+        INTERVAL="/in/interval-folder/hla.38.bed"
         
         INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
         INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
@@ -178,7 +178,7 @@ stages:
         #!/usr/bin/env bash
         set -eo pipefail
         
-        INTERVAL="/in/interval-folder/hla.38.txt"
+        INTERVAL="/in/interval-folder/hla.38.bed"
         
         INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
         INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
