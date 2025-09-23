@@ -54,7 +54,7 @@ if [ -n "${t}" ]; then # Testing case
         fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
     done > ${create_log}
 
-    echo $(cat ${create_log})
+    cat "${create_log}"
 
     rm /data/tmp/registration_test/*/*
 else # Normal case
