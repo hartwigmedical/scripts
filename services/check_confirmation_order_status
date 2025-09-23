@@ -8,7 +8,7 @@ if [[ -z "${confirmation_order}" ]]; then
     error "Provide a confirmation_order. Exiting"
 fi
 
-lama_json=$(curl -s -X 'GET' -H 'accept: */*' "http://lama.prod-1/api/registration/order-confirmation/${confirmation_order}")
+lama_json=$(curl -s -X 'GET' -H 'accept: */*' "http://lama.prod-1/api/hss/order-confirmation/${confirmation_order}")
 api_samples_json=$(hmf_api_get "samples?submission=${confirmation_order}" | jq '[.[] | select(.status != "Unregistered")]')
 api_runs_json=$(hmf_api_get "runs?set_name_contains=${confirmation_order}")
 
@@ -31,7 +31,7 @@ info "${api_validated_runs} API runs finished"
 info ""
 
 info "Commands for further inspection:"
-info "  curl -s -X 'GET' -H 'accept: */*' \"http://lama.prod-1/api/registration/order-confirmation/${confirmation_order}\" | jq"
+info "  curl -s -X 'GET' -H 'accept: */*' \"http://lama.prod-1/api/hss/order-confirmation/${confirmation_order}\" | jq"
 info "  api samples ${confirmation_order} submission"
 info "  api runs ${confirmation_order} submission"
 info ""
