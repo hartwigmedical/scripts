@@ -5,6 +5,8 @@ source locate_files || exit 1
 
 unregistered_jsons_dir=$(locate_sample_registration_unregistered_jsons_dir) || die "Could not find the unregistered-jsons dir"
 
+rm "${unregistered_jsons_dir}"/jsonnull.json
+
 for json in "${unregistered_jsons_dir}"/*.json; do
     echo ""
     info "About to register: ${json}"
