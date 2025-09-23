@@ -12,7 +12,7 @@ do
     order_info=$(curl -s -X 'GET' -H 'accept: */*' "http://lama.prod-1/api/hss/order-confirmation/${order}")
     confirmation_number=$(echo "${order_info}" | jq -r '.confirmationNumber')
     project_category=$(echo "${order_info}" | jq -r '.projectCategory')
-    count=$(echo "${order_info}" | jq '.servicesSamples | .[] | length')
+    count=$(echo "${order_info}" | jq '.servicesSamples | length')
     output=$(echo "${order_info}" | jq -r '.servicesSamples | .[0].dataOutputLevel')
     if [[ "${confirmation_number}" == "INN*" ]]
     then
