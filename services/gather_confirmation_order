@@ -108,7 +108,7 @@ echo ""
 
 
 info "And/or get the aria2 download config:"
-echo " nohup gather_submission_aria_config ${confirmation_order} > ${out_path}/gather_aria.log &"
+echo " nohup gather_confirmation_order_aria_config ${confirmation_order} > ${out_path}/gather_aria.log &"
 echo ""
 
 info "And/or print info for (PDF) report:"
