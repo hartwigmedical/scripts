@@ -82,7 +82,7 @@ else # Normal case
         for sheet in ${sources}
         do
             fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
-        done < ${create_log}
+        done > ${create_log}
 
         register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
         info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
