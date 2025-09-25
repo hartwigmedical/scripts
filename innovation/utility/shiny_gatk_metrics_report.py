@@ -21,8 +21,9 @@ METRICS_TO_PLOT = [
     "PCT_EXC_OVERLAP","PCT_EXC_CAPPED","PCT_EXC_TOTAL","PCT_1X","PCT_5X","PCT_10X","PCT_15X",
     "PCT_20X","PCT_25X","PCT_30X","PCT_40X","PCT_50X","PCT_60X","PCT_70X","PCT_80X","PCT_90X",
     "PCT_100X","FOLD_80_BASE_PENALTY","FOLD_90_BASE_PENALTY","FOLD_95_BASE_PENALTY",
-    "HET_SNP_SENSITIVITY","HET_SNP_Q",
-    "AT_DROPOUT","GC_DROPOUT",
+    "HET_SNP_SENSITIVITY","HET_SNP_Q","AT_DROPOUT","GC_DROPOUT",
+    "Phred_All","Phred_Substitutions","Phred_Insertions","Phred_Deletions","Phred_Indel",
+    "median_read_length","mean_read_length","ratio_90_to_10percentile"
 ]
 
 PALETTE = [
@@ -60,6 +61,123 @@ def dbg(tag: str, **kv):
 # ==============================
 # Helpers
 # ==============================
+
+def _get_meta_df(sample_meta) -> pd.DataFrame:
+    """Return a real DataFrame with the expected columns, never None."""
+    df = sample_meta.get()
+    if df is None or not isinstance(df, pd.DataFrame):
+        return pd.DataFrame(columns=["SampleID","Date","Cycle","bam_uri","yaml_found"])
+    # Ensure required columns exist
+    for c in ["SampleID","Date","Cycle","bam_uri","yaml_found"]:
+        if c not in df.columns:
+            df[c] = ""
+    return df
+
+def _clean_sample_id_remove_sbx(sample_id: str) -> str:
+    """Strip a trailing '-sbx' (case-insensitive). Do NOT touch '-ref'."""
+    if not sample_id:
+        return sample_id
+    return re.sub(r"-sbx$", "", str(sample_id), flags=re.I)
+
+def _metrics_report_path_from_bam_uri(bam_uri: str | None) -> str | None:
+    """
+    bam_uri example:
+      gs://.../cycle01/output/SAMPLE001/
+    report path:
+      gs://.../cycle01/output/metrics-report.tsv
+    """
+    if not bam_uri:
+        dbg("metrics_report_path", bam_uri=None)
+        return None
+    s = bam_uri.rstrip("/")
+    parent1 = s.rsplit("/", 1)[0] if "/" in s else s          # up from SAMPLEID
+    parent2 = parent1.rsplit("/", 1)[0] if "/" in parent1 else parent1  # maybe up to /output
+    base = parent1 if parent1.endswith("/output") else parent2
+    report = f"{base}/metrics-report.tsv" if base else None
+    dbg("metrics_report_path", bam_uri=bam_uri, parent1=parent1, parent2=parent2, chosen_base=base, report=report)
+    return report
+
+def _parse_metrics_report_for_sample(gcs: GCSFileSystem, report_path: str, sample_id: str) -> dict | None:
+    """
+    Read metrics-report.tsv and return selected fields for the matching row.
+    Matching uses 'sample_name' CONTAINS cleaned SampleID (strip trailing -sbx).
+    """
+    if not report_path:
+        dbg("metrics_report_skip", reason="no_report_path", sample_id=sample_id)
+        return None
+
+    try:
+        if not gcs.exists(report_path):
+            dbg("metrics_report_missing", report_path=report_path, sample_id=sample_id)
+            return None
+
+        with gcs.open(report_path, "r") as f:
+            df = pd.read_csv(f, sep="\t")
+
+        dbg("metrics_report_loaded",
+            report_path=report_path,
+            rows=int(df.shape[0]),
+            cols=list(df.columns)[:20])
+
+    except Exception as e:
+        dbg("metrics_report_read_error", report_path=report_path, error=repr(e))
+        return None
+
+    if df.empty or "sample_name" not in df.columns:
+        dbg("metrics_report_bad_df", empty=df.empty, has_sample_name=("sample_name" in df.columns))
+        return None
+
+    target = _clean_sample_id_remove_sbx(sample_id)
+    # primary: case-sensitive contains
+    mask_cs = df["sample_name"].astype(str).str.contains(re.escape(target), regex=True)
+    n_cs = int(mask_cs.sum())
+
+    # fallback: case-insensitive if no case-sensitive match
+    mask_ci = None
+    n_ci = 0
+    if n_cs == 0:
+        mask_ci = df["sample_name"].astype(str).str.contains(re.escape(target), regex=True, case=False)
+        n_ci = int(mask_ci.sum())
+
+    dbg("metrics_report_match_stats",
+        sample_id=sample_id, cleaned_target=target, case_sensitive_hits=n_cs, case_insensitive_hits=n_ci)
+
+    if n_cs > 0:
+        sub = df.loc[mask_cs].copy()
+    elif n_ci > 0:
+        dbg("metrics_report_using_case_insensitive", sample_id=sample_id, target=target)
+        sub = df.loc[mask_ci].copy()
+    else:
+        # show a few sample_name values for quick eyeballing
+        dbg("metrics_report_no_match",
+            sample_id=sample_id,
+            target=target,
+            sample_name_head=df["sample_name"].astype(str).head(5).tolist())
+        return None
+
+    if len(sub) > 1:
+        dbg("metrics_report_multimatch",
+            sample_id=sample_id,
+            target=target,
+            first_5=sub["sample_name"].astype(str).head(5).tolist(),
+            total=int(len(sub)))
+
+    row = sub.iloc[0]
+
+    keep = [
+        "Phred_All","Phred_Substitutions","Phred_Insertions","Phred_Deletions","Phred_Indel",
+        "median_read_length","mean_read_length","ratio_90_to_10percentile",
+    ]
+    out = {}
+    for k in keep:
+        if k in row.index:
+            out[k] = pd.to_numeric(row[k], errors="coerce")
+
+    dbg("metrics_report_selected_values",
+        sample_id=sample_id,
+        selected={k: out.get(k, None) for k in keep})
+
+    return out if out else None
 
 def _normalize_pct_columns_inplace(df: pd.DataFrame, cols: list[str]) -> None:
     """
@@ -372,13 +490,13 @@ def server(input, output, session):
 
     # ---------- Screen 2: criteria + exclusions ----------
     @reactive.Calc
-    def meta_df() -> pd.DataFrame:
+    def meta_table() -> pd.DataFrame:
         df = sample_meta.get()
         return df if df is not None else pd.DataFrame(columns=["SampleID","Date","Cycle","bam_uri","yaml_found"])
 
     @reactive.Calc
     def criteria_filtered_ids() -> list[str]:
-        df = meta_df().copy()
+        df = meta_table().copy()
         if df.empty:
             return []
 
@@ -411,7 +529,7 @@ def server(input, output, session):
 
     def _selected_rows_to_ids() -> list[str]:
         rows = input.sample_table_selected_rows()
-        df = meta_df()
+        df = meta_table()
         if not rows or df.empty:
             return []
         return df.iloc[list(rows)]["SampleID"].astype(str).tolist()
@@ -443,7 +561,7 @@ def server(input, output, session):
 
     @render.data_frame
     def sample_table():
-        df = meta_df()
+        df = meta_table()
         if df.empty:
             return pd.DataFrame({"Info": ["No metadata found"]})
         # User selects rows to exclude/include
@@ -508,6 +626,50 @@ def server(input, output, session):
                     merged["SampleID"] = sample_id
                     all_metrics.append(pd.Series(merged))
 
+                # 2.5) metrics-report.tsv next to bam_uri (if available)
+                #     Use the cleaned SampleID to match 'sample_name'
+                # Get the latest stored metadata DataFrame
+                meta = _get_meta_df(sample_meta)
+
+                row = meta.loc[meta["SampleID"] == sample_id]
+                bam_uri = None
+                if not row.empty:
+                    val = str(row["bam_uri"].iat[0]).strip()
+                    bam_uri = val if val else None
+
+                dbg("metrics_report_probe_start", sample_id=sample_id, bam_uri=bam_uri)
+
+                report_path = _metrics_report_path_from_bam_uri(bam_uri)
+
+                # quick visibility into the /output directory contents
+                if report_path:
+                    base_dir = report_path.rsplit("/", 1)[0]
+                    try:
+                        exists = fs.exists(base_dir)
+                    except Exception:
+                        exists = False
+                    dbg("metrics_report_base_dir", base_dir=base_dir, exists=exists)
+
+                    if exists:
+                        try:
+                            # list up to 12 entries for debugging
+                            entries = fs.ls(base_dir)
+                            dbg("metrics_report_dir_list",
+                                base_dir=base_dir,
+                                n_entries=len(entries),
+                                head=entries[:12])
+                        except Exception as e:
+                            dbg("metrics_report_dir_list_error", base_dir=base_dir, error=repr(e))
+
+                if report_path:
+                    report_vals = _parse_metrics_report_for_sample(fs, report_path, sample_id)
+
+                if report_vals:
+                    dbg("metrics_report_merge", sample_id=sample_id, keys=list(report_vals.keys()))
+                    merged.update(report_vals)
+                else:
+                    dbg("metrics_report_skip_merge", sample_id=sample_id)
+
                 # 3) Alignment summary histogram
                 aln_glob = f"{bucket}/{sample_id}/mmetrics/*alignment_summary_metrics*"
                 aln_files = fs.glob(aln_glob)
@@ -528,6 +690,8 @@ def server(input, output, session):
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
         
+        dbg("metrics_df_built", shape=df.shape, cols=list(df.columns))
+
         # Normalize percent-like GC-bias metrics to fractions for proper % axes
         _normalize_pct_columns_inplace(df, ["AT_DROPOUT", "GC_DROPOUT"])
 
@@ -634,12 +798,47 @@ def server(input, output, session):
         dbg("filter_meta_table_view", rows=len(view))
         return render.DataTable(view, selection_mode="none")
 
+    @render.data_frame
+    def table_overview():
+        # Full metrics with metadata
+        df = full_data.get()
+        if df is None or df.empty:
+            return render.DataTable(pd.DataFrame({"Info": ["No data loaded"]}), selection_mode="none")
+
+        # Respect sidebar selection
+        selected_raw = input.filter_samples()
+        selected = _normalize_selected(selected_raw)
+        if not selected:
+            return render.DataTable(pd.DataFrame({"Info": ["No samples selected"]}), selection_mode="none")
+
+        # Keep only selected samples
+        view = df[df["SampleID"].astype(str).isin(selected)].copy()
+
+        # Ensure the columns we want exist and are numeric where applicable
+        cols_present = ["SampleID", "Date", "Cycle"]
+        for col in METRICS_TO_PLOT:
+            if col in view.columns:
+                view[col] = pd.to_numeric(view[col], errors="coerce")
+                cols_present.append(col)
+
+        # Order: Date desc, Cycle asc, then SampleID
+        view["_Date"] = pd.to_datetime(view["Date"], errors="coerce")
+        view = (view.sort_values(by=["_Date", "Cycle", "SampleID"], ascending=[False, True, True])
+                    .drop(columns=["_Date"], errors="ignore"))
+
+        # Final column order (only existing ones)
+        view = view[[c for c in cols_present if c in view.columns]].reset_index(drop=True)
+
+        # Render as a sortable data table, no row selection needed
+        return render.DataTable(view, selection_mode="none")
+
     # ---------- Plots ----------
     @render.ui
     def dashboard_content():
         if full_data.get() is None:
             return ui.p("Data is loading or no data was loaded.")
         tabs = [ui.nav_panel(m, output_widget(f"plot_{m}")) for m in METRICS_TO_PLOT]
+        tabs.append(ui.nav_panel("Table Overview", ui.output_data_frame("table_overview")))
         tabs.append(ui.nav_panel("Read Length Distribution", output_widget("plot_read_length")))
         return ui.navset_card_tab(*tabs)
 
@@ -691,7 +890,6 @@ def server(input, output, session):
             fig.update_layout(margin=dict(l=40, r=40, t=50, b=80), bargap=0.25, legend_title_text="Date / Cycle")
             fig.update_xaxes(tickangle=-45)
             return fig
-
 
     @output(id="plot_read_length")
     @render_widget
