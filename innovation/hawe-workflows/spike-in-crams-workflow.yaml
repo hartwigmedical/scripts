@@ -1,0 +1,144 @@
+name: "spike-in-crams"
+version: "1.0.1"
+storagePath: "gs://spike-in-crams-output"
+externalInputs:
+  - name: "tumor-cram"
+    location: "${tumor_cram_bucket}"
+  - name: "normal-cram"
+    location: "${normal_cram_bucket}"
+  - name: "reference-folder"
+    location: "${reference_bucket}"
+stages:
+  - name: "spike-in"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/spike-in-crams"
+    version: "1.0.0"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 800Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        requests:
+          cpu: "${threads}"
+          memory: 56Gi
+          storage: 800Gi
+      node:
+        spot: true
+        pool: "n2d-standard-32-pool-1"
+    inputStages:
+      - tumor-cram
+      - normal-cram
+      - reference-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -e -o pipefail
+
+        # --- Configuration from Execution YAML ---
+        # Input files are mounted by the workflow runner into /in/
+        TUMOR_FILE="/in/tumor-cram/${tumor_cram_file}"
+        NORMAL_FILE="/in/normal-cram/${normal_cram_file}"
+        REFERENCE="/in/reference-folder/${reference_file}"
+      
+        # Constants
+        TUMOR_PLOIDY=${tumor_ploidy}
+        TOTAL_GENOME_LENGTH=${total_genome_length}
+        AVG_READ_LENGTH=${avg_read_length}
+
+        # construct output path
+        OUTPUT_BASENAME="${sample_id}-tf${target_tumor_fraction_pct}-seed${seed}"
+        LOCAL_CRAM="/out/$OUTPUT_BASENAME.cram"
+
+        echo "--- Workflow Parameters ---"
+        echo "Tumor file: $TUMOR_FILE"
+        echo "Normal file: $NORMAL_FILE"
+        echo "Reference: $REFERENCE"
+        echo "Target Tumor Fraction: ${target_tumor_fraction_pct}%"
+        echo "Current Tumor Purity: ${current_tumor_fraction}"
+        echo "Target Coverage: ${target_coverage}"
+        echo "Seed: ${seed}"
+        echo "Threads: ${threads}"
+        echo "Output file: $LOCAL_CRAM"
+        echo "---------------------------"
+
+        # --- Calculations ---
+        # Convert target percentage to a decimal fraction
+        tumorFraction=$(bc -l <<< "scale=10; ${target_tumor_fraction_pct} / 100")
+        totalReadsNeeded=$(bc -l <<< "scale=0; (${target_coverage} * ($TOTAL_GENOME_LENGTH / $AVG_READ_LENGTH)) / 1")
+        echo "Target total reads for final file: $totalReadsNeeded"
+
+        # Calculate the fraction of reads to take from the original tumor file
+        # to achieve the desired final tumor fraction.
+        readsFractionFromTumorFile=$(bc -l <<< "scale=10; ($tumorFraction / ($tumorFraction * $TUMOR_PLOIDY + (1 - $tumorFraction) * 2) / (${current_tumor_fraction} / (${current_tumor_fraction} * $TUMOR_PLOIDY + (1 - ${current_tumor_fraction}) * 2)))")
+
+        if (( $(echo "$readsFractionFromTumorFile > 1" | bc -l) )); then
+          echo "ERROR: Target TF (${target_tumor_fraction_pct}%) is higher than the purity of the Tumor file (${current_tumor_fraction}). Cannot create."
+          exit 1
+        fi
+        
+        tumorReadsNeeded=$(bc -l <<< "scale=0; $totalReadsNeeded * $readsFractionFromTumorFile / 1")
+        normalReadsNeeded=$(bc -l <<< "scale=0; $totalReadsNeeded - $tumorReadsNeeded / 1")
+        echo "Reads needed from Tumor file: $tumorReadsNeeded"
+        echo "Reads needed from Normal file: $normalReadsNeeded"
+
+        # Estimate read counts from source files
+        echo "Estimating read counts from source files..."
+        tumorReadCount=$(samtools view -@ ${threads} -c "$TUMOR_FILE")
+        normalReadCount=$(samtools view -@ ${threads} -c "$NORMAL_FILE")
+        echo "Source Tumor read count: $tumorReadCount"
+        echo "Source Normal read count: $normalReadCount"
+
+        if [[ "$tumorReadCount" -eq 0 || "$normalReadCount" -eq 0 ]]; then
+          echo "ERROR: A source CRAM file has zero reads."
+          exit 1
+        fi
+
+        tumorSubsampleRate=$(bc -l <<< "scale=10; $tumorReadsNeeded / $tumorReadCount")
+        normalSubsampleRate=$(bc -l <<< "scale=10; $normalReadsNeeded / $normalReadCount")
+        echo "Calculated tumor subsample rate: $tumorSubsampleRate"
+        echo "Calculated normal subsample rate: $normalSubsampleRate"
+
+        # ---- Subsample parsing logic ---
+        # Prepare samtools subsampling flags as simple strings
+        tumor_s_flag=""
+        if [[ $(echo "$tumorSubsampleRate < 1" | bc -l) -eq 1 ]]; then
+            tumorRateFraction=$(echo "$tumorSubsampleRate" | sed 's/^\.//')
+            tumor_s_flag="-s ${seed}.$tumorRateFraction"
+        fi
+
+        normal_s_flag=""
+        if [[ $(echo "$normalSubsampleRate < 1" | bc -l) -eq 1 ]]; then
+            normalRateFraction=$(echo "$normalSubsampleRate" | sed 's/^\.//')
+            normal_s_flag="-s ${seed}.$normalRateFraction"
+        fi
+
+        # --- Check parsing ---
+        echo "Full tumor subsampling argument: [$tumor_s_flag]"
+        echo "Full normal subsampling argument: [$normal_s_flag]"
+
+        # --- Subsampling and Merging Logic ---
+        if [[ "$tumorReadsNeeded" -gt 0 && "$normalReadsNeeded" -gt 0 ]]; then
+            echo "Subsampling from both tumor and normal sources and merging directly..."
+
+            samtools merge -O CRAM -@ ${threads} --reference "$REFERENCE" "$LOCAL_CRAM" \
+                <(samtools view -h -@ ${threads} --reference "$REFERENCE" $tumor_s_flag -T "$REFERENCE" "$TUMOR_FILE") \
+                <(samtools view -h -@ ${threads} --reference "$REFERENCE" $normal_s_flag -T "$REFERENCE" "$NORMAL_FILE")
+
+        elif [[ "$normalReadsNeeded" -gt 0 ]]; then
+            echo "Only normal reads needed. Subsampling normal CRAM directly to final output..."
+            samtools view -C -@ ${threads} --reference "$REFERENCE" $normal_s_flag -T "$REFERENCE" "$NORMAL_FILE" -o "$LOCAL_CRAM"
+
+        elif [[ "$tumorReadsNeeded" -gt 0 ]]; then
+            echo "Only tumor reads needed. Subsampling tumor CRAM directly to final output..."
+            samtools view -C -@ ${threads} --reference "$REFERENCE" $tumor_s_flag -T "$REFERENCE" "$TUMOR_FILE" -o "$LOCAL_CRAM"
+
+        else
+            echo "ERROR: Zero reads needed from both sources. Aborting."
+            exit 1
+        fi  
+
+        echo "Indexing final CRAM..."
+        samtools index -@ ${threads} "$LOCAL_CRAM"
+        
+        echo "Process complete. Outputs in $LOCAL_CRAM and its .crai index will be uploaded automatically."

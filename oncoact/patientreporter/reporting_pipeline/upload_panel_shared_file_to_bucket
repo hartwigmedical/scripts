@@ -18,8 +18,8 @@ gcp_bucket_file="gs://oncoact-panel-files-nki/dateFiles/${fileName}"
 
 echo "Filtering data and saving to ${fileLocalPath}"
 
-# Set target_ts to 3 days ago in unix format
-target_ts=$(date -d "2 days ago" +%s)
+# Set target_ts to 5 days ago in unix format
+target_ts=$(date -d "4 days ago" +%s)
 
 # Filter the data, only printing the first two columns, and write to the local file before uploading
 api reports/shared | awk -F'\t' -v target_ts="$target_ts" -v output_file="$fileLocalPath" '
