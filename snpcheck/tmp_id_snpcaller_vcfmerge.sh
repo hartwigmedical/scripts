@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
   echo "Usage: <setname> <input-bucket-name> <output-bucket-name>"
   echo "Ex: 123456_HMFregCORE_FS12345678_CORE0100000 research-pipeline-output-prod-1 example-output-bucket"
-  echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)"
+  echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)."
   echo "NOTE: When specifying a bucket, both input and output buckets must be provided."
   exit 1
 else
