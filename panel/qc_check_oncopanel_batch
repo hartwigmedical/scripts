@@ -50,6 +50,8 @@ main() {
 
   nextcloud_script="${local_working_directory}/${run_id_start}_upload_to_nextcloud"
   echo "upload_panel_qc_files_to_nextcloud ${local_working_directory}" > "${nextcloud_script}" || die "Could not create nf upload command"
+  chmod +x "${nextcloud_script}" || die "Could not make nf upload script executable"
+
   recon_cnv_yaml="${local_working_directory}/${run_id_start}_recon_cnv.yaml"
   genReconCnvYaml.py "${run_id_start}" > "${recon_cnv_yaml}" || die "Could not create reconCnv YAML"
   sage_vis_yaml="${local_working_directory}/${run_id_start}_sage_vis.yaml"
