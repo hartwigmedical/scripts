@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+print_usage() {
+    self=$(basename "$0")
+    echo ""
+    echo "Description: Submit execution to HaWe"
+    echo "Usage: $self \${execution_yaml}"
+    echo "Examples:"
+    echo "  $self '/path/to/execution.yaml'"
+    echo ""
+    exit 1
+}
+
+yaml=$1 && shift
+
+if [[ -z ${yaml} || ${yaml} == "-h" || ${yaml} == "--help" ]]; then
+    print_usage
+fi
+
+if [[ ! -f "${yaml}" ]]; then
+    die "File not found: ${yaml}"
+fi
+
+curl -X POST -H "Content-Type: application/json" --data-binary "@${yaml}" http://hawe.verification-1/executions \
+    || die "Could not submit execution to HaWe: ${yaml}"
