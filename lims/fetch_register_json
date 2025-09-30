@@ -56,7 +56,7 @@ if [ -n "${o}"  ]; then
 fi
 
 # Standard
-info "Fetching data for ${barcode}"
+# info "Fetching data for ${barcode}"
 ask_request_body=$(echo -e "{\"isolationBarcode\": \"${barcode}\"}")
 register_json=$(curl -X 'POST' 'http://lama.prod-1/api/registration/hartwig-api/show' \
                   -H 'accept: */*' \
@@ -66,7 +66,7 @@ setname=$(echo "${register_json}" | jq -r '.sampleSetName')
 
 
 # API checks
-info "Check Hartwig API samples on ${barcode}"
+# info "Check Hartwig API samples on ${barcode}"
 hmf_api_sample_json=$(hmf_api_get "samples?barcode=${barcode}")
 if [[ ! ${hmf_api_sample_json} == "[]" ]]; then
     status=$(echo "${hmf_api_sample_json}" | jq '.[].status')
@@ -78,7 +78,7 @@ if [[ ! ${hmf_api_sample_json} == "[]" ]]; then
     fi
 fi
 
-info "Check Hartwig API runs on ${barcode}"
+# info "Check Hartwig API runs on ${barcode}"
 setname_without_date=$(echo "${setname}" | cut -d_ -f2-)
 hmf_api_run_json=$(hmf_api_get "runs?context=DIAGNOSTIC&set_name_contains=${setname_without_date}")
 run_count=$(echo ${hmf_api_run_json} | jq 'map(select(.status != "Invalidated")) | length' | tr -d '"\n')
@@ -122,7 +122,7 @@ fi
 
 # Output request body (or not)
 if [[ ${check} == "true" ]]; then
-    info "Writing registration request json for LAMA to ${out_path}${setname}.json"
+    # info "Writing registration request json for LAMA to ${out_path}${setname}.json"
     echo -e ${request_body} > "${out_path}${setname}.json"
 else
     die "Not writing registration request json for barcode ${barcode}"
