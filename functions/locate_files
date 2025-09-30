@@ -69,7 +69,7 @@ locate_pilot_lilac() {
 }
 
 locate_research_cuppa() {
-    echo "/data/tools/cuppa/2.1.1/cuppa.jar"
+    echo "/data/tools/cuppa/2.3.0/cuppa.jar"
 }
 
 locate_pilot_cuppa() {
