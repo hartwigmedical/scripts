@@ -6,7 +6,7 @@ source database_functions || exit 1
 serve_actionability_dir=$1 && shift
 database_name=$1 && shift
 
-serve_jar="$(locate_prod_serve)"
+serve_jar="$(locate_actin_serve)"
 credentials=$(prod_writer_sql_credentials)
 
 db_user=$(extract_database_user "${credentials}")
