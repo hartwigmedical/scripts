@@ -1,0 +1,43 @@
+name: "merge-crams"
+version: "0.0.1"
+storagePath: "gs://merged-crams-ultima"
+
+externalInputs:
+  - name: "source-files"
+    location: "${input_file_bucket}"
+  - name: "reference-folder"
+    location: "${reference_bucket}"
+
+stages:
+  - name: "merge-and-index"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/merge-crams"
+    version: "1.0.0"
+    options:
+      resources:
+        requests:
+          cpu: "${threads}"
+          memory: "32Gi"
+          storage: "500Gi"
+    inputStages:
+      - source-files
+      - reference-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -e -o pipefail
+
+        # Build the space-separated list of full paths for the input files
+        INPUT_ARGS=""
+        for f in ${input_files}; do
+          INPUT_ARGS="${INPUT_ARGS} /in/source-files/${f}"
+        done
+
+        REFERENCE_PATH="/in/reference-folder/${reference_file}"
+        OUTPUT_FILE="/out/${sample_id}.merged.cram"
+
+        # 1. Merge all input CRAMs into a single output CRAM
+        samtools merge -@ "${threads}" -O CRAM --reference "$REFERENCE_PATH" "$OUTPUT_FILE" $INPUT_ARGS
+        
+        # 2. Index the final merged CRAM
+        samtools index -@ "${threads}" "$OUTPUT_FILE"
