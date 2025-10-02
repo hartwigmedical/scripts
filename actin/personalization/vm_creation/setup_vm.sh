@@ -56,6 +56,7 @@ while ! gcloud compute ssh developer@$VM_NAME \
     if [ $COUNT -ge $MAX_TRIES ]; then
         cat /tmp/gcloud_ssh.log
         echo "❌ VM is not available after $MAX_TRIES attempts. Giving up."
+        echo "Logs are in /tmp/gcloud_ssh.log"
         exit 1
     fi
 
