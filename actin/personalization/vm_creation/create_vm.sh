@@ -1,0 +1,15 @@
+vm_name=actin-developer-vm-$(whoami)
+
+echo "Creating VM instance: $vm_name"
+gcloud compute instances create $vm_name \
+    --zone=europe-west4-a \
+    --project=actin-research \
+    --network=research-vpc-network \
+    --subnet=research-vpc-subnet \
+    --machine-type=e2-standard-4 \
+    --image-family=debian-13 \
+    --image-project=debian-cloud \
+    --boot-disk-size=200GB \
+    --no-address \
+    --metadata enable-oslogin=FALSE,ssh-keys="" \
+    --metadata-from-file startup-script=startup.sh
