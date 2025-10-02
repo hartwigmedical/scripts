@@ -71,3 +71,4 @@ ssh -t -A $VM_NAME << EOF
     gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
 EOF
 
+echo "Setup complete! You can now connect to your VM using: ssh $VM_NAME"
