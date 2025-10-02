@@ -16,6 +16,7 @@ GIT_REPO="git@github.com:hartwigmedical/actin-personalization.git"
 echo "
 Host $VM_NAME
     User developer
+    AddKeysToAgent yes
     ForwardAgent yes
     IdentityFile $SSH_KEY_FILE
     IdentitiesOnly yes
@@ -39,11 +40,29 @@ if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
     echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
 fi
 
-while ! gcloud compute ssh developer@$VM_NAME --zone=europe-west4-a --tunnel-through-iap --ssh-key-file=$SSH_KEY_FILE --command "exit 0" --quiet 2>/dev/null; do
-    echo "Waiting for VM to become available..."
+
+MAX_TRIES=10
+COUNT=0
+
+while ! gcloud compute ssh developer@$VM_NAME \
+    --zone=europe-west4-a \
+    --project=actin-research \
+    --tunnel-through-iap \
+    --ssh-key-file=$SSH_KEY_FILE \
+    --command "exit 0" \
+    --quiet 2>/tmp/gcloud_ssh.log; do
+
+    COUNT=$((COUNT+1))
+    if [ $COUNT -ge $MAX_TRIES ]; then
+        cat /tmp/gcloud_ssh.log
+        echo "❌ VM is not available after $MAX_TRIES attempts. Giving up."
+        exit 1
+    fi
+
+    echo "Waiting for VM to become available... (attempt $COUNT/$MAX_TRIES)"
     sleep 5
 done
-echo "VM is available!"
+echo "✅ VM is available!"
 
 ssh -t -A $VM_NAME "bash -l -c 'gcloud auth login'"
 
@@ -71,4 +90,4 @@ ssh -t -A $VM_NAME << EOF
     gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
 EOF
 
-echo "Setup complete! You can now connect to your VM using: ssh $VM_NAME"
+echo "✅ Setup complete! You can now connect to your VM using: ssh $VM_NAME"
