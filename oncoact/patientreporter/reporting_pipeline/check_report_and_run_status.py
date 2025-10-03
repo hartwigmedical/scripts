@@ -189,6 +189,7 @@ class StatusChecker:
         not_shared_validated_reports = self.to_be_shared_reports[
             self.to_be_shared_reports['run_id'].isin(self.validated_runs['id'])]
         for _, report_record in not_shared_validated_reports.iterrows():
+
             warnings = self._get_all_report_associated_warnings(report_record)
             content = {**self._get_default_report_and_run_content(report_record),
                        'warnings': warnings}
@@ -196,6 +197,7 @@ class StatusChecker:
         return section
 
     def _get_all_report_associated_warnings(self, report_record):
+        print(report_record)
         return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
                 self._get_virus_names(report_record) +
