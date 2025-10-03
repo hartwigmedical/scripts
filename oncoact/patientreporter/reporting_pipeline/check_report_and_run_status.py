@@ -240,6 +240,7 @@ class StatusChecker:
         used_lama_data = self._get_lama_data_used_for_report(report_record)
         if used_lama_data is None:
             warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
+            return warnings
 
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
@@ -376,6 +377,7 @@ class StatusChecker:
 
         if used_lama_data is None:
             warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
+            return warnings
 
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
@@ -431,6 +433,7 @@ class StatusChecker:
 
         if used_lama_data is None:
             warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
+            return warnings
 
 
         patient_id = "reportingId"
