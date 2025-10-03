@@ -238,9 +238,10 @@ class StatusChecker:
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
+        if used_lama_data is None:
+            warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
+
         patient_id = "reportingId"
-        if used_lama_data[patient_id] in [None, "null"]:
-            warnings.append(f"ReportingId is missing for sample {report_record['barcode']}.")
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
@@ -373,10 +374,10 @@ class StatusChecker:
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
 
-        patient_id = "reportingId"
-        if used_lama_data[patient_id] in [None, "null"]:
-            warnings.append(f"ReportingId is missing for sample {report_record['barcode']}.")
+        if used_lama_data is None:
+            warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
 
+        patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
@@ -427,11 +428,12 @@ class StatusChecker:
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
+
+        if used_lama_data is None:
+            warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
+
+
         patient_id = "reportingId"
-
-        if used_lama_data[patient_id] in [None, "null"]:
-            warnings.append(f"ReportingId is missing for sample {report_record['barcode']}.")
-
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
