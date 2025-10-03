@@ -1,3 +1,5 @@
+#!/bin/bash
+
 vm_name=actin-developer-vm-$(whoami)
 
 echo "Creating VM instance: $vm_name"
