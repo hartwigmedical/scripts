@@ -53,7 +53,7 @@ class StatusChecker:
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
-
+:
     def generate_and_print_summary(self):
         print("Generating report summary")
         chapters = [self._failed_runs_chapter(),
@@ -370,7 +370,11 @@ class StatusChecker:
         warnings = []
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
+
         patient_id = "reportingId"
+        if used_lama_data[patient_id] in [None,"null"]:
+            warnings.append(f"ReportingId is missing for sample {report_record['barcode']}.")
+
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
@@ -422,6 +426,10 @@ class StatusChecker:
         #get reporting id
         used_lama_data = self._get_lama_data_used_for_report(report_record)
         patient_id = "reportingId"
+
+        if used_lama_data[patient_id] in [None,"null"]:
+            warnings.append(f"ReportingId is missing for sample {report_record['barcode']}.")
+
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
