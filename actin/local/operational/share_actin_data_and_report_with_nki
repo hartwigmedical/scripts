@@ -12,14 +12,14 @@ if [[ -z "${patient}" ]]; then
 fi
 
 gcp_project=$(production_actin_nki_project)
-hash="$(lookup_nki_hash_for_actin_id "${patient}")"
-shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${hash}")"
+hospital_id="$(lookup_nki_hospital_id_for_actin_id "${patient}")"
+shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${hospital_id}")"
 
 rename_and_copy_file() {
     local source_path=$1
     local filename="$(basename "${source_path}")"
     local extension="${filename#*.}"
-    gsutil cp "${source_path}" "${shared_actin_data_external_uri}/${hash}.${extension}"
+    gsutil cp "${source_path}" "${shared_actin_data_external_uri}/${hospital_id}.${extension}"
 }
 
 actin_report_pdf="$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")"
