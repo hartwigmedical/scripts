@@ -54,9 +54,12 @@ def parse_input_report(input_report: str) -> Dict:
     with open(input_report) as report_file:
         text = report_file.readlines()
 
-    output_filename = text[0].split('(')[1].split('.')[0]
-    general_info = text[1:9]
-    sample_info = text[11:]
+    # Split the report into two parts: general info and sample info
+    parts = text.split("# Sample table for report:", 1)
+
+    output_filename = parts[0][0].split('(')[1].split('.')[0]
+    general_info = parts[0][1:]
+    sample_info = parts[1]
     return {'output_file': output_filename,
             'general_info': general_info,
             'sample_info': sample_info}
