@@ -1,39 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -a  
 source .env
 set +a
 
-VM_NAME=actin-developer-vm-$(whoami)
-GIT_REPO="git@github.com:hartwigmedical/actin-personalization.git"
+vm_name=actin-developer-vm-$(whoami)
+git_repo="git@github.com:hartwigmedical/actin-personalization.git"
 
 # verify all variables are set
 : "${SSH_KEY_FILE:?Need to set SSH_KEY_FILE non-empty}"
 : "${GIT_NAME:?Need to set GIT_NAME non-empty}"
 : "${GIT_EMAIL:?Need to set GIT_EMAIL non-empty}"
 
-# create ssh config entry
+# BC: Create ssh config entry
 echo "
-Host $VM_NAME
+Host ${vm_name}
     User developer
     AddKeysToAgent yes
     ForwardAgent yes
     IdentityFile $SSH_KEY_FILE
     IdentitiesOnly yes
-    HostName $VM_NAME
+    HostName ${vm_name}
     Port 1215
     ProxyCommand gcloud compute start-iap-tunnel  --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
 " > ~/.ssh/personalization_vm_config
 
-# ensure ssh config file exists
+# BC: Ensure ssh config file exists
 if [ ! -f ~/.ssh/config ]; then
     echo "Creating ~/.ssh/config file"
     touch ~/.ssh/config
     chmod 600 ~/.ssh/config
 fi
 
-# remove old entry from known_hosts
-sed -i.bak "/$VM_NAME/d" ~/.ssh/known_hosts
+# BC: Remove old entry from known_hosts
+sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
 
 # check if entry is in main ssh and if not include in main ssh config
 if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
@@ -41,10 +41,10 @@ if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
 fi
 
 
-MAX_TRIES=10
-COUNT=0
+max_tries=10
+count=0
 
-while ! gcloud compute ssh developer@$VM_NAME \
+while ! gcloud compute ssh developer@${vm_name} \
     --zone=europe-west4-a \
     --project=actin-research \
     --tunnel-through-iap \
@@ -52,28 +52,28 @@ while ! gcloud compute ssh developer@$VM_NAME \
     --command "exit 0" \
     --quiet 2>/tmp/gcloud_ssh.log; do
 
-    COUNT=$((COUNT+1))
-    if [ $COUNT -ge $MAX_TRIES ]; then
+    count=$((count+1))
+    if [ ${count} -ge ${max_tries} ]; then
         cat /tmp/gcloud_ssh.log
-        echo "❌ VM is not available after $MAX_TRIES attempts. Giving up."
+        echo "❌ VM is not available after ${max_tries} attempts. Giving up."
         echo "Logs are in /tmp/gcloud_ssh.log"
         exit 1
     fi
 
-    echo "Waiting for VM to become available... (attempt $COUNT/$MAX_TRIES)"
+    echo "Waiting for VM to become available... (attempt ${count}/${max_tries})"
     sleep 5
 done
 echo "✅ VM is available!"
 
-ssh -t -A $VM_NAME "bash -l -c 'gcloud auth login'"
+ssh -t -A ${vm_name} "bash -l -c 'gcloud auth login'"
 
-ssh -t -A $VM_NAME << EOF
+ssh -t -A ${vm_name} << EOF
     git config --global user.name "$GIT_NAME"
     git config --global user.email "$GIT_EMAIL"
     ssh-keyscan github.com >> ~/.ssh/known_hosts
 
     if [ ! -d ~/actin-personalization ]; then
-        git clone $GIT_REPO ~/actin-personalization/
+        git clone ${git_repo} ~/actin-personalization/
     fi
     
     cd ~/actin-personalization
@@ -91,4 +91,4 @@ ssh -t -A $VM_NAME << EOF
     gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
 EOF
 
-echo "✅ Setup complete! You can now connect to your VM using: ssh $VM_NAME"
+echo "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"
