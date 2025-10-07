@@ -52,14 +52,13 @@ def prepare_report_info(config: NamedTuple) -> Dict:
 
 def parse_input_report(input_report: str) -> Dict:
     with open(input_report) as report_file:
-        text = report_file.readlines()
+        lines = report_file.readlines()
 
-    # Split the report into two parts: general info and sample info
-    parts = text.split("# Sample table for report:", 1)
+    split_index = next(i for i, line in enumerate(lines) if line.strip() == "# Sample table for report:")
 
-    output_filename = parts[0][0].split('(')[1].split('.')[0]
-    general_info = parts[0][1:]
-    sample_info = parts[1]
+    output_filename = lines[0].split('(')[1].split('.')[0]
+    general_info = lines[1:split_index]
+    sample_info = lines[split_index + 1:]
     return {'output_file': output_filename,
             'general_info': general_info,
             'sample_info': sample_info}
