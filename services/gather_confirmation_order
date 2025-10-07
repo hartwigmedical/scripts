@@ -58,7 +58,7 @@ api_runs_json=$(hmf_api_get "runs?set_name_contains=${confirmation_order}")
 echo "${api_runs_json}" > "${runs_json}"
 
 # Get counts to check completeness
-api_count=$(echo "${api_samples_json}" | jq -c '[.[] | length')
+api_count=$(echo "${api_samples_json}" | jq -c '.[] | length')
 
 # Setup barcodes file
 grep -v "^#" "${samp_file}" | cut -f2 > "${barc_file}"
