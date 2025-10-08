@@ -15,13 +15,6 @@ gcp_project=$(production_actin_nki_project)
 hospital_id="$(lookup_nki_hospital_id_for_actin_id "${patient}")"
 shared_actin_data_external_uri="$(locate_next_actin_shared_data_external_uri_gcp "${gcp_project}" "${hospital_id}")"
 
-rename_and_copy_file() {
-    local source_path=$1
-    local filename="$(basename "${source_path}")"
-    local extension="${filename#*.}"
-    gsutil cp "${source_path}" "${shared_actin_data_external_uri}/${hospital_id}.${extension}"
-}
-
 actin_report_pdf="$(locate_actin_report_pdf_gcp "${gcp_project}" "${patient}")"
 patient_record_json="$(locate_actin_patient_record_json_gcp "${gcp_project}" "${patient}")"
 treatment_match_json="$(locate_actin_treatment_match_json_gcp "${gcp_project}" "${patient}")"
@@ -31,9 +24,11 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
 fi
 
 info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
-rename_and_copy_file "${patient_record_json}"
-rename_and_copy_file "${treatment_match_json}"
-rename_and_copy_file "${actin_report_pdf}"
+today="$(date +"%d-%m-%Y")"
+destination_prefix="${shared_actin_data_external_uri}/${hospital_id}_ACTINreport_${today}_D"
+gsutil cp "${patient_record_json}" "${destination_prefix}.patient_record.json"
+gsutil cp "${treatment_match_json}" "${destination_prefix}.treatment_match.json"
+gsutil cp "${actin_report_pdf}" "${destination_prefix}.pdf"
 
 write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 
