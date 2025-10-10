@@ -13,6 +13,11 @@ if [ -z "${suffix}" ]; then
 fi
 
 vm_name=actin-developer-vm-${suffix}
+
+if [ -z "$(gcloud compute --project actin-research instances list | grep ${vm_name} 2>/dev/null)" ]; then
+    error "VM does not exist: ${vm_name}"
+fi
+    
 git_repo="git@github.com:hartwigmedical/actin-personalization.git"
 
 # BC: verify all variables are set
@@ -21,32 +26,32 @@ git_repo="git@github.com:hartwigmedical/actin-personalization.git"
 : "${GIT_EMAIL:?Need to set GIT_EMAIL non-empty}"
 
 # BC: Create ssh config entry
-#echo "
-#Host ${vm_name}
-#    User developer
-#    AddKeysToAgent yes
-#    ForwardAgent yes
-#    IdentityFile ${SSH_KEY_FILE}
-#    IdentitiesOnly yes
-#    HostName ${vm_name}
-#    Port 1215
-#    ProxyCommand gcloud compute start-iap-tunnel  --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
-#" > ~/.ssh/personalization_vm_config
-#
-## BC: Ensure ssh config file exists
-#if [ ! -f ~/.ssh/config ]; then
-#    echo "Creating ~/.ssh/config file"
-#    touch ~/.ssh/config
-#    chmod 600 ~/.ssh/config
-#fi
-#
-## BC: Remove old entry from known_hosts
-#sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
-#
-## BC: check if entry is in main ssh and if not include in main ssh config
-#if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
-#    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
-#fi
+echo "
+Host ${vm_name}
+    User developer
+    AddKeysToAgent yes
+    ForwardAgent yes
+    IdentityFile ${SSH_KEY_FILE}
+    IdentitiesOnly yes
+    HostName ${vm_name}
+    Port 1215
+    ProxyCommand gcloud compute start-iap-tunnel --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
+" > ~/.ssh/personalization_vm_config
+
+# BC: Ensure ssh config file exists
+if [ ! -f ~/.ssh/config ]; then
+    echo "Creating ~/.ssh/config file"
+    touch ~/.ssh/config
+    chmod 600 ~/.ssh/config
+fi
+
+# BC: Remove old entry from known_hosts
+sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
+
+# BC: check if entry is in main ssh and if not include in main ssh config
+if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
+    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
+fi
 
 max_tries=10
 count=0
