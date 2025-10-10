@@ -8,6 +8,10 @@ def run_bash_command(command: str) -> str:
 
 batch = sys.argv[1]
 
+if not batch:
+    print("Usage: genRemarksYaml.py <batch>")
+    exit(1)
+
 body="""workflow: "panel-plot"
 version: "1.1.5"
 params:\n"""

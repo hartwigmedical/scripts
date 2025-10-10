@@ -8,6 +8,10 @@ def run_bash_command(command: str) -> str:
 
 batch = sys.argv[1]
 
+if not batch:
+    print("Usage: genSageVisYaml.py <batch>")
+    exit(1)
+
 body="""workflow: "sage-visualisation"
 version: "0.2.0"
 params:\n"""
