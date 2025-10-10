@@ -58,7 +58,7 @@ fi
 # Standard
 # info "Fetching data for ${barcode}"
 ask_request_body=$(echo -e "{\"isolationBarcode\": \"${barcode}\"}")
-register_json=$(curl -X 'POST' 'http://lama.prod-1/api/registration/hartwig-api/show' \
+register_json=$(curl -s -X 'POST' 'http://lama.prod-1/api/registration/hartwig-api/show' \
                   -H 'accept: */*' \
                   -H 'Content-Type: application/json' \
                   -d "${ask_request_body}") || die "Could not fetch registration json for ${barcode}"
