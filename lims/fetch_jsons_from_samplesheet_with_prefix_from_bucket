@@ -45,7 +45,8 @@ if [ -n "${t}" ]; then # Testing case
     done
 
     SHEETS_LOC="/data/tmp/registration_test/samplesheet"
-    JSONS_LOC="/data/tmp/registration_test/json"
+    #JSONS_LOC="/data/tmp/registration_test/json"
+    JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir)
     LOGS_LOC="/data/tmp/registration_test/log"
     create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
     sources=$(ls "${local_sheets_dir}"/*_SampleSheet.csv)
