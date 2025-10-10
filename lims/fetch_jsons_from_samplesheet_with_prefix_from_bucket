@@ -52,7 +52,7 @@ if [ -n "${t}" ]; then # Testing case
     sources=$(ls "${local_sheets_dir}"/*_SampleSheet.csv)
     for sheet in ${sources}
     do
-        fetch_jsons_from_samplesheet -s ${sheet} -j ${JSONS_LOC}
+        fetch_jsons_from_samplesheet -s ${sheet} -j "${JSONS_LOC}/"
     done > ${create_log}
 
     cat "${create_log}"
