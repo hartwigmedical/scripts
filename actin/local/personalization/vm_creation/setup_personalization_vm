@@ -1,45 +1,52 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 set -a  
 source .env
 set +a
 
-vm_name=actin-developer-vm-$(whoami)
+suffix=$1 && shift
+if [ -z "${suffix}" ]; then
+    suffix=$(whoami)
+    info "No suffix provided, taking username '$(whoami)'"
+fi
+
+vm_name=actin-developer-vm-${suffix}
 git_repo="git@github.com:hartwigmedical/actin-personalization.git"
 
-# verify all variables are set
+# BC: verify all variables are set
 : "${SSH_KEY_FILE:?Need to set SSH_KEY_FILE non-empty}"
 : "${GIT_NAME:?Need to set GIT_NAME non-empty}"
 : "${GIT_EMAIL:?Need to set GIT_EMAIL non-empty}"
 
 # BC: Create ssh config entry
-echo "
-Host ${vm_name}
-    User developer
-    AddKeysToAgent yes
-    ForwardAgent yes
-    IdentityFile $SSH_KEY_FILE
-    IdentitiesOnly yes
-    HostName ${vm_name}
-    Port 1215
-    ProxyCommand gcloud compute start-iap-tunnel  --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
-" > ~/.ssh/personalization_vm_config
-
-# BC: Ensure ssh config file exists
-if [ ! -f ~/.ssh/config ]; then
-    echo "Creating ~/.ssh/config file"
-    touch ~/.ssh/config
-    chmod 600 ~/.ssh/config
-fi
-
-# BC: Remove old entry from known_hosts
-sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
-
-# check if entry is in main ssh and if not include in main ssh config
-if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
-    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
-fi
-
+#echo "
+#Host ${vm_name}
+#    User developer
+#    AddKeysToAgent yes
+#    ForwardAgent yes
+#    IdentityFile ${SSH_KEY_FILE}
+#    IdentitiesOnly yes
+#    HostName ${vm_name}
+#    Port 1215
+#    ProxyCommand gcloud compute start-iap-tunnel  --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
+#" > ~/.ssh/personalization_vm_config
+#
+## BC: Ensure ssh config file exists
+#if [ ! -f ~/.ssh/config ]; then
+#    echo "Creating ~/.ssh/config file"
+#    touch ~/.ssh/config
+#    chmod 600 ~/.ssh/config
+#fi
+#
+## BC: Remove old entry from known_hosts
+#sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
+#
+## BC: check if entry is in main ssh and if not include in main ssh config
+#if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
+#    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
+#fi
 
 max_tries=10
 count=0
@@ -48,28 +55,28 @@ while ! gcloud compute ssh developer@${vm_name} \
     --zone=europe-west4-a \
     --project=actin-research \
     --tunnel-through-iap \
-    --ssh-key-file=$SSH_KEY_FILE \
+    --ssh-key-file=${SSH_KEY_FILE} \
     --command "exit 0" \
     --quiet 2>/tmp/gcloud_ssh.log; do
 
     count=$((count+1))
     if [ ${count} -ge ${max_tries} ]; then
         cat /tmp/gcloud_ssh.log
-        echo "❌ VM is not available after ${max_tries} attempts. Giving up."
-        echo "Logs are in /tmp/gcloud_ssh.log"
+        warn "❌ VM is not available after ${max_tries} attempts. Giving up."
+        warn "Logs are in /tmp/gcloud_ssh.log"
         exit 1
     fi
 
-    echo "Waiting for VM to become available... (attempt ${count}/${max_tries})"
+    info "Waiting for VM to become available... (attempt ${count}/${max_tries})"
     sleep 5
 done
-echo "✅ VM is available!"
+info "✅ VM is available!"
 
 ssh -t -A ${vm_name} "bash -l -c 'gcloud auth login'"
 
 ssh -t -A ${vm_name} << EOF
-    git config --global user.name "$GIT_NAME"
-    git config --global user.email "$GIT_EMAIL"
+    git config --global user.name "${GIT_NAME}"
+    git config --global user.email "${GIT_EMAIL}"
     ssh-keyscan github.com >> ~/.ssh/known_hosts
 
     if [ ! -d ~/actin-personalization ]; then
@@ -91,4 +98,4 @@ ssh -t -A ${vm_name} << EOF
     gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
 EOF
 
-echo "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"
+info "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"

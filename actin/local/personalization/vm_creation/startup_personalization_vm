@@ -18,7 +18,6 @@ apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 apt-get update
 apt-get install -y pre-commit git
 
-
 # --- Create developer user and add to docker group ---
 useradd -m -s /bin/bash developer || true
 usermod -aG docker developer || true

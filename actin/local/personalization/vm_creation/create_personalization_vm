@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 
-vm_name=actin-developer-vm-$(whoami)
+source message_functions || exit 1
 
-echo "Creating VM instance: ${vm_name}"
+suffix=$1 && shift
+if [ -z "${suffix}" ]; then
+    suffix=$(whoami)
+    info "No suffix provided, taking username '$(whoami)'"
+fi
+
+vm_name=actin-developer-vm-${suffix}
+
+info "Creating VM instance: ${vm_name}"
 
 gcloud compute instances create ${vm_name} \
     --zone=europe-west4-a \
