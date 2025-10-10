@@ -7,7 +7,6 @@ source locate_gcp_files || exit 1
 
 info "Start moving new registration jsons and logs"
 
-prefix=$1 && shift
 registration_date=$1 && shift
 
 ## Sanity checks
@@ -23,7 +22,7 @@ local_new_jsons_dir=$(locate_sample_registration_unregistered_jsons_dir) || die 
 local_registration_logs_dir=$(locate_sample_registration_logs_dir) || die "Could not find local registration logs dir path"
 
 info "Copying all logs to bucket"
-gsutil -mq cp "${local_registration_logs_dir}/${registration_date}*${prefix}*" "${logs_bucket}" \
+gsutil -mq cp "${local_registration_logs_dir}/${registration_date}*" "${logs_bucket}" \
     || die "Could not copy all logs to bucket"
 
 info "Copying all jsons to bucket"
