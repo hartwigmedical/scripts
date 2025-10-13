@@ -48,6 +48,11 @@ fi
 # BC: Remove old entry from known_hosts
 sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
 
+# KD: check if ~/.ssh/config already contains a Host definition since that will fail the Include statement
+if grep -q "Host " ~/.ssh/config; then
+    warn "$HOME/.ssh/config contains a Host definition. Please adjust your ssh config manually to place the Include at the top"
+fi
+
 # BC: check if entry is in main ssh and if not include in main ssh config
 if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
     echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
