@@ -35,7 +35,7 @@ class ArtifactGenerator:
         self.run_id = self._report_created_record['run_id']
         self.run = self._rest_client.get_run(self.run_id)
         self.set_name = self.run['set']['name']
-        self.finished_runs = self.set_name['status'] == 'Finished'
+        self.finished_runs = self.set_name[self.set_name['status'] == 'Finished']
 
     def generate_artifacts(self):
         input_folder, output_folder = self._generate_input_and_output_folders()
