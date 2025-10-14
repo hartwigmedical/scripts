@@ -3,8 +3,6 @@
 REMOTE_TUNNEL_PORT=8888
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
-set -x
-
 function print_available_configs() {
   echo "Known configurations:"
   for c in "$(ls $CONFIG_DIR)"; do
