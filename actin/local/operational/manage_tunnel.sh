@@ -43,10 +43,12 @@ EOM
 [[ $# -gt 3 ]] && usage && exit 1
 
 action="$1"
-local_tunnel_port="${3:-$REMOTE_TUNNEL_PORT}"
 if [[ $action == "stop" ]]; then
-    cleanup $local_tunnel_port
-    echo "Tunnel stopped"
+    egrep '^LOCAL_TUNNEL_PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
+      echo "Stopping existing tunnel on local port $port"
+      cleanup $port
+    done
+    echo "Tunnels stopped"
 elif [[ $action == "start" ]]; then
   [[ $# -ne 2 && $# -ne 3 ]] && usage && exit 1
   config_file="${CONFIG_DIR}/${2}.config"
@@ -54,7 +56,7 @@ elif [[ $action == "start" ]]; then
 
   source $config_file
 
-  for var in PROJECT CLUSTER POD_NAME REMOTE_APPLICATION_PORT LOCAL_APPLICATION_PORT; do
+  for var in PROJECT CLUSTER POD_NAME REMOTE_APPLICATION_PORT LOCAL_APPLICATION_PORT LOCAL_TUNNEL_PORT; do
     [[ -z ${!var} ]] && echo "$var must be specified in [$config_file]" && exit 1
   done
 
@@ -71,15 +73,15 @@ elif [[ $action == "start" ]]; then
     echo "Attempting to determine name of bastion VM"
     read instance zone <<< $($GC instances list | grep bastion | head -n1 | awk '{print $1, $2}')
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
-    ps aux | grep gcloud | grep ssh | grep -- "-L $local_tunnel_port:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
+    ps aux | grep gcloud | grep ssh | grep -- "-L $LOCAL_TUNNEL_PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
     if [[ $? -ne 0 ]]; then
-      echo "Establishing tunnel to $instance on port $local_tunnel_port"
-      $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$local_tunnel_port:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
+      echo "Establishing tunnel to $instance on port $LOCAL_TUNNEL_PORT"
+      $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$LOCAL_TUNNEL_PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
     else 
       echo "Re-using existing SSH tunnel to bastion"
     fi
     echo "Forwarding $REMOTE_APPLICATION_PORT to localhost:$LOCAL_APPLICATION_PORT for ${POD_NAME}"
-    k8 $local_tunnel_port port-forward $(k8 $local_tunnel_port get pods $namespace | grep $POD_NAME | awk '{print $1}') $namespace \
+    k8 $LOCAL_TUNNEL_PORT port-forward $(k8 $LOCAL_TUNNEL_PORT get pods $namespace | grep $POD_NAME | awk '{print $1}') $namespace \
         "$LOCAL_APPLICATION_PORT:$REMOTE_APPLICATION_PORT" &
     echo "Tunnel started; access $POD_NAME at http://localhost:$LOCAL_APPLICATION_PORT"
 else
