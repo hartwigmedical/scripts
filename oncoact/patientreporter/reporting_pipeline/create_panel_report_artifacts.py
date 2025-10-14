@@ -35,8 +35,6 @@ class ArtifactGenerator:
         self.run_id = self._report_created_record['run_id']
         self.run = self._rest_client.get_run(self.run_id)
         self.set_name = self.run['set']['name']
-        print(self.set_name)
-        self.finished_runs = self.set_name[self.set_name['status'] == 'Finished']
 
     def generate_artifacts(self):
         input_folder, output_folder = self._generate_input_and_output_folders()
@@ -148,7 +146,7 @@ class ArtifactGenerator:
             "genenames.pass.pon.csv",
             "metadata.json"
         }
-        run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.finished_runs))
+        run_blobs = list(self._panel_pipeline_output_bucket.list_blobs(prefix=self.set_name))
 
         result = []
         for suffix in required_file_suffixes:
@@ -160,7 +158,7 @@ class ArtifactGenerator:
         return result
 
     def _copy_output_to_bucket(self, output_folder):
-        output_blob_prefix = f"{self.finished_runs}/reporting"
+        output_blob_prefix = f"{self.set_name}/reporting"
 
         artifacts = dict()
         for dir_path, dir_names, filenames in os.walk(output_folder):
