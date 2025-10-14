@@ -1,23 +1,27 @@
 name: "merge-crams"
-version: "0.0.1"
+version: "0.0.1-beta10"
 storagePath: "gs://merged-crams-ultima"
-
 externalInputs:
   - name: "source-files"
-    location: "${input_file_bucket}"
+    location: "${input_bucket}"
   - name: "reference-folder"
     location: "${reference_bucket}"
-
 stages:
   - name: "merge-and-index"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/merge-crams"
     version: "1.0.0"
     options:
+      stageTimeoutMinutes: 300
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 800Gi
       resources:
         requests:
           cpu: "${threads}"
-          memory: "32Gi"
-          storage: "500Gi"
+          memory: "100Gi"
+          storage: "800Gi"
+      node:
+        spot: true
+        pool: "n2d-standard-32-pool-1"
     inputStages:
       - source-files
       - reference-folder
@@ -26,18 +30,26 @@ stages:
       run.sh: |
         #!/usr/bin/env bash
         set -e -o pipefail
-
-        # Build the space-separated list of full paths for the input files
-        INPUT_ARGS=""
-        for f in ${input_files}; do
-          INPUT_ARGS="${INPUT_ARGS} /in/source-files/${f}"
-        done
+        
+        prefix="/in/source-files/"
 
         REFERENCE_PATH="/in/reference-folder/${reference_file}"
-        OUTPUT_FILE="/out/${sample_id}.merged.cram"
+        OUTPUT_FILE="/out/${sample_id}.cram"
+        OUTPUT_FILE_INDEX="/out/${sample_id}.cram.crai"
+
+        echo "DEBUG: Input: ${input_file_paths}"
+
+        paths=$(sed 's/;/\n/g' <<< "${input_file_paths}" | xargs -I% echo "$prefix%" | tr '\n' ' ')
+
+        echo "DEBUG: Paths: $paths"
 
         # 1. Merge all input CRAMs into a single output CRAM
-        samtools merge -@ "${threads}" -O CRAM --reference "$REFERENCE_PATH" "$OUTPUT_FILE" $INPUT_ARGS
+        samtools merge -@ 20 -O CRAM --reference "$REFERENCE_PATH" "$OUTPUT_FILE" $paths -f
         
+        echo "DEBUG: CRAM is merged"
+
         # 2. Index the final merged CRAM
-        samtools index -@ "${threads}" "$OUTPUT_FILE"
+        samtools index -@ 20 "$OUTPUT_FILE" "$OUTPUT_FILE_INDEX"
+
+        echo "DEBUG: CRAM is indexed"
+        
