@@ -3,6 +3,8 @@
 REMOTE_TUNNEL_PORT=8888
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
+set -x
+
 function print_available_configs() {
   echo "Known configurations:"
   for c in "$(ls $CONFIG_DIR)"; do
@@ -13,7 +15,7 @@ function print_available_configs() {
 function cleanup() {
     port=$1
     echo "Cleaning up old processes listening on port $port"
-    ps aux | grep "$port:localhost:$port" | grep 'compute start-iap-tunnel' | awk '{print $2}' | while read pid; do
+    ps aux | grep "$port:localhost:$REMOTE_TUNNEL_PORT" | grep 'compute start-iap-tunnel' | awk '{print $2}' | while read pid; do
         [[ -n $pid ]] && kill $pid 
         echo "  Process [$pid] killed"
     done
