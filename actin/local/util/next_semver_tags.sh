@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-git status 2>/dev/null
+git status 
 [[ $? -ne 0 ]] && echo "Not in a git checkout" && exit 1
 echo
 
@@ -11,33 +11,30 @@ IFS='.' read -r a b c <<< "$latest"
 a=${a:-0}; b=${b:-0}; c=${c:-0}
 
 branch="$(git branch | grep '^*' | cut -d' ' -f2)"
-if [[ $branch == "master" ]]; then 
-  major="$((a+1)).0.0"
-  minor="${a}.$((b+1)).0"
-  patch="${a}.${b}.$((c+1))"
-  beta="Cannot make beta tags on master"
+major="$((a+1)).0.0"
+minor="${a}.$((b+1)).0"
+patch="${a}.${b}.$((c+1))"
+
+printf "Next tags:\n\n"
+if [[ $branch == "master" ]]; then
+  echo "Major/minor/patch: $major / $minor / $patch"
+  echo "Beta branch names: Cannot make beta releases on [master]"
 else
-  major="Cannot make non-beta tags on non-master branch ${branch}"
-  minor="Cannot make minor tags on non-master branch ${branch}"
-  patch="Cannot make patch tags on non-master branch ${branch}"
-  
   local_beta="$(diff <(git tag --merged master) <(git tag --merged "$branch") | grep '^>' | sort -V | tail -n1 | cut -d' ' -f2)"
   if [[ -z $local_beta ]]; then
-    beta="${a}.${b}.$((c+1))-beta.1"
+    beta_suffix="beta.1"
   else
     local_version="${local_beta%-beta.*}"
     local_beta_version="${local_beta#${local_version}-beta\.}"
-    beta="${local_version}-beta.$((local_beta_version+1))"
+    beta_suffix="beta.$((local_beta_version+1))"
+    next_local_beta_version="${local_version}-${beta_suffix}"
+  fi
+  echo "Major/minor/patch: Cannot make non-beta releases on non-master branch [$branch]"
+  printf "Beta branch names: "
+  if [[ -z $next_local_beta_version ]]; then
+    echo "${major}-${beta_suffix} / ${minor}-${beta_suffix} / ${patch}-${beta_suffix}"
+  else
+    echo "${next_local_beta_version}"
   fi
 fi
-
-cat<<EOM
-Next tags:
-
-  Major: $major
-  Minor: $minor
-  Patch: $patch
-  Beta:  $beta
-
-EOM
-
+echo
