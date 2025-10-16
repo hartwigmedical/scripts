@@ -6,7 +6,7 @@ echo
 
 set -e
 
-latest="$(git tag -l | egrep '^v?[0-9]+\.[0-9]+\.[0-9]+(-beta)\..+$' | sort -V | tail -n1 | sed -e 's/^v//' -e 's/-beta.*$//')"
+latest="$(git tag -l | egrep '^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\..+)?$' | sort -V | tail -n1 | sed -e 's/^v//' -e 's/-beta.*$//')"
 IFS='.' read -r a b c <<< "$latest"
 a=${a:-0}; b=${b:-0}; c=${c:-0}
 
