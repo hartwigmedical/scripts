@@ -10,8 +10,8 @@ parser.add_argument("input_tsv")
 def main():
     args = parser.parse_args()
 
-    with open(args.input_tsv, 'r') as input:
-        data = [l.strip().split('\t')[:cutoff_i] for l in input.readlines()]
+    with open(args.input_tsv, 'r') as i:
+        data = [l.strip().split('\t')[:cutoff_i] for l in i.readlines()]
 
     print(*['\t'.join(r) for r in data], sep='\n')
 
