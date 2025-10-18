@@ -42,12 +42,14 @@ EOM
 
 [[ $# -gt 3 ]] && usage && exit 1
 
+
+egrep '^LOCAL_TUNNEL_PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
+    echo "Stopping existing tunnel on local port $port"
+    cleanup $port
+done
+
 action="$1"
 if [[ $action == "stop" ]]; then
-    egrep '^LOCAL_TUNNEL_PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
-        echo "Stopping existing tunnel on local port $port"
-        cleanup $port
-    done
     echo "Tunnels stopped"
 elif [[ $action == "start" ]]; then
     [[ $# -ne 2 && $# -ne 3 ]] && usage && exit 1
