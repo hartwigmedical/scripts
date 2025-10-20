@@ -52,11 +52,16 @@ def prepare_report_info(config: NamedTuple) -> Dict:
 
 def parse_input_report(input_report: str) -> Dict:
     with open(input_report) as report_file:
-        text = report_file.readlines()
+        lines = report_file.readlines()
 
-    output_filename = text[0].split('(')[1].split('.')[0]
-    general_info = text[1:9]
-    sample_info = text[11:]
+    sample_section_start_i = next(i for i, line in enumerate(lines) if line.strip() == "# Sample table for report:")
+
+    output_filename = lines[0].split('(')[1].split('.')[0]
+    # there is a hardcoded empty line before the sample section split, which we don't want to include in the general_info
+    # hence we do sample_section_start_i - 1
+    # this is very hacky
+    general_info = lines[1:sample_section_start_i - 1]
+    sample_info = lines[sample_section_start_i + 1:]
     return {'output_file': output_filename,
             'general_info': general_info,
             'sample_info': sample_info}

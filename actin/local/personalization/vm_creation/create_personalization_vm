@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+suffix=$1 && shift
+if [ -z "${suffix}" ]; then
+    suffix=$(whoami)
+    info "No suffix provided, taking username '$(whoami)'"
+fi
+
+vm_name=actin-developer-vm-${suffix}
+
+info "Creating VM instance: ${vm_name}"
+
+gcloud compute instances create ${vm_name} \
+    --zone=europe-west4-a \
+    --project=actin-research \
+    --network=research-vpc-network \
+    --subnet=research-vpc-subnet \
+    --machine-type=e2-standard-4 \
+    --image-family=debian-13 \
+    --image-project=debian-cloud \
+    --boot-disk-size=200GB \
+    --no-address \
+    --metadata enable-oslogin=FALSE,ssh-keys="" \
+    --metadata-from-file startup-script=startup_personalization_vm

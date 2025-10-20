@@ -58,11 +58,11 @@ fi
 # Standard
 # info "Fetching data for ${barcode}"
 ask_request_body=$(echo -e "{\"isolationBarcode\": \"${barcode}\"}")
-register_json=$(curl -X 'POST' 'http://lama.prod-1/api/registration/hartwig-api/show' \
+register_json=$(curl -s -X 'POST' 'http://lama.prod-1/api/registration/hartwig-api/show' \
                   -H 'accept: */*' \
                   -H 'Content-Type: application/json' \
                   -d "${ask_request_body}") || die "Could not fetch registration json for ${barcode}"
-setname=$(echo "${register_json}" | jq -r '.sampleSetName')
+setname=$(echo "${register_json}" | jq -r '.set_name')
 
 
 # API checks
@@ -83,7 +83,6 @@ setname_without_date=$(echo "${setname}" | cut -d_ -f2-)
 hmf_api_run_json=$(hmf_api_get "runs?context=DIAGNOSTIC&set_name_contains=${setname_without_date}")
 run_count=$(echo ${hmf_api_run_json} | jq 'map(select(.status != "Invalidated")) | length' | tr -d '"\n')
 if [[ ${run_count} > 0 ]]; then
-    check="false"
     warn "There already exist runs for ${barcode}: ${setname_without_date}"
 fi
 

@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+set -a  
+source .env
+set +a
+
+suffix=$1 && shift
+if [ -z "${suffix}" ]; then
+    suffix=$(whoami)
+    info "No suffix provided, taking username '$(whoami)'"
+fi
+
+vm_name=actin-developer-vm-${suffix}
+
+if [ -z "$(gcloud compute --project actin-research instances list | grep ${vm_name} 2>/dev/null)" ]; then
+    error "VM does not exist: ${vm_name}"
+fi
+    
+git_repo="git@github.com:hartwigmedical/actin-personalization.git"
+
+# BC: verify all variables are set
+: "${SSH_KEY_FILE:?Need to set SSH_KEY_FILE non-empty}"
+: "${GIT_NAME:?Need to set GIT_NAME non-empty}"
+: "${GIT_EMAIL:?Need to set GIT_EMAIL non-empty}"
+
+# BC: Create ssh config entry
+echo "
+Host ${vm_name}
+    User developer
+    AddKeysToAgent yes
+    ForwardAgent yes
+    IdentityFile ${SSH_KEY_FILE}
+    IdentitiesOnly yes
+    HostName ${vm_name}
+    Port 1215
+    ProxyCommand gcloud compute start-iap-tunnel --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
+" > ~/.ssh/personalization_vm_config
+
+# BC: Ensure ssh config file exists
+if [ ! -f ~/.ssh/config ]; then
+    echo "Creating ~/.ssh/config file"
+    touch ~/.ssh/config
+    chmod 600 ~/.ssh/config
+fi
+
+# BC: Remove old entry from known_hosts
+sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
+
+# KD: check if ~/.ssh/config already contains a Host definition since that will fail the Include statement
+if grep -q "Host " ~/.ssh/config; then
+    warn "$HOME/.ssh/config contains a Host definition. Please adjust your ssh config manually to place the Include at the top"
+fi
+
+# BC: check if entry is in main ssh and if not include in main ssh config
+if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
+    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
+fi
+
+max_tries=10
+count=0
+
+while ! gcloud compute ssh developer@${vm_name} \
+    --zone=europe-west4-a \
+    --project=actin-research \
+    --tunnel-through-iap \
+    --ssh-key-file=${SSH_KEY_FILE} \
+    --command "exit 0" \
+    --quiet 2>/tmp/gcloud_ssh.log; do
+
+    count=$((count+1))
+    if [ ${count} -ge ${max_tries} ]; then
+        cat /tmp/gcloud_ssh.log
+        warn "❌ VM is not available after ${max_tries} attempts. Giving up."
+        warn "Logs are in /tmp/gcloud_ssh.log"
+        exit 1
+    fi
+
+    info "Waiting for VM to become available... (attempt ${count}/${max_tries})"
+    sleep 5
+done
+info "✅ VM is available!"
+
+ssh -t -A ${vm_name} "bash -l -c 'gcloud auth login'"
+
+ssh -t -A ${vm_name} << EOF
+    git config --global user.name "${GIT_NAME}"
+    git config --global user.email "${GIT_EMAIL}"
+    ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+    if [ ! -d ~/actin-personalization ]; then
+        git clone ${git_repo} ~/actin-personalization/
+    fi
+    
+    cd ~/actin-personalization
+    pre-commit install
+
+    if [ ! -d /data/actin-resources-private ]; then
+        echo "Setting up private resources..."
+        gcloud source repos clone actin-resources-private /data/actin-resources-private --project=actin-build
+    fi
+
+    echo "Setting up reference data..."
+    mkdir -p /data/actin-personalization-reference-patient-data/
+    gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/actin-personalization-reference-patient-data/
+    mkdir -p /data/hmf-crunch-actin-ncr-dataset/
+    gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
+EOF
+
+info "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"

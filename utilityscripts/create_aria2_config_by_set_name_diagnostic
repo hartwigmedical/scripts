@@ -321,7 +321,8 @@ create_run_specific_files () {
         target_file_name="${file_name}"
         if [[ ${run_type} == "Fastq" ]]; then
             # Replace sample barcode with sample name in FASTQ target
-            [[ $(tr -d -c '_' <<< "${set_name}" | wc -m) -eq 3 ]] || die "Fastq set name does not contain 3 underscores (${set_name})"
+            underscore_count=$(tr -d -c '_' <<< "${set_name}" | wc -m)
+            [[ "${underscore_count}" -eq 3 || "${underscore_count}" -eq 2 ]] || die "Fastq set name does not contain 2 or 3 underscores (${set_name})"
             sample_name=$(echo "${set_name}" | rev | cut -d"_" -f1 | rev)
             target_file_name="${sample_name}_${file_name#*_}"
         fi

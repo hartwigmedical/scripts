@@ -1,13 +1,10 @@
 name: "colo"
 workflow: "merge-crams"
-version: "0.0.1"
+version: "0.0.1-beta10"
 params:
   sample_id: "colo"
-  threads: 16
-  input_file_bucket: "gs://your-input-bucket/raw_crams" 
-  input_files:
-    - "sample_A_part1.cram"
-    - "sample_B_part2.cram"
-    - "sample_C_part3.cram"
+  threads: 28
+  input_bucket: "gs://ultima-input-prod"
+  input_file_paths: "dir/colo1.cram;dir/colo2.cram"
   reference_bucket: "gs://common-resources/reference_genome/38"
   reference_file: "Homo_sapiens_assembly38.alt.masked.fasta"

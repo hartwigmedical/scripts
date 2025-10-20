@@ -197,7 +197,6 @@ class StatusChecker:
         return section
 
     def _get_all_report_associated_warnings(self, report_record):
-        print(report_record)
         return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
                 self._get_virus_names(report_record) +
