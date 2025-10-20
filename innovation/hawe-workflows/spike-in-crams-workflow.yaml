@@ -121,7 +121,7 @@ stages:
         if [[ "$tumorReadsNeeded" -gt 0 && "$normalReadsNeeded" -gt 0 ]]; then
             echo "Subsampling from both tumor and normal sources and merging directly..."
 
-            samtools merge -O CRAM -@ ${threads} --reference "$REFERENCE" "$LOCAL_CRAM" \
+            samtools merge -f -O CRAM -@ ${threads} --reference "$REFERENCE" "$LOCAL_CRAM" \
                 <(samtools view -h -@ ${threads} --reference "$REFERENCE" $tumor_s_flag -T "$REFERENCE" "$TUMOR_FILE") \
                 <(samtools view -h -@ ${threads} --reference "$REFERENCE" $normal_s_flag -T "$REFERENCE" "$NORMAL_FILE")
 
