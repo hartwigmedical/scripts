@@ -204,7 +204,7 @@ awk -v tum="$tumor_col_awk" -v na="$na_col_awk" -v ref="$ref_col_awk" 'BEGIN { O
       $tum = $na
     }
     else if (index($tum, "./.") > 0) {
-      $tum = "0/1"
+      gsub(/\.\/\./, "0/1", $tum)
     }
 
     print
