@@ -1,0 +1,103 @@
+name: "COLO829T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250121_HWG-HTP_01_pt-017_AAE24R05C04_cycle02/consensus-sample-merged/HPSID_024/"
+  sample_id: "COLO829T"
+  bam_file: "HPSID_024.intra-consensus-mapped.bam"
+---
+name: "GAYA01010053R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_001/"
+  sample_id: "GAYA01010053R"
+  bam_file: "HPSID_001.intra-consensus-mapped.bam"
+---
+name: "GAYA01010053T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_007/"
+  sample_id: "GAYA01010053T"
+  bam_file: "HPSID_007.intra-consensus-mapped.bam"
+---
+name: "GAYA01010054R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_010/"
+  sample_id: "GAYA01010054R"
+  bam_file: "HPSID_010.intra-consensus-mapped.bam"
+---
+name: "GAYA01010054T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_012/"
+  sample_id: "GAYA01010054T"
+  bam_file: "HPSID_012.intra-consensus-mapped.bam"
+---
+name: "GAYA01010058R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle02/consensus-sample-merged/HPSID_001/"
+  sample_id: "GAYA01010058R"
+  bam_file: "HPSID_001.intra-consensus-mapped.bam"
+---
+name: "GAYA01010058T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle02/consensus-sample-merged/HPSID_007/"
+  sample_id: "GAYA01010058T"
+  bam_file: "HPSID_007.intra-consensus-mapped.bam"
+---
+name: "GAYA01020027R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_014/"
+  sample_id: "GAYA01020027R"
+  bam_file: "HPSID_014.intra-consensus-mapped.bam"
+---
+name: "GAYA01020027T2-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_015/"
+  sample_id: "GAYA01020027T2"
+  bam_file: "HPSID_015.intra-consensus-mapped.bam"
+---
+name: "GAYA01020029R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_020/"
+  sample_id: "GAYA01020029R"
+  bam_file: "HPSID_020.intra-consensus-mapped.bam"
+---
+name: "GAYA01020029T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle01/consensus-sample-merged/HPSID_024/"
+  sample_id: "GAYA01020029T"
+  bam_file: "HPSID_024.intra-consensus-mapped.bam"
+---
+name: "GAYA01020031R-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle02/consensus-sample-merged/HPSID_010/"
+  sample_id: "GAYA01020031R"
+  bam_file: "HPSID_010.intra-consensus-mapped.bam"
+---
+name: "GAYA01020031T-sbx3"
+workflow: "collect-insertsize"
+version: "0.0.1"
+params:
+  bam_uri: "gs://infra-461/tests/third-round-pipeline-0.27.0-d7c6b75/250117_HWG-HTP_01_pt-017_AAE24R05C04_cycle02/consensus-sample-merged/HPSID_012/"
+  sample_id: "GAYA01020031T"
+  bam_file: "HPSID_012.intra-consensus-mapped.bam"
