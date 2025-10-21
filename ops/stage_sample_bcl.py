@@ -68,12 +68,12 @@ def read_input(path: str) -> List[SampleInput]:
 
 
 def process_input(sample_input: SampleInput) -> Sample:
-    m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+)\+(\d+)/(\d+)\s+(.+)", sample_input.sequencing_result_status)
+    m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+)\+(\d+)/(\d+|\?)\s+(.+)", sample_input.sequencing_result_status)
 
     q30 = float(m.group(1))
     yield_cur = int(m.group(2))
     yield_total = int(m.group(3))
-    yield_required = int(m.group(4))
+    yield_required = int(m.group(4)) if m.group(4) != '?' else 0
     sample_status, run_status, ini = m.group(5).split("|")
 
     if re.search(r"T\d*$", sample_input.sample_name):
