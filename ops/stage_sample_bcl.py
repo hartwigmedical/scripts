@@ -3,7 +3,7 @@
 import argparse
 import re
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 import math
 
 parser = argparse.ArgumentParser(description="Stages the BCL sample conversion results for the sample sheet excel")
@@ -20,6 +20,12 @@ class SampleInput:
     output_type: str
     sequencing_result_status: str
     set_name: str
+
+
+@dataclass
+class SampleParseError:
+    data: SampleInput
+    error: str
 
 
 @dataclass
@@ -43,8 +49,14 @@ class Sample:
 
 def main():
     args = parser.parse_args()
-    samples = [s for fp in args.file_path for s in read_input(fp)]
-    print_output_for_excel([process_input(s) for s in samples])
+    sample_input = [s for fp in args.file_path for s in read_input(fp)]
+    processed = [process_input(si) for si in sample_input]
+
+    samples = [s for s in processed if isinstance(s, Sample)]
+    err = [e for e in processed if isinstance(e, SampleParseError)]
+
+    print_output_for_excel(samples)
+    print_err(err)
 
 
 def read_input(path: str) -> List[SampleInput]:
@@ -68,14 +80,14 @@ def read_input(path: str) -> List[SampleInput]:
     return result
 
 
-def process_input(sample_input: SampleInput) -> Sample:
+def process_input(sample_input: SampleInput) -> Union[Sample, SampleParseError]:
     try:
         m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/(?:(\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
 
         q30 = float(m.group(1))
         yield_cur = float(m.group(2))
         yield_total = float(m.group(3))
-        yield_required = float(m.group(4)) if m.group(4) != '?' else None
+        yield_required = float(m.group(4))
 
         sample_status, run_status, ini = m.group(5).split("|")
 
@@ -101,29 +113,29 @@ def process_input(sample_input: SampleInput) -> Sample:
             yield_requirement=yield_required
         )
     except Exception as e:
-        raise Exception("Error parsing", sample_input, 'error:', e)
+        return SampleParseError(
+            data=sample_input,
+            error=str(e)
+        )
+
+def print_err(err: List[SampleParseError]):
+    print('\n\n')
+    print('Error parsing the following entries:')
+    for e in err:
+        print(e.data, e.error)
 
 
 def print_output_for_excel(samples: List[Sample]):
     results = []
     by_seq = []
-    err = []
     for s in samples:
-        if s.yield_requirement is None:
-            result = None
-            err.append(compute_result(
-                s,
-                'Unknown yield req in API',
-                'AB'
-            ))
-        elif s.by_seq_in_gb() > 0:
+        if s.by_seq_in_gb() > 0:
             result = compute_result(
                 s,
                 f'Extra Seq {s.by_seq_in_gb()} GBase',
                 'AB'
             )
-            by_seq_result = result + (str(s.yield_total), str(s.yield_requirement))
-            by_seq.append(by_seq_result)
+            by_seq.append(result)
         else:
             if s.sample_type == 'TUMOR' and s.output_type in ['Rna', 'Targeted']:
                 result = compute_result(
@@ -131,6 +143,7 @@ def print_output_for_excel(samples: List[Sample]):
                     'Processing',
                     'BFX'
                 )
+                results.append(result)
             elif s.sample_type == 'TUMOR' and s.output_type in ['Somatic', 'ShallowSeq']:
                 ref = find_ref_or_none(s, samples)
                 if ref and ref.by_seq_in_gb() > 0:
@@ -139,23 +152,24 @@ def print_output_for_excel(samples: List[Sample]):
                         'Waiting on R',
                         'AB'
                     )
+                    results.append(result)
                 else:
                     result = compute_result(
                         s,
                         'Processing',
                         'BFX'
                     )
+                    results.append(result)
             elif s.output_type == 'FastQ':
                 result = compute_result(
                     s,
                     'Done',
                     ''
                 )
+                results.append(result)
             else:
                 # samples that don't belong in sample-overview are skipped (i.e., ref samples)
                 continue
-        if result is not None:
-            results.append(result)
 
     results.sort(key=lambda x: x[2])  # sort by sample name
     results = ['\t'.join(r) for r in results]
@@ -163,10 +177,6 @@ def print_output_for_excel(samples: List[Sample]):
     print(*results, sep='\n')
     print("\n\n\n")
     print("The following samples need by-seq:", *['\t'.join(bs) for bs in by_seq], sep="\n")
-
-    if err:
-        print("\n\n")
-        print("The following samples had errors:", *['\t'.join(e) for e in err], sep="\n")
 
 
 def compute_result(s: Sample, output_status: str, team: str):
