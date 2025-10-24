@@ -70,6 +70,9 @@ def read_input(path: str) -> List[SampleInput]:
 def process_input(sample_input: SampleInput) -> Sample:
     m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+)\+(\d+)/(\d+|\?)\s+(.+)", sample_input.sequencing_result_status)
 
+    if not m:
+        raise Exception('Error parsing', sample_input.sequencing_result_status)
+
     q30 = float(m.group(1))
     yield_cur = int(m.group(2))
     yield_total = int(m.group(3))
