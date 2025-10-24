@@ -4,6 +4,7 @@ import argparse
 import re
 from dataclasses import dataclass
 from typing import List
+import math
 
 parser = argparse.ArgumentParser(description="Stages the BCL sample conversion results for the sample sheet excel")
 parser.add_argument("file_path", nargs='+')
@@ -37,7 +38,7 @@ class Sample:
     yield_requirement: float
 
     def by_seq_in_gb(self):
-        return max(self.yield_requirement - self.yield_total, 0)
+        return math.ceil(max(self.yield_requirement - self.yield_total, 0))
 
 
 def main():
