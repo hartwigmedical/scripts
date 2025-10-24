@@ -75,6 +75,7 @@ def process_input(sample_input: SampleInput) -> Sample:
         yield_cur = int(m.group(2))
         yield_total = int(m.group(3))
         yield_required = int(m.group(4)) if m.group(4) != '?' else None
+        print(m.group(5))
         sample_status, run_status, ini = m.group(5).split("|")
 
         if re.search(r"T\d*$", sample_input.sample_name):
