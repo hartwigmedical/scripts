@@ -32,9 +32,9 @@ class Sample:
     sample_status: str
     set_name: str
     q30: float
-    yield_cur: int
-    yield_total: int
-    yield_requirement: int
+    yield_cur: float
+    yield_total: float
+    yield_requirement: float
 
     def by_seq_in_gb(self):
         return max(self.yield_requirement - self.yield_total, 0)
@@ -71,16 +71,10 @@ def process_input(sample_input: SampleInput) -> Sample:
     try:
         m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/(?:(\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
 
-        print(m.group(1))
-        print(m.group(2))
-        print(m.group(3))
-        print(m.group(4))
-        print(m.group(5))
-
         q30 = float(m.group(1))
-        yield_cur = int(m.group(2))
-        yield_total = int(m.group(3))
-        yield_required = int(m.group(4)) if m.group(4) != '?' else None
+        yield_cur = float(m.group(2))
+        yield_total = float(m.group(3))
+        yield_required = float(m.group(4)) if m.group(4) != '?' else None
 
         sample_status, run_status, ini = m.group(5).split("|")
 
