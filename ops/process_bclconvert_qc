@@ -212,19 +212,12 @@ function process_samples () {
           tail -1
         )
 
-        if [[ "${api_samples_json}" == "[]" ]]; then
-            status_info="q=${q30_seq} y=${yld_seq_gbase} (no sample found in API by barcode!)"
-        elif [[ "${req_gbase}" == "?" ]]; then
-            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no yield requirement!)"
-        elif [[ "${api_run}" == "" ]]; then
-            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status} (sample found in API but no run!)"
-        else
-            run_status=$(cut -f1 <<< "${api_run}")
-            ini=$(cut -f2 <<< "${api_run}")
-            ini=${ini/.ini/}
-            set_name=$(cut -f3 <<< "${api_run}")
-            status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}"
-        fi
+        run_status=$(cut -f1 <<< "${api_run}")
+        ini=$(cut -f2 <<< "${api_run}")
+        ini=${ini/.ini/}
+        set_name=$(cut -f3 <<< "${api_run}")
+        status_info="q=${q30_seq} y=${yld_seq_gbase}+${yld_gbase}/${req_gbase} ${smp_status}|${run_status}|${ini}"
+
         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
             "${flowcell_name}" "${submission}" "${sample_id}" "${sample_nm}" "${reporting_id}" "${ini}" "${status_info}" "NA" "${set_name}"
 
