@@ -73,7 +73,7 @@ def process_input(sample_input: SampleInput) -> Sample:
     q30 = float(m.group(1))
     yield_cur = int(m.group(2))
     yield_total = int(m.group(3))
-    yield_required = int(m.group(4)) if m.group(4) != '?' else 0
+    yield_required = int(m.group(4)) if m.group(4) != '?' else None
     sample_status, run_status, ini = m.group(5).split("|")
 
     if re.search(r"T\d*$", sample_input.sample_name):
@@ -102,8 +102,16 @@ def process_input(sample_input: SampleInput) -> Sample:
 def print_output_for_excel(samples: List[Sample]):
     results = []
     by_seq = []
+    err = []
     for s in samples:
-        if s.by_seq_in_gb() > 0:
+        if s.yield_requirement is None:
+            result = None
+            err.append(compute_result(
+                s,
+                'Unknown yield req in API',
+                'AB'
+            ))
+        elif s.by_seq_in_gb() > 0:
             result = compute_result(
                 s,
                 f'Extra Seq {s.by_seq_in_gb()} GBase',
@@ -141,7 +149,8 @@ def print_output_for_excel(samples: List[Sample]):
             else:
                 # samples that don't belong in sample-overview are skipped (i.e., ref samples)
                 continue
-        results.append(result)
+        if result is not None:
+            results.append(result)
 
     results.sort(key=lambda x: x[2])  # sort by sample name
     results = ['\t'.join(r) for r in results]
@@ -149,6 +158,10 @@ def print_output_for_excel(samples: List[Sample]):
     print(*results, sep='\n')
     print("\n\n\n")
     print("The following samples need by-seq:", *['\t'.join(bs) for bs in by_seq], sep="\n")
+
+    if err:
+        print("\n\n")
+        print("The following samples had errors:", *['\t'.join(e) for e in err], sep="\n")
 
 
 def compute_result(s: Sample, output_status: str, team: str):
