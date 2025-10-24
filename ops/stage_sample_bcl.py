@@ -69,7 +69,7 @@ def read_input(path: str) -> List[SampleInput]:
 
 def process_input(sample_input: SampleInput) -> Sample:
     try:
-        m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/((\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
+        m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/(?:(\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
 
         print(m.group(1))
         print(m.group(2))
