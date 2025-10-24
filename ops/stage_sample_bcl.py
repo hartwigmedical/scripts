@@ -68,38 +68,38 @@ def read_input(path: str) -> List[SampleInput]:
 
 
 def process_input(sample_input: SampleInput) -> Sample:
-    m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/((\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
+    try:
+        m = re.match(r"q=(\d+(?:\.\d+)?)\s+y=(\d+(?:\.\d)*)\+(\d+(?:\.\d)*)/((\d+(?:\.\d)*)|\?)\s+(.+)", sample_input.sequencing_result_status)
 
-    if not m:
-        raise Exception('Error parsing', sample_input.sequencing_result_status)
+        q30 = float(m.group(1))
+        yield_cur = int(m.group(2))
+        yield_total = int(m.group(3))
+        yield_required = int(m.group(4)) if m.group(4) != '?' else None
+        sample_status, run_status, ini = m.group(5).split("|")
 
-    q30 = float(m.group(1))
-    yield_cur = int(m.group(2))
-    yield_total = int(m.group(3))
-    yield_required = int(m.group(4)) if m.group(4) != '?' else None
-    sample_status, run_status, ini = m.group(5).split("|")
+        if re.search(r"T\d*$", sample_input.sample_name):
+            sample_type = 'TUMOR'
+        elif re.search(r"R\d*$", sample_input.sample_name):
+            sample_type = 'REF'
+        else:
+            sample_type = 'OTHER'
 
-    if re.search(r"T\d*$", sample_input.sample_name):
-        sample_type = 'TUMOR'
-    elif re.search(r"R\d*$", sample_input.sample_name):
-        sample_type = 'REF'
-    else:
-        sample_type = 'OTHER'
-
-    return Sample(
-        submission=sample_input.submission,
-        isolation_barcode=sample_input.isolation_barcode,
-        sample_name=sample_input.sample_name,
-        reporting_id=sample_input.reporting_id,
-        output_type=sample_input.output_type,
-        sample_type=sample_type,
-        sample_status=sample_status,
-        set_name=sample_input.set_name,
-        q30=q30,
-        yield_cur=yield_cur,
-        yield_total=yield_total,
-        yield_requirement=yield_required
-    )
+        return Sample(
+            submission=sample_input.submission,
+            isolation_barcode=sample_input.isolation_barcode,
+            sample_name=sample_input.sample_name,
+            reporting_id=sample_input.reporting_id,
+            output_type=sample_input.output_type,
+            sample_type=sample_type,
+            sample_status=sample_status,
+            set_name=sample_input.set_name,
+            q30=q30,
+            yield_cur=yield_cur,
+            yield_total=yield_total,
+            yield_requirement=yield_required
+        )
+    except Exception as e:
+        raise Exception("Error parsing", sample_input, 'error:', e)
 
 
 def print_output_for_excel(samples: List[Sample]):
