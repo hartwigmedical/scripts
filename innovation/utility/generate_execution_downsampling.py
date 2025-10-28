@@ -8,7 +8,7 @@ Reads a TSV with:
 Outputs separate YAML execution blocks like:
     name: SAMPLE0123_ds
     workflow: downsample-crams
-    version: 1.0.0-beta1
+    version: 1.0.0
     params:
       alignment_file_path: "gs://bucket/run42"
       alignment_file: "SAMPLE0123.cram"
@@ -35,7 +35,7 @@ def split_alignment_uri(alignment_uri: str):
     dir_path = alignment_uri.strip()[: -(len(filename))].rstrip("/")
     if dir_path == "":
         dir_path = "."
-    sample_id = filename.split(".")[0]
+    sample_id = filename.split(".")[0].split("_")[0]
     return dir_path, filename, sample_id
 
 
