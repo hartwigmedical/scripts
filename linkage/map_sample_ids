@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+set -e  # fail on error
+
+function print_usage() {
+  echo "Usage: $0 -t|--type <type> [-o|--output <output>] [-i|--isolate {DNA,RNA}] [-- sampleIDs...]"
+  echo "    -t, --type    Type of input sample IDs (diagnostic, research)."
+  echo "    -o, --output  Output type (csv, json, txt). Optional, default is txt."
+  echo "    -i, --isolate Isolate type (DNA, RNA). Optional."
+  echo
+  echo "Remaining arguments after -- are sample IDs. If not provided, sample IDs are read from stdin."
+  echo "Provide one or more sample IDs per line, separated by whitespace."
+  echo "Empty lines and lines starting with # are ignored."
+  echo
+  echo "Example: $0 --type research -- H00000001 H00000002"
+  echo
+  exit 1
+}
+
+function error() {
+  echo "ERROR: $1" >&2
+  exit 1
+}
+
+# Default values
+type=""
+output="txt"
+isolate=""
+sample_ids=""
+GCP_TOKEN_FILE=~/.gcp-identity-token
+LINKAGE_SILO_URL="http://linkage-silo.prod-1"
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -t|--type)
+      type="$2"
+      shift 2 ;;
+    -o|--output)
+      output="$2"
+      shift 2 ;;
+    -i|--isolate)
+      isolate="$2"
+      shift 2 ;;
+    --)
+      shift
+      sample_ids="$*"
+      break ;;
+    *)
+      print_usage
+  esac
+done
+
+# Validate arguments
+if [[ -z $type || -z $output ]]; then
+  print_usage
+fi
+case $type in
+  diagnostic|research) ;; # OK
+  *) error "Invalid type. Must be 'diagnostic' or 'research'." ;;
+esac
+case $output in
+  csv|json|txt) ;; # OK
+  *) error "Invalid output. Must be one of 'csv', 'json', or 'txt'." ;;
+esac
+case $isolate in
+  DNA|RNA) ;; # OK
+  "") ;; # OK, isolate is optional
+  *) error "Invalid isolate. Must be 'DNA' or 'RNA'." ;;
+esac
+
+# Generate JWT token to access Linkage Silo if not exist. Reuse it when less than 59 minutes old to speed up script.
+if [ ! -f $GCP_TOKEN_FILE ] || [ "$(find $GCP_TOKEN_FILE -mmin +59)" ]; then
+  install -m 600 /dev/null $GCP_TOKEN_FILE  # create empty file only accessible by current user to avoid token leakage
+  gcloud auth print-identity-token > $GCP_TOKEN_FILE
+fi
+gcp_token=$(cat $GCP_TOKEN_FILE)
+
+# Create temporary directory for intermediate files and make sure it is cleaned up on exit
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TMP_DIR"' EXIT
+
+if [ -n "$sample_ids" ]; then
+  # Read sample IDs from command line arguments.
+  echo "$sample_ids" | jq -R 'split(" ")' > "$TMP_DIR"/sample_ids.json
+else
+  # Read sample IDs from stdin. Convert CRLF to LF to make JQ split lines by LF only.
+  # Filter out empty lines and comments and split each line by whitespace.
+  sed 's/\r$//' | jq \
+    --raw-input \
+    --slurp \
+    --compact-output \
+    'split("\n") |
+      map(select(length > 0 and (startswith("#") | not))) |
+      map(split("\\s+";null)) |
+      add' \
+    <&0 \
+    > "$TMP_DIR"/sample_ids.json
+fi
+
+# Replace roman suffixes in diagnostic sample IDs with numeric suffixes
+if [ "$type" == "diagnostic" ]; then
+  jq 'map(sub("TII$"; "T2") | sub("TIII$"; "T3") | sub("TIV$"; "T4") | sub("TIIII$"; "T4"))' \
+    "$TMP_DIR"/sample_ids.json > "$TMP_DIR"/sample_ids_numeric.json \
+    && mv "$TMP_DIR"/sample_ids_numeric.json "$TMP_DIR"/sample_ids.json
+fi
+
+# Fetch mapping from Linkage Silo
+case $type in
+  diagnostic) # input are diagnostic sample IDs
+    map_tumor_samples_url="$LINKAGE_SILO_URL/map-tumor-samples/sample-id" ;;
+  research) # input are Hartwig numbers
+    map_tumor_samples_url="$LINKAGE_SILO_URL/map-tumor-samples/hartwig-number" ;;
+esac
+if [ -n "$isolate" ]; then
+  map_tumor_samples_url="$map_tumor_samples_url?type=$isolate"
+fi
+
+response_code=$(curl -X POST \
+  --oauth2-bearer "$gcp_token" \
+  --silent \
+  --header 'Content-Type: application/json' \
+  --data @"$TMP_DIR"/sample_ids.json \
+  --output "$TMP_DIR"/sample_id_mapping.json \
+  --write-out '%{http_code}' \
+  --url "$map_tumor_samples_url")
+
+case $response_code in
+  000) error "Unable to connect to the Linkage Silo. Please check your network connection and enable VPN." ;;
+  400) error "Input sample IDs don't have the right format." ;;
+  401) error "Unauthorized. Please check your permissions to access the Linkage Silo." ;;
+  403) error "Forbidden. Please check your permissions to access the Linkage Silo." ;;
+  500) error "Linkage Silo failed to map sample IDs." ;;
+esac
+
+# Write sample ID mapping in the right output format
+case $output in
+  csv)
+    jq -r '.[] | [.hartwigNumber,.sampleId] | @csv | sub("\"";"";"g")' "$TMP_DIR"/sample_id_mapping.json ;;
+  json)
+    cat "$TMP_DIR"/sample_id_mapping.json ;;
+  txt)
+    case $type in
+      diagnostic)
+        jq -r '.[].hartwigNumber' "$TMP_DIR"/sample_id_mapping.json ;;
+      research)
+        jq -r '.[].sampleId' "$TMP_DIR"/sample_id_mapping.json ;;
+    esac
+esac
