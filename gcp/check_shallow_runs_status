@@ -94,7 +94,7 @@ if [[ "${to_process_count}" -gt 0 ]]; then
       echo "  cat '${tmp_results_file}' | tail -n +2 >> '${tmp_masterlist_file}'"
       echo "  gsutil cp '${tmp_masterlist_file}' '${masterlist_file}'"
       echo "echo '[INFO] Printing results"
-      echo "  print_shallow_tsv.py '${tmp_results_file}'"
+      echo "  python3 /data/repos/scripts/ops/print_shallow_tsv.py '${tmp_results_file}'"
       echo "echo '[INFO] Removing tmp files...'"
       echo "  rm '${tmp_archive_file}'"
       echo "  rm '${tmp_masterlist_file}'"
