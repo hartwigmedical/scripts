@@ -37,10 +37,10 @@ echo "${lama_data}" > "${lama_json}"
 
 p_type=$(echo "${lama_data}" | jq -r '.servicesSamples | length')
 p_count=$(echo "${lama_data}" | jq -r '.servicesSamples | .[0].dataOutputLevel')
-r_name=$(echo "${lama_data}" | jq -r '.reportContacts | .[] | .name | join(",")')
-r_mail=$(echo "${lama_data}" | jq -r '.reportContacts | .[] | .email | join(",")')
-d_name=$(echo "${lama_data}" | jq -r '.dataContacts | .[] | .name | join(",")')
-d_mail=$(echo "${lama_data}" | jq -r '.dataContacts | .[] | .email | join(",")')
+r_name=$(echo "${lama_data}" | jq -r '[ .reportContacts | .[] | .name ] | join(";")')
+r_mail=$(echo "${lama_data}" | jq -r '[ .reportContacts | .[] | .email ] | join(";")')
+d_name=$(echo "${lama_data}" | jq -r '[ .dataContacts | .[] | .name ] | join(";")')
+d_mail=$(echo "${lama_data}" | jq -r '[ .dataContacts | .[] | .email ] | join(";")')
 
 
 # Get sample info from HMF API
