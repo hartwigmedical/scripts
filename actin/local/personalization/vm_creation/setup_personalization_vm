@@ -38,24 +38,22 @@ Host ${vm_name}
     ProxyCommand gcloud compute start-iap-tunnel --zone europe-west4-a --project actin-research --listen-on-stdin %h 22
 " > ~/.ssh/personalization_vm_config
 
+ssh_config_file=~/.ssh/config
+
 # BC: Ensure ssh config file exists
-if [ ! -f ~/.ssh/config ]; then
-    echo "Creating ~/.ssh/config file"
-    touch ~/.ssh/config
-    chmod 600 ~/.ssh/config
+if [ ! -f ${ssh_config_file} ]; then
+    echo "Creating ${ssh_config_file} file"
+    touch ${ssh_config_file}
+    chmod 600 ${ssh_config_file}
 fi
 
 # BC: Remove old entry from known_hosts
 sed -i.bak "/${vm_name}/d" ~/.ssh/known_hosts
 
-# KD: check if ~/.ssh/config already contains a Host definition since that will fail the Include statement
-if grep -q "Host " ~/.ssh/config; then
-    warn "$HOME/.ssh/config contains a Host definition. Please adjust your ssh config manually to place the Include at the top"
-fi
+include_directive="Include ~/.ssh/personalization_vm_config"
 
-# BC: check if entry is in main ssh and if not include in main ssh config
-if ! grep -q "Include ~/.ssh/personalization_vm_config" ~/.ssh/config; then
-    echo "Include ~/.ssh/personalization_vm_config" >> ~/.ssh/config
+if ! head -n 1 ${ssh_config_file} | grep -Fxq "${include_directive}"; then
+    { echo "${include_directive}"; cat "${ssh_config_file}"; } > "${ssh_config_file}.tmp" && mv "${ssh_config_file}.tmp" "${ssh_config_file}"
 fi
 
 max_tries=10

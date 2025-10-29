@@ -45,8 +45,7 @@ if [ -n "${t}" ]; then # Testing case
     done
 
     SHEETS_LOC="/data/tmp/registration_test/samplesheet"
-    #JSONS_LOC="/data/tmp/registration_test/json"
-    JSONS_LOC=$(locate_sample_registration_unregistered_jsons_dir)
+    JSONS_LOC="/data/tmp/registration_test/json"
     LOGS_LOC="/data/tmp/registration_test/log"
     create_log="${LOGS_LOC}/${curr_date}_create_jsons_for_${prefix}"
     sources=$(ls "${local_sheets_dir}"/*_SampleSheet.csv)
@@ -85,12 +84,14 @@ else # Normal case
             fetch_jsons_from_samplesheet -s ${sheet} -j "${JSONS_LOC}/"
         done > ${create_log}
 
+        rm "${JSONS_LOC}/null.json"
+
         cat "${create_log}"
 
         register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
         info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
         info "TODO: If all OK you can register them in API with:"
-        info " nohup register_all_ready_jsons > ${register_log} &"
+        info " nohup register_jsons_through_lama > ${register_log} &"
         info ""
         info "TODO: Afterwards you can check the registration success rate with:"
         info " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "

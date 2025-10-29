@@ -1,0 +1,43 @@
+
+name: "collect-insertsize"
+version: "0.0.1"
+storagePath: "gs://gatk-wgs-metrics-ins"
+externalInputs:
+  - name: bam-folder
+    location: "${bam_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: interval-folder
+    location: "gs://hmf-crunch-innovation/info/gatk"
+stages:
+  - name: "insertsize"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - bam-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt"
+        SCRIPT="/in/interval-folder/insertsize.sh"
+        
+        INPUT_BAM_FILE="/in/bam-folder/${bam_file}"
+        INPUT_BAI_FILE="/in/bam-folder/${bam_file}.bai"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens_assembly38.alt.masked.fasta"
+
+
+        SAMPLE_ID="${sample_id}"
+        bash $SCRIPT $INTERVAL 20 $INPUT_BAM_FILE $REF_FOLDER $SAMPLE_ID $REF_FILE

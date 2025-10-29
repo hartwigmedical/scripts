@@ -1,0 +1,124 @@
+name: "downsample-crams"
+version: "1.0.0"
+storagePath: "gs://downsample-output"
+externalInputs:
+  - name: "alignment-path"
+    location: "${alignment_file_path}"
+  - name: reference-folder
+    location: "gs://common-resources/reference_genome/38/"
+stages:
+  - name: "downsample"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/samtools"
+    version: "1.0.0"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 500Gi
+      stageTimeoutMinutes: 1440
+      resources:
+        requests:
+          cpu: "28"
+          memory: 56Gi
+          storage: 500Gi
+      node:
+        spot: true
+        pool: "n2d-standard-32-pool-1"
+    inputStages:
+      - alignment-path
+      - reference-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          # downsample.sh
+          #
+          # Expects these external variables from the workflow engine:
+          #   ${alignment-path}   -> path to input CRAM/BAM
+          #   ${src_cov}           -> numeric coverage of input (e.g. 108)
+          #   ${tgt_cov}           -> desired target coverage (e.g. 83)
+          #
+          # Internal constants/paths:
+          REFERENCE_FASTA="/in/reference-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+          SEED=${seed}   # change if you want different subset per run
+          THREADS=28
+
+          echo "[INFO] Starting downsampling step"
+
+          # Assign external vars to internal uppercase vars
+          INPUT_ALIGNMENT="/in/alignment-path/${alignment_file}"
+          SRC_COV="${src_cov}"
+          TGT_COV="${tgt_cov}"
+          SAMPLEID="${sample_id}"
+          OUT_DIR="/out"
+
+          echo "[INFO] Input alignment : $INPUT_ALIGNMENT"
+          echo "[INFO] Source cov (X)  : $SRC_COV"
+          echo "[INFO] Target cov (X)  : $TGT_COV"
+          echo "[INFO] Reference fasta : $REFERENCE_FASTA"
+
+          # Basic validation
+          if [[ ! -f "$INPUT_ALIGNMENT" ]]; then
+              echo "ERROR: Input alignment file not found: $INPUT_ALIGNMENT" >&2
+              exit 1
+          fi
+
+          if [[ ! -f "$REFERENCE_FASTA" ]]; then
+              echo "ERROR: Reference fasta not found at $REFERENCE_FASTA" >&2
+              exit 1
+          fi
+
+          # Make sure fasta index exists (samtools faidx is cheap/no-op if already there)
+          if [[ ! -f "$REFERENCE_FASTA.fai" ]]; then
+              echo "[INFO] Indexing reference fasta..."
+              samtools faidx "$REFERENCE_FASTA"
+          fi
+
+          # Compute keep fraction = target / source (using awk)
+          FRACTION=$(awk -v t="$TGT_COV" -v s="$SRC_COV" 'BEGIN { if (s == 0) exit 1; printf("%.6f", t/s) }')
+
+
+          # If user asks for higher coverage than available, cap at 1.0
+          CMP=$(awk -v t="$TGT_COV" -v s="$SRC_COV" 'BEGIN { if (t > s) print 1; else print 0 }')
+          if [[ "$CMP" == "1" ]]; then
+              echo "[WARN] Target coverage ($TGT_COV x) > source coverage ($SRC_COV x)."
+              echo "[WARN] No downsampling will be applied (fraction=1.0)."
+              FRACTION="1.0"
+          fi
+
+          # samtools -s takes "SEED.FRACTION"
+          # Strip leading "0." if present so we get e.g. "42.7685" not "42.0.7685"
+          FRACTION_NOLEADZERO="$(printf "%s" "$FRACTION" | sed 's/^0\.//')"
+          KEEP_ARG="$SEED.$FRACTION_NOLEADZERO"
+
+          echo "[INFO] Keep fraction    : $FRACTION"
+          echo "[INFO] samtools -s arg  : $KEEP_ARG"
+
+          # Output file based on sampleid + target coverage
+          OUTPUT_FILE="$SAMPLEID.ds.cram"
+
+          echo "[INFO] Output file      : $OUTPUT_FILE"
+
+          # Perform downsampling -> sort -> CRAM
+          # We always emit CRAM because we have the reference mounted anyway.
+          samtools view \
+              -@ "$THREADS" \
+              -s "$KEEP_ARG" \
+              -T "$REFERENCE_FASTA" \
+              -C "$INPUT_ALIGNMENT" \
+              -o "$OUTPUT_FILE"
+
+          # Index result
+          samtools index -@ 2 "$OUTPUT_FILE"
+
+          # Move results to /out for workflow export
+          echo "[INFO] Moving output files to $OUT_DIR/"
+          mkdir -p "$OUT_DIR"
+          mv "$OUTPUT_FILE" "$OUT_DIR/"
+          mv "$OUTPUT_FILE.crai" "$OUT_DIR/"
+
+          echo "[INFO] Done"
+          echo "[INFO] Final outputs:" 
+          echo "  - $OUT_DIR/$OUTPUT_FILE"
+          echo "  - $OUT_DIR/$OUTPUT_FILE.crai"
