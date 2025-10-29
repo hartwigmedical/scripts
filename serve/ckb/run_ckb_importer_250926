@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+ckb_jar="/data/tools/ckb-importer/8.4.1/ckb-importer.jar"
+ckb_dir="/data/resources/custom/ckb/latest/250926_ckb_flex_dump"
+
+
+do_run_ckb_importer ${ckb_jar} "ckb_20250926_841" ${ckb_dir}
