@@ -84,6 +84,8 @@ else # Normal case
             fetch_jsons_from_samplesheet -s ${sheet} -j "${JSONS_LOC}/"
         done > ${create_log}
 
+        rm "${JSONS_LOC}/null.json"
+
         cat "${create_log}"
 
         register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
