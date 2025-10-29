@@ -89,7 +89,7 @@ else # Normal case
         register_log="${LOGS_LOC}/${curr_date}_register_sets_for_${prefix}_flowcells"
         info "TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
         info "TODO: If all OK you can register them in API with:"
-        info " nohup register_all_ready_jsons > ${register_log} &"
+        info " nohup register_jsons_through_lama > ${register_log} &"
         info ""
         info "TODO: Afterwards you can check the registration success rate with:"
         info " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "
