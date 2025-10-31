@@ -93,7 +93,7 @@ if [[ "${to_process_count}" -gt 0 ]]; then
       echo "echo '[INFO] Adding results to masterlist log file in bucket...'"
       echo "  cat '${tmp_results_file}' | tail -n +2 >> '${tmp_masterlist_file}'"
       echo "  gsutil cp '${tmp_masterlist_file}' '${masterlist_file}'"
-      echo "echo '[INFO] Printing results"
+      echo "echo '[INFO] Printing results'"
       echo "  python3 /data/repos/scripts/ops/print_shallow_tsv.py '${tmp_results_file}'"
       echo "echo '[INFO] Removing tmp files...'"
       echo "  rm '${tmp_archive_file}'"
