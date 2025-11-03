@@ -145,7 +145,7 @@ print_shallow_qc_for_run() {
             || die "Could not determine TUM yield to add for run for set ${set_name}"
 
     ## Determine full sequencing status
-    purity_check=$(echo "${purity} >= 0.2"| bc -l)
+    purity_check=$(echo "${purity} >= 0.08"| bc -l)
     tum_cov_check=$(echo "${tum_cov} >= 8.0"| bc -l)
     ref_cov_check=$(echo "${ref_cov} >= 8.0"| bc -l)
     fails_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -v FAIL_NO_TUMOR | grep -c FAIL_)
