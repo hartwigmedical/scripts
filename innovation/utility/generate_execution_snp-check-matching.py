@@ -12,15 +12,13 @@ def parse_gcs_path(uri: str):
     folder, _, fname = uri.rpartition("/")
     if not folder or not fname:
         raise ValueError(f"Malformed GCS URI: {uri}")
-    if not fname.endswith(".cram"):
-        raise ValueError(f"Not a .cram file: {uri}")
     sample_id = fname[:-5]  # strip .cram
     return folder + "/", sample_id
 
 def extract_key_part(sample_id: str, max_len: int = 20) -> str:
     """Try to pull meaningful part of ID, fallback to shortening"""
     # look for HD_x or similar pattern
-    m = re.search(r"(HD_\d+)", sample_id)
+    m = re.search(r"(H\d+)", sample_id)
     if m:
         return m.group(1)
     # else: fallback to shortened version
@@ -34,7 +32,7 @@ def main():
     ap.add_argument("input_tsv", help="TSV/line file with one gs://.../SAMPLE.cram per line")
     ap.add_argument("-o", "--output", default="-", help="Output YAML file (default: stdout)")
     ap.add_argument("--workflow", default="snp-check-matching", help="Workflow name")
-    ap.add_argument("--version", default="0.0.1-beta1", help="Workflow version")
+    ap.add_argument("--version", default="0.0.1", help="Workflow version")
     ap.add_argument("--max-name-len", type=int, default=20, help="Maximum length for fallback shortening")
     args = ap.parse_args()
 
@@ -51,9 +49,12 @@ def main():
         if not sample:
             continue
 
-        short_name = extract_key_part(sample, args.max_name_len)
+        
+        # short_name = extract_key_part(sample, args.max_name_len)
+        # name_string = sample.split('_')[0] + str("-sbx4")
+        name_string = sample.split("-")[1] + str("-us3")
         doc = (
-            f"name: {short_name}\n"
+            f"name: {name_string}\n"
             f"workflow: {args.workflow}\n"
             f"version: {args.version}\n"
             f"params:\n"
