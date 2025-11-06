@@ -4,7 +4,7 @@
 if [ "$#" -lt 1 ] || [ "$#" -gt 3 ] || [ "$#" -eq 2 ]; then
   echo "Usage: <setname> <input-bucket-name> <output-bucket-name>"
   echo "Ex: 123456_HMFregCORE_FS12345678_CORE0100000 research-pipeline-output-prod-1 example-output-bucket"
-  echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)"
+  echo "Input and output bucket-names are optional, defaults to diagnostic-pipeline-output-prod-1 and wgs-combined-snps-vcfs (used in production process)."
   echo "NOTE: When specifying a bucket, both input and output buckets must be provided."
   exit 1
 else
@@ -176,7 +176,9 @@ for i in "${!headers[@]}"; do
     na_col=$i
   elif [[ "$col" == *"-ref" ]]; then
     ref_col=$i
-  elif [[ "$col" != "FORMAT" && "$col" != "#CHROM" && "$col" != "POS" && "$col" != "ID" && "$col" != "REF" && "$col" != "ALT" && "$col" != "QUAL" && "$col" != "FILTER" && "$col" != "INFO" ]]; then
+  elif [[ "$col" == "FILTER" ]]; then
+    filter_col=$i
+  elif [[ "$col" != "FORMAT" && "$col" != "#CHROM" && "$col" != "POS" && "$col" != "ID" && "$col" != "REF" && "$col" != "ALT" && "$col" != "QUAL" && "$col" != "INFO" ]]; then
     tumor_col=$i
   fi
 done
@@ -191,21 +193,27 @@ fi
 tumor_col_awk=$((tumor_col + 1))
 na_col_awk=$((na_col + 1))
 ref_col_awk=$((ref_col + 1))
+filter_col_awk=$((filter_col + 1))
 
-## Step 1: Copy snp genotype (na) col to tumor if tumor col no variant call
-awk -v tum="$tumor_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
+## Step 1: Copy snp genotype (na) col to tumor if no variant call in tumor col
+##          + replace remaining ./.'s with default 0/1 (for germline variants)
+awk -v tum="$tumor_col_awk" -v na="$na_col_awk" -v ref="$ref_col_awk" 'BEGIN { OFS="\t" }
   /^##/ { print; next }
   /^#CHROM/ { print; next }
   {
     if ($tum == "./." && $na != "./." && $na != "") {
       $tum = $na
     }
+    else if (index($tum, "./.") > 0) {
+      gsub(/\.\/\./, "0/1", $tum)
+    }
+
     print
   }
 ' "$HOME/${MERGED_OUTPUT_VCF}" > "$HOME/temp_with_na_corrected.vcf"
 
 ## Step 2: Remove ref and NA cols
-awk -v ref="$ref_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
+awk -v ref="$ref_col_awk" -v na="$na_col_awk" -v filter="$filter_col_awk" 'BEGIN { OFS="\t" }
   /^##/ { print; next }
   /^#CHROM/ {
     for (i = 1; i <= NF; i++) {
@@ -216,6 +224,7 @@ awk -v ref="$ref_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
     next
   }
   {
+    $filter="PASS"
     for (i = 1; i <= NF; i++) {
       if (i != ref && i != na) {
         printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
