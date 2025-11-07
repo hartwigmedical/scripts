@@ -44,11 +44,13 @@ fi
 if grep -q "Name,NO" ${SHEET_LOC}
 then
   start=$(cat ${SHEET_LOC} | grep -n Data] | cut -d: -f1)
+  end=$(cat ${SHEET_LOC} | wc -l)
 else
   start=$(cat ${SHEET_LOC} | grep -n BCLConvert_Data] | cut -d: -f1)
+  end=$(( $(cat ${SHEET_LOC} | grep -n Cloud_Settings] | cut -d: -f1) - 1))
 fi
-col_num=$(tail -n +$(( ${start} + 1 )) ${SHEET_LOC} | head -n 1 | tr -s ',' '\n' | nl -nln |  grep "Sample_ID" | cut -f1)
-barcodes=$(tail -n +$(( ${start} + 2 )) ${SHEET_LOC} | cut -d',' -f${col_num} | sed '/^[[:space:]]*$/d' | tr -s '\n' ' ')
+col_num=$(sed -n -e "${start},${start}p" ${SHEET_LOC}  | tr -s ',' '\n' | nl -nln |  grep "Sample_ID" | cut -f1)
+barcodes=$(sed -n -e "${start},${end}p" ${SHEET_LOC} | head -n 1 | cut -d',' -f${col_num} | sed '/^[[:space:]]*$/d' | tr -s '\n' ' ')
 for barcode in ${barcodes}; do
     fetch_register_json -b ${barcode} -o ${JSONS_LOC}
 done
