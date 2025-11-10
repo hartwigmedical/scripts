@@ -149,9 +149,10 @@ print_shallow_qc_for_run() {
     tum_cov_check=$(echo "${tum_cov} >= 8.0"| bc -l)
     ref_cov_check=$(echo "${ref_cov} >= 8.0"| bc -l)
     fails_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -v FAIL_NO_TUMOR | grep -c FAIL_)
+    fail_tumor_check=$(echo "${qc_stat}" | sed 's/,/\n/g' | grep -c FAIL_NO_TUMOR)
     if [[ ${amb_qc} != *"FAIL"* ]] && [[ ${qc_stat} != *"FAIL"* ]] && [[ ${purity_check} -eq 1 ]]; then
         to_seq="PASS"
-    elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 1 && ${ref_cov_check} -eq 1 ]]; then
+    elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 || ${fail_tumor_check} -eq 1 ]] && [[ ${tum_cov_check} -eq 1 && ${ref_cov_check} -eq 1 ]]; then
         to_seq="FAIL"
     elif [[ ${amb_qc} != *"FAIL"* ]] && [[ ${fails_check} == 0 ]] && [[ ${purity_check} -eq 0 ]] && [[ ${tum_cov_check} -eq 0 || ${ref_cov_check} -eq 0 ]]; then
         warn "Sample set ${set_name} needs investigating, likely additional sequencing needed"
