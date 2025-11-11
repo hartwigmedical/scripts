@@ -23,7 +23,7 @@ actionable_exon_query="select gene, chromosome, start, end, applicableMutationTy
 actionable_gene_query="select gene, event, sourceDate, sourceEvent, sourceUrls from actionableGene order by 1,2,3,4,5;"
 actionable_fusion_query="select geneUp, minExonUp, maxExonUp, geneDown, minExonDown, maxExonDown, sourceDate, sourceEvent, sourceUrls from actionableFusion order by 1,2,3,4,5,6,7,8,9;"
 actionable_characteristic_query="select type, cutoffType, cutoff, sourceDate, sourceEvent, sourceUrls from actionableCharacteristic order by 1,2,3,4,5,6;"
-actionable_hla_query="select hlaAllele, sourceDate, sourceEvent, sourceUrls from actionableHla order by 1,2,3,4;"
+actionable_hla_query="select gene, sourceDate, sourceEvent, sourceUrls from actionableHla order by 1,2,3,4;"
 
 known_hotspot_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, position, ref, alt, inputTranscript, inputProteinAnnotation from knownHotspot order by 1,2,3,4,5,6,7,8,9,10;"
 known_codon_query="select gene, geneRole, proteinEffect, associatedWithDrugResistance, chromosome, start, end, applicableMutationType, inputTranscript, inputCodonRank from knownCodon order by 1,2,3,4,5,6,7,8,9,10;"
