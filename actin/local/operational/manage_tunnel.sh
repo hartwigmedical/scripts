@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REMOTE_TUNNEL_PORT=8888
+REMOTE_TUNNEL_PORT=8080
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
 function print_available_configs() {
@@ -73,7 +73,7 @@ elif [[ $action == "start" ]]; then
     echo "Attempting to determine name of bastion VM"
     read instance zone <<< $($GC instances list | grep bastion | head -n1 | awk '{print $1, $2}')
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
-    ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:8080" >/dev/null
+    ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
     if [[ $? -ne 0 ]]; then
         echo "Establishing tunnel to $instance on port $PORT"
         $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
