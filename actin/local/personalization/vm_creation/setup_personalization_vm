@@ -87,11 +87,15 @@ ssh -t -A ${vm_name} << EOF
     git config --global user.email "${GIT_EMAIL}"
     ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    if [ ! -d ~/actin-personalization ]; then
-        git clone ${git_repo} ~/actin-personalization/
+    if [ ! -d /data/repos ]; then
+        mkdir -p /data/repos
+    fi 
+    
+    if [ ! -d /data/repos/actin-personalization ]; then
+        git clone ${git_repo} /data/repos/actin-personalization/
     fi
     
-    cd ~/actin-personalization
+    cd /data/repos/actin-personalization
     pre-commit install
 
     if [ ! -d /data/actin-resources-private ]; then
