@@ -92,7 +92,7 @@ ssh -t -A ${vm_name} << EOF
     fi 
     
     if [ ! -d /data/repos/actin-personalization ]; then
-        git clone ${git_repo} data/repos/actin-personalization/
+        git clone ${git_repo} /data/repos/actin-personalization/
     fi
     
     cd /data/repos/actin-personalization
