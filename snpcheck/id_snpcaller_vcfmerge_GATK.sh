@@ -61,46 +61,73 @@ $JAVA -jar "$GATK" \
   -o "$MERGED_OUTPUT_VCF" \
   -genotypeMergeOptions UNSORTED
 
-# Copy NA column to tumor if missing
+# Copy NA column to tumor if missing, and clean up VCF
+
 header_line=$(grep -m 1 '^#CHROM' "$MERGED_OUTPUT_VCF")
 IFS=$'\t' read -r -a headers <<< "$header_line"
 
 tumor_col=-1
 na_col=-1
 ref_col=-1
+filter_col=-1
+
+# Identify columns
 for i in "${!headers[@]}"; do
   col="${headers[$i]}"
   [[ "$col" == "NA" ]] && na_col=$i
   [[ "$col" == *"-ref" ]] && ref_col=$i
-  [[ "$col" != "FORMAT" && ! "$col" =~ ^#?(CHROM|POS|ID|REF|ALT|QUAL|FILTER|INFO)$ ]] && tumor_col=$i
+  [[ "$col" == "FILTER" ]] && filter_col=$i
+  [[ "$col" != "FORMAT" && ! "$col" =~ ^#?(CHROM|POS|ID|REF|ALT|QUAL|FILTER|INFO)$ && "$col" != "NA" && "$col" != *"-ref" ]] && tumor_col=$i
 done
 
+# Validate
+if [[ $tumor_col -eq -1 || $na_col -eq -1 ]]; then
+  echo "Error: Could not find both tumor and NA columns in the merged VCF."
+  exit 1
+fi
+
+# Convert to 1-based for awk
 (( tumor_col_awk = tumor_col + 1 ))
 (( na_col_awk = na_col + 1 ))
 (( ref_col_awk = ref_col + 1 ))
+(( filter_col_awk = filter_col + 1 ))
 
+# Step 1: Copy NA genotype to tumor if missing, replace remaining ./.
 awk -v tum="$tumor_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
   /^##/ { print; next }
   /^#CHROM/ { print; next }
   {
     if ($tum == "./." && $na != "./." && $na != "") {
       $tum = $na
+    } else if (index($tum, "./.") > 0) {
+      gsub(/\.\/\./, "0/1", $tum)
     }
     print
   }
 ' "$MERGED_OUTPUT_VCF" > "${LOCAL_INPUT_DIR}/temp_with_na_corrected.vcf"
 
-awk -v ref="$ref_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
+# Step 2: Remove ref and NA columns, set FILTER to PASS
+awk -v ref="$ref_col_awk" -v na="$na_col_awk" -v filter="$filter_col_awk" 'BEGIN { OFS="\t" }
   /^##/ { print; next }
   /^#CHROM/ {
-    for (i = 1; i <= NF; i++) if (i != ref && i != na) printf "%s%s", $i, (i == NF ? ORS : OFS)
+    for (i = 1; i <= NF; i++) {
+      if (i != ref && i != na) {
+        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
+      }
+    }
     next
   }
   {
-    for (i = 1; i <= NF; i++) if (i != ref && i != na) printf "%s%s", $i, (i == NF ? ORS : OFS)
+    $filter="PASS"
+    for (i = 1; i <= NF; i++) {
+      if (i != ref && i != na) {
+        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
+      }
+    }
   }
 ' "${LOCAL_INPUT_DIR}/temp_with_na_corrected.vcf" > "$FINAL_OUTPUT_VCF"
 
+# Step 3: Upload final VCF
 gsutil cp "${FINAL_OUTPUT_VCF}" "gs://${OUTPUT_BUCKET_NAME}/${setname}/${FINAL_OUTPUT_VCF}" || {
   echo "Error: Failed to upload VCF to output bucket"
   exit 1
