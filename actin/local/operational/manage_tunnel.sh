@@ -43,7 +43,7 @@ EOM
 [[ $# -gt 3 ]] && usage && exit 1
 
 
-egrep '^LOCAL_TUNNEL_PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
+egrep '^PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
     echo "Stopping existing tunnel on local port $port"
     cleanup $port
 done
@@ -58,20 +58,13 @@ elif [[ $action == "start" ]]; then
 
     source $config_file
 
-    for var in PROJECT NAMESPACE PORT; do
+    for var in PROJECT BASTION PORT CONTEXT_ROOT; do
         [[ -z ${!var} ]] && echo "$var must be specified in [$config_file]" && exit 1
     done
 
-    if [[ "$PROJECT" == "actin-emc" ]]; then
-        [[ -z ${NAMESPACE} ]] && echo "NAMESPACE must be specified in [$config_file] when PROJECT is actin-emc" && exit 1
-    fi
-
-    namespace=""
-    [[ -n "$NAMESPACE" ]] && namespace="-n $NAMESPACE"
-
     GC="gcloud --project $PROJECT compute"
     echo "Attempting to determine name of bastion VM"
-    read instance zone <<< $($GC instances list | grep bastion | head -n1 | awk '{print $1, $2}')
+    read instance zone <<< $($GC instances list | grep $BASTION | head -n1 | awk '{print $1, $2}')
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
     ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
     if [[ $? -ne 0 ]]; then
@@ -80,7 +73,7 @@ elif [[ $action == "start" ]]; then
     else 
         echo "Re-using existing SSH tunnel to bastion"
     fi
-    echo "Tunnel started; access $2 at http://localhost:$PORT"
+    echo "Tunnel started; access $2 at http://localhost:$PORT/$CONTEXT_ROOT"
 else
     echo "Unknown action \"$action\""
     usage
