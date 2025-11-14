@@ -847,7 +847,7 @@ locate_latest_ncr_dataset_bucket() {
 }
 
 locate_personalization_reference_db_analysis_vm() {
-    echo "/data/patient_like_me/reference_db/reference_entries.json"
+    echo "/data/patient_like_me/reference_db"
 }
 
 locate_actin_personalization_database_sql_script() {

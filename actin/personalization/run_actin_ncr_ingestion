@@ -5,11 +5,11 @@ source locate_files || exit 1
 
 ncr_file="$(locate_latest_ncr_crc_dataset_analysis_vm)"
 personalization_jar="$(locate_actin_personalization_jar)"
-output_file="$(locate_personalization_reference_db_analysis_vm)"
+output_directory="$(locate_personalization_reference_db_analysis_vm)"
 
 info "Running NCR ingestion on ${ncr_file}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngestionApplicationKt \
     -ncr_file ${ncr_file} \
-    -output_file ${output_file} \
+    -output_directory ${output_directory} \
     "$@"
