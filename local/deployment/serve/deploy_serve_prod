@@ -2,7 +2,7 @@
 
 source io_functions || exit 1
 
-version="8.4.1"
+version="8.5.0"
 
 source_path="$HOME/hmf/repos/serve/algo/target"
 target_path="$HOME/hmf/repos/serve/serve"
