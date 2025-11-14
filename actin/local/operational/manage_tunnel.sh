@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-REMOTE_TUNNEL_PORT=8888
+REMOTE_TUNNEL_PORT=8080
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
 function print_available_configs() {
@@ -58,7 +58,7 @@ elif [[ $action == "start" ]]; then
 
     source $config_file
 
-    for var in PROJECT CLUSTER POD_NAME REMOTE_APPLICATION_PORT LOCAL_APPLICATION_PORT LOCAL_TUNNEL_PORT; do
+    for var in PROJECT NAMESPACE PORT; do
         [[ -z ${!var} ]] && echo "$var must be specified in [$config_file]" && exit 1
     done
 
@@ -70,22 +70,17 @@ elif [[ $action == "start" ]]; then
     [[ -n "$NAMESPACE" ]] && namespace="-n $NAMESPACE"
 
     GC="gcloud --project $PROJECT compute"
-    echo "Fetching cluster credentials"
-    gcloud container clusters get-credentials "$CLUSTER" --zone europe-west4 --project "$PROJECT"
     echo "Attempting to determine name of bastion VM"
     read instance zone <<< $($GC instances list | grep bastion | head -n1 | awk '{print $1, $2}')
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
-    ps aux | grep gcloud | grep ssh | grep -- "-L $LOCAL_TUNNEL_PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
+    ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
     if [[ $? -ne 0 ]]; then
-        echo "Establishing tunnel to $instance on port $LOCAL_TUNNEL_PORT"
-        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$LOCAL_TUNNEL_PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
+        echo "Establishing tunnel to $instance on port $PORT"
+        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
     else 
         echo "Re-using existing SSH tunnel to bastion"
     fi
-    echo "Forwarding $REMOTE_APPLICATION_PORT to localhost:$LOCAL_APPLICATION_PORT for ${POD_NAME}"
-    k8 $LOCAL_TUNNEL_PORT port-forward $(k8 $LOCAL_TUNNEL_PORT get pods $namespace | grep $POD_NAME | awk '{print $1}') $namespace \
-        "$LOCAL_APPLICATION_PORT:$REMOTE_APPLICATION_PORT" &
-    echo "Tunnel started; access $POD_NAME at http://localhost:$LOCAL_APPLICATION_PORT"
+    echo "Tunnel started; access $2 at http://localhost:$PORT"
 else
     echo "Unknown action \"$action\""
     usage
