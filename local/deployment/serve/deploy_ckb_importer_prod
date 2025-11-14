@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-version="4.0.2"
+version="5.4.0"
 
 do_deploy_prod_serve_tool "ckb-importer" ${version}
