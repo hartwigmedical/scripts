@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+ncr_file="/data/patient_like_me/sources/ncr/crc/delivery3/K23244.csv"
+personalization_jar="$(locate_actin_personalization_jar)"
+
+info "Running NCR inspection on ${ncr_file}"
+
+java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrInspectionApplicationKt \
+    -ncr_file ${ncr_file} \
+    "$@"
