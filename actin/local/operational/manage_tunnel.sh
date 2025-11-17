@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 REMOTE_TUNNEL_PORT=8080
 KUBE_PORT=8888
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
@@ -12,9 +14,9 @@ function print_available_configs() {
 }
 
 function cleanup() {
-    port=$1
-    echo "Cleaning up old processes listening on port $port"
-    ps aux | grep "$port" | grep 'start-iap-tunnel' | awk '{print $2}' | while read pid; do
+    vm=$1
+    echo "Cleaning up old processes listening tunnelling to $vm"
+    ps aux | grep "$vm" | grep 'start-iap-tunnel' | awk '{print $2}' | while read pid; do
         [[ -n $pid ]] && kill $pid 
         echo "  Process [$pid] killed"
     done
@@ -44,9 +46,9 @@ EOM
 [[ $# -gt 3 ]] && usage && exit 1
 
 
-egrep '^BASTION=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
-    echo "Stopping existing tunnel on local port $port"
-    cleanup $port
+egrep '^BASTION=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read bastion; do
+    echo "Stopping existing tunnel to VM $bastion"
+    cleanup $bastion
 done
 
 action="$1"
