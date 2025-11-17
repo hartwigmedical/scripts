@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source database_functions || exit 1
 
-actin_credentials="$(prod_writer_sql_credentials)"
+actin_credentials="$(cat $HOME/connection_secret.txt)"
 personalization_jar="$(locate_actin_personalization_jar)"
 actin_database_name="actin_personalization"
 
