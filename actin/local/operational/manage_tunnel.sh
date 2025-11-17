@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 REMOTE_TUNNEL_PORT=8080
+KUBE_PORT=8888
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
 function print_available_configs() {
@@ -13,7 +14,7 @@ function print_available_configs() {
 function cleanup() {
     port=$1
     echo "Cleaning up old processes listening on port $port"
-    ps aux | grep "$port:localhost:$REMOTE_TUNNEL_PORT" | grep 'compute start-iap-tunnel' | awk '{print $2}' | while read pid; do
+    ps aux | grep "$port" | grep 'start-iap-tunnel' | awk '{print $2}' | while read pid; do
         [[ -n $pid ]] && kill $pid 
         echo "  Process [$pid] killed"
     done
@@ -43,7 +44,7 @@ EOM
 [[ $# -gt 3 ]] && usage && exit 1
 
 
-egrep '^PORT=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
+egrep '^BASTION=' ${CONFIG_DIR}/*.config | awk -F= '{print $2}' | sort -u | while read port; do
     echo "Stopping existing tunnel on local port $port"
     cleanup $port
 done
@@ -69,7 +70,7 @@ elif [[ $action == "start" ]]; then
     ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
     if [[ $? -ne 0 ]]; then
         echo "Establishing tunnel to $instance on port $PORT"
-        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
+        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$KUBE_PORT:localhost:$KUBE_PORT" -L "$PORT:localhost:$REMOTE_TUNNEL_PORT" -N -q -f
     else 
         echo "Re-using existing SSH tunnel to bastion"
     fi
