@@ -440,7 +440,8 @@ locate_crc_actin_environment_config() {
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin() {
-    echo "/data/actin/system/actin.jar"
+    #echo "/data/actin/system/actin.jar"
+    echo "/home/rramnarine/curation-local-SNAPSHOT-jar-with-dependencies.jar"
 }
 
 locate_actin_cohort_pipeline_directory() {
