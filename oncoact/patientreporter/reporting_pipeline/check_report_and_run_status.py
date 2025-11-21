@@ -73,7 +73,7 @@ class StatusChecker:
 
         return processing_runs_chapter
 
-    def _failed_runs_without_report_section(self):
+    def _processing_runs_section(self):
         section = Section(name='Processing runs',
         description='These that are still processing. '
         'Consider investigating these is this is taking longer than usual.')
