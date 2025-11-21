@@ -49,6 +49,7 @@ class StatusChecker:
         self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
         if len(self.all_runs) == 0:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
+        self.processing_runs = self.all_runs[self.all_runs['status'] == 'Processing']
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
@@ -56,13 +57,31 @@ class StatusChecker:
 
     def generate_and_print_summary(self):
         print("Generating report summary")
-        chapters = [self._failed_runs_chapter(),
+        chapters = [self._processing_waiting_runs_chapter(),
+                    self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
                     self._reporting_pipeline_chapter(),
                     self._waiting_pending_processing_runs_chapter()]
 
         _print_chapters(chapters)
+
+    def _processing_runs_chapter(self):
+        print("Processing processing runs chapter")
+        processing_runs_chapter = Chapter(name="Processing runs")
+        processing_runs_chapter.add_section(self._processing_runs_section())
+
+        return processing_runs_chapter
+
+    def _failed_runs_without_report_section(self):
+        section = Section(name='Processing runs',
+        description='These that are still processing. '
+        'Consider investigating these is this is taking longer than usual.')
+
+        for _, run_record in self.processing_runs.iterrows():
+            run_content = _get_default_run_content(run_record)
+            section.add_content(run_content)
+        return section
 
     def _failed_runs_chapter(self):
         print("Processing failed runs chapter")
