@@ -57,7 +57,7 @@ class StatusChecker:
 
     def generate_and_print_summary(self):
         print("Generating report summary")
-        chapters = [self._processing_waiting_runs_chapter(),
+        chapters = [self._processing_runs_chapter(),
                     self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
