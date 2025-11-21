@@ -52,27 +52,17 @@ class StatusChecker:
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
-        self.waiting_runs = self.all_runs[self.all_runs['status'] == 'Waiting']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
 
     def generate_and_print_summary(self):
         print("Generating report summary")
-        chapters = [self._waiting_runs_chapter(),
-                    self._failed_runs_chapter(),
+        chapters = [self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
                     self._reporting_pipeline_chapter(),
                     self._waiting_pending_processing_runs_chapter()]
 
         _print_chapters(chapters)
-
-
-    def _waiting_runs_chapter(self):
-        print("Processing waiting runs chapter")
-        waiting_runs_chapter = Chapter(name="Waiting runs")
-        waiting_runs_chapter.add_section(self._waiting_runs_with_report_shared_section())
-
-        return waiting_runs_chapter
 
     def _failed_runs_chapter(self):
         print("Processing failed runs chapter")
@@ -82,17 +72,6 @@ class StatusChecker:
         failed_runs_chapter.add_section(self._failed_runs_with_report_shared_section())
 
         return failed_runs_chapter
-
-    def _waiting_runs_without_report_section(self):
-        section = Section(name='Waiting runs',
-                          description='These are runs that are still waiting to be processed. '
-                                      'Consider investigating why this is the case if you find these at production days.')
-
-        for _, run_record in self.waiting_runs.iterrows():
-            run_content = _get_default_run_content(run_record)
-            section.add_content(run_content)
-        return section
-
 
     def _failed_runs_without_report_section(self):
         section = Section(name='Failed runs without a report',
