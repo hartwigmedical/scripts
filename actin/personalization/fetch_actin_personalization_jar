@@ -12,10 +12,11 @@ fi
 destination_jar=$(locate_actin_personalization_jar)
 
 info "Fetching personalization jar version ${version} to ${destination_jar}"
-"$(dirname "$0")/fetch_tool_from_registry" personalization ${version} ${destination_jar}
+do_fetch_actin_tool_from_registry personalization ${version} ${destination_jar}
 
 info "Copying personalization sql files from jar to designated place on vm"
-unzip -p ${destination_jar} generate_database.sql > "$(locate_actin_personalization_database_sql_script)"
-unzip -p ${destination_jar} generate_views.sql > "$(locate_actin_personalization_database_views_sql_script)"
+unzip -p ${destination_jar} generate_ncr_database.sql > "$(locate_actin_ncr_database_sql_script)"
+unzip -p ${destination_jar} generate_personalization_database.sql > "$(locate_actin_personalization_database_sql_script)"
+unzip -p ${destination_jar} generate_personalization_views.sql > "$(locate_actin_personalization_database_views_sql_script)"
 
 info "Done!"

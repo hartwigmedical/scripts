@@ -851,12 +851,16 @@ locate_personalization_reference_db_analysis_vm() {
     echo "/data/patient_like_me/reference_db"
 }
 
+locate_actin_ncr_database_sql_script() {
+    echo "/data/patient_like_me/sql/generate_ncr_database.sql"
+}
+
 locate_actin_personalization_database_sql_script() {
-    echo "/data/patient_like_me/sql/generate_database.sql"
+    echo "/data/patient_like_me/sql/generate_personalization_database.sql"
 }
 
 locate_actin_personalization_database_views_sql_script() {
-    echo "/data/patient_like_me/sql/generate_views.sql"
+    echo "/data/patient_like_me/sql/generate_personalization_views.sql"
 }
 
 ##################################### RNA ######################################
