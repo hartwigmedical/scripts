@@ -840,7 +840,7 @@ locate_actin_personalization_jar() {
 }
 
 locate_latest_ncr_crc_dataset_analysis_vm() {
-    echo "/data/patient_like_me/sources/ncr/latest_crc/K2400223.csv"
+    echo "/data/patient_like_me/sources/ncr/crc/delivery2/K2400223.csv"
 }
 
 locate_ncr_crc_dataset_delivery3_analysis_vm() {
