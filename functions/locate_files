@@ -845,7 +845,7 @@ locate_latest_ncr_crc_dataset_analysis_vm() {
 
 locate_ncr_crc_dataset_delivery3_analysis_vm() {
     # TODO (KD): Remove this function and replace with "latest" once new NCR dataset is in production
-    echo "//data/patient_like_me/sources/ncr/crc/delivery3/K23244.csv"
+    echo "/data/patient_like_me/sources/ncr/crc/delivery3/K23244.csv"
 }
 
 locate_latest_ncr_dataset_bucket() {
