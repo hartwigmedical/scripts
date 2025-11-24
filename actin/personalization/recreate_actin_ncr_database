@@ -6,10 +6,8 @@ source actin_config || exit 1
 source database_functions || exit 1
 
 actin_credentials="$(actin_writer_sql_credentials)"
-
-# TODO (KD): Switch to "actin_ncr" once new NCR dataset is loadable. 
-ncr_database_name="actin_ncr_delivery3"
-
+ 
+ncr_database_name="actin_ncr"
 ncr_database_sql="$(locate_actin_ncr_database_sql_script)"
 
 db_host=$(extract_database_host "${actin_credentials}")

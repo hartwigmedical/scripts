@@ -7,10 +7,10 @@ source database_functions || exit 1
 
 actin_credentials="$(actin_writer_sql_credentials)"
 personalization_jar="$(locate_actin_personalization_jar)"
+ 
+actin_database_name="actin_ncr"
 
-# TODO (KD): Switch to "actin_ncr" once new NCR dataset is loadable. 
-actin_database_name="actin_ncr_delivery3"
-
+# TODO (KD): Switch to latest once delivery3 = latest
 ncr_file="$(locate_ncr_crc_dataset_delivery3_analysis_vm)"
 
 db_user=$(extract_database_user "${actin_credentials}")
