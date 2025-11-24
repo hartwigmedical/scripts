@@ -3,6 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 source actin_config || exit 1
+source database_functions || exit 1
 
 actin_credentials="$(actin_writer_sql_credentials)"
 
