@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "Step 1: Recreating base ACTIN NCR database schema..."
+recreate_actin_ncr_database
+
+info "Step 2: Loading NCR dataset into ACTIN personalization database..."
+load_actin_ncr_database
+
+info "ACTIN NCR database has been successfully recreated and loaded!"
+

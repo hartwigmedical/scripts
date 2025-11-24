@@ -8,7 +8,7 @@ recreate_actin_personalization_database
 info "Step 2: Creating ACTIN personalization views..."
 recreate_actin_personalization_database_views
 
-info "Step 3: Loading NCR dataset into ACTIN personalization database..."
+info "Step 3: Loading reference dataset into ACTIN personalization database..."
 load_actin_personalization_database
 
 info "ACTIN personalization database has been successfully recreated and loaded!"

@@ -843,6 +843,11 @@ locate_latest_ncr_crc_dataset_analysis_vm() {
     echo "/data/patient_like_me/sources/ncr/latest_crc/K2400223.csv"
 }
 
+locate_ncr_crc_dataset_delivery3_analysis_vm() {
+    # TODO (KD): Remove this function and replace with "latest" once new NCR dataset is in production
+    echo "//data/patient_like_me/sources/ncr/crc/delivery3/K23244.csv"
+}
+
 locate_latest_ncr_dataset_bucket() {
     echo "gs://hmf-crunch-actin-ncr-dataset/crc/delivery2/K2400223.csv"
 }
