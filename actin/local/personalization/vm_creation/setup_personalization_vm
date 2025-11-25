@@ -17,8 +17,6 @@ vm_name=actin-developer-vm-${suffix}
 if [ -z "$(gcloud compute --project actin-research instances list | grep ${vm_name} 2>/dev/null)" ]; then
     error "VM does not exist: ${vm_name}"
 fi
-    
-git_repo="git@github.com:hartwigmedical/actin-personalization.git"
 
 # BC: verify all variables are set
 : "${SSH_KEY_FILE:?Need to set SSH_KEY_FILE non-empty}"
@@ -87,27 +85,39 @@ ssh -t -A ${vm_name} << EOF
     git config --global user.email "${GIT_EMAIL}"
     ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    if [ ! -d /data/repos ]; then
-        mkdir -p /data/repos
-    fi 
+    echo "Setting up tools. Note: Use fetch_actin_personalization_jar to populate these the tools"
+    mkdir -p /data/tools/actin-personalization
+    mkdir -p /data/tools/actin-database-sql
     
-    if [ ! -d /data/repos/actin-personalization ]; then
-        git clone ${git_repo} /data/repos/actin-personalization/
-    fi
+    echo "Setting up repos"
+    
+    mkdir -p /data/repos 
+    git clone git@github.com:hartwigmedical/scripts.git /data/repos/scripts/    
+    git clone git@github.com:hartwigmedical/actin-personalization.git /data/repos/actin-personalization/
     
     cd /data/repos/actin-personalization
     pre-commit install
+    
+    echo "Setting up ACTIN private resources repo..."
+    gcloud source repos clone actin-resources-private /data/repos/actin-resources-private --project=actin-build
 
-    if [ ! -d /data/actin-resources-private ]; then
-        echo "Setting up private resources..."
-        gcloud source repos clone actin-resources-private /data/actin-resources-private --project=actin-build
-    fi
+    echo "Setting up training output and resources"
+    mkdir -p /data/training_output/resources
+    gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/training_output/resources/
+    mkdir -p /data/training_output/models
+    gsutil -m rsync -r gs://actin-personalization-models-v1 /data/training_output/models/
 
-    echo "Setting up reference data..."
-    mkdir -p /data/actin-personalization-reference-patient-data/
-    gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/actin-personalization-reference-patient-data/
-    mkdir -p /data/hmf-crunch-actin-ncr-dataset/
-    gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/hmf-crunch-actin-ncr-dataset/
+    echo "Setting up patient-like-me data"
+    mkdir -p /data/patient_like_me/reference_db
+    mkdir -p /data/patient_like_me/sources/cairo
+    gsutil -m rsync -r gs://hmf-crunch-actin-dccg-dataset/cairo /data/patient_like_me/sources/cairo/
+    mkdir -p /data/patient_like_me/sources/ncr
+    gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/patient_like_me/sources/ncr/
+    mkdir -p /data/patient_like_me/sources/orchestra
+    gsutil -m rsync -r gs://hmf-crunch-actin-orchestra-dataset /data/patient_like_me/sources/orchestra/
+    mkdir -p /data/patient_like_me/sources/palga
+    gsutil -m rsync -r gs://hmf-crunch-actin-palga-dataset /data/patient_like_me/sources/palga/
 EOF
 
 info "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"
+warn "Note! You should source /data/repos/scripts/config/bashrc in your .profile to be able to use the scripts properly"
