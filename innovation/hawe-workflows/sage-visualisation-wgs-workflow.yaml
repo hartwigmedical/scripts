@@ -1,0 +1,95 @@
+name: "sage-vis-wgs"
+version: "0.2.2"
+storagePath: "gs://sage-visualisations-wgs-output"
+externalInputs:
+  - name: run-folder
+    location: "${run_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: reads-folder
+    location: "${reads_folder}"
+stages:
+  - name: "sage-visualisation"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/sage-visualisation-wgs"
+    version: "0.0.3"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 20Gi
+      stageTimeoutMinutes: 60
+      resources:
+        requests:
+          cpu: 24
+          memory: 64Gi
+          storage: 20Gi
+      node:
+        spot: true
+        pool: "n2d-standard-32-pool-2"
+    inputStages:
+      - run-folder
+      - ref-folder
+      - reads-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        
+        set -eo pipefail
+        
+        INPUT_PATH="/tmp/input"
+        OUTPUT_PATH="/tmp/output"
+        TUMOR_READS="/in/reads-folder/${tumor_file}"
+        REFERENCE_READS="/in/reads-folder/${reference_file}"
+        REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        HOTSPOTS="/data/resources/KnownHotspots.somatic.38.vcf.gz"
+        PANEL_BED="/data/resources/ActionableCodingPanel.38.bed.gz"
+        HIGH_CONFIDENCE_BED="/data/resources/HG001_GRCh38_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel_noCENorHET7.bed.gz"
+        COVERAGE_BED="/data/resources/CoverageCodingPanel.38.bed.gz"
+        ENSEMBL_DATA_DIR="/data/resources/ensembl_data_cache/"
+        SAGE_WORK_DIR="/${tumor_sample_id}_sage"
+        LOG_INFO="${tumor_sample_id}"
+        THREADS=24
+
+        echo $TUMOR_READS
+        echo $REFERENCE_READS
+        
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Creating tmp directories [$LOG_INFO]"
+        mkdir -p "$INPUT_PATH" "$OUTPUT_PATH"
+
+        mkdir -p "$SAGE_WORK_DIR"
+        cp /in/run-folder/${tumor_jitter_params_file} $SAGE_WORK_DIR
+        cp /in/run-folder/${tumor_ms_table_file} $SAGE_WORK_DIR
+        cp /in/run-folder/${tumor_redux_bqr_file} $SAGE_WORK_DIR
+        cp /in/run-folder/${reference_jitter_params_file} $SAGE_WORK_DIR
+        cp /in/run-folder/${reference_ms_table_file} $SAGE_WORK_DIR
+        cp /in/run-folder/${reference_redux_bqr_file} $SAGE_WORK_DIR
+
+        ls /data/resources/
+        ls /data/resources/ensembl_data_cache/
+
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Running SAGE... [$LOG_INFO]"
+        java -Xmx16G -jar sage_v5.0.jar \
+          -tumor ${tumor_sample_id} \
+          -tumor_bam $TUMOR_READS \
+          -reference ${reference_sample_id} \
+          -reference_bam $REFERENCE_READS\
+          -ref_genome_version 38 \
+          -ref_genome $REFERENCE_GENOME \
+          -hotspots $HOTSPOTS \
+          -jitter_bqr_dir $SAGE_WORK_DIR \
+          -panel_bed $PANEL_BED \
+          -high_confidence_bed $HIGH_CONFIDENCE_BED \
+          -ensembl_data_dir $ENSEMBL_DATA_DIR \
+          -disable_soft_filter \
+          -disable_hard_filter \
+          -output_vcf "$SAGE_WORK_DIR/${tumor_sample_id}.sage.somatic.vcf.gz" \
+          -vis_max_support_reads -1 \
+          -vis_variants ${variant_location} \
+          -vis_output_dir "${tumor_sample_id}.sage.visualisation" \
+          -threads $THREADS
+          
+
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Copying output [$LOG_INFO]"
+        cp -r $SAGE_WORK_DIR /out/
+        
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Finished with sage visualisations [$LOG_INFO]"
