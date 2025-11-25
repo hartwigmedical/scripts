@@ -120,3 +120,4 @@ ssh -t -A ${vm_name} << EOF
 EOF
 
 info "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"
+warn "Note! You should source /data/repos/scripts/config/bashrc in your .profile to be able to use the scripts properly"
