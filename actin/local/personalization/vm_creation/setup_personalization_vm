@@ -117,6 +117,9 @@ ssh -t -A ${vm_name} << EOF
     gsutil -m rsync -r gs://hmf-crunch-actin-orchestra-dataset /data/patient_like_me/sources/orchestra/
     mkdir -p /data/patient_like_me/sources/palga
     gsutil -m rsync -r gs://hmf-crunch-actin-palga-dataset /data/patient_like_me/sources/palga/
+
+    echo "Creating system-level profile"
+    echo 'source /data/repos/scripts/config/bashrc' >> /etc/profile.d/actin_env.sh
 EOF
 
 info "✅ Setup complete! You can now connect to your VM using: ssh ${vm_name}"
