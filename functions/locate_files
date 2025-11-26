@@ -457,7 +457,7 @@ locate_actin_cohort_molecular_directory() {
 }
 
 locate_actin_cohort_clinical_directory() {
-    echo "/data/experiments/kd_actin_cohort/clinical"
+    echo "/data/experiments/kd_actin_cohort/clinical Testing 1 2 3"
 }
 
 locate_actin_cohort_trial_database_directory() {
