@@ -2,11 +2,10 @@ import argparse
 import pandas as pd
 import subprocess
 
-from rest_util import RestClient
+from rest_util import RestClient, _get_as_json
 from gsutil import get_bucket_and_blob_from_gs_path
 from google.cloud.storage import Client, Bucket
 import json
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -28,8 +27,7 @@ class StatusChecker:
         self.all_reports_with_null = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
                                       .drop_duplicates(subset='id', keep='last'))
         self.all_reports = self.all_reports_with_null[self.all_reports_with_null['sample_barcode'].notnull()]
-        # these if checks are to ensure that if the dataframe is empty,
-        # it still has the required columns to prevent KeyErrors.
+
         if len(self.all_reports) == 0:
             self.all_reports = pd.DataFrame(columns=['sample_barcode', 'run_id'])
         self.shared_reports_with_null = (pd.DataFrame([shared['report_created']
@@ -47,9 +45,44 @@ class StatusChecker:
             subset=['sample_barcode'], keep='last')
 
         self.all_runs = pd.DataFrame(self.rest_client.get_all_relevant_runs())
+
         if len(self.all_runs) == 0:
             self.all_runs = pd.DataFrame(columns=['status', 'id'])
+
+        recent_raw = []
+        for ini_type in ["Somatic", "Targeted"]:
+            recent_raw += _get_as_json(
+                self.rest_client._runs_url,
+                params={
+                    "ini": f"{ini_type}.ini",
+                    "context": "DIAGNOSTIC"
+                }
+            )
+
+        extra_df = pd.DataFrame(recent_raw)
+
+        if not extra_df.empty:
+            missing_processing = extra_df[extra_df["status"] == "Processing"]
+            missing_processing = missing_processing[
+                ~missing_processing["id"].isin(self.all_runs["id"])
+            ]
+
+            missing_waiting = extra_df[extra_df["status"] == "Waiting"]
+            missing_waiting = missing_waiting[
+                ~missing_waiting["id"].isin(self.all_runs["id"])
+            ]
+
+            to_add = pd.concat(
+                [missing_processing, missing_waiting],
+                ignore_index=True
+            )
+
+            if not to_add.empty:
+                self.all_runs = pd.concat([self.all_runs, to_add], ignore_index=True)
+
+
         self.processing_runs = self.all_runs[self.all_runs['status'] == 'Processing']
+        self.waiting_runs = self.all_runs[self.all_runs['status'] == 'Waiting']
         self.failed_runs = self.all_runs[self.all_runs['status'] == 'Failed']
         self.finished_runs = self.all_runs[self.all_runs['status'] == 'Finished']
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
@@ -57,30 +90,45 @@ class StatusChecker:
 
     def generate_and_print_summary(self):
         print("Generating report summary")
-        chapters = [self._processing_runs_chapter(),
+        chapters = [self._running_pipeline_chapter(),
                     self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
-                    self._reporting_pipeline_chapter(),
-                    self._waiting_pending_processing_runs_chapter()]
+                    self._reporting_pipeline_chapter()]
 
         _print_chapters(chapters)
 
-    def _processing_runs_chapter(self):
-        print("Processing processing runs chapter")
-        processing_runs_chapter = Chapter(name="Processing runs")
-        processing_runs_chapter.add_section(self._processing_runs_section())
+    def _running_pipeline_chapter(self):
+        print("Processing running pipeline chapter")
+        running_pipeline_chapter = Chapter(name="Waiting & Processing runs")
 
-        return processing_runs_chapter
+        running_pipeline_chapter.add_section(self._waiting_runs_section())
+        running_pipeline_chapter.add_section(self._processing_runs_section())
+
+        return running_pipeline_chapter
+
+
+    def _waiting_runs_section(self):
+        section = Section(name='Waiting runs',
+                          description='These runs are still waiting to start. '
+                                      'Consider investigating these if they have not started on production days.')
+
+        for _, run_record in self.waiting_runs.iterrows():
+            run_content = _get_default_run_content(run_record)
+            section.add_content(run_content)
+
+        return section
+
 
     def _processing_runs_section(self):
         section = Section(name='Processing runs',
-        description='These that are still processing. '
-        'Consider investigating these is this is taking longer than usual.')
+                          description='These runs are still processing. '
+                                      'Consider investigating these is this is taking longer than usual.')
 
         for _, run_record in self.processing_runs.iterrows():
             run_content = _get_default_run_content(run_record)
             section.add_content(run_content)
+
         return section
 
     def _failed_runs_chapter(self):
@@ -222,8 +270,7 @@ class StatusChecker:
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
                 self._get_protect_warnings(report_record) +
-                self._get_virus_warnings(report_record) +
-                self._get_unreliable_purity_ploidy_warnings(report_record))
+                self._get_virus_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
@@ -444,63 +491,6 @@ class StatusChecker:
 
         return warnings
 
-    def _get_unreliable_purity_ploidy_warnings(self, report_record):
-        warnings = []
-        #get reporting id
-        used_lama_data = self._get_lama_data_used_for_report(report_record)
-
-        if used_lama_data is None:
-            warnings.append(f"No Lama data was found in the patient reporter for {report_record['barcode']}.")
-            return warnings
-
-
-        patient_id = "reportingId"
-        patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
-
-        pathology_id = "hospitalSampleLabel"
-        pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
-
-        if pathology_id_value and patient_id_value:
-            reporting_id = f"{patient_id_value}-{pathology_id_value}"
-        elif patient_id_value:
-            reporting_id = patient_id_value
-        else:
-            warnings.append(f"Both reportingId and hospitalSampleLabel are missing in lama data for {report_record['barcode']}.")
-            return warnings
-
-        #Get credentials for sql
-        command = 'bash -i -c "source database_functions && get_secret_from_secret_manager mysql-diagnostic-patients-sql-prod-1-reader"'
-        creds_result = subprocess.run(command, shell=True, text=True, capture_output=True)
-        creds = creds_result.stdout.strip()
-        #Construct SQL query
-        sql_query = (
-            "SELECT sampleId, qcStatus, purity, minPurity,maxPurity, ploidy, minPloidy, maxPloidy, round(maxPurity-minPurity, 2) as range_purity, round(maxPloidy-minPloidy,2) as range_ploidy "
-            "FROM purity "
-            "WHERE qcStatus NOT LIKE '%FAIL_NO_TUMOR%'"
-            f"AND sampleId = '{reporting_id}' "
-        )
-
-        query_command = f"do_execute_sql_on_database \"{sql_query}\" hmfpatients '{creds}'"
-        output = subprocess.run(query_command, shell=True, text=True, capture_output=True)
-
-        # Process the output
-        if output.stdout.strip():
-            lines = output.stdout.strip().split('\n')
-            if len(lines) > 1:  # Ensure there are both headers and data
-                headers = lines[0].split('\t')
-                values = lines[1].split('\t')
-
-                # Combine headers and values into key-value pairs
-                key_value_pairs = [f"{header}: {value}" for header, value in zip(headers, values)]
-
-                # Create the readable output
-                readable_output = ", ".join(key_value_pairs)
-                warnings.append(f"The unreliable purity/ploidy fit information info is as follows: {readable_output}")
-            else:
-                warnings.append("The unreliable purity/ploidy fit information info could not be retrieved or is incomplete.")
-
-        return warnings
-
 
     def _get_report_blob(self, report_record, datatype, fallback_blob=None):
         path = _get_report_file_path_or_none(report_record, datatype=datatype)
@@ -541,12 +531,6 @@ class StatusChecker:
             section.add_content(content)
         return section
 
-    def _waiting_pending_processing_runs_chapter(self):
-        print("Processing waiting, processing and pending pipelines chapter")
-        chapter = Chapter(name='Waiting, pending and processing runs')
-        for status in {'Waiting', 'Pending', 'Processing'}:
-            chapter.add_section(self._simple_run_status_section(status))
-        return chapter
 
     def _simple_run_status_section(self, status):
         section = Section(name=f"{status} runs")
@@ -615,15 +599,36 @@ class Section:
 
 
 def _print_chapters(chapters):
+    # Kleuren per chapter
+    color_map = {
+        "Failed runs": "\033[91m",       # red
+        "Finished runs": "\033[94m",     # blue
+        "Validated runs": "\033[92m",    # green
+        "Waiting & Processing runs": "\033[33m",  # yello
+        "Reporting pipeline fails": "\033[38;5;208m",   # orange
+    }
+
+    reset = "\033[0m"
+    bold = "\033[1m"
+
     for chapter in chapters:
-        print(f'\n\n--- {chapter.name} ---')
+        color = color_map.get(chapter.name, "\033[97m")
+
+        # Chapter header
+        print("\n" + "=" * 70)
+        print(f"{color}{bold}{chapter.name.upper()}{reset}")
+        print("=" * 70)
+
+        # Sections
         for section in chapter.sections:
-            print(f'\n** {section.name.upper()} **')
+            print(f"\n{bold}{section.name.upper()}{reset}")
             if section.description:
                 print(section.description)
+
             if section.is_empty():
-                print('\n\t- This section is empty -')
+                print("\n\t- This section is empty -")
                 continue
+
             for i, content in enumerate(section.contents):
                 print('',
                       f'\t{i + 1}.',
