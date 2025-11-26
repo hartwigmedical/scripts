@@ -12,6 +12,7 @@ fi
 
 info "Running EMC experiment for ${run_dir}"
 sample=$(basename ${run_dir})
+info "Sample name: ${sample}"
 
 create_actin_cohort_clinical_record_from_doid ${sample}
 
