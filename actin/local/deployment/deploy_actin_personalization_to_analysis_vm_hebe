@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
- personalization_jar="${HOME}/hmf/repos/actin-personalization/system/target/system-local-SNAPSHOT.jar"
- vm_name="actin-analysis-vm-hebe"
-
- do_deploy_actin_personalization ${personalization_jar} ${vm_name}
