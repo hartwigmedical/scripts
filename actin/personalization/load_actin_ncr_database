@@ -7,18 +7,20 @@ source database_functions || exit 1
 
 actin_credentials="$(actin_writer_sql_credentials)"
 personalization_jar="$(locate_actin_personalization_jar)"
-actin_database_name="actin_personalization"
+ 
+actin_database_name="actin_ncr"
 
-reference_db_directory="$(locate_personalization_reference_db_analysis_vm)"
+# TODO (KD): Switch to latest once delivery3 = latest
+ncr_file="$(locate_ncr_crc_dataset_delivery3_analysis_vm)"
 
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
 db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
 
-info "Loading reference entries into ACTIN personalization database"
+info "Loading NCR dataset into ACTIN NCR database"
 
-java -cp ${personalization_jar} com.hartwig.actin.personalization.database.PersonalizationLoaderApplicationKt \
-    -reference_db_directory "${reference_db_directory}" \
+java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.database.NcrDatabaseLoaderApplicationKt \
+    -ncr_file "${ncr_file}" \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
-source database_functions || exit 1
 source locate_files || exit 1
+source actin_config || exit 1
+source database_functions || exit 1
 
-actin_credentials="$(prod_writer_sql_credentials)"
+actin_credentials="$(actin_writer_sql_credentials)"
+
 actin_database_name="actin_personalization"
-
-# NOTE: Make sure the below location contains the actual SQL you want to use!
 actin_database_sql="$(locate_actin_personalization_database_sql_script)"
 
 db_host=$(extract_database_host "${actin_credentials}")

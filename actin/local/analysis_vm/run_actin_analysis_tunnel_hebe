@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-suffix="hebe"
-
-do_run_actin_analysis_tunnel "${suffix}"

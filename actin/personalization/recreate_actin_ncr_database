@@ -6,17 +6,17 @@ source actin_config || exit 1
 source database_functions || exit 1
 
 actin_credentials="$(actin_writer_sql_credentials)"
-actin_database_name="actin_personalization"
-
-actin_views_sql="$(locate_actin_personalization_database_views_sql_script)"
+ 
+ncr_database_name="actin_ncr"
+ncr_database_sql="$(locate_actin_ncr_database_sql_script)"
 
 db_host=$(extract_database_host "${actin_credentials}")
 db_port=$(extract_database_port "${actin_credentials}")
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
 
-info "Rebuilding ACTIN personalization views for '${actin_database_name}' on '${db_host}' using ${actin_views_sql}"
+info "Rebuilding ACTIN NCR db '${ncr_database_name}' on '${db_host}' using ${ncr_database_sql} "
 
-mysql ${actin_database_name} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${actin_views_sql}
+mysql ${ncr_database_name} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${ncr_database_sql}
 
 info "Done!"

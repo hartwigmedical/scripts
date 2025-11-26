@@ -3,7 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-ncr_file="/data/patient_like_me/sources/ncr/crc/delivery3/K23244.csv"
+ncr_file="$(locate_ncr_crc_dataset_delivery3_analysis_vm)"
 personalization_jar="$(locate_actin_personalization_jar)"
 
 info "Running NCR inspection on ${ncr_file}"
