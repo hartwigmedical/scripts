@@ -11,10 +11,10 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 info "Running EMC experiment for ${run_dir}"
-sample=$(basename ${run_dir})
-info "Sample name: ${sample}"
+sample_services=$(basename ${run_dir})
+sample_actin=${sample_services%?}
 
-create_actin_cohort_clinical_record_from_doid ${sample}
+create_actin_cohort_clinical_record_from_doid ${sample_services} ${sample_actin}
 
 pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample})
 rm -rf ${pipeline_dir}
