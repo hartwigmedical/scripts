@@ -7,7 +7,7 @@ source io_functions || exit 1
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    error "Parameters missing. Exiting"
+    error "Parameters missing. Exiting - CHECK"
 fi
 
 info "Running EMC experiment for ${run_dir}"
