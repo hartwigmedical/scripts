@@ -8,7 +8,7 @@ services_sample=$1 && shift
 actin_patient=$1 && shift
 
 if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
-    error "Parameters missing. Exiting"
+    error "Parameters missing. Exiting."
 fi
 
 primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${services_sample})
