@@ -30,7 +30,7 @@ run_orange_research_no_germline ${pipeline_dir}
 molecular_dir=$(locate_actin_cohort_molecular_directory ${sample_services})
 create_or_cleanup_dir ${molecular_dir}
 cp "${pipeline_dir}/orange_no_germline/${sample_services}.orange.json" "${molecular_dir}/"
-rm -rf ${pipeline_dir}
+#rm -rf ${pipeline_dir}
 
 actin_molecular_interpreter_cohort ${sample_services}
 load_actin_molecular_cohort ${sample_services}
