@@ -1,5 +1,5 @@
 name: "sage-vis-wgs"
-version: "0.2.2"
+version: "0.2.4"
 storagePath: "gs://sage-visualisations-wgs-output"
 externalInputs:
   - name: run-folder
@@ -64,9 +64,6 @@ stages:
         cp /in/run-folder/${reference_ms_table_file} $SAGE_WORK_DIR
         cp /in/run-folder/${reference_redux_bqr_file} $SAGE_WORK_DIR
 
-        ls /data/resources/
-        ls /data/resources/ensembl_data_cache/
-
         echo "$(date +"%Y-%m-%d %H:%M:%S") Running SAGE... [$LOG_INFO]"
         java -Xmx16G -jar sage_v5.0.jar \
           -tumor ${tumor_sample_id} \
@@ -78,6 +75,7 @@ stages:
           -hotspots $HOTSPOTS \
           -jitter_bqr_dir $SAGE_WORK_DIR \
           -panel_bed $PANEL_BED \
+          -sequencing_type "${sequencing_type}" \
           -high_confidence_bed $HIGH_CONFIDENCE_BED \
           -ensembl_data_dir $ENSEMBL_DATA_DIR \
           -disable_soft_filter \
