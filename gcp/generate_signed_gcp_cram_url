@@ -4,7 +4,7 @@ source api_functions || exit 1
 source message_functions || exit 1
 source secrets_functions || exit 1
 
-biopsy_name=$1 && shift # eg WIDE01010001T
+biopsy_name=$1 && shift # eg H00006583
 sample_type=$1 && shift # REF or TUM
 
 PRESIGN_SECONDS=172800
@@ -16,10 +16,10 @@ project="hmf-database"
 
 print_usage(){
     echo "-----"
-    echo " Descr: Prints presigned CRAM and CRAI URLs by biopsy name"
+    echo " Descr: Prints presigned CRAM and CRAI URLs by H-number"
     echo " Usage: $(basename $0) \${biopsy-name} \${sample-type}"
-    echo "        $(basename $0) CPCT02010003T REF"
-    echo "        $(basename $0) CPCT02010003T TUM"
+    echo "        $(basename $0) H00006583 REF"
+    echo "        $(basename $0) H00006583 TUM"
     echo "  Note: URLs will be valid for ${PRESIGN_SECONDS} seconds (${PRESIGN_DAYS} days)"
     echo "-----"
     exit 1
