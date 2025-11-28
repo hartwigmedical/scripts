@@ -34,9 +34,9 @@ credentials=$(get_secret_from_secret_manager "${SECRET_NAME}") || die "Unable to
 
 internal_cram_url=""
 if [[ ${sample_type} = "REF" ]]; then
-    internal_cram_url=$(locate_reference_cram "${biopsy_name}")
+    internal_cram_url="gs://hartwig-reads/dna/${biopsy_name}/ref/alignments/${biopsy_name}.cram"
 elif [[ ${sample_type} = "TUM" ]]; then
-    internal_cram_url=$(locate_tumor_cram "${biopsy_name}")
+    internal_cram_url="gs://hartwig-reads/dna/${biopsy_name}/tumor/alignments/${biopsy_name}.cram"
 else
     die "Provided type needs to be REF or TUM"
 fi
