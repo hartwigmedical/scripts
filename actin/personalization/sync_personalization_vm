@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+info "Replacing training output and resources with GCP bucket contents"
+create_or_cleanup_dir "/data/training_output/resources"
+gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/training_output/resources/
+
+create_or_cleanup_dir "/data/training_output/models"
+gsutil -m rsync -r gs://actin-personalization-models-v1 /data/training_output/models/
+
+info "Replacing patient-like-me data with GCP bucket contents"
+create_or_cleanup_dir "/data/patient_like_me/sources/cairo"
+gsutil -m rsync -r gs://hmf-crunch-actin-dccg-dataset/cairo /data/patient_like_me/sources/cairo/
+
+create_or_cleanup_dir "/data/patient_like_me/sources/ncr"
+gsutil -m rsync -r gs://hmf-crunch-actin-ncr-dataset /data/patient_like_me/sources/ncr/
+
+create_or_cleanup_dir "/data/patient_like_me/sources/orchestra"
+gsutil -m rsync -r gs://hmf-crunch-actin-orchestra-dataset /data/patient_like_me/sources/orchestra/
+
+create_or_cleanup_dir "/data/patient_like_me/sources/palga"
+gsutil -m rsync -r gs://hmf-crunch-actin-palga-dataset /data/patient_like_me/sources/palga/
