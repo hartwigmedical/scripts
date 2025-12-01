@@ -41,7 +41,7 @@ if [[ ! -f ${SHEET_LOC} ]]; then
     die "SampleSheet ${SHEET_LOC} does not exist"
 fi
 
-if grep -q "Name,NO" ${SHEET_LOC}
+if grep -e "Name,NO" -e "Name,IS" ${SHEET_LOC}
 then
   start=$(( $(cat ${SHEET_LOC} | grep -n Data] | cut -d: -f1) + 1))
   end=$(cat ${SHEET_LOC} | wc -l)
