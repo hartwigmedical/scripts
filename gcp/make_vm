@@ -4,6 +4,7 @@ source message_functions || exit 1
 
 CRUNCH_PROJECT="hmf-crunch"
 OPS_PROJECT="hmf-ops"
+SHARE_PROJECT="hmf-share"
 DEFAULT_UMBRELLA_SCOPE="crunch"
 
 vm_name=""
@@ -45,7 +46,7 @@ print_usage() {
     echo "  -s disk_size           VM boot disk size [${disk_size}]"
     echo "  -t disk_type           VM boot disk type [${disk_type}]"
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
-    echo "  -u umbrella_scope      Can be crunch/ops/innovation/pmc/onboarding and configures accordingly [${umbrella_scope}]"
+    echo "  -u umbrella_scope      Can be crunch/ops/innovation/pmc/onboarding/share and configures accordingly [${umbrella_scope}]"
     echo "  -c cost_center         Track costs under this label [${cost_center}]"
     echo "  -e                     Make VM pre-emptible"
     echo ""
@@ -113,6 +114,11 @@ elif [[ "${umbrella_scope}" == "innovation" ]]; then
     vm_project="${CRUNCH_PROJECT}"
     cost_center="${cost_center:-innovation}"
     network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1")
+elif [[ "${umbrella_scope}" == "share" ]]; then
+    service_account="hmf-share@hmf-share.iam.gserviceaccount.com"
+    vm_project="${SHARE_PROJECT}"
+    cost_center="${cost_center:-dr}"
+    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-datarequest-prod-1")
 else
     die "Unknown umbrella scope provided [${umbrella_scope}]"
 fi
