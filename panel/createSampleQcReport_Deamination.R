@@ -58,29 +58,21 @@ runSampleQcDeamination<-function()
     
     if(length(args) < 3)
     {
-      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir")
+      print("Requires arguments: 1=SampleId, 2=DataDir, 3=RunDir, [4=ResourceDir (default=/data/resources/public)]")
       stop()
     }
-                      
+
     sampleId <- args[1]
     sampleDataDir <- args[2]
-    #cohortMedianDepthFile = args[3]
-    #cobaltRegionsFile = args[4]
-    
-    #runDir = "/home/mmendeville/matias/Panel/"
-    
-#    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
     runDir = args[3]
-    
-    
-#    runDir = "/home/evandijk/TEST_QC_Plots/QC_rundir/"
-    
-    cohortMedianDepthFile = paste0("/data/resources/public/target_regions/38/target_regions_exon_relative_depth.38.csv")
-#   cohortMedianDepthFile =
-#    cobaltRegionsFile = paste0(runDir, "QC/target_regions_normalisation.38.tsv")
-    cobaltRegionsFile = "/data/resources/public/target_regions/38/target_regions_normalisation.38.tsv"
-    ensembl_gene_data = "/data/resources/public/ensembl_data_cache/38/ensembl_gene_data.csv"
-    driverGenePanel = "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
+
+    # Optional argument with default
+    resourceDir = ifelse(length(args) >= 4, args[4], "/data/resources/public")
+
+    cohortMedianDepthFile = paste0(resourceDir, "/target_regions/38/target_regions_exon_relative_depth.38.csv")
+    cobaltRegionsFile = paste0(resourceDir, "/target_regions/38/target_regions_normalisation.38.tsv")
+    ensembl_gene_data = paste0(resourceDir, "/ensembl_data_cache/38/ensembl_gene_data.csv")
+    driverGenePanel = paste0(resourceDir, "/gene_panel/38/DriverGenePanel.38.tsv")
 
     print(sampleId)
 

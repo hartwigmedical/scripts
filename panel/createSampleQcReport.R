@@ -56,21 +56,22 @@ runSampleQcReport<-function()
 
     if(length(args) < 3)
     {
-      print("Requires arguments 1=SampleId, 2=DataDir,3 = RunDir")
+      print("Requires arguments: 1=SampleId, 2=DataDir, 3=RunDir, [4=ResourceDir (default=/data/resources/public)], [5=ExcludedExonsFile (default=/data/resources/ops/panel/excludedExons.tsv)]")
       stop()
     }
 
     sampleId <- args[1]
     sampleDataDir <- args[2]
-
     runDir = args[3]
 
+    # Optional arguments with defaults
+    resourceDir = ifelse(length(args) >= 4, args[4], "/data/resources/public")
+    excludedFile = ifelse(length(args) >= 5, args[5], "/data/resources/ops/panel/excludedExons.tsv")
 
-
-    cohortMedianDepthFile = paste0("/data/resources/public/target_regions/38/target_regions_exon_relative_depth.38.csv")
-    cobaltRegionsFile = "/data/resources/public/target_regions/38/target_regions_normalisation.38.tsv"
-    ensembl_gene_data = "/data/resources/public/ensembl_data_cache/38/ensembl_gene_data.csv"
-    driverGenePanel = "/data/resources/public/gene_panel/38/DriverGenePanel.38.tsv"
+    cohortMedianDepthFile = paste0(resourceDir, "/target_regions/38/target_regions_exon_relative_depth.38.csv")
+    cobaltRegionsFile = paste0(resourceDir, "/target_regions/38/target_regions_normalisation.38.tsv")
+    ensembl_gene_data = paste0(resourceDir, "/ensembl_data_cache/38/ensembl_gene_data.csv")
+    driverGenePanel = paste0(resourceDir, "/gene_panel/38/DriverGenePanel.38.tsv")
 
     print(sampleId)
 
@@ -78,8 +79,7 @@ runSampleQcReport<-function()
     sampleGeneCnFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.cnv.gene.tsv')
     samplePurityFile = paste0(sampleDataDir,'/purple/',sampleId,'.purple.purity.tsv')
     sampleSomaticVcf = paste0(sampleDataDir,'/purple/',sampleId,'.purple.somatic.vcf.gz')
-#    excludedFile = 'textfile.txt'
-    excludedFile = '/data/resources/ops/panel/excludedExons.tsv'
+    bamMetricsFile = paste0(sampleDataDir,'/',sampleId,'/bam_metrics/',sampleId,".wgsmetrics")
 
     check_file(cohortMedianDepthFile)
     check_file(cobaltRegionsFile)
@@ -89,8 +89,9 @@ runSampleQcReport<-function()
     check_file(samplePurityFile)
     check_file(sampleSomaticVcf)
     check_file(driverGenePanel)
-    print("files present")
+    check_file(bamMetricsFile)
     check_file(excludedFile)
+    print("files present")
 
     # set plotting features
     defaultFontSize=8
