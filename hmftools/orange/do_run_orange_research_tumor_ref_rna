@@ -22,6 +22,7 @@ ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample}
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 info "WGS Metrics files: REF - ${ref_sample_wgs_metrics_file} TUM - ${tumor_sample_wgs_metrics_file}"
+tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
 sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
@@ -79,6 +80,7 @@ do_run_orange_research \
     -sage_germline_dir "${sage_germline_dir}" \
     -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
+    -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
