@@ -19,9 +19,9 @@ fi
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
-
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
+info "WGS Metrics files: REF - ${ref_sample_wgs_metrics_file} TUM - ${tumor_sample_wgs_metrics_file}"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
 sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
