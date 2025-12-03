@@ -25,6 +25,7 @@ tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
 sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
+info "Purple directory: ${purple_dir} & ${purple_plot_dir}"
 purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
 linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
@@ -60,6 +61,9 @@ peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
+# Taken out of parameters list below temporarily
+#-tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
+
 do_run_orange_research \
     ${run_dir} \
     ${output_dir} \
@@ -70,7 +74,6 @@ do_run_orange_research \
     -experiment_type "WGS" \
     -reference_sample_id ${reference_sample} \
     ${rna_sample_cmd} \
-    #-tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
     -ref_metrics_dir "${ref_sample_wgs_metrics_file}" \
     -sage_dir "${sage_somatic_dir}" \
     -sage_germline_dir "${sage_germline_dir}" \
