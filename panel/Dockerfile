@@ -56,6 +56,7 @@ RUN R -e "BiocManager::install('VariantAnnotation', ask=FALSE, update=TRUE)" && 
 
 # Copy the R script
 COPY createSampleQcReport.R /app/
+COPY createSampleQcReport_Deamination.R /app/
 
 # Make the script executable
 RUN chmod +x /app/createSampleQcReport.R
