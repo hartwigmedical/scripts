@@ -82,7 +82,7 @@ do_run_orange_research \
     -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
     -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
     -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-    -reference_sample_flagstat_file "${reference_sample_flagstat_file}" \
+    -ref_sample_flagstat_file "${reference_sample_flagstat_file}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
