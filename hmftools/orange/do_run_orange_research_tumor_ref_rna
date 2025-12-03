@@ -61,10 +61,6 @@ peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
-# Taken out of parameters list below temporarily
-# -tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
-# -ref_metrics_dir "${ref_sample_wgs_metrics_file}" \
-
 do_run_orange_research \
     ${run_dir} \
     ${output_dir} \

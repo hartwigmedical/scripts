@@ -53,6 +53,9 @@ if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
 fi
 
+# Parameter removed
+# -signatures_etiology_tsv "${signatures_etiology_tsv}" \
+
 java -jar ${orange_jar} \
     -ref_genome_version "37" \
     -tumor_sample_id ${tumor_sample} \
@@ -61,7 +64,6 @@ java -jar ${orange_jar} \
     -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
-    -signatures_etiology_tsv "${signatures_etiology_tsv}" \
     -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
     -driver_gene_panel "${driver_gene_panel}" \
     -known_fusion_file "${known_fusion_file}" \
