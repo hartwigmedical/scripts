@@ -54,9 +54,9 @@ function main() {
     oid=$(jq -r '.id' <<< "${run_json}") # object id in api
 
     if [[ "${tum}" != "null" ]]; then
-      reporting_id=$(hmf_api_get samples?name="${tum}" | jq -r '.[] | .reporting_id' | head -n1)
+      reporting_id=$(hmf_api_get samples?name="${tum}" | jq -r '.[] | select(.reporting_id != null) | .reporting_id' | head -n1)
     else
-      reporting_id=$(hmf_api_get samples?name="${ref}" | jq -r '.[] | .reporting_id' | head -n1)
+      reporting_id=$(hmf_api_get samples?name="${ref}" | jq -r '.[] | select(.reporting_id != null) | .reporting_id' | head -n1)
     fi
     set_name_without_sample_id=$(echo "${set_name}" | rev | cut -d_ -f 2- | rev)
     file_base_name="${set_name_without_sample_id}_${reporting_id}"
