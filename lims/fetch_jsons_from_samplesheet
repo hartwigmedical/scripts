@@ -47,7 +47,7 @@ then
   end=$(cat ${SHEET_LOC} | wc -l)
 else
   start=$(( $(cat ${SHEET_LOC} | grep -n BCLConvert_Data] | cut -d: -f1) + 1))
-  end=$(( $(cat ${SHEET_LOC} | grep -n Cloud_Settings] | cut -d: -f1) - 1))
+  end=$(cat ${SHEET_LOC} | wc -l)
 fi
 col_num=$(sed -n -e "${start},${start}p" ${SHEET_LOC} | tr -s ',' '\n' | nl -nln |  grep "Sample_ID" | cut -f1)
 barcodes=$(sed -n -e "$((${start} + 1)),${end}p" ${SHEET_LOC} | cut -d',' -f${col_num} | sort | uniq | sed '/^[[:space:]]*$/d' | tr -s '\n' ' ')
