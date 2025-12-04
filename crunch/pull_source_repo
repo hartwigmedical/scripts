@@ -6,7 +6,7 @@ source locate_files || exit 1
 repo=$1
 [[ -z ${repo} ]] && die "$(basename $0) requires a repository name as an argument" 
 
-if [ ${repo} != "scripts" -a ${repo} != "serve-diff" -a ${repo} != "peach" ] ; then
+if [ ${repo} != "scripts" -a ${repo} != "production-scripts" -a ${repo} != "serve-diff" -a ${repo} != "peach" ] ; then
     die "Only allowed to be used on scripts, serve-diff and peach repos. Other repos are set to a fixed version on purpose."
 fi
 
