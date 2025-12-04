@@ -94,7 +94,8 @@ class StatusChecker:
                     self._failed_runs_chapter(),
                     self._finished_runs_chapter(),
                     self._validated_runs_chapter(),
-                    self._reporting_pipeline_chapter()]
+                    ##self._reporting_pipeline_chapter()
+                    ]
 
         _print_chapters(chapters)
 
@@ -501,13 +502,13 @@ class StatusChecker:
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
         return blob
 
-    def _reporting_pipeline_chapter(self):
-        print("Processing reporting pipeline failures chapter")
-        chapter = Chapter(name='Reporting pipeline fails')
-        chapter.add_section(self._reporting_pipeline_fail_section())
-        chapter.add_section(self._reporting_pipeline_in_progress_section())
-
-        return chapter
+    # def _reporting_pipeline_chapter(self):
+    #     print("Processing reporting pipeline failures chapter")
+    #     chapter = Chapter(name='Reporting pipeline fails')
+    #     chapter.add_section(self._reporting_pipeline_fail_section())
+    #     chapter.add_section(self._reporting_pipeline_in_progress_section())
+    #
+    #     return chapter
 
     def _reporting_pipeline_fail_section(self):
         section = Section(name='Runs with a patient reporter fail',
