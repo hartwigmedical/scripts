@@ -27,19 +27,15 @@ def derive_genotype_from_record(sample_record):
         # If format fields are missing, we cannot determine the genotype
         return GENOTYPE_MAP["DO_NOT_MATCH"]
     
-    #print("Total coverage: ", total_coverage, "Ref_count:", ref_count, "Alt_count:", alt_count)
-
     # Rule: Minimum depth must be >= 10
     if total_coverage < 10:
         return GENOTYPE_MAP["DO_NOT_MATCH"]
 
     # Rule: To call homozygous, one allele count must equal total coverage.
-    homozygous_ref_diff = total_coverage-ref_count
     if ref_count == total_coverage and alt_count == 0:
         return GENOTYPE_MAP["HOM_REF"]
 
-    homozygous_alt_diff = total_coverage-alt_count
-    if alt_count == total_coverage <= 1 and ref_count == 0:
+    if alt_count == total_coverage and ref_count == 0:
         return GENOTYPE_MAP["HOM_ALT"]
 
     # Rule: To call heterozygous, allele fraction must be between 0.4 and 0.65
@@ -99,7 +95,7 @@ def derive_genotypes_from_vcf(vcf_path, ordered_loci):
 def find_matches_in_db(new_sample_genotypes, db_config):
     """
     Connects to the DB and returns a list of all samples with >= 80 genotype matches.
-    Each item in the list is a tuple: (matched_sample_id, match_count).
+    Each item in the list is a dict: {matched_id, match_count, comparable_sites, match_percentage}.
     """
     all_matches = []
     try:
@@ -107,7 +103,7 @@ def find_matches_in_db(new_sample_genotypes, db_config):
             user=db_config['user'],
             password=db_config['pass'],
             host=db_config['host'],
-            port=db_config['port'], # Using the port here
+            port=db_config['port'],  # Using the port here
             database=db_config['name']
         )
         db_df = pd.read_sql("SELECT * FROM amberSample", cnx)
@@ -120,7 +116,6 @@ def find_matches_in_db(new_sample_genotypes, db_config):
     for index, db_sample in db_df.iterrows():
         db_genotypes = db_sample[f"site1":f"site100"].values.astype(int)
 
-        # --- NEW LOGIC IS HERE ---
         match_count = 0
         comparable_sites = 0
 
@@ -151,13 +146,14 @@ def find_matches_in_db(new_sample_genotypes, db_config):
     all_matches.sort(key=lambda x: x["match_percentage"], reverse=True)
     return all_matches
 
-
 def main():
     parser = argparse.ArgumentParser(description="Derive AMBER genotypes and match against a database.")
     parser.add_argument("--vcf", required=True, help="Input AMBER SNP VCF file (e.g., SAMPLE.amber.snp.vcf.gz)")
     parser.add_argument("--snp_check_vcf", required=True, help="VCF defining the 100 SNPs to check (e.g., Amber.snpcheck.37.vcf)")
     parser.add_argument("--sample_id", required=True, help="The original sample ID from the VCF file name (e.g., SAMPLE001_T)")
-    parser.add_argument("--output_file", required=True, help="Path to save the output TSV file")
+    parser.add_argument("--output_file", required=True, help="Path to save the output TSV file (matches)")
+    parser.add_argument("--genotype_output_file", required=False,
+                        help="Optional TSV file to save per-SNP genotypes for the input sample")  # NEW
     parser.add_argument("--db_host", required=True, help="Database host")
     parser.add_argument("--db_user", required=True, help="Database user")
     parser.add_argument("--db_pass", required=True, help="Database password")
@@ -171,6 +167,16 @@ def main():
     # Step 2: Derive the 100 genotypes from the input VCF
     new_genotypes = derive_genotypes_from_vcf(args.vcf, ordered_loci)
 
+    # NEW: optional TSV with per-SNP genotype calls for this input sample
+    if args.genotype_output_file:
+        with open(args.genotype_output_file, 'w', newline='') as geno_out:
+            writer = csv.writer(geno_out, delimiter='\t')
+            # Header: sample, snp1, snp2, ..., snp100
+            header = ['sample'] + [f"snp{i}" for i in range(1, len(new_genotypes) + 1)]
+            writer.writerow(header)
+            # One row: sample_id, then the 100 genotype codes
+            writer.writerow([args.sample_id] + list(map(int, new_genotypes)))
+
     # Step 3: Find the best match in the database
     db_config = {
         'host': args.db_host,
@@ -182,7 +188,7 @@ def main():
 
     found_matches = find_matches_in_db(new_genotypes, db_config)
 
-    # Step 4: Write the results to the specified TSV file
+    # Step 4: Write the results to the specified TSV file (matches)
     with open(args.output_file, 'w', newline='') as f_out:
         # Define the header for the more informative output
         header = ['original_sampleId', 'matched_sampleId', 'match_percentage', 'match_count', 'comparable_sites']
@@ -211,7 +217,8 @@ def main():
                 })
 
     print(f"Results successfully written to {args.output_file}")
-
+    if args.genotype_output_file:
+        print(f"Per-SNP genotypes written to {args.genotype_output_file}")
 
 if __name__ == "__main__":
     main()

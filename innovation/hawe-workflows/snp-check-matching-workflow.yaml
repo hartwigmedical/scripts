@@ -1,5 +1,5 @@
 name: "snp-check-matching"
-version: "0.0.1"
+version: "0.0.2"
 storagePath: "gs://snp-check-matching-output"
 externalInputs:
   - name: cram-folder
@@ -9,29 +9,68 @@ externalInputs:
 stages:
   - name: "run-amber"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
-    version: "1.0.2"
+    version: "1.0.3"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
         #!/usr/bin/env bash
         set -eo pipefail
 
-        # Internal working variables; external variables are referenced as ${sample_id}, etc.
-        INPUT_CRAM="/in/cram-folder/${sample_id}.cram"
-        REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        echo "Contents of /in/cram-folder:"
+        ls -l /in/cram-folder/
 
-        # Additional parameters
-        AMBER_JAR="amber.jar"  # This jar is included in the Docker image.
-    
-        # Derive internal paths based on external inputs
+        REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
         OUTPUT_DIR="amber_output_${sample_id}"
 
-        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting AMBER with RUN_ID: $RUN_ID"
+        # Resolve BAM/CRAM by pattern in case suffixes like T/R are used
+        shopt -s nullglob
+        bam_matches=(/in/cram-folder/${sample_id}*.bam)
+        cram_matches=(/in/cram-folder/${sample_id}*.cram)
+        shopt -u nullglob
+
+        # Filter out intentionally unmatched alignments so they are never picked up
+        filtered_cram_matches=()
+        for cram_path in "${cram_matches[@]}"; do
+          cram_name=$(basename "$cram_path")
+          if [[ "$cram_name" == *_unmatched.cram ]]; then
+            echo "Skipping unmatched CRAM file: $cram_path"
+            continue
+          fi
+          filtered_cram_matches+=("$cram_path")
+        done
+        cram_matches=("${filtered_cram_matches[@]}")
+
+        filtered_bam_matches=()
+        for bam_path in "${bam_matches[@]}"; do
+          bam_name=$(basename "$bam_path")
+          if [[ "$bam_name" == *_unmatched.bam || "$bam_name" == *_unmatches.bam ]]; then
+            echo "Skipping unmatched BAM file: $bam_path"
+            continue
+          fi
+          filtered_bam_matches+=("$bam_path")
+        done
+        bam_matches=("${filtered_bam_matches[@]}")
+
+        if (( ${#cram_matches[@]} > 1 )); then
+          echo "ERROR: Multiple CRAM alignment files match: ${cram_matches[*]} — narrow your pattern"; exit 1
+        elif (( ${#cram_matches[@]} == 1 )); then
+          # Prefer CRAM files when both CRAM and BAM variants are present
+          INPUT_ALIGNMENT="${cram_matches[0]}"
+        elif (( ${#bam_matches[@]} > 1 )); then
+          echo "ERROR: Multiple BAM alignment files match: ${bam_matches[*]} — narrow your pattern"; exit 1
+        elif (( ${#bam_matches[@]} == 1 )); then
+          INPUT_ALIGNMENT="${bam_matches[0]}"
+        else
+          echo "ERROR: No alignment file matching '/in/cram-folder/${sample_id}*.bam' or '/in/cram-folder/${sample_id}*.cram'"; exit 1
+        fi
+        echo "Using alignment file: $INPUT_ALIGNMENT"
+
+        echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting AMBER with RUN_ID: ${RUN_ID:-unset}"
 
         java -jar /opt/amber/amber.jar  \
             -loci /data/resources/Amber.snpcheck.38.vcf  \
             -reference ${sample_id} \
-            -reference_bam $INPUT_CRAM \
+            -reference_bam $INPUT_ALIGNMENT \
             -ref_genome $REFERENCE_GENOME \
             -ref_genome_version 38 \
             -output_dir $OUTPUT_DIR \
@@ -60,7 +99,7 @@ stages:
 
   - name: "get-genotypes"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
-    version: "1.0.2"
+    version: "1.0.3"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -70,10 +109,6 @@ stages:
         AMBER_SNP_VCF="/in/run-amber/amber_output_${sample_id}/${sample_id}.amber.snp.vcf.gz"
         SNPCHECK_VCF="/data/resources/Amber.snpcheck.38.vcf" #Included in dockerfile
         OUTPUT_FILE="sample_match_${sample_id}.tsv"
-
-        ls /in/
-        ls /in/run-amber/
-        ls /in/run-amber/amber_output_${sample_id}/
 
         # Set variables for database connection
         DB_HOST="patients.sql.prod-1"
@@ -96,6 +131,7 @@ stages:
             --snp_check_vcf "$SNPCHECK_VCF" \
             --sample_id "${sample_id}" \
             --output_file "$OUTPUT_FILE" \
+            --genotype_output_file genotypes.tsv \
             --db_host "$DB_HOST" \
             --db_user "$DB_USER" \
             --db_pass "$DB_PASS" \
@@ -104,6 +140,7 @@ stages:
 
         # Copy the tsv file to /tmp/output for transfer.
         cp "$OUTPUT_FILE" /out/
+        cp genotypes.tsv /out/
 
         echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Finished sample matching stage"
     options:
