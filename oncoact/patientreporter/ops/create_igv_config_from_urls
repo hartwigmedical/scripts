@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+set -e
+
+source message_functions || exit 1
+source secrets_functions || exit 1
+
+command -v gsutil > /dev/null || die "Dependency gsutil not found"
+
+script_name=$(basename "$0")
+
+function usage() {
+    echo "-----"
+    echo " Usage: $script_name -o <out_file> -u <run_base_url> -t <tumor_sample> [-r <ref_sample>] [-d <duration>]"
+    echo ""
+    echo " Required arguments:"
+    echo "   -o  Output file path for IGV config"
+    echo "   -u  Run base URL (gs://bucket/run_name)"
+    echo "   -t  Tumor sample name"
+    echo ""
+    echo " Optional arguments:"
+    echo "   -r  Reference sample name (if provided, ref BAM will be included)"
+    echo "   -d  Duration for signed URLs (default: 1d, max: 7d)"
+    echo ""
+    echo " Example (tumor only):"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01"
+    echo ""
+    echo " Example (with reference):"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -r REF01"
+    echo "-----"
+    exit 1
+}
+
+out_file=""
+run_base_url=""
+tum=""
+ref=""
+duration="1d"
+
+while getopts "o:u:t:r:d:h" opt; do
+    case "${opt}" in
+        o) out_file="${OPTARG}" ;;
+        u) run_base_url="${OPTARG}" ;;
+        t) tum="${OPTARG}" ;;
+        r) ref="${OPTARG}" ;;
+        d) duration="${OPTARG}" ;;
+        h) usage ;;
+        *) usage ;;
+    esac
+done
+
+if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" ]]; then
+    error "Missing required arguments"
+    usage
+fi
+
+region="europe-west4"
+secret_name=""
+billing_project=""
+service_account=""
+
+info "Start of ${script_name}"
+
+function main() {
+    if [[ "$HMF_GCP_BILLING_PROJECT" == "hmf-ops" ]]; then
+        billing_project="$HMF_GCP_BILLING_PROJECT"
+        secret_name="gcp-hmf-share-u-hmf-share"
+        service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
+    else
+        die "Required ENV missing or misconfigured [HMF_GCP_BILLING_PROJECT]"
+    fi
+
+    [[ "$(gcloud config get-value account)" == "${service_account}" ]] || die "Not logged in as ${service_account}"
+    secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
+
+    info "Details:"
+    info "  Duration: ${duration}"
+    info "  RunBaseURL: ${run_base_url}"
+    info "  TumSample: ${tum}"
+    if [[ -n "${ref}" ]]; then
+        info "  RefSample: ${ref}"
+    fi
+    info "  OutputFile: ${out_file}"
+
+    create_igv_config "${out_file}" "${run_base_url}" "${ref}" "${tum}" || die "Unable to create IGV config. Exiting."
+
+    info "Finished with ${script_name}"
+    info "IGV config created at: ${out_file}"
+}
+
+create_igv_config () {
+    local out_file=$1 && shift
+    local run_base_url=$1 && shift
+    local ref=$1 && shift
+    local tum=$1 && shift
+
+    tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
+    tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
+
+    info "Requesting signed URLs for tumor"
+    tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
+    tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
+    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
+    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
+
+    info "Creating output file [${out_file}]"
+    {
+        if [[ -n "${ref}" ]]; then
+            ref_bam="${run_base_url}/${ref}/aligner/${ref}.bam"
+            ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
+
+            info "Requesting signed URLs for reference"
+            ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
+            ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
+            ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
+            ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
+
+            echo "load ${ref_bam_url} index=${ref_bai_url}"
+        fi
+        echo "load ${tum_bam_url} index=${tum_bai_url}"
+        echo "goto TP53"
+        echo "collapse"
+        echo "colorBy READ_STRAND"
+    } > "${out_file}"
+}
+
+main
