@@ -32,8 +32,8 @@ fi
 
 region="europe-west4"
 duration=${3:-1d}
+secret_name=""
 billing_project=""
-service_account=""
 
 info "Start of ${script_name}"
 
@@ -41,12 +41,10 @@ function main() {
 
     if [[ "$HMF_GCP_BILLING_PROJECT" == "hmf-ops" ]]; then
         billing_project="$HMF_GCP_BILLING_PROJECT"
-        service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
+        secret_name="gcp-hmf-share-u-hmf-share"
     else
         die "Required ENV missing or misconfigured [HMF_GCP_BILLING_PROJECT]"
     fi
-
-    [[ "$(gcloud config get-value account)" == "${service_account}" ]] || die "Not logged in as ${service_account}"
 
     runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
@@ -87,13 +85,13 @@ function main() {
       if [[ $ref != "null" ]]; then
         info "  RefName: ${ref}"
         info "  RefTag: ${ref_tag}"
-        create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -r "${ref_tag}" -d "${duration}" -b "${billing_project}" -s "${service_account}" || die "Unable to create IGV config. Exiting."
+        create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -r "${ref_tag}" -d "${duration}" -b "${billing_project}" -n "${secret_name}" || die "Unable to create IGV config. Exiting."
       else
         info "No reference data is available for panel data!"
         exit 1
       fi
     else
-      create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -d "${duration}" -b "${billing_project}" -s "${service_account}" || die "Unable to create IGV config. Exiting."
+      create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -d "${duration}" -b "${billing_project}" -n "${secret_name}" || die "Unable to create IGV config. Exiting."
     fi
     info "Finished with ${script_name}"
 }

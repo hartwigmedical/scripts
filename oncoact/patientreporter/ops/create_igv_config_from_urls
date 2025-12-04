@@ -24,28 +24,30 @@ die() {
     exit 1
 }
 
+command -v gsutil > /dev/null || die "Dependency gsutil not found"
 command -v gcloud > /dev/null || die "Dependency gcloud not found"
 
 function usage() {
     echo "-----"
-    echo " Usage: $script_name -o <out_file> -u <run_base_url> -t <tumor_sample> -b <billing_project> -s <service_account> [-r <ref_sample>] [-d <duration>]"
+    echo " Usage: $script_name -o <out_file> -u <run_base_url> -t <tumor_sample> -b <billing_project> -n <secret_name> [-r <ref_sample>] [-d <duration>] [-p <secret_project>]"
     echo ""
     echo " Required arguments:"
     echo "   -o  Output file path for IGV config"
     echo "   -u  Run base URL (gs://bucket/run_name)"
     echo "   -t  Tumor sample name"
     echo "   -b  Billing project for signed URLs"
-    echo "   -s  Service account to impersonate for signed URLs"
+    echo "   -n  Secret name in GCP Secret Manager"
     echo ""
     echo " Optional arguments:"
     echo "   -r  Reference sample name (if provided, ref BAM will be included)"
     echo "   -d  Duration for signed URLs (default: 1d, max: 7d)"
+    echo "   -p  GCP project for secret (default: hmf-secrets)"
     echo ""
     echo " Example (tumor only):"
-    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -b hmf-ops -s hmf-ops@hmf-ops.iam.gserviceaccount.com"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -b hmf-ops -n gcp-hmf-share-u-hmf-share"
     echo ""
     echo " Example (with reference):"
-    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -r REF01 -b hmf-ops -s hmf-ops@hmf-ops.iam.gserviceaccount.com"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -r REF01 -b hmf-ops -n gcp-hmf-share-u-hmf-share -p hmf-secrets"
     echo "-----"
     exit 1
 }
@@ -57,9 +59,10 @@ ref=""
 duration="1d"
 region="europe-west4"
 billing_project=""
-service_account=""
+secret_name=""
+secret_project="hmf-secrets"
 
-while getopts "o:u:t:r:d:b:s:h" opt; do
+while getopts "o:u:t:r:d:b:n:p:h" opt; do
     case "${opt}" in
         o) out_file="${OPTARG}" ;;
         u) run_base_url="${OPTARG}" ;;
@@ -67,13 +70,14 @@ while getopts "o:u:t:r:d:b:s:h" opt; do
         r) ref="${OPTARG}" ;;
         d) duration="${OPTARG}" ;;
         b) billing_project="${OPTARG}" ;;
-        s) service_account="${OPTARG}" ;;
+        n) secret_name="${OPTARG}" ;;
+        p) secret_project="${OPTARG}" ;;
         h) usage ;;
         *) usage ;;
     esac
 done
 
-if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" || -z "${billing_project}" || -z "${service_account}" ]]; then
+if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" || -z "${billing_project}" || -z "${secret_name}" ]]; then
     info "Missing required arguments"
     usage
 fi
@@ -90,10 +94,14 @@ function main() {
         info "  RefSample: ${ref}"
     fi
     info "  BillingProject: ${billing_project}"
-    info "  ServiceAccount: ${service_account}"
+    info "  SecretName: ${secret_name}"
+    info "  SecretProject: ${secret_project}"
     info "  OutputFile: ${out_file}"
 
-    create_igv_config "${out_file}" "${run_base_url}" "${ref}" "${tum}" || die "Unable to create IGV config. Exiting."
+    info "Retrieving secret from Secret Manager"
+    secret=$(gcloud secrets versions access "latest" --secret="${secret_name}" --project="${secret_project}") || die "Unable to retrieve secret (${secret_name} from project ${secret_project})"
+
+    create_igv_config "${out_file}" "${run_base_url}" "${ref}" "${tum}" "${secret}" || die "Unable to create IGV config. Exiting."
 
     info "Finished with ${script_name}"
     info "IGV config created at: ${out_file}"
@@ -104,16 +112,19 @@ create_igv_config () {
     local run_base_url=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
+    local secret=$1 && shift
 
     tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
     tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
 
-    # Build gcloud command
-    local sign_url_cmd="gcloud storage sign-url --duration=${duration} --region=${region} --billing-project=${billing_project} --impersonate-service-account=${service_account}"
-
     info "Requesting signed URLs for tumor"
-    tum_bam_url=$(${sign_url_cmd} "${tum_bam}" | tail -n1)
-    tum_bai_url=$(${sign_url_cmd} "${tum_bai}" | tail -n1)
+    tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}" 2>&1)
+    [[ $? -eq 0 ]] || die "Failed to create signed URL for tumor BAM: ${tum_bam_signurl_payload}"
+    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
+
+    tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}" 2>&1)
+    [[ $? -eq 0 ]] || die "Failed to create signed URL for tumor BAI: ${tum_bai_signurl_payload}"
+    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
 
     info "Creating output file [${out_file}]"
     {
@@ -122,8 +133,13 @@ create_igv_config () {
             ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
 
             info "Requesting signed URLs for reference"
-            ref_bam_url=$(${sign_url_cmd} "${ref_bam}" | tail -n1)
-            ref_bai_url=$(${sign_url_cmd} "${ref_bai}" | tail -n1)
+            ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}" 2>&1)
+            [[ $? -eq 0 ]] || die "Failed to create signed URL for reference BAM: ${ref_bam_signurl_payload}"
+            ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
+
+            ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}" 2>&1)
+            [[ $? -eq 0 ]] || die "Failed to create signed URL for reference BAI: ${ref_bai_signurl_payload}"
+            ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
 
             echo "load ${ref_bam_url} index=${ref_bai_url}"
         fi
