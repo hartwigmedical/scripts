@@ -8,7 +8,7 @@ from google.cloud.storage import Client, Bucket, Blob
 import subprocess
 import os
 import gzip
-from reports_to_nc import upload_to_nextcloud
+from reports_to_nc_for_sharing import upload_to_nextcloud
 
 
 def main():

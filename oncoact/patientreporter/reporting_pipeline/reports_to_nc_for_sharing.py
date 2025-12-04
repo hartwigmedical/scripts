@@ -13,12 +13,9 @@ def main():
 
     args = parser.parse_args()
 
-    pipeline_output_bucket = 'diagnostic-pipeline-output-prod-1'
-    reports_to_nc(sample_barcode=args.sample_barcode,
-                  pipeline_output_bucket=pipeline_output_bucket)
+    reports_to_nc(sample_barcode=args.sample_barcode)
 
-
-def reports_to_nc(sample_barcode, pipeline_output_bucket):
+def reports_to_nc(sample_barcode):
     """
     This script can be used to upload the reporting artifacts to Next Cloud.
 
@@ -26,7 +23,6 @@ def reports_to_nc(sample_barcode, pipeline_output_bucket):
     user has described which artifacts they want on Next Cloud, the program will automatically perform the uploading.
 
     :param sample_barcode: the sample barcode of the report to upload the artifacts for.
-    :param pipeline_output_bucket: the output bucket of the pipeline. This is where the artifacts are located.
     """
     api_util = RestClient(profile='prod')
     report_created = api_util.get_report_created(sample_barcode)
@@ -77,7 +73,7 @@ def upload_to_nextcloud(path):
 
 
 def _upload_file_to_nextcloud(filepath):
-    subprocess.check_output(['upload_file_to_nc_for_viewing', filepath])
+    subprocess.check_output(['upload_file_to_nc_for_sharing', filepath])
 
 
 if __name__ == '__main__':
