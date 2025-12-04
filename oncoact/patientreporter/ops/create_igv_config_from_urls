@@ -2,31 +2,44 @@
 
 set -e
 
-source message_functions || exit 1
-source secrets_functions || exit 1
-
-command -v gsutil > /dev/null || die "Dependency gsutil not found"
-
 script_name=$(basename "$0")
+
+info() {
+    msg "INFO" "$@"
+}
+
+error() {
+    msg "ERROR" "$@" >&2
+    exit 1
+}
+
+die() {
+    msg "ERROR" "$@" >&2
+    exit 1
+}
+
+command -v gcloud > /dev/null || die "Dependency gcloud not found"
 
 function usage() {
     echo "-----"
-    echo " Usage: $script_name -o <out_file> -u <run_base_url> -t <tumor_sample> [-r <ref_sample>] [-d <duration>]"
+    echo " Usage: $script_name -o <out_file> -u <run_base_url> -t <tumor_sample> -b <billing_project> -s <service_account> [-r <ref_sample>] [-d <duration>]"
     echo ""
     echo " Required arguments:"
     echo "   -o  Output file path for IGV config"
     echo "   -u  Run base URL (gs://bucket/run_name)"
     echo "   -t  Tumor sample name"
+    echo "   -b  Billing project for signed URLs"
+    echo "   -s  Service account to impersonate for signed URLs"
     echo ""
     echo " Optional arguments:"
     echo "   -r  Reference sample name (if provided, ref BAM will be included)"
     echo "   -d  Duration for signed URLs (default: 1d, max: 7d)"
     echo ""
     echo " Example (tumor only):"
-    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -b hmf-ops -s hmf-ops@hmf-ops.iam.gserviceaccount.com"
     echo ""
     echo " Example (with reference):"
-    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -r REF01"
+    echo "   $script_name -o ~/igv-config.txt -u gs://bucket/run -t TUMOR01 -r REF01 -b hmf-ops -s hmf-ops@hmf-ops.iam.gserviceaccount.com"
     echo "-----"
     exit 1
 }
@@ -36,50 +49,42 @@ run_base_url=""
 tum=""
 ref=""
 duration="1d"
+region="europe-west4"
+billing_project=""
+service_account=""
 
-while getopts "o:u:t:r:d:h" opt; do
+while getopts "o:u:t:r:d:b:s:h" opt; do
     case "${opt}" in
         o) out_file="${OPTARG}" ;;
         u) run_base_url="${OPTARG}" ;;
         t) tum="${OPTARG}" ;;
         r) ref="${OPTARG}" ;;
         d) duration="${OPTARG}" ;;
+        b) billing_project="${OPTARG}" ;;
+        s) service_account="${OPTARG}" ;;
         h) usage ;;
         *) usage ;;
     esac
 done
 
-if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" ]]; then
+if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" || -z "${billing_project}" || -z "${service_account}" ]]; then
     error "Missing required arguments"
     usage
 fi
 
-region="europe-west4"
-secret_name=""
-billing_project=""
-service_account=""
-
 info "Start of ${script_name}"
 
 function main() {
-    if [[ "$HMF_GCP_BILLING_PROJECT" == "hmf-ops" ]]; then
-        billing_project="$HMF_GCP_BILLING_PROJECT"
-        secret_name="gcp-hmf-share-u-hmf-share"
-        service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
-    else
-        die "Required ENV missing or misconfigured [HMF_GCP_BILLING_PROJECT]"
-    fi
-
-    [[ "$(gcloud config get-value account)" == "${service_account}" ]] || die "Not logged in as ${service_account}"
-    secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
-
     info "Details:"
     info "  Duration: ${duration}"
+    info "  Region: ${region}"
     info "  RunBaseURL: ${run_base_url}"
     info "  TumSample: ${tum}"
     if [[ -n "${ref}" ]]; then
         info "  RefSample: ${ref}"
     fi
+    info "  BillingProject: ${billing_project}"
+    info "  ServiceAccount: ${service_account}"
     info "  OutputFile: ${out_file}"
 
     create_igv_config "${out_file}" "${run_base_url}" "${ref}" "${tum}" || die "Unable to create IGV config. Exiting."
@@ -97,11 +102,12 @@ create_igv_config () {
     tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
     tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
 
+    # Build gcloud command
+    local sign_url_cmd="gcloud storage sign-url --duration=${duration} --region=${region} --billing-project=${billing_project} --impersonate-service-account=${service_account}"
+
     info "Requesting signed URLs for tumor"
-    tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
-    tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
-    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
-    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
+    tum_bam_url=$(${sign_url_cmd} "${tum_bam}" | tail -n1)
+    tum_bai_url=$(${sign_url_cmd} "${tum_bai}" | tail -n1)
 
     info "Creating output file [${out_file}]"
     {
@@ -110,10 +116,8 @@ create_igv_config () {
             ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
 
             info "Requesting signed URLs for reference"
-            ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
-            ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
-            ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
-            ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
+            ref_bam_url=$(${sign_url_cmd} "${ref_bam}" | tail -n1)
+            ref_bai_url=$(${sign_url_cmd} "${ref_bai}" | tail -n1)
 
             echo "load ${ref_bam_url} index=${ref_bai_url}"
         fi
