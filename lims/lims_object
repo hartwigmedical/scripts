@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-obj_type=$1 && shift
-obj_key=$1 && shift
-obj_val=$1 && shift
-
-object_by_query "query_lims.pl" "${obj_type}" "${obj_key}" "${obj_val}"

@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-lims_object "samples" "sample_name" "${1}"

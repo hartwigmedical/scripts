@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-query_lims.pl -type "samples" "$@"
