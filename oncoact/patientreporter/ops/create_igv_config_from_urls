@@ -4,6 +4,12 @@ set -e
 
 script_name=$(basename "$0")
 
+msg() {
+    local msg_type=$1 && shift
+    local msg_content=$* && shift
+    echo "[${msg_type}] $(date +'%y%m%d %T') - ${msg_content}"
+}
+
 info() {
     msg "INFO" "$@"
 }
@@ -68,7 +74,7 @@ while getopts "o:u:t:r:d:b:s:h" opt; do
 done
 
 if [[ -z "${out_file}" || -z "${run_base_url}" || -z "${tum}" || -z "${billing_project}" || -z "${service_account}" ]]; then
-    error "Missing required arguments"
+    info "Missing required arguments"
     usage
 fi
 
