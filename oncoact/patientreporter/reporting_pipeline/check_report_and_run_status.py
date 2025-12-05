@@ -271,7 +271,7 @@ class StatusChecker:
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
                 self._get_protect_warnings(report_record) +
-                self._get_vcf_merge_warnings(report_record) +
+               # self._get_vcf_merge_warnings(report_record) +
                 self._get_virus_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
