@@ -424,7 +424,7 @@ class StatusChecker:
             return warnings
         _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
 
-        if path is None:
+        if log_blob is None:
             return ["Rose log not found."]
         rose_log = log_blob.download_as_string().decode()
         if 'WARN' in rose_log:
@@ -441,7 +441,7 @@ class StatusChecker:
             return warnings
         _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
 
-        if path is None:
+        if log_blob is None:
             return ["Protect log not found"]
         protect_log = log_blob.download_as_string().decode()
         if 'WARN' in protect_log:
