@@ -21,7 +21,7 @@ class StatusChecker:
         self.rest_client = RestClient(profile)
         self.storage_client = Client()
 
-        self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="run-oncoact-reporting-pipeline")
+        self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="patient-reporter-final-prod-1")
 
         print("Gathering data")
         self.all_reports_with_null = ((pd.DataFrame(self.rest_client.get_all_reports_created()))
@@ -256,9 +256,7 @@ class StatusChecker:
                                       ' any pending warnings are displayed below.')
         not_shared_validated_reports = self.to_be_shared_reports[
             self.to_be_shared_reports['run_id'].isin(self.validated_runs['id'])]
-        print(not_shared_validated_reports)
         for _, report_record in not_shared_validated_reports.iterrows():
-            print(report_record)
 
             warnings = self._get_all_report_associated_warnings(report_record)
             content = {**self._get_default_report_and_run_content(report_record),
@@ -277,12 +275,10 @@ class StatusChecker:
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
-
-        report_files = report_record['report_files']
-        log_file = next((file for file in report_files if file['datatype'] == 'report_log'), None)
-        if not log_file:
+        sample_barcode = report_record["sample_barcode"].lower()
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter.log"
+        if not path:
             return warnings
-        path = log_file['path']
         _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
 
         if log_blob is None:
@@ -407,10 +403,14 @@ class StatusChecker:
         return warnings
 
     def _get_lama_data_used_for_report(self, report_record):
-        lama_blob = self._get_report_blob(report_record, "lama.json", "lama/patient-reporter.json")
-        if lama_blob is None:
+        sample_barcode = report_record["sample_barcode"].lower()
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json"
+
+        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+
+        if blob is None:
             return None
-        return json.loads(lama_blob.download_as_string().decode())
+        return json.loads(blob.download_as_string().decode())
 
     def _get_current_lama_data(self, report_record):
         isolation_barcode = report_record['barcode']
@@ -418,24 +418,35 @@ class StatusChecker:
 
     def _get_rose_warnings(self, report_record):
         warnings = []
-        rose_blob = self._get_report_blob(report_record, "rose_log", "rose.log")
-        if rose_blob is None:
+        sample_barcode = report_record["sample_barcode"].lower()
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/rose.log"
+        if not path:
+            return warnings
+        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+
+        if path is None:
             return ["Rose log not found."]
-        rose_log = rose_blob.download_as_string().decode()
+        rose_log = log_blob.download_as_string().decode()
         if 'WARN' in rose_log:
             warnings.append(
-                f"A warning was found in the rose log. Use 'gsutil cat gs://{rose_blob.bucket.name}/{rose_blob.name}'")
+                f"A warning was found in the rose log. Use 'gsutil cat {path}'")
         return warnings
 
     def _get_protect_warnings(self, report_record):
         warnings = []
-        protect_blob = self._get_report_blob(report_record, "protect_log", "protect.log")
-        if protect_blob is None:
+        sample_barcode = report_record["sample_barcode"].lower()
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/protect.log"
+
+        if not path:
+            return warnings
+        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+
+        if path is None:
             return ["Protect log not found"]
-        protect_log = protect_blob.download_as_string().decode()
+        protect_log = log_blob.download_as_string().decode()
         if 'WARN' in protect_log:
             warnings.append(
-                f"A warning was found in the protect log. Use 'gsutil cat gs://{protect_blob.bucket.name}/{protect_blob.name}'")
+                f"A warning was found in the protect log. Use 'gsutil cat ${path}'")
         return warnings
 
     def _get_virus_warnings(self, report_record):
@@ -496,10 +507,9 @@ class StatusChecker:
 
 
     def _get_report_blob(self, report_record, datatype, fallback_blob=None):
-        path = _get_report_file_path_or_none(report_record, datatype=datatype)
-        if fallback_blob and path is None:  # fallback to hardcoded solution (old samples rely on this)
-            sample_barcode = report_record["sample_barcode"].lower()
-            path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
+        # fallback to hardcoded solution (old samples rely on this)
+        sample_barcode = report_record["sample_barcode"]
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
 
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
         return blob
@@ -573,11 +583,6 @@ def _get_default_run_content(run_record):
         'run_finished_date': run_record['endTime'],
         'set_name': run_record['set']['name']
     }
-
-
-def _get_report_file_path_or_none(report_record, datatype):
-    return next((entry["path"] for entry in report_record["report_files"] if entry["datatype"] == datatype), None)
-
 
 class Chapter:
     def __init__(self, name):
