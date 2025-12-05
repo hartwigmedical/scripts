@@ -7,29 +7,6 @@ imply_ref_sample_from_tumor_sample() {
     echo $(echo ${tumor_sample} | cut -c1-12)R
 }
 
-find_barcode_for_sample_name() {
-    local sample=$1
-    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
-    query_lims.pl -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].sample_id'
-}
-
-find_ref_barcode_for_sample_name() {
-    local sample=$1
-    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
-    query_lims.pl -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].ref_sample_id'
-}
-
-find_name_for_barcode() {
-    local barcode=$1
-    query_lims.pl -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[].sample_name'
-}
-
-find_cohort_type() {
-    local barcode=$1
-    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
-    query_lims.pl -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[0].cohort'
-}
-
 get_doids_for_biopsy() {
     local biopsy=$1 && shift # eg CPCT02010001T
     doid_file=$(get_doids_file)
