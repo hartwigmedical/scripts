@@ -553,17 +553,28 @@ class StatusChecker:
         run_record = self._get_run_from_report_record(report_record)
         if run_record is not None:
             return {**_get_default_run_content(run_record),
-                    **_get_default_report_content(report_record)}
+                    **_get_default_report_content(self,report_record)}
         return {'run_id': report_record['run_id'],
-                **_get_default_report_content(report_record)}
+                **_get_default_report_content(self, report_record)}
 
 
-def _get_default_report_content(report_created_record):
+def _get_default_report_content(self, report_created_record):
+    used_lama_data = self._get_lama_data_used_for_report(report_created_record)
+
+    patient_id = "reportingId"
+    patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
+
+    pathology_id = "hospitalSampleLabel"
+    pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
+
     return {
         'report_created_id': report_created_record['id'],
         'sample_barcode': report_created_record['sample_barcode'],
         'isolation_barcode': report_created_record['barcode'],
-        'report_type': report_created_record['report_type']
+        'report_type': report_created_record['report_type'],
+        'reportingId': patient_id_value,
+        'hospitalSampleLabel': pathology_id_value
+
     }
 
 def _get_default_run_content(run_record):
