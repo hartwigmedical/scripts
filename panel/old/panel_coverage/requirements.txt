@@ -25,4 +25,4 @@ six==1.16.0
 tomli==1.2.3
 typed-ast==1.5.2
 typing-extensions==4.0.1
-urllib3==1.26.7
+urllib3==2.6.0
