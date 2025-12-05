@@ -2,29 +2,66 @@
 
 # Trigger ACTIN SERVE pipeline by copying a file from the hmf-crunch-resources bucket to the pipeline input buckets
 
+SOURCE_BUCKET="gs://hmf-crunch-resources/ckb"
+
 usage() {
-    echo "Usage: $0 <date-string> [id]"
-    echo "  <date-string>  : Date in the format YYYYMMDD (e.g., 20250131)"
-    echo "  [id]           : Optional short target bucket id, e.g. 'emc' or 'nki'. If omitted, the file is copied to all targets."
-    exit 1
+    local status="${1:-1}"
+    echo "Usage: $0 [-q] [-t <target>] <file-name>"
+    echo "  -q             : Query the latest available export filename and exit (cannot be combined with file upload)"
+    echo "  -t <target>    : Optional target id, e.g. 'emc' or 'nki'. Default: shared"
+    echo "  <file-name>    : Export file name, e.g. api-export-20251205.zip (required unless -q is used)"
+    echo "Examples:"
+    echo "  $0 -q"
+    echo "    api-export-20251205.zip"
+    echo "  $0 api-export-20251205.zip"
+    echo "    # trigger pipeline for the given file"
+    exit "$status"
 }
 
-if [ "$#" -lt 1 ]; then
-    echo "Error: Missing date string."
-    usage
+QUERY_LATEST=false
+TARGET_SET=false
+TARGET_ID="shared"
+while getopts ":qt:" opt; do
+    case "$opt" in
+        q) QUERY_LATEST=true ;;
+        t) TARGET_SET=true; TARGET_ID="$OPTARG" ;;
+        *) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+FILE_NAME="$1"
+
+if $QUERY_LATEST; then
+    if [ -n "$FILE_NAME" ] || $TARGET_SET; then
+        echo "Error: -q cannot be combined with upload options."
+        usage
+    fi
+    latest_file=$(gsutil ls "${SOURCE_BUCKET}/api-export-*.zip" | sed -E 's#.*/##' | sort | tail -n 1)
+    if [ -z "$latest_file" ]; then
+        echo "Error: Could not determine latest file in ${SOURCE_BUCKET}."
+        exit 1
+    fi
+    echo "$latest_file"
+    exit 0
 fi
 
-DATE="$1"
-TARGET_ID="$2"
+if [ -z "$FILE_NAME" ]; then
+    if [ "$OPTIND" -eq 1 ]; then
+        usage 0
+    else
+        echo "Error: Missing file name."
+        usage
+    fi
+fi
 
-SOURCE_BUCKET="gs://hmf-crunch-resources/ckb"
-FILE_NAME="api-export-${DATE}.zip"
 SOURCE_FILE="${SOURCE_BUCKET}/${FILE_NAME}"
 
-VALID_IDS=("nki" "mcgi" "emc")
+VALID_IDS=("nki" "mcgi" "shared" "emc")
 VALID_IDS_WITH_NAMESPACES=(
     "nki:"
     "mcgi:"
+    "shared:"
     "emc:tm-progene-study"
 )
 
@@ -50,30 +87,16 @@ copy_to_bucket() {
     gsutil cp "${SOURCE_FILE}" "${dest_bucket}"
 }
 
-if [ -n "${TARGET_ID}" ]; then
-    if [[ ! " ${VALID_IDS[@]} " =~ " ${TARGET_ID} " ]]; then
-        echo "Error: Invalid target id '${TARGET_ID}'. Valid ids are: ${VALID_IDS[*]}"
-        exit 1
-    fi
-    namespaces=$(get_namespaces_for_id "${TARGET_ID}")
-    if [ -z "$namespaces" ]; then
-        copy_to_bucket "${TARGET_ID}" ""
-    else
-        for ns in $namespaces; do
-            copy_to_bucket "${TARGET_ID}" "$ns"
-        done
-    fi
-else
-    for entry in "${VALID_IDS_WITH_NAMESPACES[@]}"; do
-        id="${entry%%:*}"
-        namespaces="${entry#*:}"
+if [[ ! " ${VALID_IDS[@]} " =~ " ${TARGET_ID} " ]]; then
+    echo "Error: Invalid target id '${TARGET_ID}'. Valid ids are: ${VALID_IDS[*]}"
+    exit 1
+fi
 
-        if [ -z "$namespaces" ]; then
-            copy_to_bucket "$id" ""
-        else
-            for ns in $namespaces; do
-                copy_to_bucket "$id" "$ns"
-            done
-        fi
+namespaces=$(get_namespaces_for_id "${TARGET_ID}")
+if [ -z "$namespaces" ]; then
+    copy_to_bucket "${TARGET_ID}" ""
+else
+    for ns in $namespaces; do
+        copy_to_bucket "${TARGET_ID}" "$ns"
     done
 fi
