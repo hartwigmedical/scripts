@@ -275,7 +275,7 @@ class StatusChecker:
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
-        sample_barcode = report_record["sample_barcode"].lower()
+        sample_barcode = report_record["sample_barcode"]
         path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter.log"
         if not path:
             return warnings
@@ -403,7 +403,7 @@ class StatusChecker:
         return warnings
 
     def _get_lama_data_used_for_report(self, report_record):
-        sample_barcode = report_record["sample_barcode"].lower()
+        sample_barcode = report_record["sample_barcode"]
         path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json"
 
         _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
@@ -418,7 +418,7 @@ class StatusChecker:
 
     def _get_rose_warnings(self, report_record):
         warnings = []
-        sample_barcode = report_record["sample_barcode"].lower()
+        sample_barcode = report_record["sample_barcode"]
         path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/rose.log"
         if not path:
             return warnings
@@ -434,7 +434,7 @@ class StatusChecker:
 
     def _get_protect_warnings(self, report_record):
         warnings = []
-        sample_barcode = report_record["sample_barcode"].lower()
+        sample_barcode = report_record["sample_barcode"]
         path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/protect.log"
 
         if not path:
@@ -504,15 +504,6 @@ class StatusChecker:
                 warnings.append("The virus Alphapapillomavirus 7 information info could not be retrieved or is incomplete.")
 
         return warnings
-
-
-    def _get_report_blob(self, report_record, datatype, fallback_blob=None):
-        # fallback to hardcoded solution (old samples rely on this)
-        sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/{fallback_blob}"
-
-        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
-        return blob
 
     # def _reporting_pipeline_chapter(self):
     #     print("Processing reporting pipeline failures chapter")
