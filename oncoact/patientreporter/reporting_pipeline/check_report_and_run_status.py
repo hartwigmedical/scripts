@@ -271,6 +271,7 @@ class StatusChecker:
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
                 self._get_protect_warnings(report_record) +
+                self._get_vcf_merge_warnings(report_record) +
                 self._get_virus_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
@@ -447,6 +448,23 @@ class StatusChecker:
         if 'WARN' in protect_log:
             warnings.append(
                 f"A warning was found in the protect log. Use 'gsutil cat ${path}'")
+        return warnings
+
+    def _get_vcf_merge_warnings(self, report_record):
+        warnings = []
+        sample_barcode = report_record["sample_barcode"]
+        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/vcf-merge.log"
+
+        if not path:
+            return warnings
+        _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+
+        if log_blob is None:
+            return ["VCF merge log not found"]
+        vcf_merge_log = log_blob.download_as_string().decode()
+        if 'WARN' in vcf_merge_log:
+            warnings.append(
+                f"A warning was found in the VCF merge log. Use 'gsutil cat ${path}'")
         return warnings
 
     def _get_virus_warnings(self, report_record):
