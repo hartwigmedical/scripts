@@ -256,7 +256,9 @@ class StatusChecker:
                                       ' any pending warnings are displayed below.')
         not_shared_validated_reports = self.to_be_shared_reports[
             self.to_be_shared_reports['run_id'].isin(self.validated_runs['id'])]
+        print(not_shared_validated_reports)
         for _, report_record in not_shared_validated_reports.iterrows():
+            print(report_record)
 
             warnings = self._get_all_report_associated_warnings(report_record)
             content = {**self._get_default_report_and_run_content(report_record),
@@ -265,13 +267,12 @@ class StatusChecker:
         return section
 
     def _get_all_report_associated_warnings(self, report_record):
-        return (
-                #self._get_patient_reporter_log_related_warnings(report_record) +
+        return (self._get_patient_reporter_log_related_warnings(report_record) +
                 self._get_health_checker_related_warnings(report_record) +
                 self._get_virus_names(report_record) +
                 self._get_doid_warnings(report_record) +
-             #   self._get_rose_warnings(report_record) +
-              #  self._get_protect_warnings(report_record) +
+                self._get_rose_warnings(report_record) +
+                self._get_protect_warnings(report_record) +
                 self._get_virus_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
