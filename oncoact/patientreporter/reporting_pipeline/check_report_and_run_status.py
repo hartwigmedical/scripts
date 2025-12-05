@@ -563,8 +563,6 @@ def _get_default_report_content(report_created_record):
         'report_created_id': report_created_record['id'],
         'sample_barcode': report_created_record['sample_barcode'],
         'isolation_barcode': report_created_record['barcode'],
-        'reportingId': report_created_record['reportingId'],
-        'hospitalSampleLabel': report_created_record['hospitalSampleLabel'],
         'report_type': report_created_record['report_type']
     }
 
