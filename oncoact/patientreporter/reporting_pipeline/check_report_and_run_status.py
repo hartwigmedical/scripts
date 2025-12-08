@@ -88,8 +88,6 @@ class StatusChecker:
         self.validated_runs = self.all_runs[self.all_runs['status'] == 'Validated']
         self.runs_without_report = self.all_runs[~self.all_runs['id'].isin(self.all_reports_with_null['run_id'])]
 
-        print("All statuses of the samples are examined!")
-
     def generate_and_print_summary(self):
         print("Generating report summary")
         chapters = [self._running_pipeline_chapter(),
@@ -98,8 +96,9 @@ class StatusChecker:
                     self._validated_runs_chapter(),
                     ##self._reporting_pipeline_chapter()
                     ]
-
         _print_chapters(chapters)
+
+        print("All statuses of the samples are examined!")
 
     def _running_pipeline_chapter(self):
         print("Processing running pipeline chapter")
