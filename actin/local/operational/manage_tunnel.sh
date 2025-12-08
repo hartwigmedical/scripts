@@ -69,7 +69,9 @@ elif [[ $action == "start" ]]; then
     else 
         echo "Re-using existing SSH tunnel to bastion"
     fi
-    echo "Tunnel started; access $2 at http://localhost:$PORT/$CONTEXT_ROOT"
+    link="http://localhost:$PORT/$CONTEXT_ROOT"
+    echo "Tunnel started; access $2 at: $link. Opening..."
+    open "$link"
 else
     echo "Unknown action \"$action\""
     usage
