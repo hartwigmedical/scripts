@@ -89,9 +89,9 @@ function main() {
     file_count=$(jq 'length' <<< "${files_json}")
 
     # Temporary way to use FASTQ entries instead of files for specific submission
-    # if [[ "${ini}" == "FastQ.ini" ]]; then
-    #     files_json=$(construct_files_json_from_fastqs "${set_name}")
-    # fi
+    if [[ "${ini}" == "FastQ.ini" ]]; then
+        files_json=$(construct_files_json_from_fastqs "${set_name}")
+    fi
 
     # Virtual samples potentially have zero yield and therefore no files but other FASTQ runs are expected to always have files
     if [[ "${file_count}" -eq 0 && "${ini}" == "FastQ.ini" ]]; then
