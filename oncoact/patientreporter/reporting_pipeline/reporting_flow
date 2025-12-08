@@ -15,6 +15,7 @@ print_usage(){
     echo " $script check_pipelines" #Check for processing reporting pipelines
     echo " $script fail_report FR123" #Generate fail reports
     echo " $script upload_for_share FR123" #Upload reports to nextcloud
+    echo " $script share_panel" # Upload panel reports to bucket
     exit 1
 }
 
@@ -42,6 +43,8 @@ elif [[ "${process}" == "fail_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "upload_for_share" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc_for_sharing.py ${sampleBarcode}
+elif [[ "${process}" == "share_panel" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_panel_to_bucket.py ${sampleBarcode} --profile prod
 else
     error "Unknown process type is used as input"
 fi
