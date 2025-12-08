@@ -21,6 +21,10 @@ rm -rf ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir}"
 cp -r "${run_dir}" "${pipeline_dir}"
+# Rename bam_metrics file to sample name
+
+# Make required chord TSV from TXT
+
 run_orange_research_no_germline ${pipeline_dir}
 
 molecular_dir=$(locate_actin_cohort_molecular_directory ${sample_services})
