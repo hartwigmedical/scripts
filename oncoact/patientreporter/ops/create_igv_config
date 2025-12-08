@@ -3,10 +3,10 @@
 set -e
 
 source message_functions || exit 1
-source secrets_functions || exit 1
 
 command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
 command -v jq > /dev/null || die "Dependency jq not found"
+command -v create_igv_config_from_urls > /dev/null || die "Dependency create_igv_config_from_urls not found"
 
 script_name=$(basename "$0")
 
@@ -34,7 +34,6 @@ region="europe-west4"
 duration=${3:-1d}
 secret_name=""
 billing_project=""
-service_account=""
 
 info "Start of ${script_name}"
 
@@ -43,13 +42,9 @@ function main() {
     if [[ "$HMF_GCP_BILLING_PROJECT" == "hmf-ops" ]]; then
         billing_project="$HMF_GCP_BILLING_PROJECT"
         secret_name="gcp-hmf-share-u-hmf-share"
-        service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
     else
         die "Required ENV missing or misconfigured [HMF_GCP_BILLING_PROJECT]"
     fi
-
-    [[ "$(gcloud config get-value account)" == "${service_account}" ]] || die "Not logged in as ${service_account}"
-    secret=$(get_secret_from_secret_manager "${secret_name}") || die "Unable to retrieve secret (${secret_name})"
 
     runs_json=$(retrieve_runs_by_set "${set_name}") || die "Unable to get runs from API (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
@@ -90,51 +85,15 @@ function main() {
       if [[ $ref != "null" ]]; then
         info "  RefName: ${ref}"
         info "  RefTag: ${ref_tag}"
-        create_igv_config "${out_file}" "${run_url}" "${ref_tag}" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+        create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -r "${ref_tag}" -d "${duration}" -b "${billing_project}" -n "${secret_name}" || die "Unable to create IGV config. Exiting."
       else
         info "No reference data is available for panel data!"
         exit 1
       fi
     else
-      create_igv_config "${out_file}" "${run_url}" "" "${tum_tag}" || die "Unable to create IGV config. Exiting."
+      create_igv_config_from_urls -o "${out_file}" -u "${run_url}" -t "${tum_tag}" -d "${duration}" -b "${billing_project}" -n "${secret_name}" || die "Unable to create IGV config. Exiting."
     fi
     info "Finished with ${script_name}"
-}
-
-create_igv_config () {
-    local out_file=$1 && shift
-    local run_base_url=$1 && shift
-    local ref=$1 && shift
-    local tum=$1 && shift
-
-    ref_bam="${run_base_url}/${ref}/aligner/${ref}.bam"
-    ref_bai="${run_base_url}/${ref}/aligner/${ref}.bam.bai"
-    tum_bam="${run_base_url}/${tum}/aligner/${tum}.bam"
-    tum_bai="${run_base_url}/${tum}/aligner/${tum}.bam.bai"
-
-    info "Requesting signed URLs"
-    if [[ $tumor_ref == "true" ]]; then
-          ref_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bam}")
-          ref_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${ref_bai}")
-          ref_bam_url=$(awk -v filename="${ref_bam}" '$1 == filename {print $5}' <<< "${ref_bam_signurl_payload}")
-          ref_bai_url=$(awk -v filename="${ref_bai}" '$1 == filename {print $5}' <<< "${ref_bai_signurl_payload}")
-    fi
-
-    tum_bam_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bam}")
-    tum_bai_signurl_payload=$(gsutil signurl -r "${region}" -b "${billing_project}" -d "${duration}" <(echo "${secret}") "${tum_bai}")
-    tum_bam_url=$(awk -v filename="${tum_bam}" '$1 == filename {print $5}' <<< "${tum_bam_signurl_payload}")
-    tum_bai_url=$(awk -v filename="${tum_bai}" '$1 == filename {print $5}' <<< "${tum_bai_signurl_payload}")
-
-    info "Creating output file [${out_file}]"
-    {
-      if [[ $tumor_ref == "true" ]]; then
-        echo "load ${ref_bam_url} index=${ref_bai_url}"
-      fi
-      echo "load ${tum_bam_url} index=${tum_bai_url}"
-      echo "goto TP53"
-      echo "collapse"
-      echo "colorBy READ_STRAND"
-    } > "${out_file}"
 }
 
 retrieve_runs_by_set () {
