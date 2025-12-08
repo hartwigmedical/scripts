@@ -408,9 +408,9 @@ class StatusChecker:
         sample_barcode = report_record["sample_barcode"]
 
         candidate_paths = [
-            f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json",
-            f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/lama/patient-reporter.json",
             f"gs://{self.oncoact_bucket.name}/corr-{sample_barcode}/lama/patient-reporter.json",
+            f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json",
+            f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/lama/patient-reporter.json"
         ]
 
         for path in candidate_paths:
