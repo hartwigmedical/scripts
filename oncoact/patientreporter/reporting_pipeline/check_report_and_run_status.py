@@ -584,12 +584,14 @@ def _get_default_report_content(self, report_created_record):
 
     if used_lama_data is None:
         print(f"No Lama data was found in the patient reporter for {report_created_record['barcode']}.")
+        patient_id_value = None
+        pathology_id_value = None
+    else:
+        patient_id = "reportingId"
+        patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
-    patient_id = "reportingId"
-    patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
-
-    pathology_id = "hospitalSampleLabel"
-    pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
+        pathology_id = "hospitalSampleLabel"
+        pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
 
     return {
         'report_created_id': report_created_record['id'],
