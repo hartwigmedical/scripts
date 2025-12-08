@@ -18,13 +18,9 @@ if [[ -f "${pipeline_version_file}" ]]; then
 fi
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
-# Instead of real metrics file, which is not present for sample in HMF db, provide fake location
 ref_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${reference_sample})"
-#ref_sample_wgs_metrics_file="/home/rramnarine/tempBamMetricsOutputFiles/R"
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_wgs_metrics_file="$(locate_wgs_metrics ${run_dir} ${tumor_sample})"
-#Instead of real metrics file, which is not present for sample in HMF db, provide fake location
-#tumor_sample_wgs_metrics_file="/home/rramnarine/tempBamMetricsOutputFiles/T"
 tumor_sample_flagstat_file="$(locate_flagstats ${run_dir} ${tumor_sample})"
 reference_sample_flagstat_file="$(locate_flagstats ${run_dir} ${reference_sample})"
 sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
