@@ -2,7 +2,6 @@ import subprocess
 import os
 import shutil
 import argparse
-from rest_util import RestClient
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
 from google.cloud.storage import Bucket, Client
 
@@ -24,11 +23,15 @@ def reports_to_nc(sample_barcode):
 
     :param sample_barcode: the sample barcode of the report to upload the artifacts for.
     """
-    api_util = RestClient(profile='prod')
-    report_created = api_util.get_report_created(sample_barcode)
+    candidate_paths = [
+        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf",
+        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf"
+    ]
 
-    reports = [report_file for report_file in report_created['report_files'] if
-               report_file['datatype'] in {'report_pdf', 'report_json', 'report_xml'}]
     temp_dir_path = f'{os.path.expanduser("~")}/temp'
 
     try:
@@ -43,9 +46,8 @@ def reports_to_nc(sample_barcode):
 
     client = Client()
 
-    for report in reports:
-        path = report['path']
-        remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, path)
+    for report in candidate_paths:
+        remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, report)
         blob_file = get_file_name_from_blob_name(blob.name)
 
         destination_file_name = f'{temp_dir_path}/{blob_file}'
