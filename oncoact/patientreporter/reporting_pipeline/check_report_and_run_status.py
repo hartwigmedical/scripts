@@ -581,6 +581,10 @@ def _get_default_report_content(self, report_created_record):
     used_lama_data = self._get_lama_data_used_for_report(report_created_record)
 
     print(used_lama_data)
+
+    if used_lama_data is None:
+        print(f"No Lama data was found in the patient reporter for {report_created_record['barcode']}.")
+
     patient_id = "reportingId"
     patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
