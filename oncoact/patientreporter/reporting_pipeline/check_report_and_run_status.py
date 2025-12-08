@@ -405,13 +405,19 @@ class StatusChecker:
 
     def _get_lama_data_used_for_report(self, report_record):
         sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json"
 
-        _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+        candidate_paths = [
+            f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama/patient-reporter.json",
+            f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/lama/patient-reporter.json",
+            f"gs://{self.oncoact_bucket.name}/corr-{sample_barcode}/lama/patient-reporter.json",
+        ]
 
-        if blob is None:
-            return None
-        return json.loads(blob.download_as_string().decode())
+        for path in candidate_paths:
+            _, blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
+            if blob is not None:
+                return json.loads(blob.download_as_string().decode())
+
+        return None
 
     def _get_current_lama_data(self, report_record):
         isolation_barcode = report_record['barcode']
@@ -631,12 +637,12 @@ class Section:
 
 
 def _print_chapters(chapters):
-    # Kleuren per chapter
+    # Colors per chapter
     color_map = {
         "Failed runs": "\033[91m",       # red
         "Finished runs": "\033[94m",     # blue
         "Validated runs": "\033[92m",    # green
-        "Waiting & Processing runs": "\033[33m",  # yello
+        "Waiting & Processing runs": "\033[33m",  # yellow
         "Reporting pipeline fails": "\033[38;5;208m",   # orange
     }
 
