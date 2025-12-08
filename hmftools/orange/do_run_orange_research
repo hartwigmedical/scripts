@@ -58,7 +58,7 @@ java -jar ${orange_jar} \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
     -sampling_date ${sampling_date} \
-    -output _dir "${output_dir}" \
+    -output_dir "${output_dir}" \
     -doid_json "${doid_json}" \
     -cohort_mapping_tsv "${cohort_mapping_tsv}" \
     -cohort_percentiles_tsv "${cohort_percentiles_tsv}" \
