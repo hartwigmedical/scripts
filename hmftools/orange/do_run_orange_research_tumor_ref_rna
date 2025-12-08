@@ -63,11 +63,13 @@ peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
 
-# Parameters changed
+# Parameters changed between versions
 # -tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
 # -ref_metrics_dir "${ref_sample_wgs_metrics_file}" \
 # -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
 # -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
+# -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
+# -ref_sample_flagstat_file "${reference_sample_flagstat_file}" \
 
 do_run_orange_research \
     ${run_dir} \
@@ -83,8 +85,6 @@ do_run_orange_research \
     -sage_germline_dir "${sage_germline_dir}" \
     -tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
     -ref_metrics_dir "${ref_sample_wgs_metrics_file}" \
-    -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-    -ref_sample_flagstat_file "${reference_sample_flagstat_file}" \
     -purple_dir "${purple_dir}" \
     -purple_plot_dir "${purple_plot_dir}" \
     -linx_dir "${linx_somatic_dir}" \
