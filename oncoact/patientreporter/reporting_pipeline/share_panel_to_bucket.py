@@ -137,7 +137,7 @@ class ReportSharer:
             ".sage.visualisation.zip",
             ".vchord.prediction.tsv",
             ".gnomad.pon.vcf",
-            "-igv-config.txt"
+            ".igv-config.txt"
         }
 
 if __name__ == "__main__":
