@@ -2,7 +2,7 @@ import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Client
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
-import fnmatch
+import subprocess
 
 def main():
     argument_parser = argparse.ArgumentParser()
@@ -56,10 +56,12 @@ class ReportSharer:
     def _get_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
-        pathPdf = f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        pathPdf = subprocess.check_output(cmd_pdf, shell=True, text=True).strip()
         _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
 
-        pathJson = f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
         result.append(blobPdf)
