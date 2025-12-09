@@ -2,7 +2,7 @@ import argparse
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Client
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
-
+import fnmatch
 
 def main():
     argument_parser = argparse.ArgumentParser()
@@ -20,6 +20,7 @@ class ReportSharer:
         self.storage_client: Client = Client()
 
         self.panel_pipeline_output_bucket: Bucket = self.storage_client.bucket(f'targeted-pipeline-output-{profile}-1')
+        self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="patient-reporter-final-prod-1")
         self.panel_share_bucket: Bucket = self.storage_client.bucket(f'oncoact-panel-files-nki')
 
         self.report_created_record = self.rest_client.get_report_created(self.sample_barcode)
@@ -53,13 +54,16 @@ class ReportSharer:
             self._share_panel_report(report_blobs)
 
     def _get_report_blobs(self):
-        all_report_files = self.report_created_record["report_files"]
-        report_files_to_upload = [file for file in all_report_files if
-                                  file['datatype'] in {'report_pdf', 'report_xml', 'report_json'}]
+        sample_barcode = self.sample_barcode
         result = []
-        for file in report_files_to_upload:
-            _, blob = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=file['path'])
-            result.append(blob)
+        pathPdf = f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
+
+        pathJson = f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
+
+        result.append(blobPdf)
+        result.append(blobJson)
         return result
 
     def _share_panel_failure_report(self, report_blobs):
