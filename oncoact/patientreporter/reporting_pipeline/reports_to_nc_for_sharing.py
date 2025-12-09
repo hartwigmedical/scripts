@@ -33,7 +33,7 @@ def reports_to_nc(sample_barcode):
 
     # alle patterns combineren in een enkele regex
     gsutil_pattern = f"gs://patient-reporter-final-prod-1/**/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.*"
-    corr_pattern   = f"gs://patient-reporter-final-prod-1/**/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.*"
+    corr_pattern = f"gs://patient-reporter-final-prod-1/**/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.*"
 
     cmd = [
         "bash", "-c",
@@ -41,7 +41,7 @@ def reports_to_nc(sample_barcode):
         r"| grep -v '^Total:' "
         r"| sort -k2,2nr "
         r"| head -n 3 "
-        f"| awk '{{print $3}}'"
+        r"| awk '{ $1=\"\"; $2=\"\"; sub(/^  */, \"\"); print }'"
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
