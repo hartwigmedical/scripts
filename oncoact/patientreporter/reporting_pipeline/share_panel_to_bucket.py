@@ -87,7 +87,7 @@ class ReportSharer:
 
     def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
-        bucket_contents = list(bucket.list_blobs(prefix=self._set_name()))
+        bucket_contents = list(bucket.list_blobs(prefix=self._set_name() + "/RUO/"))
         for blob in bucket_contents:
             for file_name in file_names:
                 if blob.name[-len(file_name):] == file_name:  # this checks if the blob name ends with the file name.
