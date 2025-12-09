@@ -23,13 +23,13 @@ def reports_to_nc(sample_barcode):
 
     :param sample_barcode: the sample barcode of the report to upload the artifacts for.
     """
-    candidate_paths = [
-        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
-        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
-        f"gs://patient-reporter-final-prod-1/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf",
-        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
-        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
-        f"gs://patient-reporter-final-prod-1/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf"
+    patterns = [
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf",
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf",
     ]
 
     temp_dir_path = f'{os.path.expanduser("~")}/temp'
@@ -45,14 +45,19 @@ def reports_to_nc(sample_barcode):
         os.mkdir(temp_dir_path)
 
     client = Client()
+    bucket = client.bucket("patient-reporter-final-prod-1")
 
-    for report in candidate_paths:
-        remote_bucket, blob = get_bucket_and_blob_from_gs_path(client, report)
-        blob_file = get_file_name_from_blob_name(blob.name)
+    for pattern in patterns:
+        prefix = pattern.split("*")[0]
 
-        destination_file_name = f'{temp_dir_path}/{blob_file}'
-        with open(destination_file_name, 'xb') as file:
-            blob.download_to_file(file)
+        blobs = client.list_blobs(bucket, prefix=prefix)
+
+        for blob in blobs:
+            if fnmatch.fnmatch(blob.name, pattern):
+                destination = os.path.join(temp_dir_path, os.path.basename(blob.name))
+                with open(destination, "wb") as f:
+                    blob.download_to_file(f)
+                print("Downloaded:", blob.name)
 
     upload_to_nextcloud(temp_dir_path)
     shutil.rmtree(temp_dir_path)
