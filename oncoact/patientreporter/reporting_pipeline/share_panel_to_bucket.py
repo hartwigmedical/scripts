@@ -89,7 +89,7 @@ class ReportSharer:
         result = []
         print(bucket)
 
-        bucket_contents = list(bucket.list_blobs(prefix=self._set_name()))
+        bucket_contents = list(bucket.list_blobs(prefix=self.sample_barcode + "/RUO/"))
         print(bucket_contents)
         for blob in bucket_contents:
             for file_name in file_names:
