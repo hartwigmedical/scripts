@@ -39,42 +39,6 @@ def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
             f"qc_check_oncopanel_batch {batch} {Path.home()}/tmp_diag_{batch}"
         )
     else:
-        recon_cnv_yaml = input_directory / f"{batch}_recon_cnv.yaml"
-        if recon_cnv_yaml.exists():
-            logging.info(f"Found recon CNV YAML {recon_cnv_yaml}")
-
-            barcodes = []
-            for line in open(recon_cnv_yaml):
-                if line.startswith('name: "'):
-                    barcodes.append(line[len('name: "'):-2])
-
-            log_or_warn(f"Found {len(barcodes)} barcodes in YAML: {barcodes}", len(barcodes) == relevant_count_found)
-
-            barcodes_done = [
-                barcode for barcode in barcodes
-                if run_bash_command(["gcloud", "storage",  "ls", f"gs://panel-vis-files/recon-cnv/{barcode.lower()}/recon-cnv/SUCCESS"])]
-            log_or_warn(f"Found {len(barcodes_done)} recon CNV outputs", len(barcodes_done) == relevant_count_found)
-        else:
-            logging.warning(f"No Recon CNV YAML {recon_cnv_yaml}")
-
-        sage_vis_yaml = input_directory / f"{batch}_sage_vis.yaml"
-        if sage_vis_yaml.exists():
-            logging.info(f"Found Sage vis YAML {sage_vis_yaml}")
-
-            barcodes = []
-            for line in open(sage_vis_yaml):
-                if line.startswith('name: "'):
-                    barcodes.append(line[len('name: "'):-2])
-
-            log_or_warn(f"Found {len(barcodes)} barcodes in YAML: {barcodes}", len(barcodes) == relevant_count_found)
-
-            barcodes_done = [
-                barcode for barcode in barcodes
-                if run_bash_command(["gcloud", "storage",  "ls", f"gs://panel-vis-files/sage-visualisations/{barcode.lower()}/sage-visualisation/SUCCESS"])]
-            log_or_warn(f"Found {len(barcodes_done)} Sage vis outputs", len(barcodes_done) == relevant_count_found)
-        else:
-            logging.warning(f"No SAGE vis YAML {sage_vis_yaml}")
-
         remarks_yaml = input_directory / f"{batch}_remarks.yaml"
         if remarks_yaml.exists():
             logging.info(f"Found remarks YAML {remarks_yaml}")

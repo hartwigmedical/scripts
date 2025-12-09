@@ -48,21 +48,10 @@ main() {
 
   info "Create possible follow-up commands"
 
-  nextcloud_script="${local_working_directory}/${run_id_start}_upload_to_nextcloud"
-  echo "upload_panel_qc_files_to_nextcloud ${local_working_directory}" > "${nextcloud_script}" || die "Could not create nf upload command"
-  chmod +x "${nextcloud_script}" || die "Could not make nf upload script executable"
-
-  recon_cnv_yaml="${local_working_directory}/${run_id_start}_recon_cnv.yaml"
-  genReconCnvYaml.py "${run_id_start}" > "${recon_cnv_yaml}" || die "Could not create reconCnv YAML"
-  sage_vis_yaml="${local_working_directory}/${run_id_start}_sage_vis.yaml"
-  genSageVisYaml.py "${run_id_start}" > "${sage_vis_yaml}" || die "Could not create Sage visualisation YAML"
   remarks_yaml="${local_working_directory}/${run_id_start}_remarks.yaml"
   genRemarksYaml.py "${run_id_start}" > "${remarks_yaml}" || die "Could not create remarks YAML"
 
   info "Possible follow-up commands:"
-  echo "${nextcloud_script}"
-  echo "submit_hawe_execution ${recon_cnv_yaml}"
-  echo "submit_hawe_execution ${sage_vis_yaml}"
   echo "submit_hawe_execution ${remarks_yaml}"
 
   info "Finished ${SCRIPT_NAME}"
