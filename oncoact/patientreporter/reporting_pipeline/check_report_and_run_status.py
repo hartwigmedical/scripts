@@ -590,12 +590,15 @@ def _get_default_report_content(self, report_created_record):
         print(f"No Lama data was found in the patient reporter for {report_created_record['barcode']}.")
         patient_id_value = None
         pathology_id_value = None
+        sharedMethod = None
     else:
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
         pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
+        reportSettings = used_lama_data["reportSettings"]
+        sharedMethod = reportSettings["isSharedThroughPortal"]
 
     return {
         'report_created_id': report_created_record['id'],
@@ -603,7 +606,8 @@ def _get_default_report_content(self, report_created_record):
         'isolation_barcode': report_created_record['barcode'],
         'report_type': report_created_record['report_type'],
         'reportingId': patient_id_value,
-        'hospitalSampleLabel': pathology_id_value
+        'hospitalSampleLabel': pathology_id_value,
+        'sharedMethod': sharedMethod
 
     }
 
