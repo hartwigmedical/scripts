@@ -2,6 +2,7 @@ import subprocess
 import os
 import shutil
 import argparse
+import fnmatch
 from gsutil import get_bucket_and_blob_from_gs_path, get_file_name_from_blob_name
 from google.cloud.storage import Bucket, Client
 
