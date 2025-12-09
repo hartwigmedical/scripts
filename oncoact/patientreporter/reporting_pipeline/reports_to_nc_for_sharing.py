@@ -41,7 +41,7 @@ def reports_to_nc(sample_barcode):
         r"| grep -v '^Total:' "
         r"| sort -k2,2nr "
         r"| head -n 3 "
-        r"| awk '{ $1=\"\"; $2=\"\"; sub(/^  */, \"\"); print }'"
+        r"| awk '{ print substr($0, index($0, $3)) }'"
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
