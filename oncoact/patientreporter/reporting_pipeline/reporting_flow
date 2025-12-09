@@ -13,16 +13,9 @@ print_usage(){
     echo " $script help" #For find the usage of this script
     echo " $script check_reports" #Check for processing all reports
     echo " $script check_pipelines" #Check for processing reporting pipelines
-    echo " $script panel_data FR123" #Generate panel data
     echo " $script fail_report FR123" #Generate fail reports
-    echo " $script wgs_override_report FR123" #Generate wgs override reports
-    echo " $script panel_override_report FR123" #Generate panel override reports
-    echo " $script upload FR123" #Upload reports to nextcloud
-    echo " $script share_wgs FR123" #Share wgs reports + archive
-    echo " $script share_wgs_fail FR123" #Share wgs reports fail + archive
-    echo " $script share_panel FR123" #Share panel reports + archive
-    echo " $script share_panel_fail FR123" #Share panel fail reports + archive
-    echo " $script upload_kmbp_report FR123" #Share panel reports + archive
+    echo " $script upload_for_share FR123" #Upload reports to nextcloud
+    echo " $script share_panel" # Upload panel reports to bucket
     echo " $script portal_api FR123" #New call to portal api
     exit 1
 }
@@ -47,38 +40,12 @@ if [[ "${process}" == "check_reports" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod
 elif [[ "${process}" == "check_pipelines" ]]; then
     check_process_pipelines
-elif [[ "${process}" == "panel_data" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/create_panel_report_artifacts.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "fail_report" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_fail_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" == "wgs_override_report" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_override_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" == "panel_override_report" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/generate_panel_override_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" == "upload" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc.py ${sampleBarcode}
-elif [[ "${process}" == "share_wgs" ]]; then
-    setname=$(api runs "ini=Somatic.ini&status=Validated&context=DIAGNOSTIC&barcode=${isolationBarcode}" | awk 'NR==2 { print $1 }')
-    echo "Creating reported.variants.and.snps.vcf (can take 10+ seconds)..."
-    id_snpcaller_vcfmerge.sh ${setname}
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" == "share_wgs_fail" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
+elif [[ "${process}" == "upload_for_share" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/reports_to_nc_for_sharing.py ${sampleBarcode}
 elif [[ "${process}" == "share_panel" ]]; then
-    copy_extra_panel_data_to_panel_reporting_dir ${isolationBarcode} ${sampleBarcode}
-
-    # Check if the previous command was successful
-    if [[ $? -ne 0 ]]; then
-        echo -e "\033[1;31m Error: Not all panel data available for this sample. Aborting. \033[0m"
-        exit 1
-    fi
-
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
-
-elif [[ "${process}" == "share_panel_fail" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_report.py ${sampleBarcode} --profile prod
-elif [[ "${process}" == "upload_kmbp_report" ]]; then
-        upload_kmbp_reports_to_check ${isolationBarcode}
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_panel_to_bucket.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "portal_api" ]]; then
         python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/update_api.py ${sampleBarcode} --publish --notify-users --profile prod
 else

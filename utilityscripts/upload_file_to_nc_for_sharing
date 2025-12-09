@@ -6,7 +6,7 @@ file=$1 && shift
 
 [[ -n "${file}" ]] || die "No file name provided. Exiting"
 
-nextcloud_dir="STAGING/New-Reports-Viewing"
+nextcloud_dir="STAGING/Reports-To-Share"
 
-info "Uploading ${file} to Nextcloud for viewing."
+info "Uploading ${file} to Nextcloud for sharing."
 do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${file}"
