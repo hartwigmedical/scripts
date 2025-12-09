@@ -85,7 +85,8 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
         sample_barcode = self.sample_barcode
-        igv_config = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/create-igv-config/*-igv-config.txt"
+
+        igv_config = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/create-igv-config/*.igv-config.txt"
         pathIgv_config = subprocess.check_output(igv_config, shell=True, text=True).strip()
         _, blob_Igv_config = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathIgv_config)
 
