@@ -31,10 +31,10 @@ class ReportSharer:
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
 
         """
-        print("Deleting existing panel files of shared bucket")
+        print("Deleting existing panel files of GCP shared bucket")
         self._delete_old_artifacts_in_gcp_share_bucket()
 
-        print("Copy panel files to shared bucket")
+        print("Copy panel files to GCP shared bucket")
         self._copy_files_to_remote_buckets()
 
         print("Done!")
@@ -63,7 +63,7 @@ class ReportSharer:
         return result
 
     def _share_panel_failure_report(self, report_blobs):
-        print(f"Sharing {len(report_blobs)} report files with the portal")
+        print(f"Sharing {len(report_blobs)} report files with the GCP bucket")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
 
@@ -71,10 +71,10 @@ class ReportSharer:
         panel_blobs = self._get_blobs_from_bucket(bucket=self.panel_pipeline_output_bucket,
                                                   file_names=self._panel_files())
 
-        print(f"Sharing ${len(report_blobs)} report files with the portal")
+        print(f"Sharing ${len(report_blobs)} report files with the GCP bucket")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
-        print(f"Sharing a total of '{len(panel_blobs)}' panel files with the portal")
+        print(f"Sharing a total of '{len(panel_blobs)}' panel files with the GCP bucket")
         for blob in panel_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
