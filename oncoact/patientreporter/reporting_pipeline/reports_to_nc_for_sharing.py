@@ -24,41 +24,46 @@ def reports_to_nc(sample_barcode):
 
     :param sample_barcode: the sample barcode of the report to upload the artifacts for.
     """
-    temp_dir_path = f'{os.path.expanduser("~")}/temp'
-
-    # temp folder clean
-    if os.path.isdir(temp_dir_path):
-        shutil.rmtree(temp_dir_path)
-    os.mkdir(temp_dir_path)
-
-    # alle patterns combineren in een enkele regex
-    gsutil_pattern = f"gs://patient-reporter-final-prod-1/**/{sample_barcode}/patient-reporter/*_oncoact_wgs_report.*"
-    corr_pattern = f"gs://patient-reporter-final-prod-1/**/corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.*"
-
-    cmd = [
-        "bash", "-c",
-        f"gsutil ls -l '{gsutil_pattern}' '{corr_pattern}' "
-        r"| grep -v '^Total:' "
-        r"| sort -k2,2nr "
-        r"| head -n 3 "
-        r"| awk '{ print substr($0, index($0, $3)) }'"
+    patterns = [
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf",
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.xml",
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.json",
+        f"corr-{sample_barcode}/patient-reporter/*_oncoact_wgs_report.pdf"
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    files = [f for f in result.stdout.strip().split("\n") if f]
+    temp_dir_path = f'{os.path.expanduser("~")}/temp'
 
-    print("Files to download:", files)
+    try:
+        os.mkdir(temp_dir_path)
+    except FileExistsError as e:
+        print(e)
+        delete_and_try_again = input('Do you want to delete this folder and try again? (y/n)\n').lower() == 'y'
+        if not delete_and_try_again:
+            exit(1)
+        shutil.rmtree(temp_dir_path)
+        os.mkdir(temp_dir_path)
 
-    for filepath in files:
-        subprocess.run(["gsutil", "cp", filepath, temp_dir_path], check=True)
-        print("Downloaded:", filepath)
+    client = Client()
+    bucket = client.bucket("patient-reporter-final-prod-1")
+
+    for pattern in patterns:
+        prefix = pattern.split("*")[0]
+
+        blobs = client.list_blobs(bucket, prefix=prefix)
+
+        for blob in blobs:
+            if fnmatch.fnmatch(blob.name, pattern):
+                destination = os.path.join(temp_dir_path, os.path.basename(blob.name))
+                with open(destination, "wb") as f:
+                    blob.download_to_file(f)
+                print("Downloaded:", blob.name)
 
     upload_to_nextcloud(temp_dir_path)
     shutil.rmtree(temp_dir_path)
-
-    print("All done!")
+    print('All done!')
     exit(0)
-
 
 
 def upload_to_nextcloud(path):
