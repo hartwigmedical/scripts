@@ -20,6 +20,7 @@ class ReportSharer:
         self.storage_client: Client = Client()
 
         self.panel_pipeline_output_bucket: Bucket = self.storage_client.bucket(f'targeted-pipeline-output-{profile}-1')
+        self.portal_bucket: Bucket = self.storage_client.bucket(f'hmf-customer-portal-report-shared-{profile}')
         self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="patient-reporter-final-prod-1")
         self.panel_share_bucket: Bucket = self.storage_client.bucket(f'oncoact-panel-files-nki')
 
@@ -74,7 +75,7 @@ class ReportSharer:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket)
 
     def _share_panel_report(self, report_blobs):
-        panel_blobs = self._get_blobs_from_bucket(bucket=self.panel_pipeline_output_bucket,
+        panel_blobs = self._get_blobs_from_bucket(bucket=self.portal_bucket,
                                                   file_names=self._panel_files())
 
         print(f"Sharing ${len(report_blobs)} report files with the GCP bucket")
@@ -83,14 +84,6 @@ class ReportSharer:
         print(f"Sharing a total of '{len(panel_blobs)}' panel files with the GCP bucket")
         for blob in panel_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
-
-        sample_barcode = self.sample_barcode
-
-        igv_config = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/create-igv-config/*.igv-config.txt"
-        pathIgv_config = subprocess.check_output(igv_config, shell=True, text=True).strip()
-        _, blob_Igv_config = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathIgv_config)
-
-        self._copy_blob_to_bucket(blob=blob_Igv_config, destination_bucket=self.panel_share_bucket, target_sub_folder='RUO')
 
     def _get_blobs_from_bucket(self, bucket, file_names):
         result = []
