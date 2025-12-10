@@ -124,7 +124,7 @@ class ReportSharer:
             "purple.purity.tsv",
             "purple.cnv.gene.tsv",
             "purple.sv.vcf.gz",
-            "purple.sv.vcf.gz.tbi"
+            "purple.sv.vcf.gz.tbi",
             "reported.somatic.vcf",
             "sampleQcReport.pdf",
             "sampleQcReport.png",
