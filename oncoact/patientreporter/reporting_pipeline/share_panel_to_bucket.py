@@ -65,8 +65,19 @@ class ReportSharer:
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
+
+        cmd_pdf_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/pfail-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        pathPdfFail = subprocess.check_output(cmd_pdf_fail, shell=True, text=True).strip()
+        _, blobPdfFail = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdfFail)
+
+        cmd_json_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/pfail-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        pathJsonFail = subprocess.check_output(cmd_json_fail, shell=True, text=True).strip()
+        _, blobJsonFail = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJsonFail)
+
         result.append(blobPdf)
         result.append(blobJson)
+        result.append(blobPdfFail)
+        result.append(blobJsonFail)
         return result
 
     def _share_panel_failure_report(self, report_blobs):
