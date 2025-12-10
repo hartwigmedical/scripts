@@ -120,9 +120,11 @@ class ReportSharer:
         return {
             "driver.catalog.somatic.tsv",
             "purple.somatic.vcf.gz",
+            "purple.somatic.vcf.gz.tbi",
             "purple.purity.tsv",
             "purple.cnv.gene.tsv",
             "purple.sv.vcf.gz",
+            "purple.sv.vcf.gz.tbi"
             "reported.somatic.vcf",
             "sampleQcReport.pdf",
             "sampleQcReport.png",
