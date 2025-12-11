@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.2.8"
+version: "0.3.0"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -218,7 +218,6 @@ stages:
 
         WORK_DIR="/tmp/work"
         mkdir -p $WORK_DIR
-        TRUTH_BUCKET="/in/truth-bucket"
 
         COMPAR_INPUT_DIR="/in/execute-compar/compar_${run_id}/reported"
         OUTPUT_FILE="$WORK_DIR/compar_output.xlsx"
@@ -250,4 +249,61 @@ stages:
         pool: "n2d-standard-16-pool-1"
     inputStages:
       - execute-compar
-      - truth-bucket
+  - name: "vis-reported"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
+    version: "1.0.0"
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        OVERRIDES='${compar_vis_overrides}'
+        read -r -a OVERRIDES_ARRAY <<< "$OVERRIDES"
+        
+        python3 -m compar_vis \
+          --input_directory "/in/execute-compar/compar_${run_id}/reported" \
+          --output_file /out/compar_vis.${run_id}.reported.html \
+          ${OVERRIDES_ARRAY[@]}
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 50Gi
+      stageTimeoutMinutes: 60
+      resources:
+        requests:
+          cpu: 8
+          memory: 16Gi
+          storage: 50Gi
+      node:
+        spot: true
+        pool: "n2d-standard-16-pool-1"
+    inputStages:
+      - execute-compar
+  - name: "vis-all"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
+    version: "1.0.0"
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        OVERRIDES='${compar_vis_overrides}'
+        read -r -a OVERRIDES_ARRAY <<< "$OVERRIDES"
+        
+        python3 -m compar_vis \
+          --input_directory "/in/execute-compar/compar_${run_id}/all" \
+          --output_file /out/compar_vis.${run_id}.all.html \
+          ${OVERRIDES_ARRAY[@]}
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 50Gi
+      stageTimeoutMinutes: 60
+      resources:
+        requests:
+          cpu: 8
+          memory: 16Gi
+          storage: 50Gi
+      node:
+        spot: true
+        pool: "n2d-standard-16-pool-1"
+    inputStages:
+      - execute-compar
