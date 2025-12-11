@@ -28,6 +28,7 @@ cp -r "${run_dir}" "${pipeline_dir}"
 # TUM = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
 # REF = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
 
+echo "${pipeline_dir}"
 echo "${pipeline_dir}/${sample_actin}T/bam_metrics"
 echo "${pipeline_dir}/${sample_actin}R/bam_metrics"
 
