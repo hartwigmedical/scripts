@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source database_functions || exit 1
+
+patient_json=$1 && shift
+actin_credentials=$1 && shift
+actin_jar=$1 && shift
+actin_database_name=$1 && shift
+
+if [[ -z "${patient_json}" || -z "${actin_credentials}" || -z "${actin_jar}" || -z "${actin_database_name}" ]]; then
+    error "Parameters missing. Exiting."
+fi
+
+db_user=$(extract_database_user "${actin_credentials}")
+db_pass=$(extract_database_password "${actin_credentials}")
+db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
+
+info "Loading $(basename ${patient_json}) into ACTIN database '${actin_database_name}'"
+
+java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplicationKt \
+    -patient_json ${patient_json} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
