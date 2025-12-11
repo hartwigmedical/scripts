@@ -38,7 +38,7 @@ rm -r "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
 rm -r "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
 
 #echo "${pipeline_dir}/chord/"
-mv "${pipeline_dir}/chord/${sample_actin}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample_actin}T_chord_prediction.tsv"
+mv "${pipeline_dir}/chord/${sample_actin}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample_actin}T.chord.prediction.tsv"
 
 # Make required chord TSV from TXT
 run_orange_research_no_germline ${pipeline_dir}
