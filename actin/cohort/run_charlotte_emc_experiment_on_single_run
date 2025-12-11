@@ -34,6 +34,8 @@ cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}T/bam_m
 cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
 rm -r "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
 rm -r "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
+
+echo "${pipeline_dir}/${sample_actin}T/chord/"
 mv  "${pipeline_dir}/${sample_actin}T/chord/${sample_actin}T_chord_prediction.txt" "${pipeline_dir}/${sample_actin}T/chord/${sample_actin}T_chord_prediction.tsv"
 
 # Make required chord TSV from TXT
