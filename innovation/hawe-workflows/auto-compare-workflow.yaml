@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.2.7"
+version: "0.2.8"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket

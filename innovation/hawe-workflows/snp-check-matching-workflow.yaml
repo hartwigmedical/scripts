@@ -1,5 +1,5 @@
 name: "snp-check-matching"
-version: "0.0.2"
+version: "0.0.3"
 storagePath: "gs://snp-check-matching-output"
 externalInputs:
   - name: cram-folder
@@ -24,8 +24,8 @@ stages:
 
         # Resolve BAM/CRAM by pattern in case suffixes like T/R are used
         shopt -s nullglob
-        bam_matches=(/in/cram-folder/${sample_id}*.bam)
-        cram_matches=(/in/cram-folder/${sample_id}*.cram)
+        bam_matches=(/in/cram-folder/${sample_id}.bam)
+        cram_matches=(/in/cram-folder/${sample_id}.cram)
         shopt -u nullglob
 
         # Filter out intentionally unmatched alignments so they are never picked up
