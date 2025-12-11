@@ -19,6 +19,7 @@ sample_actin=${sample_services%?}
 create_actin_cohort_clinical_record_from_doid ${sample_services} ${sample_actin}
 
 pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample_services})
+
 rm -rf ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir}"
@@ -30,8 +31,8 @@ cp -r "${run_dir}" "${pipeline_dir}"
 echo "${pipeline_dir}/${sample_actin}T/bam_metrics"
 echo "${pipeline_dir}/${sample_actin}R/bam_metrics"
 
-cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics"
-cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
+cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/bam_metrics"
+cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/bam_metrics"
 rm -r "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
 rm -r "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
 
