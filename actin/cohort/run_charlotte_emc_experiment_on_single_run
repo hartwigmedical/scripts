@@ -29,9 +29,7 @@ cp -r "${run_dir}" "${pipeline_dir}"
 # Fake data location = /home/rramnarine/bam_metrics
 # TUM = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
 # REF = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
-echo "${pipeline_dir}"
-echo "${pipeline_dir}/${sample_actin}T/bam_metrics"
-echo "${pipeline_dir}/${sample_actin}R/bam_metrics"
+
 cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics"
 cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
 rm -r "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
@@ -39,7 +37,7 @@ rm -r "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
 # Chord output file name modification
 mv "${pipeline_dir}/chord/${sample_actin}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample_actin}T.chord.prediction.tsv"
 # Peach output file name modification
-mv "${pipeline_dir}/peach/${sample_actin}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample_actin}T.peach.haplotypes.best.tsv"
+mv "${pipeline_dir}/peach/${sample_actin}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample_actin}R.peach.haplotypes.best.tsv"
 
 # Make required chord TSV from TXT
 run_orange_research_no_germline ${pipeline_dir}
