@@ -26,20 +26,16 @@ cp -r "${run_dir}" "${pipeline_dir}"
 # Copy fake bam_metrics to patient sample folders
 # TUM = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
 # REF = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
-echo /home/rramnarine/bam_metrics/*.tsv
+
 echo "${pipeline_dir}/${sample_actin}T/bam_metrics"
 echo "${pipeline_dir}/${sample_actin}R/bam_metrics"
 
 cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics"
 cp -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
-
 rm -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
 rm -r /home/rramnarine/bam_metrics/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
 
-COREDB010353R.wgsmetrics
-
 # Make required chord TSV from TXT
-
 run_orange_research_no_germline ${pipeline_dir}
 
 molecular_dir=$(locate_actin_cohort_molecular_directory ${sample_services})
