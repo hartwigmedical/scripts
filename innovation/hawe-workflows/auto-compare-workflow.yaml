@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.3.0"
+version: "0.3.1"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -11,7 +11,7 @@ externalInputs:
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.1.2"
+    version: "0.2.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -138,11 +138,13 @@ stages:
                 -sample_dir_ref "$RENAMED_TRUTH_RUNS_DIR/*" \
                 -sample_dir_new "$RENAMED_TARGET_RUNS_DIR/*" \
                 -somatic_unfiltered_vcf_ref "$RENAMED_TRUTH_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz" \
-                -somatic_unfiltered_vcf_new "$SOMATIC_UNFILTERED_VCF_NEW" \
+                -somatic_unfiltered_vcf_new "$RENAMED_TARGET_RUNS_DIR/*/sage_somatic/*.sage.somatic.vcf.gz" \
                 -output_dir "$MODE_DIR" \
                 -output_id "$OUTPUT_ID" \
                 -log_debug \
                 -threads 16 \
+                -pipeline_format_ref PIP5_V6_0 \
+                -pipeline_format_new PIP5_V6_0 \
                 "${OPTIONAL_ARGS_ARRAY[@]}"
         }
 
@@ -209,7 +211,7 @@ stages:
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.1.2"
+    version: "0.2.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
