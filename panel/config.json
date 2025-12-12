@@ -13,7 +13,7 @@
             "field_separator": "\t",
 			"off_target_label": "Antitarget",
 			"off_target_low_conf_log2": -10,
-			"weight_scaling_factor": 10
+			"weight_scaling_factor": 50
 		},
 		"genome_file":{
 			"column_names":{
@@ -81,6 +81,7 @@
 		"logFC_genome_plot":{
 			"width": 1200,
 			"height": 250,
+                        "point_size" : 4,
 			"output_backend": "webgl",
 			"active_scroll": "xwheel_zoom",
 			"title": "Genome Level CNV",
