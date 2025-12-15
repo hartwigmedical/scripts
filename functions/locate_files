@@ -836,7 +836,8 @@ locate_actin_report_pdf() {
 }
 
 locate_actin_serve_directory() {
-    echo "/data/actin/serve"
+    #echo "/data/actin/serve"
+    echo "/data/resources/actin/treatment_db"
 }
 
 ############################ ACTIN Personalization #############################
