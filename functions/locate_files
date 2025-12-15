@@ -5,7 +5,8 @@ source message_functions || exit 1
 ##################################### JARS #####################################
 
 locate_actin_jar_on_vm() {
-    echo "/data/actin/system/actin.jar"
+    #echo "/data/actin/system/actin.jar"
+    echo "/home/rramnarine/molecular-local-SNAPSHOT-jar-with-dependencies.jar"
 }
 
 locate_actin_clinical_jar_on_vm() {
