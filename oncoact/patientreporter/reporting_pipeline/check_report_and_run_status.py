@@ -184,7 +184,7 @@ class StatusChecker:
 
         run_content = _get_default_run_content(run_record)
         run_content['fail_reason'] = fail_reason
-        report_content = _get_default_report_content(report_record)
+        ##report_content = _get_default_report_content(report_record)
         return {**run_content,
                 **report_content}
 
