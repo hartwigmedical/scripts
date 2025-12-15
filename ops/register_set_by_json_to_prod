@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-source message_functions || exit 1
-
-json=$1
-api_url='http://api.prod-1/hmf/v1/action/register'
-
-if [[ -z "${json+x}" ]]; then error "No json given"; fi
-curl -s ${api_url} -XPOST -H "Content-Type: application/json" -d @${json}
