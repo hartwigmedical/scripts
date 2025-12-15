@@ -6,9 +6,10 @@ source secrets_functions || exit 1
 
 function print_help () {
     echo "-----"
-    echo " Descr: Download provided file to provided nextcloud directory"
+    echo " Descr: Download provided file from provided nextcloud directory to current location."
     echo " Usage: $(basename $0) \${NC_DIR} <File1> ]"
     echo " Examp: $(basename $0) UPLOAD file.txt"
+    echo " Examp: $(basename $0) UPLOAD/subfolder file.txt"
     echo "-----"
     exit 1
 }
@@ -26,6 +27,6 @@ info "Collecting credentials"
 user=$(get_nextcloud_upload_user)
 pass=$(get_nextcloud_upload_password)
 
-info "Starting donwload of file from Nextcloud dir ${nextcloud_dir} for user ${user}"
-curl -u "${user}:${pass}" -O "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" --output ./${file}
-info "Finished with donwload. "
+info "Starting download of file from Nextcloud dir ${nextcloud_dir} for user ${user}"
+curl -u "${user}:${pass}" -O "${nextcloud_url}/remote.php/webdav/${nextcloud_dir}/${file}" --output "./${file}"
+info "Finished with download. "
