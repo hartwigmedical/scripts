@@ -9,7 +9,8 @@ if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-clinical_json="$(locate_actin_clinical_json ${patient})"
+# /data/experiments/kd_actin_cohort/clinical
+clinical_json="$(locate_actin_cohort_clinical_directory ${patient})"
 if [[ -z "${clinical_json}" ]]; then
     error "No clinical record json found for ${patient}."
 fi
