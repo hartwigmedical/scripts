@@ -772,7 +772,8 @@ locate_actin_wts_directory() {
 }
 
 locate_actin_patient_record_directory() {
-    echo "/data/actin/patients"
+    #echo "/data/actin/patients"
+    echo "/data/experiments/kd_actin_cohort/patients"
 }
 
 locate_actin_patient_record_json() {
