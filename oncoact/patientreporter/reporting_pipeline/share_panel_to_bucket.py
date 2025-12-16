@@ -31,7 +31,6 @@ class ReportSharer:
     def share_report(self):
         """
         Shares the report by updating the remote portal bucket and the remote archive bucket. It also updates the API.
-
         """
         print("Deleting existing panel files of GCP shared bucket")
         self._delete_old_artifacts_in_gcp_share_bucket()
@@ -59,11 +58,11 @@ class ReportSharer:
     def _get_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
-        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
         pathPdf = subprocess.check_output(cmd_pdf, shell=True, text=True).strip()
         _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
 
-        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
