@@ -159,7 +159,7 @@ cmd+=("${network_arg[@]}")
 
 [[ "${preemptible}" == "TRUE" ]] && cmd+=("--preemptible")
 [[ "${startup_script}" != "NONE" ]] && cmd+=("--metadata-from-file=startup-script=${startup_script}")
-[[ "${accelerator}" != "" ]] && cmd+=("--accelerator=${accelerator}")
+[[ "${accelerator}" != "" ]] && cmd+=("--accelerator=${accelerator}" "--maintenance-policy=TERMINATE")
 
 info "Command to be executed: ${cmd[*]}"
 info "NOTE: Cost center will be configured to '${cost_center}'"
