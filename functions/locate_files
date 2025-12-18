@@ -449,6 +449,11 @@ locate_cohort_actin() {
     echo "/home/rramnarine/curation-local-SNAPSHOT-jar-with-dependencies.jar"
 }
 
+locate_cohort_actin_molecularLoaderAPP() {
+    #echo "/data/actin/system/actin.jar"
+    echo "/home/rramnarine/database-local-SNAPSHOT-jar-with-dependencies.jar"
+}
+
 locate_actin_cohort_pipeline_directory() {
     local sample=$1 && shift
 

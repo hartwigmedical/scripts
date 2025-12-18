@@ -5,23 +5,26 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 patient=$1 && shift
-
 actin_credentials=$1 && shift
-actin_jar=$1 && shift
 actin_database_name=$1 && shift
 
 patient_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
+actin_jar="$(locate_cohort_actin_molecularLoaderAPP)"
 
-info "Patient json ${patient_json}"
-info "Patient credentials ${actin_credentials}"
+info "Patient json path location${patient_json}"
 info "Actin jar location ${actin_jar}"
-info "Actin DB name ${actin_database_name}"
 
-if [[ -z "${patient_json}" || -z "${actin_credentials}" || -z "${actin_jar}" || -z "${actin_database_name}" ]]; then
-    error "Parameters missing. Exiting."
+if [[ -z "${patient_json}" || -z "${actin_jar}" ]]; then
+    error "Patient or jar Parameters missing. Exiting."
 fi
 
-db_user=$(extract_database_user "${actin_credentials}")
+if [[ -z "${actin_credentials}" || -z "${actin_database_name}" ]]; then
+    error "SQL Parameters missing. Exiting."
+fi
+info "Patient credentials ${actin_credentials}"
+info "Actin DB name ${actin_database_name}"
+
+db_user=$(extract_database  _user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
 db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
 
