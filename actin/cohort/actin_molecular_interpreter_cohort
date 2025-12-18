@@ -5,13 +5,13 @@ source locate_files || exit 1
 
 patient=$1 && shift
 
-info "Patent identifier: ${patient}"
+info "Patent identifier: ${patient%?}"
 
 if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-  clinical_json="$(locate_actin_cohort_clinical_directory)/${patient}"
+  clinical_json="$(locate_actin_cohort_clinical_directory)/${patient%?}"
 if [[ -z "${clinical_json}" ]]; then
     error "No clinical record json found for ${patient}."
 fi
