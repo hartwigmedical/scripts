@@ -13,6 +13,8 @@ fi
 if [[ -z "${clinical_json}" ]]; then
     error "No clinical record json found for ${patient}."
 fi
+# Remove after
+info "Clinical json location: $(clinical_json)"
 
 wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
 orange_cmd=""

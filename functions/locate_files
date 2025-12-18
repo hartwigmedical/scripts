@@ -735,7 +735,7 @@ locate_actin_clinical_json() {
 
 locate_actin_wgs_directory() {
     #echo "/data/actin/wgs_pipeline_output"
-    echo "/data/experiments/kd_actin_cohort/pipelines/"
+    echo "/data/experiments/kd_actin_cohort/pipelines"
 }
 
 locate_actin_wgs_directory_for_patient() {
