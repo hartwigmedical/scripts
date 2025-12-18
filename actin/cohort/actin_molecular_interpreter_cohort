@@ -5,6 +5,8 @@ source locate_files || exit 1
 
 patient=$1 && shift
 
+info "Patent identifier: ${patient}"
+
 if [[ -z "${patient}" ]]; then
     error "Parameters missing. Exiting."
 fi
