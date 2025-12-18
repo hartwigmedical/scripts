@@ -4,12 +4,15 @@ source message_functions || exit 1
 source locate_files || exit 1
 source database_functions || exit 1
 
-patient_json=$1 && shift
+patient=$1 && shift
+
 actin_credentials=$1 && shift
 actin_jar=$1 && shift
 actin_database_name=$1 && shift
 
-info "Patient json location ${patient_json}"
+patient_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
+
+info "Patient json ${patient_json}"
 info "Patient credentials ${actin_credentials}"
 info "Actin jar location ${actin_jar}"
 info "Actin DB name ${actin_database_name}"
