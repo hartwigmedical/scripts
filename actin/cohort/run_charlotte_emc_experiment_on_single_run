@@ -48,4 +48,5 @@ cp "${pipeline_dir}/orange_no_germline/${sample_services}.orange.json" "${molecu
 #rm -rf ${pipeline_dir}
 
 actin_molecular_interpreter_cohort ${sample_services}
+INFO "I AM HERE"
 load_actin_molecular_cohort ${sample_services}
