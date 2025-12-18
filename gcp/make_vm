@@ -26,6 +26,7 @@ startup_script="NONE"
 umbrella_scope="${DEFAULT_UMBRELLA_SCOPE}"
 cost_center=""
 do_not_ask=""
+accelerator=""
 
 print_usage() {
     script=$(basename "$0")
@@ -48,6 +49,7 @@ print_usage() {
     echo "  -d startup_script      Startup script (as a file) [${startup_script}]"
     echo "  -u umbrella_scope      Can be crunch/ops/innovation/pmc/onboarding/share and configures accordingly [${umbrella_scope}]"
     echo "  -c cost_center         Track costs under this label [${cost_center}]"
+    echo "  -a accelerator         Add GPU to instance. Format: [count=Count],[type=TYPE]"
     echo "  -e                     Make VM pre-emptible"
     echo ""
     echo "For configuration see also:"
@@ -66,7 +68,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:u:p:f:i:m:s:t:d:c:ex' flag; do
+while getopts ':n:u:p:f:i:m:s:t:d:c:a:ex' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         u) umbrella_scope=${OPTARG} ;;
@@ -78,6 +80,7 @@ while getopts ':n:u:p:f:i:m:s:t:d:c:ex' flag; do
         t) disk_type=${OPTARG} ;;
         d) startup_script=${OPTARG} ;;
         c) cost_center=${OPTARG} ;;
+        a) accelerator=${OPTARG} ;;
         e) preemptible="TRUE" ;;
         x) do_not_ask="TRUE" ;;
         *) warn "Incorrect options provided" && print_usage
@@ -156,6 +159,7 @@ cmd+=("${network_arg[@]}")
 
 [[ "${preemptible}" == "TRUE" ]] && cmd+=("--preemptible")
 [[ "${startup_script}" != "NONE" ]] && cmd+=("--metadata-from-file=startup-script=${startup_script}")
+[[ "${accelerator}" != "" ]] && cmd+=("--accelerator=${accelerator}")
 
 info "Command to be executed: ${cmd[*]}"
 info "NOTE: Cost center will be configured to '${cost_center}'"
