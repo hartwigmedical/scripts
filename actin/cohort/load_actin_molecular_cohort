@@ -8,7 +8,7 @@ patient=$1 && shift
 actin_credentials=$1 && shift
 actin_database_name=$1 && shift
 
-patient_json="$(locate_actin_cohort_clinical_directory)/${patient}.clinical.json"
+patient_json="$(locate_actin_patient_record_directory)/${patient}.clinical.json"
 actin_jar="$(locate_cohort_actin_molecularLoaderAPP)"
 
 info "Patient json path location${patient_json}"
