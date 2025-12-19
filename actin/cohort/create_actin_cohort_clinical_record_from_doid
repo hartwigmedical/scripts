@@ -9,7 +9,7 @@ actin_patient=$1 && shift
 
 if [[ -z "${services_sample}" || -z "${actin_patient}" ]]; then
     error "Parameters missing. Exiting."
-w
+
 primary_tumor_doids=$(get_primary_tumor_doids_for_sample ${services_sample})
 if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_doids="\"\""
