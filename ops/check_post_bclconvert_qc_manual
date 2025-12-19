@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-source message_functions || exit 1
-
-# List all samples with status 'Insufficient Quality', thus needing additional sequencing
-execute_sql_on_api_prod "SELECT * FROM samples WHERE status ='Insufficient Quality';" || die "Could not execute SQL statement"
