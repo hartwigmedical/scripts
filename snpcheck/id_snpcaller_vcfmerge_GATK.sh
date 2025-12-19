@@ -107,25 +107,28 @@ awk -v tum="$tumor_col_awk" -v na="$na_col_awk" 'BEGIN { OFS="\t" }
 ' "$MERGED_OUTPUT_VCF" > "${LOCAL_INPUT_DIR}/temp_with_na_corrected.vcf"
 
 # Step 2: Remove ref and NA columns, set FILTER to PASS
-awk -v ref="$ref_col_awk" -v na="$na_col_awk" -v filter="$filter_col_awk" 'BEGIN { OFS="\t" }
-  /^##/ { print; next }
-  /^#CHROM/ {
-    for (i = 1; i <= NF; i++) {
-      if (i != ref && i != na) {
-        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
-      }
-    }
-    next
-  }
-  {
-    $filter="PASS"
-    for (i = 1; i <= NF; i++) {
-      if (i != ref && i != na) {
-        printf "%s%s", $i, (i == NF || (i+1 == ref || i+1 == na) ? ORS : OFS)
-      }
-    }
-  }
-' "${LOCAL_INPUT_DIR}/temp_with_na_corrected.vcf" > "$FINAL_OUTPUT_VCF"
+awk -v ref="$ref_col_awk" -v na="$na_col_awk" '
+BEGIN { OFS="\t" }
+
+/^##/ { print; next }
+
+/^#CHROM/ {
+  out=""
+  for (i=1; i<=NF; i++)
+    if (i!=ref && i!=na)
+      out = out (out ? OFS : "") $i
+  print out
+  next
+}
+
+{
+  out=""
+  for (i=1; i<=NF; i++)
+    if (i!=ref && i!=na)
+      out = out (out ? OFS : "") $i
+  print out
+}
+' temp_with_na_corrected.vcf > final.vcf
 
 # Step 3: Upload final VCF
 gsutil cp "${FINAL_OUTPUT_VCF}" "gs://${OUTPUT_BUCKET_NAME}/${setname}/${FINAL_OUTPUT_VCF}" || {
