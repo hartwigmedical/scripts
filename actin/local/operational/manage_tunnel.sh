@@ -122,11 +122,11 @@ elif [[ $action == "start" ]]; then
     echo "Attempting to determine name of bastion VM"
     read instance zone <<< $($GC instances list | grep $BASTION | head -n1 | awk '{print $1, $2}')
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
-    ps aux | grep gcloud | grep ssh | grep -- "-L $PORT:localhost:$REMOTE_TUNNEL_PORT" >/dev/null
+    ps aux | grep gcloud | grep ssh | grep -- "$instance" >/dev/null
     if [[ $? -ne 0 ]]; then
         REMOTE_PROXY_PORT=$(start_remote_proxy "$GC" "$instance" "$zone" "$NAMESPACE" "$PROJECT" "$CLUSTER" "$CONTEXT_ROOT")
         echo "Using bastion proxy on port $REMOTE_PROXY_PORT"
-        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$REMOTE_TUNNEL_PORT:localhost:$REMOTE_PROXY_PORT" -L "$KUBE_PORT:localhost:$KUBE_PORT" -N -q -f
+        $GC ssh $instance --tunnel-through-iap --zone $zone -- -L "$PORT:localhost:$REMOTE_PROXY_PORT" -L "$KUBE_PORT:localhost:$KUBE_PORT" -N -q -f
     else 
         echo "Re-using existing SSH tunnel to bastion"
     fi
