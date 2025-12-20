@@ -37,9 +37,9 @@ mysql --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" \
 info "Building ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}'"
 mysql --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" \
       --execute="CREATE DATABASE IF NOT EXISTS ${database};"
-#info "Rebuilding ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}' using ${actin_database_sql}"
-#mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" < ${actin_database_sql}
-
+info "Done!"
+info "Rebuilding ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}' using ${actin_database_sql}"
+mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" < ${actin_database_sql}
 info "Done!"
 
 info "Loading $(basename ${patient_json}) into ACTIN database '${database}'"
