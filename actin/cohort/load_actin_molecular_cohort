@@ -34,7 +34,7 @@ info "Database name ${database}"
 actin_database_sql="$(locate_actin_database_sql_script)"
 info "Rebuilding ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}' using ${actin_database_sql}"
 
-mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pass}" < ${actin_database_sql}
+mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" < ${actin_database_sql}
 
 info "Done!"
 
