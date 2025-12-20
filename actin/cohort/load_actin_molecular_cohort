@@ -40,10 +40,9 @@ mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password=
 
 info "Done!"
 
+info "Loading $(basename ${patient_json}) into ACTIN database '${database}'"
 
-#info "Loading $(basename ${patient_json}) into ACTIN database '${database}'"
-
-#java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplicationKt \
-#    -patient_json ${patient_json} \
-#    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-#    "$@"
+java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplicationKt \
+    -patient_json ${patient_json} \
+    -db_user ${user} -db_pass ${pwd} -db_url ${url} \
+    "$@"
