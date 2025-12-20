@@ -32,11 +32,13 @@ info "Database url ${url}"
 
 actin_database_sql="$(locate_actin_database_sql_script)"
 
+mysql --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" \
+      --execute="DROP DATABASE IF EXISTS ${database};"
 info "Building ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}'"
 mysql --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" \
       --execute="CREATE DATABASE IF NOT EXISTS ${database};"
-info "Rebuilding ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}' using ${actin_database_sql}"
-mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" < ${actin_database_sql}
+#info "Rebuilding ACTIN db '${database}' with host '${host}' on port '${port}' with user '${user}' with pass '${pwd}' using ${actin_database_sql}"
+#mysql ${database} --host="${host}" --port="${port}" --user="${user}" --password="${pwd}" < ${actin_database_sql}
 
 info "Done!"
 
