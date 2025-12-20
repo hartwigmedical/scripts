@@ -5,32 +5,51 @@ source locate_files || exit 1
 source database_functions || exit 1
 
 patient=$1 && shift
-actin_credentials=$1 && shift
-actin_database_name=$1 && shift
+#actin_credentials=$1 && shift
+#actin_database_name=$1 && shift
 
 patient_json="$(locate_actin_patient_record_directory)/${patient}.clinical.json"
 actin_jar="$(locate_cohort_actin_molecularLoaderAPP)"
-
-info "Patient json path location${patient_json}"
-info "Actin jar location ${actin_jar}"
 
 if [[ -z "${patient_json}" || -z "${actin_jar}" ]]; then
     error "Patient or jar Parameters missing. Exiting."
 fi
 
-if [[ -z "${actin_credentials}" || -z "${actin_database_name}" ]]; then
-    error "SQL Parameters missing. Exiting."
-fi
-info "Patient credentials ${actin_credentials}"
-info "Actin DB name ${actin_database_name}"
+info "Patient json path location${patient_json}"
+info "Actin jar location ${actin_jar}"
 
-db_user=$(extract_database  _user "${actin_credentials}")
-db_pass=$(extract_database_password "${actin_credentials}")
-db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
+credentials=$(gcloud secrets versions access "latest" --secret="mysql-patients-sql-prod-1-writer" --project=hmf-secrets)
 
-info "Loading $(basename ${patient_json}) into ACTIN database '${actin_database_name}'"
+#usr=$(echo "${credentials}" | grep user | cut -d "=" -f2)
+#pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
 
-java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplicationKt \
-    -patient_json ${patient_json} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    "$@"
+#host=$(extract_database_host "${credentials}")
+#port=$(extract_database_port "${credentials}")
+#user=$(extract_database_user "${credentials}")
+#pass=$(extract_database_password "${credentials}")
+#
+#if [[ -z "${credentials}" || -z "${host}" || -z "${port}" || -z "${user}" || -z "${pass}"]]; then
+#    error "SQL Credentials Missing. Exiting."
+#fi
+#
+#info "Credentials ${credentials}"
+#info "Port ${port}"
+#info "Username ${user}"
+#info "Password ${pass}"
+
+database="actinRunOnHMFpatientDB"
+info "Database name ${database}"
+
+do_recreate_actin_database ${credentials} ${database}
+
+#info "Database url ${database_url}"
+#database_url
+#db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
+
+
+#info "Loading $(basename ${patient_json}) into ACTIN database '${database}'"
+
+#java -cp ${actin_jar} com.hartwig.actin.database.molecular.MolecularLoaderApplicationKt \
+#    -patient_json ${patient_json} \
+#    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+#    "$@"
