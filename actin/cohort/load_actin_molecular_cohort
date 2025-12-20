@@ -28,29 +28,17 @@ port=$(echo "${credentials}" | grep port | cut -d "=" -f2)
 
 info "User: ${user} Password: ${pwd} Host: ${host} Port: ${port}"
 
-#host=$(extract_database_host "${credentials}")
-#port=$(extract_database_port "${credentials}")
-#user=$(extract_database_user "${credentials}")
-#pass=$(extract_database_password "${credentials}")
-#
-#if [[ -z "${credentials}" || -z "${host}" || -z "${port}" || -z "${user}" || -z "${pass}"]]; then
-#    error "SQL Credentials Missing. Exiting."
-#fi
-#
-#info "Credentials ${credentials}"
-#info "Port ${port}"
-#info "Username ${user}"
-#info "Password ${pass}"
-
 database="actinRunOnHMFpatientDB"
 info "Database name ${database}"
 
+actin_database_sql="$(locate_actin_database_sql_script)"
+info "Rebuilding ACTIN db '${actin_database_name}' with host '${host}' on port '${port}' with user '${user}' with pass '${pass}' using ${actin_database_sql}"
+
+mysql $database} --host="${host}" --port="${port}" --user="${user}" --password="${pass}" < ${actin_database_sql}
+
+info "Done!"
+
 #do_recreate_actin_database ${credentials} ${database}
-
-#info "Database url ${database_url}"
-#database_url
-#db_url=$(construct_database_url "${actin_credentials}" "${actin_database_name}")
-
 
 #info "Loading $(basename ${patient_json}) into ACTIN database '${database}'"
 
