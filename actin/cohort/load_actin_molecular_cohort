@@ -28,7 +28,7 @@ port=$(echo "${credentials}" | grep port | cut -d "=" -f2 | tr -d '"')
 
 info "User: ${user} Password: ${pwd} Host: ${host} Port: ${port}"
 
-database="actinRunOnHMFpatientDB"
+database="actinResistanceAnalysis"
 info "Database name ${database}"
 
 actin_database_sql="$(locate_actin_database_sql_script)"
