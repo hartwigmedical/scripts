@@ -21,8 +21,12 @@ info "Actin jar location ${actin_jar}"
 credentials=$(gcloud secrets versions access "latest" --secret="mysql-patients-sql-prod-1-writer" --project=hmf-secrets)
 
 info "Credentials ${credentials}"
-#usr=$(echo "${credentials}" | grep user | cut -d "=" -f2)
-#pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
+user=$(echo "${credentials}" | grep user | cut -d "=" -f2)
+pwd=$(echo "${credentials}" | grep password | cut -d "=" -f2)
+host=$(echo "${credentials}" | grep host | cut -d "=" -f2)
+port=$(echo "${credentials}" | grep port | cut -d "=" -f2)
+
+info "User: ${user} Password: ${pwd} Host: ${host} Port: ${port}"
 
 #host=$(extract_database_host "${credentials}")
 #port=$(extract_database_port "${credentials}")
@@ -41,7 +45,7 @@ info "Credentials ${credentials}"
 database="actinRunOnHMFpatientDB"
 info "Database name ${database}"
 
-do_recreate_actin_database ${credentials} ${database}
+#do_recreate_actin_database ${credentials} ${database}
 
 #info "Database url ${database_url}"
 #database_url
