@@ -23,7 +23,7 @@ user=$(echo "${credentials}" | grep user | cut -d "=" -f2 | tr -d '"')
 pwd=$(echo "${credentials}" | grep password | cut -d "=" -f2 | tr -d '"')
 host=$(echo "${credentials}" | grep host | cut -d "=" -f2 | tr -d '"')
 port=$(echo "${credentials}" | grep port | cut -d "=" -f2 | tr -d '"')
-dependencies=$(echo "${credentials}" | grep dependencies | cut -d "=" -f2 | tr -d '"')
+dependencies=$(echo "${credentials}" | grep dependencies | cut -d "=" -f2- | tr -d '"')
 database="actinResistanceAnalysis"
 url=$(echo "mysql://${host}:${port}/${database}?serverTimezone=CET${dependencies}")
 
