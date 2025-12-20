@@ -20,6 +20,7 @@ info "Actin jar location ${actin_jar}"
 
 credentials=$(gcloud secrets versions access "latest" --secret="mysql-patients-sql-prod-1-writer" --project=hmf-secrets)
 
+info "Credentials ${credentials}"
 #usr=$(echo "${credentials}" | grep user | cut -d "=" -f2)
 #pwd=$(echo "${credentials}" | grep password | cut -d " " -f2)
 

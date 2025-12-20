@@ -18,7 +18,7 @@ db_port=$(extract_database_port "${actin_credentials}")
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
 
-info "Rebuilding ACTIN db '${actin_database_name}' on '${db_host}' using ${actin_database_sql}"
+info "Rebuilding ACTIN db '${actin_database_name}' on '${db_host}' on port '${db_port}' with user '${db_user}' with pass '${db_pass}' using ${actin_database_sql}"
 
 mysql ${actin_database_name} --host="${db_host}" --port="${db_port}" --user="${db_user}" --password="${db_pass}" < ${actin_database_sql}
 
