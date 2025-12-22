@@ -21,7 +21,7 @@ pipeline_dir=$(locate_actin_cohort_pipeline_directory ${tum_sample})
 create_or_cleanup_dir ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir}"
-cp -r "${run_dir}" "${pipeline_dir}"
+cp -r "${run_dir}/." "${pipeline_dir}/"
 
 # RR: Copy fake bam_metrics to patient sample folders
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
