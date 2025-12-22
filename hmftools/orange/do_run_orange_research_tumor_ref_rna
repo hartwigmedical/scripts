@@ -27,7 +27,6 @@ sage_somatic_dir="$(locate_sage_somatic_data_directory ${run_dir})"
 sage_germline_dir="$(locate_sage_germline_data_directory ${run_dir})"
 purple_dir="$(locate_purple_data_directory ${run_dir})"
 purple_plot_dir="$(locate_purple_plot_directory ${run_dir})"
-info "Purple directory: ${purple_dir} & ${purple_plot_dir}"
 linx_somatic_dir="$(locate_linx_somatic_data_directory ${run_dir})"
 linx_somatic_plot_dir="$(locate_linx_plot_directory ${run_dir})"
 if [[ -d "${linx_somatic_plot_dir}" ]]; then
@@ -61,14 +60,6 @@ sigs_dir="$(locate_sigs_data_directory ${run_dir})"
 peach_dir="$(locate_peach_prod_output_dir ${run_dir})"
 
 info "Running ORANGE research tumor-ref-rna on ${run_dir}"
-
-# Parameters changed between versions
-# -tumor_metrics_dir "${tumor_sample_wgs_metrics_file}" \
-# -ref_metrics_dir "${ref_sample_wgs_metrics_file}" \
-# -tumor_sample_wgs_metrics_file "${tumor_sample_wgs_metrics_file}" \
-# -ref_sample_wgs_metrics_file "${ref_sample_wgs_metrics_file}" \
-# -tumor_sample_flagstat_file "${tumor_sample_flagstat_file}" \
-# -ref_sample_flagstat_file "${reference_sample_flagstat_file}" \
 
 do_run_orange_research \
     ${run_dir} \
