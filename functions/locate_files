@@ -444,11 +444,11 @@ locate_crc_actin_environment_config() {
 ############################### ACTIN Cohort ###################################
 
 locate_cohort_actin_clinical() {
-    echo "/data/experiments/rr_actin_cohort/actin-clinical.jar"
+    echo "/data/experiments/rr_actin_cohort/system/actin-clinical.jar"
 }
 
 locate_cohort_actin() {
-    echo "/data/experiments/rr_actin_cohort/actin.jar"
+    echo "/data/experiments/rr_actin_cohort/system.actin.jar"
 }
 
 locate_actin_cohort_pipeline_directory() {
