@@ -454,17 +454,17 @@ locate_cohort_actin() {
 locate_actin_cohort_pipeline_directory() {
     local sample=$1 && shift
 
-    echo "/data/experiments/rr_actin_cohort/pipelines/${sample}"
+    echo "/data/experiments/rr_actin_cohort/data/pipelines/${sample}"
 }
 
 locate_actin_cohort_molecular_directory() {
     local sample=$1 && shift
 
-    echo "/data/experiments/rr_actin_cohort/molecular/${sample}"
+    echo "/data/experiments/rr_actin_cohort/data/molecular/${sample}"
 }
 
 locate_actin_cohort_clinical_directory() {
-    echo "/data/experiments/rr_actin_cohort/clinical"
+    echo "/data/experiments/rr_actin_cohort/data/clinical"
 }
 
 ############################### ACTIN Buckets ##################################
