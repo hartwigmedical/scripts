@@ -10,7 +10,7 @@ if [[ -z "${run_dir}" ]]; then
     error "Parameters missing. Exiting."
 fi
 
-info "Running EMC experiment for ${run_dir}"
+info "Running ACTIN cohort experiment for ${run_dir}"
 # Sample folder name in data/datasets
 sample_services=$(basename ${run_dir})
 # Sample name without T
@@ -27,8 +27,8 @@ cp -r "${run_dir}" "${pipeline_dir}"
 
 # Copy fake bam_metrics to patient sample folders
 # Fake data location = /home/rramnarine/bam_metrics
-# TUM = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
-# REF = /data/experiments/kd_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
+# TUM = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
+# REF = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
 
 cp -r /home/rramnarine/bam_metrics/bam_metrics_T/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics"
 cp -r /home/rramnarine/bam_metrics/bam_metrics_R/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
