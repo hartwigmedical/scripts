@@ -24,22 +24,22 @@ info "Copying ${run_dir} to ${pipeline_dir}"
 cp -r "${run_dir}" "${pipeline_dir}"
 
 # RR: Copy fake bam_metrics to patient sample folders
-ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
-cp -r /data/experiments/rr_actin_cohort/dummy_metrics/dummy_tum_sample*.tsv "${pipeline_dir}/${sample}/bam_metrics"
+ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
+cp -r /data/experiments/rr_actin_cohort/dummy_metrics/dummy_tum_sample*.tsv "${pipeline_dir}/${tum_sample}/bam_metrics"
 cp -r /data/experiments/rr_actin_cohort/dummy_metrics/dummy_ref_sample*.tsv "${pipeline_dir}/${ref_sample}/bam_metrics"
-rm -r "${pipeline_dir}/${sample}/bam_metrics/${sample}.wgsmetrics"
+rm -r "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.wgsmetrics"
 rm -r "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.wgsmetrics"
 
 # RR: Chord output file name modification
-mv "${pipeline_dir}/chord/${sample}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample}T.chord.prediction.tsv"
+mv "${pipeline_dir}/chord/${tum_sample}T_chord_prediction.txt" "${pipeline_dir}/chord/${tum_sample}T.chord.prediction.tsv"
 # RR: Peach output file name modification
-mv "${pipeline_dir}/peach/${sample}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample}R.peach.haplotypes.best.tsv"
+mv "${pipeline_dir}/peach/${tum_sample}T.peach.genotype.tsv" "${pipeline_dir}/peach/${tum_sample}R.peach.haplotypes.best.tsv"
 
 run_orange_research_no_germline ${pipeline_dir}
 
-molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
+molecular_dir=$(locate_actin_cohort_molecular_directory ${tum_sample})
 create_or_cleanup_dir ${molecular_dir}
 
-cp "${pipeline_dir}/orange_no_germline/${sample}.orange.json" "${molecular_dir}/"
-actin_molecular_interpreter_cohort ${sample}
-load_actin_molecular_cohort ${sample}
+cp "${pipeline_dir}/orange_no_germline/${tum_sample}.orange.json" "${molecular_dir}/"
+actin_molecular_interpreter_cohort ${tum_sample}
+load_actin_molecular_cohort ${tum_sample}

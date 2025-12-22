@@ -443,11 +443,11 @@ locate_crc_actin_environment_config() {
 
 ############################### ACTIN Cohort ###################################
 
-locate_cohort_actin_clinical() {
+locate_cohort_actin_clinical_jar_on_vm() {
     echo "/data/experiments/rr_actin_cohort/system/actin-clinical.jar"
 }
 
-locate_cohort_actin() {
+locate_cohort_actin_jar_on_vm() {
     echo "/data/experiments/rr_actin_cohort/system.actin.jar"
 }
 
@@ -759,11 +759,6 @@ locate_actin_wgs_diagnostic_directory() {
 
 locate_actin_wts_directory() {
     echo "/data/actin/wts_pipeline_output"
-}
-
-locate_actin_patient_record_directory() {
-    #echo "/data/actin/patients"
-    echo "/data/experiments/rr_actin_cohort/patients"
 }
 
 locate_actin_patient_record_json() {
