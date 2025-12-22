@@ -3,6 +3,7 @@
 source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
+source lims_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -11,32 +12,29 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 info "Running ACTIN cohort experiment for ${run_dir}"
-sample=$(basename ${run_dir})
+tum_sample=$(basename ${run_dir})
 
-create_actin_cohort_clinical_record_from_doid ${sample}
+create_actin_cohort_clinical_record_from_doid ${tum_sample}
 
-pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample})
+pipeline_dir=$(locate_actin_cohort_pipeline_directory ${tum_sample})
 
 create_or_cleanup_dir ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir}"
 cp -r "${run_dir}" "${pipeline_dir}"
 
-# Copy fake bam_metrics to patient sample folders
-# Fake data location = /home/rramnarine/bam_metrics
-# TUM = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
-# REF = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
+# RR: Copy fake bam_metrics to patient sample folders
+ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
+cp -r /data/experiments/rr_actin_cohort/resources/dummy_tum_sample*.tsv "${pipeline_dir}/${sample}/bam_metrics"
+cp -r /data/experiments/rr_actin_cohort/resources/dummy_ref_sample*.tsv "${pipeline_dir}/${ref_sample}/bam_metrics"
+rm -r "${pipeline_dir}/${sample}/bam_metrics/${sample}.wgsmetrics"
+rm -r "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.wgsmetrics"
 
-cp -r /home/rramnarine/bam_metrics/bam_metrics_T/*.tsv "${pipeline_dir}/${sample}T/bam_metrics"
-cp -r /home/rramnarine/bam_metrics/bam_metrics_R/*.tsv "${pipeline_dir}/${sample}R/bam_metrics"
-rm -r "${pipeline_dir}/${sample}T/bam_metrics/${sample}T.wgsmetrics"
-rm -r "${pipeline_dir}/${sample}R/bam_metrics/${sample}R.wgsmetrics"
-# Chord output file name modification
+# RR: Chord output file name modification
 mv "${pipeline_dir}/chord/${sample}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample}T.chord.prediction.tsv"
-# Peach output file name modification
+# RR: Peach output file name modification
 mv "${pipeline_dir}/peach/${sample}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample}R.peach.haplotypes.best.tsv"
 
-# Make required chord TSV from TXT
 run_orange_research_no_germline ${pipeline_dir}
 
 molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
