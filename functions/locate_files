@@ -441,17 +441,14 @@ locate_crc_actin_environment_config() {
     echo "$(locate_base_crc_experiment_directory)/config/actin-crc-config.yaml"
 }
 
-
 ############################### ACTIN Cohort ###################################
 
-locate_cohort_actin() {
-    #echo "/data/actin/system/actin.jar"
-    echo "/home/rramnarine/curation-local-SNAPSHOT-jar-with-dependencies.jar"
+locate_cohort_actin_clinical() {
+    echo "/data/experiments/rr_actin_cohort/actin-clinical.jar"
 }
 
-locate_cohort_actin_molecularLoaderAPP() {
-    #echo "/data/actin/system/actin.jar"
-    echo "/home/rramnarine/database-local-SNAPSHOT-jar-with-dependencies.jar"
+locate_cohort_actin() {
+    echo "/data/experiments/rr_actin_cohort/actin.jar"
 }
 
 locate_actin_cohort_pipeline_directory() {
@@ -468,18 +465,6 @@ locate_actin_cohort_molecular_directory() {
 
 locate_actin_cohort_clinical_directory() {
     echo "/data/experiments/rr_actin_cohort/clinical"
-}
-
-locate_actin_cohort_trial_database_directory() {
-    echo "/data/experiments/rr_actin_cohort/trial_database"
-}
-
-locate_actin_cohort_treatment_match_directory() {
-    echo "/data/experiments/rr_actin_cohort/treatment_matches"
-}
-
-locate_actin_cohort_trial_config_directory() {
-    echo "/data/resources/actin/cohort_analysis/trial_config"
 }
 
 ############################### ACTIN Buckets ##################################

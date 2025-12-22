@@ -11,10 +11,7 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 info "Running ACTIN cohort experiment for ${run_dir}"
-# Sample folder name in data/datasets
-sample_services=$(basename ${run_dir})
-# Sample name without T
-sample_actin=${sample_services%?}
+sample=$(basename ${run_dir})
 
 create_actin_cohort_clinical_record_from_doid ${sample_services} ${sample_actin}
 
