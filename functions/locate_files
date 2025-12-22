@@ -448,7 +448,7 @@ locate_cohort_actin_clinical_jar_on_vm() {
 }
 
 locate_cohort_actin_jar_on_vm() {
-    echo "/data/experiments/rr_actin_cohort/system.actin.jar"
+    echo "/data/experiments/rr_actin_cohort/system/actin.jar"
 }
 
 locate_actin_cohort_pipeline_directory() {
