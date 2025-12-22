@@ -722,8 +722,7 @@ locate_actin_clinical_json() {
 }
 
 locate_actin_wgs_directory() {
-    #echo "/data/actin/wgs_pipeline_output"
-    echo "/data/experiments/rr_actin_cohort/pipelines"
+    echo "/data/actin/wgs_pipeline_output"
 }
 
 locate_actin_wgs_directory_for_patient() {
@@ -820,7 +819,6 @@ locate_actin_report_pdf() {
 }
 
 locate_actin_serve_directory() {
-    #echo "/data/actin/serve"
     echo "/data/resources/actin/serve"
 }
 
