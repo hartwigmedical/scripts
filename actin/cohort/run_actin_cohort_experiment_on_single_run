@@ -25,8 +25,8 @@ cp -r "${run_dir}" "${pipeline_dir}"
 
 # RR: Copy fake bam_metrics to patient sample folders
 ref_sample=$(imply_ref_sample_from_tumor_sample ${sample})
-cp -r /data/experiments/rr_actin_cohort/resources/dummy_tum_sample*.tsv "${pipeline_dir}/${sample}/bam_metrics"
-cp -r /data/experiments/rr_actin_cohort/resources/dummy_ref_sample*.tsv "${pipeline_dir}/${ref_sample}/bam_metrics"
+cp -r /data/experiments/rr_actin_cohort/dummy_metrics/dummy_tum_sample*.tsv "${pipeline_dir}/${sample}/bam_metrics"
+cp -r /data/experiments/rr_actin_cohort/dummy_metrics/dummy_ref_sample*.tsv "${pipeline_dir}/${ref_sample}/bam_metrics"
 rm -r "${pipeline_dir}/${sample}/bam_metrics/${sample}.wgsmetrics"
 rm -r "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.wgsmetrics"
 
