@@ -13,11 +13,11 @@ fi
 info "Running ACTIN cohort experiment for ${run_dir}"
 sample=$(basename ${run_dir})
 
-create_actin_cohort_clinical_record_from_doid ${sample_services} ${sample_actin}
+create_actin_cohort_clinical_record_from_doid ${sample}
 
-pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample_services})
+pipeline_dir=$(locate_actin_cohort_pipeline_directory ${sample})
 
-rm -rf ${pipeline_dir}
+create_or_cleanup_dir ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir}"
 cp -r "${run_dir}" "${pipeline_dir}"
@@ -27,22 +27,21 @@ cp -r "${run_dir}" "${pipeline_dir}"
 # TUM = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameT/bam_metrics/
 # REF = /data/experiments/rr_actin_cohort/pipelines/sampleName/sampleNameR/bam_metrics/
 
-cp -r /home/rramnarine/bam_metrics/bam_metrics_T/*.tsv "${pipeline_dir}/${sample_actin}T/bam_metrics"
-cp -r /home/rramnarine/bam_metrics/bam_metrics_R/*.tsv "${pipeline_dir}/${sample_actin}R/bam_metrics"
-rm -r "${pipeline_dir}/${sample_actin}T/bam_metrics/${sample_actin}T.wgsmetrics"
-rm -r "${pipeline_dir}/${sample_actin}R/bam_metrics/${sample_actin}R.wgsmetrics"
+cp -r /home/rramnarine/bam_metrics/bam_metrics_T/*.tsv "${pipeline_dir}/${sample}T/bam_metrics"
+cp -r /home/rramnarine/bam_metrics/bam_metrics_R/*.tsv "${pipeline_dir}/${sample}R/bam_metrics"
+rm -r "${pipeline_dir}/${sample}T/bam_metrics/${sample}T.wgsmetrics"
+rm -r "${pipeline_dir}/${sample}R/bam_metrics/${sample}R.wgsmetrics"
 # Chord output file name modification
-mv "${pipeline_dir}/chord/${sample_actin}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample_actin}T.chord.prediction.tsv"
+mv "${pipeline_dir}/chord/${sample}T_chord_prediction.txt" "${pipeline_dir}/chord/${sample}T.chord.prediction.tsv"
 # Peach output file name modification
-mv "${pipeline_dir}/peach/${sample_actin}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample_actin}R.peach.haplotypes.best.tsv"
+mv "${pipeline_dir}/peach/${sample}T.peach.genotype.tsv" "${pipeline_dir}/peach/${sample}R.peach.haplotypes.best.tsv"
 
 # Make required chord TSV from TXT
 run_orange_research_no_germline ${pipeline_dir}
 
-molecular_dir=$(locate_actin_cohort_molecular_directory ${sample_services})
+molecular_dir=$(locate_actin_cohort_molecular_directory ${sample})
 create_or_cleanup_dir ${molecular_dir}
-cp "${pipeline_dir}/orange_no_germline/${sample_services}.orange.json" "${molecular_dir}/"
-#rm -rf ${pipeline_dir}
 
-actin_molecular_interpreter_cohort ${sample_services}
-load_actin_molecular_cohort ${sample_actin}
+cp "${pipeline_dir}/orange_no_germline/${sample}.orange.json" "${molecular_dir}/"
+actin_molecular_interpreter_cohort ${sample}
+load_actin_molecular_cohort ${sample}
