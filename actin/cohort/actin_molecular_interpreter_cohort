@@ -3,30 +3,19 @@
 source message_functions || exit 1
 source locate_files || exit 1
 
-patient=$1 && shift
+sample=$1 && shift
 
-info "Patent identifier: ${patient%?}"
-
-if [[ -z "${patient}" ]]; then
-    error "Parameters missing. Exiting."
+if [[ -z "${sample}" ]]; then
+    error "Sample parameter missing. Exiting."
 fi
 
-  clinical_json="$(locate_actin_cohort_clinical_directory)/${patient%?}.clinical.json"
+clinical_json="$(locate_actin_cohort_clinical_directory)/${sample}.clinical.json"
 if [[ -z "${clinical_json}" ]]; then
-    error "No clinical record json found for ${patient}."
+    error "No clinical record json found for ${sample}."
 fi
 
-info "Clinical json location: ${clinical_json}"
-
-wgs_dir="$(locate_actin_wgs_directory_for_patient ${patient})"
-orange_cmd=""
-if [[ ! -z "${wgs_dir}" ]]; then
-    info "Using ORANGE json from ${wgs_dir}"
-    orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
-    orange_cmd="-orange_json ${orange_json}"
-else
-    info "Assuming no WGS has been performed for ${patient}"
-fi
+wgs_dir="$(locate_actin_cohort_pipeline_directory ${sample})"
+orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
 
 serve_directory="$(locate_actin_serve_directory)"
 doid_json="$(locate_actin_doid_json)"
@@ -38,15 +27,15 @@ driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 panel_specifications_file="$(locate_panel_specifications_file)"
 
-output_directory="$(locate_actin_patient_record_directory)"
+output_directory="$(locate_actin_cohort_molecular_directory)"
 
 actin_jar="$(locate_actin_jar_on_vm)"
 
-info "Running ACTIN molecular interpreter on ${patient}"
+info "Running ACTIN molecular interpreter on ${sample}"
 
 java -cp ${actin_jar} com.hartwig.actin.molecular.MolecularInterpreterApplicationKt \
     -clinical_json "${clinical_json}" \
-    ${orange_cmd} \
+    -orange_json "${orange_json}" \
     -serve_directory "${serve_directory}" \
     -doid_json "${doid_json}" \
     -onco_dnds_database_path "${dnds_driver_likelihood_onco}" \

@@ -43,9 +43,6 @@ mv "${pipeline_dir}/peach/${tum_sample}.peach.genotype.tsv" "${pipeline_dir}/pea
 
 run_orange_research_no_germline ${pipeline_dir}
 
-molecular_dir=$(locate_actin_cohort_molecular_directory ${tum_sample})
-create_or_cleanup_dir ${molecular_dir}
-
-cp "${pipeline_dir}/orange_no_germline/${tum_sample}.orange.json" "${molecular_dir}/"
 actin_molecular_interpreter_cohort ${tum_sample}
+
 load_actin_molecular_cohort ${tum_sample}
