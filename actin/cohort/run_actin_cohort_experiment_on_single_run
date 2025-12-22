@@ -26,8 +26,8 @@ cp -r "${run_dir}/." "${pipeline_dir}/"
 dummy_metric_dir="/data/experiments/rr_actin_cohort/dummy_metrics"
 # RR: Replace wgs metrics with fake bam metrics for tumor
 rm -r "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.wgsmetrics"
-cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tumor_sample}.bam_metric.flag_counts.tsv"
-cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tumor_sample}.bam_metric.summary.tsv"
+cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.flag_counts.tsv"
+cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.summary.tsv"
 
 # RR: Replace wgs metrics with fake bam metrics for reference
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
