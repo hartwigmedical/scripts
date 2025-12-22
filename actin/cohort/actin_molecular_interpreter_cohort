@@ -29,7 +29,7 @@ panel_specifications_file="$(locate_panel_specifications_file)"
 
 output_directory="$(locate_actin_cohort_molecular_directory)"
 
-actin_jar="$(locate_actin_cohort_jar_on_vm)"
+actin_jar="$(locate_cohort_actin_jar_on_vm)"
 
 info "Running ACTIN molecular interpreter on ${sample}"
 
