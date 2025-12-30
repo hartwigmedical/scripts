@@ -54,7 +54,7 @@ ref_isolation_barcode=$(echo "${hartwig_response}" | jq -r '
 lama_api_url_base="http://lama.prod-1/api/queries/patient-reporter"
 lama_query_params="tumor-isolation-barcode=${tumor_barcode}"
 
-if [[ -n "${ref_isolation_barcode}" ]]; then
+if [[ -n "${ref_isolation_barcode}" &&  ${#ref_isolation_barcode}  == 10 ]]; then
     lama_query_params+="&reference-isolation-barcode=${ref_isolation_barcode}"
 fi
 
