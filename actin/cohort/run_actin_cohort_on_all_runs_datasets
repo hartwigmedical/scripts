@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 for run_dir in /data/datasets/*; do
     start=$(date +%s)
-    info "---------------------- RUNNING SAMPLE: ${run_dir} starting at RUNTIME OF: $(start) seconds         ----------------------"
+    info "---------------------- RUNNING SAMPLE: ${run_dir} starting at RUNTIME OF: ${start} seconds         ----------------------"
     #run_actin_cohort_experiment_on_single_run ${run_dir}
     end=$(date +%s)
     info "---------------------- FINISHED RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
