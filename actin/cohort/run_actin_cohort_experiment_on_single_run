@@ -53,7 +53,7 @@ wgs_dir="$(locate_actin_cohort_pipeline_directory ${sample})"
 orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
 if [[ -z "${orange_json}" ]]; then
     echo "${sample}" >> "$sampleFailedLogFile"
-    error "Orange failed. No orange.json present in ${wgs_dir}. Exiting."
+    error "Orange failed. No orange.json present in ${wgs_dir}. Sample name added to ${sampleFailedLogFile}. Exiting."
 fi
 
 actin_molecular_interpreter_cohort ${tum_sample}
@@ -62,4 +62,5 @@ info "Cleaning up temporary pipeline dir '${pipeline_dir}'"
 rm -rf "${pipeline_dir}"
 
 load_actin_molecular_cohort ${tum_sample}
-echo "${sample}" >> "$samplePassedLogFile"
+echo "${sample}" >> "${samplePassedLogFile}"
+info "ACTIN run successfully. Sample name added to ${samplePassedLogFile}. Goodbye!"
