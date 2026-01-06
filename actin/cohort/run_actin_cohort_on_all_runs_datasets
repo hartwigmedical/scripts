@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 for run_dir in /data/datasets/*; do
     start=$(date +%s)
     info "RUNNING SAMPLE: ${run_dir}"
