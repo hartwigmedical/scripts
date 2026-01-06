@@ -42,6 +42,13 @@ mv "${pipeline_dir}/peach/${tum_sample}.peach.genotype.tsv" "${pipeline_dir}/pea
 
 run_orange_research_no_germline ${pipeline_dir}
 
+info "Checking if orange completed successfully and created an orange json"
+wgs_dir="$(locate_actin_cohort_pipeline_directory ${sample})"
+orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
+if [[ -z "${orange_json}" ]]; then
+    error "Orange failed. No orange.json present in ${wgs_dir}. Exiting."
+fi
+
 actin_molecular_interpreter_cohort ${tum_sample}
 
 info "Cleaning up temporary pipeline dir '${pipeline_dir}'"
