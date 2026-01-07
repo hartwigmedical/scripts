@@ -16,7 +16,7 @@ tum_sample=$(basename ${run_dir})
 
 create_actin_clinical_record ${tum_sample}
 
-pipeline_dir=$(locate_actin_pipeline_directory ${tum_sample})
+pipeline_dir=$(locate_rr_actin_pipeline_directory ${tum_sample})
 info "Creating temporary pipeline dir for orange rerun: '${pipeline_dir}'"
 create_or_cleanup_dir ${pipeline_dir}
 
@@ -48,13 +48,12 @@ sampleFailedLogFile="$logs_dir/samplesFailed.log"
 samplePassedLogFile="$logs_dir/samplesPassed.log"
 
 info "Checking if orange completed successfully and created orange.json"
-wgs_dir="$(locate_actin_pipeline_directory ${tum_sample})"
-orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
+orange_json="$(locate_orange_no_germline_json ${pipeline_dir})"
 if [[ -z "${orange_json}" ]]; then
     echo "${tum_sample}" >> "$sampleFailedLogFile"
-    info "Orange failed. No orange.json present in ${wgs_dir}."
+    info "Orange failed. No orange.json present in ${pipeline_dir}."
     info "ACTIN run unsuccessful on ${tum_sample}."
-    error "Sample name added to ${sampleFailedLogFile} Exiting."
+    error "Sample name added to ${sample_failed_log_file} Exiting."
 fi
 
 run_actin_molecular_interpreter ${tum_sample}

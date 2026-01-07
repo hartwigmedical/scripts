@@ -10,8 +10,8 @@ if [[ -z "${tum_sample}" ]]; then
     error "Patient or jar Parameters missing. Exiting."
 fi
 
-actin_jar="$(locate_actin_jar_on_vm)"
-patient_json="$(locate_actin_molecular_directory)/${tum_sample}.patient_record.json"
+actin_jar="$(locate_rr_actin_jar_on_vm)"
+patient_json="$(locate_rr_actin_jar_on_vm)/${tum_sample}.patient_record.json"
 
 database="actin_cohort"
 credentials="$(prod_writer_sql_credentials)"
