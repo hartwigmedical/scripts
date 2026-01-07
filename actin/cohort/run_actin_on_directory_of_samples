@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 logs_dir=$(locate_actin_logs_directory)
 create_or_cleanup_dir ${logs_dir}
