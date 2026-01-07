@@ -43,6 +43,7 @@ mv "${pipeline_dir}/peach/${tum_sample}.peach.genotype.tsv" "${pipeline_dir}/pea
 run_orange_research_no_germline ${pipeline_dir}
 
 info "Creating log files in ${logs_dir} to track samples successfully/unsuccessfully run through ACTIN"
+logs_dir=$(locate_actin_logs_directory)
 sampleFailedLogFile="$logs_dir/samplesFailed.log"
 samplePassedLogFile="$logs_dir/samplesPassed.log"
 
