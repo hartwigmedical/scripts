@@ -14,9 +14,9 @@ fi
 info "Running ACTIN cohort experiment for ${run_dir}"
 tum_sample=$(basename ${run_dir})
 
-create_actin_cohort_clinical_record_from_doid ${tum_sample}
+create_actin_clinical_record ${tum_sample}
 
-pipeline_dir=$(locate_actin_cohort_pipeline_directory ${tum_sample})
+pipeline_dir=$(locate_actin_pipeline_directory ${tum_sample})
 info "Creating temporary pipeline dir for orange rerun: '${pipeline_dir}'"
 create_or_cleanup_dir ${pipeline_dir}
 
@@ -24,7 +24,7 @@ info "Copying ${run_dir} to ${pipeline_dir}"
 cp -r "${run_dir}/." "${pipeline_dir}/"
 
 info "Replacing metrics output files with dummy output in correct format"
-dummy_metric_dir="/data/experiments/rr_actin_cohort/dummy_metrics"
+dummy_metric_dir="/data/experiments/rr_actin/dummy_metrics"
 rm -r "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.wgsmetrics"
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.flag_counts.tsv"
 cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.summary.tsv"
@@ -42,26 +42,26 @@ mv "${pipeline_dir}/peach/${tum_sample}.peach.genotype.tsv" "${pipeline_dir}/pea
 
 run_orange_research_no_germline ${pipeline_dir}
 
-logs_dir=$(locate_actin_cohort_logs_directory)
+logs_dir=$(locate_actin_logs_directory)
 create_or_cleanup_dir ${logs_dir}
 info "Creating log files in ${logs_dir} to track samples successfully/unsuccessfully run through ACTIN"
 sampleFailedLogFile="$logs_dir/samplesFailed.log"
 samplePassedLogFile="$logs_dir/samplesPassed.log"
 
 info "Checking if orange completed successfully and created orange.json"
-wgs_dir="$(locate_actin_cohort_pipeline_directory ${tum_sample})"
+wgs_dir="$(locate_actin_pipeline_directory ${tum_sample})"
 orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
 if [[ -z "${orange_json}" ]]; then
     echo "${tum_sample}" >> "$sampleFailedLogFile"
-    echo "Orange failed. No orange.json present in ${wgs_dir}."
-    error "Sample name added to ${sampleFailedLogFile}. Exiting."
+    info "Orange failed. No orange.json present in ${wgs_dir}."
+    error "Sample name added to ${sampleFailedLogFile} Exiting."
 fi
 
-actin_molecular_interpreter_cohort ${tum_sample}
+run_actin_molecular_interpreter ${tum_sample}
 
 info "Cleaning up temporary pipeline dir '${pipeline_dir}'"
 rm -rf "${pipeline_dir}"
 
-load_actin_molecular_cohort ${tum_sample}
+run_actin_molecular_loader ${tum_sample}
 echo "${tum_sample}" >> "${samplePassedLogFile}"
-info "ACTIN run successfully. Sample name added to ${samplePassedLogFile}. Goodbye!"
+info "ACTIN run successfully. Sample name added to ${samplePassedLogFile}"

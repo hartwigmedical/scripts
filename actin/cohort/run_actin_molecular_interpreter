@@ -9,12 +9,12 @@ if [[ -z "${sample}" ]]; then
     error "Sample parameter missing. Exiting."
 fi
 
-clinical_json="$(locate_actin_cohort_clinical_directory)/${sample}.clinical.json"
+clinical_json="$(locate_actin_clinical_directory)/${sample}.clinical.json"
 if [[ -z "${clinical_json}" ]]; then
     error "No clinical record json found for ${sample}."
 fi
 
-wgs_dir="$(locate_actin_cohort_pipeline_directory ${sample})"
+wgs_dir="$(locate_actin_pipeline_directory ${sample})"
 orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
 
 serve_directory="$(locate_actin_serve_directory)"
@@ -27,9 +27,9 @@ driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
 known_fusion_file="$(locate_known_fusion_data_37_csv)"
 panel_specifications_file="$(locate_panel_specifications_file)"
 
-output_directory="$(locate_actin_cohort_molecular_directory)"
+output_directory="$(locate_actin_molecular_directory)"
 
-actin_jar="$(locate_cohort_actin_jar_on_vm)"
+actin_jar="$(locate_actin_jar_on_vm)"
 
 info "Running ACTIN molecular interpreter on ${sample}"
 
