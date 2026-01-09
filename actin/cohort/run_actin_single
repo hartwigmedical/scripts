@@ -17,8 +17,8 @@ tum_sample=$(basename ${run_dir})
 run_actin_app_build_clinical_record ${tum_sample}
 
 pipeline_dir=$(locate_rr_actin_pipeline_directory ${tum_sample})
-info "Creating temporary pipeline dir for orange rerun: '${pipeline_dir}'"
-create_or_cleanup_dir ${pipeline_dir}
+#info "Creating temporary pipeline dir for orange rerun: '${pipeline_dir}'"
+#create_or_cleanup_dir ${pipeline_dir}
 
 info "Copying ${run_dir} to ${pipeline_dir} -- ALREADY DONE SKIPPING STEP"
 #cp -r "${run_dir}/." "${pipeline_dir}/"
