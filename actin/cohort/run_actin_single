@@ -26,12 +26,12 @@ info "Copying ${run_dir} to ${pipeline_dir} -- ALREADY DONE SKIPPING STEP"
 info "Replacing metrics output files with dummy output in correct format"
 info "Old metrics files replaced are: *.wgsmetrics & *WGSMetrics.txt"
 dummy_metric_dir="/data/experiments/rr_actin/dummy_metrics"
-rm -r "${pipeline_dir}/${tum_sample}/bam_metrics/*etrics*"
+rm "${pipeline_dir}/${tum_sample}/bam_metrics/"*etrics*
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.flag_counts.tsv"
 cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.summary.tsv"
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
-rm -r "${pipeline_dir}/${ref_sample}/bam_metrics/*etrics*"
+rm "${pipeline_dir}/${ref_sample}/bam_metrics/"*etrics*
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.bam_metric.flag_counts.tsv"
 cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.bam_metric.summary.tsv"
 
