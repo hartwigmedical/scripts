@@ -14,8 +14,8 @@ if [[ -z "${clinical_json}" ]]; then
     error "No clinical record json found for ${sample}."
 fi
 
-wgs_dir="$(locate_rr_actin_pipeline_directory ${sample})"
-orange_json="$(locate_orange_no_germline_json ${wgs_dir})"
+pipeline_dir="$(locate_rr_actin_pipeline_directory ${sample})"
+orange_json="$(locate_orange_no_germline_json ${pipeline_dir})"
 
 serve_directory="$(locate_rr_actin_serve_directory)"
 doid_json="$(locate_actin_doid_json)"

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+logs_dir=$(locate_rr_actin_logs_directory)
+create_or_cleanup_dir ${logs_dir}
+
+for run_dir in /data/datasets/*; do
+    start=$(date +%s)
+    info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+    run_actin_single ${run_dir}
+    end=$(date +%s)
+    info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+done
