@@ -461,7 +461,7 @@ locate_rr_actin_clinical_directory() {
     echo "/data/experiments/rr_actin/data/clinical"
 }
 
-locate_rr_actin_cohort_logs_directory() {
+locate_rr_actin_logs_directory() {
     echo "/data/experiments/rr_actin/logs"
 }
 
