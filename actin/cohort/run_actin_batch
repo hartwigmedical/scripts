@@ -7,10 +7,31 @@ source io_functions || exit 1
 logs_dir=$(locate_rr_actin_logs_directory)
 create_or_cleanup_dir ${logs_dir}
 
+# TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
+info "Reading file with list of samples already processed from prior analysis"
+passed_samples_file="/data/experiments/rr_actin/logs/samples_passed.txt"
+passed_samples=""
+
+info "Checking if file /data/experiments/rr_actin/logs/samples_passed.txt exist"
+if [[ -f "${passed_samples_file}" ]]; then
+    passed_samples=$(<"${passed_samples_file}")
+fi
+
+info "${passed_samples_file}"
+
 for run_dir in /data/datasets/*; do
-    start=$(date +%s)
-    info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
-    run_actin_single ${run_dir}
-    end=$(date +%s)
-    info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+  sample_name=$(basename "${run_dir}")
+
+  if [[ " ${passed_samples} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+    info "Skipping ${sample_name}: already present in samples_passed.txt"
+    continue
+  fi
+
+  start=$(date +%s)
+  info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+  #run_actin_single ${run_dir}
+  info "SAMPLE: ${sample_name}"
+  end=$(date +%s)
+  info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+
 done
