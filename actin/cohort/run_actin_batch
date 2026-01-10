@@ -33,13 +33,13 @@ for run_dir in /data/datasets/*; do
 
   ((processed_count++))
   #start=$(date +%s)
-  #info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+  #info "---------------------- STARTING RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
   #run_actin_single ${run_dir}
   #end=$(date +%s)
-  #info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+  #info "---------------------- FINISHED RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
 
 done
 
 info "------------------------------------------------------------------------------------------------"
-info "Run SUMMARY: Processed ${processed_count} samples, Skipped ${skipped_count} samples."
+info "RUN SUMMARY: Processed ${processed_count} samples, Skipped ${skipped_count} samples."
 info "------------------------------------------------------------------------------------------------"
