@@ -28,11 +28,10 @@ for run_dir in /data/datasets/*; do
     continue
   fi
 
-  start=$(date +%s)
-  info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+  #start=$(date +%s)
+  #info "---------------------- STARTING RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
   #run_actin_single ${run_dir}
-  info "SAMPLE: ${sample_name}"
-  end=$(date +%s)
-  info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+  #end=$(date +%s)
+  #info "---------------------- FINISHED RE RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
 
 done
