@@ -9,6 +9,7 @@ create_or_cleanup_dir ${logs_dir}
 
 # TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
 info "Reading file with list of samples already processed from prior analysis"
+cp /home/rramnarine/tmp/samples_passed.txt /data/experiments/rr_actin/logs/
 passed_samples_file="/data/experiments/rr_actin/logs/samples_passed.txt"
 passed_samples=""
 
@@ -23,7 +24,7 @@ for run_dir in /data/datasets/*; do
   sample_name=$(basename "${run_dir}")
 
   if [[ " ${passed_samples} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
-    info "Skipping ${sample_name}: already present in samples_passed.txt"
+    info "SKIPPING ${sample_name}: already present in samples_passed.txt"
     continue
   fi
 
