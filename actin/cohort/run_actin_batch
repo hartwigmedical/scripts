@@ -32,11 +32,11 @@ for run_dir in /data/datasets/*; do
   fi
 
   ((processed_count++))
-  #start=$(date +%s)
-  #info "---------------------- STARTING RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
-  #run_actin_single ${run_dir}
-  #end=$(date +%s)
-  #info "---------------------- FINISHED RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+  start=$(date +%s)
+  info "---------------------- STARTING RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+  run_actin_single ${run_dir}
+  end=$(date +%s)
+  info "---------------------- FINISHED RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
 
 done
 
