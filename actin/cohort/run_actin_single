@@ -20,7 +20,7 @@ pipeline_dir=$(locate_rr_actin_pipeline_directory ${tum_sample})
 info "Creating temporary pipeline dir for orange rerun: '${pipeline_dir}'"
 create_or_cleanup_dir ${pipeline_dir}
 
-info "Copying ${run_dir} to ${pipeline_dir} -- ALREADY DONE SKIPPING STEP"
+info "Copying ${run_dir} to ${pipeline_dir}
 cp -r "${run_dir}/." "${pipeline_dir}/"
 
 info "Replacing metrics output files with dummy output in correct format"

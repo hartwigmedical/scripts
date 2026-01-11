@@ -4,12 +4,14 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 
+passed_samples_dir=$1 && shift
+
 logs_dir=$(locate_rr_actin_logs_directory)
 create_or_cleanup_dir ${logs_dir}
 
 # START OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
 info "Reading file with list of samples already processed from prior analysis"
-cp /home/rramnarine/tmp/samples_passed.txt /data/experiments/rr_actin/logs/
+cp "${passed_samples_dir}" /data/experiments/rr_actin/logs/samples_passed.txt
 passed_samples_file="/data/experiments/rr_actin/logs/samples_passed.txt"
 passed_samples=""
 
