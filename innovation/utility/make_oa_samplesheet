@@ -7,6 +7,7 @@ HEADER="group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,fi
 input_bucket=""
 file_type="FASTQ"
 pipeline_mode="TUMOR_ONLY"
+library_id_override=""
 
 print_usage() {
     script=$(basename "$0")
@@ -21,15 +22,17 @@ print_usage() {
     echo "  -i input_bucket        Input bucket"
     echo "  -f file_type           File type. Default: ${file_type}. Options: FASTQ"
     echo "  -m pipeline_mode       Pipeline mode. Default: ${pipeline_mode}. Options: TUMOR_ONLY"
+    echo "  -l library_id          Library ID. Optional. If not set, extracted from filename or set to UNKNOWN"
     echo ""
     exit 1
 }
 
-while getopts ':i:f:m:' flag; do
+while getopts ':i:f:m:l:' flag; do
     case "${flag}" in
         i) input_bucket=${OPTARG} ;;
         f) file_type=${OPTARG} ;;
         m) pipeline_mode=${OPTARG} ;;
+        l) library_id_override=${OPTARG} ;;
         *) warn "Incorrect options provided" && print_usage
         exit 1 ;;
     esac
@@ -76,8 +79,17 @@ if [[ "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
         # Extract lane (L00X pattern, must be surrounded by underscores)
         lane=$(echo "${filename}" | grep -oE '_L[0-9]+_' | tr -d '_') || die "Could not get lane from filename: ${filename}"
 
+        # Determine library_id: use override if provided, otherwise extract from filename or set to UNKNOWN
+        if [[ -n "${library_id_override}" ]]; then
+            library_id="${library_id_override}"
+        elif [[ "${filename}" =~ ^[^_]+_([A-Z0-9]{10})_S[0-9]+_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
+            library_id="${BASH_REMATCH[1]}"
+        else
+            library_id="UNKNOWN"
+        fi
+
         # Output the line
-        echo "${sample_name},${sample_name},${sample_name},tumor,dna,fastq,lane:${lane},${r1_file};${r2_file}"
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,fastq,library_id:${library_id};lane:${lane},${r1_file};${r2_file}"
     done
 
 else
