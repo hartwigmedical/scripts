@@ -80,9 +80,13 @@ if [[ "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
         lane=$(echo "${filename}" | grep -oE '_L[0-9]+_' | tr -d '_') || die "Could not get lane from filename: ${filename}"
 
         # Determine library_id: use override if provided, otherwise extract from filename or set to UNKNOWN
+        # Format 1: {sample}_{flowcell_id}_S{num}_L{lane}_R{read}_001.fastq.gz -> {flowcell_id}_S{num}
+        # Format 2: {sample}_S{num}_L{lane}_R{read}_001.fastq.gz -> S{num}
         if [[ -n "${library_id_override}" ]]; then
             library_id="${library_id_override}"
-        elif [[ "${filename}" =~ ^[^_]+_([A-Z0-9]{10})_S[0-9]+_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
+        elif [[ "${filename}" =~ ^[^_]+_([A-Z0-9]{10})_(S[0-9]+)_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
+            library_id="${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
+        elif [[ "${filename}" =~ ^[^_]+_(S[0-9]+)_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
             library_id="${BASH_REMATCH[1]}"
         else
             library_id="UNKNOWN"
