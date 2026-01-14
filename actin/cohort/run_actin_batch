@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source io_functions || exit 1
+
+passed_samples_dir=$1 && shift
+
+logs_dir=$(locate_rr_actin_logs_directory)
+create_or_cleanup_dir ${logs_dir}
+
+# START OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
+info "Reading file with list of samples already processed from prior analysis"
+cp "${passed_samples_dir}" /data/experiments/rr_actin/logs/samples_passed.txt
+passed_samples_file="/data/experiments/rr_actin/logs/samples_passed.txt"
+passed_samples=""
+
+info "Checking if file ${passed_samples_file} exist"
+if [[ -f "${passed_samples_file}" ]]; then
+    passed_samples=$(<"${passed_samples_file}")
+fi
+
+skipped_count=0
+processed_count=0
+# START OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
+
+for run_dir in /data/datasets/*; do
+  sample_name=$(basename "${run_dir}")
+
+  if [[ " ${passed_samples} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+    info "SKIPPING ${sample_name}: already present in samples_passed.txt"
+    ((skipped_count++))
+    continue
+  fi
+
+  ((processed_count++))
+  start=$(date +%s)
+  info "---------------------- STARTING RUNNING SAMPLE: ${run_dir} with RUNTIME OF: ${start} seconds ----------------------"
+  run_actin_single ${run_dir}
+  end=$(date +%s)
+  info "---------------------- FINISHED RUNNING SAMPLE: ${run_dir} with RUNTIME OF: $((end-start)) seconds ----------------------"
+
+done
+
+info "------------------------------------------------------------------------------------------------"
+info "RUN SUMMARY: Processed ${processed_count} samples, Skipped ${skipped_count} samples."
+info "------------------------------------------------------------------------------------------------"

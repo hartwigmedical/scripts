@@ -5,8 +5,7 @@ source message_functions || exit 1
 ##################################### JARS #####################################
 
 locate_actin_jar_on_vm() {
-    #echo "/data/actin/system/actin.jar"
-    echo "/home/rramnarine/molecular-local-SNAPSHOT-jar-with-dependencies.jar"
+    echo "/data/actin/system/actin.jar"
 }
 
 locate_actin_clinical_jar_on_vm() {
@@ -115,9 +114,6 @@ locate_prod_orange() {
 
 locate_research_orange() {
     echo "/data/tools/orange/4.0.1/orange.jar"
-    #echo "/data/tools/orange/4.1.0/orange.jar"
-    #echo "/data/tools/orange/3.0.0/orange.jar"
-    #echo "/data/tools/orange/3.2.0/orange.jar"
 }
 
 
@@ -443,26 +439,34 @@ locate_crc_actin_environment_config() {
 
 ############################### ACTIN Cohort ###################################
 
-locate_cohort_actin_clinical_jar_on_vm() {
-    echo "/data/experiments/rr_actin_cohort/system/actin-clinical.jar"
+locate_rr_actin_clinical_jar_on_vm() {
+    echo "/data/experiments/rr_actin/system/actin-clinical.jar"
 }
 
-locate_cohort_actin_jar_on_vm() {
-    echo "/data/experiments/rr_actin_cohort/system/actin.jar"
+locate_rr_actin_jar_on_vm() {
+    echo "/data/experiments/rr_actin/system/actin.jar"
 }
 
-locate_actin_cohort_pipeline_directory() {
+locate_rr_actin_pipeline_directory() {
     local sample=$1 && shift
 
-    echo "/data/experiments/rr_actin_cohort/data/pipelines/${sample}"
+    echo "/data/experiments/rr_actin/data/pipelines/${sample}"
 }
 
-locate_actin_cohort_molecular_directory() {
-    echo "/data/experiments/rr_actin_cohort/data/molecular"
+locate_rr_actin_molecular_directory() {
+    echo "/data/experiments/rr_actin/data/molecular"
 }
 
-locate_actin_cohort_clinical_directory() {
-    echo "/data/experiments/rr_actin_cohort/data/clinical"
+locate_rr_actin_clinical_directory() {
+    echo "/data/experiments/rr_actin/data/clinical"
+}
+
+locate_rr_actin_logs_directory() {
+    echo "/data/experiments/rr_actin/logs"
+}
+
+locate_rr_actin_serve_directory() {
+    echo "/data/resources/actin/serve"
 }
 
 ############################### ACTIN Buckets ##################################

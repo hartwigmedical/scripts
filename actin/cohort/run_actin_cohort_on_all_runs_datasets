@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-for run_dir in /data/datasets/*; do
-    run_actin_cohort_experiment_on_single_run ${run_dir}
-done

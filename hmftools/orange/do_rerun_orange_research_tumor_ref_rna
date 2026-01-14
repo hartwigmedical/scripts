@@ -74,6 +74,9 @@ if [[ -d "${run_dir}/isofox" ]]; then
     isofox_dir_cmd="-isofox_dir $(locate_isofox_data_directory ${run_dir})"
 fi
 
+#info "Rerunning virus interpreter to correct format incompatibility"
+#run_virus_interpreter
+
 virus_dir="$(locate_virus_interpreter_data_directory ${run_dir})"
 chord_dir="$(locate_chord_data_directory ${run_dir})"
 cuppa_dir="$(locate_cuppa_dna_rna_output_directory ${run_dir})"

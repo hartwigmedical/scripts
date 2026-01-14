@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+HEADER="group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath"
+
+input_bucket=""
+file_type="FASTQ"
+pipeline_mode="TUMOR_ONLY"
+library_id_override=""
+
+print_usage() {
+    script=$(basename "$0")
+    echo ""
+    echo "Description: Creates an OncoAnalyser sample sheet"
+    echo "Usage: ${script} -i <input_bucket> [-m <mode>]"
+    echo "Examples:"
+    echo "    ${script} -i gs://input"
+    echo "    ${script} -i gs://input -f FASTQ"
+    echo ""
+    echo "Options:"
+    echo "  -i input_bucket        Input bucket"
+    echo "  -f file_type           File type. Default: ${file_type}. Options: FASTQ"
+    echo "  -m pipeline_mode       Pipeline mode. Default: ${pipeline_mode}. Options: TUMOR_ONLY"
+    echo "  -l library_id          Library ID. Optional. If not set, extracted from filename or set to UNKNOWN"
+    echo ""
+    exit 1
+}
+
+while getopts ':i:f:m:l:' flag; do
+    case "${flag}" in
+        i) input_bucket=${OPTARG} ;;
+        f) file_type=${OPTARG} ;;
+        m) pipeline_mode=${OPTARG} ;;
+        l) library_id_override=${OPTARG} ;;
+        *) warn "Incorrect options provided" && print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z ${input_bucket} ]]; then
+    echo "ERROR: Missing input bucket argument" && print_usage
+fi
+
+if [[ -z ${file_type} ]]; then
+    echo "ERROR: Missing file type argument" && print_usage
+fi
+
+if [[ -z ${pipeline_mode} ]]; then
+    echo "ERROR: Missing pipeline mode argument" && print_usage
+fi
+
+if [[ "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
+    # Store file names in array to catch errors from gcloud storage ls
+    if ! mapfile -t r1_files < <(gcloud storage ls "${input_bucket}/*_R1_*.fastq.gz"); then
+        die "Failed to list files in bucket: ${input_bucket}"
+    fi
+    if [[ ${#r1_files[@]} -eq 0 ]]; then
+        die "No R1 FASTQ files found in bucket: ${input_bucket}"
+    fi
+
+    echo "${HEADER}"
+
+    for r1_file in "${r1_files[@]}"; do
+        # Get the corresponding R2 file
+        r2_file="${r1_file/_R1_/_R2_}"
+
+        # Check that R2 file exists
+        if ! gcloud storage ls "${r2_file}" &>/dev/null; then
+            die "R2 file does not exist: ${r2_file}"
+        fi
+
+        # Extract filename from path
+        filename=$(basename "${r1_file}") || die "Could not get base name of file: ${r1_file}"
+
+        # Extract sample name (everything before the first underscore)
+        sample_name="${filename%%_*}"
+
+        # Extract lane (L00X pattern, must be surrounded by underscores)
+        lane=$(echo "${filename}" | grep -oE '_L[0-9]+_' | tr -d '_') || die "Could not get lane from filename: ${filename}"
+
+        # Determine library_id: use override if provided, otherwise extract from filename or set to UNKNOWN
+        # Format 1: {sample}_{flowcell_id}_S{num}_L{lane}_R{read}_001.fastq.gz -> {flowcell_id}_S{num}
+        # Format 2: {sample}_S{num}_L{lane}_R{read}_001.fastq.gz -> S{num}
+        if [[ -n "${library_id_override}" ]]; then
+            library_id="${library_id_override}"
+        elif [[ "${filename}" =~ ^[^_]+_([A-Z0-9]{10})_(S[0-9]+)_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
+            library_id="${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
+        elif [[ "${filename}" =~ ^[^_]+_(S[0-9]+)_L[0-9]+_R[12]_001\.fastq\.gz$ ]]; then
+            library_id="${BASH_REMATCH[1]}"
+        else
+            library_id="UNKNOWN"
+        fi
+
+        # Output the line
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,fastq,library_id:${library_id};lane:${lane},${r1_file};${r2_file}"
+    done
+
+else
+    die "Combination not implemented: file_type=${file_type}, pipeline_mode=${pipeline_mode}"
+fi
