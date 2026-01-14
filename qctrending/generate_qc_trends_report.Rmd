@@ -81,7 +81,7 @@ coefficients_annotation <- function(dataset, x, y, coloring) {
 ```{r load_data, include=FALSE}
 # QC Info on Sample level
 sample_qc_info <- read.table(params$data_file, sep = '\t', header = TRUE) %>%
-                  filter(grepl('^A', sequencer))
+                  filter(grepl('^A|L', sequencer))
 
 sample_qc_info$sequencer <- as.factor(sample_qc_info$sequencer)
 sample_qc_info["type"][sample_qc_info["type"] == ''] <- "NA"
