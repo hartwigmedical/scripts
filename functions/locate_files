@@ -632,6 +632,7 @@ locate_actin_orange_germline_pdf_gcp() {
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE germline pdf")
 }
 
+
 locate_actin_orange_no_germline_json_gcp() {
     local gcp_project=$1 && shift
     local patient=$1 && shift
@@ -652,6 +653,17 @@ locate_actin_orange_no_germline_pdf_gcp() {
     local report_gsutil_uri="$(locate_actin_wgs_pipeline_bucket ${gcp_project} ${namespace})/*${patient}*/orange_no_germline/${sample}.orange.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE no-germline pdf")
+}
+
+locate_actin_first_shared_orange_pdf_gcp() {
+    local gcp_project=$1 && shift
+    local patient=$1 && shift
+    local namespace=$1 && shift
+
+    local sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
+    local report_gsutil_uri="$(locate_actin_shared_data_external_bucket ${gcp_project} ${namespace})/${patient}/orange/1/${sample}.orange.pdf"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ORANGE shared pdf")
 }
 
 locate_actin_patient_record_json_gcp() {
@@ -682,6 +694,16 @@ locate_actin_report_pdf_gcp() {
     local report_gsutil_uri="$(locate_actin_analysis_bucket "${gcp_project}" "${namespace}")/report/${patient}.actin.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN report PDF")
+}
+
+locate_actin_first_shared_report_pdf_gcp() {
+    local gcp_project=$1 && shift
+    local patient=$1 && shift
+    local namespace=$1 && shift
+
+    local report_gsutil_uri="$(locate_actin_shared_data_external_bucket "${gcp_project}" "${namespace}")/${patient}/actin/1/${patient}.actin.pdf"
+
+    echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN shared report PDF")
 }
 
 locate_actin_blob() {

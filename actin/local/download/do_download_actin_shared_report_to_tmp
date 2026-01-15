@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source actin_config || exit 1
+source locate_files || exit 1
+
+patient=$1 && shift
+gcp_project=$1 && shift
+namespace=$1 && shift
+
+if [[ -z "${patient}" || -z "${gcp_project}" ]]; then
+    error "Missing parameters. Exiting."
+fi
+
+if [[ "${gcp_project}" == "$(production_actin_emc_project)" ]]; then
+    if [[ -z "${namespace}" ]]; then
+        error "Missing namespace [$(actin_emc_namespaces)]"
+        exit 1
+    fi
+fi
+
+local_dir="${HOME}/hmf/tmp/actin"
+if [[ ! -d "${local_dir}" ]]; then
+    mkdir -p "${local_dir}"
+fi
+
+actin_report="$(locate_actin_first_shared_report_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
+
+gsutil cp ${actin_report} ${local_dir}
