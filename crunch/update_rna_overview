@@ -25,14 +25,13 @@ info "Writing output to directory ${tmp_dir}" | tee "${sum_out}"
 
 execute_sql_on_prod "SELECT sampleId AS '#sampleId',readLength,totalFragments FROM rnaStatistics" > "${sql_tsv}"
 hmf_api_get "samples?type=tumor-rna" > "${api_samples_jsn}"
-hmf_api_get "runs?ini=Rna.ini&status=Validated" > "${api_runs_jsn}"
+hmf_api_get "runs?ini=Rna.ini" > "${api_runs_jsn}"
 
 printf "#%s\t%s\t%s\t%s\t%s\n" "name" "barcode" "status" "yield" "q30" > "${api_samples_tsv}"
 jq -r '.[] | [.name,.barcode,.status,.yld,.q30,.createTime] | @tsv' "${api_samples_jsn}" | sort | uniq >> "${api_samples_tsv}"
 
-printf "#%s\t%s\t%s\t%s\t%s\n" "setname" "ini" "status" "bucket" "version" > "${api_runs_tsv}"
-jq -r '.[] | [.set.name,.ini,.status,.bucket,.version] | @tsv' "${api_runs_jsn}" | sort | uniq >> "${api_runs_tsv}"
-
+printf "#%s\t%s\t%s\t%s\t%s\n" "setname" "tumor_sample" "tumor_barcode" "cohort" "date" > "${api_runs_tsv}"
+jq -r '.[] | [.set.name, .set.tumor_sample, .set.tumor_isolation_barcode, (.set.name | split("_")[1]), (.set.createTime | split("T")[0]) ] | @tsv' api_runs_jsn.json | sort | uniq | grep ^2 > api_runs_jsn.tsv
 count_sql_all=$(grep -vc ^# "${sql_tsv}")
 count_api_all=$(grep -vc ^# "${api_samples_tsv}")
 count_api_rdy=$(grep -v ^# "${api_samples_tsv}" | grep -cP "Ready|Unregistered")
