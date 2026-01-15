@@ -31,7 +31,7 @@ printf "#%s\t%s\t%s\t%s\t%s\n" "name" "barcode" "status" "yield" "q30" > "${api_
 jq -r '.[] | [.name,.barcode,.status,.yld,.q30,.createTime] | @tsv' "${api_samples_jsn}" | sort | uniq >> "${api_samples_tsv}"
 
 printf "#%s\t%s\t%s\t%s\t%s\n" "setname" "tumor_sample" "tumor_barcode" "cohort" "date" > "${api_runs_tsv}"
-jq -r '.[] | [.set.name, .set.tumor_sample, .set.tumor_isolation_barcode, (.set.name | split("_")[1]), (.set.createTime | split("T")[0]) ] | @tsv' api_runs_jsn.json | sort | uniq | grep ^2 > api_runs_jsn.tsv
+jq -r '.[] | [.set.name, .set.tumor_sample, .set.tumor_isolation_barcode, (.set.name | split("_")[1]), (.set.createTime | split("T")[0]) ] | @tsv' "${api_runs_jsn}" | sort | uniq | grep ^2 >> "${api_runs_tsv}"
 count_sql_all=$(grep -vc ^# "${sql_tsv}")
 count_api_all=$(grep -vc ^# "${api_samples_tsv}")
 count_api_rdy=$(grep -v ^# "${api_samples_tsv}" | grep -cP "Ready|Unregistered")
