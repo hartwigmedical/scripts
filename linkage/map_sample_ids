@@ -93,6 +93,7 @@ else
     'split("\n") |
       map(select(length > 0 and (startswith("#") | not))) |
       map(split("\\s+";null)) |
+      select(. != "") |
       add' \
     <&0 \
     > "$TMP_DIR"/sample_ids.json
