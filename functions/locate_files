@@ -194,7 +194,7 @@ locate_research_serve() {
 }
 
 locate_actin_serve() {
-    echo "/data/tools/serve/8.5.0/serve.jar"
+    echo "/data/tools/serve/8.6.0/serve.jar"
 }
 
 locate_pilot_serve() {
