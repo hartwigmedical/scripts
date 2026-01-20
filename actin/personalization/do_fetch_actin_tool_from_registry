@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 set -e
 
 function do_curl() {
@@ -21,9 +23,8 @@ do_curl -o "${destination}" -L "${remote_dir}/system-${version}.jar"
 actual_md5="$(md5sum "${destination}" | awk '{print $1}')"
 [[ ${actual_md5} == "" ]] && echo "No local md5" && exit 1
 if [[ ${actual_md5} != "${expected_md5}" ]]; then
-    echo "Checksum not as expected for ${tool} version ${version}"
     rm "${destination}"
-    exit 1
+    error "Checksum not as expected for ${tool} version ${version}"
 else
-    echo "Fetched ${tool} version ${version} (md5=${actual_md5}) to ${destination}"
+    info "Fetched ${tool} version ${version} (md5=${actual_md5}) to ${destination}"
 fi
