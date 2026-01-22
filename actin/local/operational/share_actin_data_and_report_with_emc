@@ -17,10 +17,10 @@ if [[ -z "${namespace}" ]]; then
     error "Missing namespace [$(actin_emc_namespaces)]"
 fi
 
-sync_orange=$(echo "$sync_orange" | tr '[:upper:]' '[:lower:]')
-if [[ "$sync_orange" != "true" && "$sync_orange" != "false" ]]; then
-  echo "Invalid value for sync_orange: '$sync_orange'. Expected 'true' or 'false'."
-  exit 1
+sync_orange=$(echo "${sync_orange}" | tr '[:upper:]' '[:lower:]')
+if [[ "${sync_orange}" != "true" && "${sync_orange}" != "false" ]]; then
+    echo "Invalid value for sync_orange: '$sync_orange'. Expected 'true' or 'false'."
+    exit 1
 fi
 
 gcp_project=$(production_actin_emc_project)
@@ -41,9 +41,9 @@ gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
 
 write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 
-if [[ "$sync_orange" == "false" ]]; then
-  info "Skipping copying of ORANGE data for ${patient}"
-  exit 0
+if [[ "${sync_orange}" == "false" ]]; then
+    info "Skipping copying of ORANGE data for ${patient}"
+    exit 0
 fi
 
 orange_no_germline_json="$(locate_actin_orange_no_germline_json_gcp "${gcp_project}" "${patient}" "${namespace}")"
