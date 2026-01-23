@@ -19,6 +19,10 @@ surgery_tsv="${dir}/surgery.tsv"
 intolerance_tsv="${dir}/intolerance.tsv"
 bodyweight_tsv="${dir}/bodyweight.tsv"
 questionnaire_tsv="${dir}/questionnaire.tsv"
+reference_tsv="${dir}/reference.tsv"
+pathology_tsv="${dir}/pathology.tsv"
+radiology_tsv="${dir}/radiology.tsv"
+medical_history_tsv="${dir}/medical_history.tsv"
 
 # Clean up old files if they exist
 if [[ -f ${digital_file_tsv} ]]; then
@@ -57,6 +61,22 @@ if [[ -f ${questionnaire_tsv} ]]; then
     rm "${questionnaire_tsv}"
 fi
 
+if [[ -f ${reference_tsv} ]]; then
+    rm "${reference_tsv}"
+fi
+
+if [[ -f ${pathology_tsv} ]]; then
+    rm "${pathology_tsv}"
+fi
+
+if [[ -f ${radiology_tsv} ]]; then
+    rm "${radiology_tsv}"
+fi
+
+if [[ -f ${medical_history_tsv} ]]; then
+    rm "${medical_history_tsv}"
+fi
+
 no_consent_patients=("ACTN-01-02-0015" "ACTN-01-02-0059" "ACTN-01-02-0067" "ACTN-01-02-0073" "ACTN-01-02-0083" "ACTN-01-02-0086" \
     "ACTN-01-02-0090" "ACTN-01-02-0092" "ACTN-01-02-0096" "ACTN-01-02-0097" "ACTN-01-02-0099" "ACTN-01-02-0119" "ACTN-01-02-0128" \
     "ACTN-01-02-0133" "ACTN-01-02-0160" "ACTN-01-02-0163" "ACTN-01-02-0169" "ACTN-01-02-0192" "ACTN-01-02-0198" "ACTN-01-02-0199" \
@@ -92,15 +112,19 @@ for file in ${dir}/*.tsv; do
 done
 
 # Sort by first column and rename files
-(head -n 1 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" && tail -n +2 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" | sort) > "${digital_file_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Patient.tsv" && tail -n +2 "${dir}/ACTIN_Data_Patient.tsv" | sort) > "${patient_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Metingen.tsv" && tail -n +2 "${dir}/ACTIN_Data_Metingen.tsv" | sort) > "${vital_function_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Medicatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Medicatie.tsv" | sort) > "${medication_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Labwaarden.tsv" && tail -n +2 "${dir}/ACTIN_Data_Labwaarden.tsv" | sort) > "${lab_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Operatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Operatie.tsv" | sort) > "${surgery_tsv}"
 (head -n 1 "${dir}/ACTIN_Data_Allergie_bijwerking.tsv" && tail -n +2 "${dir}/ACTIN_Data_Allergie_bijwerking.tsv" | sort) > "${intolerance_tsv}"
-(head -n 1 "${dir}/ACTIN_Data_Gewicht.tsv" && tail -n +2 "${dir}/ACTIN_Data_Gewicht.tsv" | sort) > "${bodyweight_tsv}"
 (head -n 1 "${dir}/ACTIN_Data_Consulten.tsv" && tail -n +2 "${dir}/ACTIN_Data_Consulten.tsv" | sort) > "${questionnaire_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" && tail -n +2 "${dir}/ACTIN_Data_Digitaal_dossier.tsv" | sort) > "${digital_file_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Gewicht.tsv" && tail -n +2 "${dir}/ACTIN_Data_Gewicht.tsv" | sort) > "${bodyweight_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Labwaarden.tsv" && tail -n +2 "${dir}/ACTIN_Data_Labwaarden.tsv" | sort) > "${lab_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Medicatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Medicatie.tsv" | sort) > "${medication_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Metingen.tsv" && tail -n +2 "${dir}/ACTIN_Data_Metingen.tsv" | sort) > "${vital_function_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Naslag.tsv" && tail -n +2 "${dir}/ACTIN_Data_Naslag.tsv" | sort) > "${reference_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Operatie.tsv" && tail -n +2 "${dir}/ACTIN_Data_Operatie.tsv" | sort) > "${surgery_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Pathologisch_onderzoek.tsv" && tail -n +2 "${dir}/ACTIN_Data_Pathologisch_onderzoek.tsv" | sort) > "${pathology_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Patient.tsv" && tail -n +2 "${dir}/ACTIN_Data_Patient.tsv" | sort) > "${patient_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Radiologisch_onderzoek.tsv" && tail -n +2 "${dir}/ACTIN_Data_Radiologisch_onderzoek.tsv" | sort) > "${radiology_tsv}"
+(head -n 1 "${dir}/ACTIN_Data_Voorgeschiedenis.tsv" && tail -n +2 "${dir}/ACTIN_Data_Voorgeschiedenis.tsv" | sort) > "${medical_history_tsv}"
 
 # Remove old files
 rm "${dir}/ACTIN_Data_"*tsv
