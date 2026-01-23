@@ -117,6 +117,7 @@ if [ -n "$isolate" ]; then
   map_tumor_samples_url="$map_tumor_samples_url?type=$isolate"
 fi
 
+set +e
 response_code=$(curl -X POST \
   --oauth2-bearer "$gcp_token" \
   --silent \
@@ -125,6 +126,7 @@ response_code=$(curl -X POST \
   --output "$TMP_DIR"/sample_id_mapping.json \
   --write-out '%{http_code}' \
   --url "$map_tumor_samples_url")
+set -e
 
 case $response_code in
   000) error "Unable to connect to the Linkage Silo. Please check your network connection and enable VPN." ;;
