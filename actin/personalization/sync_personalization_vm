@@ -5,11 +5,8 @@ source locate_files || exit 1
 source io_functions || exit 1
 
 info "Replacing training output and resources with GCP bucket contents"
-create_or_cleanup_dir "/data/training_output/resources"
-gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/training_output/resources/
-
-create_or_cleanup_dir "/data/training_output/models"
-gsutil -m rsync -r gs://actin-personalization-models-v1 /data/training_output/models/
+create_or_cleanup_dir "/data/reference_patient_data"
+gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/reference_patient_data/
 
 info "Replacing patient-like-me data with GCP bucket contents"
 create_or_cleanup_dir "/data/patient_like_me/sources/cairo"

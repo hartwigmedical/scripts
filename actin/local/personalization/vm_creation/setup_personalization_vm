@@ -102,11 +102,12 @@ ssh -t -A ${vm_name} << EOF
     gcloud source repos clone actin-resources-private /data/repos/actin-resources-private --project=actin-build
 
     echo "Setting up training output and resources"
-    mkdir -p /data/training_output/resources
-    gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/training_output/resources/
-    mkdir -p /data/training_output/models
-    gsutil -m rsync -r gs://actin-personalization-models-v1 /data/training_output/models/
-
+    mkdir -p /data/training_output
+    
+    echo "Setting up reference patient data"
+    mkdir -p /data/reference_patient_data
+    gsutil -m rsync -r gs://actin-personalization-reference-patient-data /data/reference_patient_data/
+    
     echo "Setting up patient-like-me data"
     mkdir -p /data/patient_like_me/reference_db
     mkdir -p /data/patient_like_me/sources/cairo
