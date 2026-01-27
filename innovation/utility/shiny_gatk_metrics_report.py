@@ -390,19 +390,95 @@ def parse_runlevel_for_sample(gcs: GCSFileSystem, tsv_path: str, sample_id: str)
             out[k] = pd.to_numeric(row[k], errors="coerce")
     return out or None
 
+def _tsv_contains_required_field(gcs: GCSFileSystem, tsv_path: str) -> bool:
+    """Check if a TSV file contains the Num_Full_Length_Reads field (case-insensitive)."""
+    try:
+        with gcs.open(tsv_path, "r") as f:
+            # Read only the first few KB to find headers
+            content = f.read(8192)
+        # Look for the field in headers (first line or any line with 'sample_name')
+        for line in content.splitlines():
+            lower_line = line.lower()
+            if "num_full_length_reads" in lower_line:
+                return True
+        return False
+    except Exception as e:
+        dbg("tsv_field_check_error", path=tsv_path, error=repr(e))
+        return False
+
+
 def runlevel_tsv_from_bam_uri(gcs: GCSFileSystem, bam_uri: Optional[str]) -> Optional[str]:
+    """
+    Find the correct runlevel TSV file based on bam/cram URI path.
+
+    Search strategy:
+    1. Look at the same directory level as the bam/cram file
+    2. Look one level up from the bam/cram file
+    3. Look two levels up from the bam/cram file
+
+    For each level, we:
+    - Skip files named 'metrics-report.tsv' (these lack required fields)
+    - Validate that the TSV contains 'Num_Full_Length_Reads' field
+    """
     if not bam_uri:
         return None
+
     s = str(bam_uri).rstrip("/")
-    m = re.search(r"/output(?:/|$)", s, flags=re.I)
-    if not m:
-        return None
-    cycle_dir = s[:m.start()].rstrip("/")
-    try:
-        candidates = gcs.glob(f"{cycle_dir}/*.tsv")
-        return sorted(candidates)[0] if candidates else None
-    except Exception:
-        return None
+
+    # Get the directory containing the bam/cram file
+    # The bam_uri typically points to a file, so we need its parent directory
+    if s.endswith((".bam", ".cram")):
+        base_dir = "/".join(s.split("/")[:-1])
+    else:
+        # If it doesn't end with .bam/.cram, assume it's already a directory or use as-is
+        base_dir = s
+
+    # Build list of directories to search (same level, one up, two up)
+    dirs_to_search: List[str] = []
+
+    # Same level as bam/cram
+    dirs_to_search.append(base_dir)
+
+    # One level up
+    parts = base_dir.rstrip("/").split("/")
+    if len(parts) > 1:
+        one_up = "/".join(parts[:-1])
+        dirs_to_search.append(one_up)
+
+    # Two levels up
+    if len(parts) > 2:
+        two_up = "/".join(parts[:-2])
+        dirs_to_search.append(two_up)
+
+    dbg("runlevel_tsv_search", bam_uri=bam_uri, dirs_to_search=dirs_to_search)
+
+    # Search each directory level
+    for search_dir in dirs_to_search:
+        try:
+            candidates = gcs.glob(f"{search_dir}/*.tsv")
+            dbg("runlevel_tsv_candidates", dir=search_dir, candidates=candidates)
+
+            # Filter out metrics-report.tsv and validate remaining files
+            for tsv_path in sorted(candidates):
+                filename = tsv_path.split("/")[-1].lower()
+
+                # Skip metrics-report.tsv (it lacks required fields)
+                if filename == "metrics-report.tsv":
+                    dbg("runlevel_tsv_skip_metrics_report", path=tsv_path)
+                    continue
+
+                # Validate this TSV has the required Num_Full_Length_Reads field
+                if _tsv_contains_required_field(gcs, tsv_path):
+                    dbg("runlevel_tsv_found_valid", path=tsv_path)
+                    return tsv_path
+                else:
+                    dbg("runlevel_tsv_missing_field", path=tsv_path)
+        except Exception as e:
+            dbg("runlevel_tsv_search_error", dir=search_dir, error=repr(e))
+            continue
+
+    dbg("runlevel_tsv_not_found", bam_uri=bam_uri)
+    return None
 
 # ========= Meta normalization =========
 def normalize_meta(df_meta_in: pd.DataFrame) -> pd.DataFrame:
@@ -486,6 +562,7 @@ def build_batch_index(df_meta: pd.DataFrame) -> Dict[str, List[str]]:
     return out
 
 # ========= Colors / plots =========
+
 def lighten_hex(hex_color: str, factor: float = 0.45) -> str:
     hc = hex_color.lstrip("#")
     if len(hc) != 6:
@@ -819,12 +896,12 @@ def server(input, output, session):
             meta_df = normalize_meta(pd.DataFrame(rows))
             sample_meta.set(meta_df)
             preselect_batch_keys.set(set())  # no auto preselect in SBX mode
-            ui.update_navset("wizard", selected="screen_samples")
+            ui.update_navs("wizard", selected="screen_samples")
         else:
             # Manual mode → go to builder
             # populate choices
             ui.update_checkbox_group("manual_samples", choices={s: s for s in samples}, selected=[])
-            ui.update_navset("wizard", selected="screen_manual")
+            ui.update_navs("wizard", selected="screen_manual")
 
     @render.text
     def scan_summary():
@@ -905,7 +982,7 @@ def server(input, output, session):
         preselect_batch_keys.set(keys)
         dbg("manual_go_to_select_built", meta_rows=int(manual_df.shape[0]),
             meta_cols=list(manual_df.columns), preselect_keys=list(keys)[:20])
-        ui.update_navset("wizard", selected="screen_samples")
+        ui.update_navs("wizard", selected="screen_samples")
 
     # Batch tiles
     @reactive.Calc
@@ -1198,13 +1275,19 @@ def server(input, output, session):
         df = pd.DataFrame(series_rows)
         df.columns = df.columns.astype(str).str.strip()
 
-        # Yield (Gb): prefer flagstat total reads; prefer Alignment Summary MEAN_READ_LENGTH
-        flag_tot = pd.to_numeric(df.get("FLAGSTAT_TOTAL_READS"), errors="coerce")
-        tsv_tot  = pd.to_numeric(df.get("Total_Reads"), errors="coerce") if "Total_Reads" in df.columns else pd.to_numeric(df.get("TOTAL_READS"), errors="coerce")
+        # NEW (fixed):
+        def _get_numeric_series(dataframe: pd.DataFrame, col_name: str) -> pd.Series:
+            """Safely get a numeric Series from a DataFrame column, returning NA series if missing."""
+            if col_name in dataframe.columns:
+                return pd.to_numeric(dataframe[col_name], errors="coerce")
+            return pd.Series([pd.NA] * len(dataframe), index=dataframe.index)
+
+        flag_tot = _get_numeric_series(df, "FLAGSTAT_TOTAL_READS")
+        tsv_tot = _get_numeric_series(df, "Total_Reads") if "Total_Reads" in df.columns else _get_numeric_series(df, "TOTAL_READS")
         total_reads = flag_tot.where(flag_tot.notna(), tsv_tot)
 
-        mean_len_as = pd.to_numeric(df.get("MEAN_READ_LENGTH"), errors="coerce")
-        mean_len_fb = pd.to_numeric(df.get("mean_read_length"), errors="coerce")
+        mean_len_as = _get_numeric_series(df, "MEAN_READ_LENGTH")
+        mean_len_fb = _get_numeric_series(df, "mean_read_length")
         mean_len = mean_len_as.where(mean_len_as.notna(), mean_len_fb)
 
         df["Yield"] = (total_reads * mean_len) / 1e9
@@ -1314,7 +1397,7 @@ def server(input, output, session):
         # initialize "Displayed Samples"
         sids = df["SampleID"].dropna().astype(str).tolist()
         ui.update_checkbox_group("filter_samples", choices={sid: sid for sid in sids}, selected=sids)
-        ui.update_navset("wizard", selected="screen_dashboard")
+        ui.update_navs("wizard", selected="screen_dashboard")
 
         dbg("loaded_summary",
             n_rows=int(df.shape[0]),

@@ -1,0 +1,180 @@
+name: "wgs-metrics-sbx4-il"
+version: "0.0.4"
+storagePath: "gs://gatk-wgs-metrics-downsampled/"
+externalInputs:
+  - name: cram-folder
+    location: "${cram_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: interval-folder
+    location: "gs://hmf-crunch-innovation/info/gatk"
+stages:
+  - name: "cov"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - cram-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn.whole_genome.intervals.txt"
+        
+        INPUT_CRAM="/in/cram-folder/${cram_file}"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens_assembly38.alt.masked.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_CRAM $REF_FOLDER $SAMPLE_ID $REF_FILE
+  - name: "cov-hc"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - cram-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        
+        INTERVAL="/in/interval-folder/ilmn_hcr.38.intervals.txt"
+        
+        INPUT_CRAM="/in/cram-folder/${cram_file}"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens_assembly38.alt.masked.fasta"
+
+        SAMPLE_ID="${sample_id}"
+        ./gatk.sh $INTERVAL 20 $INPUT_CRAM $REF_FOLDER $SAMPLE_ID $REF_FILE
+  - name: "resort-cram"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/samtools"
+    version: "1.0.0"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 300Gi
+      stageTimeoutMinutes: 600
+      resources:
+        requests:
+          cpu: 12
+          memory: 32Gi
+          storage: 300Gi
+      node:
+        spot: true
+        pool: "n2d-standard-16-pool-1"
+    inputStages:
+      - cram-folder
+      - ref-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        THREADS=12
+        INPUT_CRAM="/in/cram-folder/${cram_file}"
+        OUTPUT_ALIGNMENT="/out/${sample_id}.cram"
+        REF_FILE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        TMP_PREFIX="/tmp/${sample_id}.sort"
+
+        echo "Sorting to CRAM: $INPUT_CRAM -> $OUTPUT_ALIGNMENT"
+        samtools sort \
+          -@ "$THREADS" \
+          -O CRAM \
+          -o "$OUTPUT_ALIGNMENT" \
+          --reference "$REF_FILE" \
+          -T "$TMP_PREFIX" \
+          "$INPUT_CRAM"
+
+        echo "Indexing $OUTPUT_ALIGNMENT"
+        samtools index -@ "$THREADS" "$OUTPUT_ALIGNMENT"
+
+        echo "Resort and index complete"
+  - name: "mmetrics"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - resort-cram
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+        INPUT_CRAM="/in/resort-cram/${sample_id}.cram"
+        REF_FOLDER="ref-folder"
+        REF_FILE="Homo_sapiens_assembly38.alt.masked.fasta"
+        SCRIPT="/in/interval-folder/collectMM_sortedfalse.sh"
+
+        SAMPLE_ID="${sample_id}"
+
+        ./collectMM.sh $INPUT_CRAM $REF_FOLDER $SAMPLE_ID $REF_FILE
+
+        # Check for any alignment_summary_metrics file in /out
+        if ls /out/*alignment_summary_metrics 1> /dev/null 2>&1; then
+          echo "alignment_summary_metrics file detected. Deleting CRAM file."
+          rm -f "$INPUT_CRAM"
+        else
+          echo "WARNING: alignment_summary_metrics file not found. CRAM file will be kept."
+        fi
+  - name: "run-flagstat"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/samtools"
+    version: "1.0.0"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 600
+      resources:
+        requests:
+          cpu: 26
+          memory: 64Gi
+          storage: 5Gi
+      node:
+        spot: true
+        pool: "n2d-standard-32-pool-1"
+    inputStages:
+      - cram-folder
+      - ref-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # Example variables
+        THREADS=12
+        INPUT="/in/cram-folder/${cram_file}"
+        REF_FILE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        OUTPUT_TXT="/out/${sample_id}.flagstat.txt"
+        SAMPLE_ID="${sample_id}"
+
+        # Run samtools flagstat with reference for CRAM input
+        samtools flagstat -@ $THREADS $INPUT > $OUTPUT_TXT

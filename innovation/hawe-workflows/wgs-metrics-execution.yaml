@@ -1,0 +1,15 @@
+name: "SAMPLE123"
+workflow: "wgs-metrics-sbx4-il"
+version: "0.0.4"
+params:
+  cram_uri: "gs://input-bucket/alignments/"
+  sample_id: "SAMPLE123"
+  cram_file: "SAMPLE123.cram"
+---
+name: "SAMPLE123-ref"
+workflow: "wgs-metrics-sbx4-il"
+version: "0.0.4"
+params:
+  cram_uri: "gs://input-bucket/alignments/"
+  sample_id: "SAMPLE123-ref"
+  cram_file: "SAMPLE123-ref.cram"
