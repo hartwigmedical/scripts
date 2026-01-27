@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 write_shared_data_latest_path_manifest() {
-  latest_path="$1"
+    latest_path="$1"
 
-  if [[ -z "${latest_path}" ]]; then
-    echo "Missing path to latest"
-    return 1
-  fi
+    if [[ -z "${latest_path}" ]]; then
+        echo "Missing path to latest"
+        return 1
+    fi
 
-  latest_path="${latest_path%/}"
-  latest_version="${latest_path##*/}"
-  manifest_path="${latest_path%/*}/manifest.json"
+    latest_path="${latest_path%/}"
+    latest_version="${latest_path##*/}"
+    manifest_path="${latest_path%/*}/manifest.json"
 
-  printf '{"latest_version": "%s", "latest_path": "%s/"}' "${latest_version}" "${latest_path}" | gsutil cp - "${manifest_path}"
-  echo "Manifest written to ${manifest_path}"
+    printf '{"latest_version": "%s", "latest_path": "%s/"}' "${latest_version}" "${latest_path}" | gsutil cp - "${manifest_path}"
+    echo "Manifest written to ${manifest_path}"
 }
