@@ -14,4 +14,7 @@ clinical_feed_input_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_proj
 do_sync_actin_input_data_to_vm ${gcp_project} ${clinical_feed_input_bucket} ${namespace}
 
 # We need to convert the EMC input feed to a format usable by downstream tools. This is done automatically in actin-pipeline.
-check_and_convert_emc_clinical_data_dump $(locate_actin_clinical_input_feed_directory)
+if [[ "${namespace}" != "$(actin_emc_pers_crc_study_namespace)" ]]; then
+    check_and_convert_emc_clinical_data_dump $(locate_actin_clinical_input_feed_directory)
+fi
+

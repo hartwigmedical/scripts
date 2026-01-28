@@ -107,7 +107,7 @@ done
 for file in ${dir}/*.tsv; do
     header=$(head -1 ${file} | grep "subject")
     if [[ -z "${header}" ]]; then
-    error "Detection of malformed header(s) in ${file}. Exiting."
+        error "Detection of malformed header(s) in ${file}. Exiting."
     fi
 done
 
