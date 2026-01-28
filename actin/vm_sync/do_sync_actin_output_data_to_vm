@@ -21,6 +21,11 @@ fi
 
 info "Syncing ACTIN wgs pipeline and actin analysis output for ${gcp_project} ${namespace} to $(hostname)"
 
+info "Syncing ACTIN clinical output..."
+clinical_output_directory=$(locate_actin_curated_clinical_directory)
+create_or_cleanup_dir "${clinical_output_directory}"
+gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project} ${namespace}) ${clinical_output_directory}
+
 info "Syncing ACTIN wgs pipeline output..."
 actin_wgs_directory=$(locate_actin_wgs_directory)
 create_or_cleanup_dir "${actin_wgs_directory}"
@@ -30,11 +35,6 @@ info "Syncing diagnostics wgs pipeline output..."
 actin_wgs_diagnostic_directory=$(locate_actin_wgs_diagnostic_directory)
 create_or_cleanup_dir "${actin_wgs_diagnostic_directory}"
 gsutil -m rsync -r -x ".*\.bam$|.*\.cram$" $(locate_actin_wgs_diagnostic_pipeline_bucket ${gcp_project} ${namespace}) ${actin_wgs_diagnostic_directory}
-
-info "Syncing ACTIN clinical output..."
-clinical_output_directory=$(locate_actin_curated_clinical_directory)
-create_or_cleanup_dir "${clinical_output_directory}"
-gsutil -m rsync -r $(locate_actin_clinical_output_bucket ${gcp_project} ${namespace}) ${clinical_output_directory}
 
 info "Syncing ACTIN patient records..."
 patient_record_directory=$(locate_actin_patient_record_directory)
