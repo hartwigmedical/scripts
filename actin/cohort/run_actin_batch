@@ -11,8 +11,8 @@ create_or_cleanup_dir ${logs_dir}
 
 # START OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
 info "Reading file with list of samples already processed from prior analysis"
-cp "${passed_samples_dir}" /data/experiments/rr_actin/logs/samples_passed.txt
-passed_samples_file="/data/experiments/rr_actin/logs/samples_passed.txt"
+cp "${passed_samples_dir}" /data/experiments/rr_actin/logs/sql_imported_patients.txt
+passed_samples_file="/data/experiments/rr_actin/logs/sql_imported_patients.txt"
 passed_samples=""
 
 info "Checking if file ${passed_samples_file} exist"

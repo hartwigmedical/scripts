@@ -447,6 +447,10 @@ locate_rr_actin_jar_on_vm() {
     echo "/data/experiments/rr_actin/system/actin.jar"
 }
 
+locate_rr_actin_serve_directory() {
+    echo "/data/experiments/rr_actin/system"
+}
+
 locate_rr_actin_pipeline_directory() {
     local sample=$1 && shift
 
@@ -463,10 +467,6 @@ locate_rr_actin_clinical_directory() {
 
 locate_rr_actin_logs_directory() {
     echo "/data/experiments/rr_actin/logs"
-}
-
-locate_rr_actin_serve_directory() {
-    echo "/data/resources/actin/serve"
 }
 
 ############################### ACTIN Buckets ##################################

@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-source database_functions || exit 1
-
-credentials="$(prod_writer_sql_credentials)"
-
-echo $credentials
