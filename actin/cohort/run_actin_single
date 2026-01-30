@@ -60,7 +60,7 @@ fi
 run_actin_app_molecular_interpreter ${tum_sample}
 
 info "Checking if ACTIN Molecular Interpreter completed successfully and created patient_record.json"
-patient_json="$(locate_rr_actin_molecular_directory)/${tum_sample}.patient_record.json"
+patient_json="$(locate_actin_patient_record_json ${tum_sample})"
 if [[ -z "${patient_json}" ]]; then
     echo "${tum_sample}" >> "${sample_failed_log_file}"
     info "ACTIN Molecular Interpreter failed. No .patient_record.json exists in $(locate_rr_actin_molecular_directory)"
