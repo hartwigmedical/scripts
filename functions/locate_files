@@ -786,7 +786,7 @@ locate_actin_wts_directory() {
 
 locate_actin_patient_record_json() {
     local patient=$1
-    local patient_dir=$(locate_actin_patient_record_directory)
+    local patient_dir=$2
 
     if [[ ! -d "${patient_dir}" ]]; then
         error "Unable to locate ACTIN patient directory '${patient_dir}'"
