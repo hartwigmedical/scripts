@@ -22,7 +22,7 @@ fi
 
 skipped_count=0
 processed_count=0
-# START OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
+# END OF TEMPORARY BLOCK OF CODE TO BE REMOVED AFTER FAILED SAMPLES PASS
 
 for run_dir in /data/datasets/*; do
   sample_name=$(basename "${run_dir}")
