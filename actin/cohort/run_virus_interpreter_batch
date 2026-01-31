@@ -11,8 +11,6 @@ fi
 # Get directory path from parameter
 dir_path=$1
 
-#ADDING SOME TEST COMMENTS TO GET COMMIT AND PUSH TO WORK
-
 # Check if path exists and is a directory
 if [ ! -d "$dir_path" ]; then
     echo "Error: '$dir_path' is not a valid directory"
@@ -24,6 +22,6 @@ fi
 echo "Processing subdirectories in $dir_path:"
 for subdir in "$dir_path"/*; do
     if [[ -d "$subdir" ]]; then
-        echo "${subdir}\t$(basename "$subdir")"
+        do_run_virus_interpreter ${subdir}
     fi
 done
