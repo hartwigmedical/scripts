@@ -5,27 +5,26 @@ source metadata_functions || exit 1
 source message_functions || exit 1
 
 run_dir=$1 && shift
-virus_interpreter_jar=$1 && shift
-output_dir=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${virus_interpreter_jar}" || -z "${output_dir}" ]]; then
+if [[ -z "${run_dir}" ]]; then
     error "Missing parameters. Exiting"
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 purple_dir="$(locate_purple_data_directory ${run_dir})"
-tumor_sample_wgs_metrics_file=$(locate_wgs_metrics ${run_dir} ${sample})
-
+tumor_sample_metrics_dir=$(locate_metrics_dir ${run_dir} ${sample})
+output_dir="${run_dir}/virus_interpreter"
 virus_breakend_tsv=$(locate_virus_breakend_tsv ${run_dir})
 
-taxonomy_db_tsv="/data/resources/public/virus_interpreter/taxonomy_db.tsv"
-virus_reporting_db_tsv="/data/resources/public/virus_interpreter/virus_reporting_db.tsv"
-virus_blacklisting_db_tsv="/data/resources/public/virus_interpreter/virus_blacklisting_db.tsv"
+taxonomy_db_tsv="/data/experiments/rr_actin/system/virus-interpreter-1.7.1-resources/taxonomy_db.tsv"
+virus_reporting_db_tsv="/data/experiments/rr_actin/system/virus-interpreter-1.7.1-resources/virus_reporting_db.tsv"
+virus_blacklisting_db_tsv="/data/experiments/rr_actin/system/virus-interpreter-1.7.1-resources/virus_blacklisting_db.tsv"
+virus_interpreter_jar="/data/experiments/rr_actin/system/virus-interpreter.jar"
 
 java -jar ${virus_interpreter_jar} \
     -sample ${sample} \
     -purple_dir ${purple_dir} \
-    -tumor_sample_wgs_metrics_file ${tumor_sample_wgs_metrics_file} \
+    -tumor_metrics_dir ${tumor_sample_metrics_dir} \
     -virus_breakend_tsv ${virus_breakend_tsv} \
     -taxonomy_db_tsv ${taxonomy_db_tsv} \
     -virus_reporting_db_tsv ${virus_reporting_db_tsv} \

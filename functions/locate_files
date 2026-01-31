@@ -1217,6 +1217,18 @@ locate_ref_genome_38_to_37_chain() {
 
 ##################################  METRICS ####################################
 
+locate_metrics_dir() {
+    local run_dir=$1 && shift
+    local sample=$1 && shift
+
+    local metrics_data_dir="${run_dir}/${sample}/bam_metrics/"
+    if [[ ! -d "${metrics_data_dir}" ]]; then
+        error "Unable to locate metrics data directory in ${run_dir}."
+    fi
+
+    echo "${metrics_data_dir}"
+}
+
 locate_wgs_metrics() {
     local run_dir=$1 && shift
     local sample=$1 && shift
