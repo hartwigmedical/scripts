@@ -444,7 +444,7 @@ locate_rr_actin_clinical_jar_on_vm() {
 }
 
 locate_rr_actin_jar_on_vm() {
-    echo "/data/experiments/rr_actin/system/actin.jar"
+    echo "/data/experiments/rr_actin/system/actin2.jar"
 }
 
 locate_rr_actin_serve_directory() {
