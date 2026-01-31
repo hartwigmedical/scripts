@@ -22,6 +22,6 @@ fi
 echo "Processing subdirectories in $dir_path:"
 for subdir in "$dir_path"/*; do
     if [[ -d "$subdir" ]]; then
-        echo "$(basename "$subdir")"
+        echo "${subdir}\t$(basename "$subdir")"
     fi
 done
