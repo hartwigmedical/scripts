@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <directory_path>"
+    exit 1
+fi
+
+dir_path=$1
+
+if [ ! -d "$dir_path" ]; then
+    echo "Error: '$dir_path' is not a valid directory"
+    echo "Usage: $0 <directory_path>"
+    exit 1
+fi
+
+echo "Processing subdirectories in $dir_path:"
+for subdir in "$dir_path"/*; do
+    if [[ -d "$subdir" ]]; then
+        do_run_virus_interpreter ${subdir}
+    fi
+done
