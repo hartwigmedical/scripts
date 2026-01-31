@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+source actin_config || exit 1
+
+patient=$1 && shift
+
+if [[ -z "${patient}" ]]; then
+    error "Missing patient parameter. Exiting."
+fi
+
+actin_emc_progene_report_to_tmp ${patient}
+orange_germline_actin_emc_to_tmp ${patient}
+orange_no_germline_actin_emc_to_tmp ${patient}
