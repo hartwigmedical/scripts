@@ -11,6 +11,8 @@ fi
 # Get directory path from parameter
 dir_path=$1
 
+#ADDING SOME TEST COMMENTS TO GET COMMIT AND PUSH TO WORK
+
 # Check if path exists and is a directory
 if [ ! -d "$dir_path" ]; then
     echo "Error: '$dir_path' is not a valid directory"
