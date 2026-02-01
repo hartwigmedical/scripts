@@ -439,12 +439,16 @@ locate_crc_actin_environment_config() {
 
 ############################### ACTIN Cohort ###################################
 
-locate_rr_actin_clinical_jar_on_vm() {
+locate_rr_actin_clinical_jar() {
     echo "/data/experiments/rr_actin/system/actin-clinical.jar"
 }
 
-locate_rr_actin_jar_on_vm() {
-    echo "/data/experiments/rr_actin/system/actin2.jar"
+locate_rr_actin_molecular_jar() {
+    echo "/data/experiments/rr_actin/system/actin-molecular.jar"
+}
+
+locate_rr_actin_database_jar() {
+    echo "/data/experiments/rr_actin/system/actin-database.jar"
 }
 
 locate_rr_actin_serve_directory() {

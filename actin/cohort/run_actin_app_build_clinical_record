@@ -17,7 +17,7 @@ fi
 
 output_directory=$(locate_rr_actin_clinical_directory)
 
-actin_clinical_jar="$(locate_rr_actin_clinical_jar_on_vm)"
+actin_clinical_jar="$(locate_rr_actin_clinical_jar)"
 
 info "Running ACTIN Build Clinical From Doids Only on ${sample}"
 

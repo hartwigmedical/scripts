@@ -70,9 +70,9 @@ if [[ -z "${patient_json}" ]]; then
     error "Sample name added to ${sample_failed_log_file} Exiting."
 fi
 
-info "Cleaning up temporary pipeline dir '${pipeline_dir}'"
-rm -rf "${pipeline_dir}"
-
 run_actin_app_molecular_loader ${tum_sample}
 echo "${tum_sample}" >> "${sample_passed_log_file}"
 info "ACTIN run successfully on ${tum_sample}. Sample name added to ${sample_passed_log_file}"
+
+info "Cleaning up temporary pipeline dir '${pipeline_dir}'"
+rm -rf "${pipeline_dir}"
