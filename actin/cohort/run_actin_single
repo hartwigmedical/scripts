@@ -35,6 +35,7 @@ cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sam
 
 ref_sample=$(load_ref_sample_from_metadata ${pipeline_dir})
 #ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
+info "------>REFERENCE SAMPLE NAME ${ref_sample}"
 
 rm "${pipeline_dir}/${ref_sample}/bam_metrics/"*etrics*
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.bam_metric.flag_counts.tsv"
