@@ -4,6 +4,7 @@ source message_functions || exit 1
 source locate_files || exit 1
 source io_functions || exit 1
 source lims_functions || exit 1
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -32,7 +33,9 @@ rm "${pipeline_dir}/${tum_sample}/bam_metrics/"*etrics*
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.flag_counts.tsv"
 cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${tum_sample}/bam_metrics/${tum_sample}.bam_metric.summary.tsv"
 
-ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
+ref_sample=$(load_ref_sample_from_metadata ${pipeline_dir})
+#ref_sample=$(imply_ref_sample_from_tumor_sample ${tum_sample})
+
 rm "${pipeline_dir}/${ref_sample}/bam_metrics/"*etrics*
 cp "${dummy_metric_dir}/dummy.bam_metric.flag_counts.tsv" "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.bam_metric.flag_counts.tsv"
 cp "${dummy_metric_dir}/dummy.bam_metric.summary.tsv" "${pipeline_dir}/${ref_sample}/bam_metrics/${ref_sample}.bam_metric.summary.tsv"
