@@ -1,67 +1,164 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-source locate_files || exit 1
 source database_functions || exit 1
 
-print_usage() {
-    echo "Usage: $0 [output_file] [doid_json] "
-    echo "  output_file     Exact path to the output file - with .tsv extension"
-    echo "  doid_json       Path to the DOID JSON file (default: result of locate_doid_json)"
-}
+JAVA_BIN="$(/usr/libexec/java_home -v 17 2>/dev/null || true)/bin/java"
 
-orange_jar="$(locate_pilot_orange)"
-output_file=$1 && shift
-doid_json=${1:-$(locate_doid_json)}
-shift
+if [[ ! -x "${JAVA_BIN}" ]]; then
+  echo "ERROR: Java 17 not found (required for ORANGE, classfile 61)." >&2
+  echo "Install with: brew install openjdk@17" >&2
+  exit 1
+fi
 
-if [[ -z "${output_file}" ]]; then
-    echo "Error: Missing output_file argument. Exiting." >&2
-    print_usage
+HMFTOOLS_REPO="${HOME}/hmf/repos/hmftools"
+ORANGE_DIR="${HMFTOOLS_REPO}/orange"
+ORANGE_TARGET="${ORANGE_DIR}/target"
+
+ORANGE_JAR="$(ls -1 "${ORANGE_TARGET}"/orange-*-jar-with-dependencies.jar 2>/dev/null | sort -V | tail -n 1 || true)"
+
+if [[ -z "${ORANGE_JAR}" || ! -f "${ORANGE_JAR}" ]]; then
+  echo "ORANGE jar not found under ${ORANGE_TARGET}" >&2
+  echo "Attempting local build via Maven (skip tests)..." >&2
+
+  if ! command -v mvn >/dev/null 2>&1; then
+    echo "ERROR: mvn not found in PATH. Install Maven or build ORANGE manually." >&2
     exit 1
+  fi
+
+  ( cd "${ORANGE_DIR}" && mvn -DskipTests package )
+
+  ORANGE_JAR="$(ls -1 "${ORANGE_TARGET}"/orange-*-jar-with-dependencies.jar 2>/dev/null | sort -V | tail -n 1 || true)"
 fi
 
-echo "Using DOID JSON: ${doid_json}"
-echo "Output file: ${output_file}"
-
-output_dir=$(dirname "${output_file}")
-if [[ ! -d "${output_dir}" ]]; then
-    echo "Creating output directory: ${output_dir}"
-    mkdir -p "${output_dir}"
+if [[ -z "${ORANGE_JAR}" || ! -f "${ORANGE_JAR}" ]]; then
+  echo "ERROR: ORANGE jar still not found after build." >&2
+  echo "Expected something like: ${ORANGE_TARGET}/orange-*-jar-with-dependencies.jar" >&2
+  echo "Try: cd ${ORANGE_DIR} && mvn -DskipTests package" >&2
+  exit 1
 fi
 
-[[ -f "${output_file}" ]] || touch "${output_file}"
+DOID_JSON="${HOME}/hmf/repos/actin-resources-private/disease_ontology/doid.json"
+NEW_DOID_JSON="${HOME}/hmf/repos/actin-resources-private/disease_ontology/new_doid.json"
 
-input_directory="/data/actin/patients/"
-echo "Using all patient_record JSONs from: ${input_directory}"
+GCS_TSV="gs://actin-emc-clinical-pipeline-curation-input-tm-progene-study/primary_tumor.tsv"
 
-doid_resolve_comparison() {
-    local patient_record="$1"
-    local doid
+OUT_DIR="${HOME}/hmf/tmp"
+OUT_OLD="${OUT_DIR}/doid_term_solver.tsv"
+OUT_NEW="${OUT_DIR}/new_doid_term_solver.tsv"
 
-    doid=$(jq -r 'first(.tumor.doids[] // empty)' "$patient_record" 2>/dev/null)
+mkdir -p "${OUT_DIR}"
+: > "${OUT_OLD}"
+: > "${OUT_NEW}"
 
-    if [ -z "$doid" ]; then
-        doid="null"
-    fi
+if [[ ! -f "${DOID_JSON}" ]]; then
+  echo "ERROR: Missing DOID JSON: ${DOID_JSON}" >&2
+  exit 1
+fi
+if [[ ! -f "${NEW_DOID_JSON}" ]]; then
+  echo "ERROR: Missing NEW DOID JSON: ${NEW_DOID_JSON}" >&2
+  exit 1
+fi
 
-    if [ "$doid" != "null" ]; then
-        doid_resolver_output=$(java -cp "$orange_jar" com.hartwig.hmftools.common.doid.tools.DoidTermResolverApp \
-            -doid_json "$doid_json" \
-	    -doid_to_resolve "$doid" 2>&1)
+if ! command -v gsutil >/dev/null 2>&1; then
+  echo "ERROR: gsutil not found in PATH." >&2
+  exit 1
+fi
 
-        resolved_doid=$(echo "$doid_resolver_output" | sed -n "s/.*'\([^']*\)'.*/\1/p")
-    else
-        resolved_doid="null"
-    fi
+echo "Using ORANGE jar: ${ORANGE_JAR}"
+echo "Using TSV: ${GCS_TSV}"
+echo "Using DOID JSON: ${DOID_JSON}"
+echo "Using NEW DOID JSON: ${NEW_DOID_JSON}"
+echo "Writing outputs to: ${OUT_OLD} and ${OUT_NEW}"
+echo
 
-    echo "[INFO] Adding to output-file: $patient_record with doid $resolved_doid"
-    echo -e "$patient_record\t$resolved_doid" >> "$output_file"
+DOIDS=()
+while IFS= read -r doid; do
+  DOIDS+=("$doid")
+done < <(
+  gsutil cat "${GCS_TSV}" \
+  | awk -F'\t' '
+      NR==1 {
+        for (i=1; i<=NF; i++) if ($i=="doids") { col=i; break }
+        if (!col) {
+          print "ERROR: no \"doids\" column found in header" > "/dev/stderr"
+          exit 2
+        }
+        next
+      }
+      {
+        v=$col
+        gsub(/"/, "", v)
+
+        if (v=="" || v=="null" || v=="NULL" || v=="NA" || v=="N/A") next
+
+        n=split(v, a, /;/)
+        for (j=1; j<=n; j++) {
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", a[j])
+          if (a[j] != "" && a[j]!="null" && a[j]!="NULL" && a[j]!="NA" && a[j]!="N/A")
+            print a[j]
+        }
+      }
+    ' \
+  | sort -u
+)
+
+if [[ "${#DOIDS[@]}" -eq 0 ]]; then
+  echo "ERROR: No DOIDs found in ${GCS_TSV} (doids column)." >&2
+  exit 1
+fi
+
+echo "Found ${#DOIDS[@]} unique DOIDs"
+echo
+
+resolve_one() {
+  local doid_json="$1"
+  local doid="$2"
+
+  local out
+  out=$("${JAVA_BIN}" -cp "${ORANGE_JAR}" com.hartwig.hmftools.common.doid.tools.DoidTermResolverApp \
+    -doid_json "${doid_json}" \
+    -doid_to_resolve "${doid}" 2>&1 || true)
+
+  local resolved
+  resolved=$(echo "${out}" | sed -n "s/.*'\([^']*\)'.*/\1/p" | head -n 1)
+
+  if [[ -z "${resolved}" ]]; then
+    resolved="UNRESOLVED"
+  fi
+
+  printf "%s -> %s\n" "${doid}" "${resolved}" >&2
+  printf "%s\t%s\n" "${doid}" "${resolved}"
 }
 
-for i in "$input_directory"*.json; do
-    if [ -e "$i" ]; then
-        doid_resolve_comparison "$i"
-    else
-        echo "No JSON files found in the directory."
-    fi
-done
+write_results() {
+  local doid_json="$1"
+  local outfile="$2"
+
+  printf "doid\tresolved_term\n" >> "${outfile}"
+
+  for d in "${DOIDS[@]}"; do
+    resolve_one "${doid_json}" "${d}" >> "${outfile}"
+  done
+}
+
+echo "Resolving terms using ${DOID_JSON} ... (this may take a while)"
+write_results "${DOID_JSON}" "${OUT_OLD}"
+echo
+
+echo "Resolving terms using ${NEW_DOID_JSON} ... (this may take a while)"
+write_results "${NEW_DOID_JSON}" "${OUT_NEW}"
+echo
+
+echo "Opening diff:"
+echo "  ${OUT_OLD}"
+echo "  ${OUT_NEW}"
+echo
+
+if diff -u "${OUT_OLD}" "${OUT_NEW}"; then
+  echo
+  echo "Diff is empty: files are identical"
+else
+  echo
+  echo "Diff found differences"
+fi
