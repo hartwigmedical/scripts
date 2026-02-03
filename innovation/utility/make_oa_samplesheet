@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 HEADER="group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath"
 
-input_bucket=""
+input=""
 file_type="FASTQ"
 pipeline_mode="TUMOR_ONLY"
 library_id_override=""
@@ -13,23 +13,25 @@ print_usage() {
     script=$(basename "$0")
     echo ""
     echo "Description: Creates an OncoAnalyser sample sheet"
-    echo "Usage: ${script} -i <input_bucket> [-m <mode>]"
+    echo "Usage: ${script} -i <input> [-m <mode>] [-f <file_type>] [-l <library_id>]"
     echo "Examples:"
     echo "    ${script} -i gs://input"
     echo "    ${script} -i gs://input -f FASTQ"
     echo ""
-    echo "Options:"
-    echo "  -i input_bucket        Input bucket"
-    echo "  -f file_type           File type. Default: ${file_type}. Options: FASTQ"
-    echo "  -m pipeline_mode       Pipeline mode. Default: ${pipeline_mode}. Options: TUMOR_ONLY"
-    echo "  -l library_id          Library ID. Optional. If not set, extracted from filename or set to UNKNOWN"
+    echo "Required Arguments:"
+    echo "  -i input               Input file or bucket"
+    echo ""
+    echo "Optional Arguments:"
+    echo "  -f file_type           File type. Default: ${file_type}. Options: FASTQ, CRAM"
+    echo "  -m pipeline_mode       Pipeline mode. Default: ${pipeline_mode}. Options: TUMOR_ONLY, TUMOR_NORMAL"
+    echo "  -l library_id          Library ID. Only relevant when running from FASTQ. If not set, extracted from filename or set to UNKNOWN"
     echo ""
     exit 1
 }
 
 while getopts ':i:f:m:l:' flag; do
     case "${flag}" in
-        i) input_bucket=${OPTARG} ;;
+        i) input=${OPTARG} ;;
         f) file_type=${OPTARG} ;;
         m) pipeline_mode=${OPTARG} ;;
         l) library_id_override=${OPTARG} ;;
@@ -38,7 +40,7 @@ while getopts ':i:f:m:l:' flag; do
     esac
 done
 
-if [[ -z ${input_bucket} ]]; then
+if [[ -z ${input} ]]; then
     echo "ERROR: Missing input bucket argument" && print_usage
 fi
 
@@ -50,13 +52,13 @@ if [[ -z ${pipeline_mode} ]]; then
     echo "ERROR: Missing pipeline mode argument" && print_usage
 fi
 
-if [[ "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
+if [[ "${input}" == gs://* && "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
     # Store file names in array to catch errors from gcloud storage ls
-    if ! mapfile -t r1_files < <(gcloud storage ls "${input_bucket}/*_R1_*.fastq.gz"); then
-        die "Failed to list files in bucket: ${input_bucket}"
+    if ! mapfile -t r1_files < <(gcloud storage ls "${input}/*_R1_*.fastq.gz"); then
+        die "Failed to list files in bucket: ${input}"
     fi
     if [[ ${#r1_files[@]} -eq 0 ]]; then
-        die "No R1 FASTQ files found in bucket: ${input_bucket}"
+        die "No R1 FASTQ files found in bucket: ${input}"
     fi
 
     echo "${HEADER}"
@@ -95,7 +97,20 @@ if [[ "${file_type}" == "FASTQ" && "${pipeline_mode}" == "TUMOR_ONLY" ]]; then
         # Output the line
         echo "${sample_name},${sample_name},${sample_name},tumor,dna,fastq,library_id:${library_id};lane:${lane},${r1_file};${r2_file}"
     done
+elif [[ "${input}" != gs://* && "${file_type}" == "CRAM" && "${pipeline_mode}" == "TUMOR_NORMAL" ]]; then
+    echo "${HEADER}"
 
+    while IFS= read -r sample_name; do
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,cram_redux,,gs://hartwig-reads/dna/${sample_name}/tumor/alignments/${sample_name}.cram"
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,crai,,gs://hartwig-reads/dna/${sample_name}/tumor/alignments/${sample_name}.cram.crai"
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,redux_jitter_tsv,,gs://hartwig-reads/dna/${sample_name}/tumor/alignments/${sample_name}.jitter_params.tsv"
+        echo "${sample_name},${sample_name},${sample_name},tumor,dna,redux_ms_tsv,,gs://hartwig-reads/dna/${sample_name}/tumor/alignments/${sample_name}.ms_table.tsv.gz"
+
+        echo "${sample_name},${sample_name},${sample_name}-ref,normal,dna,cram_redux,,gs://hartwig-reads/dna/${sample_name}/ref/alignments/${sample_name}-ref.cram"
+        echo "${sample_name},${sample_name},${sample_name}-ref,normal,dna,crai,,gs://hartwig-reads/dna/${sample_name}/ref/alignments/${sample_name}-ref.cram.crai"
+        echo "${sample_name},${sample_name},${sample_name}-ref,normal,dna,redux_jitter_tsv,,gs://hartwig-reads/dna/${sample_name}/ref/alignments/${sample_name}-ref.jitter_params.tsv"
+        echo "${sample_name},${sample_name},${sample_name}-ref,normal,dna,redux_ms_tsv,,gs://hartwig-reads/dna/${sample_name}/ref/alignments/${sample_name}-ref.ms_table.tsv.gz"
+    done < "${input}"
 else
-    die "Combination not implemented: file_type=${file_type}, pipeline_mode=${pipeline_mode}"
+    die "Combination not implemented: input=${input}, file_type=${file_type}, pipeline_mode=${pipeline_mode}"
 fi
