@@ -26,16 +26,16 @@ print_usage() {
     echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
     echo "  dest_dir            Destination directory for resource output (must be existing)"
     echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
-    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v2.3.0--1')"
+    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--1')"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20251003_build_resources_2.3.0--1/ 38 v2.3.0--1"
+    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20260205_build_resources_3.0.0--1/ 38 v3.0.0--1"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<resources_version>.tar.gz"
     echo ""
     echo "Example output:"
-    echo "  /data/experiments/oncoanalyser/20251003_build_resources_2.3.0--1/38/hmf_pipeline_resources.38_v2.3.0--1.tar.gz"
+    echo "  /data/experiments/oncoanalyser/20260205_build_resources_3.0.0--1/38/hmf_pipeline_resources.38_v3.0.0--1.tar.gz"
 }
 
 if [[ $# -ne 4 ]]; then
@@ -66,11 +66,11 @@ echo "Resources version: ${RESOURCES_VERSION}"
 echo "## --------------------------------"
 
 ## Cloud source repo: common-resources-public
-# commit e596fde6679f497b8eb77c953a77848be88cf0cd (HEAD -> master, tag: pipeline5-6-0-202509291757, tag: pipeline5-2-3-202509301002, origin/master, origin/HEAD)
+# commit 42c6df2d73989bd9b6130ec8fcd5426a38bab839 (HEAD -> master, origin/master, origin/HEAD)
 # Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Mon Sep 29 17:55:05 2025 +1000
-
-#     AUS-303: fixed v37 hotspot from last commit
+# Date:   Thu Feb 5 09:23:22 2026 +1100
+# 
+#     SV: added SBX and Illumina combined PON files
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
@@ -166,21 +166,20 @@ copy_files_hmftools (){
 
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.somatic.${REF_GENOME_VERSION}.vcf.gz   ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.germline.${REF_GENOME_VERSION}.vcf.gz  ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/ActionableCodingPanel.${REF_GENOME_VERSION}.bed.gz   ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/CoverageCodingPanel.${REF_GENOME_VERSION}.bed.gz     ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/clinvar.${REF_GENOME_VERSION}.vcf.gz                 ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.bed    ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.vcf.gz ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/PanelArtefacts.${REF_GENOME_VERSION}.tsv             ${VARIANTS_DIR}
+
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/giab_high_conf/${REF_GENOME_VERSION}/*GIAB_highconf*.bed.gz                     ${VARIANTS_DIR}
+	
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/mappability_150.${REF_GENOME_VERSION}.bed.gz  ${VARIANTS_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/msi_jitter_sites.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
 
 	if [[ "${REF_GENOME_VERSION}" == ${REF_GENOME_VERSION_37} ]]; then
-		cp -vnLr ${COMMON_RESOURCES_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz             ${VARIANTS_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz    ${VARIANTS_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz           ${VARIANTS_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz  ${VARIANTS_DIR}
 	else
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon_1000.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon*.${REF_GENOME_VERSION}.tsv.gz   ${VARIANTS_DIR}
 		mkdir -p ${VARIANTS_DIR}/gnomad/
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/*gz ${VARIANTS_DIR}/gnomad/
 	fi
@@ -189,10 +188,10 @@ copy_files_hmftools (){
 	echo "## Copy number"
 	COPY_NUMBER_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/copy_number/
 
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/amber/${REF_GENOME_VERSION}/AmberGermlineSites.${REF_GENOME_VERSION}.tsv.gz     ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gc_profiles/${REF_GENOME_VERSION}/GC_profile.1000bp.${REF_GENOME_VERSION}.cnp   ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/purple/${REF_GENOME_VERSION}/cohort_germline_del_freq.${REF_GENOME_VERSION}.csv ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/cobalt/${REF_GENOME_VERSION}/DiploidRegions.${REF_GENOME_VERSION}.bed.gz        ${COPY_NUMBER_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/amber/${REF_GENOME_VERSION}/AmberGermlineSites.${REF_GENOME_VERSION}.tsv.gz   ${COPY_NUMBER_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gc_profiles/${REF_GENOME_VERSION}/GC_profile.1000bp.${REF_GENOME_VERSION}.cnp ${COPY_NUMBER_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/purple/${REF_GENOME_VERSION}/cohort_germline_*_freq.${REF_GENOME_VERSION}.csv ${COPY_NUMBER_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/cobalt/${REF_GENOME_VERSION}/DiploidRegions.${REF_GENOME_VERSION}.bed.gz      ${COPY_NUMBER_DIR}
 
 	echo ""
 	echo "## Structural variants"
@@ -324,7 +323,7 @@ make_tar (){
 	cd $ORIGINAL_DIR
 }
 
-mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/tars
+mkdir -pv ${DEST_DIR}/tars
 
 if [[ $MODE == $MODE_GENOME ]]; then
 	mkdir -p ${DEST_DIR}/${REF_GENOME_VERSION}/tars/genome
@@ -341,7 +340,7 @@ if [[ $MODE == $MODE_HMFTOOLS ]]; then
 	echo "## HMF tools"
 	make_tar \
 	${DEST_DIR}/${REF_GENOME_VERSION}/hmftools \
-	${DEST_DIR}/${REF_GENOME_VERSION}/tars/hmf_pipeline_resources.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz
+	${DEST_DIR}/tars/hmf_pipeline_resources.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz
 fi
 
 if [[ $MODE == $MODE_PANEL ]]; then
@@ -349,5 +348,5 @@ if [[ $MODE == $MODE_PANEL ]]; then
 	echo "## TSO500 panel"
 	make_tar \
 	${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500 \
-	${DEST_DIR}/${REF_GENOME_VERSION}/tars/hmf_panel_resources.tso500.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz 
+	${DEST_DIR}/tars/hmf_panel_resources.tso500.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz 
 fi
