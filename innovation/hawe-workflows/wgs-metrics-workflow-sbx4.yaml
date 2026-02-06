@@ -1,5 +1,5 @@
 name: "wgs-metrics-sbx4"
-version: "0.0.3"
+version: "0.0.5"
 storagePath: "gs://gatk-wgs-metrics-clean/"
 externalInputs:
   - name: cram-folder
@@ -9,68 +9,6 @@ externalInputs:
   - name: interval-folder
     location: "gs://hmf-crunch-innovation/info/gatk"
 stages:
-  - name: "convert-cram"
-    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/samtools"
-    version: "1.0.0"
-    options:
-      backoffLimit: 2
-      annotations:
-        gke-gcsfuse/ephemeral-storage-request: 400Gi
-      stageTimeoutMinutes: 600
-      resources:
-        requests:
-          cpu: 12
-          memory: 32Gi
-          storage: 400Gi
-      node:
-        spot: true
-        pool: "n2-highcpu-32-pool-1"
-    inputStages:
-      - cram-folder
-      - ref-folder
-    command: "bash /config/run.sh"
-    configFiles:
-      run.sh: |
-        #!/usr/bin/env bash
-        set -eo pipefail
-
-        THREADS=24
-        INPUT_CRAM="/in/cram-folder/${cram_file}"
-        REF_FILE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
-        OUTPUT_ALIGNMENT="/out/${sample_id}.bam"
-
-        echo "Converting $INPUT_CRAM to BAM"
-        samtools view -@ $THREADS -T "$REF_FILE" -b -o "$OUTPUT_ALIGNMENT" "$INPUT_CRAM"
-
-        echo "Indexing $OUTPUT_ALIGNMENT"
-        samtools index -@ $THREADS "$OUTPUT_ALIGNMENT"
-
-        echo "CRAM to BAM conversion complete"
-  - name: "fastqc"
-    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/fastqc"
-    version: "0.0.1"
-    options:
-      backoffLimit: 2
-      annotations:
-        gke-gcsfuse/ephemeral-storage-request: 5Gi
-      stageTimeoutMinutes: 2880
-      resources:
-        resourceProfile: "n2d-2-highmem-100"
-    inputStages:
-      - convert-cram
-    command: "bash /config/run.sh"
-    configFiles:
-      run.sh: |
-        #!/usr/bin/env bash
-        set -eo pipefail
-
-        INPUT_CONVERTED_BAM="/in/convert-cram/${sample_id}.bam"
-        SAMPLE_ID="${sample_id}"
-
-        echo "Running FastQC on $INPUT_CONVERTED_BAM"
-        fastqc --outdir /out "$INPUT_CONVERTED_BAM"
-
-        echo "FastQC completed for $SAMPLE_ID"
   - name: "cov"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
     version: "0.0.1"
@@ -149,8 +87,10 @@ stages:
         INPUT_CRAM="/in/cram-folder/${cram_file}"
         REF_FOLDER="ref-folder"
         REF_FILE="Homo_sapiens_assembly38.alt.masked.fasta"
+        SCRIPT="/in/interval-folder/collectMM_sortedfalse.sh"
 
         SAMPLE_ID="${sample_id}"
+
         ./collectMM.sh $INPUT_CRAM $REF_FOLDER $SAMPLE_ID $REF_FILE
   - name: "run-flagstat"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/samtools"
@@ -158,16 +98,16 @@ stages:
     options:
       backoffLimit: 2
       annotations:
-        gke-gcsfuse/ephemeral-storage-request: 400Gi
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
       stageTimeoutMinutes: 600
       resources:
         requests:
-          cpu: 12
-          memory: 32Gi
-          storage: 400Gi
+          cpu: 26
+          memory: 64Gi
+          storage: 5Gi
       node:
         spot: true
-        pool: "n2d-standard-16-pool-1"
+        pool: "n2d-standard-32-pool-1"
     inputStages:
       - cram-folder
       - ref-folder

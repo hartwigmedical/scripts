@@ -115,7 +115,7 @@ stages:
         DB_USER="writer"
         DB_PASS="$RESEARCH_DB_WRITER_PASS"
         DB_PORT="3306"
-        DB_NAME="hmfpatients60"
+        DB_NAME="hmfpatients"
 
         echo "$DB_HOST"
         echo "$DB_USER"

@@ -1,6 +1,6 @@
 name: "wgs-metrics-sbx4-il"
 version: "0.0.4"
-storagePath: "gs://gatk-wgs-metrics-downsampled/"
+storagePath: "gs://gatk-wgs-metrics-il/"
 externalInputs:
   - name: cram-folder
     location: "${cram_uri}"
