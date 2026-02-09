@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.3.1"
+version: "0.3.2"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -28,6 +28,8 @@ stages:
         read -r -a OPTIONAL_ARGS_ARRAY <<< "$OPTIONAL_ARGS"
         SAMPLE_LINK='${sample_link}'
         SAMPLE_ID_CSV_URI='/in/sample-id-bucket/${sample_id_file_name}'
+        SKIP_TRUTH_RENAMING="${skip_truth_renaming ? 'true'}"
+        SKIP_TARGET_RENAMING="${skip_target_renaming ? 'true'}"
 
         # Additional parameters
         COMPAR_JAR="compar.jar"  # This jar is included in the Docker image.
@@ -58,16 +60,18 @@ stages:
         echo "Optional compar arguments: ${OPTIONAL_ARGS_ARRAY[@]}"
         echo "Sample list json: $SAMPLE_LINK"
         echo "External sample_id.csv: ${SAMPLE_ID_CSV_URI:-<none>}"
+        echo "Skip truth renaming: ${SKIP_TRUTH_RENAMING:-false}"
+        echo "Skip target renaming: ${SKIP_TARGET_RENAMING:-false}"
 
         main() {
             create_dir "$OUTPUT_DIR"
 
             # rename truth/target runs to tumor-sample names
             RENAMED_TRUTH_RUNS_DIR="$OUTPUT_DIR/truth";  create_dir "$RENAMED_TRUTH_RUNS_DIR"
-            symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR"  "$RENAMED_TRUTH_RUNS_DIR"
+            symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR"  "$RENAMED_TRUTH_RUNS_DIR" "$SKIP_TRUTH_RENAMING"
 
             RENAMED_TARGET_RUNS_DIR="$OUTPUT_DIR/target"; create_dir "$RENAMED_TARGET_RUNS_DIR"
-            symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR"
+            symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR" "$SKIP_TARGET_RENAMING"
 
             # SAMPLE_ID_FILE logic
             if [[ -n "${sample_id_file_name}" && "${sample_id_file_name}" != "{}" ]]; then
@@ -151,12 +155,17 @@ stages:
         symlink_runs_to_tumor_name() {
             local RUN_INPUT_DIR=$1 && shift
             local RUN_OUTPUT_DIR=$1 && shift
+            local SKIP_RENAMING=$1 && shift
 
             [[ -n "$RUN_OUTPUT_DIR" ]] || echo "[ERROR] Missing arguments for symlink_runs_to_tumor_name"
 
             for RUN_DIR in "$RUN_INPUT_DIR"/*/; do
                 local TUMOR_SAMPLE
-                TUMOR_SAMPLE=$(load_tumor_sample_from_metadata "$RUN_DIR") || echo "[ERROR] Could not get tumor sample name from $RUN_DIR"
+                if [[ "$SKIP_RENAMING" != "true" ]]; then
+                    TUMOR_SAMPLE=$(load_tumor_sample_from_metadata "$RUN_DIR") || echo "[ERROR] Could not get tumor sample name from $RUN_DIR"
+                else
+                    TUMOR_SAMPLE=$(basename "$RUN_DIR") || echo "[ERROR] Could not get directory name from $RUN_DIR"
+                fi
                 local RENAMED_RUN_DIR="$RUN_OUTPUT_DIR/$TUMOR_SAMPLE"
                 if [[ -d "$RENAMED_RUN_DIR" ]]; then
                     echo "[WARN] SKIP copying of $RUN_DIR since $RENAMED_RUN_DIR exists"

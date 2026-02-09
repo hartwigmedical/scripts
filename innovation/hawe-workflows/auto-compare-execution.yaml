@@ -1,6 +1,6 @@
 name: "genomescan"
 workflow: "auto-compare"
-version: "0.3.1"
+version: "0.3.2"
 params:
   truth_bucket_uri: "gs://hartwig-output-genomescan-truth"
   target_bucket_uri: "gs://hartwig-output-genomescan"
@@ -10,3 +10,6 @@ params:
   compar_optional_arguments: '-write_detailed -include_matches -tumor_flagstat_dir_ref */flagstat -tumor_flagstat_dir_new */flagstat -germline_flagstat_dir_ref \$/flagstat -germline_flagstat_dir_new \$/flagstat'
   sample_link: ""
   compar_vis_overrides: ""
+flags:
+  skip_truth_renaming: false
+  skip_target_renaming: false
