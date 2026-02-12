@@ -2,10 +2,10 @@
 
 set -e
 
-MODE=$1
-DEST_DIR=$2
-REF_GENOME_VERSION=$3
-RESOURCES_VERSION=$4
+DEST_DIR=$1
+REF_GENOME_VERSION=$2
+RESOURCES_VERSION=$3
+MODE=$4
 
 MODE_HMFTOOLS="hmftools"
 MODE_PANEL="panel"
@@ -20,22 +20,22 @@ print_usage() {
     echo "  This script copies required resources files for Oncoanalyser to a destination dir, and packages them up into tars."
     echo ""
     echo "Usage:"
-    echo "  bash oncoanalyser_build_resources <mode> <dest_dir> <ref_genome_version> <resources_version>"
+    echo "  bash oncoanalyser_build_resources <dest_dir> <ref_genome_version> <resources_version> <mode>"
     echo ""
     echo "Arguments:"
-    echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
     echo "  dest_dir            Destination directory for resource output (must be existing)"
     echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
-    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--1')"
+    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--2')"
+    echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources hmftools /data/experiments/oncoanalyser/20260205_build_resources_3.0.0--1/ 38 v3.0.0--1"
+    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260212_build_resources_3.0.0--2/ 38 v3.0.0--2 hmftools"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<resources_version>.tar.gz"
     echo ""
     echo "Example output:"
-    echo "  /data/experiments/oncoanalyser/20260205_build_resources_3.0.0--1/38/hmf_pipeline_resources.38_v3.0.0--1.tar.gz"
+    echo "  /data/experiments/oncoanalyser/20260212_build_resources_3.0.0--2/38/hmf_pipeline_resources.38_v3.0.0--2.tar.gz"
 }
 
 if [[ $# -ne 4 ]]; then
@@ -66,11 +66,18 @@ echo "Resources version: ${RESOURCES_VERSION}"
 echo "## --------------------------------"
 
 ## Cloud source repo: common-resources-public
-# commit 42c6df2d73989bd9b6130ec8fcd5426a38bab839 (HEAD -> master, origin/master, origin/HEAD)
+# commit bb7e35d1137fa77a85d7cc8705b864c36147dee7 (HEAD -> master, origin/master, origin/HEAD)
+# Merge: b7dc74f bebca15
 # Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Thu Feb 5 09:23:22 2026 +1100
-# 
-#     SV: added SBX and Illumina combined PON files
+# Date:   Thu Feb 12 09:36:38 2026 +1100
+
+#     Merge branch 'master' of https://source.developers.google.com/p/hmf-pipeline-development/r/common-resources-public
+
+# commit b7dc74fb3207f773065beedc27505245451aef8f
+# Author: Charles Shale <shalecharles@gmail.com>
+# Date:   Thu Feb 12 09:36:25 2026 +1100
+
+#     Sage: updated SBX and Ultima PONs
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
@@ -179,7 +186,7 @@ copy_files_hmftools (){
 		cp -vnLr ${COMMON_RESOURCES_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz           ${VARIANTS_DIR}
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz  ${VARIANTS_DIR}
 	else
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon*.${REF_GENOME_VERSION}.tsv.gz   ${VARIANTS_DIR}
+		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon*plus*.tsv.gz   ${VARIANTS_DIR}
 		mkdir -p ${VARIANTS_DIR}/gnomad/
 		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/*gz ${VARIANTS_DIR}/gnomad/
 	fi
