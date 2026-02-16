@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.3.2"
+version: "0.3.3"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -262,7 +262,7 @@ stages:
       - execute-compar
   - name: "vis-reported"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.1.0"
+    version: "1.2.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -291,7 +291,7 @@ stages:
       - execute-compar
   - name: "vis-all"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.1.0"
+    version: "1.2.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
