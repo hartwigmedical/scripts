@@ -24,8 +24,7 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
 fi
 
 info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
-today="$(date +"%d-%m-%Y")"
-destination_prefix="${shared_actin_data_external_uri}/${hospital_id}_ACTINreport_${today}_D"
+destination_prefix="${shared_actin_data_external_uri}/${hospital_id}"
 gsutil cp "${patient_record_json}" "${destination_prefix}.patient_record.json"
 gsutil cp "${treatment_match_json}" "${destination_prefix}.treatment_match.json"
 gsutil cp "${actin_report_pdf}" "${destination_prefix}.pdf"
