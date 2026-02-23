@@ -8,4 +8,4 @@ gcp_project="$(production_actin_nki_project)"
 clinical_feed_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})"
 
 info "Showing content of clinical feed input bucket of ${gcp_project}"
-gsutil ls -l gs://${clinical_feed_bucket}/ | sort -k2 -k3 -r
+gsutil ls -l ${clinical_feed_bucket} | sort -k2 -k3 -r
