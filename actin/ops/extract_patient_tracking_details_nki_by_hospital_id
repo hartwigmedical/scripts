@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source actin_config || exit 1
+
+hospital_id=$1 && shift
+
+if [[ -z "${hospital_id}" ]]; then
+    error "Parameter patient missing. Exiting.";
+fi
+
+gcp_project="$(production_actin_nki_project)"
+clinical_feed_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})"
+
+info "Extract patient tracking details for ${hospital_id} of ${gcp_project}"
+
+info "ACTIN ID: $(lookup_nki_actin_id_for_hospital_id "${hospital_id}")"
+info "Date ACTIN request: $(gsutil cat "${clinical_feed_bucket}"/"${hospital_id}".merged.json | jq -r '.patientDetails.registrationDate')"
+info "Date merged file shared: $(gsutil stat "${clinical_feed_bucket}"/"${hospital_id}".merged.json | grep "Creation time")"
