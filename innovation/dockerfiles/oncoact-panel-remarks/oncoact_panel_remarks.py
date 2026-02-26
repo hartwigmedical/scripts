@@ -26,9 +26,9 @@ TSV_SEPARATOR = "\t"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
 
-MIN_UNRELIABLE_PURITY = 0.995
-MIN_UNRELIABLE_PLOIDY = 1.85
-MAX_UNRELIABLE_PLOIDY = 2.15
+MIN_UNRELIABLE_PURITY = Decimal("0.995")
+MIN_UNRELIABLE_PLOIDY = Decimal("1.85")
+MAX_UNRELIABLE_PLOIDY = Decimal("2.15")
 
 VCHORD_MIN_PURITY_THRESHOLD = Decimal("0.30")
 DEL_MIN_PURITY_THRESHOLD = Decimal("0.30")
@@ -282,7 +282,7 @@ def determine_remarks(
         remarks.append(
             f"De coverage van dit sample is te laag: "
             f"slechts {percent_exons_median_coverage_at_least_100:.2f}% van de exonen heeft median coverage minstens 100x, "
-            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100}% zou moeten zijn. "
+            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:.1f}% zou moeten zijn. "
             f"Hierdoor kunnen varianten gemist worden."
         )
 
@@ -332,7 +332,7 @@ def determine_remarks(
 
     purity = run_data.purple_qc.purity
     ploidy = run_data.purple_qc.ploidy
-    if purity >= MIN_UNRELIABLE_PURITY and MIN_UNRELIABLE_PLOIDY <= ploidy <= MAX_UNRELIABLE_PLOIDY:
+    if purity > MIN_UNRELIABLE_PURITY and MIN_UNRELIABLE_PLOIDY < ploidy < MAX_UNRELIABLE_PLOIDY:
         remarks.append(
             f"Dit sample is geschat op mTCP {purity * 100:.2f}% en ploidy {ploidy:.2f}. "
             f"Als er weinig duidelijke copy number changes gevonden zijn, kan deze schatting onbetrouwbaar zijn. "
