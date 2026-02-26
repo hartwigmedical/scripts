@@ -1,5 +1,5 @@
 name: "oncoact-panel-remarks"
-version: "0.0.1-beta.20"
+version: "0.0.1-beta.22"
 storagePath: "gs://oncoact-panel-remarks-output"
 externalInputs:
   - name: input-bucket
@@ -7,7 +7,7 @@ externalInputs:
 stages:
   - name: "remarks"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-    version: "0.0.19"
+    version: "0.0.21"
     options:
       backoffLimit: 2
       annotations:

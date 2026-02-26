@@ -25,6 +25,11 @@ CHR_X_NON_PAR_END = 156030895
 TSV_SEPARATOR = "\t"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
+
+MIN_UNRELIABLE_PURITY = 0.995
+MIN_UNRELIABLE_PLOIDY = 1.85
+MAX_UNRELIABLE_PLOIDY = 2.15
+
 VCHORD_MIN_PURITY_THRESHOLD = Decimal("0.30")
 DEL_MIN_PURITY_THRESHOLD = Decimal("0.30")
 AMP_MIN_PURITY_THRESHOLD = Decimal("0.20")
@@ -291,7 +296,7 @@ def determine_remarks(
         if FAIL_NO_TUMOR in run_data.purple_qc.qc_status:
             remarks.append(
                 f"'{FAIL_NO_TUMOR}' betekent dat er volgens het algoritme geen of slechts zeer weinig tumor aanwezig is in het sample. "
-                f"Dit zou kunnen komen doordat dit een normal sample of een zeer laag mTCP sample is, "
+                f"Dit zou kunnen komen doordat dit een normaal sample of een zeer laag mTCP sample is, "
                 f"of doordat dit een rustig type tumor is waarvoor onze mTCP schatter niet goed werkt.")
         if WARN_DELETED_GENES in run_data.purple_qc.qc_status or WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
             if WARN_DELETED_GENES in run_data.purple_qc.qc_status and WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
@@ -304,9 +309,9 @@ def determine_remarks(
                 f"{sentence_start} dat er indicaties zijn dat de gekozen mTCP en/of ploidy voor dit sample niet correct zijn."
             )
             if WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
-                remarks.append("Om deze reden worden amplificaties en deleties alleen gecalld met SV support.")
+                remarks.append("Om deze reden worden amplificaties en deleties alleen gerapporteerd met structurele variant (SV) support.")
             else:
-                remarks.append("Om deze reden worden deleties alleen gecalld met SV support.")
+                remarks.append("Om deze reden worden deleties alleen gerapporteerd met structurele variant (SV) support.")
 
     baf_points_in_x_outside_par = [
         baf_point for baf_point in run_data.amber_baf_points
@@ -315,39 +320,50 @@ def determine_remarks(
     percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / max(len(run_data.amber_baf_points), 1)
     if run_data.purple_qc.amber_gender == "MALE" and percent_baf_points_in_x_outside_par > 0.5:
         remarks.append(
-            f"Door het relatief hoge aantal BAF punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
-            f"is de gender call van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
+            f"Door het relatief hoge aantal B Allele Frequency (BAF) punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
+            f"is de bepaalde sekse van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
         )
 
     if run_data.purple_qc.amber_gender == "FEMALE" and percent_baf_points_in_x_outside_par < 1.5:
         remarks.append(
-            f"Door het relatief lage aantal BAF punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
-            f"is de gender call van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
+            f"Door het relatief lage aantal B Allele Frequency (BAF) punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
+            f"is de bepaalde sekse van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
+        )
+
+    purity = run_data.purple_qc.purity
+    ploidy = run_data.purple_qc.ploidy
+    if purity >= MIN_UNRELIABLE_PURITY and MIN_UNRELIABLE_PLOIDY <= ploidy <= MAX_UNRELIABLE_PLOIDY:
+        remarks.append(
+            f"Dit sample is geschat op mTCP {purity * 100:.2f}% en ploidy {ploidy:.2f}. "
+            f"Als er weinig duidelijke copy number changes gevonden zijn, kan deze schatting onbetrouwbaar zijn. "
+            f"Dit kan bijvoorbeeld veroorzaakt worden doordat er weinig copy number changes in het sample aanwezig zijn, "
+            f"door een lage purity, of doordat het sample een te lage kwaliteit heeft. "
+            f"Bij een te lage purity kunnen de bepaalde uitkomsten onbetrouwbaar zijn."
         )
 
     purity_too_low = set()
-    if run_data.purple_qc.purity < TMB_MIN_PURITY_THRESHOLD:
+    if purity < TMB_MIN_PURITY_THRESHOLD:
         purity_too_low.add("TMB")
 
-    if run_data.purple_qc.purity < MSI_MIN_PURITY_THRESHOLD:
+    if purity < MSI_MIN_PURITY_THRESHOLD:
         purity_too_low.add("MSI")
 
-    if run_data.purple_qc.purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
+    if purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
         purity_too_low.add("kleine varianten")
 
-    if run_data.purple_qc.purity < DEL_MIN_PURITY_THRESHOLD:
+    if purity < DEL_MIN_PURITY_THRESHOLD:
         purity_too_low.add("deleties")
 
-    if run_data.purple_qc.purity < AMP_MIN_PURITY_THRESHOLD:
+    if purity < AMP_MIN_PURITY_THRESHOLD:
         purity_too_low.add(AMPLIFICATIONS_DESCRIPTION)
 
-    if run_data.purple_qc.purity < VCHORD_MIN_PURITY_THRESHOLD:
+    if purity < VCHORD_MIN_PURITY_THRESHOLD:
         purity_too_low.add("HRD")
 
     if purity_too_low:
         remarks.append(
-            f"De mTCP van dit sample ({run_data.purple_qc.purity*100:.2f}%) is te laag "
-            f"voor het betrouwbaar callen van {pretty_listing(purity_too_low)}."
+            f"De mTCP van dit sample ({purity * 100:.2f}%) is te laag "
+            f"voor het betrouwbaar rapporteren van {pretty_listing(purity_too_low)}."
         )
 
     amp_drivers_needing_manual_curation = [
