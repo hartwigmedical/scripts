@@ -14,18 +14,10 @@ spec:
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
       version: "1.0.1"
       options:
-        backoffLimit: 2
-        annotations:
-          gke-gcsfuse/ephemeral-storage-request: 400Gi
-        stageTimeoutMinutes: 120
+        backoffLimit: "2"
+        stageTimeoutMinutes: "120"
         resources:
-          requests:
-            cpu: 8
-            memory: 16Gi
-            storage: 20Gi
-        node:
-          spot: true
-          pool: "n2d-standard-16-pool-1"
+          resourceProfile: "n2d-8-375"
       inputStages:
         - input-bucket
       arguments: >-
