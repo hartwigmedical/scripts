@@ -24,8 +24,8 @@ stages:
 
         # Resolve BAM/CRAM by pattern in case suffixes like T/R are used
         shopt -s nullglob
-        bam_matches=(/in/cram-folder/${sample_id}.bam)
-        cram_matches=(/in/cram-folder/${sample_id}.cram)
+        cram_matches=(/in/cram-folder/${sample_id}*.cram)
+        bam_matches=(/in/cram-folder/${sample_id}*.bam)
         shopt -u nullglob
 
         # Filter out intentionally unmatched alignments so they are never picked up

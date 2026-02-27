@@ -1,0 +1,90 @@
+apiVersion: hartwigmedicalfoundation.nl/v1
+kind: WorkflowDefinitionCustomResource
+metadata:
+  name: "wgs-metrics-v3-1.0.0"
+spec:
+  name: "wgs-metrics-v3"
+  version: "1.0.0"
+  storagePath: "gs://gatk-wgs-metrics-ult/"
+  externalInputs:
+    - name: cram-folder
+      location: "${cram_uri}"
+    - name: ref-folder
+      location: "gs://common-resources/reference_genome/38/"
+  stages:
+    - name: "bam-metrics"
+      image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/bamtools-picard"
+      version: "1.0.2"
+      options:
+        backoffLimit: "2"
+        stageTimeoutMinutes: "2880"
+        resources:
+          resourceProfile: n2d-8-375
+      inputStages:
+        - cram-folder
+        - ref-folder
+      command: "bash /config/run.sh"
+      configFiles:
+        run.sh: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          SAMPLE_ID="${sample_id}"
+          INPUT_CRAM="/in/cram-folder/${cram_file}"
+          REFERENCE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+          WORK_DIR="/work_$SAMPLE_ID"
+          THREADS=8
+
+          mkdir -p $WORK_DIR
+
+          echo "$(date +"%Y-%m-%d %H:%M:%S") Running bam-tools BamMetrics"
+          java -Xmx16g -cp /opt/tools/bam-tools_v1.5.jar \
+            com.hartwig.hmftools.bamtools.metrics.BamMetrics \
+            -sample $SAMPLE_ID \
+            -bam_file $INPUT_CRAM \
+            -ref_genome $REFERENCE \
+            -ref_genome_version V38 \
+            -output_dir $WORK_DIR \
+            -threads $THREADS
+
+          echo "$(date +"%Y-%m-%d %H:%M:%S") Running samtools stats for mean read length"
+          samtools stats --reference $REFERENCE $INPUT_CRAM \
+            | grep '^SN' > $WORK_DIR/$SAMPLE_ID.samtools_sn.txt
+
+          cp -r $WORK_DIR/* /out/
+          echo "$(date +"%Y-%m-%d %H:%M:%S") Finished bam-tools BamMetrics + samtools stats"
+    - name: "gc-bias"
+      image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/bamtools-picard"
+      version: "1.0.2"
+      options:
+        backoffLimit: "2"
+        stageTimeoutMinutes: "2880"
+        resources:
+          resourceProfile: high
+      inputStages:
+        - cram-folder
+        - ref-folder
+      command: "bash /config/run.sh"
+      configFiles:
+        run.sh: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+
+          SAMPLE_ID="${sample_id}"
+          INPUT_CRAM="/in/cram-folder/${cram_file}"
+          REFERENCE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+          WORK_DIR="/work_$SAMPLE_ID"
+
+          mkdir -p $WORK_DIR
+
+          echo "$(date +"%Y-%m-%d %H:%M:%S") Running CollectGcBiasMetrics"
+          gatk --java-options "-Xmx8G" CollectMultipleMetrics \
+            -I $INPUT_CRAM \
+            -R $REFERENCE \
+            -O $WORK_DIR/$SAMPLE_ID \
+            -UNPAIRED \
+            --VERBOSITY ERROR \
+            --PROGRAM CollectGcBiasMetrics
+
+          cp -r $WORK_DIR/* /out/
+          echo "$(date +"%Y-%m-%d %H:%M:%S") Finished CollectGcBiasMetrics"

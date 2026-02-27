@@ -1,0 +1,8 @@
+name: "SAMPLE123"
+workflow: "hs-metrics"
+version: "0.0.1"
+params:
+  alignment_uri: "gs://input-bucket/alignments/"
+  sample_id: "SAMPLE123"
+  alignment_file: "SAMPLE123.cram"
+  resort_before_metrics: "false"
