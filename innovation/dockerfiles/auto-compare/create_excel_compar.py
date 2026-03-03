@@ -38,6 +38,8 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
                 tab_colour = COLOR_EMPTY
             elif "INVALID" in df.to_string(index=False):
                 tab_colour = COLOR_INVALID
+            elif "MismatchType" in df.columns and (df["MismatchType"] == "FULL_MATCH").all():
+                tab_colour = COLOR_EMPTY
             else:
                 tab_colour = COLOR_STANDARD
 
