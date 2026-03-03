@@ -35,7 +35,7 @@ RUN pip install --no-cache-dir \
 SHELL ["bash", "-c"]
 
 # Get COMPAR jar
-RUN wget -O compar.jar https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.4.0/compar_v1.4.0.jar
+RUN wget -O compar.jar https://github.com/hartwigmedical/hmftools/releases/download/compar-v1.5.0/compar_v1.5.0.jar
 
 # Copy workflow scripts into the container.
 RUN mkdir -p /scripts

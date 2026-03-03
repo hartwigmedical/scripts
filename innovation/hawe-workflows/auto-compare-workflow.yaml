@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.3.4"
+version: "0.4.0"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -11,7 +11,7 @@ externalInputs:
 stages:
   - name: "execute-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.2.0"
+    version: "0.3.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -67,11 +67,19 @@ stages:
             create_dir "$OUTPUT_DIR"
 
             # rename truth/target runs to tumor-sample names
-            RENAMED_TRUTH_RUNS_DIR="$OUTPUT_DIR/truth";  create_dir "$RENAMED_TRUTH_RUNS_DIR"
-            symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR"  "$RENAMED_TRUTH_RUNS_DIR" "$SKIP_TRUTH_RENAMING"
+            if [[ "$SKIP_TRUTH_RENAMING" == "true" ]]; then
+                RENAMED_TRUTH_RUNS_DIR="$TRUTH_INPUT_DIR"
+            else
+                RENAMED_TRUTH_RUNS_DIR="$OUTPUT_DIR/truth";  create_dir "$RENAMED_TRUTH_RUNS_DIR"
+                symlink_runs_to_tumor_name "$TRUTH_INPUT_DIR"  "$RENAMED_TRUTH_RUNS_DIR"
+            fi
 
-            RENAMED_TARGET_RUNS_DIR="$OUTPUT_DIR/target"; create_dir "$RENAMED_TARGET_RUNS_DIR"
-            symlink_runs_to_tumor_name "$TARGET_INPUT_DIR" "$RENAMED_TARGET_RUNS_DIR" "$SKIP_TARGET_RENAMING"
+            if [[ "$SKIP_TARGET_RENAMING" == "true" ]]; then
+                RENAMED_TARGET_RUNS_DIR="$TARGET_INPUT_DIR"
+            else
+                RENAMED_TARGET_RUNS_DIR="$OUTPUT_DIR/target"; create_dir "$RENAMED_TARGET_RUNS_DIR"
+                symlink_runs_to_tumor_name "$TARGET_INPUT_DIR"  "$RENAMED_TARGET_RUNS_DIR"
+            fi
 
             # SAMPLE_ID_FILE logic
             if [[ -n "${sample_id_file_name}" && "${sample_id_file_name}" != "{}" ]]; then
@@ -155,22 +163,18 @@ stages:
         symlink_runs_to_tumor_name() {
             local RUN_INPUT_DIR=$1 && shift
             local RUN_OUTPUT_DIR=$1 && shift
-            local SKIP_RENAMING=$1 && shift
 
             [[ -n "$RUN_OUTPUT_DIR" ]] || echo "[ERROR] Missing arguments for symlink_runs_to_tumor_name"
 
             for RUN_DIR in "$RUN_INPUT_DIR"/*/; do
                 local TUMOR_SAMPLE
-                if [[ "$SKIP_RENAMING" != "true" ]]; then
-                    TUMOR_SAMPLE=$(load_tumor_sample_from_metadata "$RUN_DIR") || echo "[ERROR] Could not get tumor sample name from $RUN_DIR"
-                else
-                    TUMOR_SAMPLE=$(basename "$RUN_DIR") || echo "[ERROR] Could not get directory name from $RUN_DIR"
-                fi
+                TUMOR_SAMPLE=$(load_tumor_sample_from_metadata "$RUN_DIR") || echo "[ERROR] Could not get tumor sample name from $RUN_DIR"
+
                 local RENAMED_RUN_DIR="$RUN_OUTPUT_DIR/$TUMOR_SAMPLE"
                 if [[ -d "$RENAMED_RUN_DIR" ]]; then
-                    echo "[WARN] SKIP copying of $RUN_DIR since $RENAMED_RUN_DIR exists"
+                    echo "[WARN] SKIP symlinking of $RUN_DIR since $RENAMED_RUN_DIR exists"
                 else
-                    echo "[INFO] Copy $RUN_DIR to $RENAMED_RUN_DIR"
+                    echo "[INFO] Symlink $RUN_DIR to $RENAMED_RUN_DIR"
                     ln -s "$RUN_DIR" "$RENAMED_RUN_DIR" || echo "[ERROR] Could not symlink $RUN_DIR to $RENAMED_RUN_DIR"
                 fi
             done
@@ -220,7 +224,7 @@ stages:
 
   - name: "excel-compar"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/auto-compare"
-    version: "0.2.0"
+    version: "0.3.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -262,7 +266,7 @@ stages:
       - execute-compar
   - name: "vis-reported"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.3.0"
+    version: "1.3.1"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -291,7 +295,7 @@ stages:
       - execute-compar
   - name: "vis-all"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.3.0"
+    version: "1.3.1"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
