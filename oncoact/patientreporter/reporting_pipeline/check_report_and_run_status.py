@@ -10,14 +10,21 @@ import json
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', choices=['pilot', 'prod'], default='pilot')
+    parser.add_argument('--blacklist', type=str, default=None,
+                        help='Path to a text file with one blacklisted run ID per line')
     args = parser.parse_args()
 
-    StatusChecker(profile=args.profile).generate_and_print_summary()
+    blacklisted_run_ids = []
+    if args.blacklist:
+        with open(args.blacklist, 'r') as f:
+            blacklisted_run_ids = [float(line.strip()) for line in f if line.strip()]
+
+    StatusChecker(profile=args.profile, blacklisted_run_ids=blacklisted_run_ids).generate_and_print_summary()
 
 
 class StatusChecker:
 
-    def __init__(self, profile):
+    def __init__(self, profile, blacklisted_run_ids=None):
         self.rest_client = RestClient(profile)
         self.storage_client = Client()
 
@@ -79,6 +86,13 @@ class StatusChecker:
 
             if not to_add.empty:
                 self.all_runs = pd.concat([self.all_runs, to_add], ignore_index=True)
+
+        if blacklisted_run_ids:
+            self.all_runs = self.all_runs[~self.all_runs['id'].isin(blacklisted_run_ids)]
+            self.all_reports = self.all_reports[~self.all_reports['run_id'].isin(blacklisted_run_ids)]
+            self.all_reports_with_null = self.all_reports_with_null[~self.all_reports_with_null['run_id'].isin(blacklisted_run_ids)]
+            self.shared_reports = self.shared_reports[~self.shared_reports['run_id'].isin(blacklisted_run_ids)]
+            self.to_be_shared_reports = self.to_be_shared_reports[~self.to_be_shared_reports['run_id'].isin(blacklisted_run_ids)]
 
 
         self.processing_runs = self.all_runs[self.all_runs['status'] == 'Processing']
@@ -271,7 +285,7 @@ class StatusChecker:
                 self._get_doid_warnings(report_record) +
                 self._get_rose_warnings(report_record) +
                 self._get_protect_warnings(report_record) +
-               # self._get_vcf_merge_warnings(report_record) +
+                # self._get_vcf_merge_warnings(report_record) +
                 self._get_virus_warnings(report_record))
 
     def _get_patient_reporter_log_related_warnings(self, report_record):
