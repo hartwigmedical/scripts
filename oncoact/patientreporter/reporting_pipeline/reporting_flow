@@ -49,5 +49,5 @@ elif [[ "${process}" == "share_panel" ]]; then
 elif [[ "${process}" == "portal_api" ]]; then
         python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/update_api.py ${sampleBarcode} --publish --notify-users --profile prod
 else
-    error "Unknown process type is used as input"
+    error "Unknown process type is used as input."
 fi
