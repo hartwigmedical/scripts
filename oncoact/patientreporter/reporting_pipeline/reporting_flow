@@ -37,7 +37,7 @@ if [[ $isolationBarcode != "" ]]; then
 fi
 
 if [[ "${process}" == "check_reports" ]]; then
-    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod --blacklist /data/tmp/blacklisted_run_ids.txt
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/check_report_and_run_status.py --profile prod --blacklist /data/ops/lims/prod/blacklisted_run_ids.txt
 elif [[ "${process}" == "check_pipelines" ]]; then
     check_process_pipelines
 elif [[ "${process}" == "fail_report" ]]; then
