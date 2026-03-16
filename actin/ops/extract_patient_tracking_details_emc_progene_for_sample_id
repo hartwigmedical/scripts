@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+sample_id=$1 && shift
+
+if [[ -z "${sample_id}"  ]]; then
+    error "Parameter sample id missing. Exiting.";
+fi
+
+info "Extract patient tracking details for ${sample_id}"
+echo ""
+info "Sample ID: ${sample_id}"
+info "ACTIN ID: $(curl -s http://lama.prod-1/api/tumor-sample/sample-id/${sample_id} -L | jq -r .hospitalSampleLabel)"
+info "Primary tumor details: $(curl -s http://lama.prod-1/api/tumor-sample/sample-id/${sample_id} -L | jq -r .tumorType)"
+info "Date sample arrival tumor sample: $(lama tumor-sample ${sample_id} | cut -f5)"

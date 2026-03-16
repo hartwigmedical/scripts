@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+reference_id=$1 && shift
+
+if [[ -z "${reference_id}"  ]]; then
+    error "Parameter reference id missing. Exiting.";
+fi
+
+info "Extract patient tracking details for ${reference_id}"
+echo ""
+info "Date sample arrival reference sample: $(lama reference-sample ${reference_id} | cut -f5)"
