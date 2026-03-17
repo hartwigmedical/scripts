@@ -1,6 +1,5 @@
 args = commandArgs(trailingOnly=TRUE)
 
-library(matrixStats)
 fileName=args[1]
 print(fileName)
 df = read.table(fileName,header=T,sep="\t")
