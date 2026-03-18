@@ -725,6 +725,12 @@ locate_actin_blob() {
     fi
 }
 
+############################## ACTIN Data Local ################################
+
+locate_local_tmp_actin_reports_directory() {
+  echo "${HOME}/hmf/tmp/actin"
+}
+
 ############################## ACTIN Data VM Based #############################
 
 locate_actin_clinical_input_feed_directory() {
