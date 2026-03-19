@@ -20,7 +20,6 @@ while getopts ':n:p:c:b' flag; do
         n) bucket_name=${OPTARG} ;;
         p) project_name=${OPTARG} ;;
         *) print_usage
-        exit 1 ;;
     esac
 done
 
@@ -29,8 +28,8 @@ if [[ -z "${bucket_name}" || -z "${project_name}" || -z "${cost_center}" ]]; the
 fi
 
 class_args="--autoclass"
-if [[ -n $backup_only ]]; then
-  class_args="-c archive"
+if [[ -n ${backup_only} ]]; then
+    class_args="-c archive"
 fi
 
 info "Creating bucket in GCP. Disregard warnings about KMS permissions, our storage accounts are authorized."
@@ -38,7 +37,7 @@ gsutil mb "$class_args" -b on -l europe-west4 -p "${project_name}" "gs://${bucke
 gsutil kms encryption -w -k "${CMEK_KEY}" "gs://${bucket_name}" || die "Unable to set encryption"
 gsutil label ch -l "user:$USER" "gs://${bucket_name}" || die "Unable to set user label"
 gsutil label ch -l "cost_center:${cost_center}" "gs://${bucket_name}" || die "Unable to set cost center label"
-if [[ -z $backup_only ]]; then
+if [[ -z ${backup_only} ]]; then
     gcloud storage buckets update "gs://${bucket_name}" --autoclass-terminal-storage-class=ARCHIVE
 fi
 
