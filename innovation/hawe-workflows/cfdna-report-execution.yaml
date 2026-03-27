@@ -1,0 +1,21 @@
+name: "colo-example"
+workflow: "cfdna-report"
+version: "0.1.0"
+params:
+  wgs_input_bucket_uri: "gs://cfdna-testing"
+  cfdna_input_bucket_uri: "gs://cfdna-testing"
+  tumor_type: "Melanoma"
+  sample_manifest: |
+    SampleId,SampleType,SamplingDate,WispSummaryTsv,PurpleDirectory
+    COLO829v012T,WGS,2024-01-15,,gs://cfdna-testing/COLO829v012T-ctdna-yp/purple
+    ctMimic0-0001VL01-2026,CFDNA,2024-01-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-0001VL01-2026.wisp.summary.tsv,
+    ctMimic0-001VL01-2026,CFDNA,2024-02-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-001VL01-2026.wisp.summary.tsv,
+    ctMimic0-01VL01-2026,CFDNA,2024-03-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-01VL01-2026.wisp.summary.tsv,
+    ctMimic0-01VL12-2025,CFDNA,2024-04-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-01VL12-2025.wisp.summary.tsv,
+    ctMimic0-1VL12-2025-2,CFDNA,2024-05-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-1VL12-2025-2.wisp.summary.tsv,
+    ctMimic0-1VL12-2025,CFDNA,2024-06-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0-1VL12-2025.wisp.summary.tsv,
+    ctMimic0VL12-2025-2,CFDNA,2024-07-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0VL12-2025-2.wisp.summary.tsv,
+    ctMimic0VL12-2025,CFDNA,2024-08-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic0VL12-2025.wisp.summary.tsv,
+    ctMimic100VL12-2025,CFDNA,2024-09-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic100VL12-2025.wisp.summary.tsv,
+    ctMimic10VL12-2025,CFDNA,2024-10-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic10VL12-2025.wisp.summary.tsv,
+    ctMimic1VL12-2025,CFDNA,2024-11-15,gs://cfdna-testing/mimic-output-wisp/COLO829-22-38_ctMimic1VL12-2025.wisp.summary.tsv,
