@@ -1,0 +1,13 @@
+name: "qsee-sbx-example"
+workflow: "qsee"
+version: "1.0.0"
+params:
+  sample_data_uri: "gs://jvt-qsee-percentiles/input-files-sbx/"
+  sample_id_file_uri: "gs://jvt-qsee-percentiles/sample-id-files"
+  sample_id_file_name: "sbx-wgs-samples.txt"
+  driver_gene_panel_uri: "gs://hmf-crunch-innovation/info/hawe-resources/"
+  driver_gene_panel_file: "DriverGenePanel.38.tsv"
+  cohort_percentiles_uri: "gs://jvt-qsee-percentiles/qsee-sbx-perc/gen-percentiles"
+  cohort_percentiles_file: "qsee.cohort.percentiles.tsv.gz"
+  threads: "8"
+  extra_arguments: "-sequencing_type SBX -skip_categories FRAG_LENGTH_DISTRIBUTION"
