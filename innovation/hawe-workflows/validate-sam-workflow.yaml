@@ -1,0 +1,42 @@
+name: "validate-sam"
+version: "1.0.0"
+storagePath: "gs://gatk-validate-sam/"
+externalInputs:
+  - name: cram-folder
+    location: "${cram_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+stages:
+  - name: "validate-sam-file"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/bamtools-picard"
+    version: "1.0.2"
+    options:
+      backoffLimit: "2"
+      stageTimeoutMinutes: "2880"
+      resources:
+        resourceProfile: n2d-8-375
+    inputStages:
+      - cram-folder
+      - ref-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        SAMPLE_ID="${sample_id}"
+        INPUT_CRAM="/in/cram-folder/${cram_file}"
+        REFERENCE="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        WORK_DIR="/work_$SAMPLE_ID"
+
+        mkdir -p $WORK_DIR
+
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Running ValidateSamFile"
+        gatk --java-options "-Xmx8G" ValidateSamFile \
+          -I $INPUT_CRAM \
+          -R $REFERENCE \
+          -O $WORK_DIR/$SAMPLE_ID.validation.txt \
+          --MODE SUMMARY
+
+        cp -r $WORK_DIR/* /out/
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Finished ValidateSamFile"
