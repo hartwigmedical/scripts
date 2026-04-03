@@ -4,10 +4,13 @@ set -euo pipefail
 usage() {
   cat <<EOF
 Usage:
-  $0 OPA123_remarks.csv barcodes_panel.txt
+  <remarks_file.csv> [barcodes_file.txt]
+Example:
+  bulk_share_panel_with_remarks OPA123_remarks.csv barcodes_panel.txt
   or without second argument:
-  $0 OPA123_remarks.csv   (defaults to "panel_barcodes.txt")
+  bulk_share_panel_with_remarks OPA123_remarks.csv   (defaults to "panel_barcodes.txt")
 
+File requirements:
 OPA123_remarks.csv: CSV file with remarks for the panel, must be in the format OPA***_remarks.csv and use ';' as separator.
 barcodes_panel.txt: Text file with one isolation barcode per line per panel sample to be shared
 EOF
