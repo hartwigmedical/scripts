@@ -6,12 +6,12 @@ usage() {
 Usage:
   <remarks_file.csv> [barcodes_file.txt]
 Example:
-  bulk_share_panel_with_remarks OPA123_remarks.csv barcodes_panel.txt
+  bulk_share_panel_with_remarks OPA123_remarks.csv panel_barcodes.txt
   or without second argument:
   bulk_share_panel_with_remarks OPA123_remarks.csv   (defaults to "panel_barcodes.txt")
 
 File requirements:
-OPA123_remarks.csv: CSV file with remarks for the panel, must be in the format OPA***_remarks.csv and use ';' as separator.
+OPA123_remarks.csv: CSV file with remarks for the panel samples, must be in the format OPA***_remarks.csv and use ';' as separator.
 barcodes_panel.txt: Text file with one isolation barcode per line per panel sample to be shared
 EOF
 }
