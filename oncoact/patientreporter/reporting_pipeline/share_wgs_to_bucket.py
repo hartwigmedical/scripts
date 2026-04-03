@@ -1,4 +1,5 @@
 import argparse
+import sys
 from datetime import date
 from rest_util import RestClient
 from google.cloud.storage import Bucket, Client
@@ -54,12 +55,20 @@ class ReportSharer:
 
         if self._is_failure():
              failed_report_blobs = self._get_failed_report_blobs()
-             self._share_failure_report(failed_report_blobs)
+             if not failed_report_blobs:
+                 print("This is not a NKI sample so skipping copy files")
+                 sys.exit(1)
+             else:
+                self._share_failure_report(failed_report_blobs)
         else:
             failed_report_blobs = self._get_failed_report_blobs()
             report_blobs = self._get_report_blobs()
             reports = failed_report_blobs + report_blobs
-            self._share_report(reports)
+            if not reports:
+                print("This is not a NKI sample so skipping copy files")
+                sys.exit(1)
+            else:
+                self._share_report(reports)
 
     def _get_report_blobs(self):
         sample_barcode = self.sample_barcode
