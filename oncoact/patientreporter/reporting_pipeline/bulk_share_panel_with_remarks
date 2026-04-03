@@ -12,7 +12,7 @@ Example:
 
 File requirements:
 OPA123_remarks.csv: CSV file with remarks for the panel samples, must be in the format OPA***_remarks.csv and use ';' as separator.
-barcodes_panel.txt: Text file with one isolation barcode per line per panel sample to be shared
+panel_barcodes.txt: Text file with one isolation barcode per line per panel sample to be shared
 EOF
 }
 
