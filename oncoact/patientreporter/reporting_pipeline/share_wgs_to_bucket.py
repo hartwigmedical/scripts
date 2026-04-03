@@ -52,13 +52,29 @@ class ReportSharer:
 
     def _copy_files_to_remote_bucket(self):
 
-        report_blobs = self._get_report_blobs()
         if self._is_failure():
-            self._share_failure_report(report_blobs)
+             failed_report_blobs = self._get_failed_report_blobs()
+             self._share_failure_report(failed_report_blobs)
         else:
+            report_blobs = self._get_report_blobs()
             self._share_report(report_blobs)
 
     def _get_report_blobs(self):
+        sample_barcode = self.sample_barcode
+        result = []
+
+        failed_report_blobs = self._get_failed_report_blobs()
+
+        cmd_xml = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}-*/*_NKI-AVL_*_oncoact_wgs_report.xml"
+        pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
+        _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
+
+        result.append(failed_report_blobs)
+        result.append(blobXml)
+
+        return result
+
+    def _get_failed_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
         cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}-*/*_NKI-AVL_*_oncoact_wgs_report.pdf"
@@ -71,6 +87,7 @@ class ReportSharer:
 
         result.append(blobPdf)
         result.append(blobJson)
+
         return result
 
     def _share_failure_report(self, report_blobs):
