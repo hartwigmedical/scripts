@@ -23,12 +23,8 @@ class ReportSharer:
 
         self.pipeline_output_bucket: Bucket = self.storage_client.bucket(f'diagnostic-pipeline-output-{profile}-1')
         self.portal_bucket: Bucket = self.storage_client.bucket(f'hmf-customer-portal-report-shared-{profile}')
-        self.oncoact_bucket: Bucket = self.storage_client.bucket(bucket_name="patient-reporter-final-prod-1")
         self.wgs_share_bucket: Bucket = self.storage_client.bucket(f'oncoact-wgs-files-nki')
 
-        self.report_created_record = self.rest_client.get_report_created(self.sample_barcode)
-        self.run_id = self.report_created_record['run_id']
-        self.run = self.rest_client.get_run(self.run_id) if self.run_id else None
 
     def share_report(self):
         """
@@ -74,7 +70,7 @@ class ReportSharer:
         sample_barcode = self.sample_barcode
         result = []
 
-        cmd_xml = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}-*/*_NKI-AVL_*_oncoact_wgs_report.xml"
+        cmd_xml = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
         pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
         _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
 
@@ -85,11 +81,11 @@ class ReportSharer:
     def _get_failed_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
-        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}-*/*_NKI-AVL_*_oncoact_wgs_report.pdf"
+        cmd_pdf = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.pdf"
         pathPdf = subprocess.check_output(cmd_pdf, shell=True, text=True).strip()
         _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
 
-        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}-*/*_NKI-AVL_*_oncoact_wgs_report.json"
+        cmd_json = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.json"
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
@@ -139,32 +135,6 @@ class ReportSharer:
     def _create_complete_file(self):
         blob = self.wgs_share_bucket.blob(f'{self.sample_barcode}.complete')
         blob.upload_from_string(date.today().strftime('%Y-%m-%d'))
-
-    def _set_name(self):
-        return self.run['set']['name']
-
-    def _is_failure(self):
-        return self.report_created_record['report_type'] in ['wgs_processing_issue',
-                                                             'wgs_processing_issue_corrected_internal',
-                                                             'wgs_processing_issue_corrected_external',
-                                                             'wgs_isolation_fail',
-                                                             'wgs_isolation_fail_corrected_internal',
-                                                             'wgs_isolation_fail_corrected_external',
-                                                             'wgs_tcp_shallow_fail',
-                                                             'wgs_tcp_shallow_fail_corrected_internal',
-                                                             'wgs_tcp_shallow_fail_corrected_external',
-                                                             'wgs_preparation_fail',
-                                                             'wgs_preparation_fail_corrected_internal',
-                                                             'wgs_preparation_fail_corrected_external',
-                                                             'wgs_tumor_processing_issue',
-                                                             'wgs_tumor_processing_issue_corrected_internal',
-                                                             'wgs_tumor_processing_issue_corrected_external',
-                                                             'wgs_pipeline_fail',
-                                                             'wgs_pipeline_fail_corrected_internal',
-                                                             'wgs_pipeline_fail_corrected_external',
-                                                             'wgs_tcp_fail',
-                                                             'wgs_tcp_fail_corrected_internal',
-                                                             'wgs_tcp_fail_corrected_external']
 
 if __name__ == "__main__":
     main()
