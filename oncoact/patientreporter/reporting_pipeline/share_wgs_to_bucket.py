@@ -48,37 +48,14 @@ class ReportSharer:
         self.wgs_share_bucket.delete_blobs(blobs=blobs_old_run)
 
     def _copy_files_to_remote_bucket(self):
-
-        if self._is_failure():
-             failed_report_blobs = self._get_failed_report_blobs()
-             if not failed_report_blobs:
-                 print("This is not a NKI sample so skipping copy files")
-                 sys.exit(1)
-             else:
-                self._share_failure_report(failed_report_blobs)
+        report_blobs = self._get_report_blobs()
+        if not report_blobs:
+            print("This is not a NKI sample so skipping copy files")
+            sys.exit(1)
         else:
-            failed_report_blobs = self._get_failed_report_blobs()
-            report_blobs = self._get_report_blobs()
-            reports = failed_report_blobs + report_blobs
-            if not reports:
-                print("This is not a NKI sample so skipping copy files")
-                sys.exit(1)
-            else:
-                self._share_report(reports)
+            self._share_report(report_blobs)
 
     def _get_report_blobs(self):
-        sample_barcode = self.sample_barcode
-        result = []
-
-        cmd_xml = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
-        pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
-        _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
-
-        result.append(blobXml)
-
-        return result
-
-    def _get_failed_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
         cmd_pdf = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.pdf"
@@ -89,8 +66,13 @@ class ReportSharer:
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
+        cmd_xml = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
+        pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
+        _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
+
         result.append(blobPdf)
         result.append(blobJson)
+        result.append(blobXml)
 
         return result
 
