@@ -9,8 +9,6 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
     """Convert compar TSV files into a single Excel workbook.
 
     Each TSV becomes its own worksheet, tab‑coloured by basic QC rules.
-    A Summary sheet up front lists mismatch counts and a concordance score
-    that is now based entirely on FULL_MATCH entries.
     """
 
     # Tab colours
@@ -22,8 +20,6 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
     wb = Workbook()
     if "Sheet" in wb.sheetnames:
         wb.remove(wb["Sheet"])
-
-    summary_rows = []
 
     for fname in os.listdir(input_dir):
         if not fname.endswith(".tsv"):
@@ -42,30 +38,10 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
                 tab_colour = COLOR_EMPTY
             elif "INVALID" in df.to_string(index=False):
                 tab_colour = COLOR_INVALID
+            elif "MismatchType" in df.columns and (df["MismatchType"] == "FULL_MATCH").all():
+                tab_colour = COLOR_EMPTY
             else:
                 tab_colour = COLOR_STANDARD
-
-            # Count mismatch types
-            if "MismatchType" in df.columns:
-                counts = df["MismatchType"].value_counts()
-                full_match = int(counts.get("FULL_MATCH", 0))
-                new_only = int(counts.get("NEW_ONLY", 0))
-                ref_only = int(counts.get("REF_ONLY", 0))
-                value_mis = int(counts.get("VALUE", 0))
-            else:
-                full_match = new_only = ref_only = value_mis = 0
-
-            denom = full_match + new_only + ref_only + value_mis
-            concordance = full_match / denom if denom else None
-
-            summary_rows.append([
-                tab_name,
-                full_match,
-                new_only,
-                ref_only,
-                value_mis,
-                concordance,
-            ])
 
             # Write the individual sheet
             ws = wb.create_sheet(title=tab_name)
@@ -76,30 +52,13 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
         except Exception as exc:
             print(f"Error processing '{fname}': {exc}")
 
-    # Build summary sheet
-    summary_df = pd.DataFrame(
-        summary_rows,
-        columns=[
-            "Category",
-            "#FULL_MATCH",
-            "#NEW_ONLY",
-            "#REF_ONLY",
-            "#VALUE",
-            "CONCORDANCE",
-        ],
-    )
-
-    ws_sum = wb.create_sheet(title="Summary", index=0)
-    for row in dataframe_to_rows(summary_df, index=False, header=True):
-        ws_sum.append(row)
-
     wb.save(output_file)
     print(f"Excel file '{output_file}' written.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Organise compar TSV files into a coloured Excel workbook and generate a concordance summary based on FULL_MATCH entries.",
+        description="Organise compar TSV files into a coloured Excel workbook.",
     )
     parser.add_argument("input_dir", help="Directory containing compar TSV files")
     parser.add_argument("output_file", help="Output Excel file (.xlsx)")

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+hospital_id=$1 && shift
+
+if [[ -z "${hospital_id}" ]]; then
+    error "Parameter patient missing. Exiting.";
+fi
+
+do_extract_patient_tracking_details_nki ${hospital_id}

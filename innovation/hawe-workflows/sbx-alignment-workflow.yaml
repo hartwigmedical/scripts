@@ -1,0 +1,106 @@
+name: "sbx-alignment"
+version: "0.4.0"
+storagePath: "gs://axelios-reads/"
+externalInputs:
+  - name: fastq-folder
+    location: "${fastq_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+stages:
+  - name: align
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/sbx-alignment"
+    version: "0.1.1"
+    options:
+      backoffLimit: 20
+      stageTimeoutMinutes: 2880
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 1500Gi
+      resources:
+        requests:
+          cpu: "29850m"
+          memory: "114Gi"
+          storage: "1500Gi"
+      node:
+        spot: false
+        pool: "n2d-standard-32-pool-1"
+    inputStages:
+      - fastq-folder
+      - ref-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        SAMPLE_ID="${sample_id}"
+        FASTQ="/in/fastq-folder/${fastq_file}"
+        REF="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        THREADS=28
+        OUTPUT="/out/$SAMPLE_ID.sorted.bam"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Starting alignment for $SAMPLE_ID"
+        echo "Input: $FASTQ"
+        echo "Reference: $REF"
+
+        # Remap SBX base qualities to match Redux expectations:
+        #   Q22 (Phred+33 = ASCII '7') → Q18 (ASCII '3') for simplex reads
+        #   Q39 (Phred+33 = ASCII 'H') → Q93 (ASCII '~') for duplex reads
+        bwa-mem2 mem \
+            -v1 -c 300 -K 40000000 -C -Y \
+            -t $THREADS \
+            -R "@RG\tID:${read_group_id}\tSM:${sample_barcode}\tPL:${platform}\tLB:${library_id}\tPU:${platform_unit}" \
+            "$REF" "$FASTQ" 2>/dev/null \
+          | perl -pe '
+              unless (/^@/) {
+                  @F = split /\t/, $_, 12;
+                  $F[10] =~ tr/7H/3~/;
+                  $_ = join("\t", @F);
+              }
+            ' \
+          | samtools sort -T /tmp/sort -m 4G -@ 4 -o "$OUTPUT"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Alignment and sort complete"
+
+  - name: cram
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/sbx-alignment"
+    version: "0.1.0"
+    options:
+      backoffLimit: 5
+      stageTimeoutMinutes: 2880
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 1500Gi
+      resources:
+        requests:
+          cpu: "29850m"
+          memory: "114Gi"
+          storage: "1500Gi"
+      node:
+        spot: false
+        pool: "n2d-standard-32-pool-1"
+    inputStages:
+      - align
+      - ref-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        SAMPLE_ID="${sample_id}"
+        REF="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        INPUT="/in/align/$SAMPLE_ID.sorted.bam"
+        OUTPUT="/out/$SAMPLE_ID.cram"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Converting BAM to CRAM for $SAMPLE_ID"
+
+        samtools view \
+            -@ 28 \
+            --reference "$REF" \
+            -C \
+            -o "$OUTPUT" \
+            "$INPUT"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Indexing CRAM"
+        samtools index "$OUTPUT"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Conversion and indexing complete"

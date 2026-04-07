@@ -19,7 +19,7 @@ if [[ "${gcp_project}" == "$(production_actin_emc_project)" ]]; then
     fi
 fi
 
-local_dir="${HOME}/hmf/tmp/actin"
+local_dir="$(locate_local_tmp_actin_reports_directory)"
 if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi

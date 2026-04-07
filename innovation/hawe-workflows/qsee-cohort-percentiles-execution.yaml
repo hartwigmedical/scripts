@@ -1,0 +1,11 @@
+name: "qsee-cohort-percentiles-example"
+workflow: "qsee-perc-gen"
+version: "1.0.0"
+params:
+  sample_data_uri: "gs://output-bucket"
+  sample_id_file_uri: "gs://jvt-qsee-percentiles/sample-id-files"
+  sample_id_file_name: "sample_ids.tsv"
+  driver_gene_panel_uri: "gs://hmf-crunch-innovation/info/hawe-resources/"
+  driver_gene_panel_file: "DriverGenePanel.38.tsv"
+  threads: "8"
+  extra_arguments: "-sequencing_type SBX -skip_categories FRAG_LENGTH_DISTRIBUTION"

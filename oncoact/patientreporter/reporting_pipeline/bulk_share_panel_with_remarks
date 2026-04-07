@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<EOF
+Usage:
+  <remarks_file.csv> [barcodes_file.txt]
+Example:
+  bulk_share_panel_with_remarks OPA123_remarks.csv panel_barcodes.txt
+  or without second argument:
+  bulk_share_panel_with_remarks OPA123_remarks.csv   (defaults to "panel_barcodes.txt")
+
+File requirements:
+OPA123_remarks.csv: CSV file with remarks for the panel samples, must be in the format OPA***_remarks.csv and use ';' as separator.
+panel_barcodes.txt: Text file with one isolation barcode per line per panel sample to be shared
+EOF
+}
+
+REMARKS_FILE="${1:-}"
+INPUT_FILE="${2:-panel_barcodes.txt}"
+BUCKET_FOLDER="gs://oncoact-panel-files-nki/remarks"
+
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+err() {
+  echo -e "${RED}Error: $*${NC}" >&2
+}
+
+# --- Validate remarks file ---
+
+if [[ -z "$REMARKS_FILE" ]]; then
+  err "please provide a remarks file as the first argument."
+  usage >&2
+  exit
+fi
+
+if [[ ! "$REMARKS_FILE" =~ ^OPA.+_remarks\.csv$ ]]; then
+  err "filename '$REMARKS_FILE' does not match the required format OPA***_remarks.csv"
+  exit
+fi
+
+if [[ ! -f "$REMARKS_FILE" ]]; then
+  err "remarks file not found: '$REMARKS_FILE'"
+  exit
+fi
+
+# --- Check if file already exists in bucket ---
+
+if gsutil ls "$BUCKET_FOLDER/$REMARKS_FILE" > /dev/null 2>&1; then
+  err "'$REMARKS_FILE' already exists in '$BUCKET_FOLDER/'. Aborting to prevent overwrite."
+  exit
+fi
+
+# --- Validate CSV separator ---
+
+if ! head -1 "$REMARKS_FILE" | grep -q ";"; then
+  err "CSV file '$REMARKS_FILE' does not appear to use ';' as a separator."
+  exit
+fi
+
+# --- Validate input file ---
+
+if [[ ! -f "$INPUT_FILE" ]]; then
+  err "barcode file not found: '$INPUT_FILE'"
+  exit
+fi
+
+# --- Main loop ---
+
+while IFS= read -r barcode || [[ -n "$barcode" ]]; do
+  barcode="${barcode//$'\r'/}"
+  barcode="$(printf '%s' "$barcode" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+
+  echo "=== Running for barcode: '$barcode' ==="
+  if ! echo "Y" | reporting_flow share_panel "$barcode"; then
+    echo -e "${RED}WARNING: reporting_flow failed for barcode: $barcode${NC}" >&2
+  fi
+done < "$INPUT_FILE"
+
+# --- Upload remarks file ---
+
+echo "=== Uploading '$REMARKS_FILE' to '$BUCKET_FOLDER/' ==="
+if ! gsutil cp "$REMARKS_FILE" "$BUCKET_FOLDER/"; then
+  err "upload of '$REMARKS_FILE' failed"
+  exit
+fi
+echo "Upload successful."

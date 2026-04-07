@@ -559,6 +559,10 @@ locate_actin_serve_bucket() {
     echo "gs://${gcp_project}-serve-pipeline-output${namespace:+-$namespace}"
 }
 
+locate_actin_treatment_db_bucket() {
+    echo "gs://actin-shared-treatment-database"
+}
+
 ############################## ACTIN Data GCP ##################################
 
 locate_next_orange_shared_data_external_uri_gcp() {
@@ -719,6 +723,12 @@ locate_actin_blob() {
     else
         error "Could not locate ${name} at ${gsutil_uri}"
     fi
+}
+
+############################## ACTIN Data Local ################################
+
+locate_local_tmp_actin_reports_directory() {
+  echo "${HOME}/hmf/tmp/actin"
 }
 
 ############################## ACTIN Data VM Based #############################

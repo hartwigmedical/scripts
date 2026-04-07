@@ -1,0 +1,88 @@
+name: "hotspot-coverage"
+version: "0.0.1"
+storagePath: "gs://hotspot-coverage-output/"
+externalInputs:
+  - name: alignment-folder
+    location: "${alignment_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: hotspot-folder
+    location: "${hotspot_uri}"
+stages:
+  - name: "coverage"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/hotspot-coverage"
+    version: "1.0.3"
+    options:
+      backoffLimit: 2
+      stageTimeoutMinutes: 120
+      resources:
+        resourceProfile: "n2d-8-375"
+    inputStages:
+      - alignment-folder
+      - ref-folder
+      - hotspot-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        INPUT="/in/alignment-folder/${alignment_file}"
+        REF="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        HOTSPOT_VCF="/in/hotspot-folder/${hotspot_file}"
+        SAMPLE_ID="${sample_id}"
+
+        HOTSPOT_BED="/tmp/hotspots.bed"
+        DEPTHS="/tmp/depths.txt"
+        OUTPUT_SUMMARY="/out/$SAMPLE_ID.hotspot_summary.tsv"
+        OUTPUT_DEPTHS="/out/$SAMPLE_ID.hotspot_depths.tsv.gz"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Converting hotspot VCF to BED"
+        bcftools query -f '%CHROM\t%POS\t%REF\n' "$HOTSPOT_VCF" \
+          | awk -F'\t' '{print $1"\t"($2-1)"\t"($2-1+length($3))}' \
+          | sort -k1,1 -k2,2n \
+          | bedtools merge > "$HOTSPOT_BED"
+
+        POSITIONS=$(awk '{s+=($3-$2)} END {print s}' "$HOTSPOT_BED")
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Calculating coverage at $POSITIONS unique hotspot positions"
+
+        samtools depth -a -Q 10 -b "$HOTSPOT_BED" --reference "$REF" "$INPUT" \
+          | tee >(gzip > "$OUTPUT_DEPTHS") \
+          | cut -f3 | sort -n > "$DEPTHS"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Generating summary statistics"
+
+        awk '
+          BEGIN { n=0; sum=0 }
+          {
+            depths[n++] = $1
+            sum += $1
+            if ($1 >= 1) a1++
+            if ($1 >= 10) a10++
+            if ($1 >= 30) a30++
+            if ($1 >= 50) a50++
+            if ($1 >= 100) a100++
+            if ($1 >= 200) a200++
+            if ($1 >= 500) a500++
+          }
+          END {
+            if (n % 2 == 1) median = depths[int(n/2)]
+            else median = (depths[int(n/2)-1] + depths[int(n/2)]) / 2
+
+            printf "metric\tvalue\n"
+            printf "total_hotspot_positions\t%d\n", n
+            printf "mean_depth\t%.1f\n", (n>0 ? sum/n : 0)
+            printf "median_depth\t%.1f\n", median
+            printf "min_depth\t%d\n", depths[0]
+            printf "max_depth\t%d\n", depths[n-1]
+            printf "pct_above_1x\t%.2f\n", (n>0 ? a1/n*100 : 0)
+            printf "pct_above_10x\t%.2f\n", (n>0 ? a10/n*100 : 0)
+            printf "pct_above_30x\t%.2f\n", (n>0 ? a30/n*100 : 0)
+            printf "pct_above_50x\t%.2f\n", (n>0 ? a50/n*100 : 0)
+            printf "pct_above_100x\t%.2f\n", (n>0 ? a100/n*100 : 0)
+            printf "pct_above_200x\t%.2f\n", (n>0 ? a200/n*100 : 0)
+            printf "pct_above_500x\t%.2f\n", (n>0 ? a500/n*100 : 0)
+          }
+        ' "$DEPTHS" > "$OUTPUT_SUMMARY"
+
+        echo "[$(date +"%Y-%m-%d %H:%M:%S")] Finished hotspot coverage workflow"

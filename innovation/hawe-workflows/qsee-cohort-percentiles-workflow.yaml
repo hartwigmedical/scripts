@@ -1,0 +1,52 @@
+name: "qsee-perc-gen"
+version: "1.0.0"
+storagePath: "gs://jvt-qsee-percentiles/"
+externalInputs:
+  - name: sample-data
+    location: "${sample_data_uri}"
+  - name: sample-id-file
+    location: "${sample_id_file_uri}"
+  - name: driver-gene-panel
+    location: "${driver_gene_panel_uri}"
+stages:
+  - name: "gen-percentiles"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/qsee-percentile-generator"
+    version: "1.0.0"
+    options:
+      backoffLimit: 2
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: n2d-8-375
+    inputStages:
+      - sample-data
+      - sample-id-file
+      - driver-gene-panel
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        SAMPLE_DATA_DIR="/in/sample-data"
+        SAMPLE_ID_FILE="/in/sample-id-file/${sample_id_file_name}"
+        DRIVER_GENE_PANEL="/in/driver-gene-panel/${driver_gene_panel_file}"
+        OUTPUT_DIR="/out"
+        THREADS=${threads}
+        EXTRA_ARGS='${extra_arguments}'
+        read -r -a EXTRA_ARGS_ARRAY <<< "$EXTRA_ARGS"
+
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Running Qsee CohortPercentilesTrainer"
+        echo "Extra arguments: ${EXTRA_ARGS_ARRAY[@]}"
+
+        java -Xmx24g -cp /opt/tools/qsee.jar \
+          com.hartwig.hmftools.qsee.cohort.CohortPercentilesTrainer \
+          -sample_id_file "$SAMPLE_ID_FILE" \
+          -sample_data_dir "$SAMPLE_DATA_DIR" \
+          -driver_gene_panel "$DRIVER_GENE_PANEL" \
+          -output_dir "$OUTPUT_DIR" \
+          -threads $THREADS \
+          -write_cohort_features \
+          -allow_missing_input \
+          "${EXTRA_ARGS_ARRAY[@]}"
+
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Finished Qsee CohortPercentilesTrainer"

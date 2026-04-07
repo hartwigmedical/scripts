@@ -1,11 +1,13 @@
 name: "snp-check-matching"
-version: "0.0.3"
+version: "0.0.4"
 storagePath: "gs://snp-check-matching-output"
 externalInputs:
   - name: cram-folder
     location: "${cram_folder_uri}"
   - name: ref-folder
     location: "gs://common-resources/reference_genome/38/"
+  - name: snp-file-folder
+    location: "${snp_file_uri}"
 stages:
   - name: "run-amber"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
@@ -21,11 +23,12 @@ stages:
 
         REFERENCE_GENOME="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
         OUTPUT_DIR="amber_output_${sample_id}"
+        SNP_LOCI_VCF="/in/snp-file-folder/${snp_file}"
 
         # Resolve BAM/CRAM by pattern in case suffixes like T/R are used
         shopt -s nullglob
-        bam_matches=(/in/cram-folder/${sample_id}.bam)
-        cram_matches=(/in/cram-folder/${sample_id}.cram)
+        cram_matches=(/in/cram-folder/${sample_id}*.cram)
+        bam_matches=(/in/cram-folder/${sample_id}*.bam)
         shopt -u nullglob
 
         # Filter out intentionally unmatched alignments so they are never picked up
@@ -54,7 +57,6 @@ stages:
         if (( ${#cram_matches[@]} > 1 )); then
           echo "ERROR: Multiple CRAM alignment files match: ${cram_matches[*]} — narrow your pattern"; exit 1
         elif (( ${#cram_matches[@]} == 1 )); then
-          # Prefer CRAM files when both CRAM and BAM variants are present
           INPUT_ALIGNMENT="${cram_matches[0]}"
         elif (( ${#bam_matches[@]} > 1 )); then
           echo "ERROR: Multiple BAM alignment files match: ${bam_matches[*]} — narrow your pattern"; exit 1
@@ -64,11 +66,12 @@ stages:
           echo "ERROR: No alignment file matching '/in/cram-folder/${sample_id}*.bam' or '/in/cram-folder/${sample_id}*.cram'"; exit 1
         fi
         echo "Using alignment file: $INPUT_ALIGNMENT"
+        echo "Using SNP loci VCF: $SNP_LOCI_VCF"
 
         echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting AMBER with RUN_ID: ${RUN_ID:-unset}"
 
         java -jar /opt/amber/amber.jar  \
-            -loci /data/resources/Amber.snpcheck.38.vcf  \
+            -loci "$SNP_LOCI_VCF" \
             -reference ${sample_id} \
             -reference_bam $INPUT_ALIGNMENT \
             -ref_genome $REFERENCE_GENOME \
@@ -76,26 +79,26 @@ stages:
             -output_dir $OUTPUT_DIR \
             -threads 8
 
-        # Copy AMBER outputs to /tmp/output so that hawe can transfer them.
         cp -r "$OUTPUT_DIR" /out/
         
         echo "AMBER run completed"
     options:
       backoffLimit: 2
       annotations:
-        gke-gcsfuse/ephemeral-storage-request: 400Gi # Can be optimized?
+        gke-gcsfuse/ephemeral-storage-request: 400Gi
       stageTimeoutMinutes: 120
       resources:
         requests:
           cpu: 8
           memory: 16Gi 
-          storage: 400Gi # Can be optimized?
+          storage: 400Gi
       node:
         spot: true
         pool: "n2d-standard-16-pool-1"
     inputStages:
       - cram-folder
       - ref-folder
+      - snp-file-folder
 
   - name: "get-genotypes"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/amber-sample-match"
@@ -107,7 +110,7 @@ stages:
         set -eo pipefail
 
         AMBER_SNP_VCF="/in/run-amber/amber_output_${sample_id}/${sample_id}.amber.snp.vcf.gz"
-        SNPCHECK_VCF="/data/resources/Amber.snpcheck.38.vcf" #Included in dockerfile
+        SNPCHECK_VCF="/in/snp-file-folder/${snp_file}"
         OUTPUT_FILE="sample_match_${sample_id}.tsv"
 
         # Set variables for database connection
@@ -115,7 +118,7 @@ stages:
         DB_USER="writer"
         DB_PASS="$RESEARCH_DB_WRITER_PASS"
         DB_PORT="3306"
-        DB_NAME="hmfpatients60"
+        DB_NAME="hmfpatients"
 
         echo "$DB_HOST"
         echo "$DB_USER"
@@ -124,8 +127,8 @@ stages:
         echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting sample matching"
         echo "Input directory: $AMBER_INPUT_DIR"
         echo "Output tsv file: $OUTPUT_FILE"
+        echo "Using SNP check VCF: $SNPCHECK_VCF"
 
-        # Run the Python sample matching script with the retrieved credentials. Python script included in dockerfile
         python3 /data/scripts/match_amber_sample.py \
             --vcf "$AMBER_SNP_VCF" \
             --snp_check_vcf "$SNPCHECK_VCF" \
@@ -138,7 +141,6 @@ stages:
             --db_name "$DB_NAME" \
             --db_port "$DB_PORT" \
 
-        # Copy the tsv file to /tmp/output for transfer.
         cp "$OUTPUT_FILE" /out/
         cp genotypes.tsv /out/
 
@@ -160,3 +162,4 @@ stages:
       - RESEARCH_DB_WRITER_PASS
     inputStages:
       - run-amber
+      - snp-file-folder

@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+set -e  # fail on error
+
+function print_usage() {
+  echo "Usage: $0 [specimenID]"
+  echo
+  echo "Example: $0 S00000001"
+  echo
+  exit 1
+}
+
+function error() {
+  echo "ERROR: $1" >&2
+  exit 1
+}
+
+# Default values
+output="txt"
+sample_ids=""
+GCP_TOKEN_FILE=~/.gcp-identity-token
+LINKAGE_SILO_URL="http://linkage-silo.prod-1"
+BUCKET_NAME="gs://hmf-linkage-consent"
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  sample_ids="$*"
+  break
+done
+
+
+# Generate JWT token to access Linkage Silo if not exist. Reuse it when less than 59 minutes old to speed up script.
+if [ ! -f $GCP_TOKEN_FILE ] || [ "$(find $GCP_TOKEN_FILE -mmin +59)" ]; then
+  install -m 600 /dev/null $GCP_TOKEN_FILE  # create empty file only accessible by current user to avoid token leakage
+  gcloud auth print-identity-token > $GCP_TOKEN_FILE
+fi
+gcp_token=$(cat $GCP_TOKEN_FILE)
+
+# Create temporary directory for intermediate files and make sure it is cleaned up on exit
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf -- "$TMP_DIR"' EXIT
+
+if [ -n "$sample_ids" ]; then
+  # Read sample IDs from command line arguments.
+  echo "$sample_ids" | jq -R 'split(" ")' > "$TMP_DIR"/sample_ids.json
+else
+  # Read sample IDs from stdin. Convert CRLF to LF to make JQ split lines by LF only.
+  # Filter out empty lines and comments and split each line by whitespace.
+  sed 's/\r$//' | jq \
+    --raw-input \
+    --slurp \
+    --compact-output \
+    'split("\n") |
+      map(select(length > 0 and (startswith("#") | not))) |
+      map(split("\\s+"; null)) |
+      flatten |
+      select(length > 0)' \
+    <&0 \
+    > "$TMP_DIR"/sample_ids.json
+fi
+
+
+# Loop over specimen IDs and fetch mapping individually
+for specimenid in $(jq -r '.[]' "$TMP_DIR/sample_ids.json"); do
+  response_code=$(curl -X GET \
+    --oauth2-bearer "$gcp_token" \
+    --header 'Content-Type: application/json' \
+    --write-out '%{http_code}' \
+    --silent \
+    --output "$TMP_DIR/${specimenid}_mapping.json" \
+    --url "$LINKAGE_SILO_URL/specimen/id/$specimenid")
+
+  # Check response code FIRST
+  case $response_code in
+    000) error "Unable to connect to the Linkage Silo. Please check your network connection and enable VPN." ;;
+    400) error "Input sample IDs don't have the right format." ;;
+    401) error "Unauthorized. Please check your permissions to access the Linkage Silo." ;;
+    403) error "Forbidden. Please check your permissions to access the Linkage Silo." ;;
+    500) error "Linkage Silo failed to map sample IDs." ;;
+  esac
+
+  if [[ "$response_code" -ne 200 ]]; then
+    error "Failed to fetch mapping for $specimenid. HTTP response code: $response_code"
+    continue
+  fi
+
+  # Only then check the output file
+  if [[ -s "$TMP_DIR/${specimenid}_mapping.json" ]]; then
+    continue
+  else
+    echo "WARNING: Mapping file for $specimenid is missing or empty." >&2
+  fi
+done
+
+# Aggregate all mapping files into one JSON array for output
+jq -s '.' "$TMP_DIR"/*_mapping.json > "$TMP_DIR/sample_id_mapping.json"
+
+# Write specimen ID mapping to patient id
+hospitalPatientId=$(jq -r '.[].hospitalPatientId' "$TMP_DIR"/sample_id_mapping.json)
+
+files=$(gsutil ls "$BUCKET_NAME" | grep -E "$hospitalPatientId" || true)
+
+if [ -z "$files" ]; then
+  echo "No consent found"
+else
+  echo "$files" | sed 's|.*/[^_]*_||; s/\.pdf$//'
+fi

@@ -1,0 +1,68 @@
+name: "hs-metrics"
+version: "1.0.0"
+storagePath: "gs://gatk-hs-metrics/"
+externalInputs:
+  - name: alignment-folder
+    location: "${alignment_uri}"
+  - name: ref-folder
+    location: "gs://common-resources/reference_genome/38/"
+  - name: interval-folder
+    location: "gs://hmf-crunch-innovation/info/gatk"
+stages:
+  - name: "hs-metrics"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - alignment-folder
+      - ref-folder
+      - interval-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        INPUT="/in/alignment-folder/${alignment_file}"
+        REF="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+        INTERVALS="/in/interval-folder/target_regions.interval_list"
+        OUTPUT="/out/${sample_id}.hs_metrics.txt"
+
+        gatk CollectHsMetrics \
+          -I "$INPUT" \
+          -R "$REF" \
+          -BI "$INTERVALS" \
+          -TI "$INTERVALS" \
+          -O "$OUTPUT" \
+          --VERBOSITY ERROR
+  - name: "quality-metrics"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/collectwgsmetrics"
+    version: "0.0.1"
+    options:
+      backoffLimit: 2
+      annotations:
+        gke-gcsfuse/ephemeral-storage-request: 5Gi
+      stageTimeoutMinutes: 2880
+      resources:
+        resourceProfile: "n2d-2-highmem-100"
+    inputStages:
+      - alignment-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        INPUT="/in/alignment-folder/${alignment_file}"
+        OUTPUT="/out/${sample_id}.quality_yield_metrics.txt"
+
+        gatk CollectQualityYieldMetrics \
+          -I "$INPUT" \
+          -O "$OUTPUT"\
+          --VERBOSITY ERROR

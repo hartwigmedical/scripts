@@ -20,3 +20,8 @@ gsutil -m rsync -r gs://hmf-crunch-actin-orchestra-dataset /data/patient_like_me
 
 create_or_cleanup_dir "/data/patient_like_me/sources/palga"
 gsutil -m rsync -r gs://hmf-crunch-actin-palga-dataset /data/patient_like_me/sources/palga/
+
+treatment_db_dir="$(locate_actin_treatment_db_directory)"
+treatment_db_bucket="$(locate_actin_treatment_db_bucket)"
+create_or_cleanup_dir ${treatment_db_dir}
+gsutil -m rsync -r ${treatment_db_bucket} ${treatment_db_dir}

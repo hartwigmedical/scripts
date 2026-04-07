@@ -1,0 +1,9 @@
+name: "SAMPLE123"
+workflow: "hotspot-coverage"
+version: "0.0.1"
+params:
+  alignment_uri: "gs://input-bucket/alignments/"
+  sample_id: "SAMPLE123"
+  alignment_file: "SAMPLE123.cram"
+  hotspot_uri: "gs://input-bucket/hotspots/"
+  hotspot_file: "hotspots.vcf.gz"

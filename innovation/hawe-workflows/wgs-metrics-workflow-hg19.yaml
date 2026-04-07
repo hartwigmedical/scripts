@@ -1,6 +1,6 @@
-name: "wgs-metrics"
-version: "0.0.9"
-storagePath: "gs://gatk-wgs-metrics"
+name: "wgs-metrics-hg19"
+version: "0.1.0"
+storagePath: "gs://gatk-wgs-metrics/"
 externalInputs:
   - name: bam-folder
     location: "${bam_uri}"

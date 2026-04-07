@@ -1,0 +1,44 @@
+name: "cfdna-report"
+version: "0.1.0"
+storagePath: "gs://cfdna-report-output"
+externalInputs:
+  - name: wgs-input-bucket
+    location: "${wgs_input_bucket_uri}"
+  - name: cfdna-input-bucket
+    location: "${cfdna_input_bucket_uri}"
+stages:
+  - name: "sample-manifest"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/coral"
+    version: "0.1.0"
+    options:
+      backoffLimit: "2"
+      stageTimeoutMinutes: "60"
+      resources:
+        resourceProfile: "light"
+    inputStages:
+      - wgs-input-bucket
+      - cfdna-input-bucket
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        echo "${sample_manifest}" \
+          | sed '/,WGS,/s#${wgs_input_bucket_uri}/#/in/wgs-input-bucket/#g' \
+          | sed '/,CFDNA,/s#${cfdna_input_bucket_uri}/#/in/cfdna-input-bucket/#g' \
+          > /out/sample_manifest.csv
+  - name: "coral"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/coral"
+    version: "0.1.0"
+    options:
+      backoffLimit: "2"
+      stageTimeoutMinutes: "60"
+      resources:
+        resourceProfile: "light"
+    inputStages:
+      - wgs-input-bucket
+      - cfdna-input-bucket
+      - sample-manifest
+    arguments: >-
+      -sample_manifest /in/sample-manifest/sample_manifest.csv
+      -output_directory /out
+      -tumor_type "${tumor_type}"

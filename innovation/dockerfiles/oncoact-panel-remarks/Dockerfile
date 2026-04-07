@@ -1,5 +1,5 @@
-# Use Debian Buster slim as base image
-FROM debian:buster-slim
+# Use Debian Trixie slim as base image
+FROM debian:trixie-slim
 
 
 # Install OS-level dependencies
@@ -17,11 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip to the latest version
-RUN python3 -m pip install --upgrade pip
-
 # Install required Python packages
-RUN pip install --no-cache-dir \
+RUN pip install --no-cache-dir --break-system-packages \
     pandas \
     cyvcf2 \
     openpyxl

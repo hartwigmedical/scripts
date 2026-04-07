@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+source actin_config || exit 1
+
+actin_id=$1 && shift
+
+if [[ -z "${actin_id}" ]]; then
+    error "Parameter patient missing. Exiting.";
+fi
+
+gcp_project="$(production_actin_nki_project)"
+clinical_feed_bucket="$(locate_actin_clinical_feed_input_bucket ${gcp_project})"
+
+info "Showing clinical feed input JSON for ${actin_id} of ${gcp_project}"
+hospital_id="$(lookup_nki_hospital_id_for_actin_id "${actin_id}")"
+gsutil cat "${clinical_feed_bucket}"/"${hospital_id}".merged.json

@@ -10,7 +10,7 @@ if not batch:
     exit(1)
 
 body="""workflow: "oncoact-panel-remarks"
-version: "0.0.1-beta.20"
+version: "1.0.1"
 params:\n"""
 
 outputYaml=""

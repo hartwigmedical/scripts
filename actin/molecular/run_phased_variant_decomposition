@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+source locate_files || exit 1
+
+gene=$1 && shift
+original=$1 && shift
+decomposed=${1:-}
+if [[ -n "${decomposed}" ]]; then
+    shift
+fi
+
+if [[ -z "${gene}" || -z "${original}" ]]; then
+    error "Usage: $(basename "$0") <gene> <original_coding_hgvs> [decomposed_coding_hgvs] [--transcript <transcript>] [-jar <path>] [-- <extra args>]"
+    exit 1
+fi
+
+transcript=""
+jar_override=""
+extra_args=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --transcript)
+            transcript=$2
+            shift 2
+            ;;
+        -jar|--jar)
+            jar_override=$2
+            shift 2
+            ;;
+        --)
+            shift
+            extra_args+=("$@")
+            break
+            ;;
+        *)
+            error "Unknown argument: $1"
+            exit 1
+    esac
+done
+
+transcript_cmd=""
+if [[ -n "${transcript}" ]]; then
+    transcript_cmd="-transcript ${transcript}"
+fi
+
+ref_genome_fasta_file="$(locate_ref_genome_37_fasta_file)"
+ensembl_data_dir="$(locate_ensembl_data_dir_37)"
+driver_gene_panel="$(locate_driver_gene_panel_37_tsv)"
+actin_jar="${jar_override:-$(locate_actin_jar_on_vm)}"
+
+info "Running phased variant decomposition for ${gene}:${original}"
+if [[ -n "${transcript}" ]]; then
+    info "Using transcript ${transcript}"
+fi
+
+java -cp ${actin_jar} com.hartwig.actin.molecular.panel.PhasedVariantDecompositionApplicationKt \
+    -gene "${gene}" \
+    ${transcript_cmd} \
+    -original_coding_hgvs "${original}" \
+    ${decomposed:+-decomposed_coding_hgvs "${decomposed}"} \
+    -ref_genome_version V37 \
+    -ref_genome_fasta_file "${ref_genome_fasta_file}" \
+    -ensembl_data_dir "${ensembl_data_dir}" \
+    -driver_gene_panel "${driver_gene_panel}" \
+    "${extra_args[@]}"
