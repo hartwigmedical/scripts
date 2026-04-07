@@ -70,7 +70,7 @@ class ReportSharer:
         sample_barcode = self.sample_barcode
         result = []
 
-        cmd_xml = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
+        cmd_xml = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
         pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
         _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
 
@@ -81,11 +81,11 @@ class ReportSharer:
     def _get_failed_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
-        cmd_pdf = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.pdf"
+        cmd_pdf = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.pdf"
         pathPdf = subprocess.check_output(cmd_pdf, shell=True, text=True).strip()
         _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
 
-        cmd_json = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.json"
+        cmd_json = f"gsutil ls gs://{self.portal_bucket}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.json"
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
