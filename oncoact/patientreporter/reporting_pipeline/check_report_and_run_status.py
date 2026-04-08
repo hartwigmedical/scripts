@@ -603,15 +603,21 @@ def _get_default_report_content(self, report_created_record):
         print(f"No Lama data was found in the patient reporter for {report_created_record['barcode']}.")
         patient_id_value = None
         pathology_id_value = None
-        sharedMethod = None
+        requesterEmail = None
+        wgs_bucket = None
     else:
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
 
         pathology_id = "hospitalSampleLabel"
         pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
-        reportSettings = used_lama_data["reportSettings"]
-        sharedMethod = reportSettings["isSharedThroughPortal"]
+        requesterEmail = used_lama_data["requesterName"] + ": " + used_lama_data["requesterEmail"]
+
+        hospitalName = used_lama_data["hospitalName"]
+        if hospitalName == "NKI-AVL":
+            wgs_bucket = "python3 ~/tmp/tmp_scripts_report/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py " + report_created_record['barcode'] + " --profile prod"
+        else:
+            wgs_bucket = None
 
     return {
         'report_created_id': report_created_record['id'],
@@ -620,8 +626,8 @@ def _get_default_report_content(self, report_created_record):
         'report_type': report_created_record['report_type'],
         'reportingId': patient_id_value,
         'hospitalSampleLabel': pathology_id_value,
-        'sharedMethod': sharedMethod
-
+        'requesterEmail' : requesterEmail,
+        'wgs_bucket': wgs_bucket
     }
 
 def _get_default_run_content(run_record):
