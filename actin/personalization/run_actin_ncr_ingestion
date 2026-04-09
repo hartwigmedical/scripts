@@ -8,6 +8,11 @@ personalization_jar="$(locate_actin_personalization_jar)"
 output_directory="$(locate_personalization_reference_db_analysis_vm)"
 treatment_db_directory="$(locate_actin_treatment_db_directory)"
 
+info "Syncing latest ACTIN treatment database to VM"
+create_or_cleanup_dir ${treatment_db_directory}
+treatment_db_bucket="$(locate_actin_treatment_db_bucket)"
+gsutil -m rsync -r ${treatment_db_bucket} ${treatment_db_directory}
+
 info "Running NCR ingestion on ${ncr_file}"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.NcrIngestionApplicationKt \
