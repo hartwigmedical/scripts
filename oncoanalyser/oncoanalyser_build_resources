@@ -65,15 +65,6 @@ echo "Reference genome version: ${REF_GENOME_VERSION}"
 echo "Resources version: ${RESOURCES_VERSION}"
 echo "## --------------------------------"
 
-## Cloud source repo: common-resources-public
-# commit faae5f6f41cea71dd85f2ca1fd7b0773601b3d19 (HEAD -> master, origin/master, origin/HEAD)
-# Merge: ad76b5e cce0152
-# Author: Charles Shale <shalecharles@gmail.com>
-# Date:   Thu Mar 26 10:10:41 2026 +1100
-
-#     Merge branch 'master' of https://source.developers.google.com/p/hmf-pipeline-development/r/common-resources-public
-
-#     Sage: updated SBX and Ultima PONs
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
 
 ## gs://common-resources
@@ -262,10 +253,9 @@ copy_files_panel (){
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz       ${TSO500_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv      ${TSO500_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/tmb_ratio.tso500.${REF_GENOME_VERSION}.tsv                 ${TSO500_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/msi_indels.tso500.${REF_GENOME_VERSION}.tsv                ${TSO500_DIR}
+	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/ms_model_error_rates.tso500.${REF_GENOME_VERSION}.tsv      ${TSO500_DIR}
 	
 	## RNA
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/tso500_rna_gene_ids.csv                                                          ${TSO500_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv ${TSO500_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv                        ${TSO500_DIR}
 	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv                     ${TSO500_DIR}
