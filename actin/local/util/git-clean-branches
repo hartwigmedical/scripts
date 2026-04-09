@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+git fetch --prune
+mapfile -t MERGED_DELETED_BRANCHES < <(git branch -vv | grep ': gone]' | awk '{print $1}')
+
+if [ ${#MERGED_DELETED_BRANCHES[@]} -eq 0 ]; then
+    echo "No merged or deleted branches."
+    exit 0
+fi
+
+echo "Merged or deleted branches (${#MERGED_DELETED_BRANCHES[@]}):"
+printf '  - %s\n' "${MERGED_DELETED_BRANCHES[@]}"
+
+read -r -p "Delete these? [y/N] " reply
+echo ""
+if [[ "$reply" =~ ^[Yy]$ ]]; then
+    git branch -D "${MERGED_DELETED_BRANCHES[@]}"
+else
+    echo "Skipped."
+fi
