@@ -2,6 +2,7 @@
 
 source message_functions || exit 1
 source locate_files || exit 1
+source io_functions || exit 1
 
 ncr_file="$(locate_latest_ncr_crc_dataset_analysis_vm)"
 personalization_jar="$(locate_actin_personalization_jar)"
