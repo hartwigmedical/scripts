@@ -611,7 +611,7 @@ def _get_default_report_content(self, report_created_record):
 
         pathology_id = "hospitalSampleLabel"
         pathology_id_value = used_lama_data[pathology_id] if pathology_id in used_lama_data else None
-        requesterEmail = used_lama_data["requesterName"] + ": " + used_lama_data["requesterEmail"]
+        requesterEmail =  used_lama_data["requesterEmail"] if "requesterEmail" in used_lama_data else None
 
         hospitalName = used_lama_data["hospitalName"]
         if hospitalName == "NKI-AVL":
