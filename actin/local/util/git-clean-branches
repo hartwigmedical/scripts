@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 git fetch --prune
 mapfile -t MERGED_DELETED_BRANCHES < <(git branch -vv | grep ': gone]' | awk '{print $1}')
 
