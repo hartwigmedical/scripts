@@ -71,12 +71,12 @@ class ReportSharer:
             pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
             _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
             result.append(blobXml)
+            result.append(blobPdf)
+            result.append(blobJson)
         except subprocess.CalledProcessError:
             print("XML report not found, skipping.")
             result.append(blobPdf)
             result.append(blobJson)
-
-
 
         return result
 
