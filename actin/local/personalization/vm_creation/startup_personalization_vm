@@ -34,7 +34,8 @@ echo "developer:${dev_gid}:65536" >> /etc/subgid
 mkdir -p /etc/docker
 cat >/etc/docker/daemon.json <<EOF
 {
-  "userns-remap": "developer"
+  "userns-remap": "developer",
+  "dns": ["8.8.8.8", "8.8.4.4"]
 }
 EOF
 
