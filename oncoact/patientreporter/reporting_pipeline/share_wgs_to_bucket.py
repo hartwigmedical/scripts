@@ -66,26 +66,25 @@ class ReportSharer:
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
-        cmd_xml = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
-        pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
-        _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
+        try:
+            cmd_xml = f"gsutil ls gs://{self.portal_bucket.name}/{sample_barcode}/*_NKI-AVL_*_oncoact_wgs_report.xml"
+            pathXml = subprocess.check_output(cmd_xml, shell=True, text=True).strip()
+            _, blobXml = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathXml)
+            result.append(blobXml)
+        except subprocess.CalledProcessError:
+            print("XML report not found, skipping.")
+            result.append(blobPdf)
+            result.append(blobJson)
 
-        result.append(blobPdf)
-        result.append(blobJson)
-        result.append(blobXml)
+
 
         return result
-
-    def _share_failure_report(self, report_blobs):
-        print(f"Sharing {len(report_blobs)} report files with the GCP bucket")
-        for blob in report_blobs:
-            self._copy_blob_to_bucket(blob=blob, destination_bucket=self.wgs_share_bucket)
 
     def _share_report(self, report_blobs):
         wgs_blobs = self._get_blobs_from_bucket(bucket=self.portal_bucket, subfolder='RUO')
         wgs_germline_blobs = self._get_blobs_from_bucket(bucket=self.portal_bucket, subfolder='RUO_germline')
 
-        print(f"Sharing ${len(report_blobs)} report files with the GCP bucket")
+        print(f"Sharing '{len(report_blobs)}' report files with the GCP bucket")
         for blob in report_blobs:
             self._copy_blob_to_bucket(blob=blob, destination_bucket=self.wgs_share_bucket)
 
