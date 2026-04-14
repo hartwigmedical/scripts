@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+function usage_error() {
+    echo "Usage: $(basename "$0") (--major|-M | --minor|-m | --patch|-p | --beta|-b | --version|-v <version>)" >&2
+    echo "" >&2
+    echo "  Tags and pushes the next semver version based on the bump type." >&2
+    echo "" >&2
+    echo "  Options:" >&2
+    echo "    --major,   -M           Bump the major version (x.0.0)" >&2
+    echo "    --minor,   -m           Bump the minor version (x.y.0)" >&2
+    echo "    --patch,   -p           Bump the patch version (x.y.z)" >&2
+    echo "    --beta,    -b           Bump the beta number of the current branch beta (branch must have an existing beta tag)" >&2
+    echo "    --version, -v <version> Push a specific version tag, bypassing semver safety checks" >&2
+    exit 1
+}
+
+manual_version=""
+case "$1" in
+    --major | -M) bump_description="Major (breaking changes)" ;;
+    --minor | -m) bump_description="Minor (new features, backwards compatible)" ;;
+    --patch | -p) bump_description="Patch (bug fixes, backwards compatible)" ;;
+    --beta | -b) bump_description="Beta increment" ;;
+    --version | -v)
+        if [[ $# -lt 2 ]]; then
+            usage_error
+        fi
+        manual_version="$2"
+        bump_description="Manual version. WARNING: All semver safety checks bypassed."
+        ;;
+    *) usage_error ;;
+esac
+
+remote=${REMOTE:-origin}
+current_branch="$(git branch --show-current)"
+main_branch=$(git symbolic-ref refs/remotes/"${remote}"/HEAD | awk -F/ '{print $NF}')
+if [[ "$main_branch" == "$current_branch" ]]; then
+    update_type="production"
+else
+    update_type="beta"
+fi
+
+git fetch "$remote" --quiet
+if ! git rev-parse "${remote}/${current_branch}" &>/dev/null; then
+    echo "Branch $current_branch does not exist on remote $remote. Push the branch before tagging a version." >&2
+    exit 1
+fi
+if [ -n "$(git status --porcelain)" ]; then
+    echo "Branch has uncommitted changes. Ensure all changes are committed and pushed before tagging a version." >&2
+    exit 1
+fi
+if [ -n "$(git log "${remote}"/"${main_branch}"..HEAD)" ]; then
+    echo "Branch has unpushed commits. Ensure all changes are committed and pushed before tagging a version." >&2
+    exit 1
+fi
+if [ -n "$(git log HEAD.."${remote}/${current_branch}")" ]; then
+    echo "Branch has unpulled commits. Ensure the current branch is up to date before tagging a version." >&2
+    exit 1
+fi
+
+most_recent_production_tag=$(git tag --merged "$remote"/"$main_branch" --sort=creatordate | grep -v 'beta' | tail -n1)
+next_semver=$manual_version
+production_version_for_display=${most_recent_production_tag:-"No production tag exists yet."}
+current_version_for_display="$production_version_for_display"
+if [[ -z "$manual_version" ]]; then
+    if [[ -z "$most_recent_production_tag" ]]; then
+        echo "No production tags found on $remote/$main_branch. Create the initial version tag manually." >&2
+        exit 1
+    fi
+
+    case "$update_type" in
+        beta)
+            most_recent_beta_tag=$(git log "$remote"/"$main_branch"..HEAD --pretty="%D" | grep -oE 'tag: [^,)]+' | sed 's/tag: //' | grep 'beta' | head -n1)
+            if [[ "$1" != "-b" && "$1" != "--beta" ]]; then
+                if [[ -n "$most_recent_beta_tag" ]]; then
+                    echo "A beta tag already exists for this branch. Use -b or --beta to bump the beta version." >&2
+                    exit 1
+                fi
+                bump_description="${bump_description} — beta pre-release on ${current_branch}"
+            fi
+            current_semver="${most_recent_beta_tag:-$most_recent_production_tag}"
+            current_version_for_display=${most_recent_beta_tag:-"No previous beta tag."}
+            ;;
+        production) current_semver="$most_recent_production_tag" ;;
+    esac
+
+    next_semver=$(next_semver_tags "$1")
+    validate_semver_increment --"$update_type" "$current_semver" "$next_semver"
+fi
+
+echo
+if [[ "$update_type" == "beta" ]]; then
+    echo "  Production version  : $production_version_for_display"
+fi
+echo "  Current version     : $current_version_for_display"
+echo "  New version         : $next_semver"
+echo "  Bump type           : $bump_description"
+echo
+read -r -p "Tag and push $next_semver? [y/N] " RESPONSE
+if [[ ! "$RESPONSE" =~ ^[yY]$ ]]; then
+    echo "Aborted." >&2
+    exit 1
+fi
+
+git tag "$next_semver"
+git push "$remote" "$next_semver"
+echo "Pushed $next_semver tag to $current_branch."
