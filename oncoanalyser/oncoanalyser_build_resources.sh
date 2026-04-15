@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+#set -x ## Show commands being run for debugging
 
 DEST_DIR=$1
 REF_GENOME_VERSION=$2
@@ -10,9 +11,9 @@ MODE=$4
 REF_GENOME_VERSION_37="37"
 REF_GENOME_VERSION_38="38"
 
-MODE_GENOME="genome"
-MODE_HMFTOOLS="hmftools"
-MODE_PANEL="panel"
+MODE_GENOME="GENOME"
+MODE_HMFTOOLS="HMFTOOLS"
+MODE_PANEL_TSO500="PANEL_TSO500"
 
 print_usage() {
     echo ""
@@ -25,11 +26,11 @@ print_usage() {
     echo "Arguments:"
     echo "  dest_dir            Destination directory for resource output (must be existing)"
     echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
-    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--3')"
-    echo "  mode                One of: '${MODE_HMFTOOLS}', '${MODE_PANEL}', '${MODE_GENOME}'"
+    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--4')"
+    echo "  mode                One of: '${MODE_GENOME}', '${MODE_HMFTOOLS}', '${MODE_PANEL_TSO500}'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260323_build_resources_3.0.0--3/ 38 v3.0.0--3 hmftools"
+    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260413_build_resources_3.0.0--4/ 38 v3.0.0--4 HMFTOOLS"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<resources_version>.tar.gz"
@@ -38,23 +39,30 @@ print_usage() {
     echo "  /data/experiments/oncoanalyser/20260323_build_resources_3.0.0--3/38/hmf_pipeline_resources.38_v3.0.0--3.tar.gz"
 }
 
+if [[ ! -d ${DEST_DIR} ]]; then
+	mkdir ${DEST_DIR} || exit 1
+fi
+
 if [[ $# -ne 4 ]]; then
     echo "Error: Invalid number of arguments."
     print_usage
     exit 1
 fi
 
-if [[ ${REF_GENOME_VERSION} != ${REF_GENOME_VERSION_37} && ${REF_GENOME_VERSION} != ${REF_GENOME_VERSION_38} ]]; then
-    echo "Error: Valid reference genome versions are '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'."
+if [[ ! ${REF_GENOME_VERSION} =~ ^(${REF_GENOME_VERSION_37}|${REF_GENOME_VERSION_38})$ ]]; then
+    echo "Invalid ref genome version: ${REF_GENOME_VERSION}"
     print_usage
     exit 1
 fi
 
-if [[ ${MODE} != ${MODE_HMFTOOLS} && ${MODE} != ${MODE_PANEL} && ${MODE} != ${MODE_GENOME} ]]; then
-    echo "Error: Valid modes are '${MODE_HMFTOOLS}', '${MODE_PANEL}' or '${MODE_GENOME}'."
-    print_usage
-    exit 1
-fi
+IFS=',' read -ra MODES <<< "${MODE}"
+for m in "${MODES[@]}"; do
+    if [[ ! "$m" =~ ^(${MODE_GENOME}|${MODE_HMFTOOLS}|${MODE_PANEL_TSO500})$ ]]; then
+        echo "Error: '$m' is not a valid mode."
+        print_usage
+        exit 1
+    fi
+done
 
 echo "## --------------------------------"
 echo "Building resources"
@@ -66,47 +74,17 @@ echo "Resources version: ${RESOURCES_VERSION}"
 echo "## --------------------------------"
 
 COMMON_RESOURCES_PUBLIC_PATH=/data/resources/public
+COMMON_RESOURCES_BUCKET_PATH=/data/resources/bucket ## From gs://common-resources. Used for big files that are too unwieldy to track with git in common-resources-public
 
-## gs://common-resources
-## Used for big files that are too unwieldy to track with git in common-resources-public
-COMMON_RESOURCES_PATH=/data/resources/bucket
+copy_files () {    
+    local SOURCE_PATHS=("${@:1:$#-1}")
+    local DEST_DIR="${@: -1}"
 
-echo ""
-echo "## ----------------------------"
-echo "## Creating directory structure"
-echo "## ----------------------------"
-
-if [[ ! -d ${DEST_DIR} ]]; then
-	mkdir ${DEST_DIR} || exit 1
-fi
-
-if [[ $MODE == $MODE_GENOME ]]; then
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/genome/star_index-gencode_19-2.7.3a
-fi
-
-if [[ $MODE == $MODE_HMFTOOLS ]]; then
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/{common,dna,misc,rna}
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/{copy_number,sv,variants}
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/misc/{cuppa,lilac,neo,orange,peach,qsee,sigs,virusbreakend,virusinterpreter}
-fi
-
-if [[ $MODE == $MODE_PANEL ]]; then
-	mkdir -pv ${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/
-fi
-
-copy_files () {
-	SOURCE_PATH=$1
-	DEST_PATH=$2
+	mkdir --parents --verbose $DEST_DIR
+	cp --dereference --no-clobber --no-preserve=mode --no-clobber --recursive --verbose --target-directory "$DEST_DIR" "${SOURCE_PATHS[@]}"
 }
 
 copy_files_ref_genome (){
-
-	echo ""
-	echo "## --------------------"
-	echo "## Copying genome files"
-	echo "## --------------------"
 
 	if [[ ${REF_GENOME_VERSION} == ${REF_GENOME_VERSION_37} ]]; then
 		GENOME_FASTA='Homo_sapiens.GRCh37.GATK.illumina.fasta'
@@ -114,156 +92,107 @@ copy_files_ref_genome (){
 		GENOME_FASTA='GRCh38_masked_exclusions_alts_hlas.fasta'
 	fi
 
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}               ${DEST_DIR}/${REF_GENOME_VERSION}/genome
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.dict          ${DEST_DIR}/${REF_GENOME_VERSION}/genome
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.fai           ${DEST_DIR}/${REF_GENOME_VERSION}/genome
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.img           ${DEST_DIR}/${REF_GENOME_VERSION}/genome
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}               ${DEST_DIR}/${REF_GENOME_VERSION}/genome
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.dict          ${DEST_DIR}/${REF_GENOME_VERSION}/genome
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.fai           ${DEST_DIR}/${REF_GENOME_VERSION}/genome
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.img           ${DEST_DIR}/${REF_GENOME_VERSION}/genome
 
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.0123          ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.amb           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.ann           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.bwt.2bit.64   ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
-	cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.pac           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.0123          ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.amb           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.ann           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.bwt.2bit.64   ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.pac           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
 
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.amb           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.ann           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.bwt           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.gridsscache   ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.img           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.pac           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-    cp -vnLr ${COMMON_RESOURCES_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.sa            ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
-
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.amb           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.ann           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.bwt           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.gridsscache   ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.img           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.pac           ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
+    copy_files ${COMMON_RESOURCES_BUCKET_PATH}/reference_genome/${REF_GENOME_VERSION}/${GENOME_FASTA}.sa            ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
 }
 
 
 copy_files_hmftools (){
 
-	echo ""
-	echo "## --------------------"
-	echo "## Copying common files"
-	echo "## --------------------"
-
 	COMMON_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/common/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gene_panel/${REF_GENOME_VERSION}/DriverGenePanel.${REF_GENOME_VERSION}.tsv ${COMMON_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/unmap_regions.${REF_GENOME_VERSION}.tsv  ${COMMON_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/ensembl_data_cache/${REF_GENOME_VERSION}/*                                 ${COMMON_DIR}/ensembl_data/
 
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gene_panel/${REF_GENOME_VERSION}/DriverGenePanel.${REF_GENOME_VERSION}.tsv ${COMMON_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/unmap_regions.${REF_GENOME_VERSION}.tsv  ${COMMON_DIR}
-
-	## Copy paths that fail to dereference symlinks when running oncoanalyser
-	mkdir -p ${COMMON_DIR}/ensembl_data/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/ensembl_data_cache/${REF_GENOME_VERSION}/* ${COMMON_DIR}/ensembl_data/
-
-
-	echo ""
-	echo "## --------------------------"
-	echo "## Copying DNA pipeline files"
-	echo "## --------------------------"
-
-	echo ""
-	echo "## SNV"
 	VARIANTS_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/variants/
-
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.somatic.${REF_GENOME_VERSION}.vcf.gz   ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.germline.${REF_GENOME_VERSION}.vcf.gz  ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/clinvar.${REF_GENOME_VERSION}.vcf.gz                 ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.bed    ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.vcf.gz ${VARIANTS_DIR}
-
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/giab_high_conf/${REF_GENOME_VERSION}/*GIAB_highconf*.bed.gz                     ${VARIANTS_DIR}
-	
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/mappability_150.${REF_GENOME_VERSION}.bed.gz  ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/msi_jitter_sites.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/ms_model_coefficients.hmf_wgs.tsv                                   ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.somatic.${REF_GENOME_VERSION}.vcf.gz   ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownHotspots.germline.${REF_GENOME_VERSION}.vcf.gz  ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/clinvar.${REF_GENOME_VERSION}.vcf.gz                 ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.bed    ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/KnownBlacklist.germline.${REF_GENOME_VERSION}.vcf.gz ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/giab_high_conf/${REF_GENOME_VERSION}/*GIAB_highconf*.bed.gz                     ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/mappability_150.${REF_GENOME_VERSION}.bed.gz  ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/msi_jitter_sites.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/ms_model_coefficients.hmf_wgs.tsv                                   ${VARIANTS_DIR}
 
 	if [[ "${REF_GENOME_VERSION}" == ${REF_GENOME_VERSION_37} ]]; then
-		cp -vnLr ${COMMON_RESOURCES_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz           ${VARIANTS_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz  ${VARIANTS_DIR}
+		copy_files ${COMMON_RESOURCES_BUCKET_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz    ${VARIANTS_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/gnomad_variants_v${REF_GENOME_VERSION}.csv.gz  ${VARIANTS_DIR}
 	else
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon*tsv* ${VARIANTS_DIR}
-		mkdir -p ${VARIANTS_DIR}/gnomad/
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/*gz ${VARIANTS_DIR}/gnomad/
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sage/${REF_GENOME_VERSION}/hmf_wgs_sage_pon*tsv* ${VARIANTS_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gnomad/${REF_GENOME_VERSION}/*gz ${VARIANTS_DIR}/gnomad/
 	fi
 
-	echo ""
-	echo "## Copy number"
 	COPY_NUMBER_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/copy_number/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/amber/${REF_GENOME_VERSION}/AmberGermlineSites.${REF_GENOME_VERSION}.tsv.gz   ${COPY_NUMBER_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gc_profiles/${REF_GENOME_VERSION}/GC_profile.1000bp.${REF_GENOME_VERSION}.cnp ${COPY_NUMBER_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/purple/${REF_GENOME_VERSION}/cohort_germline_*_freq.${REF_GENOME_VERSION}.csv ${COPY_NUMBER_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/cobalt/${REF_GENOME_VERSION}/DiploidRegions.${REF_GENOME_VERSION}.bed.gz      ${COPY_NUMBER_DIR}
 
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/amber/${REF_GENOME_VERSION}/AmberGermlineSites.${REF_GENOME_VERSION}.tsv.gz   ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gc_profiles/${REF_GENOME_VERSION}/GC_profile.1000bp.${REF_GENOME_VERSION}.cnp ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/purple/${REF_GENOME_VERSION}/cohort_germline_*_freq.${REF_GENOME_VERSION}.csv ${COPY_NUMBER_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/cobalt/${REF_GENOME_VERSION}/DiploidRegions.${REF_GENOME_VERSION}.bed.gz      ${COPY_NUMBER_DIR}
-
-	echo ""
-	echo "## Structural variants"
 	STRUCTURAL_VARIANTS_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/sv/
-
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sv/${REF_GENOME_VERSION}/* ${STRUCTURAL_VARIANTS_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/gridss/gridss.properties   ${STRUCTURAL_VARIANTS_DIR}
-
-
-	echo ""
-	echo "## ---------------------------"
-	echo "## Copying misc/tool resources"
-	echo "## ---------------------------"
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sv/${REF_GENOME_VERSION}/* ${STRUCTURAL_VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gridss/gridss.properties   ${STRUCTURAL_VARIANTS_DIR}
 
 	MISC_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/misc/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/cuppa/${REF_GENOME_VERSION}/*  ${MISC_DIR}/cuppa/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/lilac/${REF_GENOME_VERSION}/*  ${MISC_DIR}/lilac/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/lilac/*.csv                    ${MISC_DIR}/lilac/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/disease_ontology/doid.json     ${MISC_DIR}/orange/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/qsee/*                         ${MISC_DIR}/qsee/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sigs/snv_cosmic_signatures.csv ${MISC_DIR}/sigs/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/peach/${REF_GENOME_VERSION}/*  ${MISC_DIR}/peach/
+	copy_files ${COMMON_RESOURCES_BUCKET_PATH}/virusbreakend_db/*             ${MISC_DIR}/virusbreakend/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/virus_interpreter/*            ${MISC_DIR}/virusinterpreter/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/neo/*                          ${MISC_DIR}/neo/binding/
 
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/cuppa/${REF_GENOME_VERSION}/*  ${MISC_DIR}/cuppa/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/lilac/${REF_GENOME_VERSION}/*  ${MISC_DIR}/lilac/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/lilac/*.csv                    ${MISC_DIR}/lilac/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/disease_ontology/doid.json     ${MISC_DIR}/orange/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/qsee/*                         ${MISC_DIR}/qsee/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/sigs/snv_cosmic_signatures.csv ${MISC_DIR}/sigs/
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/peach/${REF_GENOME_VERSION}/*  ${MISC_DIR}/peach/
-	
-	## !NOTE!
-	## Had to delete bjqKvtb8yE.fna.* files in /data/resources/bucket/virusbreakend_db/library/added/. These were old viral sequence files
-	cp -vnLr ${COMMON_RESOURCES_PATH}/virusbreakend_db/*                    ${MISC_DIR}/virusbreakend/
-	
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/virus_interpreter/*            ${MISC_DIR}/virusinterpreter/
-
-	mkdir -pv ${MISC_DIR}/neo/{binding,tpm_cohort} ## tpm_cohort: see RNA files below
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/neo/*                          ${MISC_DIR}/neo/binding/
-
-	echo ""
-	echo "## --------------------------"
-	echo "## Copying RNA pipeline files"
-	echo "## --------------------------"
 	RNA_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/rna/
-
 	if [[ ${REF_GENOME_VERSION} == ${REF_GENOME_VERSION_37} ]]; then
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.alt_sj_cohort.37.csv.gz            ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.gene_distribution.37.csv.gz        ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.transcript_medians.37.csv.gz       ${MISC_DIR}/neo/tpm_cohort/
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.alt_sj_cohort.37.csv.gz            ${RNA_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.gene_distribution.37.csv.gz        ${RNA_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_3444.transcript_medians.37.csv.gz       ${MISC_DIR}/neo/tpm_cohort/
 	else
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.alt_sj_cohort.csv.gz        ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.gene_distribution.csv.gz    ${RNA_DIR}
-		cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.transcript_medians.csv.gz   ${MISC_DIR}/neo/tpm_cohort/
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.alt_sj_cohort.csv.gz        ${RNA_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.gene_distribution.csv.gz    ${RNA_DIR}
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/isofox.hmf_38_151_2600.transcript_medians.csv.gz   ${MISC_DIR}/neo/tpm_cohort/
 	fi
 
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_100_exp_gc_ratios.${REF_GENOME_VERSION}.csv       ${RNA_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_151_exp_counts.${REF_GENOME_VERSION}.csv          ${RNA_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_100_exp_gc_ratios.${REF_GENOME_VERSION}.csv       ${RNA_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_151_exp_counts.${REF_GENOME_VERSION}.csv          ${RNA_DIR}
 }
 
-copy_files_panel (){
-	echo ""
-	echo "## --------------------------"
-	echo "## Copying TSO500 panel files"
-	echo "## --------------------------"
+copy_files_tso500 (){
 	PANEL_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/
-
-	## DNA / common
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/driver_genes.tso500.${REF_GENOME_VERSION}.tsv              ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz          ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz       ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/tmb_ratio.tso500.${REF_GENOME_VERSION}.tsv                 ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/ms_model_error_rates.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
-	
-	## RNA
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv                        ${PANEL_DIR}
-	cp -vnLr ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv                     ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/driver_genes.tso500.${REF_GENOME_VERSION}.tsv              ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz          ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz       ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/tmb_ratio.tso500.${REF_GENOME_VERSION}.tsv                 ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/ms_model_error_rates.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv                        ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv                     ${PANEL_DIR}
 }
+
+echo ""
+echo "## -------------"
+echo "## Copying files"
+echo "## -------------"
 
 if [[ $MODE == $MODE_GENOME ]]; then
 	copy_files_ref_genome
@@ -273,41 +202,25 @@ if [[ $MODE == $MODE_HMFTOOLS ]]; then
 	copy_files_hmftools
 fi
 
-if [[ $MODE == $MODE_PANEL ]]; then
-	copy_files_panel
+if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
+	copy_files_tso500
 fi
 
-
 echo ""
-echo "## -------------------"
-echo "## Setting permissions"
-echo "## -------------------"
-
-chmod --verbose --recursive 766 ${DEST_DIR}/${REF_GENOME_VERSION}
-
-echo ""
-echo "## -----------"
-echo "## Making tars"
-echo "## -----------"
+echo "## ----------"
+echo "## Making tar"
+echo "## ----------"
 
 make_tar (){
-	# SOURCE_PATH=/data/resources/oncoanalyser/37/panel/tso500
-	# TARGET_PATH=/data/resources/oncoanalyser/37/tars/hmf_panel_resources.tso500.37_v6.0.tar.gz
 
 	SOURCE_PATH=$1
 	TARGET_PATH=$2
 
-	if [[ -f $TARGET_PATH ]]; then
-		echo "Skipping making tar. File exists: $TARGET_PATH"
-	fi
-
 	ORIGINAL_DIR=$PWD
 
 	echo "Determining relative paths"
-	SOURCE_BASENAME=$(basename $SOURCE_PATH)
-	SOURCE_DIR=$(dirname $SOURCE_PATH)
-	TARGET_BASENAME=$(basename $TARGET_PATH)
-	TARGET_DIR=$(dirname $TARGET_PATH)
+	SOURCE_BASENAME=$(basename $SOURCE_PATH); SOURCE_DIR=$(dirname $SOURCE_PATH)
+	TARGET_BASENAME=$(basename $TARGET_PATH); TARGET_DIR=$(dirname $TARGET_PATH)
 
 	echo "Changing dir to: $SOURCE_DIR"
 	cd $SOURCE_DIR
@@ -325,25 +238,17 @@ mkdir -pv ${DEST_DIR}/tars
 
 if [[ $MODE == $MODE_GENOME ]]; then
 	mkdir -p ${DEST_DIR}/${REF_GENOME_VERSION}/tars/genome
-
-	echo ""
-	echo "## Genome"
-
-	tar -czvhf ${DEST_DIR}/${REF_GENOME_VERSION}/genome/genome/bwa-mem2_index/2.2.1.tar.gz ${DEST_DIR}/${REF_GENOME_VERSION}/genome/genome/bwa-mem2_index-2.2.1
-	tar -czvhf ${DEST_DIR}/${REF_GENOME_VERSION}/genome/genome/bwa-mem2_index/2.13.2.tar.gz ${DEST_DIR}/${REF_GENOME_VERSION}/genome/genome/gridss_index-2.13.2
+	tar -czvhf ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index/2.2.1.tar.gz ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index-2.2.1
+	tar -czvhf ${DEST_DIR}/${REF_GENOME_VERSION}/genome/bwa-mem2_index/2.13.2.tar.gz ${DEST_DIR}/${REF_GENOME_VERSION}/genome/gridss_index-2.13.2
 fi
 
 if [[ $MODE == $MODE_HMFTOOLS ]]; then
-	echo ""
-	echo "## HMF tools"
 	make_tar \
 	${DEST_DIR}/${REF_GENOME_VERSION}/hmftools \
 	${DEST_DIR}/tars/hmf_pipeline_resources.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz
 fi
 
-if [[ $MODE == $MODE_PANEL ]]; then
-	echo ""
-	echo "## TSO500 panel"
+if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
 	make_tar \
 	${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500 \
 	${DEST_DIR}/tars/hmf_panel_resources.tso500.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz 
