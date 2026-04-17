@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+TAG_REGEX="^v?(([0-9]+)\.([0-9]+)\.([0-9]+)(-((alpha|beta)\.([0-9])+))?(_([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?)$"
+
+ERRORS=()
+
+function semver_error() { ERRORS+=("$1"); }
+
+function check_errors() {
+    if [[ ${#ERRORS[@]} -gt 0 ]]; then
+        echo "Issues with next semver:" >&2
+        for error in "${ERRORS[@]}"; do
+            echo "  - $error" >&2
+        done
+        exit 1
+    fi
+}
+
+function usage() {
+    echo "Usage: $(basename "$0") [--production | --beta] <current_semver> <next_semver>"
+    echo ""
+    echo "  Validates that next_semver is a valid increment given the current tag state."
+    echo "  Exits 0 on success, exits 1 with a descriptive message on failure."
+    echo ""
+    echo "  Modes (optional — auto-detected from git if omitted):"
+    echo "    --production   next_semver must be a clean major/minor/patch increment of current_semver"
+    echo "    --beta         next_semver must be a valid beta increment of current_semver."
+    echo "                   If current_semver is a production tag, next_semver must be a"
+    echo "                   major/minor/patch increment with a beta.1_<branch> suffix."
+    echo "                   If current_semver is a beta tag, next_semver must have the same"
+    echo "                   base and branch suffix with the beta number incremented by 1."
+    echo ""
+    echo "  Arguments:"
+    echo "    <current_semver>   Most recent relevant tag (production tag or beta tag)"
+    echo "    <next_semver>      Proposed next version tag to validate"
+    exit 1
+}
+
+function check_base_version_increment() {
+    EXPECTED_NEXT_MAJOR_BASE="$((CURRENT_MAJOR_VERSION+1)).0.0"
+    EXPECTED_NEXT_MINOR_BASE="${CURRENT_MAJOR_VERSION}.$((CURRENT_MINOR_VERSION+1)).0"
+    EXPECTED_NEXT_PATCH_BASE="${CURRENT_MAJOR_VERSION}.${CURRENT_MINOR_VERSION}.$((CURRENT_PATCH_VERSION+1))"
+
+    if [[ "$NEXT_BASE_VERSION" != "$EXPECTED_NEXT_MAJOR_BASE" && "$NEXT_BASE_VERSION" != "$EXPECTED_NEXT_MINOR_BASE" && "$NEXT_BASE_VERSION" != "$EXPECTED_NEXT_PATCH_BASE" ]]; then
+        semver_error "Base version $NEXT_BASE_VERSION is not a valid increment of $CURRENT_SEMVER; expected one of $EXPECTED_NEXT_MAJOR_BASE / $EXPECTED_NEXT_MINOR_BASE / $EXPECTED_NEXT_PATCH_BASE"
+    fi
+}
+
+case "${1:-}" in
+    --production|--beta) MODE="$1"; shift ;;
+    -h|--help) usage ;;
+esac
+
+if [[ $# -ne 2 ]]; then
+    usage
+fi
+
+CURRENT_SEMVER="$1"
+NEXT_SEMVER="$2"
+CURRENT_BRANCH="$(git branch --show-current)"
+
+if [[ -z "$MODE" ]]; then
+    REMOTE=${remote:-origin}
+    MAIN_BRANCH=$(git symbolic-ref refs/remotes/"${REMOTE}"/HEAD | awk -F/ '{print $NF}')
+    if [[ $CURRENT_BRANCH == "$MAIN_BRANCH" ]]; then
+        MODE="--production"
+    else
+        MODE="--beta"
+    fi
+fi
+
+if [[ ! $CURRENT_SEMVER =~ $TAG_REGEX ]]; then
+    semver_error "$CURRENT_SEMVER does not match expected semver format"
+fi
+CURRENT_MAJOR_VERSION=${BASH_REMATCH[2]}
+CURRENT_MINOR_VERSION=${BASH_REMATCH[3]}
+CURRENT_PATCH_VERSION=${BASH_REMATCH[4]}
+CURRENT_RELEASE_TYPE=${BASH_REMATCH[7]}
+CURRENT_BETA_VERSION=${BASH_REMATCH[8]}
+CURRENT_BRANCH_SUFFIX=${BASH_REMATCH[9]}
+
+if [[ ! $NEXT_SEMVER =~ $TAG_REGEX ]]; then
+    semver_error "$NEXT_SEMVER does not match expected semver format"
+fi
+NEXT_MAJOR_VERSION=${BASH_REMATCH[2]}
+NEXT_MINOR_VERSION=${BASH_REMATCH[3]}
+NEXT_PATCH_VERSION=${BASH_REMATCH[4]}
+NEXT_RELEASE_TYPE=${BASH_REMATCH[7]}
+NEXT_BETA_VERSION=${BASH_REMATCH[8]}
+NEXT_BRANCH_SUFFIX=${BASH_REMATCH[9]}
+
+check_errors
+
+NEXT_BASE_VERSION="${NEXT_MAJOR_VERSION}.${NEXT_MINOR_VERSION}.${NEXT_PATCH_VERSION}"
+
+case "$MODE" in
+    --production)
+        if [[ -n $NEXT_RELEASE_TYPE || -n $NEXT_BETA_VERSION || -n $NEXT_BRANCH_SUFFIX ]]; then
+            semver_error "Production releases must not have any suffix, got $NEXT_SEMVER"
+        fi
+        check_base_version_increment
+        ;;
+
+    --beta)
+        if [[ -z $CURRENT_RELEASE_TYPE ]]; then
+            check_base_version_increment
+            EXPECTED_NEXT="$NEXT_BASE_VERSION-beta.1_$CURRENT_BRANCH"
+        else
+            EXPECTED_NEXT="${CURRENT_MAJOR_VERSION}.${CURRENT_MINOR_VERSION}.${CURRENT_PATCH_VERSION}-beta.$((CURRENT_BETA_VERSION+1))${CURRENT_BRANCH_SUFFIX}"
+        fi
+
+        if [[ "$NEXT_SEMVER" != "$EXPECTED_NEXT" ]]; then
+            semver_error "Expected ${EXPECTED_NEXT} but received ${NEXT_SEMVER}."
+        fi
+        ;;
+esac
+
+check_errors

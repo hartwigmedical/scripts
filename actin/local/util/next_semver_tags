@@ -2,9 +2,19 @@
 
 source message_functions || exit 1
 
-git status 
-[[ $? -ne 0 ]] && echo "Not in a git checkout" && exit 1
-echo
+
+if [[ $# -gt 1 ]]; then
+    echo "Only one option may be provided"
+    exit 1
+fi
+case "$1" in
+    --major|-M) BUMP_TYPE="major" ;;
+    --minor|-m) BUMP_TYPE="minor" ;;
+    --patch|-p) BUMP_TYPE="patch" ;;
+    --beta|-b)  BUMP_TYPE="beta"  ;;
+esac
+
+git status &>/dev/null || { echo "Not in a git checkout" >&2; exit 1; }
 
 TAG_REGEX="^v?(([0-9]+)\.([0-9]+)\.([0-9]+)(-((alpha|beta)\.([0-9])+))?(_([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?)$"
 latest="$(git tag -l | egrep "$TAG_REGEX" | sort -V | tail -n1)"
@@ -20,8 +30,16 @@ if [[ ${latest} =~ ${TAG_REGEX} ]]; then
     minor="${a}.$((b+1)).0"
     patch="${a}.${b}.$((c+1))"
 
-    printf "Next tags:\n\n"
     if [[ ${branch} == "master" ]]; then
+        if [[ ${BUMP_TYPE} == "beta" ]]; then
+            echo "Cannot make beta releases on [master]" >&2
+            exit 1
+        fi
+        if [[ -n "${BUMP_TYPE}" ]]; then
+            echo "${!BUMP_TYPE}"
+            exit 0
+        fi
+        printf "Next tags:\n\n"
         info "Major/minor/patch: $major / $minor / $patch"
         info "Beta branch names: Cannot make beta releases on [master]"
     else
@@ -32,6 +50,21 @@ if [[ ${latest} =~ ${TAG_REGEX} ]]; then
             beta_suffix="beta.$((beta_version+1))${description}"
         fi
 
+
+        if [[ ${BUMP_TYPE} == "beta" ]]; then
+            if [[ -z ${local_beta} ]]; then
+                echo "No existing beta tag on branch [${branch}]. Use --major, --minor, or --patch to create the first beta." >&2
+                exit 1
+            fi
+            [[ ${local_beta} =~ ${TAG_REGEX} ]]
+            echo "${BASH_REMATCH[2]}.${BASH_REMATCH[3]}.${BASH_REMATCH[4]}-beta.$((BASH_REMATCH[8]+1))${BASH_REMATCH[9]}"
+            exit 0
+        fi
+        if [[ -n ${BUMP_TYPE} ]]; then
+            echo "${!BUMP_TYPE}-${beta_suffix}"
+            exit 0
+        fi
+        printf "Next tags:\n\n"
         info "Major/minor/patch: Cannot make non-beta releases on non-master branch [${branch}]"
         printf "Beta branch names: "
         echo "${major}-${beta_suffix} / ${minor}-${beta_suffix} / ${patch}-${beta_suffix}"
