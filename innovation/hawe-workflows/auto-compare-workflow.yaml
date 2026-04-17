@@ -1,5 +1,5 @@
 name: "auto-compare"
-version: "0.4.0"
+version: "0.5.0"
 storagePath: "gs://auto-compare-output"
 externalInputs:
   - name: truth-bucket
@@ -48,7 +48,7 @@ stages:
         BASE_DIR="$WORK_DIR"
         TRUTH_INPUT_DIR="$TRUTH_BUCKET"
         TARGET_INPUT_DIR="$TARGET_BUCKET"
-        OUTPUT_DIR="$BASE_DIR/compar_$RUN_ID"
+        OUTPUT_DIR="$BASE_DIR"
         OUTPUT_ID="$RUN_ID"
 
         echo "[$(date +"%Y-%m-%dT%H:%M:%S")] Starting COMPAR with RUN_ID: $RUN_ID"
@@ -200,8 +200,8 @@ stages:
 
         main "$@" || echo [ERROR] "compar execution failed"
         
-        # Copy COMPAR outputs to /tmp/output so that hawe can transfer them.
-        cp -r "$OUTPUT_DIR" /out/
+        # Copy COMPAR outputs to /out so that hawe can transfer them.
+        cp -r "$OUTPUT_DIR"/* /out/
         
         echo "COMPAR execution completed"
     options:
@@ -234,7 +234,7 @@ stages:
         WORK_DIR="/tmp/work"
         mkdir -p $WORK_DIR
 
-        COMPAR_INPUT_DIR="/in/execute-compar/compar_${run_id}/reported"
+        COMPAR_INPUT_DIR="/in/execute-compar/reported"
         OUTPUT_FILE="$WORK_DIR/compar_output.xlsx"
 
         touch $OUTPUT_FILE
@@ -266,7 +266,7 @@ stages:
       - execute-compar
   - name: "vis-reported"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.3.1"
+    version: "1.4.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -275,8 +275,9 @@ stages:
         read -r -a OVERRIDES_ARRAY <<< "$OVERRIDES"
         
         python3 -m compar_vis \
-          --input_directory "/in/execute-compar/compar_${run_id}/reported" \
-          --output_file /out/compar_vis.${run_id}.reported.html \
+          --run_id "${run_id}" \
+          --input_directory "/in/execute-compar/reported" \
+          --output_directory /out \
           ${OVERRIDES_ARRAY[@]}
     options:
       backoffLimit: 2
@@ -295,7 +296,7 @@ stages:
       - execute-compar
   - name: "vis-all"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/compar-vis"
-    version: "1.3.1"
+    version: "1.4.0"
     command: "bash /config/run.sh"
     configFiles:
       run.sh: |
@@ -304,8 +305,9 @@ stages:
         read -r -a OVERRIDES_ARRAY <<< "$OVERRIDES"
         
         python3 -m compar_vis \
-          --input_directory "/in/execute-compar/compar_${run_id}/all" \
-          --output_file /out/compar_vis.${run_id}.all.html \
+          --run_id "${run_id}" \
+          --input_directory "/in/execute-compar/all" \
+          --output_directory /out \
           ${OVERRIDES_ARRAY[@]}
     options:
       backoffLimit: 2

@@ -1,6 +1,6 @@
-name: "genomescan"
+name: "genomescan-test"
 workflow: "auto-compare"
-version: "0.3.4"
+version: "0.5.0"
 params:
   truth_bucket_uri: "gs://hartwig-output-genomescan-truth"
   target_bucket_uri: "gs://hartwig-output-genomescan"
