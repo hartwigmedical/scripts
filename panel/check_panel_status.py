@@ -49,7 +49,7 @@ def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
             filename = remarks_yaml.stem
             run_id = filename[:-len(REMARKS_SUFFIX)] if filename.endswith(REMARKS_SUFFIX) else filename
             logging.info(f"Found remarks YAML {remarks_yaml}")
-            remarks_path = f"gs://oncoact-panel-remarks-output/remarks-{run_id.replace('-panel', '', 1)}/remarks/remarks.txt"
+            remarks_path = f"gs://oncoact-panel-remarks-output/{run_id.replace('_Panel', '', 1)}/remarks/remarks.txt"
             if run_bash_command(["gcloud", "storage", "ls", remarks_path]):
                 metadata = json.loads(run_bash_command(["gcloud", "storage", "cat", f"{TARGETED_PIPELINE_DIRECTORY}/{run_id}/metadata.json"]))
                 sample_name = metadata["tumor"]["sampleName"]

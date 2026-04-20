@@ -15,7 +15,7 @@ params:\n"""
 
 outputYaml=""
 
-outputYaml += 'name: "remarks-' + run_id +'"\n'
+outputYaml += 'name: "' + run_id +'"\n'
 outputYaml += body
 outputYaml+=  '  input_bucket_uri: "' + input_bucket_uri + "/" + run_id +'"\n'
 
