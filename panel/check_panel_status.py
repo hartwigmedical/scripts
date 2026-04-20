@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import json
 import logging
 import subprocess
 
@@ -39,18 +40,23 @@ def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
             f"qc_check_oncopanel_batch {batch} {Path.home()}/tmp_diag_{batch}"
         )
     else:
-        remarks_yaml = input_directory / f"{batch}_remarks.yaml"
-        if remarks_yaml.exists():
+        remarks_yamls = sorted(input_directory.glob(f"{batch}*_remarks.yaml"))
+        log_or_warn(f"Found {len(remarks_yamls)} remarks YAMLs", len(remarks_yamls) == relevant_count_found)
+        all_remarks_lines = []
+        for remarks_yaml in remarks_yamls:
+            run_id = remarks_yaml.stem.removesuffix("_remarks")
             logging.info(f"Found remarks YAML {remarks_yaml}")
-
-            remarks_path = f"gs://oncoact-panel-remarks-output/remarks-{batch}/remarks/remarks.tsv"
-            if run_bash_command(["gcloud", "storage",  "ls", remarks_path]):
-                remarks_output = run_bash_command(["gcloud", "storage",  "cat", remarks_path])
-                logging.info(f"Found remarks output:\n{remarks_output}")
+            remarks_path = f"gs://oncoact-panel-remarks-output/remarks-{run_id}/remarks/remarks.txt"
+            if run_bash_command(["gcloud", "storage", "ls", remarks_path]):
+                metadata = json.loads(run_bash_command(["gcloud", "storage", "cat", f"{TARGETED_PIPELINE_DIRECTORY}/{run_id}/metadata.json"]))
+                sample_name = metadata["tumor"]["sampleName"]
+                remarks = run_bash_command(["gcloud", "storage", "cat", remarks_path]).strip()
+                all_remarks_lines.append(f"{sample_name}\t{remarks}")
             else:
-                logging.warning(f"No remarks output for batch {batch}")
-        else:
-            logging.warning(f"No remarks YAML {remarks_yaml}")
+                logging.warning(f"No remarks output for {run_id}")
+        if all_remarks_lines:
+            remarks_lines = "\n".join(all_remarks_lines) + "\n"
+            logging.info(f"Remarks output:\nSample ID\tOpmerkingen\n{remarks_lines}")
 
 
 def run_bash_command(command: List[str]) -> str:

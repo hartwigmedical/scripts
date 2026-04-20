@@ -1,18 +1,18 @@
 apiVersion: hartwigmedicalfoundation.nl/v1
 kind: WorkflowDefinitionCustomResource
 metadata:
-  name: oncoact-panel-remarks-1.0.1
+  name: oncoact-panel-remarks-1.1.0-beta.1
 spec:
   name: "oncoact-panel-remarks"
-  version: "1.0.1"
-  storagePath: "gs://oncoact-panel-remarks-output"
+  version: "1.1.0-beta.1"
+  storagePath: "gs://oncoact-panel-remarks-output-test"
   externalInputs:
     - name: input-bucket
       location: "${input_bucket_uri}"
   stages:
     - name: "remarks"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.0.1"
+      version: "1.1.0-beta.1"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
@@ -22,6 +22,5 @@ spec:
         - input-bucket
       arguments: >-
         --input-directory /in/input-bucket
-        --run-names ${run_names}
         --excluded-exons /data/resources/ops/panel/excludedExons.tsv
-        --output-file /out/remarks.tsv
+        --output-file /out/remarks.txt

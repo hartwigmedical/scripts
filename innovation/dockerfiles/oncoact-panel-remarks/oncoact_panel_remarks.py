@@ -210,50 +210,24 @@ class ExonCoverageStatistics:
         return 100 * self.exons_with_median_coverage_at_least_100_count / self.relevant_exon_count
 
 
-@dataclass(frozen=True, eq=True)
-class SampleSummary:
-    tumor_name: str
-    remarks: List[str]
-
-    def summary_text(self) -> str:
-        return " ".join(self.remarks)
-
-
-def main(run_names: str, input_directory: Path, excluded_exons_file_path: Path, output_file_path: Path) -> None:
+def main(input_directory: Path, excluded_exons_file_path: Path, output_file_path: Path) -> None:
     logging.info("Start QC checking OncoPanel runs")
-
-    pipeline_directories = determine_relevant_pipeline_directories(input_directory, run_names)
 
     logging.info("Load excluded_exons")
     excluded_exons = load_excluded_exons(excluded_exons_file_path)
 
-    sample_summaries = determine_sample_summaries(pipeline_directories, excluded_exons)
+    logging.info(f"Get metadata from {input_directory}")
+    metadata = get_metadata(input_directory)
 
-    write_summary_file(sample_summaries, output_file_path)
-
-    logging.info("Finished QC checking OncoPanel run")
-
-
-def determine_sample_summaries(
-        pipeline_directories: Set[Path], excluded_exons: List[ExonExclusion]
-) -> List[SampleSummary]:
-    return [determine_sample_summary(pipeline_directory, excluded_exons) for pipeline_directory in pipeline_directories]
-
-
-def determine_sample_summary(
-        pipeline_directory: Path, excluded_exons: List[ExonExclusion]
-) -> SampleSummary:
-    logging.info(f"Get metadata from {pipeline_directory}")
-    metadata = get_metadata(pipeline_directory)
-
-    logging.info(f"Handling run for {metadata.tumor_name}: {pipeline_directory}")
-
-    run_data = load_run_data(pipeline_directory, metadata.tumor_name)
+    logging.info(f"Handling run for {metadata.tumor_name}: {input_directory}")
+    run_data = load_run_data(input_directory, metadata.tumor_name)
 
     exon_coverage_statistics = ExonCoverageStatistics.from_exon_coverages(run_data.exon_median_coverages, excluded_exons)
-
     remarks = determine_remarks(run_data, exon_coverage_statistics, metadata)
-    return SampleSummary(metadata.tumor_name, remarks)
+
+    write_remarks_file(remarks, output_file_path)
+
+    logging.info("Finished QC checking OncoPanel run")
 
 
 def determine_remarks(
@@ -431,27 +405,10 @@ def find_relevant_gene_copy_numbers(gene: str, run_data: RunData) -> List[GeneCo
     return relevant_gene_copy_numbers
 
 
-def determine_relevant_pipeline_directories(input_directory: Path, run_names: str) -> Set[Path]:
-    pipeline_directories = set()
-    for given_run_name in run_names.split(";"):
-        if "*" in given_run_name:
-            for run_name in input_directory.glob(given_run_name):
-                pipeline_directories.add(run_name)
-        else:
-            pipeline_directories.add(input_directory / given_run_name)
-    return pipeline_directories
-
-
-def write_summary_file(sample_summaries: List[SampleSummary], output_file: Path) -> None:
+def write_remarks_file(remarks: list[str], output_file: Path) -> None:
+    remarks_text = " ".join(remarks) + "\n"
     with open(output_file, "w") as output_f:
-        output_f.write(construct_summary_file_text(sample_summaries))
-
-
-def construct_summary_file_text(sample_summaries: List[SampleSummary]) -> str:
-    lines = ["Sample ID\tOpmerkingen"]
-    for sample_summary in sorted(sample_summaries, key=lambda sample_summary: sample_summary.tumor_name):
-        lines.append(f"{sample_summary.tumor_name}\t{sample_summary.summary_text()}")
-    return "\n".join(lines) + "\n"
+        output_f.write(remarks_text)
 
 
 def is_relevant_for_coverage(exon: ExonMedianCoverage, gene_to_excluded_exons: Dict[str, Tuple[int, ...]]) -> bool:
@@ -807,7 +764,6 @@ def convert_bases_to_rounded_gbases(base_count: int) -> Decimal:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="oncoact_panel_remarks.py", description="Create automatic remarks for OncoAct Panel runs")
     parser.add_argument("--input-directory", "-i", type=Path, required=True, help="Input directory")
-    parser.add_argument("--run-names", "-n", type=str, required=True, help="List of run names to include, separated by ';'. Use '*' as a wildcard.")
     parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis")
     parser.add_argument("--output-file", "-o", type=Path, required=True, help="Output file with sample remarks")
     return parser.parse_args()
@@ -818,4 +774,4 @@ if __name__ == "__main__":
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     args = parse_args()
-    main(args.run_names, args.input_directory, args.excluded_exons, args.output_file)
+    main(args.input_directory, args.excluded_exons, args.output_file)

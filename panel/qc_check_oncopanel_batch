@@ -33,6 +33,8 @@ main() {
 
   driver_gene_panel=$(locate_driver_gene_panel_38_tsv) || die "Could not find driver gene panel file"
 
+  remarks_yamls=()
+
   for targeted_run_url in $(gsutil ls "${TARGETED_PIPELINE_OUTPUT_BUCKET}" | sort -t_ -k4); do
     targeted_run_url_without_end_slash="${targeted_run_url::-1}"
     run_id="${targeted_run_url_without_end_slash##*/}"
@@ -43,16 +45,18 @@ main() {
         --driver-gene-panel "${driver_gene_panel}" \
         --excluded-exons "${EXCLUDED_EXONS}" \
           || die "Could not run QC check script for ${run_id}"
+
+      remarks_yaml="${local_working_directory}/${run_id}_remarks.yaml"
+      genRemarksYaml.py "${run_id}" > "${remarks_yaml}" || die "Could not create remarks YAML"
+
+      remarks_yamls+=("${remarks_yaml}")
     fi
   done
 
-  info "Create possible follow-up commands"
-
-  remarks_yaml="${local_working_directory}/${run_id_start}_remarks.yaml"
-  genRemarksYaml.py "${run_id_start}" > "${remarks_yaml}" || die "Could not create remarks YAML"
-
   info "Possible follow-up commands:"
-  echo "submit_hawe_execution ${remarks_yaml}"
+  for remarks_yaml in "${remarks_yamls[@]}"; do
+    echo "submit_hawe_execution ${remarks_yaml}"
+  done
 
   info "Finished ${SCRIPT_NAME}"
 }

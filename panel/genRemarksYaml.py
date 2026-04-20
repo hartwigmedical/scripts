@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 import sys
 
-input_bucket_uri = "gs://targeted-pipeline-output-prod-1/"
+input_bucket_uri = "gs://targeted-pipeline-output-prod-1"
 
-batch = sys.argv[1]
+run_id = sys.argv[1]
 
-if not batch:
-    print("Usage: genRemarksYaml.py <batch>")
+if not run_id:
+    print("Usage: genRemarksYaml.py <run_id>")
     exit(1)
 
 body="""workflow: "oncoact-panel-remarks"
-version: "1.0.1"
+version: "1.1.0-beta.1"
 params:\n"""
 
 outputYaml=""
 
-outputYaml += 'name: "remarks-' + batch +'"\n'
+outputYaml += 'name: "remarks-' + run_id +'"\n'
 outputYaml += body
-outputYaml+=  '  input_bucket_uri: "' + input_bucket_uri +'"\n'
-outputYaml += '  run_names: "' + batch +'*"\n'
+outputYaml+=  '  input_bucket_uri: "' + input_bucket_uri + "/" + run_id +'"\n'
 
 print(outputYaml)
