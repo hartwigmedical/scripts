@@ -12,7 +12,7 @@ spec:
     - name: ref-folder
       location: "gs://common-resources/reference_genome/38/"
   stages:
-    - name: "hotspot-coverage"
+    - name: "hotspot"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
       version: "1.1.0"
       options:
@@ -105,9 +105,9 @@ spec:
           resourceProfile: "n2d-8-375"
       inputStages:
         - input-bucket
-        - hotspot-coverage
+        - hotspot
       arguments: >-
         --pipeline-input-directory /in/input-bucket
-        --hotspot-coverage-input-directory /in/hotspot-coverage
+        --hotspot-coverage-input-directory /in/hotspot
         --excluded-exons /data/resources/ops/panel/excludedExons.tsv
         --output-file /out/remarks.txt

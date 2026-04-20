@@ -47,7 +47,7 @@ main() {
           || die "Could not run QC check script for ${run_id}"
 
       remarks_yaml="${local_working_directory}/${run_id}_remarks.yaml"
-      genRemarksYaml.py "${run_id}" > "${remarks_yaml}" || die "Could not create remarks YAML"
+      genRemarksYaml.py "${run_id/-panel/}" > "${remarks_yaml}" || die "Could not create remarks YAML"
 
       remarks_yamls+=("${remarks_yaml}")
     fi
