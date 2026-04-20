@@ -46,7 +46,8 @@ GENES_EXCLUDED_FROM_DESIGN = {"SPATA31A7", "LINC01001", "U2AF1"}
 
 BASES_PER_GBASE = 1000000000
 TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
-TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100 = 95.
+TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X = 95.
+TARGET_PERCENT_HOTSPOT_AT_LEAST_200X = 85.
 
 AMPLIFICATIONS_DESCRIPTION = "amplificaties"
 
@@ -118,7 +119,7 @@ class Driver:
             str(self.min_copy_number),
             str(self.max_copy_number),
         ]
-        return "\t".join(data)
+        return TSV_SEPARATOR.join(data)
 
 
 @dataclass(frozen=True, eq=True)
@@ -183,6 +184,22 @@ class RunData:
 
 
 @dataclass(frozen=True, eq=True)
+class HotspotCoverageData:
+    total_hotspot_positions: float
+    mean_depth: float
+    median_depth: float
+    min_depth: float
+    max_depth: float
+    percent_above_1x: float
+    percent_above_10x: float
+    percent_above_30x: float
+    percent_above_50x: float
+    percent_above_100x: float
+    percent_above_200x: float
+    percent_above_500x: float
+
+
+@dataclass(frozen=True, eq=True)
 class ExonExclusion:
     gene_name: str
     gene_id: str
@@ -193,7 +210,7 @@ class ExonExclusion:
 @dataclass(frozen=True, eq=True)
 class ExonCoverageStatistics:
     relevant_exon_count: int
-    exons_with_median_coverage_at_least_100_count: int
+    exons_with_median_coverage_at_least_100x_count: int
 
     @classmethod
     def from_exon_coverages(
@@ -203,28 +220,36 @@ class ExonCoverageStatistics:
         relevant_exons = [exon for exon in exon_median_coverages if is_relevant_for_coverage(exon, gene_to_excluded_exons)]
         if not relevant_exons:
             raise ValueError("No exons found relevant for coverage. Check excluded genes and exons!")
-        exons_with_median_coverage_at_least_100 = [exon for exon in relevant_exons if exon.median_depth >= 100]
-        return ExonCoverageStatistics(len(relevant_exons), len(exons_with_median_coverage_at_least_100))
+        exons_with_median_coverage_at_least_100x = [exon for exon in relevant_exons if exon.median_depth >= 100]
+        return ExonCoverageStatistics(len(relevant_exons), len(exons_with_median_coverage_at_least_100x))
 
-    def percent_exons_median_coverage_at_least_100(self) -> float:
-        return 100 * self.exons_with_median_coverage_at_least_100_count / self.relevant_exon_count
+    def percent_exons_median_coverage_at_least_100x(self) -> float:
+        return 100 * self.exons_with_median_coverage_at_least_100x_count / self.relevant_exon_count
 
 
-def main(input_directory: Path, excluded_exons_file_path: Path, output_file_path: Path) -> None:
+def main(pipeline_input_directory: Path, hotspot_coverage_input_directory: Path, excluded_exons_file_path: Path,
+         output_file_path: Path) -> None:
     logging.info("Start QC checking OncoPanel runs")
+
+    logging.info(f"Get metadata from {pipeline_input_directory}")
+    metadata = get_metadata(pipeline_input_directory)
+
+    logging.info(f"Handling run for {metadata.tumor_name}")
+
+    logging.info(f"Load run data: {pipeline_input_directory}")
+    run_data = load_run_data(pipeline_input_directory, metadata.tumor_name)
+
+    logging.info(f"Load hotspot coverage data: {hotspot_coverage_input_directory}")
+    hotspot_coverage_data = load_hotspot_coverage_data(hotspot_coverage_input_directory, metadata.tumor_name)
 
     logging.info("Load excluded_exons")
     excluded_exons = load_excluded_exons(excluded_exons_file_path)
 
-    logging.info(f"Get metadata from {input_directory}")
-    metadata = get_metadata(input_directory)
-
-    logging.info(f"Handling run for {metadata.tumor_name}: {input_directory}")
-    run_data = load_run_data(input_directory, metadata.tumor_name)
-
+    logging.info(f"Determine remarks")
     exon_coverage_statistics = ExonCoverageStatistics.from_exon_coverages(run_data.exon_median_coverages, excluded_exons)
-    remarks = determine_remarks(run_data, exon_coverage_statistics, metadata)
+    remarks = determine_remarks(run_data, hotspot_coverage_data, exon_coverage_statistics, metadata)
 
+    logging.info(f"Write remarks")
     write_remarks_file(remarks, output_file_path)
 
     logging.info("Finished QC checking OncoPanel run")
@@ -232,33 +257,44 @@ def main(input_directory: Path, excluded_exons_file_path: Path, output_file_path
 
 def determine_remarks(
         run_data: RunData,
+        hotspot_coverage_data: HotspotCoverageData,
         exon_coverage_statistics: ExonCoverageStatistics,
         metadata: Metadata,
 ) -> List[str]:
     remarks = []
 
-    percent_exons_median_coverage_at_least_100 = exon_coverage_statistics.percent_exons_median_coverage_at_least_100()
+    percent_exons_median_coverage_at_least_100x = exon_coverage_statistics.percent_exons_median_coverage_at_least_100x()
+    good_coverage_exons = percent_exons_median_coverage_at_least_100x >= TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X
+    good_coverage_hotspots = hotspot_coverage_data.percent_above_200x >= TARGET_PERCENT_HOTSPOT_AT_LEAST_200X
+    good_coverage = good_coverage_exons and good_coverage_hotspots
     if metadata.yield_in_bases < TARGET_YIELD_IN_BASES:
-        if percent_exons_median_coverage_at_least_100 > TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:
+        remarks.append(
+            f"Dit sample heeft {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb yield, "
+            f"wat minder is dan ons eigenlijke minimum van {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb yield."
+        )
+        if good_coverage:
             remarks.append(
-                f"Dit sample heeft {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb yield, "
-                f"wat minder is dan ons eigenlijke minimum van {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb yield. "
                 f"De coverage van dit sample is wel goed: "
-                f"{percent_exons_median_coverage_at_least_100:.2f}% van de exonen heeft median coverage minstens 100x."
-            )
-        else:
-            remarks.append(
-                f"Dit sample heeft {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb yield, "
-                f"wat minder is dan ons eigenlijke minimum van {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb yield."
+                f"{percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x. "
+                f"{hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x."
             )
 
-    if percent_exons_median_coverage_at_least_100 < TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:
+    if not good_coverage:
         remarks.append(
-            f"De coverage van dit sample is te laag: "
-            f"slechts {percent_exons_median_coverage_at_least_100:.2f}% van de exonen heeft median coverage minstens 100x, "
-            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100:.1f}% zou moeten zijn. "
-            f"Hierdoor kunnen varianten gemist worden."
+            f"De coverage van dit sample is te laag:"
         )
+
+        if not good_coverage_exons:
+            remarks.append(
+                f"slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
+                f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X:.1f}% zou moeten zijn."
+            )
+        if not good_coverage_hotspots:
+            remarks.append(
+                f"slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
+                f"terwijl dit minstens {TARGET_PERCENT_HOTSPOT_AT_LEAST_200X:.1f}% zou moeten zijn."
+            )
+        remarks.append("Hierdoor kunnen varianten gemist worden.")
 
     if run_data.purple_qc.qc_status != "PASS":
         remarks.append(
@@ -437,6 +473,37 @@ def load_run_data(local_directory: Path, tumor_name: str) -> RunData:
         tuple(amber_baf_points),
     )
     return run_data
+
+
+def load_hotspot_coverage_data(local_directory: Path, tumor_name: str) -> HotspotCoverageData:
+    filename = local_directory / f"{tumor_name}.hotspot_summary.tsv"
+    with open(filename, "r") as in_f:
+        split_header = next(in_f).strip().split(TSV_SEPARATOR)
+        metric_index = split_header.index("metric")
+        value_index = split_header.index("value")
+
+        metric_to_value = {}
+        for line in in_f:
+            split_line = line.strip().split(TSV_SEPARATOR)
+            metric = split_line[metric_index]
+            value = float(split_line[value_index])
+            metric_to_value[metric] = value
+
+        hotspot_coverage_data = HotspotCoverageData(
+            metric_to_value["total_hotspot_positions"],
+            metric_to_value["mean_depth"],
+            metric_to_value["median_depth"],
+            metric_to_value["min_depth"],
+            metric_to_value["max_depth"],
+            metric_to_value["pct_above_1x"],
+            metric_to_value["pct_above_10x"],
+            metric_to_value["pct_above_30x"],
+            metric_to_value["pct_above_50x"],
+            metric_to_value["pct_above_100x"],
+            metric_to_value["pct_above_200x"],
+            metric_to_value["pct_above_500x"],
+        )
+    return hotspot_coverage_data
 
 
 def load_excluded_exons(excluded_exons_path: Path) -> List[ExonExclusion]:
@@ -763,7 +830,8 @@ def convert_bases_to_rounded_gbases(base_count: int) -> Decimal:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="oncoact_panel_remarks.py", description="Create automatic remarks for OncoAct Panel runs")
-    parser.add_argument("--input-directory", "-i", type=Path, required=True, help="Input directory")
+    parser.add_argument("--pipeline-input-directory", "-i", type=Path, required=True, help="Pipeline input directory")
+    parser.add_argument("--hotspot-coverage-input-directory", "-c", type=Path, required=True, help="Hotspot coverage input directory")
     parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis")
     parser.add_argument("--output-file", "-o", type=Path, required=True, help="Output file with sample remarks")
     return parser.parse_args()
@@ -774,4 +842,4 @@ if __name__ == "__main__":
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     args = parse_args()
-    main(args.input_directory, args.excluded_exons, args.output_file)
+    main(args.pipeline_input_directory, args.hotspot_coverage_input_directory, args.excluded_exons, args.output_file)

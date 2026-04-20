@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     ca-certificates \
     curl \
+    samtools \
+    bcftools \
+    bedtools \
+    gawk \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Install required Python packages
@@ -30,5 +35,6 @@ RUN mkdir -p /scripts
 COPY oncoact_panel_remarks.py /scripts
 # Find a clever way to retrieve these automatically, now update manually!!!
 COPY excludedExons.tsv /data/resources/ops/panel/
+COPY KnownHotspots.somatic.38.vcf.gz /data/resources/ops/panel/
 
 ENTRYPOINT ["/scripts/oncoact_panel_remarks.py"]

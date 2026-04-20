@@ -1,18 +1,20 @@
 apiVersion: hartwigmedicalfoundation.nl/v1
 kind: WorkflowDefinitionCustomResource
 metadata:
-  name: oncoact-panel-remarks-1.1.0-beta.1
+  name: oncoact-panel-remarks-1.1.0
 spec:
   name: "oncoact-panel-remarks"
-  version: "1.1.0-beta.1"
-  storagePath: "gs://oncoact-panel-remarks-output-test"
+  version: "1.1.0"
+  storagePath: "gs://oncoact-panel-remarks-output"
   externalInputs:
     - name: input-bucket
       location: "${input_bucket_uri}"
+    - name: ref-folder
+      location: "gs://common-resources/reference_genome/38/"
   stages:
-    - name: "remarks"
+    - name: "hotspot-coverage"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.1.0-beta.1"
+      version: "1.1.0"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
@@ -20,7 +22,92 @@ spec:
           resourceProfile: "n2d-8-375"
       inputStages:
         - input-bucket
+        - ref-folder
+      command: "bash /config/run.sh"
+      configFiles:
+        run.sh: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+          
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Start hotspot coverage check"
+          
+          INPUT_DIR="/in/input-bucket"
+          REF="/in/ref-folder/Homo_sapiens_assembly38.alt.masked.fasta"
+          HOTSPOT_VCF="/data/resources/ops/panel/KnownHotspots.somatic.38.vcf.gz"
+          
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Extract Sample ID from: $INPUT_DIR/metadata.json"
+          SAMPLE_ID=$(cat "$INPUT_DIR/metadata.json" | jq -r .tumor.sampleName) || { echo "Could not get sample ID from metadata JSON"; exit 1; }
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Sample ID: $SAMPLE_ID"
+          
+          INPUT="$INPUT_DIR/$SAMPLE_ID/aligner/$SAMPLE_ID.bam"
+          
+          HOTSPOT_BED="/tmp/hotspots.bed"
+          DEPTHS="/tmp/depths.txt"
+          OUTPUT_SUMMARY="/out/$SAMPLE_ID.hotspot_summary.tsv"
+          OUTPUT_DEPTHS="/out/$SAMPLE_ID.hotspot_depths.tsv.gz"
+          
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Converting hotspot VCF to BED"
+          bcftools query -f '%CHROM\t%POS\t%REF\n' "$HOTSPOT_VCF" \
+            | awk -F'\t' '{print $1"\t"($2-1)"\t"($2-1+length($3))}' \
+            | sort -k1,1 -k2,2n \
+            | bedtools merge > "$HOTSPOT_BED"
+          
+          POSITIONS=$(awk '{s+=($3-$2)} END {print s}' "$HOTSPOT_BED")
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Calculating coverage at $POSITIONS unique hotspot positions"
+          
+          samtools depth -a -Q 10 -b "$HOTSPOT_BED" --reference "$REF" "$INPUT" \
+            | tee >(gzip > "$OUTPUT_DEPTHS") \
+            | cut -f3 | sort -n > "$DEPTHS"
+          
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Generating summary statistics"
+          
+          awk '
+            BEGIN { n=0; sum=0 }
+            {
+              depths[n++] = $1
+              sum += $1
+              if ($1 >= 1) a1++
+              if ($1 >= 10) a10++
+              if ($1 >= 30) a30++
+              if ($1 >= 50) a50++
+              if ($1 >= 100) a100++
+              if ($1 >= 200) a200++
+              if ($1 >= 500) a500++
+            }
+            END {
+              if (n % 2 == 1) median = depths[int(n/2)]
+              else median = (depths[int(n/2)-1] + depths[int(n/2)]) / 2
+          
+              printf "metric\tvalue\n"
+              printf "total_hotspot_positions\t%d\n", n
+              printf "mean_depth\t%.1f\n", (n>0 ? sum/n : 0)
+              printf "median_depth\t%.1f\n", median
+              printf "min_depth\t%d\n", depths[0]
+              printf "max_depth\t%d\n", depths[n-1]
+              printf "pct_above_1x\t%.2f\n", (n>0 ? a1/n*100 : 0)
+              printf "pct_above_10x\t%.2f\n", (n>0 ? a10/n*100 : 0)
+              printf "pct_above_30x\t%.2f\n", (n>0 ? a30/n*100 : 0)
+              printf "pct_above_50x\t%.2f\n", (n>0 ? a50/n*100 : 0)
+              printf "pct_above_100x\t%.2f\n", (n>0 ? a100/n*100 : 0)
+              printf "pct_above_200x\t%.2f\n", (n>0 ? a200/n*100 : 0)
+              printf "pct_above_500x\t%.2f\n", (n>0 ? a500/n*100 : 0)
+            }
+          ' "$DEPTHS" > "$OUTPUT_SUMMARY"
+          
+          echo "[$(date +"%Y-%m-%d %H:%M:%S")] Finished hotspot coverage check"
+    - name: "remarks"
+      image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
+      version: "1.1.0"
+      options:
+        backoffLimit: "2"
+        stageTimeoutMinutes: "120"
+        resources:
+          resourceProfile: "n2d-8-375"
+      inputStages:
+        - input-bucket
+        - hotspot-coverage
       arguments: >-
-        --input-directory /in/input-bucket
+        --pipeline-input-directory /in/input-bucket
+        --hotspot-coverage-input-directory /in/hotspot-coverage
         --excluded-exons /data/resources/ops/panel/excludedExons.tsv
         --output-file /out/remarks.txt

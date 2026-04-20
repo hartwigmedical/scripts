@@ -7,7 +7,9 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
+
 TARGETED_PIPELINE_DIRECTORY = "gs://targeted-pipeline-output-prod-1"
+REMARKS_SUFFIX = "_remarks"
 
 
 def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
@@ -44,7 +46,8 @@ def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
         log_or_warn(f"Found {len(remarks_yamls)} remarks YAMLs", len(remarks_yamls) == relevant_count_found)
         all_remarks_lines = []
         for remarks_yaml in remarks_yamls:
-            run_id = remarks_yaml.stem.removesuffix("_remarks")
+            filename = remarks_yaml.stem
+            run_id = filename[:-len(REMARKS_SUFFIX)] if filename.endswith(REMARKS_SUFFIX) else filename
             logging.info(f"Found remarks YAML {remarks_yaml}")
             remarks_path = f"gs://oncoact-panel-remarks-output/remarks-{run_id}/remarks/remarks.txt"
             if run_bash_command(["gcloud", "storage", "ls", remarks_path]):
