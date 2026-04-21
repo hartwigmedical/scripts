@@ -1,10 +1,10 @@
 apiVersion: hartwigmedicalfoundation.nl/v1
 kind: WorkflowDefinitionCustomResource
 metadata:
-  name: oncoact-panel-remarks-1.1.1
+  name: oncoact-panel-remarks-1.1.2
 spec:
   name: "oncoact-panel-remarks"
-  version: "1.1.1"
+  version: "1.1.2"
   storagePath: "gs://oncoact-panel-remarks-output"
   externalInputs:
     - name: input-bucket
@@ -14,7 +14,7 @@ spec:
   stages:
     - name: "hotspot"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.1.1"
+      version: "1.1.2"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
@@ -97,7 +97,7 @@ spec:
           echo "[$(date +"%Y-%m-%d %H:%M:%S")] Finished hotspot coverage check"
     - name: "remarks"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.1.1"
+      version: "1.1.2"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
