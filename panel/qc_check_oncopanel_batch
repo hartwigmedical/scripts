@@ -48,6 +48,8 @@ main() {
           --driver-gene-panel "${driver_gene_panel}" \
           --excluded-exons "${EXCLUDED_EXONS}" \
             || die "Could not run QC check script for ${run_id}"
+      else
+        mkdir "${local_working_directory}" || die "Could not create output directory"
       fi
 
       remarks_yaml="${local_working_directory}/${run_id}_remarks.yaml"
