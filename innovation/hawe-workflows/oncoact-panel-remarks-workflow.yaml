@@ -1,7 +1,7 @@
 apiVersion: hartwigmedicalfoundation.nl/v1
 kind: WorkflowDefinitionCustomResource
 metadata:
-  name: oncoact-panel-remarks-1.1.0
+  name: oncoact-panel-remarks-1.1.1
 spec:
   name: "oncoact-panel-remarks"
   version: "1.1.1"
