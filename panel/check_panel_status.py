@@ -59,7 +59,7 @@ def main(batch: Optional[str], input_directory: Optional[Path]) -> None:
             else:
                 logging.warning(f"No remarks output for {run_id}")
         if all_remarks_lines:
-            remarks_lines = "\n".join(all_remarks_lines) + "\n"
+            remarks_lines = "\n".join(sorted(all_remarks_lines)) + "\n"
             logging.info(f"Remarks output:\nSample ID\tOpmerkingen\n{remarks_lines}")
 
 
