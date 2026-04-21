@@ -281,17 +281,17 @@ def determine_remarks(
 
     if not good_coverage:
         remarks.append(
-            f"De coverage van dit sample is te laag:"
+            f"De coverage van dit sample is te laag."
         )
 
         if not good_coverage_exons:
             remarks.append(
-                f"slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
+                f"Slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
                 f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X:.1f}% zou moeten zijn."
             )
         if not good_coverage_hotspots:
             remarks.append(
-                f"slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
+                f"Slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
                 f"terwijl dit minstens {TARGET_PERCENT_HOTSPOT_AT_LEAST_200X:.1f}% zou moeten zijn."
             )
         remarks.append("Hierdoor kunnen varianten gemist worden.")
