@@ -12,10 +12,11 @@ print_usage() {
     self=$(basename "$0")
     echo ""
     echo "Description: Run qc_check_oncopanel_run.py script on a batch of OncoPanel runs"
-    echo "Usage: $self \${sample_name} \${local_working_directory}"
+    echo "Usage: $self \${sample_name} \${local_working_directory} \${optional_remarks_only}"
     echo "Examples:"
     echo "  $self 230929 ~/tmp"
-    echo "  $self 230929_HMFregTARG_FR12345678 ~/some/nested/dir"
+    echo "  $self 230929_HMFregTARG_FR12345678 ~/some/nested/dir TRUE"
+    echo "  $self 230929_HMFregTARG_FR12345678 ~/some/nested/dir FALSE"
     echo ""
     exit 1
 }
@@ -25,6 +26,7 @@ main() {
 
   run_id_start=$1 && shift
   local_working_directory=$1 && shift
+  remarks_only=${1:-FALSE} && shift
 
   if [[ -z ${local_working_directory} ]]; then
     info "Missing arguments"
@@ -39,12 +41,14 @@ main() {
     targeted_run_url_without_end_slash="${targeted_run_url::-1}"
     run_id="${targeted_run_url_without_end_slash##*/}"
     if [[ ${run_id} = ${run_id_start}* ]]; then
-      qc_check_oncopanel_run.py \
-        --gcp-run-url "${targeted_run_url}" \
-        --working-directory "${local_working_directory}" \
-        --driver-gene-panel "${driver_gene_panel}" \
-        --excluded-exons "${EXCLUDED_EXONS}" \
-          || die "Could not run QC check script for ${run_id}"
+      if [[ ${remarks_only} != "TRUE" ]]; then
+        qc_check_oncopanel_run.py \
+          --gcp-run-url "${targeted_run_url}" \
+          --working-directory "${local_working_directory}" \
+          --driver-gene-panel "${driver_gene_panel}" \
+          --excluded-exons "${EXCLUDED_EXONS}" \
+            || die "Could not run QC check script for ${run_id}"
+      fi
 
       remarks_yaml="${local_working_directory}/${run_id}_remarks.yaml"
       genRemarksYaml.py "${run_id}" > "${remarks_yaml}" || die "Could not create remarks YAML"
