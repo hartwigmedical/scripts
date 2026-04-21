@@ -48,10 +48,9 @@ main() {
           --driver-gene-panel "${driver_gene_panel}" \
           --excluded-exons "${EXCLUDED_EXONS}" \
             || die "Could not run QC check script for ${run_id}"
-      else
-        mkdir "${local_working_directory}" || die "Could not create output directory"
       fi
 
+      mkdir -p "${local_working_directory}" || die "Could not create local working directory"
       remarks_yaml="${local_working_directory}/${run_id}_remarks.yaml"
       genRemarksYaml.py "${run_id}" > "${remarks_yaml}" || die "Could not create remarks YAML"
 
