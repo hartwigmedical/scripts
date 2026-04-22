@@ -75,7 +75,7 @@ if [[ -z "$manual_version" ]]; then
 
     case "$update_type" in
         beta)
-            most_recent_beta_tag=$(git log "$remote"/"$main_branch"..HEAD --pretty="%D" | grep -oE 'tag: [^,)]+' | sed 's/tag: //' | grep 'beta' | head -n1)
+            most_recent_beta_tag=$(git log "$remote"/"$main_branch"..HEAD --pretty="%D" | grep -oE 'tag: [^,)]+' | sed 's/tag: //' | grep 'beta' | head -n1 || true)
             if [[ "$1" != "-b" && "$1" != "--beta" ]]; then
                 if [[ -n "$most_recent_beta_tag" ]]; then
                     echo "A beta tag already exists for this branch. Use -b or --beta to bump the beta version." >&2
