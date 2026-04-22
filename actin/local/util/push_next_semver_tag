@@ -17,6 +17,10 @@ function usage_error() {
 }
 
 manual_version=""
+
+if [[ $# == 0 ]]; then
+    usage_error
+fi
 case "$1" in
     --major | -M) bump_description="Major (breaking changes)" ;;
     --minor | -m) bump_description="Minor (new features, backwards compatible)" ;;
