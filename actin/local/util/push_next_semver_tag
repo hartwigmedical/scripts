@@ -54,7 +54,7 @@ if [ -n "$(git status --porcelain)" ]; then
     echo "Branch has uncommitted changes. Ensure all changes are committed and pushed before tagging a version." >&2
     exit 1
 fi
-if [ -n "$(git log "${remote}"/"${main_branch}"..HEAD)" ]; then
+if [ -n "$(git log "${remote}"/"${current_branch}"..HEAD)" ]; then
     echo "Branch has unpushed commits. Ensure all changes are committed and pushed before tagging a version." >&2
     exit 1
 fi
