@@ -67,28 +67,31 @@ most_recent_production_tag=$(git tag --merged "$remote"/"$main_branch" --sort=cr
 next_semver=$manual_version
 production_version_for_display=${most_recent_production_tag:-"No production tag exists yet."}
 current_version_for_display="$production_version_for_display"
+
+if [[ "$update_type" == "beta" ]]; then
+    most_recent_beta_tag=$(git log "$remote"/"$main_branch"..HEAD --pretty="%D" | grep -oE 'tag: [^,)]+' | sed 's/tag: //' | grep 'beta' | head -n1 || true)
+    current_version_for_display=${most_recent_beta_tag:-"No previous beta tag."}
+fi
+
+case "$update_type" in
+    beta)
+        if [[ "$1" != "-b" && "$1" != "--beta" ]]; then
+            if [[ -z "$manual_version" && -n "$most_recent_beta_tag" ]]; then
+                echo "A beta tag already exists for this branch. Use -b or --beta to bump the beta version." >&2
+                exit 1
+            fi
+            bump_description="${bump_description} — beta pre-release on ${current_branch}"
+        fi
+        current_semver="${most_recent_beta_tag:-$most_recent_production_tag}"
+        ;;
+    production) current_semver="$most_recent_production_tag" ;;
+esac
+
 if [[ -z "$manual_version" ]]; then
     if [[ -z "$most_recent_production_tag" ]]; then
         echo "No production tags found on $remote/$main_branch. Create the initial version tag manually." >&2
         exit 1
     fi
-
-    case "$update_type" in
-        beta)
-            most_recent_beta_tag=$(git log "$remote"/"$main_branch"..HEAD --pretty="%D" | grep -oE 'tag: [^,)]+' | sed 's/tag: //' | grep 'beta' | head -n1 || true)
-            if [[ "$1" != "-b" && "$1" != "--beta" ]]; then
-                if [[ -n "$most_recent_beta_tag" ]]; then
-                    echo "A beta tag already exists for this branch. Use -b or --beta to bump the beta version." >&2
-                    exit 1
-                fi
-                bump_description="${bump_description} — beta pre-release on ${current_branch}"
-            fi
-            current_semver="${most_recent_beta_tag:-$most_recent_production_tag}"
-            current_version_for_display=${most_recent_beta_tag:-"No previous beta tag."}
-            ;;
-        production) current_semver="$most_recent_production_tag" ;;
-    esac
-
     next_semver=$(next_semver_tags "$1")
     validate_semver_increment --"$update_type" "$current_semver" "$next_semver"
 fi
