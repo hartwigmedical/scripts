@@ -55,7 +55,6 @@ AMPLIFICATIONS_DESCRIPTION = "amplificaties"
 @dataclass(frozen=True, eq=True)
 class Metadata:
     tumor_name: str
-    tumor_barcode: str
     yield_in_bases: int
 
 
@@ -227,12 +226,17 @@ class ExonCoverageStatistics:
         return 100 * self.exons_with_median_coverage_at_least_100x_count / self.relevant_exon_count
 
 
-def main(pipeline_input_directory: Path, hotspot_coverage_input_directory: Path, excluded_exons_file_path: Path,
-         output_file_path: Path) -> None:
+def main(
+        pipeline_input_directory: Path,
+        optional_sample_id: str,
+        hotspot_coverage_input_directory: Path,
+        excluded_exons_file_path: Path,
+        output_file_path: Path,
+) -> None:
     logging.info("Start QC checking OncoPanel runs")
 
     logging.info(f"Get metadata from {pipeline_input_directory}")
-    metadata = get_metadata(pipeline_input_directory)
+    metadata = load_metadata(pipeline_input_directory, optional_sample_id)
 
     logging.info(f"Handling run for {metadata.tumor_name}")
 
@@ -765,15 +769,28 @@ def get_bool_from_string(string: str) -> bool:
         raise ValueError(f"Unrecognized boolean string: {string}")
 
 
-def get_metadata(pipeline_directory: Path) -> Metadata:
-    with open(pipeline_directory / "metadata.json") as in_f:
-        metadata_json = json.load(in_f)
-    tumor_name = metadata_json["tumor"]["sampleName"]
-    tumor_barcode = metadata_json["tumor"]["barcode"]
+def load_metadata(pipeline_directory: Path, optional_sample_id: str) -> Metadata:
+    metadata_json_path = pipeline_directory / "metadata.json"
+    metadata_json_exists = metadata_json_path.exists()
+    stripped_optional_sample_id = optional_sample_id.strip('"\'')
+    if stripped_optional_sample_id:
+        tumor_name = stripped_optional_sample_id
+    elif metadata_json_exists:
+        with open(metadata_json_path) as in_f:
+            metadata_json = json.load(in_f)
+        tumor_name = metadata_json["tumor"]["sampleName"]
+    else:
+        raise ValueError(f"No sample ID available")
 
-    yield_in_bases = get_yield_in_bases_from_api(tumor_barcode)
+    if metadata_json_exists:
+        with open(metadata_json_path) as in_f:
+            metadata_json = json.load(in_f)
+        yield_in_bases = get_yield_in_bases_from_api(metadata_json["tumor"]["barcode"])
+    else:
+        logging.warning(f"Cannot get yield from API without metadata.json")
+        yield_in_bases = -BASES_PER_GBASE
 
-    return Metadata(tumor_name, tumor_barcode, yield_in_bases)
+    return Metadata(tumor_name, yield_in_bases)
 
 
 def get_yield_in_bases_from_api(tumor_barcode: str) -> int:
@@ -829,11 +846,17 @@ def convert_bases_to_rounded_gbases(base_count: int) -> Decimal:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="oncoact_panel_remarks.py", description="Create automatic remarks for OncoAct Panel runs")
-    parser.add_argument("--pipeline-input-directory", "-i", type=Path, required=True, help="Pipeline input directory")
-    parser.add_argument("--hotspot-coverage-input-directory", "-c", type=Path, required=True, help="Hotspot coverage input directory")
-    parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis")
-    parser.add_argument("--output-file", "-o", type=Path, required=True, help="Output file with sample remarks")
+    parser = argparse.ArgumentParser(prog="oncoact_panel_remarks.py", description="Create automatic remarks for OncoAct Panel runs.")
+    parser.add_argument("--pipeline-input-directory", "-i", type=Path, required=True, help="Pipeline input directory.")
+    parser.add_argument(
+        "--optional-sample-id", "-s", type=str, required=True,
+        help="Optional sample ID. If an empty string is provided, the sample ID is extracted from the metadata.json."
+    )
+    parser.add_argument(
+        "--hotspot-coverage-input-directory", "-c", type=Path, required=True, help="Hotspot coverage input directory."
+    )
+    parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis.")
+    parser.add_argument("--output-file", "-o", type=Path, required=True, help="Output file with sample remarks.")
     return parser.parse_args()
 
 
@@ -842,4 +865,10 @@ if __name__ == "__main__":
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
     )
     args = parse_args()
-    main(args.pipeline_input_directory, args.hotspot_coverage_input_directory, args.excluded_exons, args.output_file)
+    main(
+        args.pipeline_input_directory,
+        args.optional_sample_id,
+        args.hotspot_coverage_input_directory,
+        args.excluded_exons,
+        args.output_file
+    )
