@@ -1,6 +1,6 @@
 name: "remarks-250815-2"
 workflow: "oncoact-panel-remarks"
-version: "1.2.0"
+version: "1.2.1"
 params:
   input_bucket_uri: "gs://targeted-pipeline-output-prod-1/example-run"
   optional_sample_id: ""

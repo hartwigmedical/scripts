@@ -10,7 +10,7 @@ if not run_id:
     exit(1)
 
 body = """workflow: "oncoact-panel-remarks"
-version: "1.2.0"
+version: "1.2.1"
 params:\n"""
 
 outputYaml = ""
