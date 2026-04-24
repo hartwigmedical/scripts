@@ -35,5 +35,5 @@ echo "Copied files to ${shared_actin_data_external_uri}"
 
 info "Tracking report shared event for ${patient}"
 gcloud pubsub topics publish "projects/${gcp_project}/topics/patient-tracker.update" \
-    --message="{\"patientId\":\"${patient}\",\"timestamp\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",\"process\":\"SHARING\",\"status\":\"SHARED\",\"message\":null}"
+    --message="{\"patientId\":\"${patient}\",\"site\":\"${gcp_project}\",\"timestamp\":\"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",\"process\":\"SHARING\",\"status\":\"SHARED\",\"message\":null}"
 
