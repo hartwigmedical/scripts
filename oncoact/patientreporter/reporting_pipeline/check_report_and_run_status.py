@@ -615,7 +615,7 @@ def _get_default_report_content(self, report_created_record):
 
         hospitalName = used_lama_data["hospitalName"]
         if hospitalName == "NKI-AVL":
-            wgs_bucket = "python3 ~/tmp/tmp_scripts_report/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py " + report_created_record['barcode'] + " --profile prod"
+            wgs_bucket = "python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py " + report_created_record['barcode'] + " --profile prod"
         else:
             wgs_bucket = None
 
