@@ -1,5 +1,5 @@
 name: "cfdna-report"
-version: "0.1.0"
+version: "0.2.0"
 storagePath: "gs://cfdna-report-output"
 externalInputs:
   - name: wgs-input-bucket
@@ -9,7 +9,7 @@ externalInputs:
 stages:
   - name: "sample-manifest"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/coral"
-    version: "0.1.0"
+    version: "0.2.0"
     options:
       backoffLimit: "2"
       stageTimeoutMinutes: "60"
@@ -28,7 +28,7 @@ stages:
           > /out/sample_manifest.csv
   - name: "coral"
     image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/coral"
-    version: "0.1.0"
+    version: "0.2.0"
     options:
       backoffLimit: "2"
       stageTimeoutMinutes: "60"

@@ -1,6 +1,6 @@
 name: "colo-example"
 workflow: "cfdna-report"
-version: "0.1.0"
+version: "0.2.0"
 params:
   wgs_input_bucket_uri: "gs://cfdna-testing"
   cfdna_input_bucket_uri: "gs://cfdna-testing"
