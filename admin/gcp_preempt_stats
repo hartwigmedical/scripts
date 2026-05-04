@@ -1,0 +1,589 @@
+#!/usr/bin/env python3
+"""Summarize Compute Engine Spot/preemptible VM lifecycle logs.
+
+Requires an authenticated gcloud CLI. The script reads Cloud Audit Logs for
+Compute Engine VM lifecycle events over a requested freshness window.
+"""
+
+from __future__ import annotations
+
+import argparse
+import collections
+import datetime as dt
+import json
+import re
+import subprocess
+import sys
+from typing import Any
+
+
+LOG_FILTER = r'''
+resource.type="gce_instance"
+protoPayload.serviceName="compute.googleapis.com"
+(
+  log_id("cloudaudit.googleapis.com/activity")
+  OR log_id("cloudaudit.googleapis.com/system_event")
+)
+(
+  protoPayload.methodName:"compute.instances.insert"
+  OR protoPayload.methodName:"compute.instances.start"
+  OR protoPayload.methodName:"compute.instances.automaticRestart"
+  OR protoPayload.methodName:"compute.instances.recreateInstance"
+  OR protoPayload.methodName:"compute.instances.preempted"
+  OR protoPayload.methodName:"compute.instances.guestTerminate"
+  OR protoPayload.methodName:"compute.instances.stop"
+  OR protoPayload.methodName:"compute.instances.delete"
+  OR operation.producer:"compute.instances.start"
+  OR operation.producer:"compute.instances.automaticRestart"
+  OR operation.producer:"compute.instances.recreateInstance"
+  OR operation.producer:"compute.instances.preempted"
+  OR operation.producer:"compute.instances.guestTerminate"
+  OR operation.producer:"compute.instances.stop"
+  OR operation.producer:"compute.instances.delete"
+)
+'''
+
+
+RUNNING_EVENTS = ("insert", "start", "automaticRestart", "recreateInstance")
+PREEMPT_EVENTS = ("preempted",)
+FINISHED_EVENTS = ("guestTerminate", "stop", "delete")
+ALL_EVENTS = RUNNING_EVENTS + PREEMPT_EVENTS + FINISHED_EVENTS
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Summarize GCE Spot/preemptible VM lifecycle logs from Cloud Logging."
+    )
+    parser.add_argument(
+        "duration",
+        help="Cloud Logging freshness window, for example 6h, 24h, 7d, 30d.",
+    )
+    parser.add_argument(
+        "--project",
+        help="Google Cloud project ID. Defaults to the active gcloud project.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=10000,
+        help="Maximum log entries to read. Default: 10000.",
+    )
+    parser.add_argument(
+        "--prefix-regex",
+        default=r"^(.*)-[a-z0-9]{4}$",
+        help=(
+            "Regex used to derive a stable group from VM names. The first "
+            "capture group is used. Default strips common 4-char MIG suffixes."
+        ),
+    )
+    parser.add_argument(
+        "--show-events",
+        action="store_true",
+        help="Print each preemption event after the summary.",
+    )
+    parser.add_argument(
+        "--show-vms",
+        action="store_true",
+        help="Print the per-created-VM final status table.",
+    )
+    parser.add_argument(
+        "--show-node-pools",
+        action="store_true",
+        help="Print the instance-name-group/node-pool outcomes table.",
+    )
+    parser.add_argument(
+        "--max-vms",
+        type=int,
+        default=500,
+        help="Maximum rows to print with --show-vms. Default: 500.",
+    )
+    parser.add_argument(
+        "--gcloud-timeout",
+        type=int,
+        default=60,
+        help="Seconds to wait for gcloud logging read before failing. Default: 60.",
+    )
+    return parser.parse_args()
+
+
+def read_logs(args: argparse.Namespace) -> list[dict[str, Any]]:
+    cmd = [
+        "gcloud",
+        "logging",
+        "read",
+        LOG_FILTER,
+        f"--freshness={args.duration}",
+        f"--limit={args.limit}",
+        "--order=desc",
+        "--format=json",
+    ]
+    if args.project:
+        cmd.append(f"--project={args.project}")
+
+    try:
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=args.gcloud_timeout,
+        )
+    except FileNotFoundError:
+        sys.exit("gcloud was not found on PATH.")
+    except subprocess.TimeoutExpired:
+        sys.exit(
+            f"gcloud logging read did not finish within {args.gcloud_timeout}s. "
+            "Try a smaller --limit, a shorter duration, or increase --gcloud-timeout."
+        )
+    except subprocess.CalledProcessError as exc:
+        sys.stderr.write(exc.stderr)
+        sys.exit(exc.returncode)
+
+    if not result.stdout.strip():
+        return []
+    entries = json.loads(result.stdout)
+    return sorted(entries, key=lambda entry: entry.get("timestamp", ""))
+
+
+def method_name(entry: dict[str, Any]) -> str:
+    proto = entry.get("protoPayload", {})
+    operation = entry.get("operation", {})
+    return " ".join(
+        value
+        for value in (
+            proto.get("methodName", ""),
+            operation.get("producer", ""),
+        )
+        if value
+    )
+
+
+def event_type(entry: dict[str, Any]) -> str | None:
+    methods = method_name(entry)
+    for event in ALL_EVENTS:
+        if f"compute.instances.{event}" in methods:
+            return event
+    return None
+
+
+def instance_name(entry: dict[str, Any]) -> str:
+    proto = entry.get("protoPayload", {})
+    resource_name = proto.get("resourceName", "")
+    if "/instances/" in resource_name:
+        return resource_name.rsplit("/instances/", 1)[1]
+
+    request_name = proto.get("request", {}).get("name")
+    if request_name:
+        return request_name
+
+    labels = entry.get("resource", {}).get("labels", {})
+    return labels.get("instance_id", "<unknown>")
+
+
+def instance_group(name: str, prefix_regex: re.Pattern[str]) -> str:
+    match = prefix_regex.search(name)
+    if match:
+        return match.group(1)
+    return name
+
+
+def zone(entry: dict[str, Any]) -> str:
+    labels = entry.get("resource", {}).get("labels", {})
+    return labels.get("zone", "<unknown>")
+
+
+def instance_id(entry: dict[str, Any]) -> str:
+    labels = entry.get("resource", {}).get("labels", {})
+    return labels.get("instance_id", "<unknown>")
+
+
+def principal(entry: dict[str, Any]) -> str:
+    proto = entry.get("protoPayload", {})
+    auth = proto.get("authenticationInfo", {})
+    return auth.get("principalEmail", "")
+
+
+def machine_type(entry: dict[str, Any]) -> str:
+    proto = entry.get("protoPayload", {})
+    value = proto.get("request", {}).get("machineType")
+    if not value:
+        return "<unknown>"
+    return value.rsplit("/", 1)[-1]
+
+
+def status_after_event(current_status: str, event: str) -> str:
+    if event in RUNNING_EVENTS:
+        return "RUNNING"
+    if event in PREEMPT_EVENTS:
+        return "PREEMPTED"
+    if event in FINISHED_EVENTS and current_status != "PREEMPTED":
+        return "FINISHED"
+    return current_status
+
+
+def fmt_table(rows: list[tuple[Any, ...]], headers: tuple[str, ...]) -> str:
+    all_rows = [headers, *[[str(cell) for cell in row] for row in rows]]
+    widths = [max(len(row[i]) for row in all_rows) for i in range(len(headers))]
+    lines = []
+    lines.append("  ".join(headers[i].ljust(widths[i]) for i in range(len(headers))))
+    lines.append("  ".join("-" * widths[i] for i in range(len(headers))))
+    for row in all_rows[1:]:
+        lines.append("  ".join(row[i].ljust(widths[i]) for i in range(len(headers))))
+    return "\n".join(lines)
+
+
+def pct(count: int, total: int) -> str:
+    if total == 0:
+        return "0.0%"
+    return f"{count / total * 100:.1f}%"
+
+
+def incidence_rows(
+    totals: collections.Counter[str],
+    statuses: dict[str, collections.Counter[str]],
+    max_running: collections.Counter[str],
+) -> list[tuple[str, int, int, int, str, int, str, int, str]]:
+    rows = []
+    for name, total in totals.most_common():
+        status_counts = statuses[name]
+        preempted = status_counts["PREEMPTED"]
+        finished = status_counts["FINISHED"]
+        running = status_counts["RUNNING"]
+        rows.append(
+            (
+                name,
+                total,
+                max_running[name],
+                preempted,
+                pct(preempted, total),
+                finished,
+                pct(finished, total),
+                running,
+                pct(running, total),
+            )
+        )
+    return rows
+
+
+def estimate_max_running(
+    entries: list[dict[str, Any]],
+    created_vm_state: dict[str, dict[str, Any]],
+    prefix_regex: re.Pattern[str],
+) -> tuple[
+    int,
+    collections.Counter[str],
+    collections.Counter[str],
+    collections.Counter[str],
+]:
+    running_by_id: dict[str, bool] = {}
+    total_running = 0
+    max_total_running = 0
+    running_by_zone: collections.Counter[str] = collections.Counter()
+    running_by_group: collections.Counter[str] = collections.Counter()
+    running_by_machine_type: collections.Counter[str] = collections.Counter()
+    max_running_by_zone: collections.Counter[str] = collections.Counter()
+    max_running_by_group: collections.Counter[str] = collections.Counter()
+    max_running_by_machine_type: collections.Counter[str] = collections.Counter()
+
+    for entry in entries:
+        kind = event_type(entry)
+        if kind is None:
+            continue
+
+        vm_id = instance_id(entry)
+        state = created_vm_state.get(vm_id)
+        if state is None:
+            continue
+
+        if kind in RUNNING_EVENTS:
+            should_run = True
+        elif kind in PREEMPT_EVENTS or kind in FINISHED_EVENTS:
+            should_run = False
+        else:
+            continue
+
+        is_running = running_by_id.get(vm_id, False)
+        if is_running == should_run:
+            continue
+
+        running_by_id[vm_id] = should_run
+        delta = 1 if should_run else -1
+        total_running += delta
+
+        vm_zone = state["zone"]
+        vm_group = instance_group(state["name"], prefix_regex)
+        vm_machine_type = state["machine_type"]
+        running_by_zone[vm_zone] += delta
+        running_by_group[vm_group] += delta
+        running_by_machine_type[vm_machine_type] += delta
+
+        if should_run:
+            max_total_running = max(max_total_running, total_running)
+            max_running_by_zone[vm_zone] = max(
+                max_running_by_zone[vm_zone], running_by_zone[vm_zone]
+            )
+            max_running_by_group[vm_group] = max(
+                max_running_by_group[vm_group], running_by_group[vm_group]
+            )
+            max_running_by_machine_type[vm_machine_type] = max(
+                max_running_by_machine_type[vm_machine_type],
+                running_by_machine_type[vm_machine_type],
+            )
+
+    return (
+        max_total_running,
+        max_running_by_zone,
+        max_running_by_group,
+        max_running_by_machine_type,
+    )
+
+
+def main() -> int:
+    args = parse_args()
+    prefix_regex = re.compile(args.prefix_regex)
+    entries = read_logs(args)
+
+    inserts_by_id: dict[str, dict[str, Any]] = {}
+    created_vm_state: dict[str, dict[str, Any]] = {}
+    preempts: list[dict[str, Any]] = []
+
+    for entry in entries:
+        kind = event_type(entry)
+        if kind is None:
+            continue
+
+        vm_id = instance_id(entry)
+        if kind == "insert":
+            name = instance_name(entry)
+            entry_machine_type = machine_type(entry)
+            inserts_by_id.setdefault(vm_id, entry)
+            if vm_id not in created_vm_state:
+                created_vm_state[vm_id] = {
+                    "created_at": entry["timestamp"],
+                    "created_by": principal(entry),
+                    "last_event_at": entry["timestamp"],
+                    "last_event": kind,
+                    "status_event_at": entry["timestamp"],
+                    "status_event": kind,
+                    "status": "RUNNING",
+                    "zone": zone(entry),
+                    "name": name,
+                    "machine_type": entry_machine_type,
+                }
+            elif entry_machine_type != "<unknown>":
+                created_vm_state[vm_id]["machine_type"] = entry_machine_type
+        elif kind == "preempted":
+            preempts.append(entry)
+
+        state = created_vm_state.get(vm_id)
+        if state is not None:
+            old_status = state["status"]
+            new_status = status_after_event(old_status, kind)
+            state["last_event_at"] = entry["timestamp"]
+            state["last_event"] = kind
+            state["status"] = new_status
+            if new_status != old_status or kind in RUNNING_EVENTS:
+                state["status_event_at"] = entry["timestamp"]
+                state["status_event"] = kind
+            if state.get("name") in ("", "<unknown>"):
+                state["name"] = instance_name(entry)
+            if state.get("zone") in ("", "<unknown>"):
+                state["zone"] = zone(entry)
+
+    created_by_zone = collections.Counter(
+        state["zone"] for state in created_vm_state.values()
+    )
+    created_status_by_zone: dict[str, collections.Counter[str]] = collections.defaultdict(
+        collections.Counter
+    )
+    created_by_group: collections.Counter[str] = collections.Counter()
+    created_status_by_group: dict[str, collections.Counter[str]] = collections.defaultdict(
+        collections.Counter
+    )
+    created_by_machine_type: collections.Counter[str] = collections.Counter()
+    created_status_by_machine_type: dict[
+        str, collections.Counter[str]
+    ] = collections.defaultdict(collections.Counter)
+    for state in created_vm_state.values():
+        group = instance_group(state["name"], prefix_regex)
+        created_by_group[group] += 1
+        created_status_by_group[group][state["status"]] += 1
+        created_status_by_zone[state["zone"]][state["status"]] += 1
+        created_by_machine_type[state["machine_type"]] += 1
+        created_status_by_machine_type[state["machine_type"]][state["status"]] += 1
+    (
+        max_running_total,
+        max_running_by_zone,
+        max_running_by_group,
+        max_running_by_machine_type,
+    ) = estimate_max_running(entries, created_vm_state, prefix_regex)
+
+    preempted_ids = {instance_id(entry) for entry in preempts}
+    inserts_for_preempted = preempted_ids & set(inserts_by_id)
+
+    print(f"Window: last {args.duration}")
+    print(f"Log entries read: {len(entries)}")
+    if len(entries) >= args.limit:
+        print(f"WARNING: hit --limit={args.limit}; increase --limit for complete stats.")
+    print(f"VM insert events: {len(inserts_by_id)}")
+    print(f"Preemption events: {len(preempts)}")
+    print(f"Unique preempted VM instance IDs: {len(preempted_ids)}")
+    print(f"Preempted VMs with creation event in window: {len(inserts_for_preempted)}")
+    print(f"Estimated max simultaneously running created VMs: {max_running_total}")
+    if created_vm_state:
+        known_machine_types = sum(
+            1
+            for state in created_vm_state.values()
+            if state["machine_type"] != "<unknown>"
+        )
+        print(
+            "Machine types resolved from insert logs: "
+            f"{known_machine_types}/{len(created_vm_state)}"
+        )
+    status_counts = collections.Counter(
+        state["status"] for state in created_vm_state.values()
+    )
+    print(
+        "Created VM final statuses: "
+        + (
+            ", ".join(
+                f"{status}={count} ({pct(count, status_counts.total())})"
+                for status, count in sorted(status_counts.items())
+            )
+            if status_counts
+            else "none"
+        )
+    )
+    print()
+
+    if created_by_zone:
+        print("Created VM outcomes by zone:")
+        print(
+            fmt_table(
+                incidence_rows(
+                    created_by_zone, created_status_by_zone, max_running_by_zone
+                ),
+                (
+                    "zone",
+                    "created",
+                    "max_running",
+                    "preempted",
+                    "preempted_pct",
+                    "finished",
+                    "finished_pct",
+                    "running",
+                    "running_pct",
+                ),
+            )
+        )
+        print()
+
+    if args.show_node_pools and created_by_group:
+        print("Created VM outcomes by instance name group:")
+        print(
+            fmt_table(
+                incidence_rows(
+                    created_by_group, created_status_by_group, max_running_by_group
+                ),
+                (
+                    "group",
+                    "created",
+                    "max_running",
+                    "preempted",
+                    "preempted_pct",
+                    "finished",
+                    "finished_pct",
+                    "running",
+                    "running_pct",
+                ),
+            )
+        )
+        print()
+
+    if created_by_machine_type:
+        print("Created VM outcomes by machine type:")
+        print(
+            fmt_table(
+                incidence_rows(
+                    created_by_machine_type,
+                    created_status_by_machine_type,
+                    max_running_by_machine_type,
+                ),
+                (
+                    "machine_type",
+                    "created",
+                    "max_running",
+                    "preempted",
+                    "preempted_pct",
+                    "finished",
+                    "finished_pct",
+                    "running",
+                    "running_pct",
+                ),
+            )
+        )
+        print()
+
+    if args.show_vms and created_vm_state:
+        rows = []
+        for vm_id, state in sorted(
+            created_vm_state.items(), key=lambda item: (item[1]["created_at"], item[0])
+        ):
+            name = state["name"]
+            rows.append(
+                (
+                    state["created_at"],
+                    state["status"],
+                    state["status_event_at"],
+                    state["status_event"],
+                    state["last_event_at"],
+                    state["last_event"],
+                    state["zone"],
+                    state["machine_type"],
+                    instance_group(name, prefix_regex),
+                    name,
+                    vm_id,
+                    state["created_by"],
+                )
+            )
+
+        print("Created VM final status table:")
+        visible_rows = rows[: args.max_vms]
+        print(
+            fmt_table(
+                visible_rows,
+                (
+                    "created_at",
+                    "status",
+                    "status_at",
+                    "status_event",
+                    "last_seen_at",
+                    "last_seen_event",
+                    "zone",
+                    "machine_type",
+                    "group",
+                    "instance",
+                    "instance_id",
+                    "created_by",
+                ),
+            )
+        )
+        if len(rows) > args.max_vms:
+            print(f"... truncated {len(rows) - args.max_vms} rows; increase --max-vms.")
+        print()
+
+    if args.show_events and preempts:
+        rows = []
+        for entry in preempts:
+            timestamp = entry["timestamp"]
+            name = instance_name(entry)
+            group = instance_group(name, prefix_regex)
+            rows.append((timestamp, zone(entry), group, name, instance_id(entry)))
+        print("Preemption events:")
+        print(fmt_table(rows, ("timestamp", "zone", "group", "instance", "instance_id")))
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
