@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""Find Cloud Armor WAF triggers in denied load balancer logs.
+
+Requires an authenticated gcloud CLI. The script reads Cloud Logging entries for
+the ingress nginx security policy over a requested freshness window.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from typing import Any
+
+
+LOG_FILTER = r'''
+(resource.type:(http_load_balancer) OR resource.type:(tcp_ssl_proxy_rule) OR resource.type:(l4_proxy_rule)) AND jsonPayload.enforcedSecurityPolicy.name:(ingress-nginx-security-policy)
+jsonPayload.enforcedSecurityPolicy.outcome="DENY"
+'''
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Find Cloud Armor WAF triggers from denied Cloud Logging entries."
+    )
+    parser.add_argument(
+        "duration",
+        help="Cloud Logging freshness window, for example 6h, 24h, 7d, 30d.",
+    )
+    parser.add_argument(
+        "--project",
+        help="Google Cloud project ID. Defaults to the active gcloud project.",
+    )
+    return parser.parse_args()
+
+
+def read_logs(args: argparse.Namespace) -> list[dict[str, Any]]:
+    cmd = [
+        "gcloud",
+        "logging",
+        "read",
+        LOG_FILTER,
+        f"--freshness={args.duration}",
+        "--order=desc",
+        "--format=json",
+    ]
+    if args.project:
+        cmd.append(f"--project={args.project}")
+
+    try:
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except FileNotFoundError:
+        sys.exit("gcloud was not found on PATH.")
+    except subprocess.TimeoutExpired:
+        sys.exit("gcloud logging read did not finish within 60s. Try a shorter duration.")
+    except subprocess.CalledProcessError as exc:
+        sys.stderr.write(exc.stderr)
+        sys.exit(exc.returncode)
+
+    if not result.stdout.strip():
+        return []
+    entries = json.loads(result.stdout)
+    return sorted(entries, key=lambda entry: entry.get("timestamp", ""))
+
+
+def nested_values(value: Any, target_key: str) -> list[Any]:
+    if isinstance(value, dict):
+        values = []
+        for key, child in value.items():
+            if key == target_key:
+                values.append(child)
+            values.extend(nested_values(child, target_key))
+        return values
+    if isinstance(value, list):
+        values = []
+        for child in value:
+            values.extend(nested_values(child, target_key))
+        return values
+    return []
+
+
+def flatten_strings(values: list[Any]) -> list[str]:
+    flattened = []
+    for value in values:
+        if isinstance(value, str):
+            flattened.append(value)
+        elif isinstance(value, list):
+            flattened.extend(flatten_strings(value))
+    return flattened
+
+
+def waf_triggers(entry: dict[str, Any]) -> list[str]:
+    json_payload = entry.get("jsonPayload", {})
+    enforced_policy = json_payload.get("enforcedSecurityPolicy", {})
+    triggers = flatten_strings(
+        nested_values(enforced_policy, "preconfiguredExprIds")
+        + nested_values(json_payload, "preconfiguredExprIds")
+    )
+    if triggers:
+        return sorted(set(triggers))
+
+    region_code = (
+        json_payload.get("securityPolicyRequestData", {})
+        .get("remoteIpInfo", {})
+        .get("regionCode")
+    )
+    if region_code:
+        return [f"region:{region_code}"]
+
+    return ["<no trigger id in log entry>"]
+
+
+def request_url(entry: dict[str, Any]) -> str:
+    http_request = entry.get("httpRequest", {})
+    return http_request.get("requestUrl", "")
+
+
+def main() -> int:
+    args = parse_args()
+    entries = read_logs(args)
+
+    for entry in entries:
+        for trigger in waf_triggers(entry):
+            print(f"{trigger}\t{request_url(entry)}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
