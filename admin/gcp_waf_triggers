@@ -15,8 +15,18 @@ from typing import Any
 
 
 LOG_FILTER = r'''
-(resource.type:(http_load_balancer) OR resource.type:(tcp_ssl_proxy_rule) OR resource.type:(l4_proxy_rule)) AND jsonPayload.enforcedSecurityPolicy.name:(ingress-nginx-security-policy)
-jsonPayload.enforcedSecurityPolicy.outcome="DENY"
+(resource.type:(http_load_balancer) OR resource.type:(tcp_ssl_proxy_rule) OR resource.type:(l4_proxy_rule))
+(
+  (
+    jsonPayload.enforcedSecurityPolicy.name:(ingress-nginx-security-policy)
+    jsonPayload.enforcedSecurityPolicy.outcome="DENY"
+  )
+  OR
+  (
+    jsonPayload.previewSecurityPolicy.name:(ingress-nginx-security-policy)
+    jsonPayload.previewSecurityPolicy.outcome="DENY"
+  )
+)
 '''
 
 
@@ -99,8 +109,10 @@ def flatten_strings(values: list[Any]) -> list[str]:
 def waf_triggers(entry: dict[str, Any]) -> list[str]:
     json_payload = entry.get("jsonPayload", {})
     enforced_policy = json_payload.get("enforcedSecurityPolicy", {})
+    preview_policy = json_payload.get("previewSecurityPolicy", {})
     triggers = flatten_strings(
         nested_values(enforced_policy, "preconfiguredExprIds")
+        + nested_values(preview_policy, "preconfiguredExprIds")
         + nested_values(json_payload, "preconfiguredExprIds")
     )
     if triggers:
