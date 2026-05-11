@@ -14,6 +14,7 @@ REF_GENOME_VERSION_38="38"
 MODE_GENOME="GENOME"
 MODE_HMFTOOLS="HMFTOOLS"
 MODE_PANEL_TSO500="PANEL_TSO500"
+MODE_PANEL_MSK="PANEL_MSK"
 
 print_usage() {
     echo ""
@@ -30,7 +31,7 @@ print_usage() {
     echo "  mode                One of: '${MODE_GENOME}', '${MODE_HMFTOOLS}', '${MODE_PANEL_TSO500}'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260413_build_resources_3.0.0--4/ 38 v3.0.0--4 HMFTOOLS"
+    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260511_build_resources_3.0.0--4/ 38 v3.0.0--4 HMFTOOLS"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<resources_version>.tar.gz"
@@ -57,7 +58,7 @@ fi
 
 IFS=',' read -ra MODES <<< "${MODE}"
 for m in "${MODES[@]}"; do
-    if [[ ! "$m" =~ ^(${MODE_GENOME}|${MODE_HMFTOOLS}|${MODE_PANEL_TSO500})$ ]]; then
+    if [[ ! "$m" =~ ^(${MODE_GENOME}|${MODE_HMFTOOLS}|${MODE_PANEL_TSO500}|${MODE_PANEL_MSK})$ ]]; then
         echo "Error: '$m' is not a valid mode."
         print_usage
         exit 1
@@ -130,6 +131,7 @@ copy_files_hmftools (){
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/mappability_150.${REF_GENOME_VERSION}.bed.gz  ${VARIANTS_DIR}
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/${REF_GENOME_VERSION}/msi_jitter_sites.${REF_GENOME_VERSION}.tsv.gz ${VARIANTS_DIR}
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/mappability/ms_model_coefficients.hmf_wgs.tsv                                   ${VARIANTS_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500//ms_model_error_rates.tso500.37.tsv                                ${VARIANTS_DIR} # For custom panels, default to error rates from TS0500 (note: only GRCh37 supported)
 
 	if [[ "${REF_GENOME_VERSION}" == ${REF_GENOME_VERSION_37} ]]; then
 		copy_files ${COMMON_RESOURCES_BUCKET_PATH}/sage/${REF_GENOME_VERSION}/SageGermlinePon*.${REF_GENOME_VERSION}.tsv.gz    ${VARIANTS_DIR}
@@ -177,16 +179,40 @@ copy_files_hmftools (){
 }
 
 copy_files_tso500 (){
+
+	if [[ ${REF_GENOME_VERSION} -eq '38' ]]; then
+		echo "Unsupported ref genome version (${REF_GENOME_VERSION}) for panel TSO500"
+		exit 1
+	fi
+
 	PANEL_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500/
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/driver_genes.tso500.${REF_GENOME_VERSION}.tsv              ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz          ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz       ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/tmb_ratio.tso500.${REF_GENOME_VERSION}.tsv                 ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/ms_model_error_rates.tso500.${REF_GENOME_VERSION}.tsv      ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/${REF_GENOME_VERSION}/isofox.gene_normalisation.tso500.${REF_GENOME_VERSION}.csv ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv                        ${PANEL_DIR}
-	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv                     ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/driver_genes.tso500.${REF_GENOME_VERSION}.tsv                ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/pon_artefacts.tso500.${REF_GENOME_VERSION}.tsv.gz            ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/panel_definition.tso500.${REF_GENOME_VERSION}.bed.gz         ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/cobalt_normalisation.tso500.${REF_GENOME_VERSION}.tsv        ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/ms_model_error_rates.tso500.${REF_GENOME_VERSION}.tsv        ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/tso500/tpm_normalisation.tso500.${REF_GENOME_VERSION}.csv           ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv    ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv ${PANEL_DIR}
+}
+
+copy_files_msk (){
+
+	if [[ ${REF_GENOME_VERSION} -eq '38' ]]; then
+		echo "Unsupported ref genome version (${REF_GENOME_VERSION}) for panel MSK"
+		exit 1
+	fi
+
+	PANEL_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/panel/msk/
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/driver_genes.msk.${REF_GENOME_VERSION}.tsv                      ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/pon_artefacts.msk.${REF_GENOME_VERSION}.tsv.gz                  ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/panel_definition.msk.${REF_GENOME_VERSION}.bed.gz               ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/cobalt_normalisation.msk.${REF_GENOME_VERSION}.tsv              ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/ms_model_error_rates.msk.${REF_GENOME_VERSION}.tsv              ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/msk_panel_known_umis.csv                                        ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/panel/msk/tpm_normalisation.msk.${REF_GENOME_VERSION}.csv                 ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_counts.${REF_GENOME_VERSION}.csv    ${PANEL_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_93_exp_gc_ratios.${REF_GENOME_VERSION}.csv ${PANEL_DIR}
 }
 
 echo ""
@@ -205,6 +231,15 @@ fi
 if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
 	copy_files_tso500
 fi
+
+if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
+	copy_files_tso500
+fi
+
+if [[ $MODE == $MODE_PANEL_MSK ]]; then
+	copy_files_msk
+fi
+
 
 echo ""
 echo "## ----------"
@@ -253,3 +288,10 @@ if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
 	${DEST_DIR}/${REF_GENOME_VERSION}/panel/tso500 \
 	${DEST_DIR}/tars/hmf_panel_resources.tso500.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz 
 fi
+
+if [[ $MODE == $MODE_PANEL_MSK ]]; then
+	make_tar \
+	${DEST_DIR}/${REF_GENOME_VERSION}/panel/msk \
+	${DEST_DIR}/tars/hmf_panel_resources.msk.${REF_GENOME_VERSION}_${RESOURCES_VERSION}.tar.gz 
+fi
+
