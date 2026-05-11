@@ -232,10 +232,6 @@ if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
 	copy_files_tso500
 fi
 
-if [[ $MODE == $MODE_PANEL_TSO500 ]]; then
-	copy_files_tso500
-fi
-
 if [[ $MODE == $MODE_PANEL_MSK ]]; then
 	copy_files_msk
 fi
