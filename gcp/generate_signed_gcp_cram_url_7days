@@ -49,7 +49,5 @@ signed_crai_url=$(gsutil signurl -r "${region}" -b "${project}" -d "7d" <(echo "
 [[ "${signed_crai_url}" =~ ^https ]] || die "Signed URL has wrong format (${signed_crai_url})"
 
 info "URLs for ${sample_type} sample of biopsy ${biopsy_name} (valid for 7 days):"
-info "CRAM internal URL: ${internal_cram_url}"
-info "CRAI internal URL: ${internal_crai_url}"
 info "CRAM external URL: ${signed_cram_url}"
 info "CRAI external URL: ${signed_crai_url}"
