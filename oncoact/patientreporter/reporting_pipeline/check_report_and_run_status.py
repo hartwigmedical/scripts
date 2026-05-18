@@ -590,13 +590,14 @@ class StatusChecker:
     def _get_default_report_and_run_content(self, report_record):
         run_record = self._get_run_from_report_record(report_record)
         if run_record is not None:
+            set_name = run_record['set']['name']
             return {**_get_default_run_content(run_record),
-                    **_get_default_report_content(self,report_record)}
+                    **_get_default_report_content(self, report_record, set_name=set_name)}
         return {'run_id': report_record['run_id'],
                 **_get_default_report_content(self, report_record)}
 
 
-def _get_default_report_content(self, report_created_record):
+def _get_default_report_content(self, report_created_record, set_name=None):
     used_lama_data = self._get_lama_data_used_for_report(report_created_record)
 
     if used_lama_data is None:
@@ -605,6 +606,7 @@ def _get_default_report_content(self, report_created_record):
         pathology_id_value = None
         requesterEmail = None
         wgs_bucket = None
+        share_underlying_data = None
     else:
         patient_id = "reportingId"
         patient_id_value = used_lama_data[patient_id] if patient_id in used_lama_data else None
@@ -614,10 +616,15 @@ def _get_default_report_content(self, report_created_record):
         requesterEmail =  used_lama_data["requesterEmail"] if "requesterEmail" in used_lama_data else None
 
         hospitalName = used_lama_data["hospitalName"]
-        if hospitalName == "NKI-AVL":
+
+        cohort = used_lama_data["cohort"]
+
+        wgs_bucket = None
+        share_underlying_data = None
+        if hospitalName == "NKI-AVL" and cohort != "DRUP":
             wgs_bucket = "python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py " + report_created_record['sample_barcode'] + " --profile prod"
-        else:
-            wgs_bucket = None
+        elif hospitalName in ("UMCG", "Vall D'Hebron Institute of Oncology"):
+            share_underlying_data = f"create_aria2_config_by_set_name {set_name}" if set_name else "create_aria2_config_by_set_name <set_name unavailable>"
 
     return {
         'report_created_id': report_created_record['id'],
@@ -627,7 +634,8 @@ def _get_default_report_content(self, report_created_record):
         'reportingId': patient_id_value,
         'hospitalSampleLabel': pathology_id_value,
         'requesterEmail' : requesterEmail,
-        'wgs_bucket': wgs_bucket
+        'wgs_bucket': wgs_bucket,
+        'share_underlying_data': share_underlying_data
     }
 
 def _get_default_run_content(run_record):
