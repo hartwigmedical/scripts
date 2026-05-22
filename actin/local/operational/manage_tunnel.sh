@@ -20,8 +20,7 @@ ns="${3:-default}"
 declare -A clusters=( ["research"]="research-cluster-patient-processing" ["prod"]="shared-cluster-services" )
 declare -A projects=( ["research"]="actin-research" ["prod"]="actin-shared" )
 declare -A apps=( ["trial-ui"]="actin-trial-ui" ["tracker-ui"]="actin-patient-tracker" ["feed-review"]="actin-feed-review" )
-declare -A ports=( ["trial-ui"]="8082" ["tracker-ui"]="9999" ["feed-review"]="9999" )
-declare -A paths=( ["trial-ui"]="trial-ui" ["tracker-ui"]="" ["feed-review"]="" )
+declare -A ports=( ["trial-ui"]="8082" ["tracker-ui"]="8085" ["feed-review"]="8080" )
 
 set -e
 
@@ -33,5 +32,5 @@ remote="${ports[$app]}"
 increment=0
 [[ $env == "research" ]] && increment=1000
 local="$(( $remote + $increment ))"
-(sleep 3; open "http://localhost:$local/${paths[$app]}" ) &
+(sleep 3; open "http://localhost:$local/$app" ) &
 kubectl -n "$ns" port-forward "pod/${pod}" "$local:$remote"
