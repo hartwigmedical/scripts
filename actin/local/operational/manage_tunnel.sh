@@ -29,8 +29,9 @@ gcloud container clusters get-credentials "${clusters[$env]}" --zone europe-west
 
 pod="$(kubectl -n "$ns" get pods | grep "^${apps[$app]}-" | awk '{print $1}' | tail -n1)"
 [[ -z "$pod" ]] && echo "No pod found for application '$app'" && exit 1
-port="${ports[$app]}"
-
-(sleep 3; open "http://localhost:$port/${paths[$app]}" ) &
-kubectl -n "$ns" port-forward "pod/${pod}" "$port:$port"
-
+remote="${ports[$app]}"
+increment=0
+[[ $env == "research" ]] && increment=1000
+local="$(( $remote + $increment ))"
+(sleep 3; open "http://localhost:$local/${paths[$app]}" ) &
+kubectl -n "$ns" port-forward "pod/${pod}" "$local:$remote"
