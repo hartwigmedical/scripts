@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
 function print_usage() {
   echo "$0: establish a connection to an application running in Kubernetes"
@@ -32,5 +32,6 @@ remote="${ports[$app]}"
 increment=0
 [[ $env == "research" ]] && increment=1000
 local="$(( $remote + $increment ))"
-(sleep 3; open "http://localhost:$local/$app" ) &
+username="$(gcloud compute os-login describe-profile --format="json" | jq -r '.posixAccounts[].username')"
+(sleep 3; open "http://localhost:$local/${app}?username=${username}" ) &
 kubectl -n "$ns" port-forward "pod/${pod}" "$local:$remote"
