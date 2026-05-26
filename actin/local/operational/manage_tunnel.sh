@@ -9,6 +9,9 @@ function print_usage() {
 
 [[ $# -ne 2 && $# -ne 3 ]] && print_usage && exit 1
 
+gcv="$(gcloud --version | head -n1 | awk '{print $NF}' | awk -F. '{print $1}')"
+[[ $gcv -lt "496" ]] && echo "Local version of gcloud is not new enough (need >= 496.0.0)" && exit 1
+
 env="$1"
 app="$2"
 ns="${3:-default}"
