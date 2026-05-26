@@ -37,4 +37,5 @@ increment=0
 local="$(( $remote + $increment ))"
 username="$(gcloud compute os-login describe-profile --format="json" | jq -r '.posixAccounts[].username')"
 (sleep 3; open "http://localhost:$local/${app}?username=${username}" ) &
+echo "Establishing tunnel, Ctrl-C will close it"
 kubectl -n "$ns" port-forward "pod/${pod}" "$local:$remote"
