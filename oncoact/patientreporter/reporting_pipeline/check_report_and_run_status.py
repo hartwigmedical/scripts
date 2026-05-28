@@ -291,7 +291,7 @@ class StatusChecker:
     def _get_patient_reporter_log_related_warnings(self, report_record):
         warnings = []
         sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter.log"
+        path = f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/patient-reporter.log"
         if not path:
             return warnings
         _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
@@ -421,9 +421,9 @@ class StatusChecker:
         sample_barcode = report_record["sample_barcode"]
 
         candidate_paths = [
-            f"gs://{self.oncoact_bucket.name}/corr-{sample_barcode}/lama.json",
-            f"gs://{self.oncoact_bucket.name}/{sample_barcode}/lama.json",
-            f"gs://{self.oncoact_bucket.name}/panel-{sample_barcode}/lama.json"
+            f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/corr-{sample_barcode}/lama.json",
+            f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/lama.json",
+            f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/panel-{sample_barcode}/lama.json"
         ]
 
         for path in candidate_paths:
@@ -440,7 +440,7 @@ class StatusChecker:
     def _get_rose_warnings(self, report_record):
         warnings = []
         sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/rose.log"
+        path = f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/rose.log"
         if not path:
             return warnings
         _, log_blob = get_bucket_and_blob_from_gs_path(self.storage_client, path)
@@ -456,7 +456,7 @@ class StatusChecker:
     def _get_protect_warnings(self, report_record):
         warnings = []
         sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/protect.log"
+        path = f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/protect.log"
 
         if not path:
             return warnings
@@ -473,7 +473,7 @@ class StatusChecker:
     def _get_vcf_merge_warnings(self, report_record):
         warnings = []
         sample_barcode = report_record["sample_barcode"]
-        path = f"gs://{self.oncoact_bucket.name}/{sample_barcode}/vcf-merge.log"
+        path = f"gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/vcf-merge.log"
 
         if not path:
             return warnings
