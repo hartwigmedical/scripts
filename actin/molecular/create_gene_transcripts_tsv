@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+output_path=$1 && shift
+ensembl_data_dir=$1 && shift
+
+if [[ -z "${output_path}" ]]; then
+    error "Usage: $(basename "$0") <output_path>"
+fi
+
+if [[ -z "${ensembl_data_dir}" ]]; then
+       error "Usage: $(basename "$0") <output_path> <ensembl gene data path>"
+fi
+
+gene_data="${ensembl_data_dir}/ensembl_gene_data.csv"
+trans_exon_data="${ensembl_data_dir}/ensembl_trans_exon_data.csv"
+
+info "Generating gene transcripts TSV from ${ensembl_data_dir}"
+
+{ echo -e "gene\ttranscript";
+  awk -F',' '
+    NR==FNR { if (NR > 1) gene[$1] = $2; next }
+    FNR > 1 && $1 in gene { print gene[$1] "\t" $5 }
+  ' "${gene_data}" "${trans_exon_data}" | sort -u; } > "${output_path}"
+
+info "Written to ${output_path}"
