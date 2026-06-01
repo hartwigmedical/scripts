@@ -17,6 +17,7 @@ print_usage(){
     echo " $script upload_for_share FR123" #Upload reports to nextcloud
     echo " $script share_panel" # Upload panel reports to bucket
     echo " $script bulk_share_panel" # Upload panel reports to bucket in bulk with remarks file
+    echo " $script share_wgs" # Upload WGS report and RUO files to bucket for one sample
     echo " $script portal_api FR123" #New call to portal api
     exit 1
 }
@@ -49,7 +50,10 @@ elif [[ "${process}" == "upload_for_share" ]]; then
 elif [[ "${process}" == "share_panel" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_panel_to_bucket.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "bulk_share_panel" ]]; then
-    bulk_share_panel_with_remarks
+    shift
+    bulk_share_panel_with_remarks "$@"
+elif [[ "${process}" == "share_wgs" ]]; then
+    python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py ${sampleBarcode} --profile prod
 elif [[ "${process}" == "portal_api" ]]; then
     python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/update_api.py ${sampleBarcode} --publish --notify-users --profile prod
 else
