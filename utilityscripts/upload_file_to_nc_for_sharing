@@ -2,11 +2,9 @@
 
 source message_functions || exit 1
 
-file=$1 && shift
-
-[[ -n "${file}" ]] || die "No file name provided. Exiting"
+[[ -n "${file}" ]] || die "Usage: $(basename $0) <file1> [<fileN>]"
 
 nextcloud_dir="STAGING/Reports-To-Share"
 
 info "Uploading ${file} to Nextcloud for sharing."
-do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${file}"
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$@"
