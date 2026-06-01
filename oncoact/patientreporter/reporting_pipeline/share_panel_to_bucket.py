@@ -58,11 +58,11 @@ class ReportSharer:
     def _get_report_blobs(self):
         sample_barcode = self.sample_barcode
         result = []
-        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        cmd_pdf = f"gsutil ls gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
         pathPdf = subprocess.check_output(cmd_pdf, shell=True, text=True).strip()
         _, blobPdf = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdf)
 
-        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        cmd_json = f"gsutil ls gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
         pathJson = subprocess.check_output(cmd_json, shell=True, text=True).strip()
         _, blobJson = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJson)
 
@@ -74,11 +74,11 @@ class ReportSharer:
         sample_barcode = self.sample_barcode
         result = []
 
-        cmd_pdf_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
+        cmd_pdf_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.pdf"
         pathPdfFail = subprocess.check_output(cmd_pdf_fail, shell=True, text=True).strip()
         _, blobPdfFail = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathPdfFail)
 
-        cmd_json_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
+        cmd_json_fail = f"gsutil ls gs://{self.oncoact_bucket.name}/latest_reporting_pipeline_output/{sample_barcode}/patient-reporter/*_oncoact_panel_result_report.json"
         pathJsonFail = subprocess.check_output(cmd_json_fail, shell=True, text=True).strip()
         _, blobJsonFail = get_bucket_and_blob_from_gs_path(storage_client=self.storage_client, gs_path=pathJsonFail)
 
