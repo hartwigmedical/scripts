@@ -27,17 +27,17 @@ print_usage() {
     echo "Arguments:"
     echo "  dest_dir            Destination directory for resource output (must be existing)"
     echo "  ref_genome_version  Reference genome version, must be '${REF_GENOME_VERSION_37}' or '${REF_GENOME_VERSION_38}'"
-    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--4')"
+    echo "  resources_version   Build version string, typically matches the oncoanalyser pipeline version (e.g. 'v3.0.0--6')"
     echo "  mode                One of: '${MODE_GENOME}', '${MODE_HMFTOOLS}', '${MODE_PANEL_TSO500}'"
     echo ""
     echo "Examples:"
-    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260511_build_resources_3.0.0--4/ 38 v3.0.0--4 HMFTOOLS"
+    echo "  bash oncoanalyser_build_resources.sh /data/experiments/oncoanalyser/20260602_build_resources_3.0.0--6/ 38 v3.0.0--6 HMFTOOLS"
     echo ""
     echo "The resulting tarball will be created at:"
     echo "  <dest_dir>/<ref_genome_version>/hmf_pipeline_resources.<ref_genome_version>_<resources_version>.tar.gz"
     echo ""
     echo "Example output:"
-    echo "  /data/experiments/oncoanalyser/20260323_build_resources_3.0.0--3/38/hmf_pipeline_resources.38_v3.0.0--3.tar.gz"
+    echo "  /data/experiments/oncoanalyser/20260602_build_resources_3.0.0--6/38/hmf_pipeline_resources.38_v3.0.0--6.tar.gz"
 }
 
 if [[ ! -d ${DEST_DIR} ]]; then
@@ -147,6 +147,12 @@ copy_files_hmftools (){
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/purple/${REF_GENOME_VERSION}/cohort_germline_*_freq.${REF_GENOME_VERSION}.csv ${COPY_NUMBER_DIR}
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/cobalt/${REF_GENOME_VERSION}/DiploidRegions.${REF_GENOME_VERSION}.bed.gz      ${COPY_NUMBER_DIR}
 
+	if [[ "${REF_GENOME_VERSION}" == ${REF_GENOME_VERSION_37} ]]; then
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/purple/37/purple_cohort_cn_percentiles_hmf_1000.37.tsv ${COPY_NUMBER_DIR}
+	else
+		copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/purple/37/purple_cohort_cn_percentiles_hmf_1000.37.tsv ${COPY_NUMBER_DIR}
+	fi
+
 	STRUCTURAL_VARIANTS_DIR=${DEST_DIR}/${REF_GENOME_VERSION}/hmftools/dna/sv/
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/sv/${REF_GENOME_VERSION}/* ${STRUCTURAL_VARIANTS_DIR}
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/gridss/gridss.properties   ${STRUCTURAL_VARIANTS_DIR}
@@ -176,6 +182,7 @@ copy_files_hmftools (){
 
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_100_exp_gc_ratios.${REF_GENOME_VERSION}.csv       ${RNA_DIR}
 	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/read_151_exp_counts.${REF_GENOME_VERSION}.csv          ${RNA_DIR}
+	copy_files ${COMMON_RESOURCES_PUBLIC_PATH}/rna/${REF_GENOME_VERSION}/rna_excluded_regions.${REF_GENOME_VERSION}.tsv         ${RNA_DIR}
 }
 
 copy_files_tso500 (){
