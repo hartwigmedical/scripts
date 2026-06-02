@@ -119,8 +119,8 @@ elif [[ $action == "start" ]]; then
     done
 
     GC="gcloud --project $PROJECT compute"
-    echo "Attempting to determine name of bastion VM"
-    read instance zone <<< $($GC instances list | grep $BASTION | head -n1 | awk '{print $1, $2}')
+    echo "Attempting to determine name and zone of bastion VM"
+    read instance zone <<< $($GC instances list --format="value(name, zone.basename())" | grep "$BASTION" | head -n1)
     [[ -z $instance || -z $zone ]] && echo "Cannot locate bastion VM instance" && exit 1
     ps aux | grep gcloud | grep ssh | grep -- "$instance" >/dev/null
     if [[ $? -ne 0 ]]; then
