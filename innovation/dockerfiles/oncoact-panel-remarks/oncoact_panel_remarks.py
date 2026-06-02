@@ -270,35 +270,37 @@ def determine_remarks(
     percent_exons_median_coverage_at_least_100x = exon_coverage_statistics.percent_exons_median_coverage_at_least_100x()
     good_coverage_exons = percent_exons_median_coverage_at_least_100x >= TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X
     good_coverage_hotspots = hotspot_coverage_data.percent_above_200x >= TARGET_PERCENT_HOTSPOT_AT_LEAST_200X
-    good_coverage = good_coverage_exons and good_coverage_hotspots
-    if metadata.yield_in_bases < TARGET_YIELD_IN_BASES:
+    too_little_yield = metadata.yield_in_bases < TARGET_YIELD_IN_BASES
+
+    if too_little_yield:
         remarks.append(
             f"Dit sample heeft {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb yield, "
             f"wat minder is dan ons eigenlijke minimum van {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb yield."
         )
-        if good_coverage:
-            remarks.append(
-                f"De coverage van dit sample is wel goed: "
-                f"{percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x. "
-                f"{hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x."
-            )
 
-    if not good_coverage:
+    if not good_coverage_exons:
         remarks.append(
-            f"De coverage van dit sample is te laag."
+            f"De exon coverage van dit sample is te laag: "
+            f"Slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
+            f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X:.1f}% zou moeten zijn. "
+            f"Hierdoor kunnen varianten gemist worden."
         )
+    elif too_little_yield:
+        remarks.append(
+            f"De exon coverage van dit sample is goed: "
+            f"{percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x.")
 
-        if not good_coverage_exons:
-            remarks.append(
-                f"Slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
-                f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X:.1f}% zou moeten zijn."
-            )
-        if not good_coverage_hotspots:
-            remarks.append(
-                f"Slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
-                f"terwijl dit minstens {TARGET_PERCENT_HOTSPOT_AT_LEAST_200X:.1f}% zou moeten zijn."
-            )
-        remarks.append("Hierdoor kunnen varianten gemist worden.")
+    if not good_coverage_hotspots:
+        remarks.append(
+            f"De hotspot coverage van dit sample is te laag: "
+            f"Slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
+            f"terwijl dit minstens {TARGET_PERCENT_HOTSPOT_AT_LEAST_200X:.1f}% zou moeten zijn. "
+            f"Hierdoor kunnen varianten gemist worden."
+        )
+    elif too_little_yield:
+        remarks.append(
+            f"De hotspot coverage van dit sample is goed: "
+            f"{hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x.")
 
     if run_data.purple_qc.qc_status != "PASS":
         remarks.append(
