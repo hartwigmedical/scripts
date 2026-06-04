@@ -49,8 +49,6 @@ TARGET_YIELD_IN_BASES = 50 * BASES_PER_GBASE
 TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X = 95.
 TARGET_PERCENT_HOTSPOT_AT_LEAST_200X = 85.
 
-AMPLIFICATIONS_DESCRIPTION = "amplificaties"
-
 
 @dataclass(frozen=True, eq=True)
 class Metadata:
@@ -226,12 +224,59 @@ class ExonCoverageStatistics:
         return 100 * self.exons_with_median_coverage_at_least_100x_count / self.relevant_exon_count
 
 
+@dataclass(frozen=True, eq=True)
+class PanelQc:
+    yield_in_gbases: Decimal
+    sufficient_yield: bool
+
+    percent_exons_median_coverage_at_least_100x: float
+    sufficient_coverage_exons: bool
+    percent_hotspots_coverage_at_least_200x: float
+    sufficient_coverage_hotspots: bool
+
+    purple_qc_status: str
+    contamination: Decimal
+    purple_qc_pass: bool
+    purple_qc_fail_contamination: bool
+    purple_qc_fail_no_tumor: bool
+    purple_qc_warn_deleted_genes: bool
+    purple_qc_warn_high_copy_number_noise: bool
+
+    baf_points_outside_par_count: int
+    total_baf_points_count: int
+    baf_points_in_x_outside_par_percent: float
+    gender: str
+    unreliable_male_gender_call: bool
+    unreliable_female_gender_call: bool
+
+    purity: Decimal
+    ploidy: Decimal
+    unreliable_purity_ploidy_fit: float
+
+    purity_too_low_for_tmb: bool
+    purity_too_low_for_msi: bool
+    purity_too_low_for_somatic_variants: bool
+    purity_too_low_for_deletions: bool
+    purity_too_low_for_amplifications: bool
+    purity_too_low_for_vchord: bool
+
+    amp_driver_genes_needing_manual_curation: tuple[str, ...]
+
+    crlf2_amp_present: bool
+    unreliable_crlf2_amp: bool
+
+    partial_amp_genes: tuple[str, ...]
+
+    maybe_missed_deletion_gene_to_min_region_length: dict[str, int]
+
+
 def main(
         pipeline_input_directory: Path,
         optional_sample_id: str,
         hotspot_coverage_input_directory: Path,
         excluded_exons_file_path: Path,
-        output_file_path: Path,
+        remarks_output_file_path: Path,
+        qc_output_file_path: Path | None,
 ) -> None:
     logging.info("Start QC checking OncoPanel runs")
 
@@ -249,108 +294,104 @@ def main(
     logging.info("Load excluded_exons")
     excluded_exons = load_excluded_exons(excluded_exons_file_path)
 
-    logging.info(f"Determine remarks")
+    logging.info("Determine panel QC")
     exon_coverage_statistics = ExonCoverageStatistics.from_exon_coverages(run_data.exon_median_coverages, excluded_exons)
-    remarks = determine_remarks(run_data, hotspot_coverage_data, exon_coverage_statistics, metadata)
+    panel_qc = determine_panel_qc(run_data, hotspot_coverage_data, exon_coverage_statistics, metadata)
 
-    logging.info(f"Write remarks")
-    write_remarks_file(remarks, output_file_path)
+    logging.info("Determine remarks")
+    remarks = determine_remarks(panel_qc)
+
+    logging.info("Write remarks")
+    write_remarks_file(remarks, remarks_output_file_path)
+
+    if qc_output_file_path is not None:
+        logging.info("Write panel_qc")
+        write_panel_qc_file(panel_qc, qc_output_file_path)
 
     logging.info("Finished QC checking OncoPanel run")
 
 
-def determine_remarks(
-        run_data: RunData,
-        hotspot_coverage_data: HotspotCoverageData,
-        exon_coverage_statistics: ExonCoverageStatistics,
-        metadata: Metadata,
-) -> List[str]:
+def determine_remarks(panel_qc: PanelQc, ) -> List[str]:
     remarks = []
-
-    percent_exons_median_coverage_at_least_100x = exon_coverage_statistics.percent_exons_median_coverage_at_least_100x()
-    good_coverage_exons = percent_exons_median_coverage_at_least_100x >= TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X
-    good_coverage_hotspots = hotspot_coverage_data.percent_above_200x >= TARGET_PERCENT_HOTSPOT_AT_LEAST_200X
-    too_little_yield = metadata.yield_in_bases < TARGET_YIELD_IN_BASES
-
-    if too_little_yield:
+    if not panel_qc.sufficient_yield:
         remarks.append(
-            f"Dit sample heeft {convert_bases_to_rounded_gbases(metadata.yield_in_bases)}Gb yield, "
+            f"Dit sample heeft {panel_qc.yield_in_gbases}Gb yield, "
             f"wat minder is dan ons eigenlijke minimum van {convert_bases_to_rounded_gbases(TARGET_YIELD_IN_BASES)}Gb yield."
         )
 
-    if not good_coverage_exons:
+    if not panel_qc.sufficient_coverage_exons:
         remarks.append(
             f"De exon coverage van dit sample is te laag: "
-            f"Slechts {percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
+            f"Slechts {panel_qc.percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x, "
             f"terwijl dit minstens {TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X:.1f}% zou moeten zijn. "
             f"Hierdoor kunnen varianten gemist worden."
         )
-    elif too_little_yield:
+    elif not panel_qc.sufficient_yield:
         remarks.append(
             f"De exon coverage van dit sample is goed: "
-            f"{percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x.")
+            f"{panel_qc.percent_exons_median_coverage_at_least_100x:.2f}% van de exonen heeft median coverage minstens 100x."
+        )
 
-    if not good_coverage_hotspots:
+    if not panel_qc.sufficient_coverage_hotspots:
         remarks.append(
             f"De hotspot coverage van dit sample is te laag: "
-            f"Slechts {hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x, "
+            f"Slechts {panel_qc.percent_hotspots_coverage_at_least_200x :.2f}% van de hotspots heeft coverage minstens 200x, "
             f"terwijl dit minstens {TARGET_PERCENT_HOTSPOT_AT_LEAST_200X:.1f}% zou moeten zijn. "
-            f"Hierdoor kunnen varianten gemist worden."
+            f"Hierdoor kunnen hotspot varianten gemist worden."
         )
-    elif too_little_yield:
+    elif not panel_qc.sufficient_yield:
         remarks.append(
             f"De hotspot coverage van dit sample is goed: "
-            f"{hotspot_coverage_data.percent_above_200x:.2f}% van de hotspots heeft coverage minstens 200x.")
-
-    if run_data.purple_qc.qc_status != "PASS":
-        remarks.append(
-            f"De Purple QC status van dit sample is {run_data.purple_qc.qc_status}."
+            f"{panel_qc.percent_hotspots_coverage_at_least_200x :.2f}% van de hotspots heeft coverage minstens 200x."
         )
-        if FAIL_CONTAMINATION in run_data.purple_qc.qc_status:
+
+    if not panel_qc.purple_qc_pass:
+        remarks.append(
+            f"De Purple QC status van dit sample is {panel_qc.purple_qc_status}."
+        )
+        if panel_qc.purple_qc_fail_contamination:
             remarks.append(
-                f"'{FAIL_CONTAMINATION}' komt doordat er volgens het algoritme {run_data.purple_qc.contamination}% contaminatie aanwezig is.")
-        if FAIL_NO_TUMOR in run_data.purple_qc.qc_status:
+                f"'{FAIL_CONTAMINATION}' komt doordat er volgens het algoritme {panel_qc.contamination}% contaminatie aanwezig is."
+            )
+        if panel_qc.purple_qc_fail_no_tumor:
             remarks.append(
                 f"'{FAIL_NO_TUMOR}' betekent dat er volgens het algoritme geen of slechts zeer weinig tumor aanwezig is in het sample. "
                 f"Dit zou kunnen komen doordat dit een normaal sample of een zeer laag mTCP sample is, "
-                f"of doordat dit een rustig type tumor is waarvoor onze mTCP schatter niet goed werkt.")
-        if WARN_DELETED_GENES in run_data.purple_qc.qc_status or WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
-            if WARN_DELETED_GENES in run_data.purple_qc.qc_status and WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
+                f"of doordat dit een rustig type tumor is waarvoor onze mTCP schatter niet goed werkt."
+            )
+
+        if panel_qc.purple_qc_warn_deleted_genes or panel_qc.purple_qc_warn_high_copy_number_noise:
+            if panel_qc.purple_qc_warn_deleted_genes and panel_qc.purple_qc_warn_high_copy_number_noise:
                 sentence_start = f"'{WARN_DELETED_GENES}' en '{WARN_HIGH_COPY_NUMBER_NOISE}' betekenen"
-            elif WARN_DELETED_GENES in run_data.purple_qc.qc_status:
+            elif panel_qc.purple_qc_warn_deleted_genes:
                 sentence_start = f"'{WARN_DELETED_GENES}' betekent"
             else:
                 sentence_start = f"'{WARN_HIGH_COPY_NUMBER_NOISE}' betekent"
             remarks.append(
                 f"{sentence_start} dat er indicaties zijn dat de gekozen mTCP en/of ploidy voor dit sample niet correct zijn."
             )
-            if WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status:
+            if panel_qc.purple_qc_warn_high_copy_number_noise:
                 remarks.append("Om deze reden worden amplificaties en deleties alleen gerapporteerd met structurele variant (SV) support.")
             else:
                 remarks.append("Om deze reden worden deleties alleen gerapporteerd met structurele variant (SV) support.")
 
-    baf_points_in_x_outside_par = [
-        baf_point for baf_point in run_data.amber_baf_points
-        if baf_point.chromosome == CHR_X and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
-    ]
-    percent_baf_points_in_x_outside_par = (len(baf_points_in_x_outside_par) * 100) / max(len(run_data.amber_baf_points), 1)
-    if run_data.purple_qc.amber_gender == "MALE" and percent_baf_points_in_x_outside_par > 0.5:
+    if panel_qc.unreliable_male_gender_call:
         remarks.append(
-            f"Door het relatief hoge aantal B Allele Frequency (BAF) punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
-            f"is de bepaalde sekse van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
+            f"Door het relatief hoge aantal B Allele Frequency (BAF) punten op chromosoom X "
+            f"(aantal: {panel_qc.baf_points_outside_par_count}, percentage: {panel_qc.baf_points_in_x_outside_par_percent:.2f}%) "
+            f"is de bepaalde sekse van dit sample ({panel_qc.gender}) onbetrouwbaar."
         )
 
-    if run_data.purple_qc.amber_gender == "FEMALE" and percent_baf_points_in_x_outside_par < 1.5:
+    if panel_qc.unreliable_female_gender_call:
         remarks.append(
-            f"Door het relatief lage aantal B Allele Frequency (BAF) punten op chromosoom X (aantal: {len(baf_points_in_x_outside_par)}, percentage: {percent_baf_points_in_x_outside_par:.2f}%) "
-            f"is de bepaalde sekse van dit sample ({run_data.purple_qc.amber_gender}) onbetrouwbaar."
+            f"Door het relatief lage aantal B Allele Frequency (BAF) punten op chromosoom X "
+            f"(aantal: {panel_qc.baf_points_outside_par_count}, percentage: {panel_qc.baf_points_in_x_outside_par_percent:.2f}%) "
+            f"is de bepaalde sekse van dit sample ({panel_qc.gender}) onbetrouwbaar."
         )
 
-    purity = run_data.purple_qc.purity
-    ploidy = run_data.purple_qc.ploidy
-    if purity > MIN_UNRELIABLE_PURITY and MIN_UNRELIABLE_PLOIDY < ploidy < MAX_UNRELIABLE_PLOIDY:
+    if panel_qc.unreliable_purity_ploidy_fit:
         remarks.append(
-            f"Dit sample is geschat op mTCP {purity * 100:.2f}% en ploidy {ploidy:.2f}. "
+            f"Dit sample is geschat op mTCP {panel_qc.purity * 100:.2f}% en ploidy {panel_qc.ploidy :.2f}. "
             f"Als er weinig duidelijke copy number changes gevonden zijn, kan deze schatting onbetrouwbaar zijn. "
             f"Dit kan bijvoorbeeld veroorzaakt worden doordat er weinig copy number changes in het sample aanwezig zijn, "
             f"door een lage purity, of doordat het sample een te lage kwaliteit heeft. "
@@ -358,55 +399,40 @@ def determine_remarks(
         )
 
     purity_too_low = set()
-    if purity < TMB_MIN_PURITY_THRESHOLD:
+    if panel_qc.purity_too_low_for_tmb:
         purity_too_low.add("TMB")
-
-    if purity < MSI_MIN_PURITY_THRESHOLD:
+    if panel_qc.purity_too_low_for_msi:
         purity_too_low.add("MSI")
-
-    if purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD:
+    if panel_qc.purity_too_low_for_somatic_variants:
         purity_too_low.add("kleine varianten")
-
-    if purity < DEL_MIN_PURITY_THRESHOLD:
+    if panel_qc.purity_too_low_for_deletions:
         purity_too_low.add("deleties")
-
-    if purity < AMP_MIN_PURITY_THRESHOLD:
-        purity_too_low.add(AMPLIFICATIONS_DESCRIPTION)
-
-    if purity < VCHORD_MIN_PURITY_THRESHOLD:
+    if panel_qc.purity_too_low_for_amplifications:
+        purity_too_low.add("amplificaties")
+    if panel_qc.purity_too_low_for_vchord:
         purity_too_low.add("HRD")
 
     if purity_too_low:
         remarks.append(
-            f"De mTCP van dit sample ({purity * 100:.2f}%) is te laag "
+            f"De mTCP van dit sample ({panel_qc.purity * 100:.2f}%) is te laag "
             f"voor het betrouwbaar rapporteren van {pretty_listing(purity_too_low)}."
         )
 
-    amp_drivers_needing_manual_curation = [
-        driver for driver in run_data.drivers
-        if driver.driver_type == DriverType.AMP and driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD and driver.gene_name != CRLF2_GENE_NAME
-    ]
-    if amp_drivers_needing_manual_curation:
-        gene_name_string = ", ".join([driver.gene_name for driver in amp_drivers_needing_manual_curation])
+    if panel_qc.amp_driver_genes_needing_manual_curation:
+        gene_name_string = ", ".join(panel_qc.amp_driver_genes_needing_manual_curation)
         remarks.append(f"De volgende amplificaties moeten vanwege hun lage copy number met de hand beoordeeld worden: {gene_name_string}.")
 
-    crlf2_amp_present = any(
-        driver for driver in run_data.drivers
-        if driver.driver_type == DriverType.AMP and driver.gene_name == CRLF2_GENE_NAME
-    )
-    if crlf2_amp_present and not AMPLIFICATIONS_DESCRIPTION in purity_too_low:
+    if panel_qc.unreliable_crlf2_amp:
         remarks.append(f"De {CRLF2_GENE_NAME} amplificatie is onbetrouwbaar.")
 
-    partial_amp_drivers = [driver for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP]
-    if partial_amp_drivers:
-        gene_name_string = ", ".join(sorted(driver.gene_name for driver in partial_amp_drivers))
+    if panel_qc.partial_amp_genes:
+        gene_name_string = ", ".join(panel_qc.partial_amp_genes)
         remarks.append(f"Partiële amplificaties zijn niet gevalideerd: {gene_name_string}.")
 
-    maybe_missed_deletion_genes = determine_genes_with_potentially_missed_deletions(run_data)
-    if maybe_missed_deletion_genes:
+    if panel_qc.maybe_missed_deletion_gene_to_min_region_length:
         gene_summary_lines = {
-            f"{gene} ({pretty_base_count(determine_minimum_min_region_length(gene, run_data))})"
-            for gene in maybe_missed_deletion_genes
+            f"{gene} ({pretty_base_count(min_region_length)})"
+            for gene, min_region_length in panel_qc.maybe_missed_deletion_gene_to_min_region_length.items()
         }
         remarks.append(
             f"Er zijn mogelijk deleties gemist. "
@@ -418,6 +444,106 @@ def determine_remarks(
         remarks.append("Geen opmerkingen.")
 
     return remarks
+
+
+def determine_panel_qc(
+        run_data: RunData,
+        hotspot_coverage_data: HotspotCoverageData,
+        exon_coverage_statistics: ExonCoverageStatistics,
+        metadata: Metadata,
+) -> PanelQc:
+    sufficient_yield = metadata.yield_in_bases >= TARGET_YIELD_IN_BASES
+    yield_in_gbases = convert_bases_to_rounded_gbases(metadata.yield_in_bases)
+
+    percent_exons_median_coverage_at_least_100x = exon_coverage_statistics.percent_exons_median_coverage_at_least_100x()
+    sufficient_coverage_exons = percent_exons_median_coverage_at_least_100x >= TARGET_PERCENT_EXONS_WITH_MEDIAN_COVERAGE_AT_LEAST_100X
+    percent_hotspots_coverage_at_least_200x = hotspot_coverage_data.percent_above_200x
+    sufficient_coverage_hotspots = percent_hotspots_coverage_at_least_200x >= TARGET_PERCENT_HOTSPOT_AT_LEAST_200X
+
+    purple_qc_status = run_data.purple_qc.qc_status
+    contamination = run_data.purple_qc.contamination
+    purple_qc_pass = run_data.purple_qc.qc_status == "PASS"
+    purple_qc_fail_contamination = FAIL_CONTAMINATION in run_data.purple_qc.qc_status
+    purple_qc_fail_no_tumor = FAIL_NO_TUMOR in run_data.purple_qc.qc_status
+    purple_qc_warn_deleted_genes = WARN_DELETED_GENES in run_data.purple_qc.qc_status
+    purple_qc_warn_high_copy_number_noise = WARN_HIGH_COPY_NUMBER_NOISE in run_data.purple_qc.qc_status
+
+    baf_points_in_x_outside_par = [
+        baf_point for baf_point in run_data.amber_baf_points
+        if baf_point.chromosome == CHR_X and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
+    ]
+    baf_points_outside_par_count = len(baf_points_in_x_outside_par)
+    total_baf_points_count = len(run_data.amber_baf_points)
+    baf_points_in_x_outside_par_percent = (baf_points_outside_par_count * 100) / max(total_baf_points_count, 1)
+    gender = run_data.purple_qc.amber_gender
+    unreliable_male_gender_call = gender == "MALE" and baf_points_in_x_outside_par_percent > 0.5
+    unreliable_female_gender_call = gender == "FEMALE" and baf_points_in_x_outside_par_percent < 1.5
+
+    purity = run_data.purple_qc.purity
+    ploidy = run_data.purple_qc.ploidy
+    unreliable_purity_ploidy = purity > MIN_UNRELIABLE_PURITY and MIN_UNRELIABLE_PLOIDY < ploidy < MAX_UNRELIABLE_PLOIDY
+
+    purity_too_low_for_tmb = purity < TMB_MIN_PURITY_THRESHOLD
+    purity_too_low_for_msi = purity < MSI_MIN_PURITY_THRESHOLD
+    purity_too_low_for_somatic_variants = purity < SOMATIC_VARIANT_MIN_PURITY_THRESHOLD
+    purity_too_low_for_deletions = purity < DEL_MIN_PURITY_THRESHOLD
+    purity_too_low_for_amplifications = purity < AMP_MIN_PURITY_THRESHOLD
+    purity_too_low_for_vchord = purity < VCHORD_MIN_PURITY_THRESHOLD
+
+    amp_driver_genes_needing_manual_curation = sorted([
+        driver.gene_name for driver in run_data.drivers
+        if
+        driver.driver_type == DriverType.AMP and driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD and driver.gene_name != CRLF2_GENE_NAME
+    ])
+
+    crlf2_amp_present = any(
+        driver for driver in run_data.drivers
+        if driver.driver_type == DriverType.AMP and driver.gene_name == CRLF2_GENE_NAME
+    )
+    unreliable_crlf2_amp = crlf2_amp_present and not purity_too_low_for_amplifications
+
+    partial_amp_genes = sorted([driver.gene_name for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP])
+
+    maybe_missed_deletion_genes = determine_genes_with_potentially_missed_deletions(run_data)
+    maybe_missed_deletion_gene_to_minimum_min_region_length = {
+        gene: determine_minimum_min_region_length(gene, run_data) for gene in maybe_missed_deletion_genes
+    }
+
+    return PanelQc(
+        yield_in_gbases=yield_in_gbases,
+        sufficient_yield=sufficient_yield,
+        percent_exons_median_coverage_at_least_100x=percent_exons_median_coverage_at_least_100x,
+        sufficient_coverage_exons=sufficient_coverage_exons,
+        percent_hotspots_coverage_at_least_200x=percent_hotspots_coverage_at_least_200x,
+        sufficient_coverage_hotspots=sufficient_coverage_hotspots,
+        purple_qc_status=purple_qc_status,
+        contamination=contamination,
+        purple_qc_pass=purple_qc_pass,
+        purple_qc_fail_contamination=purple_qc_fail_contamination,
+        purple_qc_fail_no_tumor=purple_qc_fail_no_tumor,
+        purple_qc_warn_deleted_genes=purple_qc_warn_deleted_genes,
+        purple_qc_warn_high_copy_number_noise=purple_qc_warn_high_copy_number_noise,
+        baf_points_outside_par_count=baf_points_outside_par_count,
+        total_baf_points_count=total_baf_points_count,
+        baf_points_in_x_outside_par_percent=baf_points_in_x_outside_par_percent,
+        gender=gender,
+        unreliable_male_gender_call=unreliable_male_gender_call,
+        unreliable_female_gender_call=unreliable_female_gender_call,
+        purity=purity,
+        ploidy=ploidy,
+        unreliable_purity_ploidy_fit=unreliable_purity_ploidy,
+        purity_too_low_for_tmb=purity_too_low_for_tmb,
+        purity_too_low_for_msi=purity_too_low_for_msi,
+        purity_too_low_for_somatic_variants=purity_too_low_for_somatic_variants,
+        purity_too_low_for_deletions=purity_too_low_for_deletions,
+        purity_too_low_for_amplifications=purity_too_low_for_amplifications,
+        purity_too_low_for_vchord=purity_too_low_for_vchord,
+        amp_driver_genes_needing_manual_curation=tuple(amp_driver_genes_needing_manual_curation),
+        crlf2_amp_present=crlf2_amp_present,
+        unreliable_crlf2_amp=unreliable_crlf2_amp,
+        partial_amp_genes=tuple(partial_amp_genes),
+        maybe_missed_deletion_gene_to_min_region_length=maybe_missed_deletion_gene_to_minimum_min_region_length,
+    )
 
 
 def determine_genes_with_potentially_missed_deletions(run_data: RunData) -> Set[str]:
@@ -451,6 +577,48 @@ def write_remarks_file(remarks: list[str], output_file: Path) -> None:
     remarks_text = " ".join(remarks) + "\n"
     with open(output_file, "w") as output_f:
         output_f.write(remarks_text)
+
+
+def write_panel_qc_file(panel_qc: PanelQc, output_file: Path) -> None:
+    rows = [
+        ("Yield (Gbases)", panel_qc.yield_in_gbases),
+        ("Sufficient yield", panel_qc.sufficient_yield),
+        ("Exons with median coverage >=100x (%)", f"{panel_qc.percent_exons_median_coverage_at_least_100x:.2f}"),
+        ("Sufficient exon coverage", panel_qc.sufficient_coverage_exons),
+        ("Hotspots with coverage >=200x (%)", f"{panel_qc.percent_hotspots_coverage_at_least_200x:.2f}"),
+        ("Sufficient hotspot coverage", panel_qc.sufficient_coverage_hotspots),
+        ("Purple QC status", panel_qc.purple_qc_status),
+        ("Contamination", panel_qc.contamination),
+        ("Purple QC pass", panel_qc.purple_qc_pass),
+        ("Purple QC fail: contamination", panel_qc.purple_qc_fail_contamination),
+        ("Purple QC fail: no tumor", panel_qc.purple_qc_fail_no_tumor),
+        ("Purple QC warn: deleted genes", panel_qc.purple_qc_warn_deleted_genes),
+        ("Purple QC warn: high copy number noise", panel_qc.purple_qc_warn_high_copy_number_noise),
+        ("BAF points on X outside PAR (count)", panel_qc.baf_points_outside_par_count),
+        ("BAF points total (count)", panel_qc.total_baf_points_count),
+        ("BAF points on X outside PAR (%)", f"{panel_qc.baf_points_in_x_outside_par_percent:.2f}"),
+        ("Gender", panel_qc.gender),
+        ("Unreliable male gender call", panel_qc.unreliable_male_gender_call),
+        ("Unreliable female gender call", panel_qc.unreliable_female_gender_call),
+        ("Purity", panel_qc.purity),
+        ("Ploidy", panel_qc.ploidy),
+        ("Unreliable purity/ploidy fit", panel_qc.unreliable_purity_ploidy_fit),
+        ("Purity too low for TMB", panel_qc.purity_too_low_for_tmb),
+        ("Purity too low for MSI", panel_qc.purity_too_low_for_msi),
+        ("Purity too low for somatic variants", panel_qc.purity_too_low_for_somatic_variants),
+        ("Purity too low for deletions", panel_qc.purity_too_low_for_deletions),
+        ("Purity too low for amplifications", panel_qc.purity_too_low_for_amplifications),
+        ("Purity too low for vChord", panel_qc.purity_too_low_for_vchord),
+        ("AMP driver genes needing manual curation", ",".join(panel_qc.amp_driver_genes_needing_manual_curation)),
+        ("CRLF2 AMP present", panel_qc.crlf2_amp_present),
+        ("Unreliable CRLF2 AMP", panel_qc.unreliable_crlf2_amp),
+        ("Partial AMP genes", ",".join(panel_qc.partial_amp_genes)),
+        ("Potentially missed deletion genes",
+         ",".join(sorted(f"{gene}({length})" for gene, length in panel_qc.maybe_missed_deletion_gene_to_min_region_length.items()))),
+    ]
+    with open(output_file, "w") as output_f:
+        for label, value in rows:
+            output_f.write(f"{label}{TSV_SEPARATOR}{value}\n")
 
 
 def is_relevant_for_coverage(exon: ExonMedianCoverage, gene_to_excluded_exons: Dict[str, Tuple[int, ...]]) -> bool:
@@ -836,9 +1004,9 @@ def pretty_listing(things: Set[str]) -> str:
 
 def pretty_base_count(count: int) -> str:
     if count >= 1000000:
-        return f"{count/1000000:.1f}MB"
+        return f"{count / 1000000:.1f}MB"
     elif count >= 1000:
-        return f"{count/1000:.1f}KB"
+        return f"{count / 1000:.1f}KB"
     else:
         return f"{count}B"
 
@@ -859,6 +1027,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--excluded-exons", "-e", type=Path, required=True, help="Exons excluded from coverage analysis.")
     parser.add_argument("--output-file", "-o", type=Path, required=True, help="Output file with sample remarks.")
+    parser.add_argument("--qc-output-file", "-q", type=Path, required=False, help="Output file with QC values and conclusions.")
     return parser.parse_args()
 
 
@@ -872,5 +1041,6 @@ if __name__ == "__main__":
         args.optional_sample_id,
         args.hotspot_coverage_input_directory,
         args.excluded_exons,
-        args.output_file
+        args.output_file,
+        args.qc_output_file,
     )
