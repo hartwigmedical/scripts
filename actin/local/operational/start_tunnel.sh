@@ -68,7 +68,7 @@ ns="${user_ns:-$NAMESPACE}"
 ns="${ns:-default}"
 
 for var in PROJECT PORT CONTEXT_ROOT CLUSTER; do
-  [[ -z ${!var} ]] && echo "$var must be specified in [$config_file]" && exit 1
+  [[ -z ${!var+x} ]] && echo "$var must be specified in [$config_file]" && exit 1
 done
 
 local_port="${local_port:-$PORT}"
