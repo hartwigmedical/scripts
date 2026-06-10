@@ -1,12 +1,14 @@
 #!/usr/bin/env zsh
+#
+# Note there is a wrapper for this in `actin-test-framework`.
 
 set -o pipefail
 
 CONFIG_DIR="$(readlink -f "$(dirname "$0")")/.tunnel_configurations"
 
 function print_available_configs() {
-    echo "Known configurations:"
-    for c in "$(ls $CONFIG_DIR)"; do
+    echo "Known configurations in [$1]:"
+    for c in "$(ls $1)"; do
         echo "${c}" | sed -e 's/^/  /' -e 's/\.config$//'
     done
 }
@@ -19,15 +21,15 @@ Establish a connection to an application running in a private Kubernetes cluster
 USAGE: $0 (application) [-c config_dir] [-n namespace] [-p local_port]
 
   application - Application to connect to, see below for existing list
-  config_dir  - [optional] directory to use for configuration files instead of the default [.../$(basename $CONFIG_DIR)]
+  config_dir  - [optional] directory to use for configuration files instead of [$CONFIG_DIR]
   namespace   - [optional] namespace overriding any set in configuration or the default value "default"
-  local_port  = [optional] local port to bind, used to avoid conflicts (overrides default in configuragion file)
+  local_port  = [optional] local port to bind, used to avoid conflicts (overrides default in configuration file)
 
-NOTE: To start multiple tunnels  use `-p` to avoid local port conflicts and multiple terminals or Ctrl-Z to run many instances
+NOTE: To start multiple tunnels use `-p` to avoid local port conflicts and multiple terminals or Ctrl-Z to run many instances
 
 EOM
 
-  print_available_configs
+  print_available_configs $CONFIG_DIR
 }
 
 gcv="$(gcloud --version | head -n1 | awk '{print $NF}' | awk -F. '{print $1}')"
@@ -59,7 +61,7 @@ shift "$(($OPTIND -1))"
 config_file="${config_dir}/${app}.config"
 if [[ ! -f $config_file ]]; then
     echo "Unknown app [$app]: [$config_file] does not exist"
-    print_available_configs 
+    print_available_configs $config_dir
     exit 1
 fi
 
@@ -73,6 +75,8 @@ done
 
 local_port="${local_port:-$PORT}"
 pod_name_prefix="${POD:=actin-$app}"
+
+set -e
 
 gcloud container clusters get-credentials "$CLUSTER" --zone europe-west4 --project "$PROJECT" --dns-endpoint
 
