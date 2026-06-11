@@ -25,6 +25,7 @@ info "Replacing test data sets with GCP bucket contents"
 create_or_cleanup_dir "/data/example_data_sets"
 gsutil -m rsync -r gs://hmf-crunch-actin-jim-rct-dataset /data/example_data_sets
 
+info "Replacing ACTIN treatment database with bucket contents"
 treatment_db_dir="$(locate_actin_treatment_db_directory)"
 treatment_db_bucket="$(locate_actin_treatment_db_bucket)"
 create_or_cleanup_dir ${treatment_db_dir}
