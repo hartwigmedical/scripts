@@ -2,10 +2,6 @@
 
 ########################## ACTIN GCP projects and VMs #########################
 
-pilot_actin_project() {
-    echo "hmf-crunch"
-}
-
 pilot_actin_vm() {
     echo "data-vm-prod-2"
 }
@@ -58,13 +54,6 @@ production_actin_mcgi_ops_vm() {
     echo "mcgi-vm-operations"
 }
 
-production_actin_serve_vm() {
-    echo "serve-vm-actin-1"
-}
-
-production_actin_serve_project() {
-    echo "hmf-crunch"
-}
 
 ################################ ACTIN Databases ##############################
 
