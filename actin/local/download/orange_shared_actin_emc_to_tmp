@@ -5,15 +5,18 @@ source locate_files || exit 1
 source actin_config || exit 1
 
 patient=$1 && shift
-namespace=$1 && shift
+sample=$1 && shift
 
 if [[ -z "${patient}" ]]; then
     error "Missing patient parameter. Exiting."
 fi
 
-if [[ -z "${namespace}" ]]; then
-    namespace="tm-progene-study"
-    info "Missing namespace, assuming '${namespace}' from [$(actin_emc_namespaces)]"
+gcp_project=$(production_actin_emc_project)
+namespace="tm-progene-study"
+
+if [[ -z "${sample}" ]]; then
+    info "Missing sample, trying to resolve from recent WGS runs"
+    sample=$(locate_sequenced_sample_for_actin_patient_gcp ${gcp_project} ${patient} ${namespace})
 fi
 
 local_dir="${HOME}/hmf/tmp/orange_shared"
@@ -21,8 +24,7 @@ if [[ ! -d "${local_dir}" ]]; then
     mkdir -p "${local_dir}"
 fi
 
-gcp_project=$(production_actin_emc_project)
-orange_report="$(locate_actin_first_shared_orange_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
+orange_report="$(locate_actin_first_shared_orange_pdf_gcp "${gcp_project}" "${patient}" "${sample}" "${namespace}")"
 
 orange_report_file_name="$(echo $(basename "${orange_report}"))"
 preferred_orange_report_file_name="${patient}_${orange_report_file_name}"
