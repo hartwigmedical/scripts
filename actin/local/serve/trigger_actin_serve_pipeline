@@ -84,7 +84,7 @@ copy_to_bucket() {
     local suffix="${namespace:+-$namespace}"
     local dest_bucket="gs://actin-${id}-serve-pipeline-input${suffix}"
     echo "Copying ${SOURCE_FILE} to ${dest_bucket}"
-    gsutil cp "${SOURCE_FILE}" "${dest_bucket}"
+    gcloud storage cp "${SOURCE_FILE}" "${dest_bucket}"
 }
 
 if [[ ! " ${VALID_IDS[@]} " =~ " ${TARGET_ID} " ]]; then

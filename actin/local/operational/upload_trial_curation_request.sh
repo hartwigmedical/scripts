@@ -9,5 +9,5 @@ set -eo pipefail
 
 ns="$(date -u "+%N")"
 targetFile="gs://${TARGET_BUCKET}/requested/$(date -u "+%Y%m%d-%H%M%S")$(echo $ns | cut -c1-3).txt"
-gsutil cp "$1" "${targetFile}"
+gcloud storage cp "$1" "${targetFile}"
 echo "Copied [$1] to [$targetFile]"

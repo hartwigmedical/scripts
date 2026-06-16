@@ -26,4 +26,4 @@ fi
 
 actin_report="$(locate_actin_first_shared_report_pdf_gcp "${gcp_project}" "${patient}" "${namespace}")"
 
-gsutil cp ${actin_report} ${local_dir}
+gcloud storage cp ${actin_report} ${local_dir}

@@ -25,9 +25,9 @@ fi
 
 info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
 destination_prefix="${shared_actin_data_external_uri}/${hospital_id}"
-gsutil cp "${patient_record_json}" "${destination_prefix}.patient_record.json"
-gsutil cp "${treatment_match_json}" "${destination_prefix}.treatment_match.json"
-gsutil cp "${actin_report_pdf}" "${destination_prefix}.pdf"
+gcloud storage cp "${patient_record_json}" "${destination_prefix}.patient_record.json"
+gcloud storage cp "${treatment_match_json}" "${destination_prefix}.treatment_match.json"
+gcloud storage cp "${actin_report_pdf}" "${destination_prefix}.pdf"
 
 write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 

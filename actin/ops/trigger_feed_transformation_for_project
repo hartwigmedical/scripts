@@ -20,5 +20,5 @@ fi
 
 info "Triggering feed transformation for ${gcp_project} ${namespace}"
 clinical_feed_bucket=$(locate_actin_clinical_feed_input_bucket ${gcp_project} ${namespace})
-gsutil cp "${clinical_feed_bucket}/upload.complete" "/tmp/"
-gsutil cp  "/tmp/upload.complete" ${clinical_feed_bucket}/
+gcloud storage cp "${clinical_feed_bucket}/upload.complete" "/tmp/"
+gcloud storage cp  "/tmp/upload.complete" ${clinical_feed_bucket}/

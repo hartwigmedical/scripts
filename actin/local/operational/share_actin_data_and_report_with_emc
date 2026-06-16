@@ -35,9 +35,9 @@ if [[ -z "${patient_record_json}" || -z "${treatment_match_json}" || -z "${actin
 fi
 
 info "Copying ACTIN data for ${patient} to ${shared_actin_data_external_uri}"
-gsutil cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
-gsutil cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
-gsutil cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
+gcloud storage cp "${patient_record_json}" "${shared_actin_data_external_uri}/"
+gcloud storage cp "${treatment_match_json}" "${shared_actin_data_external_uri}/"
+gcloud storage cp "${actin_report_pdf}" "${shared_actin_data_external_uri}/"
 
 write_shared_data_latest_path_manifest "${shared_actin_data_external_uri}"
 
@@ -58,6 +58,6 @@ if [[ -z "${orange_no_germline_json}" && -z "${orange_no_germline_pdf}" ]]; then
 else
     sample=$(locate_sequenced_sample_for_actin_patient_gcp "${gcp_project}" "${patient}" "${namespace}")
     info "Copying ORANGE data and report for ${sample} (${patient}) to ${shared_actin_data_external_uri}"
-    gsutil cp "${orange_no_germline_json}" "${shared_actin_data_external_uri}/"
-    gsutil cp "${orange_no_germline_pdf}" "${shared_actin_data_external_uri}/"
+    gcloud storage cp "${orange_no_germline_json}" "${shared_actin_data_external_uri}/"
+    gcloud storage cp "${orange_no_germline_pdf}" "${shared_actin_data_external_uri}/"
 fi
