@@ -66,15 +66,27 @@ def getPurityPloidy(purple_purity):
             arr = lines.split(tsvSplit)
             res['purity'] = float(arr[header.index('purity')])
             res['ploidy'] = float(arr[header.index('ploidy')])
+            res['gender'] =str(arr[header.index('gender')])
     return res
-def transformRatioFile(cobalt, sampleId,geneLocation):
+
+def writePurplePurity(purple_purity, sampleId, output_dir='transformed_data'):
+  res = getPurityPloidy(purple_purity)
+
+  with open(output_dir + '/' + sampleId + '.purity', 'w') as ft:
+    ft.write(str(res['purity']))
+  with open(output_dir + '/' + sampleId + '.gender', 'w') as ft:
+    ft.write(res['gender'])
+  with open(output_dir + '/' + sampleId + '.ploidy', 'w') as ft:
+    ft.write(str(res['ploidy']))
+
+
+def transformRatioFile(cobalt, sampleId,geneLocation, output_dir='transformed_data'):
 ## xx
 
     minTumorGCRatio=10
     zeroGCoffset = 0.2
 
-
-    ft=open('transformed_data/'+sampleId+'.transformed.cnr','w')
+    ft=open(output_dir + '/' + sampleId + '.transformed.cnr', 'w')
     first = True
     header=[]
 
@@ -122,16 +134,16 @@ def transformRatioFile(cobalt, sampleId,geneLocation):
             chr = data[0]
             gene = [geneLoc.gene for geneLoc in geneLocation if geneLoc.chr==data[0] and overlaps([geneLoc.start,geneLoc.end],[int(start),int(end)])]
             if gene:
-                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+'\n')
+                ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+';'.join(gene)+ '\n')
             else:
                 ft.write(lines+tsvSplit+start+tsvSplit+end+tsvSplit+str(logR)+tsvSplit+'NA'+'\n')
 
 
-def transformGeneFile(purple_gene, sampleId, panelGenes):
+def transformGeneFile(purple_gene, sampleId, panelGenes, output_dir='transformed_data'):
     first=True
     geneLocation = []
 
-    ft=open('transformed_data/'+sampleId+'.transformed.genemetrics.cns','w')
+    ft=open(output_dir + '/' + sampleId + '.transformed.genemetrics.cns', 'w')
     with open(purple_gene,'rt') as fh:
         for lines in fh:
             lines = lines.rstrip('\n')
@@ -151,9 +163,10 @@ def transformGeneFile(purple_gene, sampleId, panelGenes):
                     ft.write(lines+tsvSplit+'1\n')
     return geneLocation
 
-def genVCFfile(amber, sampleId):
+
+def genVCFfile(amber, sampleId, output_dir='transformed_data'):
 #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SampleName
-    ft = open('transformed_data/'+sampleId+'.transformed.vcf','w')
+    ft = open(output_dir + '/' + sampleId + '.transformed.vcf', 'w')
     ft.write(vcf_header+"\n")
     first = True
     header = []
@@ -168,9 +181,9 @@ def genVCFfile(amber, sampleId):
             Depth = arr[header.index("tumorDepth")]
 
             BAF =  arr[header.index("tumorBAF")]
-            SAF = str(int(round(int(Depth)*float(BAF)*0.5)))
-            SAR = str(int(float(Depth)*float(BAF)) - int(SAF))
 
+            SAF = str(int(round(int(Depth)*float(BAF)*0.5)))
+            SAR = str(round(float(Depth)*float(BAF)) - int(SAF))
 
 
             CHROM = arr[header.index('chromosome')]
@@ -205,7 +218,7 @@ def getNormCorrection(cobalt_segmented):
     return weightedAverage(sValues,nProbes)
 
 
-def getNormPurple(purple_segmented, purple_purity, sampleId):
+def getNormPurple(purple_segmented, purple_purity):
     first = True
     header=[]
 
@@ -229,11 +242,11 @@ def getNormPurple(purple_segmented, purple_purity, sampleId):
             Weights.append(int(arr[header.index('depthWindowCount')]))
     return weightedAverage(FClogs,Weights)
 
-def transformSegmentedFile(purple_segmented,purple_purity, sampleId, normCorrection):
+def transformSegmentedFile(purple_segmented,purple_purity, sampleId, normCorrection, output_dir='transformed_data'):
 
 # xx
 #CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  SampleName
-    ft=open('transformed_data/' + sampleId + '.transformed.cns','w')
+    ft=open(output_dir + '/' + sampleId + '.transformed.cns', 'w')
     first = True
     header=[]
 
@@ -284,6 +297,7 @@ class Config:
     purplePurity: str
     sampleId: str
     panelGenes: str
+    outputDir: str = "transformed_data"
 
 def parse_args(sys_args):
     parser = argparse.ArgumentParser(prog="TransformData", description="Transform hmftools output to input for reconCNV")
@@ -297,8 +311,9 @@ def parse_args(sys_args):
     parser.add_argument("--purplePurity", "-p", type=str, required=True, help="purity file - ends with purple.purity.tsv")
     parser.add_argument("--sampleId","-i", type = str, required =True, help="sample Id - used for output file names")
     parser.add_argument("--panelGenes","-t", type = str, required = True, help="panel genes - used to annotate genes")
+    parser.add_argument("--outputDir","-o", type = str, required = False, help="output directory",default = 'transformed_data')
     args = parser.parse_args(sys_args)
-    return Config(args.cobaltRatio, args.cobaltSegmented, args.amber, args.purpledriverCatalog, args.purpleGene, args.purpleSomatic, args.purplePurity, args.sampleId, args.panelGenes)
+    return Config(args.cobaltRatio, args.cobaltSegmented, args.amber, args.purpledriverCatalog, args.purpleGene, args.purpleSomatic, args.purplePurity, args.sampleId, args.panelGenes, args.outputDir)
 
 
 def main(args):
@@ -308,11 +323,13 @@ def main(args):
 
     panelGenes = getPanelGenes(args.panelGenes)
     normCorrection=getNormCorrection(args.cobaltSegmented)
-    geneLocation=transformGeneFile(args.purpleGene,sampleId, panelGenes)
-    transformRatioFile(args.cobaltRatio, sampleId, geneLocation)
-    genVCFfile(args.amber, sampleId)
-    normPurple=getNormPurple(args.purpleSomatic,args.purplePurity,sampleId)
-    transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,-normPurple+normCorrection)
+    geneLocation=transformGeneFile(args.purpleGene,sampleId, panelGenes, args.outputDir)
+    transformRatioFile(args.cobaltRatio, sampleId, geneLocation, args.outputDir)
+    genVCFfile(args.amber, sampleId, args.outputDir)
+    normPurple=getNormPurple(args.purpleSomatic, args.purplePurity)
+    transformSegmentedFile(args.purpleSomatic,args.purplePurity,sampleId,-normPurple+normCorrection, args.outputDir)
+    writePurplePurity(args.purplePurity,sampleId,args.outputDir)
+
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s - [%(levelname)-8s] - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
