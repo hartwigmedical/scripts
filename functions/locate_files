@@ -709,7 +709,7 @@ locate_actin_first_shared_report_pdf_gcp() {
     local patient=$1 && shift
     local namespace=$1 && shift
 
-    local report_gsutil_uri="$(locate_actin_shared_data_external_bucket "${gcp_project}" "${namespace}")/${patient}/actin/1/${patient}.actin.pdf"
+    local report_gsutil_uri="$(locate_actin_shared_data_external_bucket "${gcp_project}" "${namespace}")/${patient}/actin/1/${patient}*.pdf"
 
     echo $(locate_actin_blob ${report_gsutil_uri} "ACTIN shared report PDF")
 }

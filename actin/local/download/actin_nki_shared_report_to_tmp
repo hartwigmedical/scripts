@@ -11,12 +11,12 @@ if [[ -z "${patient}" ]]; then
 fi
 
 gcp_project=$(production_actin_nki_project)
-
-do_download_actin_report_to_tmp ${patient} ${gcp_project}
-
 hospital_id="$(lookup_nki_hospital_id_for_actin_id ${patient})"
-actin_report_file_name="${patient}.actin.pdf"
-preferred_actin_report_file_name="${hospital_id}_${actin_report_file_name}"
+
+do_download_actin_shared_report_to_tmp ${hospital_id} ${gcp_project}
+
+actin_report_file_name="${hospital_id}.pdf"
+preferred_actin_report_file_name="${hospital_id}_${patient}.actin.pdf"
 
 mv "$(locate_local_tmp_actin_reports_directory)/${actin_report_file_name}" \
     "$(locate_local_tmp_actin_reports_directory)/${preferred_actin_report_file_name}"
