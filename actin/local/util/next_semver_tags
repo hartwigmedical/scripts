@@ -16,7 +16,7 @@ esac
 
 git status &>/dev/null || { echo "Not in a git checkout" >&2; exit 1; }
 
-TAG_REGEX="^v?(([0-9]+)\.([0-9]+)\.([0-9]+)(-((alpha|beta)\.([0-9])+))?(_([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?)$"
+TAG_REGEX="^v?(([0-9]+)\.([0-9]+)\.([0-9]+)(-((alpha|beta)\.([0-9]+)))?(_([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?)$"
 latest="$(git tag -l | egrep "$TAG_REGEX" | sort -V | tail -n1)"
 if [[ ${latest} =~ ${TAG_REGEX} ]]; then
     branch="$(git branch | grep '^*' | cut -d' ' -f2)"
