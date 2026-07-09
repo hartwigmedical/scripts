@@ -12,7 +12,6 @@ info "Replacing patient-like-me data with GCP bucket contents"
 create_or_cleanup_dir "/data/patient_like_me/sources/cairo"
 gsutil -m rsync -r gs://hmf-crunch-actin-dccg-dataset/cairo /data/patient_like_me/sources/cairo/
 
-info "Replacing patient-like-me data with GCP bucket contents"
 create_or_cleanup_dir "/data/patient_like_me/sources/tribe"
 gsutil -m rsync -r gs://hmf-crunch-actin-tribe-dataset/tribe /data/patient_like_me/sources/tribe/
 
