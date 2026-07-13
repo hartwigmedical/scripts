@@ -93,6 +93,7 @@ PARTIAL_AMP_WARNING_GENE_TO_CHROMOSOME = {
     "MYC": Chromosome.CHR8,
     "PDGFRA": Chromosome.CHR4,
     "PDGFRB": Chromosome.CHR5,
+    "PIK3CA": Chromosome.CHR3,
     "RAF1": Chromosome.CHR3,
     "ROS1": Chromosome.CHR6,
 }

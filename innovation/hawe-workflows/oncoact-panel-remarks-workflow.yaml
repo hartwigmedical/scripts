@@ -14,7 +14,7 @@ spec:
   stages:
     - name: "hotspot"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.3.1"
+      version: "1.3.2"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
@@ -101,7 +101,7 @@ spec:
           echo "[$(date +"%Y-%m-%d %H:%M:%S")] Finished hotspot coverage check"
     - name: "remarks"
       image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker-crunch/oncoact-panel-remarks"
-      version: "1.3.1"
+      version: "1.3.2"
       options:
         backoffLimit: "2"
         stageTimeoutMinutes: "120"
