@@ -11,6 +11,36 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Tuple, Dict, Set
 
+
+class Chromosome(Enum):
+    CHR1 = "chr1"
+    CHR2 = "chr2"
+    CHR3 = "chr3"
+    CHR4 = "chr4"
+    CHR5 = "chr5"
+    CHR6 = "chr6"
+    CHR7 = "chr7"
+    CHR8 = "chr8"
+    CHR9 = "chr9"
+    CHR10 = "chr10"
+    CHR11 = "chr11"
+    CHR12 = "chr12"
+    CHR13 = "chr13"
+    CHR14 = "chr14"
+    CHR15 = "chr15"
+    CHR16 = "chr16"
+    CHR17 = "chr17"
+    CHR18 = "chr18"
+    CHR19 = "chr19"
+    CHR20 = "chr20"
+    CHR21 = "chr21"
+    CHR22 = "chr22"
+    CHRX = "chrX"
+    CHRY = "chrY"
+
+    def __str__(self) -> str:
+        return self.value
+
 CRLF2_GENE_NAME = "CRLF2"
 
 WARN_HIGH_COPY_NUMBER_NOISE = "WARN_HIGH_COPY_NUMBER_NOISE"
@@ -18,13 +48,16 @@ WARN_DELETED_GENES = "WARN_DELETED_GENES"
 FAIL_NO_TUMOR = "FAIL_NO_TUMOR"
 FAIL_CONTAMINATION = "FAIL_CONTAMINATION"
 
-CHR_X = "chrX"
+FEMALE_GENDER = "FEMALE"
+MALE_GENDER = "MALE"
+
 CHR_X_NON_PAR_START = 2781479
 CHR_X_NON_PAR_END = 156030895
 
 TSV_SEPARATOR = "\t"
 
 AMP_MANUAL_INTERPRETATION_THRESHOLD = 7
+AMP_PLOIDY_THRESHOLD = Decimal("3")
 
 MIN_UNRELIABLE_PURITY = Decimal("0.995")
 MIN_UNRELIABLE_PLOIDY = Decimal("1.85")
@@ -41,6 +74,28 @@ DELETION_COPY_NUMBER_THRESHOLD = Decimal("0.5")
 MAX_DELETION_SIZE = 10000000
 VALIDATED_DELETION_GENES = {
     "PALB2", "RAD51B", "RAD51C", "BRCA1", "BRCA2", "CDKN2A", "TP53", "CREBBP", "EP300", "ARID1A", "RB1", "PTEN", "MTAP", "KEAP1", "SMAD4"
+}
+
+# Validated amplification genes + KRAS.
+PARTIAL_AMP_WARNING_GENE_TO_CHROMOSOME = {
+    "AR": Chromosome.CHRX,
+    "CCNE1": Chromosome.CHR19,
+    "EGFR": Chromosome.CHR7,
+    "ERBB2": Chromosome.CHR17,
+    "FGFR1": Chromosome.CHR8,
+    "FGFR2": Chromosome.CHR10,
+    "FLT4": Chromosome.CHR5,
+    "KDR": Chromosome.CHR4,
+    "KIT": Chromosome.CHR4,
+    "KRAS": Chromosome.CHR12,
+    "MDM2": Chromosome.CHR12,
+    "MET": Chromosome.CHR7,
+    "MYC": Chromosome.CHR8,
+    "PDGFRA": Chromosome.CHR4,
+    "PDGFRB": Chromosome.CHR5,
+    "PIK3CA": Chromosome.CHR3,
+    "RAF1": Chromosome.CHR3,
+    "ROS1": Chromosome.CHR6,
 }
 GENES_EXCLUDED_FROM_DESIGN = {"SPATA31A7", "LINC01001", "U2AF1"}
 
@@ -265,7 +320,7 @@ class PanelQc:
     crlf2_amp_present: bool
     unreliable_crlf2_amp: bool
 
-    partial_amp_genes: tuple[str, ...]
+    potential_partial_amp_genes: tuple[str, ...]
 
     maybe_missed_deletion_gene_to_min_region_length: dict[str, int]
 
@@ -425,9 +480,12 @@ def determine_remarks(panel_qc: PanelQc, ) -> List[str]:
     if panel_qc.unreliable_crlf2_amp:
         remarks.append(f"De {CRLF2_GENE_NAME} amplificatie is onbetrouwbaar.")
 
-    if panel_qc.partial_amp_genes:
-        gene_name_string = ", ".join(panel_qc.partial_amp_genes)
-        remarks.append(f"Partiële amplificaties zijn niet gevalideerd: {gene_name_string}.")
+    if panel_qc.potential_partial_amp_genes:
+        gene_name_string = ", ".join(panel_qc.potential_partial_amp_genes)
+        remarks.append(
+            f"In {gene_name_string} is mogelijk een partiële amplificatie aanwezig (niet gevalideerd). "
+            f"Vervolganalyse van bijvoorbeeld reconCNV wordt geadviseerd om te beoordelen of het een klinisch relevante amplificatie betreft."
+        )
 
     if panel_qc.maybe_missed_deletion_gene_to_min_region_length:
         gene_summary_lines = {
@@ -470,14 +528,14 @@ def determine_panel_qc(
 
     baf_points_in_x_outside_par = [
         baf_point for baf_point in run_data.amber_baf_points
-        if baf_point.chromosome == CHR_X and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
+        if baf_point.chromosome == Chromosome.CHRX.value and CHR_X_NON_PAR_START <= baf_point.position <= CHR_X_NON_PAR_END
     ]
     baf_points_outside_par_count = len(baf_points_in_x_outside_par)
     total_baf_points_count = len(run_data.amber_baf_points)
     baf_points_in_x_outside_par_percent = (baf_points_outside_par_count * 100) / max(total_baf_points_count, 1)
     gender = run_data.purple_qc.amber_gender
-    unreliable_male_gender_call = gender == "MALE" and baf_points_in_x_outside_par_percent > 0.5
-    unreliable_female_gender_call = gender == "FEMALE" and baf_points_in_x_outside_par_percent < 1.5
+    unreliable_male_gender_call = gender == MALE_GENDER and baf_points_in_x_outside_par_percent > 0.5
+    unreliable_female_gender_call = gender == FEMALE_GENDER and baf_points_in_x_outside_par_percent < 1.5
 
     purity = run_data.purple_qc.purity
     ploidy = run_data.purple_qc.ploidy
@@ -492,8 +550,9 @@ def determine_panel_qc(
 
     amp_driver_genes_needing_manual_curation = sorted([
         driver.gene_name for driver in run_data.drivers
-        if
-        driver.driver_type == DriverType.AMP and driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD and driver.gene_name != CRLF2_GENE_NAME
+        if driver.driver_type == DriverType.AMP
+           and driver.min_copy_number <= AMP_MANUAL_INTERPRETATION_THRESHOLD
+           and driver.gene_name != CRLF2_GENE_NAME
     ])
 
     crlf2_amp_present = any(
@@ -502,7 +561,12 @@ def determine_panel_qc(
     )
     unreliable_crlf2_amp = crlf2_amp_present and not purity_too_low_for_amplifications
 
-    partial_amp_genes = sorted([driver.gene_name for driver in run_data.drivers if driver.driver_type == DriverType.PARTIAL_AMP])
+    potential_partial_amp_genes = sorted(
+        [
+            gene_copy_number.gene_name for gene_copy_number in run_data.gene_copy_numbers
+            if has_potential_partial_amp(gene_copy_number, gender, ploidy)
+        ]
+    )
 
     maybe_missed_deletion_genes = determine_genes_with_potentially_missed_deletions(run_data)
     maybe_missed_deletion_gene_to_minimum_min_region_length = {
@@ -541,7 +605,7 @@ def determine_panel_qc(
         amp_driver_genes_needing_manual_curation=tuple(amp_driver_genes_needing_manual_curation),
         crlf2_amp_present=crlf2_amp_present,
         unreliable_crlf2_amp=unreliable_crlf2_amp,
-        partial_amp_genes=tuple(partial_amp_genes),
+        potential_partial_amp_genes=tuple(potential_partial_amp_genes),
         maybe_missed_deletion_gene_to_min_region_length=maybe_missed_deletion_gene_to_minimum_min_region_length,
     )
 
@@ -571,6 +635,26 @@ def find_relevant_gene_copy_numbers(gene: str, run_data: RunData) -> List[GeneCo
         # CDKN2A can have two entries
         raise ValueError(f"Found unexpected number of '{gene}' gene copy number for sample: {len(relevant_gene_copy_numbers)}")
     return relevant_gene_copy_numbers
+
+
+def has_potential_partial_amp(gene_copy_number: GeneCopyNumber, gender: str, ploidy: Decimal) -> bool:
+    if gene_copy_number.gene_name not in PARTIAL_AMP_WARNING_GENE_TO_CHROMOSOME.keys():
+        return False
+
+    chromosome = PARTIAL_AMP_WARNING_GENE_TO_CHROMOSOME.get(gene_copy_number.gene_name)
+    if chromosome == Chromosome.CHRX:
+        if gender == FEMALE_GENDER:
+            threshold = AMP_PLOIDY_THRESHOLD
+        else:
+            threshold = AMP_PLOIDY_THRESHOLD / 2
+    elif chromosome == Chromosome.CHRY:
+        if gender == FEMALE_GENDER:
+            return False
+        else:
+            threshold = AMP_PLOIDY_THRESHOLD / 2
+    else:
+        threshold = AMP_PLOIDY_THRESHOLD
+    return gene_copy_number.min_copy_number <= threshold * ploidy < gene_copy_number.max_copy_number
 
 
 def write_remarks_file(remarks: list[str], output_file: Path) -> None:
@@ -612,7 +696,7 @@ def write_panel_qc_file(panel_qc: PanelQc, output_file: Path) -> None:
         ("AMP driver genes needing manual curation", ",".join(panel_qc.amp_driver_genes_needing_manual_curation)),
         ("CRLF2 AMP present", panel_qc.crlf2_amp_present),
         ("Unreliable CRLF2 AMP", panel_qc.unreliable_crlf2_amp),
-        ("Partial AMP genes", ",".join(panel_qc.partial_amp_genes)),
+        ("Potential partial AMP genes", ",".join(panel_qc.potential_partial_amp_genes)),
         ("Potentially missed deletion genes",
          ",".join(sorted(f"{gene}({length})" for gene, length in panel_qc.maybe_missed_deletion_gene_to_min_region_length.items()))),
     ]
