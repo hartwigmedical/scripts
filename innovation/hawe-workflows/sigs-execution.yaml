@@ -1,0 +1,6 @@
+name: "{sampleId}"
+workflow: "sigs"
+version: "0.1.4"
+params:
+  tumor_sample_id: "{sampleId}"
+  run_uri: "{runUri}"

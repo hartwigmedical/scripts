@@ -1,0 +1,33 @@
+name: "sigs"
+version: "0.1.4"
+storagePath: "gs://sigs-targeted-output"
+externalInputs:
+  - name: run-folder
+    location: "${run_uri}"
+  - name: resources-folder
+    location: "gs://sigs-targeted-output"
+stages:
+  - name: "sigs"
+    image: "europe-west4-docker.pkg.dev/hmf-build/hmf-docker/sigs"
+    version: "1.2.1-beta.2"
+    options:
+      backoffLimit: "2"
+      stageTimeoutMinutes: "60"
+      resources:
+        resourceProfile: "light"
+    inputStages:
+      - run-folder
+      - resources-folder
+    command: "bash /config/run.sh"
+    configFiles:
+      run.sh: |
+        #!/usr/bin/env bash
+        set -eo pipefail
+
+        mkdir -p /out/sigs_output
+
+        java -jar /usr/share/java/sigs_v1.2.1-beta.2.jar \
+          -sample ${tumor_sample_id} \
+          -somatic_vcf_file /in/run-folder/purple/${tumor_sample_id}.purple.somatic.vcf.gz \
+          -output_dir /out/sigs_output \
+          -signatures_file /in/resources-folder/snv_cosmic_signatures.csv
