@@ -2,7 +2,19 @@
 
 source message_functions || exit 1
 
-file=$1 && shift
+if [[ $# -eq 0 ]]; then
+    error "No files/patterns listed"
+fi
 
-info "Copying ${file} to ~/hmf/tmp/"
-gcloud -q --project hmf-ops compute scp --recurse ops-vm-prod-2:"${file}" ${HOME}/hmf/tmp/
+dest_dir="${HOME}/hmf/tmp/"
+mkdir -p "${dest_dir}"
+
+for remote_path in "$@"; do
+    info "Copying ${remote_path} to ${dest_dir}"
+
+    gcloud -q --project hmf-ops compute scp --recurse \
+        "ops-vm-prod-2:${remote_path}" "${dest_dir}" \
+        || warn "Could not find ${remote_path}"
+done
+
+info "Done copying $# files to ${dest_dir}"
