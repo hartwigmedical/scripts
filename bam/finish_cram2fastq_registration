@@ -3,14 +3,13 @@
 source message_functions || exit 1
 
 org_barcode=$1
-new_barcode=$2
 
 if [[ -z "$1" || -z "$2" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Perform final steps of the procedure for a production cram2fastq run"
     echo "        (move FASTQ, register in API, and copy SNPcheck VCF)"
-    echo " Usage: $(basename $0) original_barcode new_barcode"
-    echo " Exmpl: $(basename $0) FR12345678 FR12345678-c2f230212"
+    echo " Usage: $(basename $0) barcode"
+    echo " Exmpl: $(basename $0) FR12345678"
     echo "---"
     exit 1
 fi
@@ -19,19 +18,19 @@ if [[ $(hmf_api_get "samples?barcode=${org_barcode}" | jq length) == 0 ]]; then
     die "Original barcode is not in api"
 fi
 
-new_barcode_lower=$(echo "${new_barcode}" | tr '[:upper:]' '[:lower:]')
+org_barcode_lower=$(echo "${org_barcode}" | tr '[:upper:]' '[:lower:]')
 
 info "Renaming newly generated fastq to correct barcodes"
-for fastq_file in $(gcloud storage ls "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq/*.fastq.gz")
+for fastq_file in $(gcloud storage ls "gs://hmf-cram2fastq/${org_barcode_lower}/cram2fastq/output_fq/*.fastq.gz")
 do
-  gcloud storage mv "${fastq_file}" "${fastq_file//SAMPLE/${new_barcode}}"
+  gcloud storage mv "${fastq_file}" "${fastq_file//SAMPLE/${org_barcode}}"
 done
 
 info "Moving newly generated fastq to fastq-input-prod-1 bucket"
-gcloud storage cp "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq/*.fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
+gcloud storage cp "gs://hmf-cram2fastq/${org_barcode_lower}/cram2fastq/output_fq/*.fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
 
-info "register new barcode fastq in api"
-manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq" "${org_barcode}" || die "Could not register new fastq"
+#info "register new barcode fastq in api"
+#manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq" "${org_barcode}" || die "Could not register new fastq"
 
-info "Patching new barcode q30 and yield with original barcode values in api"
-patch_api_sample_q30_yld_from_source_sample "${org_barcode}" "${new_barcode}" || die "Could not patch api"
+#info "Patching new barcode q30 and yield with original barcode values in api"
+#patch_api_sample_q30_yld_from_source_sample "${org_barcode}" "${new_barcode}" || die "Could not patch api"
