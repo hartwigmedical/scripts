@@ -10,7 +10,8 @@ set -euo pipefail
 # - AUTH_URL: Override the offline-session token URL
 # - LOCAL_FILE: Local file to upload
 # - REPORT_FILE_PATH: Report-relative destination path, for example supplementary/example.pdf
-# - REPORT_ID: Portal report id
+# - SUBMISSION_ID: Portal submission id (preferred)
+# - REPORT_ID: Portal report id (used when SUBMISSION_ID is omitted)
 
 prompt() {
   local var_name="$1"
@@ -51,7 +52,8 @@ print(parse_qs(s.partition("#")[2]).get("refreshToken", [s])[0])
 prompt SERVER_URL "Portal server URL" "http://portal.gateway.pilot-1/"
 SERVER_URL="${SERVER_URL%/}"
 
-prompt REPORT_ID "Report id"
+REPORT_OR_SUBMISSION_ID="${SUBMISSION_ID:-${REPORT_ID:-}}"
+prompt REPORT_OR_SUBMISSION_ID "Submission id or report id"
 prompt LOCAL_FILE "Local file path" "$HOME/Desktop/example.pdf"
 prompt REPORT_FILE_PATH "Report-relative file path" "$(basename "$LOCAL_FILE")"
 
@@ -72,6 +74,25 @@ fi
 
 if [ -z "$AUTH_TOKEN" ]; then
   echo "Error: AUTH_TOKEN is empty" >&2
+  exit 1
+fi
+
+if [[ "$REPORT_OR_SUBMISSION_ID" == *-* ]]; then
+  echo "Resolving report id for submission $REPORT_OR_SUBMISSION_ID..."
+  result_response="$(
+    curl -fsS \
+      -H "Authorization: Bearer $AUTH_TOKEN" \
+      "$SERVER_URL/api/submission/$REPORT_OR_SUBMISSION_ID/result"
+  )"
+  REPORT_ID="$(
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["reportId"])' <<< "$result_response"
+  )"
+else
+  REPORT_ID="$REPORT_OR_SUBMISSION_ID"
+fi
+
+if ! [[ "$REPORT_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: resolved report id must be numeric: $REPORT_ID" >&2
   exit 1
 fi
 
