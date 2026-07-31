@@ -27,7 +27,7 @@ do
 done
 
 info "Moving newly generated fastq to fastq-input-prod-1 bucket"
-gcloud storage cp "gs://hmf-cram2fastq/${org_barcode_lower}/cram2fastq/output_fq/*.fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
+gcloud storage cp "gs://hmf-cram2fastq/${org_barcode}/cram2fastq/output_fq/*.fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
 
 #info "register new barcode fastq in api"
 #manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq" "${org_barcode}" || die "Could not register new fastq"
