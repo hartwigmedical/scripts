@@ -1048,28 +1048,26 @@ def load_metadata(pipeline_directory: Path, optional_sample_id: str) -> Metadata
 
 
 def get_yield_in_bases_from_api(tumor_barcode: str) -> int:
-    # temporary workaround for yield no longer available in API. Check manually!
-    return 70 * BASES_PER_GBASE
-    # api_output = run_bash_command(
-    #     ["curl", "--fail", "--silent", "--show-error", "-H", "Content-Type: application/json", "-X",
-    #      "GET", f"http://api.prod-1/hmf/v1/samples?barcode={tumor_barcode}"]
-    # )
-    # if not api_output:
-    #     logging.warning(f"Could not reach API for sample yield")
-    #     return -BASES_PER_GBASE
-    #
-    # api_json = json.loads(api_output)
-    # if not api_json:
-    #     logging.warning(f"Could not find sample in API with barcode {tumor_barcode}")
-    #     return -BASES_PER_GBASE
-    #
-    # if len(api_json) > 1:
-    #     logging.warning(
-    #         f"Found multiple samples in API with barcode {tumor_barcode}"
-    #     )
-    #     return -BASES_PER_GBASE
-    #
-    # return api_json[0]["yld"]
+    api_output = run_bash_command(
+        ["curl", "--fail", "--silent", "--show-error", "-H", "accept: */*", "-X",
+         "GET", f"http://lama.prod-1/api/sequencing/summarized-results?barcodes={tumor_barcode}"]
+    )
+    if not api_output:
+        logging.warning(f"Could not reach API for sample yield")
+        return -BASES_PER_GBASE
+
+    api_json = json.loads(api_output)
+    if not api_json:
+        logging.warning(f"Could not find sample in API with barcode {tumor_barcode}")
+        return -BASES_PER_GBASE
+
+    if len(api_json) > 1:
+        logging.warning(
+            f"Found multiple samples in API with barcode {tumor_barcode}"
+        )
+        return -BASES_PER_GBASE
+
+    return api_json[0]["totalYield"]
 
 
 def run_bash_command(command: List[str]) -> str:
