@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 org_barcode=$1
 
-if [[ -z "$1" || -z "$2" || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Perform final steps of the procedure for a production cram2fastq run"
     echo "        (move FASTQ, register in API, and copy SNPcheck VCF)"
