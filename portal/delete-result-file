@@ -118,7 +118,7 @@ if [ -z "${FILE_ID:-}" ]; then
       -H "Authorization: Bearer $AUTH_TOKEN" \
       "$SERVER_URL/api/results/$RESULT_ID/files"
   )"
-  printf '%s\n' "files" | print_files
+  printf '%s\n' "$files" | print_files
   echo
   prompt FILE_ID "File id to delete"
 fi
@@ -128,7 +128,7 @@ if ! [[ "$FILE_ID" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
-read -r -p "Delete file $FILE_ID from result RESULT_ID? [y/N]: " confirm
+read -r -p "Delete file $FILE_ID from result $RESULT_ID? [y/N]: " confirm
 case "$confirm" in
   y|Y|yes|YES) ;;
   *)
@@ -137,7 +137,7 @@ case "$confirm" in
     ;;
 esac
 
-echo "Deleting file $FILE_IDsult $RESULT_ID..."
+echo "Deleting file $FILE_ID result from $RESULT_ID..."
 curl -fsS -X DELETE \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   "$SERVER_URL/api/results/$RESULT_ID/files/$FILE_ID"

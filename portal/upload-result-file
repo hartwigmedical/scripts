@@ -117,9 +117,12 @@ if [ -z "$signed_url" ]; then
   exit 1
 fi
 
-echo "Uploading '$LOCAL_FILE'..."
+CONTENT_TYPE=$(file --brief --mime-type "$LOCAL_FILE")
+
+echo "Uploading '$LOCAL_FILE' ($CONTENT_TYPE)..."
+
 curl -fsS -X PUT \
-  -H "Content-Type: application/pdf" \
+  -H "Content-Type: $CONTENT_TYPE" \
   --upload-file "$LOCAL_FILE" \
   "$signed_url"
 
