@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Delete a manually added result file from a result in REVIEW status.
+#
+# Optional environment variables:
+# - SERVER_URL: Portal base URL, for example http://portal.gateway.pilot-1/ or http://localhost:8082
+# - AUTH_TOKEN: Bearer token from the auth service offline-session flow
+# - AUTH_URL: Override the offline-session token URL
+# - SUBMISSION_ID: Portal submission id (preferred)
+# - RESULT_ID: Portal results id (used when SUBMISSION_ID is omitted)
+# - FILE_ID: File id to delete. If omitted, the script lists files first.
+
+prompt() {
+  local var_name="$1"
+  local label="$2"
+  local default_value="${3:-}"
+  local value
+
+  if [ -n "${!var_name:-}" ]; then
+    return
+  fi
+
+  if [ -n "$default_value" ]; then
+    read -r -p "$label [$default_value]: " value
+    printf -v "$var_name" '%s' "${value:-$default_value}"
+  else
+    read -r -p "$label: " value
+    printf -v "$var_name" '%s' "$value"
+  fi
+}
+
+extract_token() {
+  python3 -c '
+from urllib.parse import parse_qs
+import sys
+s = sys.argv[1]
+print(parse_qs(s.partition("#")[2]).get("refreshToken", [s])[0])
+' "$1"
+}
+
+print_files() {
+  python3 -c '
+import json
+import sys
+
+files = json.load(sys.stdin)
+
+if not files:
+    print("No files found.")
+    sys.exit(0)
+
+print("{:>8}  {:<8}  {:>12}  {}".format("ID", "TYPE", "SIZE", "PATH"))
+
+for file in files:
+    folder = file.get("folder") or ""
+    name = file.get("name") or ""
+    path = f"{folder}/{name}" if folder else name
+
+    file_id = file.get("id", "")
+    file_type = file.get("fileType", "")
+    size = file.get("sizeInBytes", "")
+
+    print("{:>8}  {:<8}  {:>12}  {}".format(
+        file_id,
+        file_type,
+        size,
+        path,
+    ))
+'
+}
+
+prompt SERVER_URL "Portal server URL" "http://portal.gateway.pilot-1/"
+SERVER_URL="${SERVER_URL%/}"
+
+RESULT_OR_SUBMISSION_ID="${SUBMISSION_ID:-${RESULT_ID:-}}"
+prompt RESULT_OR_SUBMISSION_ID "Submission id or result id"
+
+if [ -z "${AUTH_TOKEN:-}" ]; then
+  AUTH_URL="${AUTH_URL:-$SERVER_URL/auth/offline-session/token?rd=/api/roles}"
+  echo
+  echo "Open this URL, authenticate, and copy the token from the redirect URL fragment:"
+  echo "$AUTH_URL"
+  echo
+  read -r -p "Paste token or full redirect URL: " pasted_token
+  AUTH_TOKEN="$(extract_token "$pasted_token")"
+fi
+
+if [ -z "$AUTH_TOKEN" ]; then
+  echo "Error: AUTH_TOKEN is empty" >&2
+  exit 1
+fi
+
+if [[ "$RESULT_OR_SUBMISSION_ID" == *-* ]]; then
+  echo "Resolving results id for submission $RESULT_OR_SUBMISSION_ID..."
+  result_response="$(
+    curl -fsS \
+      -H "Authorization: Bearer $AUTH_TOKEN" \
+      "$SERVER_URL/api/submission/$RESULT_OR_SUBMISSION_ID/result"
+  )"
+  RESULT_ID="$(
+    python3 -c 'import json, sys; print(json.load(sys.stdin)["resultId"])' <<< "$result_response"
+  )"
+else
+  RESULT_ID="$RESULT_OR_SUBMISSION_ID"
+fi
+
+if ! [[ "$RESULT_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: resolved result id must be numeric: $RESULT_ID" >&2
+  exit 1
+fi
+
+if [ -z "${FILE_ID:-}" ]; then
+  echo "Fetching files for result $RESULT_ID..."
+  files="$(
+    curl -fsS \
+      -H "Authorization: Bearer $AUTH_TOKEN" \
+      "$SERVER_URL/api/results/$RESULT_ID/files"
+  )"
+  printf '%s\n' "$files" | print_files
+  echo
+  prompt FILE_ID "File id to delete"
+fi
+
+if ! [[ "$FILE_ID" =~ ^[0-9]+$ ]]; then
+  echo "Error: file id must be numeric: $FILE_ID" >&2
+  exit 1
+fi
+
+read -r -p "Delete file $FILE_ID from result $RESULT_ID? [y/N]: " confirm
+case "$confirm" in
+  y|Y|yes|YES) ;;
+  *)
+    echo "Cancelled."
+    exit 0
+    ;;
+esac
+
+echo "Deleting file $FILE_ID result from $RESULT_ID..."
+curl -fsS -X DELETE \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  "$SERVER_URL/api/results/$RESULT_ID/files/$FILE_ID"
+
+echo
+echo "Done: deleted file $FILE_ID from result $RESULT_ID."
