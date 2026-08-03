@@ -23,11 +23,11 @@ org_barcode_lower=$(echo "${org_barcode}" | tr '[:upper:]' '[:lower:]')
 info "Renaming newly generated fastq to correct barcodes"
 for fastq_file in $(gcloud storage ls "gs://hmf-cram2fastq/${org_barcode_lower}/cram2fastq/output_fq/*.fastq.gz")
 do
+  flowcell=$(basename ${fastq_file} | cut -d_ -f2)
   gcloud storage mv "${fastq_file}" "${fastq_file//SAMPLE/${org_barcode}}"
+  info "Moving newly generated fastq to fastq-input-prod-1 bucket"
+  gcloud storage cp "${fastq_file//SAMPLE/${org_barcode}}" "gs://fastq-input-prod-1/novaseqx/${flowcell}/fastq/" || die "Could not move fastq"
 done
-
-info "Moving newly generated fastq to fastq-input-prod-1 bucket"
-gcloud storage cp "gs://hmf-cram2fastq/${org_barcode_lower}/cram2fastq/output_fq/*.fastq.gz" "gs://fastq-input-prod-1/" || die "Could not move fastq"
 
 #info "register new barcode fastq in api"
 #manual_fastq_register_like "${new_barcode}" "gs://hmf-cram2fastq/${new_barcode_lower}/cram2fastq/output_fq" "${org_barcode}" || die "Could not register new fastq"
