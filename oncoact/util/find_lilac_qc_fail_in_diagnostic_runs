@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+ 
+set -uo pipefail
+ 
+# Make sure BUCKET_PATH ends with a single trailing slash
+BUCKET_PATH="gs://diagnostic-pipeline-output-prod-1/"
+TARGET_FILE="lilac/*.lilac.qc.tsv"
+ 
+FAILED_DIRS=()
+CHECKED_COUNT=0
+MISSING_COUNT=0
+ 
+echo "Scanning subdirectories under: ${BUCKET_PATH}"
+echo "Looking for file: ${TARGET_FILE}"
+echo "----------------------------------------------"
+ 
+# List only the immediate "subdirectories" (prefixes) under BUCKET_PATH
+# gcloud storage ls with a trailing slash lists one level; -d avoids recursing into contents
+while IFS= read -r dir; do
+    [[ -z "$dir" ]] && continue
+ 
+    file_path="${dir%/}/${TARGET_FILE}"
+    ((CHECKED_COUNT++))
+ 
+    # Try to cat the file directly from the bucket
+    content="$(gcloud storage cat "$file_path" 2>/dev/null)"
+    status=$?
+ 
+    if [[ $status -ne 0 ]]; then
+        echo "[MISSING FILE] ${file_path} could not be read (not found or no access)"
+        FAILED_DIRS+=("$dir (file missing/unreadable)")
+        ((MISSING_COUNT++))
+        continue
+    fi
+ 
+    if grep -q "PASS" <<< "$content"; then
+        echo "[OK]   ${file_path}"
+    else
+        echo "[FAIL] ${file_path} does not contain 'PASS'"
+        FAILED_DIRS+=("$dir")
+        ((MISSING_COUNT++))
+    fi
+ 
+done < <(gcloud storage ls "${BUCKET_PATH}" 2>/dev/null | grep '/$' | sort -r)
+ 
+echo "----------------------------------------------"
+echo "Checked: ${CHECKED_COUNT} directories"
+echo "Failed/Missing: ${MISSING_COUNT}"
+ 
+if (( MISSING_COUNT > 0 )); then
+    echo ""
+    echo "Directories flagged (no 'PASS' found or file unreadable):"
+    for d in "${FAILED_DIRS[@]}"; do
+        echo "  - $d"
+    done
+    exit 1
+else
+    echo "All checked files contain 'PASS'."
+    exit 0
+fi
