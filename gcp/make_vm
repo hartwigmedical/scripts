@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 CRUNCH_PROJECT="hmf-crunch"
+AUS_PROJECT="hmf-aus"
 OPS_PROJECT="hmf-ops"
 SHARE_PROJECT="hmf-share"
 DEFAULT_UMBRELLA_SCOPE="crunch"
@@ -14,7 +15,10 @@ image_name=""
 image_project="hmf-build"
 image_family="hmf-vm"
 
-zone="europe-west4-a"
+zone=""
+default_zone="europe-west4-a"
+subnet_project="hmf-vpc-network"
+subnet_name=""
 machine_type="n1-standard-2"
 disk_type="pd-ssd"
 disk_size="10G"
@@ -50,6 +54,7 @@ print_usage() {
     echo "  -u umbrella_scope      Can be crunch/ops/innovation/pmc/onboarding/share and configures accordingly [${umbrella_scope}]"
     echo "  -c cost_center         Track costs under this label [${cost_center}]"
     echo "  -a accelerator         Add GPU to instance. Format: [count=Count],[type=TYPE]"
+    echo "  -z zone                Zone [default depends on -u scope]"
     echo "  -e                     Make VM pre-emptible"
     echo ""
     echo "For configuration see also:"
@@ -68,7 +73,7 @@ print_usage() {
     exit 1
 }
 
-while getopts ':n:u:p:f:i:m:s:t:d:c:a:ex' flag; do
+while getopts ':n:u:p:f:i:m:s:t:d:c:a:z:ex' flag; do
     case "${flag}" in
         n) vm_name=${OPTARG} ;;
         u) umbrella_scope=${OPTARG} ;;
@@ -81,6 +86,7 @@ while getopts ':n:u:p:f:i:m:s:t:d:c:a:ex' flag; do
         d) startup_script=${OPTARG} ;;
         c) cost_center=${OPTARG} ;;
         a) accelerator=${OPTARG} ;;
+	z) zone=${OPTARG} ;;
         e) preemptible="TRUE" ;;
         x) do_not_ask="TRUE" ;;
         *) warn "Incorrect options provided" && print_usage
@@ -97,17 +103,26 @@ if [[ "${umbrella_scope}" == "crunch" ]]; then
     service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
     vm_project="${CRUNCH_PROJECT}"
     cost_center="${cost_center:-crunch}"
-    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1")
+    subnet_name="vpc-network-subnet-research-prod-1"
+elif [[ "${umbrella_scope}" == "aus" ]]; then
+    [[ -n "${cost_center}" ]] || die "Scope ${umbrella_scope} requires providing a cost-center (see --help)"
+    service_account="hmf-aus@hmf-aus.iam.gserviceaccount.com"
+    vm_project="${AUS_PROJECT}"
+    cost_center="${cost_center:-aus}"
+    default_zone="australia-southeast1-c"
+    network="projects/hmf-aus/global/networks/default"
+    subnet_project="hmf-aus"
+    subnet_name="default"
 elif [[ "${umbrella_scope}" == "ops" ]]; then
     service_account="hmf-ops@hmf-ops.iam.gserviceaccount.com"
     vm_project="${OPS_PROJECT}"
     cost_center="${cost_center:-ops}"
-    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-ops-prod-1")
+    subnet_name="vpc-network-subnet-ops-prod-1"
 elif [[ "${umbrella_scope}" == "pmc" ]]; then
     service_account="hmf-pmc@hmf-pmc.iam.gserviceaccount.com"
     vm_project="hmf-pmc"
     cost_center="${cost_center:-pmc}"
-    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-pmc-prod-1")
+    subnet_name="vpc-network-subnet-pmc-prod-1"
 elif [[ "${umbrella_scope}" == "onboarding" ]]; then
     service_account="hmf-onboarding@hmf-onboarding.iam.gserviceaccount.com"
     vm_project="hmf-onboarding"
@@ -116,12 +131,12 @@ elif [[ "${umbrella_scope}" == "innovation" ]]; then
     service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
     vm_project="${CRUNCH_PROJECT}"
     cost_center="${cost_center:-innovation}"
-    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-research-prod-1")
+    subnet_name="vpc-network-subnet-research-prod-1"
 elif [[ "${umbrella_scope}" == "share" ]]; then
     service_account="hmf-share@hmf-share.iam.gserviceaccount.com"
     vm_project="${SHARE_PROJECT}"
     cost_center="${cost_center:-dr}"
-    network_arg=("--network" "${network}" "--subnet" "projects/hmf-vpc-network/regions/europe-west4/subnetworks/vpc-network-subnet-datarequest-prod-1")
+    subnet_name="vpc-network-subnet-datarequest-prod-1"
 else
     die "Unknown umbrella scope provided [${umbrella_scope}]"
 fi
@@ -141,6 +156,8 @@ if [[ -z "${image_name}" ]]; then
 fi
 
 labels="user=${USER},cost_center=${cost_center}"
+zone="${zone:-${default_zone}}"
+network_arg=("--network" "${network}" "--subnet" "projects/${subnet_project}/regions/${zone%-*}/subnetworks/${subnet_name}")
 cmd=("gcloud" "compute" "instances" "create" "${vm_name}")
 cmd+=("--project" "${vm_project}")
 cmd+=("--image" "${image_name}")
