@@ -623,7 +623,7 @@ def _get_default_report_content(self, report_created_record, set_name=None):
         share_underlying_data = None
         if hospitalName == "NKI-AVL" and cohort != "DRUP":
             wgs_bucket = "python3 /data/repos/scripts/oncoact/patientreporter/reporting_pipeline/share_wgs_to_bucket.py " + report_created_record['sample_barcode'] + " --profile prod"
-        elif hospitalName in ("UMCG", "Vall D'Hebron Institute of Oncology"):
+        elif hospitalName in ("Vall D'Hebron Institute of Oncology"):
             share_underlying_data = f"create_aria2_config_by_set_name {set_name}" if set_name else "create_aria2_config_by_set_name <set_name unavailable>"
 
     return {
