@@ -127,6 +127,9 @@ elif [[ "${umbrella_scope}" == "onboarding" ]]; then
     service_account="hmf-onboarding@hmf-onboarding.iam.gserviceaccount.com"
     vm_project="hmf-onboarding"
     cost_center="${cost_center:-onboarding}"
+    network="projects/hmf-onboarding/global/networks/default"
+    subnet_project="hmf-onboarding"
+    subnet_name="default"
 elif [[ "${umbrella_scope}" == "innovation" ]]; then
     service_account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com"
     vm_project="${CRUNCH_PROJECT}"
