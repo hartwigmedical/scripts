@@ -44,6 +44,22 @@ non-interleaved paired-end FASTQ is supported. Index files are auto-fetched for 
 group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath,coverage
 P1,P1,P1-T,tumor,dna,fastq,library_id:S1;lane:001,gs://my-in/P1-T_L001_R1.fastq.gz;gs://my-in/P1-T_L001_R2.fastq.gz,34
 P1,P1,P1-RNA,tumor,rna,fastq,library_id:S1;lane:001,gs://my-in/P1-RNA_L001_R1.fastq.gz;gs://my-in/P1-RNA_L001_R2.fastq.gz,
+
+Purity estimate (WISP)
+----------------------
+`--mode purity_estimate --purity-estimate-mode wgts|targeted` estimates the tumor fraction of a
+longitudinal sample (e.g. ctDNA / MRD) from variants already called in a primary sample of the
+same patient. The primary must have been run through wgts or targeted mode first; the minimum
+manifest is its PURPLE dir plus the longitudinal BAM, tagged `longitudinal_sample` in `info`:
+
+group_id,subject_id,sample_id,sample_type,sequence_type,filetype,info,filepath
+P1,P1,P1-L,tumor,dna,bam,longitudinal_sample,gs://my-in/P1-L.dna.bam
+P1,P1,P1-T,tumor,dna,purple_dir,,gs://my-out/P1-T/purple/
+
+Under `--purity-estimate-mode wgts`, adding the primary's `amber_dir` row and the primary
+normal's `bam_redux` row lets WISP use LOH as well. `targeted` fits on SNVs only and needs no
+panel reference data, so --panel-config stays unset there. Directory rows are localized as
+whole prefixes, so they cost disk: size the group for the longitudinal BAM plus those dirs.
 """
 
 import argparse
@@ -303,6 +319,10 @@ HELPER_COLUMNS = {"coverage", "vm_type", "sequencing_type"}
 # Accepted values for oncoanalyser's --sequencing_type
 SEQUENCING_TYPES = {"ILLUMINA", "ULTIMA", "SBX"}
 
+# Accepted values for oncoanalyser's --mode (lib/pipeline/PipelineMode.groovy).
+PIPELINE_MODES = {"wgts", "targeted", "purity_estimate", "panel_resource_creation",
+                  "prepare_reference"}
+
 STARTUP_TEMPLATE = r"""#!/bin/bash
 set -uo pipefail
 
@@ -310,6 +330,7 @@ GROUP_ID="%%GROUP_ID%%"
 REVISION="%%REVISION%%"
 GENOME="%%GENOME%%"
 MODE="%%MODE%%"
+PURITY_ESTIMATE_MODE="%%PURITY_ESTIMATE_MODE%%"
 SEQUENCING_TYPE="%%SEQUENCING_TYPE%%"
 NXF_VER="%%NXF_VER%%"
 RUN_ROOT="%%RUN_ROOT%%"
@@ -428,6 +449,13 @@ if [ -n "$PANEL_CONFIG_GCS" ]; then
   REF_ARG="$REF_ARG -config panel_data.config"
 fi
 
+# --mode purity_estimate additionally needs --purity_estimate_mode; every other mode must not
+# pass it at all (the pipeline only reads it under PURITY_ESTIMATE).
+PURITY_ARG=""
+if [ -n "$PURITY_ESTIMATE_MODE" ]; then
+  PURITY_ARG="--purity_estimate_mode $PURITY_ESTIMATE_MODE"
+fi
+
 # Localize gs:// inputs to local disk with gcloud (parallel + resumable), then point the
 # samplesheet at the local copies. This avoids Nextflow's single-stream foreign-file copier,
 # which has no resume and stalls on large (100 GB+) CRAM/BAM inputs.
@@ -539,6 +567,7 @@ nextflow run nf-core/oncoanalyser \
   $REF_ARG \
   -config resources.config \
   --mode "$MODE" \
+  $PURITY_ARG \
   --genome "$GENOME" \
   --sequencing_type "$SEQUENCING_TYPE" \
   --input "$INPUT_SHEET" \
@@ -646,6 +675,8 @@ def group_dna_inputs(group_rows):
         if st not in DNA_SAMPLE_TYPES:
             continue
         ft = (r.get("filetype") or "").strip().lower()
+        if ft.endswith("_dir"):
+            continue           # existing-output prefixes (purple_dir, amber_dir, ...) are not alignments
         for p in (r.get("filepath") or "").split(";"):
             p = p.strip()
             if p.startswith("gs://"):
@@ -1762,7 +1793,13 @@ def main():
                          "panel; layered on top of --reference-config as a second -config.")
     ap.add_argument("--revision", default="dev-3.0.0-beta.15", help="oncoanalyser git branch/tag/commit (default: dev-3.0.0-beta.15)")
     ap.add_argument("--genome", default="GRCh38_hmf")
-    ap.add_argument("--mode", default="wgts")
+    ap.add_argument("--mode", default="wgts", choices=sorted(PIPELINE_MODES),
+                    help="oncoanalyser workflow mode (default: wgts)")
+    ap.add_argument("--purity-estimate-mode", default="", choices=("", "wgts", "targeted"),
+                    help="required with --mode purity_estimate, rejected otherwise. 'wgts' fits on "
+                         "SNVs + CNVs (+ LOH when the primary AMBER dir and the primary normal "
+                         "REDUX BAM are in the manifest); 'targeted' fits on SNVs only and needs no "
+                         "panel ref data (so no --panel-config).")
     ap.add_argument("--nextflow-version", default="25.04.8",
                     help="pinned NXF_VER on the VM. Must be in [25.04, 26.04): dev-3.0.0's bundled "
                          "nf-schema needs >=25.04.0, and >=26.04 defaults to the v2 config parser which "
@@ -1843,6 +1880,12 @@ def main():
 
     purple_ext_args = parse_purple_purity_range(args.purple_purity_range)
     isofox_reserve_arg = parse_isofox_reserve(args.isofox_reserve)
+
+    # purity_estimate is the only mode that reads --purity_estimate_mode, and it hard-requires it.
+    if args.mode == "purity_estimate" and not args.purity_estimate_mode:
+        sys.exit("--mode purity_estimate also requires --purity-estimate-mode wgts|targeted")
+    if args.purity_estimate_mode and args.mode != "purity_estimate":
+        sys.exit(f"--purity-estimate-mode only applies to --mode purity_estimate (got --mode {args.mode})")
 
     if args.report:
         report_costs(build_run_root(args.output_bucket, args.runs_prefix, args.report), args.report)
@@ -1969,6 +2012,7 @@ def main():
             .replace("%%REVISION%%", args.revision)
             .replace("%%GENOME%%", args.genome)
             .replace("%%MODE%%", args.mode)
+            .replace("%%PURITY_ESTIMATE_MODE%%", args.purity_estimate_mode)
             .replace("%%SEQUENCING_TYPE%%", seq_type)
             .replace("%%NXF_VER%%", args.nextflow_version)
             .replace("%%RUN_ROOT%%", run_root)
