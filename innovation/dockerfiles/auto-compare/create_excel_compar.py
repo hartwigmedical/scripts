@@ -5,6 +5,42 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 
+EXCEL_TAB_LIMIT = 31  # Excel caps worksheet titles at 31 characters
+
+
+def derive_category(fname: str) -> str:
+    """Return the compar category a TSV holds, e.g. "driver" or "somatic_variant".
+
+    Compar names its cohort output "compar_cohort.<runId>.<category>.tsv" but its
+    per-sample output "<sampleId>.cmp.<runId>.<category>.tsv", so the category sits at a
+    different position depending on which one it wrote. Counting back from the extension
+    is the only position that holds for both.
+    """
+    stem = os.path.splitext(fname)[0]
+    return stem.rsplit(".", 1)[-1] or stem
+
+
+def unique_sheet_title(category: str, fname: str, taken: list) -> str:
+    """Keep worksheet titles distinct and within Excel's length cap.
+
+    Per-sample compar output repeats every category once per sample, so fall back to
+    qualifying the tab with the sample rather than letting openpyxl append a number.
+    """
+    title = category[:EXCEL_TAB_LIMIT]
+    if title not in taken:
+        return title
+
+    sample = fname.split(".", 1)[0]
+    qualified = f"{sample}_{category}"
+    title = qualified[:EXCEL_TAB_LIMIT]
+    attempt = 2
+    while title in taken:
+        suffix = f"_{attempt}"
+        title = qualified[: EXCEL_TAB_LIMIT - len(suffix)] + suffix
+        attempt += 1
+    return title
+
+
 def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
     """Convert compar TSV files into a single Excel workbook.
 
@@ -26,9 +62,7 @@ def categorize_files_to_excel(input_dir: str, output_file: str) -> None:
             continue
 
         fpath = os.path.join(input_dir, fname)
-        parts = fname.split(".")
-        tab_name = parts[2] if len(parts) > 2 else fname[:31]
-        tab_name = tab_name[:31]  # Excel cap
+        tab_name = unique_sheet_title(derive_category(fname), fname, wb.sheetnames)
 
         try:
             df = pd.read_csv(fpath, sep="\t")
