@@ -11,6 +11,7 @@ personalization_jar="$(locate_actin_personalization_jar)"
 actin_database_name="actin_ncr"
 
 ncr_file="$(locate_latest_ncr_crc_dataset_analysis_vm)"
+ncr_morphology_file="$(locate_latest_ncr_crc_morphology_dataset_analysis_vm)"
 
 db_user=$(extract_database_user "${actin_credentials}")
 db_pass=$(extract_database_password "${actin_credentials}")
@@ -20,6 +21,7 @@ info "Loading NCR dataset into ACTIN NCR database"
 
 java -cp ${personalization_jar} com.hartwig.actin.personalization.ncr.database.NcrDatabaseLoaderApplicationKt \
     -ncr_file "${ncr_file}" \
+    -ncr_morphology_file "${ncr_morphology_file}" \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
 
