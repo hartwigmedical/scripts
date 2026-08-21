@@ -357,6 +357,9 @@ echo "[$(date -u)] === oncoanalyser startup for ${GROUP_ID} (run ${RUN_ID}) ==="
 
 # All run artifacts are namespaced by a unique run-id so separate runs never clobber each other.
 RUN_PREFIX="${RUN_ROOT%/}/${GROUP_ID}"
+# Pipeline output of every group of the run lands side by side under one results/ folder, so the
+# run reads like a native single-nextflow-run outdir: <run-id>/results/<sample>/<tool dirs>.
+RESULTS_ROOT="${RUN_ROOT%/}/results"
 
 report() {  # $1 = SUCCESS|FAILED
   echo "$1 $(date -u)" > /tmp/_STATUS
@@ -577,8 +580,22 @@ nextflow run nf-core/oncoanalyser \
 RC=$?
 echo "[$(date -u)] nextflow exited with code ${RC}"
 
-# Always try to ship outputs + logs, even on failure
-gcloud storage rsync -r ./output "${RUN_PREFIX}/output" || true
+# Always try to ship outputs + logs, even on failure.
+# Nextflow writes ./output/<group_id>/<tool dirs> plus ./output/pipeline_info/. Shipping the whole
+# tree to <group>/output/ would nest the group name twice, so each subdirectory is placed on its
+# own: sample dirs go flat into results/, and pipeline_info is a run report (trace/timeline), so it
+# stays with startup.log/nextflow.log rather than polluting results/.
+for d in ./output/*/; do
+  [ -d "$d" ] || continue
+  name=$(basename "$d")
+  if [ "$name" = "pipeline_info" ]; then
+    gcloud storage rsync -r "$d" "${RUN_PREFIX}/pipeline_info" || true
+  else
+    gcloud storage rsync -r "$d" "${RESULTS_ROOT}/${name}" || true
+  fi
+done
+# Loose files at the outdir root (none expected, but a plain rsync used to carry them) are kept.
+find ./output -maxdepth 1 -type f -exec gcloud storage cp {} "${RESULTS_ROOT}/${GROUP_ID}/" \; || true
 [ -f ./.nextflow.log ] && gcloud storage cp ./.nextflow.log "${RUN_PREFIX}/nextflow.log" || true
 
 # --- cost record (self-computed estimate from wall time x injected hourly rate) ---
@@ -1013,8 +1030,57 @@ PROCESS_MEM_GB = {
 }
 
 
+# ======================================================================================
+# hmftools tool version pinning
+# ======================================================================================
+# HMF publishes a Docker Hub image per hmftools release the moment the release is tagged
+# (hartwigmedicalfoundation/<tool>:<version>), so a run can use a tool version newer than the
+# pipeline's own pin without waiting on bioconda -- which lags the GitHub release by hours to
+# days. Just interpolate the version into a `container` override on the tool's processes.
+# --<tool>-container takes a full image reference instead, for a private/Artifact Registry build.
+#
+# The docker.io/ prefix is NOT optional. oncoanalyser's nextflow.config sets
+# docker.registry = 'quay.io', so Nextflow prepends that to any image name it considers
+# unqualified: a bare 'hartwigmedicalfoundation/pave:1.9.1' is pulled as
+# 'quay.io/hartwigmedicalfoundation/pave:1.9.1' and dies with 401 UNAUTHORIZED. A name whose
+# first component looks like a host (contains a '.' or ':') is left alone -- which is also why
+# the STAR pin below is written out as a full quay.io/... reference.
+
+HMF_IMAGE = "docker.io/hartwigmedicalfoundation/{tool}:{version}"
+
+# tool -> the withName selector covering every process that runs it.
+TOOL_PROCESS_SELECTOR = {
+    "redux": "REDUX",
+    "pave": ".*PAVE.*",   # PAVE_GERMLINE + PAVE_SOMATIC
+}
+
+
+def qualify_registry(image):
+    """Prefix docker.io/ unless the reference already names a registry host.
+
+    Same rule Nextflow uses to decide whether docker.registry applies, so an image passed as
+    --<tool>-container means what it means to `docker pull` rather than silently resolving
+    against the pipeline's quay.io default.
+    """
+    head = image.split("/")[0]
+    if "/" in image and ("." in head or ":" in head or head == "localhost"):
+        return image
+    return f"docker.io/{image}"
+
+
+def resolve_tool_pin(tool, version, container_override=""):
+    """(image, note) for --<tool>-version / --<tool>-container. ('', '') means don't override."""
+    if container_override:
+        image = qualify_registry(container_override.strip())
+        return image, f"{tool.upper()} pinned to {image} (--{tool}-container)"
+    if not version:
+        return "", ""
+    image = HMF_IMAGE.format(tool=tool, version=version.strip().lstrip("vV"))
+    return image, f"{tool.upper()} pinned to {image}"
+
+
 def write_resources_config(cpus, mem_gb, out_path, align_max_forks=0, purple_ext_args="",
-                           redux_version="", purple_mem_gb=96, retune=True, redux_split=None,
+                           tool_pins=None, purple_mem_gb=96, retune=True, redux_split=None,
                            isofox_cpus=None):
     # Leave headroom below the box's RAM for the OS, the Nextflow JVM and the Docker daemon.
     # This is also the executor pool, so it is the real cap on how much work runs at once.
@@ -1066,16 +1132,17 @@ def write_resources_config(cpus, mem_gb, out_path, align_max_forks=0, purple_ext
     # PURPLE's module appends ${task.ext.args} verbatim and the pipeline sets none, so this is
     # additive.
     purple_args_line = f"        ext.args = '{purple_ext_args}'\n" if purple_ext_args else ""
-    # Pin the REDUX container to a specific hmftools-redux release, so a run can use a newer redux
-    # (e.g. 2.0.1 for new SBX samples) without waiting for a pipeline bump. Default: the
+    # Pin a tool's container to a specific hmftools release, so a run can use a newer REDUX
+    # (e.g. 2.0.1 for new SBX samples) or PAVE without waiting for a pipeline bump. Default: the
     # pipeline's own pin. Same mechanism as the STAR_ALIGN pin below.
-    redux_block = (
+    tool_block = "".join(
         "\n"
-        "    // Override the REDUX container to a specific hmftools-redux release.\n"
-        f"    withName: 'REDUX' {{\n"
-        f"        container = 'biocontainers/hmftools-redux:{redux_version}--hdfd78af_0'\n"
+        f"    // Override the {tool.upper()} container to a specific hmftools release.\n"
+        f"    withName: '{TOOL_PROCESS_SELECTOR[tool]}' {{\n"
+        f"        container = '{image}'\n"
         "    }\n"
-    ) if redux_version else ""
+        for tool, image in sorted((tool_pins or {}).items()) if image
+    )
     # ---------------------------------------------------------------------------------
     # The retune block: two rules, applied to every process that matters.
     #   cpus   -- a constant, sized by plan_cpus() so the box is actually filled.
@@ -1228,7 +1295,7 @@ def write_resources_config(cpus, mem_gb, out_path, align_max_forks=0, purple_ext
             f"{purple_args_line}"
             f"{oom_retry if retune else ''}"
             "    }\n"
-            f"{redux_block}"
+            f"{tool_block}"
             "}\n"
             "\n"
             "// Pin the local executor's resource pool instead of letting Nextflow autodetect it.\n"
@@ -1551,8 +1618,13 @@ def delete_run(args, run_id):
             print(f"    {d['name']:40s} {d['zone']:16s} {d['size_gb']} GB{note}")
     else:
         print("  Disks to delete: none found")
+    targets = []
     if args.delete_outputs:
-        targets = [gcs_join(run_root, sanitize(g)) for g in groups] or [run_root]
+        # A single group lives in two places: its status/log folder <run-id>/<group>/ and its
+        # pipeline output <run-id>/results/<group>/. Deleting the whole run covers both at once.
+        targets = [t for g in groups
+                   for t in (gcs_join(run_root, sanitize(g)),
+                             gcs_join(run_root, "results", sanitize(g)))] or [run_root]
         if staging_root:
             targets += [gcs_join(staging_root, g) for g in groups] or [staging_root]
         print("  GCS to delete (RECURSIVE, irreversible):")
@@ -1604,11 +1676,8 @@ def delete_run(args, run_id):
 
     if args.delete_outputs:
         print("Deleting GCS folders...")
-        for t in ([gcs_join(run_root, sanitize(g)) for g in groups] or [run_root]):
+        for t in targets:
             gcs_rm_tree(t)
-        if staging_root:
-            for t in ([gcs_join(staging_root, g) for g in groups] or [staging_root]):
-                gcs_rm_tree(t)
 
     left_vms = find_run_instances(args.project, run_id, groups or None)
     left_disks = find_run_disks(args.project, run_id, groups or None)
@@ -1649,33 +1718,41 @@ STALE_MARKERS = ("_FAILED", "_SUCCESS", "_CANCELLED", "_PREEMPTED",
 
 
 def existing_output(run_root, gid):
-    """What oncoanalyser results already sit under gs://.../<run-id>/<group>/output/ ?
+    """What oncoanalyser results already sit under gs://.../<run-id>/results/<group>/ ?
 
-    The startup script rsyncs ./output there only AFTER nextflow exits, so an empty/absent prefix
-    means the run never got far enough to produce anything -- the only case where wiping a terminal
-    marker and relaunching is safe. Anything present is real pipeline output that a from-scratch
-    relaunch would rsync over (a _FAILED VM self-deletes its work disk, so the next attempt has no
-    -resume cache and recomputes everything).
+    The startup script rsyncs ./output/<group> there only AFTER nextflow exits, so an empty/absent
+    prefix means the run never got far enough to produce anything -- the only case where wiping a
+    terminal marker and relaunching is safe. Anything present is real pipeline output that a
+    from-scratch relaunch would rsync over (a _FAILED VM self-deletes its work disk, so the next
+    attempt has no -resume cache and recomputes everything).
+
+    The legacy <group>/output/ prefix is checked too, so the guard keeps protecting runs launched
+    before results/ became the layout.
 
     Returns (state, entries):
         True,  [names]  output exists -- do NOT overwrite
         False, []       nothing there -- safe to clear markers and relaunch
         None,  []       the listing itself failed; unknown, so treat it as 'exists' (fail closed)
     """
-    res = subprocess.run(["gcloud", "storage", "ls", f"{gcs_join(run_root, gid, 'output')}/"],
-                         capture_output=True, text=True)
-    if res.returncode == 0:
-        entries = [ln.strip().rstrip("/").rsplit("/", 1)[-1]
-                   for ln in res.stdout.splitlines() if ln.strip()]
-        return (bool(entries), entries)
-    err = (res.stderr or "").lower()
-    if "matched no objects" in err or "not found" in err:
-        return (False, [])
-    return (None, [])
+    unknown = False
+    for prefix in (gcs_join(run_root, "results", gid), gcs_join(run_root, gid, "output")):
+        res = subprocess.run(["gcloud", "storage", "ls", f"{prefix}/"],
+                             capture_output=True, text=True)
+        if res.returncode == 0:
+            entries = [ln.strip().rstrip("/").rsplit("/", 1)[-1]
+                       for ln in res.stdout.splitlines() if ln.strip()]
+            if entries:
+                return (True, entries)
+            continue
+        err = (res.stderr or "").lower()
+        if not ("matched no objects" in err or "not found" in err):
+            unknown = True
+    return (None, []) if unknown else (False, [])
 
 
-# Markers whose removal implies discarding a finished attempt's verdict. If output/ is already
-# populated, clearing one of these and relaunching would overwrite real results, so it is refused.
+# Markers whose removal implies discarding a finished attempt's verdict. If results/<group>/ is
+# already populated, clearing one of these and relaunching would overwrite real results, so it is
+# refused.
 PROTECTED_MARKERS = ("_FAILED", "_SUCCESS", "_GAVE_UP_PREEMPTED")
 
 
@@ -1689,13 +1766,14 @@ def clear_stale_markers(run_root, gid, dry_run=False, force=False):
     watchdog reads the same markers, hence the false failure alerts.
 
     Safeguard: a _FAILED/_SUCCESS marker is only stale if the attempt that wrote it left nothing
-    behind. If output/ already holds results, the group is BLOCKED instead of cleared -- relaunch it
-    under a fresh --run-id, or pass --force-over-output to overwrite deliberately.
+    behind. If results/<group>/ already holds results, the group is BLOCKED instead of cleared --
+    relaunch it under a fresh --run-id, or pass --force-over-output to overwrite deliberately.
 
     Returns (cleared, ok, blocked): the marker names removed, False if any removal failed, and a
     reason string when the group must not be launched (nothing was deleted in that case).
     """
     base = gcs_join(run_root, gid)
+    results_dir = gcs_join(run_root, "results", gid)
     res = subprocess.run(["gcloud", "storage", "ls", f"{base}/"], capture_output=True, text=True)
     if res.returncode != 0:
         return [], True, ""  # folder does not exist yet: a first launch has nothing to clean
@@ -1708,11 +1786,11 @@ def clear_stale_markers(run_root, gid, dry_run=False, force=False):
     if protected and not force:
         has_output, entries = existing_output(run_root, gid)
         if has_output is None:
-            return [], True, (f"could not list {base}/output/ to check for existing results; "
+            return [], True, (f"could not list {results_dir}/ to check for existing results; "
                               f"refusing to clear {', '.join(protected)} while that is unknown")
         if has_output:
             shown = ", ".join(sorted(entries)[:6]) + (", ..." if len(entries) > 6 else "")
-            return [], True, (f"{base}/output/ already holds pipeline output ({shown}) alongside "
+            return [], True, (f"{results_dir}/ already holds pipeline output ({shown}) alongside "
                               f"{', '.join(protected)}; a relaunch would overwrite it")
 
     uris = [f"{base}/{m}" for m in cleared]
@@ -1807,7 +1885,10 @@ def main():
     ap.add_argument("--sequencing-type", default="ILLUMINA", choices=sorted(SEQUENCING_TYPES),
                     help="default platform; overridden per-group by a 'sequencing_type' manifest column")
     ap.add_argument("--extra-args", default="", help="extra oncoanalyser args, e.g. '--processes_exclude virusinterpreter,orange'")
-    ap.add_argument("--redux-version", default="", help="pin the hmftools-redux container to this release (e.g. '2.0.1'); default uses the pipeline's own pin")
+    ap.add_argument("--redux-version", default="", help="pin REDUX to this hmftools release (e.g. '2.0.5'), i.e. run hartwigmedicalfoundation/redux:<version>; default uses the pipeline's own pin")
+    ap.add_argument("--redux-container", default="", metavar="IMAGE", help="pin REDUX to this exact image instead (e.g. a private Artifact Registry build). Wins over --redux-version")
+    ap.add_argument("--pave-version", default="", help="pin PAVE to this hmftools release (e.g. '1.9.1'), i.e. run hartwigmedicalfoundation/pave:<version>; default uses the pipeline's own pin")
+    ap.add_argument("--pave-container", default="", metavar="IMAGE", help="pin PAVE to this exact image instead. Wins over --pave-version")
     ap.add_argument("--purple-purity-range", default="", metavar="MIN,MAX",
                     help="constrain PURPLE's fit grid to this purity range, e.g. '0.95,1.0'. Injects "
                          "'-min_purity MIN -max_purity MAX' as ext.args on the PURPLE process. Use to "
@@ -1880,6 +1961,14 @@ def main():
 
     purple_ext_args = parse_purple_purity_range(args.purple_purity_range)
     isofox_reserve_arg = parse_isofox_reserve(args.isofox_reserve)
+
+    tool_pins = {}
+    for tool, version, override in (("redux", args.redux_version, args.redux_container),
+                                    ("pave", args.pave_version, args.pave_container)):
+        image, note = resolve_tool_pin(tool, version, override)
+        tool_pins[tool] = image
+        if note:
+            print("  " + note)
 
     # purity_estimate is the only mode that reads --purity_estimate_mode, and it hard-requires it.
     if args.mode == "purity_estimate" and not args.purity_estimate_mode:
@@ -1999,7 +2088,7 @@ def main():
         rc = os.path.join(tmpdir, f"{sanitize(gid)}.resources.config")
         write_samplesheet(rows, sheet_cols, ss)
         write_resources_config(cpus, mem_gb, rc, align_max_forks=args.align_max_forks,
-                               purple_ext_args=purple_ext_args, redux_version=args.redux_version,
+                               purple_ext_args=purple_ext_args, tool_pins=tool_pins,
                                purple_mem_gb=args.purple_mem_gb, retune=not args.no_retune,
                                redux_split=redux_split, isofox_cpus=isofox_reserve or None)
         run(["gcloud", "storage", "cp", ss, gcs_join(staging_prefix, "samplesheet.csv")], args.dry_run)
@@ -2101,6 +2190,7 @@ def main():
     print(f"\nStatus markers ({markers}) will appear under:")
     for gid in specs:
         print(f"  {gcs_join(run_root, gid)}/")
+    print(f"\nPipeline output lands flat, one folder per sample, under:\n  {run_root}/results/")
 
     if args.spot and not args.wait and not args.dry_run:
         print("\nNOTE: --spot without --wait means NO auto-relaunch. A preempted group drops a "
